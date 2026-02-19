@@ -1,9 +1,8 @@
-package org.vechain.indexer
+package org.vechain.indexer.config.metrics
 
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
-import jakarta.annotation.PostConstruct
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration
@@ -15,11 +14,6 @@ class ProcessorMetrics(private val registry: MeterRegistry) {
 
     private val processingDurationTimers = ConcurrentHashMap<String, Timer>()
     private val eventsCounters = ConcurrentHashMap<String, Counter>()
-
-    @PostConstruct
-    fun init() {
-        setInstance(this)
-    }
 
     fun observeProcessingDuration(indexerName: String, duration: Duration) {
         processingDurationTimers
@@ -41,21 +35,5 @@ class ProcessorMetrics(private val registry: MeterRegistry) {
                     .register(registry)
             }
             .increment(count)
-    }
-
-    companion object {
-        @Volatile private var instance: ProcessorMetrics? = null
-
-        private fun setInstance(metrics: ProcessorMetrics) {
-            instance = metrics
-        }
-
-        fun observeProcessingDuration(indexerName: String, duration: Duration) {
-            instance?.observeProcessingDuration(indexerName, duration)
-        }
-
-        fun incrementEventsCounter(indexerName: String, count: Double) {
-            instance?.incrementEventsCounter(indexerName, count)
-        }
     }
 }

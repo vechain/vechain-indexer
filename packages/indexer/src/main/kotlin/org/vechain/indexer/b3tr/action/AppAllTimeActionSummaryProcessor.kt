@@ -10,6 +10,7 @@ import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.AppAllTimeActionSummaryRepository
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 
 @Component
 @Profile("b3tr", "b3tr-actions", "b3tr-app-all-time-action-summary")
@@ -18,6 +19,7 @@ open class AppAllTimeActionSummaryProcessor(
     appAllTimeActionSummaryArchiveService: ArchiveService<AppAllTimeActionSummary>,
     private val service: AppAllTimeActionSummaryService,
     checkpointService: CheckpointService,
+    processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = repository,
@@ -25,6 +27,7 @@ open class AppAllTimeActionSummaryProcessor(
         indexerName = IndexerNames.APP_ALL_TIME_ACTION_SUMMARY.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.APP_ALL_TIME_ACTION_SUMMARY.COLLECTION,
+        processorMetrics = processorMetrics,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {

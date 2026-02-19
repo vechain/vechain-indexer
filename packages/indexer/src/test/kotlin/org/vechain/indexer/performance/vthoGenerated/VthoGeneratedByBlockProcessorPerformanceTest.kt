@@ -10,6 +10,7 @@ import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.stargate.StargateUtils
@@ -24,6 +25,7 @@ class VthoGeneratedByBlockProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var vthoGeneratedByBlockRepository: VthoGeneratedByBlockRepository
     @Autowired lateinit var vthoGeneratedByBlockService: VthoGeneratedByBlockService
     @Autowired lateinit var checkpointService: CheckpointService
+    @Autowired lateinit var processorMetrics: ProcessorMetrics
 
     @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
     lateinit var stakerContract: String
@@ -89,12 +91,14 @@ class VthoGeneratedByBlockProcessorPerformanceTest : BasePerformanceTest() {
                     repository = vthoGeneratedByBlockRepository,
                     profiler = profiler,
                     checkpointService = checkpointService,
+                    processorMetrics = processorMetrics,
                 )
             } else {
                 VthoGeneratedByBlockProcessor(
                     service = serviceToUse,
                     repository = vthoGeneratedByBlockRepository,
                     checkpointService = checkpointService,
+                    processorMetrics = processorMetrics,
                 )
             }
 
@@ -116,11 +120,13 @@ class VthoGeneratedByBlockProcessorPerformanceTest : BasePerformanceTest() {
         repository: VthoGeneratedByBlockRepository,
         private val profiler: DetailedProfiler,
         checkpointService: CheckpointService,
+        processorMetrics: ProcessorMetrics,
     ) :
         VthoGeneratedByBlockProcessor(
             service = service,
             repository = repository,
             checkpointService = checkpointService,
+            processorMetrics = processorMetrics,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    VthoGeneratedByBlockProcessor.process (per block)") {

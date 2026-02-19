@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_NO_CLAUSES
 
 @ExtendWith(MockKExtension::class)
@@ -22,6 +23,8 @@ class VeVoteCommentProcessorTest {
     @MockK lateinit var mongoTemplate: MongoTemplate
 
     @MockK lateinit var checkpointService: CheckpointService
+
+    private val processorMetrics: ProcessorMetrics = mockk(relaxed = true)
 
     private lateinit var vevoteCommentProcessor: VeVoteCommentProcessor
 
@@ -35,6 +38,7 @@ class VeVoteCommentProcessorTest {
                 veVoteCommentService,
                 mongoTemplate,
                 checkpointService,
+                processorMetrics,
             )
     }
 

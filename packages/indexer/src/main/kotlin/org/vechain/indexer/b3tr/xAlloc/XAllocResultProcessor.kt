@@ -10,6 +10,7 @@ import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.xAlloc.repository.XAllocResultRepository
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 
 @Profile("b3tr", "b3tr-x-alloc")
 @Component
@@ -18,6 +19,7 @@ open class XAllocResultProcessor(
     xAllocResultArchiveService: ArchiveService<XAllocResult>,
     private val service: XAllocResultService,
     checkpointService: CheckpointService,
+    processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = repository,
@@ -25,6 +27,7 @@ open class XAllocResultProcessor(
         indexerName = IndexerNames.X_ALLOC_RESULT.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.X_ALLOC_RESULT.COLLECTION,
+        processorMetrics = processorMetrics,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {

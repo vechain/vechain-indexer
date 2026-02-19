@@ -10,8 +10,10 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.validator.Delegation
 import org.vechain.indexer.validator.DelegationConfig
 import org.vechain.indexer.validator.DelegationProcessor
@@ -26,6 +28,7 @@ class DelegationProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var delegationService: DelegationService
     @Autowired lateinit var archiveService: ArchiveService<Delegation>
     @Autowired lateinit var checkpointService: CheckpointService
+    @Autowired lateinit var processorMetrics: ProcessorMetrics
     @Autowired
     lateinit var validatorDelegationService:
         org.vechain.indexer.validator.ValidatorDelegationService
@@ -89,6 +92,7 @@ class DelegationProcessorPerformanceTest : BasePerformanceTest() {
                 ProfiledDelegationService(
                     repository = delegationRepository,
                     archiveService = archiveService,
+                    delegationPruner = delegationPruner,
                     validatorDelegationService = validatorDelegationService,
                     stakerSC = builtinStakerAddress,
                     profiler = profiler,
@@ -105,6 +109,7 @@ class DelegationProcessorPerformanceTest : BasePerformanceTest() {
                     service = serviceToUse,
                     profiler = profiler,
                     checkpointService = checkpointService,
+                    processorMetrics = processorMetrics,
                 )
             } else {
                 DelegationProcessor(
@@ -112,6 +117,7 @@ class DelegationProcessorPerformanceTest : BasePerformanceTest() {
                     archiveService = archiveService,
                     checkpointService = checkpointService,
                     service = serviceToUse,
+                    processorMetrics = processorMetrics,
                 )
             }
 
@@ -136,12 +142,14 @@ class DelegationProcessorPerformanceTest : BasePerformanceTest() {
         service: DelegationService,
         private val profiler: DetailedProfiler,
         checkpointService: CheckpointService,
+        processorMetrics: ProcessorMetrics,
     ) :
         DelegationProcessor(
             repository = repository,
             archiveService = archiveService,
             checkpointService = checkpointService,
             service = service,
+            processorMetrics = processorMetrics,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    DelegationProcessor.process (per block)") {

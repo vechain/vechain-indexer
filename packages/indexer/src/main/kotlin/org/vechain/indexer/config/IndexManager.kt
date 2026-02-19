@@ -55,6 +55,7 @@ open class IndexManager(
     }
 
     @Scheduled(fixedDelay = 60_000)
+    @EventListener(ContextClosedEvent::class)
     open fun saveCheckpoints() {
         val activeSyncStatuses = setOf(Status.FAST_SYNCING, Status.SYNCING, Status.FULLY_SYNCED)
 
@@ -79,8 +80,6 @@ open class IndexManager(
     @EventListener(ContextClosedEvent::class)
     open fun onShutdown() {
         logger.info("Shutting down indexers")
-
-        saveCheckpoints()
 
         indexers.forEach { indexer ->
             try {

@@ -12,6 +12,7 @@ import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.accounts.repository.AccountOverviewRepository
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.thor.model.Block
 
 @Profile("accounts", "account-overview")
@@ -21,6 +22,7 @@ open class AccountOverviewProcessor(
     repository: AccountOverviewRepository,
     archiveService: ArchiveService<AccountOverview>,
     checkpointService: CheckpointService,
+    processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = repository,
@@ -28,6 +30,7 @@ open class AccountOverviewProcessor(
         indexerName = IndexerNames.ACCOUNT_OVERVIEW.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.ACCOUNT_OVERVIEW.COLLECTION,
+        processorMetrics = processorMetrics,
     ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)

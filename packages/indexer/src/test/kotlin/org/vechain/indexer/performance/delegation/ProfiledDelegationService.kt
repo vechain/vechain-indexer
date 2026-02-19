@@ -3,6 +3,7 @@ package org.vechain.indexer.performance.delegation
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.performance.DetailedProfiler
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.Delegation
@@ -28,7 +29,14 @@ class ProfiledDelegationService(
     validatorDelegationService: ValidatorDelegationService,
     stakerSC: String,
     private val profiler: DetailedProfiler,
-) : DelegationService(repository, archiveService, validatorDelegationService, stakerSC) {
+) :
+    DelegationService(
+        repository,
+        archiveService,
+        delegationPruner,
+        validatorDelegationService,
+        stakerSC,
+    ) {
 
     override suspend fun processBlock(
         block: Block,

@@ -6,6 +6,7 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.just
+import io.mockk.mockk
 import io.mockk.verify
 import java.math.BigDecimal
 import kotlinx.coroutines.runBlocking
@@ -18,6 +19,7 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.UserDailyActionSummaryRepository
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 
@@ -31,6 +33,8 @@ internal class UserDailyActionSummaryProcessorTest {
 
     @MockK lateinit var checkpointService: CheckpointService
 
+    private val processorMetrics: ProcessorMetrics = mockk(relaxed = true)
+
     private lateinit var processor: UserDailyActionSummaryProcessor
 
     @BeforeEach
@@ -42,6 +46,7 @@ internal class UserDailyActionSummaryProcessorTest {
                 userDailyActionSummaryArchiveService = archiveService,
                 service = service,
                 checkpointService = checkpointService,
+                processorMetrics = processorMetrics,
             )
     }
 

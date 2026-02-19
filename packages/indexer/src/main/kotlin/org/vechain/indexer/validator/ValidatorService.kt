@@ -1,5 +1,6 @@
 package org.vechain.indexer.validator
 
+import java.math.BigDecimal
 import java.math.BigInteger
 import java.util.concurrent.ConcurrentHashMap
 import org.springframework.beans.factory.annotation.Value
@@ -218,13 +219,14 @@ open class ValidatorService(
                     )
                 }
 
-            working[validatorId] =
-                base.copy(
-                    blockId = ev.blockId,
-                    blockNumber = ev.blockNumber,
-                    blockTimestamp = ev.blockTimestamp,
-                    beneficiary = ev.params.getAsString("beneficiary") ?: base.beneficiary,
-                    exitingValidatorVetStaked =
+            val updatedExitingStake =
+                when (ev.eventType) {
+                    "ValidationWithdrawn" -> {
+                        val withdrawn =
+                            NumberUtils.toVET(ev.params.getAsBigInteger("stake") ?: BigInteger.ZERO)
+                        (base.exitingValidatorVetStaked - withdrawn).max(BigDecimal.ZERO)
+                    }
+                    else ->
                         ValidatorCalculator.updatePendingValidatorVET(
                             ev.params.getAsBigInteger("removed"),
                             base.exitingValidatorVetStaked,
@@ -232,7 +234,16 @@ open class ValidatorService(
                             ev.blockNumber,
                             base.startBlock,
                             base.cyclePeriodLength,
-                        ),
+                        )
+                }
+
+            working[validatorId] =
+                base.copy(
+                    blockId = ev.blockId,
+                    blockNumber = ev.blockNumber,
+                    blockTimestamp = ev.blockTimestamp,
+                    beneficiary = ev.params.getAsString("beneficiary") ?: base.beneficiary,
+                    exitingValidatorVetStaked = updatedExitingStake,
                     startBlock = base.startBlock ?: periodInfo?.get(validatorId)?.first,
                     cyclePeriodLength =
                         base.cyclePeriodLength ?: periodInfo?.get(validatorId)?.second,

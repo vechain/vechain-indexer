@@ -9,6 +9,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.contracts.repository.ContractRepository
 
 @Profile("contracts", "contract")
@@ -18,6 +19,7 @@ open class ContractProcessor(
     repository: ContractRepository,
     archiveService: ArchiveService<Contract>,
     checkpointService: CheckpointService,
+    processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = repository,
@@ -25,6 +27,7 @@ open class ContractProcessor(
         indexerName = IndexerNames.CONTRACTS.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.CONTRACTS.COLLECTION,
+        processorMetrics = processorMetrics,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {

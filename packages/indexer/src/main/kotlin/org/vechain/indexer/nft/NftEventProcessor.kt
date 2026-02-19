@@ -9,6 +9,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 
 @Profile("nfts")
 @Component
@@ -17,6 +18,7 @@ open class NftProcessor(
     nftArchiveService: ArchiveService<IndexedNft>,
     repository: NftRepository,
     checkpointService: CheckpointService,
+    processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = repository,
@@ -24,6 +26,7 @@ open class NftProcessor(
         indexerName = IndexerNames.NFT.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.NFT.COLLECTION,
+        processorMetrics = processorMetrics,
     ) {
 
     override suspend fun processEntry(entry: IndexingResult) {

@@ -11,6 +11,7 @@ import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.EventUtils.groupByBlock
 
@@ -21,6 +22,7 @@ open class ProposalResultProcessor(
     proposalResultArchiveService: ArchiveService<ProposalResult>,
     private val service: ProposalResultService,
     checkpointService: CheckpointService,
+    processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = repository,
@@ -28,6 +30,7 @@ open class ProposalResultProcessor(
         indexerName = IndexerNames.PROPOSAL_RESULT.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.PROPOSAL_RESULT.COLLECTION,
+        processorMetrics = processorMetrics,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         val accumulator = VersionedDocumentAccumulator<ProposalResult>(service::findByProposalId)

@@ -11,6 +11,7 @@ import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.AppRoundActionSummaryRepository
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 
 @Component
 @Profile("b3tr", "b3tr-actions", "b3tr-app-round-action-summary")
@@ -20,6 +21,7 @@ open class AppRoundActionSummaryProcessor(
     private val service: AppRoundActionSummaryService,
     @param:Value("\${indexer.start-round.b3tr-sustainable-actions}") private val startRound: Int,
     checkpointService: CheckpointService,
+    processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = repository,
@@ -27,6 +29,7 @@ open class AppRoundActionSummaryProcessor(
         indexerName = IndexerNames.APP_ROUND_ACTION_SUMMARY.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.APP_ROUND_ACTION_SUMMARY.COLLECTION,
+        processorMetrics = processorMetrics,
     ) {
 
     protected var roundId: Int =

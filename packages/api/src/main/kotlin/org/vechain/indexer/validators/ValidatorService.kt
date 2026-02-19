@@ -75,6 +75,7 @@ open class ValidatorService(
 
     open fun getValidatorBlockRewards(
         validator: Address?,
+        blockNumber: Long?,
         status: BlockStatus?,
         pageable: Pageable,
     ): PaginatedResponse<ValidatorBlock> {
@@ -84,6 +85,15 @@ open class ValidatorService(
             criteriaList.add(
                 Criteria.where(ValidatorBlock::validator.name).`is`(it.value.lowercase())
             )
+        }
+        blockNumber?.let {
+            val isAscending =
+                pageable.sort.getOrderFor(ValidatorBlock::blockNumber.name)?.isAscending ?: false
+            if (isAscending) {
+                criteriaList.add(Criteria.where(ValidatorBlock::blockNumber.name).gte(it))
+            } else {
+                criteriaList.add(Criteria.where(ValidatorBlock::blockNumber.name).lte(it))
+            }
         }
         status?.let { criteriaList.add(Criteria.where(ValidatorBlock::status.name).`is`(it)) }
 

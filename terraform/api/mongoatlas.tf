@@ -1,176 +1,207 @@
-locals {
-  mongodbatlas_backup_schedule = {
-    reference_hour_of_day    = 7
-    reference_minute_of_hour = 00
-    restore_window_days      = 1
+################################################################################
+# MongoDB Atlas Advanced Clusters
+################################################################################
 
-    policy_item_daily = {
-      frequency_interval = 1
-      retention_unit     = "days"
-      retention_value    = 7
-    }
+resource "mongodbatlas_advanced_cluster" "main_net" {
+  count      = try(local.env.enabled_nets.main.mongodb.type, false) == "atlas" ? 1 : 0
+  project_id = local.env.mongoatlas_project_id
+  name       = "${local.env.environment}-Mainnet"
 
-    policy_item_weekly = {
-      frequency_interval = 1
-      retention_unit     = "weeks"
-      retention_value    = 3
-    }
+  cluster_type           = "REPLICASET"
+  mongo_db_major_version = "8"
+  backup_enabled         = true
 
-    policy_item_monthly = {
-      frequency_interval = 1
-      retention_unit     = "months"
-      retention_value    = 3
-    }
+  replication_specs = [{
+    region_configs = [{
+      provider_name = "AWS"
+      region_name   = "EU_WEST_1"
+      priority      = 7
+
+      electable_specs = {
+        instance_size = local.env.enabled_nets.main.mongodb.cluster_tier
+        node_count    = 3
+      }
+
+      auto_scaling = {
+        disk_gb_enabled            = true
+        compute_enabled            = false
+        compute_scale_down_enabled = false
+      }
+    }]
+  }]
+}
+
+resource "mongodbatlas_advanced_cluster" "test_net" {
+  count      = try(local.env.enabled_nets.test.mongodb.type, false) == "atlas" ? 1 : 0
+  project_id = local.env.mongoatlas_project_id
+  name       = "${local.env.environment}-Testnet"
+
+  cluster_type           = "REPLICASET"
+  mongo_db_major_version = "8"
+  backup_enabled         = true
+
+  replication_specs = [{
+    region_configs = [{
+      provider_name = "AWS"
+      region_name   = "EU_WEST_1"
+      priority      = 7
+
+      electable_specs = {
+        instance_size = local.env.enabled_nets.test.mongodb.cluster_tier
+        node_count    = 3
+        disk_size_gb  = local.env.enabled_nets.test.mongodb.disk_size_gb
+      }
+
+      auto_scaling = {
+        disk_gb_enabled            = true
+        compute_enabled            = false
+        compute_scale_down_enabled = false
+      }
+    }]
+  }]
+}
+
+################################################################################
+# Backup Schedules (production only)
+################################################################################
+
+resource "mongodbatlas_cloud_backup_schedule" "main_net" {
+  count        = startswith(local.env.environment, "prod") && try(local.env.enabled_nets.main.mongodb.type, false) == "atlas" ? 1 : 0
+  project_id   = local.env.mongoatlas_project_id
+  cluster_name = mongodbatlas_advanced_cluster.main_net[0].name
+
+  reference_hour_of_day    = 7
+  reference_minute_of_hour = 0
+  restore_window_days      = 1
+
+  policy_item_daily {
+    frequency_interval = 1
+    retention_unit     = "days"
+    retention_value    = 7
+  }
+
+  policy_item_weekly {
+    frequency_interval = 1
+    retention_unit     = "weeks"
+    retention_value    = 3
+  }
+
+  policy_item_monthly {
+    frequency_interval = 1
+    retention_unit     = "months"
+    retention_value    = 3
   }
 }
 
-module "mongoatlas-main-net" {
-  source     = "git::git@github.com:vechainfoundation/terraform_infrastructure_modules.git//mongoatlas?ref=v.3.1.1"
-  secret_id  = local.env.enabled_nets.main.mongodb.secret_arn
-  project_id = local.env.mongoatlas_project_id # MongoDB Atlas project ID
+resource "mongodbatlas_cloud_backup_schedule" "test_net" {
+  count        = startswith(local.env.environment, "prod-") && try(local.env.enabled_nets.test.mongodb.type, false) == "atlas" ? 1 : 0
+  project_id   = local.env.mongoatlas_project_id
+  cluster_name = mongodbatlas_advanced_cluster.test_net[0].name
 
-  create_api_key  = false
-  slack_api_token = local.env.slack_secret_arn
-  alerts = startswith(local.env.environment, "dev") ? {} : {
-    alert_type_1 = {
-      event_type = "HOST_MONGOT_CRASHING_OOM"
-      enabled    = true
+  reference_hour_of_day    = 7
+  reference_minute_of_hour = 0
+  restore_window_days      = 1
 
-      notifications = [
-        {
-          type_name     = "GROUP"
-          interval_min  = 60
-          delay_min     = 0
-          email_enabled = true
-          roles         = ["GROUP_CHARTS_ADMIN", "GROUP_CLUSTER_MANAGER"]
-        },
-        {
-          type_name          = "SLACK"
-          interval_min       = 60
-          delay_min          = 0
-          slack_enabled      = true
-          slack_channel_name = "veworld-x-devops"
-          roles              = ["GROUP_CHARTS_ADMIN", "GROUP_CLUSTER_MANAGER"]
-        }
-      ]
-    }
+  policy_item_daily {
+    frequency_interval = 1
+    retention_unit     = "days"
+    retention_value    = 7
   }
 
-  audit_enabled = false
-  audit_config = {
-    audit_filter                = "{ 'atype': 'authenticate', 'param': {   'user': 'auditAdmin',   'db': 'admin',   'mechanism': 'SCRAM-SHA-1' }}"
-    audit_authorization_success = false // Enabling Audit authorization successes can severely impact cluster performance. Enable this option with caution.
+  policy_item_weekly {
+    frequency_interval = 1
+    retention_unit     = "weeks"
+    retention_value    = 3
   }
 
-  enable_cluster = try(local.env.enabled_nets.test.mongodb.type, false) == "atlas" ? true : false
-
-  cluster_config = {
-    cluster_name                 = "${local.env.environment}-Mainnet"
-    disk_size_gb                 = local.env.enabled_nets.main.mongodb.disk_size_gb
-    num_shards                   = 1
-    cloud_backup                 = true
-    cluster_type                 = "REPLICASET"
-    auto_scaling_disk_gb_enabled = true
-    provider_name                = "AWS"
-    provider_volume_type         = "STANDARD"
-    provider_instance_size_name  = local.env.enabled_nets.main.mongodb.cluster_tier
-    mongo_db_major_version       = "8"
-
-    auto_scaling_compute_enabled                    = true
-    auto_scaling_compute_scale_down_enabled         = true
-    provider_auto_scaling_compute_max_instance_size = local.env.enabled_nets.main.mongodb.auto_scaling_compute_max_instance_size
-    provider_auto_scaling_compute_min_instance_size = local.env.enabled_nets.main.mongodb.auto_scaling_compute_min_instance_size
-
-    replication_specs = [
-      {
-        num_shards = 1
-        regions_config = [
-          {
-            region_name     = "EU_WEST_1"
-            electable_nodes = 3
-            priority        = 7
-            read_only_nodes = 0
-          },
-        ]
-      }
-    ]
+  policy_item_monthly {
+    frequency_interval = 1
+    retention_unit     = "months"
+    retention_value    = 3
   }
-
-  enable_mongodbatlas_backup_schedule = startswith(local.env.environment, "prod") ? true : false
-  mongodbatlas_backup_schedule_config = local.mongodbatlas_backup_schedule
 }
 
-module "mongoatlas-test-net" {
-  source     = "git::git@github.com:vechainfoundation/terraform_infrastructure_modules.git//mongoatlas?ref=v.3.1.1"
-  secret_id  = local.env.enabled_nets.test.mongodb.secret_arn
-  project_id = local.env.mongoatlas_project_id # MongoDB Atlas project ID
+################################################################################
+# Alerts (non-dev environments only)
+################################################################################
 
-  create_api_key  = false
-  slack_api_token = local.env.slack_secret_arn
-  alerts = startswith(local.env.environment, "dev") ? {} : {
-    alert_type_1 = {
-      event_type = "HOST_MONGOT_CRASHING_OOM"
-      enabled    = true
+data "aws_secretsmanager_secret_version" "slack_token" {
+  count     = startswith(local.env.environment, "dev") ? 0 : 1
+  secret_id = local.env.slack_secret_arn
+}
 
-      notifications = [
-        {
-          type_name     = "GROUP"
-          interval_min  = 60
-          delay_min     = 0
-          email_enabled = true
-          roles         = ["GROUP_CHARTS_ADMIN", "GROUP_CLUSTER_MANAGER"]
-        },
-        {
-          type_name          = "SLACK"
-          interval_min       = 60
-          delay_min          = 0
-          slack_enabled      = true
-          slack_channel_name = "veworld-x-devops"
-          roles              = ["GROUP_CHARTS_ADMIN", "GROUP_CLUSTER_MANAGER"]
-        }
-      ]
-    }
+resource "mongodbatlas_alert_configuration" "host_mongot_crashing_oom" {
+  count      = startswith(local.env.environment, "dev") ? 0 : 1
+  project_id = local.env.mongoatlas_project_id
+  event_type = "HOST_MONGOT_CRASHING_OOM"
+  enabled    = true
+
+  notification {
+    type_name     = "GROUP"
+    interval_min  = 60
+    delay_min     = 0
+    email_enabled = true
+    roles         = ["GROUP_CLUSTER_MANAGER"]
   }
 
-  audit_enabled = false
-  audit_config = {
-    audit_filter                = "{ 'atype': 'authenticate', 'param': {   'user': 'auditAdmin',   'db': 'admin',   'mechanism': 'SCRAM-SHA-1' }}"
-    audit_authorization_success = false // Enabling Audit authorization successes can severely impact cluster performance. Enable this option with caution.
+  notification {
+    type_name    = "SLACK"
+    interval_min = 60
+    delay_min    = 0
+    api_token    = data.aws_secretsmanager_secret_version.slack_token[0].secret_string
+    channel_name = "veworld-x-devops"
   }
+}
 
-  enable_cluster = try(local.env.enabled_nets.test.mongodb.type, false) == "atlas" ? true : false
-  cluster_config = {
-    cluster_name                 = "${local.env.environment}-Testnet"
-    disk_size_gb                 = local.env.enabled_nets.test.mongodb.disk_size_gb
-    num_shards                   = 1
-    cloud_backup                 = true
-    cluster_type                 = "REPLICASET"
-    auto_scaling_disk_gb_enabled = true
-    provider_name                = "AWS"
-    provider_volume_type         = "STANDARD"
-    provider_instance_size_name  = local.env.enabled_nets.test.mongodb.cluster_tier
-    mongo_db_major_version       = "8"
+# TODO: Remove this resource after state migration has been applied to all environments.
+# It exists only to receive the moved state from the old testnet module alert.
+resource "mongodbatlas_alert_configuration" "host_mongot_crashing_oom_legacy" {
+  count      = startswith(local.env.environment, "dev") ? 0 : 1
+  project_id = local.env.mongoatlas_project_id
+  event_type = "HOST_MONGOT_CRASHING_OOM"
+  enabled    = false
 
-    auto_scaling_compute_enabled            = false
-    auto_scaling_compute_scale_down_enabled = false
-
-    replication_specs = [
-      {
-        num_shards = 1
-        regions_config = [
-          {
-            region_name     = "EU_WEST_1"
-            electable_nodes = 3
-            priority        = 7
-            read_only_nodes = 0
-          },
-        ]
-      }
-    ]
+  notification {
+    type_name     = "GROUP"
+    interval_min  = 60
+    delay_min     = 0
+    email_enabled = true
+    roles         = ["GROUP_CLUSTER_MANAGER"]
   }
+}
 
-  enable_mongodbatlas_backup_schedule = startswith(local.env.environment, "prod-") ? true : false
-  mongodbatlas_backup_schedule_config = local.mongodbatlas_backup_schedule
+################################################################################
+# State migration: moved blocks
+################################################################################
+
+moved {
+  from = module.mongoatlas-main-net.mongodbatlas_cluster.cluster[0]
+  to   = mongodbatlas_advanced_cluster.main_net[0]
+}
+
+moved {
+  from = module.mongoatlas-test-net.mongodbatlas_cluster.cluster[0]
+  to   = mongodbatlas_advanced_cluster.test_net[0]
+}
+
+moved {
+  from = module.mongoatlas-main-net.mongodbatlas_cloud_backup_schedule.schedule[0]
+  to   = mongodbatlas_cloud_backup_schedule.main_net[0]
+}
+
+moved {
+  from = module.mongoatlas-test-net.mongodbatlas_cloud_backup_schedule.schedule[0]
+  to   = mongodbatlas_cloud_backup_schedule.test_net[0]
+}
+
+moved {
+  from = module.mongoatlas-main-net.mongodbatlas_alert_configuration.dynamic_alert["alert_type_1"]
+  to   = mongodbatlas_alert_configuration.host_mongot_crashing_oom[0]
+}
+
+moved {
+  from = module.mongoatlas-test-net.mongodbatlas_alert_configuration.dynamic_alert["alert_type_1"]
+  to   = mongodbatlas_alert_configuration.host_mongot_crashing_oom_legacy[0]
 }
 
 # Create Database Users in MongoDB Atlas and corresponding secrets in AWS Secrets Manager

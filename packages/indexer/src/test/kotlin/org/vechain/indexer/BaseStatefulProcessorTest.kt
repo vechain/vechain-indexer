@@ -6,12 +6,14 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.just
+import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 
 @ExtendWith(MockKExtension::class)
 class BaseStatefulProcessorTest {
@@ -27,17 +29,23 @@ class BaseStatefulProcessorTest {
     fun setup() {
         MockKAnnotations.init(this)
 
-        processor = TestableBaseStatefulProcessor(repository, archiveService, checkpointService)
+        processor =
+            TestableBaseStatefulProcessor(
+                repository,
+                archiveService,
+                checkpointService,
+                mockk(relaxed = true),
+            )
     }
 
     @Test
     fun `rollback - saves checkpoint and rolls back archives`() {
-        every { checkpointService.saveCheckpoint(TEST_COLLECTION, 10) } just Runs
+        every { checkpointService.saveCheckpoint(TEST_COLLECTION, 9) } just Runs
         every { archiveService.rollback(10) } just Runs
 
         processor.rollback(10)
 
-        verify(exactly = 1) { checkpointService.saveCheckpoint(TEST_COLLECTION, 10) }
+        verify(exactly = 1) { checkpointService.saveCheckpoint(TEST_COLLECTION, 9) }
         verify(exactly = 1) { archiveService.rollback(10) }
     }
 
@@ -56,6 +64,7 @@ class BaseStatefulProcessorTest {
         repository: BaseIndexedRepository<*, *>,
         archiveService: ArchiveService<*>,
         checkpointService: CheckpointService,
+        processorMetrics: ProcessorMetrics,
     ) :
         BaseStatefulProcessor(
             repository,
@@ -63,6 +72,7 @@ class BaseStatefulProcessorTest {
             TEST_INDEXER_NAME,
             checkpointService,
             TEST_COLLECTION,
+            processorMetrics,
         ) {
 
         override suspend fun processEntry(entry: IndexingResult) {

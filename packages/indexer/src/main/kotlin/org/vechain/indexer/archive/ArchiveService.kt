@@ -56,7 +56,6 @@ open class ArchiveService<T : VersionedDocument>(
             .insertMany(bsonDocs, InsertManyOptions().ordered(false))
     }
 
-    @Transactional(rollbackFor = [Exception::class])
     open fun rollback(blockNumber: Long) {
         val currentDocuments = getCurrentDocuments(blockNumber)
 

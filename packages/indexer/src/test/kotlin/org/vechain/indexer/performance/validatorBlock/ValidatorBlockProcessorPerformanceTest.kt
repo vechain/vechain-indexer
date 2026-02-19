@@ -9,6 +9,7 @@ import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.validator.ValidatorBlockConfig
@@ -23,6 +24,7 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var validatorBlockRepository: ValidatorBlockRepository
     @Autowired lateinit var validatorBlockService: ValidatorBlockService
     @Autowired lateinit var checkpointService: CheckpointService
+    @Autowired lateinit var processorMetrics: ProcessorMetrics
 
     @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
     lateinit var getAllValidatorsAddress: String
@@ -89,12 +91,14 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
                     repository = validatorBlockRepository,
                     profiler = profiler,
                     checkpointService = checkpointService,
+                    processorMetrics = processorMetrics,
                 )
             } else {
                 ValidatorBlockProcessor(
                     service = serviceToUse,
                     repository = validatorBlockRepository,
                     checkpointService = checkpointService,
+                    processorMetrics = processorMetrics,
                 )
             }
 
@@ -116,11 +120,13 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
         repository: ValidatorBlockRepository,
         private val profiler: DetailedProfiler,
         checkpointService: CheckpointService,
+        processorMetrics: ProcessorMetrics,
     ) :
         ValidatorBlockProcessor(
             service = service,
             repository = repository,
             checkpointService = checkpointService,
+            processorMetrics = processorMetrics,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    ValidatorBlockProcessor.process (per block)") {

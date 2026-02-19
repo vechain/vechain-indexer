@@ -9,6 +9,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 
 @Profile("stargate", "stargate-token")
 @Component
@@ -17,6 +18,7 @@ open class StargateTokenProcessor(
     stargateTokenRepository: StargateTokenRepository,
     archiveService: ArchiveService<StargateToken>,
     checkpointService: CheckpointService,
+    processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = stargateTokenRepository,
@@ -24,6 +26,7 @@ open class StargateTokenProcessor(
         indexerName = IndexerNames.STARGATE_TOKEN.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.STARGATE_TOKEN.COLLECTION,
+        processorMetrics = processorMetrics,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {

@@ -11,6 +11,7 @@ import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_MINT
 
 @ExtendWith(MockKExtension::class)
@@ -24,6 +25,8 @@ internal class NftProcessorTest {
 
     @MockK lateinit var checkpointService: CheckpointService
 
+    private val processorMetrics: ProcessorMetrics = mockk(relaxed = true)
+
     private lateinit var processor: NftProcessor
 
     @BeforeEach
@@ -36,6 +39,7 @@ internal class NftProcessorTest {
                 nftArchiveService = archiveService,
                 repository = nftRepository,
                 checkpointService = checkpointService,
+                processorMetrics = processorMetrics,
             )
     }
 

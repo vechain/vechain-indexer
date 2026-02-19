@@ -49,7 +49,7 @@ class ValidatorServiceTest {
                 validatorBlock(blockNumber = 99, status = BlockStatus.MISSED),
             )
 
-        val result = service.getValidatorBlockRewards(null, null, pageable)
+        val result = service.getValidatorBlockRewards(null, null, null, pageable)
 
         expectThat(result.data).hasSize(2)
         expectThat(querySlot.captured.queryObject.keys).isEmpty()
@@ -64,7 +64,7 @@ class ValidatorServiceTest {
         every { mongoTemplate.find(capture(querySlot), ValidatorBlock::class.java) } returns
             listOf(validatorBlock(blockNumber = 100, status = BlockStatus.VALIDATED))
 
-        service.getValidatorBlockRewards(null, BlockStatus.VALIDATED, pageable)
+        service.getValidatorBlockRewards(null, null, BlockStatus.VALIDATED, pageable)
 
         val andList = querySlot.captured.queryObject.get("\$and") as List<*>
         expectThat(andList).hasSize(1)
@@ -86,7 +86,7 @@ class ValidatorServiceTest {
                 )
             )
 
-        service.getValidatorBlockRewards(validator, null, pageable)
+        service.getValidatorBlockRewards(validator, null, null, pageable)
 
         val andList = querySlot.captured.queryObject.get("\$and") as List<*>
         expectThat(andList).hasSize(1)
@@ -102,7 +102,7 @@ class ValidatorServiceTest {
         every { mongoTemplate.find(capture(querySlot), ValidatorBlock::class.java) } returns
             emptyList()
 
-        service.getValidatorBlockRewards(null, null, pageable)
+        service.getValidatorBlockRewards(null, null, null, pageable)
 
         expectThat(querySlot.captured.sortObject).isEqualTo(org.bson.Document("blockNumber", 1))
     }
@@ -115,9 +115,63 @@ class ValidatorServiceTest {
         every { mongoTemplate.find(capture(querySlot), ValidatorBlock::class.java) } returns
             emptyList()
 
-        service.getValidatorBlockRewards(null, null, pageable)
+        service.getValidatorBlockRewards(null, null, null, pageable)
 
         expectThat(querySlot.captured.sortObject).isEqualTo(org.bson.Document("blockNumber", -1))
+    }
+
+    // -- getValidatorBlockRewards blockNumber filter tests --
+
+    @Test
+    fun `getValidatorBlockRewards uses lte for blockNumber when sort is DESC`() {
+        val pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "blockNumber"))
+        val querySlot = slot<Query>()
+
+        every { mongoTemplate.find(capture(querySlot), ValidatorBlock::class.java) } returns
+            emptyList()
+
+        service.getValidatorBlockRewards(null, 500L, null, pageable)
+
+        val andList = querySlot.captured.queryObject.get("\$and") as List<*>
+        expectThat(andList).hasSize(1)
+        expectThat(andList[0])
+            .isEqualTo(org.bson.Document("blockNumber", org.bson.Document("\$lte", 500L)))
+    }
+
+    @Test
+    fun `getValidatorBlockRewards uses gte for blockNumber when sort is ASC`() {
+        val pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "blockNumber"))
+        val querySlot = slot<Query>()
+
+        every { mongoTemplate.find(capture(querySlot), ValidatorBlock::class.java) } returns
+            emptyList()
+
+        service.getValidatorBlockRewards(null, 500L, null, pageable)
+
+        val andList = querySlot.captured.queryObject.get("\$and") as List<*>
+        expectThat(andList).hasSize(1)
+        expectThat(andList[0])
+            .isEqualTo(org.bson.Document("blockNumber", org.bson.Document("\$gte", 500L)))
+    }
+
+    @Test
+    fun `getValidatorBlockRewards combines validator, blockNumber, and status filters`() {
+        val pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "blockNumber"))
+        val validator = Address("0x1234567890abcdef1234567890abcdef12345678")
+        val querySlot = slot<Query>()
+
+        every { mongoTemplate.find(capture(querySlot), ValidatorBlock::class.java) } returns
+            emptyList()
+
+        service.getValidatorBlockRewards(validator, 500L, BlockStatus.VALIDATED, pageable)
+
+        val andList = querySlot.captured.queryObject.get("\$and") as List<*>
+        expectThat(andList).hasSize(3)
+        expectThat(andList[0])
+            .isEqualTo(org.bson.Document("validator", validator.value.lowercase()))
+        expectThat(andList[1])
+            .isEqualTo(org.bson.Document("blockNumber", org.bson.Document("\$lte", 500L)))
+        expectThat(andList[2]).isEqualTo(org.bson.Document("status", BlockStatus.VALIDATED))
     }
 
     // -- hasNext pagination tests --
@@ -130,7 +184,7 @@ class ValidatorServiceTest {
 
         every { mongoTemplate.find(any<Query>(), ValidatorBlock::class.java) } returns blocks
 
-        val result = service.getValidatorBlockRewards(null, null, pageable)
+        val result = service.getValidatorBlockRewards(null, null, null, pageable)
 
         expectThat(result.data).hasSize(3)
         expectThat(result.pagination.hasNext).isFalse()
@@ -144,7 +198,7 @@ class ValidatorServiceTest {
 
         every { mongoTemplate.find(any<Query>(), ValidatorBlock::class.java) } returns blocks
 
-        val result = service.getValidatorBlockRewards(null, null, pageable)
+        val result = service.getValidatorBlockRewards(null, null, null, pageable)
 
         expectThat(result.data).hasSize(3)
         expectThat(result.pagination.hasNext).isTrue()
@@ -158,7 +212,7 @@ class ValidatorServiceTest {
 
         every { mongoTemplate.find(any<Query>(), ValidatorBlock::class.java) } returns blocks
 
-        val result = service.getValidatorBlockRewards(null, null, pageable)
+        val result = service.getValidatorBlockRewards(null, null, null, pageable)
 
         expectThat(result.data).hasSize(2)
         expectThat(result.pagination.hasNext).isFalse()

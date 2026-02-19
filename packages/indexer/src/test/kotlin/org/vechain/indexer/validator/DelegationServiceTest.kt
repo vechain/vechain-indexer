@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
@@ -32,6 +33,7 @@ class DelegationServiceTest {
                 DelegationService(
                     repository,
                     archiveService,
+                    delegationPruner,
                     validatorDelegationService,
                     stakerSC = "0xSTAKER",
                 )
@@ -41,6 +43,7 @@ class DelegationServiceTest {
         every { repository.findByValidatorIn(any()) } returns emptyList()
         every { repository.findByTokenIdIn(any()) } returns emptyList()
         every { repository.findByValidatorNextCycleInAndStatusIn(any(), any()) } returns emptyList()
+        every { repository.findById(any<String>()) } returns java.util.Optional.empty()
 
         every { validatorDelegationService.decodeValidatorSnapshots(any()) } returns emptyMap()
         every { validatorDelegationService.nextStatus(any()) } answers
@@ -288,5 +291,36 @@ class DelegationServiceTest {
         expectThat(archive.map { it.id }).contains("d5")
         expectThat(updates.first().status).isEqualTo(Status.EXITING)
         expectThat(updates.first().validatorNextCycle).isEqualTo(20L)
+    }
+
+    @Test
+    fun `DelegationInitiated followed by ValidatorExitRequested in same block sets new delegation to EXITING`():
+        Unit = runBlocking {
+        // stub validator cycle resolution for DelegationInitiated
+        coEvery { validatorDelegationService.resolveCycleInfo(any(), any(), any()) } returns
+            (5L to 10L)
+        // stub validator exit block for ValidatorExitRequested
+        coEvery { validatorDelegationService.getValidatorExitBlock("0xVAL", any()) } returns 20L
+
+        val initiateEv =
+            event(
+                "DelegationInitiated",
+                mapOf(
+                    "delegationId" to "d6",
+                    "validator" to "0xVAL",
+                    "tokenId" to "t6",
+                    "levelId" to "2",
+                    "amount" to "100",
+                ),
+            )
+
+        val exitEv =
+            event("ValidatorExitRequested", mapOf("validator" to "0xVAL"), address = "0xSTAKER")
+
+        val (updates, _) = service.processBlock(block(5), listOf(initiateEv, exitEv), emptyList())
+
+        val delegation = updates.first { it.id == "d6" }
+        expectThat(delegation.status).isEqualTo(Status.EXITING)
+        expectThat(delegation.validatorNextCycle).isEqualTo(20L)
     }
 }

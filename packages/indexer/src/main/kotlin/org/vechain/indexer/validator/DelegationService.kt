@@ -1,14 +1,17 @@
 package org.vechain.indexer.validator
 
 import java.math.BigInteger
-import kotlin.collections.set
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
@@ -23,7 +26,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
  * 1. Finds delegations that are due for a status transition.
  * 2. Finds delegations referenced in chain events.
  * 3. Finds delegations belonging to validators that exited or disappeared.
- * 4. Applies lifecycle transitions (QUEUED → ACTIVE → EXITING → EXITED).
+ * 4. Applies lifecycle transitions (QUEUED -> ACTIVE -> EXITING -> EXITED).
  * 5. Applies event mutations (initiation, exit requests, withdrawals, rewards).
  * 6. Forces exit of delegations if their validator disappeared.
  *
@@ -41,6 +44,8 @@ open class DelegationService(
     private val logger = LoggerFactory.getLogger(DelegationService::class.java)
     private var cachedValidators: Set<String> = emptySet()
 
+    open fun findById(id: String): Delegation? = repository.findByIdOrNull(id)
+
     open suspend fun processBlock(
         block: Block,
         events: List<IndexedEvent>,
@@ -54,33 +59,60 @@ open class DelegationService(
         val eventDelegations = findDelegationsFromEvents(events)
         val validatorExitDelegations = findDelegationsFromExits(events, disappeared)
 
-        // 2. Build working set (deduped by delegation ID) - excludes unknownStart initially
-        val delegations =
-            (due + eventDelegations + validatorExitDelegations).associateBy { it.id }.toMutableMap()
-        val delegationsToArchive = mutableListOf<Delegation>()
+        // 2. Build preload cache (deduped) and secondary index maps
+        val allLoaded =
+            (unknownStart + due + eventDelegations + validatorExitDelegations).associateBy { it.id }
+        val preloaded = allLoaded.toMutableMap()
+        val tokenIdToId = buildTokenIdIndex(allLoaded.values)
+        val validatorToIds = buildValidatorIndex(allLoaded.values)
 
-        // 3. Check status on delegations with unknown start blocks, merge only if updated
-        val updatedUnknown = checkForUpdatesOnUnknown(unknownStart, block, validatorSnapshots)
-        delegationsToArchive.addAll(updatedUnknown.first)
-        delegations.putAll(updatedUnknown.second.associateBy { it.id })
+        // 3. Create accumulator with preload-backed findById
+        val accumulator =
+            VersionedDocumentAccumulator<Delegation>(
+                findById = { id -> preloaded[id] ?: findById(id) },
+                initialVersion = 0,
+            )
+        accumulator.startBlock()
 
-        // 4. Apply lifecycle transitions + event mutations
-        applyScheduledTransitions(block, delegations, delegationsToArchive)
-        applyEventMutations(events, delegations, delegationsToArchive, block, validatorSnapshots)
+        // 4. Process (same logical order as before)
+        checkForUpdatesOnUnknown(unknownStart, block, validatorSnapshots, accumulator)
+        applyScheduledTransitions(block, allLoaded.keys, accumulator)
+        applyEventMutations(
+            events,
+            block,
+            validatorSnapshots,
+            accumulator,
+            tokenIdToId,
+            validatorToIds,
+        )
+        disappeared.forEach { handleValidatorDisappeared(it, block, accumulator, validatorToIds) }
 
-        // 5. Handle validators that disappeared entirely
-        disappeared.forEach {
-            handleValidatorDisappeared(it, delegations, delegationsToArchive, block)
-        }
-
-        return delegations.values.toList() to delegationsToArchive
+        return accumulator.results()
     }
 
-    @Transactional
-    open fun save(updates: List<Delegation>, archive: List<Delegation>) {
-        if (updates.isNotEmpty()) repository.saveAll(updates)
-        if (archive.isNotEmpty()) archiveService.saveAll(archive)
+    @Transactional(rollbackFor = [Exception::class])
+    open fun save(updated: List<Delegation>, existing: List<Delegation>) {
+        saveVersionedDocuments(updated, existing, repository, archiveService, delegationPruner)
     }
+
+    // ------------------------------
+    // Secondary index builders
+    // ------------------------------
+
+    private fun buildTokenIdIndex(delegations: Collection<Delegation>): MutableMap<String, String> =
+        delegations
+            .filter { it.status != Status.EXITED }
+            .associateBy({ it.tokenId }, { it.id })
+            .toMutableMap()
+
+    private fun buildValidatorIndex(
+        delegations: Collection<Delegation>
+    ): MutableMap<String, MutableList<String>> =
+        delegations
+            .filter { it.status != Status.EXITED }
+            .groupBy { it.validator }
+            .mapValues { (_, dels) -> dels.map { it.id }.toMutableList() }
+            .toMutableMap()
 
     // ------------------------------
     // Step 1 helpers
@@ -126,26 +158,30 @@ open class DelegationService(
 
     private fun applyScheduledTransitions(
         block: Block,
-        delegations: MutableMap<String, Delegation>,
-        archive: MutableList<Delegation>,
+        candidateIds: Set<String>,
+        accumulator: VersionedDocumentAccumulator<Delegation>,
     ) {
-        delegations.values
-            .filter {
-                (it.status == Status.QUEUED || it.status == Status.EXITING) &&
-                    it.validatorNextCycle == block.number
-            }
-            .forEach { d ->
-                archive.add(d)
-                delegations[d.id] =
-                    d.copy(
-                        status = validatorDelegationService.nextStatus(d.status),
+        candidateIds.forEach { id ->
+            val (existing, nextVersion) = accumulator.resolve(id)
+            if (
+                existing != null &&
+                    (existing.status == Status.QUEUED || existing.status == Status.EXITING) &&
+                    existing.validatorNextCycle == block.number
+            ) {
+                accumulator.put(
+                    id,
+                    existing,
+                    existing.copy(
+                        status = validatorDelegationService.nextStatus(existing.status),
                         notify = true,
                         blockId = block.id,
                         blockNumber = block.number,
                         blockTimestamp = block.timestamp,
-                        version = d.version + 1,
-                    )
+                        version = nextVersion,
+                    ),
+                )
             }
+        }
     }
 
     /**
@@ -153,19 +189,16 @@ open class DelegationService(
      *
      * Uses validator snapshots if available, otherwise queries the chain
      * (`getValidationPeriodDetails`). When a non-zero start block is found, the delegation is
-     * archived and updated with the new cycle info.
-     *
-     * @return Pair of (delegations to archive, updated delegations)
+     * updated with the new cycle info via the accumulator.
      */
     private suspend fun checkForUpdatesOnUnknown(
         unknown: List<Delegation>,
         block: Block,
         validatorsSnapshots: Map<String, ValidatorSnapshot>,
-    ): Pair<List<Delegation>, List<Delegation>> {
-        if (unknown.isEmpty()) return emptyList<Delegation>() to emptyList()
+        accumulator: VersionedDocumentAccumulator<Delegation>,
+    ) {
+        if (unknown.isEmpty()) return
 
-        val archive = mutableListOf<Delegation>()
-        val updated = mutableListOf<Delegation>()
         val validators = unknown.groupBy { it.validator }
 
         val snapshotEmpty = validatorsSnapshots.isEmpty()
@@ -185,22 +218,24 @@ open class DelegationService(
                 }
 
             if (startBlock != 0L) {
-                validators[validatorId]?.forEach { existing ->
-                    archive.add(existing)
-                    updated.add(
-                        existing.copy(
-                            validatorNextCycle = startBlock,
-                            blockId = block.id,
-                            blockNumber = block.number,
-                            blockTimestamp = block.timestamp,
-                            version = existing.version + 1,
+                validators[validatorId]?.forEach { delegation ->
+                    val (existing, nextVersion) = accumulator.resolve(delegation.id)
+                    if (existing != null) {
+                        accumulator.put(
+                            delegation.id,
+                            existing,
+                            existing.copy(
+                                validatorNextCycle = startBlock,
+                                blockId = block.id,
+                                blockNumber = block.number,
+                                blockTimestamp = block.timestamp,
+                                version = nextVersion,
+                            ),
                         )
-                    )
+                    }
                 }
             }
         }
-
-        return archive to updated
     }
 
     // ------------------------------
@@ -209,31 +244,38 @@ open class DelegationService(
 
     private suspend fun applyEventMutations(
         events: List<IndexedEvent>,
-        delegations: MutableMap<String, Delegation>,
-        delegationsToArchive: MutableList<Delegation>,
         block: Block,
         validatorSnapshots: Map<String, ValidatorSnapshot>,
+        accumulator: VersionedDocumentAccumulator<Delegation>,
+        tokenIdToId: MutableMap<String, String>,
+        validatorToIds: MutableMap<String, MutableList<String>>,
     ) {
         events
             .filter { shouldProcessDelegationEvent(it, stakerSC) }
             .forEach { ev ->
                 when (ev.eventType) {
                     "DelegationInitiated" ->
-                        handleDelegationInitiated(ev, delegations, block, validatorSnapshots)
+                        handleDelegationInitiated(
+                            ev,
+                            block,
+                            validatorSnapshots,
+                            accumulator,
+                            tokenIdToId,
+                            validatorToIds,
+                        )
                     "DelegationExitRequested" ->
-                        handleDelegationExitRequested(ev, delegations, delegationsToArchive, block)
-                    "DelegationWithdrawn" ->
-                        handleDelegationWithdrawn(ev, delegations, delegationsToArchive, block)
+                        handleDelegationExitRequested(ev, block, accumulator)
+                    "DelegationWithdrawn" -> handleDelegationWithdrawn(ev, block, accumulator)
                     "DelegationRewardsClaimed" ->
-                        handleDelegationRewardsClaimed(ev, delegations, delegationsToArchive, block)
-                    "Transfer" -> handleTransfer(ev, delegations, delegationsToArchive, block)
+                        handleDelegationRewardsClaimed(ev, block, accumulator)
+                    "Transfer" -> handleTransfer(ev, block, accumulator, tokenIdToId)
                     "ValidatorExitRequested" ->
                         handleValidatorExitRequested(
                             ev,
-                            delegations,
-                            delegationsToArchive,
                             block,
                             validatorSnapshots,
+                            accumulator,
+                            validatorToIds,
                         )
                 }
             }
@@ -246,20 +288,24 @@ open class DelegationService(
     /** Handles a new delegation being initiated. */
     private suspend fun handleDelegationInitiated(
         ev: IndexedEvent,
-        delegations: MutableMap<String, Delegation>,
         block: Block,
         validatorSnapshots: Map<String, ValidatorSnapshot>,
+        accumulator: VersionedDocumentAccumulator<Delegation>,
+        tokenIdToId: MutableMap<String, String>,
+        validatorToIds: MutableMap<String, MutableList<String>>,
     ) {
         val delegationId = ev.params.getAsString("delegationId")!!
+        val tokenId = ev.params.getAsString("tokenId")!!
         val validator = ev.params.getAsString("validator")!!
         val (cycleLength, nextCycle) =
             validatorDelegationService.resolveCycleInfo(validator, block.number, validatorSnapshots)
 
+        val (existing, nextVersion) = accumulator.resolve(delegationId)
         val newDelegation =
             Delegation(
                 id = delegationId,
                 validator = validator,
-                tokenId = ev.params.getAsString("tokenId")!!,
+                tokenId = tokenId,
                 tokenLevel = TokenLevel.fromOrdinal(ev.params.getAsString("levelId")!!.toInt())!!,
                 status = Status.QUEUED,
                 stakedAmount = ev.params.getAsString("amount")!!,
@@ -268,170 +314,181 @@ open class DelegationService(
                 blockId = block.id,
                 blockNumber = block.number,
                 blockTimestamp = block.timestamp,
-                version = 0,
+                version = nextVersion,
                 validatorNextCycle = nextCycle,
                 validatorCycleLength = cycleLength,
                 txId = ev.txId,
             )
 
-        delegations[delegationId] = newDelegation
+        accumulator.put(delegationId, existing, newDelegation)
+        tokenIdToId[tokenId] = delegationId
+        validatorToIds.getOrPut(validator) { mutableListOf() }.add(delegationId)
     }
 
     /** Handles a delegation requesting exit. */
     private fun handleDelegationExitRequested(
         ev: IndexedEvent,
-        delegations: MutableMap<String, Delegation>,
-        delegationsToArchive: MutableList<Delegation>,
         block: Block,
+        accumulator: VersionedDocumentAccumulator<Delegation>,
     ) {
         val delegationId = ev.params.getAsString("delegationId")!!
-        delegations[delegationId]?.let { existing ->
-            if (existing.status == Status.EXITED) return@let
+        val (existing, nextVersion) = accumulator.resolve(delegationId)
+        if (existing == null || existing.status == Status.EXITED) return
 
-            delegationsToArchive.add(existing)
-            delegations[delegationId] =
-                existing.copy(
-                    status = Status.EXITING,
-                    blockId = block.id,
-                    blockNumber = block.number,
-                    blockTimestamp = block.timestamp,
-                    validatorNextCycle =
-                        validatorDelegationService.resolveNextCycleBlock(
-                            existing.validatorNextCycle,
-                            existing.validatorCycleLength,
-                            block.number,
-                        ),
-                    version = existing.version + 1,
-                )
-        }
+        accumulator.put(
+            delegationId,
+            existing,
+            existing.copy(
+                status = Status.EXITING,
+                blockId = block.id,
+                blockNumber = block.number,
+                blockTimestamp = block.timestamp,
+                validatorNextCycle =
+                    validatorDelegationService.resolveNextCycleBlock(
+                        existing.validatorNextCycle,
+                        existing.validatorCycleLength,
+                        block.number,
+                    ),
+                version = nextVersion,
+            ),
+        )
     }
 
     /** Handles a delegation being withdrawn (final exit). */
     private fun handleDelegationWithdrawn(
         ev: IndexedEvent,
-        delegations: MutableMap<String, Delegation>,
-        delegationsToArchive: MutableList<Delegation>,
         block: Block,
+        accumulator: VersionedDocumentAccumulator<Delegation>,
     ) {
-        val delegationId = ev.params.getAsString("delegationId")!! // note: uppercase ID here
-        delegations[delegationId]?.let { existing ->
-            delegationsToArchive.add(existing)
-            delegations[delegationId] =
-                existing.copy(
-                    status = Status.EXITED,
-                    blockId = block.id,
-                    blockNumber = block.number,
-                    blockTimestamp = block.timestamp,
-                    version = existing.version + 1,
-                )
-        }
+        val delegationId = ev.params.getAsString("delegationId")!!
+        val (existing, nextVersion) = accumulator.resolve(delegationId)
+        if (existing == null) return
+
+        accumulator.put(
+            delegationId,
+            existing,
+            existing.copy(
+                status = Status.EXITED,
+                blockId = block.id,
+                blockNumber = block.number,
+                blockTimestamp = block.timestamp,
+                version = nextVersion,
+            ),
+        )
     }
 
     /** Handles a rewards claim on a delegation. */
     private fun handleDelegationRewardsClaimed(
         ev: IndexedEvent,
-        delegations: MutableMap<String, Delegation>,
-        delegationsToArchive: MutableList<Delegation>,
         block: Block,
+        accumulator: VersionedDocumentAccumulator<Delegation>,
     ) {
         val delegationId = ev.params.getAsString("delegationId")!!
         val amount = ev.params.getAsBigInteger("amount")!!
-        delegations[delegationId]?.let { existing ->
-            delegationsToArchive.add(existing)
-            delegations[delegationId] =
-                existing.copy(
-                    totalRewardsClaimed = existing.totalRewardsClaimed + amount,
-                    blockNumber = block.number,
-                    blockTimestamp = block.timestamp,
-                    blockId = block.id,
-                    version = existing.version + 1,
-                )
-        }
+        val (existing, nextVersion) = accumulator.resolve(delegationId)
+        if (existing == null) return
+
+        accumulator.put(
+            delegationId,
+            existing,
+            existing.copy(
+                totalRewardsClaimed = existing.totalRewardsClaimed + amount,
+                blockNumber = block.number,
+                blockTimestamp = block.timestamp,
+                blockId = block.id,
+                version = nextVersion,
+            ),
+        )
     }
 
-    /** Handles a token transfer */
+    /** Handles a token transfer -- O(1) lookup via tokenIdToId secondary index. */
     private fun handleTransfer(
         ev: IndexedEvent,
-        delegations: MutableMap<String, Delegation>,
-        delegationsToArchive: MutableList<Delegation>,
         block: Block,
+        accumulator: VersionedDocumentAccumulator<Delegation>,
+        tokenIdToId: Map<String, String>,
     ) {
         val tokenId = ev.params.getAsString("tokenId") ?: return
         val to = ev.params.getAsString("to") ?: return
+        val delegationId = tokenIdToId[tokenId] ?: return
 
-        // Find the active delegation for this token
-        val existing =
-            delegations.values.find { it.tokenId == tokenId && it.status != Status.EXITED }
-                ?: return
+        val (existing, nextVersion) = accumulator.resolve(delegationId)
+        if (existing == null || existing.status == Status.EXITED) return
 
-        // Archive the old state
-        delegationsToArchive.add(existing)
-
-        // Create updated copy with new owner
-        delegations[existing.id] =
+        accumulator.put(
+            delegationId,
+            existing,
             existing.copy(
                 owner = to,
                 blockId = block.id,
                 blockNumber = block.number,
                 blockTimestamp = block.timestamp,
-                version = existing.version + 1,
-            )
+                version = nextVersion,
+            ),
+        )
     }
 
-    /** Handles a validator requesting exit → updates all of its delegations. */
+    /** Handles a validator requesting exit -- uses validatorToIds for O(1) lookup. */
     private suspend fun handleValidatorExitRequested(
         ev: IndexedEvent,
-        delegations: MutableMap<String, Delegation>,
-        delegationsToArchive: MutableList<Delegation>,
         block: Block,
         validatorSnapshots: Map<String, ValidatorSnapshot>,
+        accumulator: VersionedDocumentAccumulator<Delegation>,
+        validatorToIds: Map<String, List<String>>,
     ) {
         val validatorId = ev.params.getAsString("validator")!!
         val exitAt =
             validatorDelegationService.getValidatorExitBlock(validatorId, validatorSnapshots)
 
-        delegations.values
-            .filter { it.validator == validatorId && it.status != Status.EXITED }
-            .forEach { existing ->
-                if (existing.status == Status.EXITING) return@forEach
+        val delegationIds = validatorToIds[validatorId] ?: return
+        delegationIds.forEach { id ->
+            val (existing, nextVersion) = accumulator.resolve(id)
+            if (existing == null || existing.status == Status.EXITED) return@forEach
+            if (existing.status == Status.EXITING) return@forEach
 
-                delegationsToArchive.add(existing)
-                delegations[existing.id] =
-                    existing.copy(
-                        status = Status.EXITING,
-                        validatorNextCycle = exitAt,
-                        blockId = block.id,
-                        blockNumber = block.number,
-                        blockTimestamp = block.timestamp,
-                        version = existing.version + 1,
-                        force = true,
-                    )
-            }
+            accumulator.put(
+                id,
+                existing,
+                existing.copy(
+                    status = Status.EXITING,
+                    validatorNextCycle = exitAt,
+                    blockId = block.id,
+                    blockNumber = block.number,
+                    blockTimestamp = block.timestamp,
+                    version = nextVersion,
+                    force = true,
+                ),
+            )
+        }
     }
 
     /** Handles a validator disappearing completely from chain state. */
     private fun handleValidatorDisappeared(
         validatorId: String,
-        delegations: MutableMap<String, Delegation>,
-        delegationsToArchive: MutableList<Delegation>,
         block: Block,
+        accumulator: VersionedDocumentAccumulator<Delegation>,
+        validatorToIds: Map<String, List<String>>,
     ) {
-        delegations.values
-            .filter { it.validator == validatorId && it.status != Status.EXITED }
-            .forEach { existing ->
-                delegationsToArchive.add(existing)
-                delegations[existing.id] =
-                    existing.copy(
-                        status = Status.EXITED,
-                        validatorNextCycle = block.number, // immediate exit
-                        blockId = block.id,
-                        blockNumber = block.number,
-                        blockTimestamp = block.timestamp,
-                        version = existing.version + 1,
-                        notify = true,
-                        force = true,
-                    )
-            }
+        val delegationIds = validatorToIds[validatorId] ?: return
+        delegationIds.forEach { id ->
+            val (existing, nextVersion) = accumulator.resolve(id)
+            if (existing == null || existing.status == Status.EXITED) return@forEach
+
+            accumulator.put(
+                id,
+                existing,
+                existing.copy(
+                    status = Status.EXITED,
+                    validatorNextCycle = block.number,
+                    blockId = block.id,
+                    blockNumber = block.number,
+                    blockTimestamp = block.timestamp,
+                    version = nextVersion,
+                    notify = true,
+                    force = true,
+                ),
+            )
+        }
     }
 
     /** Detect validators that disappeared compared to previous state. */

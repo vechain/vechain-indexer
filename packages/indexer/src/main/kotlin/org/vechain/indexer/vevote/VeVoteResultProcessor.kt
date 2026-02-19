@@ -9,6 +9,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 
 @Profile("vevote", "vevote-results")
 @Component
@@ -17,6 +18,7 @@ open class VeVoteResultProcessor(
     repository: VeVoteProposalResultRepository,
     veVoteResultArchiveService: ArchiveService<VeVoteProposalResult>,
     checkpointService: CheckpointService,
+    processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = repository,
@@ -24,6 +26,7 @@ open class VeVoteResultProcessor(
         indexerName = IndexerNames.VEVOTE_RESULT.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.VEVOTE_RESULT.COLLECTION,
+        processorMetrics = processorMetrics,
     ) {
 
     override suspend fun processEntry(entry: IndexingResult) {

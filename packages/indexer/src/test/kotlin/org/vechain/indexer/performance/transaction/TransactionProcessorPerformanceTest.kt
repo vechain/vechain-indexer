@@ -10,6 +10,7 @@ import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.transaction.TransactionProcessor
@@ -24,6 +25,7 @@ class TransactionProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var transactionService: TransactionService
     @Autowired lateinit var mongoTemplate: MongoTemplate
     @Autowired lateinit var checkpointService: CheckpointService
+    @Autowired lateinit var processorMetrics: ProcessorMetrics
 
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
@@ -75,12 +77,14 @@ class TransactionProcessorPerformanceTest : BasePerformanceTest() {
                     repository = transactionRepository,
                     profiler = profiler,
                     checkpointService = checkpointService,
+                    processorMetrics = processorMetrics,
                 )
             } else {
                 TransactionProcessor(
                     transactionService = transactionService,
                     repository = transactionRepository,
                     checkpointService = checkpointService,
+                    processorMetrics = processorMetrics,
                 )
             }
 
@@ -102,12 +106,14 @@ class TransactionProcessorPerformanceTest : BasePerformanceTest() {
         repository: TransactionRepository,
         private val profiler: DetailedProfiler,
         checkpointService: CheckpointService,
+        processorMetrics: ProcessorMetrics,
     ) :
         org.vechain.indexer.BaseProcessor(
             repository = repository,
             indexerName = IndexerNames.TRANSACTION.NAME,
             checkpointService = checkpointService,
             collectionName = IndexerNames.TRANSACTION.COLLECTION,
+            processorMetrics = processorMetrics,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    TransactionProcessor.process (per block)") {
