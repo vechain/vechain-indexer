@@ -6,6 +6,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockRevision
@@ -28,6 +30,8 @@ class AmnProcessorTest {
 
     @MockK lateinit var checkpointService: CheckpointService
 
+    private val processorMetrics: ProcessorMetrics = mockk(relaxed = true)
+
     private lateinit var processor: AmnProcessor
 
     @BeforeEach
@@ -40,6 +44,7 @@ class AmnProcessorTest {
                 amnService = amnService,
                 thorClient = thorClient,
                 checkpointService = checkpointService,
+                processorMetrics = processorMetrics,
             )
     }
 

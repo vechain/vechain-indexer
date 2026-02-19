@@ -9,6 +9,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.b3tr.proposal.repository.ProposalCommentRepository
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 
 @Profile("b3tr", "b3tr-proposal", "b3tr-proposal-comments")
 @Component
@@ -16,12 +17,14 @@ open class ProposalCommentProcessor(
     repository: ProposalCommentRepository,
     private val service: ProposalCommentService,
     checkpointService: CheckpointService,
+    processorMetrics: ProcessorMetrics,
 ) :
     BaseProcessor(
         repository = repository,
         indexerName = IndexerNames.PROPOSAL_COMMENT.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.PROPOSAL_COMMENT.COLLECTION,
+        processorMetrics = processorMetrics,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {

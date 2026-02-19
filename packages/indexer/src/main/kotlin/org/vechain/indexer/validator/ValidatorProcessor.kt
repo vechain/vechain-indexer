@@ -10,6 +10,7 @@ import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 
 @Profile("validator", "validator-stats")
 @Component
@@ -18,6 +19,7 @@ open class ValidatorProcessor(
     archiveService: ArchiveService<Validator, ValidatorArchive>,
     checkpointService: CheckpointService,
     private val service: ValidatorService,
+    processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = repository,
@@ -25,6 +27,7 @@ open class ValidatorProcessor(
         indexerName = IndexerNames.VALIDATOR.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.VALIDATOR.COLLECTION,
+        processorMetrics = processorMetrics,
     ) {
 
     override suspend fun processEntry(entry: IndexingResult) {

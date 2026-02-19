@@ -11,6 +11,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.stargate.rewards.TokenRewardProcessor
@@ -30,6 +31,7 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var archiveService: ArchiveService<TokenReward, TokenRewardArchive>
     @Autowired lateinit var delegationRepository: DelegationRepository
     @Autowired lateinit var checkpointService: CheckpointService
+    @Autowired lateinit var processorMetrics: ProcessorMetrics
 
     @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
     lateinit var getAllValidatorsContract: String
@@ -97,6 +99,7 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
                     archiveService = archiveService,
                     profiler = profiler,
                     checkpointService = checkpointService,
+                    processorMetrics = processorMetrics,
                 )
             } else {
                 TokenRewardProcessor(
@@ -104,6 +107,7 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
                     repository = tokenRewardRepository,
                     archiveService = archiveService,
                     checkpointService = checkpointService,
+                    processorMetrics = processorMetrics,
                 )
             }
 
@@ -126,12 +130,14 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
         archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
         private val profiler: DetailedProfiler,
         checkpointService: CheckpointService,
+        processorMetrics: ProcessorMetrics,
     ) :
         TokenRewardProcessor(
             service = service,
             repository = repository,
             archiveService = archiveService,
             checkpointService = checkpointService,
+            processorMetrics = processorMetrics,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    TokenRewardProcessor.process (per block)") {
