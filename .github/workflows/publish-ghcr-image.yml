@@ -139,6 +139,7 @@ jobs:
 
       - name: Clean up untagged images
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # GHCR package name uses repo/packageName, slash must be URL-encoded for the API
           PACKAGE_PATH: veworld-indexer%2F${{ matrix.packageName }}
         run: |
