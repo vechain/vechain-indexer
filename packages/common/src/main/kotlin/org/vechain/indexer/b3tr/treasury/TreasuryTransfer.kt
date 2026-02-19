@@ -1,5 +1,6 @@
 package org.vechain.indexer.b3tr.treasury
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
@@ -11,8 +12,8 @@ data class TreasuryTransfer
 @ConstructorBinding
 constructor(
     @Id val id: String,
-    override val blockId: String,
-    override val blockNumber: Long,
+    @JsonIgnore override val blockId: String,
+    @JsonIgnore override val blockNumber: Long,
     override val blockTimestamp: Long,
     val txId: String,
     val from: String,
