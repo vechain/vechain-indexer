@@ -9,6 +9,7 @@ import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.explorer.BlockUsageProcessor
 import org.vechain.indexer.explorer.BlockUsageService
 import org.vechain.indexer.explorer.repository.BlockUsageRepository
@@ -22,6 +23,7 @@ class BlockUsageProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var blockUsageRepository: BlockUsageRepository
     @Autowired lateinit var blockUsageService: BlockUsageService
     @Autowired lateinit var checkpointService: CheckpointService
+    @Autowired lateinit var processorMetrics: ProcessorMetrics
 
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
@@ -79,12 +81,14 @@ class BlockUsageProcessorPerformanceTest : BasePerformanceTest() {
                     service = serviceToUse,
                     profiler = profiler,
                     checkpointService = checkpointService,
+                    processorMetrics = processorMetrics,
                 )
             } else {
                 BlockUsageProcessor(
                     repository = blockUsageRepository,
                     service = serviceToUse,
                     checkpointService = checkpointService,
+                    processorMetrics = processorMetrics,
                 )
             }
 
@@ -104,11 +108,13 @@ class BlockUsageProcessorPerformanceTest : BasePerformanceTest() {
         service: BlockUsageService,
         private val profiler: DetailedProfiler,
         checkpointService: CheckpointService,
+        processorMetrics: ProcessorMetrics,
     ) :
         BlockUsageProcessor(
             repository = repository,
             service = service,
             checkpointService = checkpointService,
+            processorMetrics = processorMetrics,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    BlockUsageProcessor.process (per block)") {

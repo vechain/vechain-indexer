@@ -12,6 +12,7 @@ import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_NO_CLAUSES
 
 @ExtendWith(MockKExtension::class)
@@ -28,6 +29,8 @@ class VeVoteResultIndexerTest {
 
     @MockK lateinit var checkpointService: CheckpointService
 
+    private val processorMetrics: ProcessorMetrics = mockk(relaxed = true)
+
     private lateinit var voteResultsIndexer: VeVoteResultProcessor
 
     @BeforeEach
@@ -40,6 +43,7 @@ class VeVoteResultIndexerTest {
                 repository = veVoteProposalResultRepository,
                 veVoteResultArchiveService = veVoteProposalResultArchive,
                 checkpointService = checkpointService,
+                processorMetrics = processorMetrics,
             )
     }
 

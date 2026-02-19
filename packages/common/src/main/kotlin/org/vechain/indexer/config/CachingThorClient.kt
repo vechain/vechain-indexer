@@ -13,7 +13,7 @@ import org.vechain.indexer.utils.TtlCache
  * reducing repeated best-block requests and therefore lowering load on the Thor API. Cached entries
  * have a time-to-live (TTL) of 10 seconds before they are refreshed from the underlying client.
  */
-class CachingThorClient(baseUrl: String, vararg headers: Pair<String, Any>) :
+open class CachingThorClient(baseUrl: String, vararg headers: Pair<String, Any>) :
     DefaultThorClient(baseUrl, *headers) {
 
     private val bestBlockCache = TtlCache<Block>()

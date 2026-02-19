@@ -7,6 +7,7 @@ import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.version.IndexerVersionService
 
 @Component
@@ -18,12 +19,14 @@ open class HistoricProposalsVoteProcessor(
     private val indexerVersionService: IndexerVersionService,
     @Value("\${indexer.stop-block.historic-proposals}") private val stopBlock: Long,
     checkpointService: CheckpointService,
+    processorMetrics: ProcessorMetrics,
 ) :
     BaseProcessor(
         repository = repository,
         indexerName = IndexerNames.HISTORIC_PROPOSALS_VOTE.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.HISTORIC_PROPOSALS_VOTE.COLLECTION,
+        processorMetrics = processorMetrics,
     ) {
     private var aggregationRan: Boolean = false
 

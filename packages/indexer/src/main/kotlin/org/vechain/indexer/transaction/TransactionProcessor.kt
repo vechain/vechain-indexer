@@ -7,6 +7,7 @@ import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 
 @Profile("transactions")
 @Component
@@ -14,12 +15,14 @@ open class TransactionProcessor(
     private val transactionService: TransactionService,
     repository: TransactionRepository,
     checkpointService: CheckpointService,
+    processorMetrics: ProcessorMetrics,
 ) :
     BaseProcessor(
         repository = repository,
         indexerName = IndexerNames.TRANSACTION.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.TRANSACTION.COLLECTION,
+        processorMetrics = processorMetrics,
     ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)

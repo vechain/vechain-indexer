@@ -1,24 +1,14 @@
 package org.vechain.indexer.config
 
 import java.text.NumberFormat
-import java.time.LocalDateTime
-import java.time.ZoneOffset
 import java.util.Locale
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.actuate.health.Health
 import org.springframework.boot.actuate.health.HealthIndicator
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.Indexer
-import org.vechain.indexer.Status
-import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.thor.model.BlockRevision
-import org.vechain.indexer.utils.TtlCache
 
-enum class HealthStatus() {
+enum class HealthStatus {
     UP,
     DOWN,
     UNKNOWN,
@@ -27,64 +17,23 @@ enum class HealthStatus() {
 @Component
 class IndexerHealthIndicator(
     private val indexers: List<Indexer>,
-    private val metrics: IndexerHealthMetrics,
-    private val thorClient: ThorClient,
-    @param:Value("\${indexer.healthcheck.inactive-threshold-syncing}")
-    private val inactiveThresholdSyncing: Long,
-    @param:Value("\${indexer.healthcheck.inactive-threshold-not-syncing}")
-    private val inactiveThresholdNotSyncing: Long,
+    private val indexerHealthService: IndexerHealthService,
 ) : HealthIndicator {
-
-    private val scope = CoroutineScope(Dispatchers.IO)
-    private val bestBlockCache = TtlCache<Long>()
 
     data class IndexerHealth(
         val indexerName: String,
         val status: HealthStatus,
         val statusDetails: String,
-        val syncStatus: Status,
+        val syncStatus: org.vechain.indexer.Status,
         val currentBlock: String,
     )
 
     override fun health(): Health {
         val key = "IndexersHealth"
 
-        // Fetch best block asynchronously to avoid blocking the health check thread
-        scope.launch {
-            val bestBlock = thorClient.getBlockUnexpanded(BlockRevision.Keyword.BEST).number
-            bestBlockCache.set(bestBlock)
-            metrics.setBestBlockNumber(bestBlock)
-        }
-
-        val bestBlockNumber = bestBlockCache.get()
-
         val indexerHealths =
             indexers.map { indexer ->
-                val (status, statusDetails) = getIndexerHealth(indexer)
-                metrics.setComponentHealth(
-                    indexer.name,
-                    "indexer",
-                    when (status) {
-                        HealthStatus.UP -> 1.0
-                        HealthStatus.DOWN -> 0.0
-                        HealthStatus.UNKNOWN -> -1.0
-                    },
-                )
-                metrics.setIndexerSyncStatus(indexer.name, indexer.getStatus())
-                if (indexer is BlockIndexer) {
-                    val currentBlockNumber = indexer.getCurrentBlockNumber()
-                    metrics.setIndexerCurrentBlockByStatus(
-                        indexer.name,
-                        currentBlockNumber,
-                        indexer.getStatus(),
-                    )
-                    if (bestBlockNumber != null) {
-                        metrics.setIndexerSyncGap(
-                            indexer.name,
-                            bestBlockNumber - currentBlockNumber,
-                        )
-                    }
-                }
+                val (status, statusDetails) = indexerHealthService.getIndexerHealth(indexer)
 
                 IndexerHealth(
                     indexerName = indexer.name,
@@ -107,46 +56,6 @@ class IndexerHealthIndicator(
             Health.down().withDetail(key, badIndexers).build()
         } else {
             Health.up().withDetail(key, indexerHealths).build()
-        }
-    }
-
-    /**
-     * Get the health status of the indexer If the indexer is syncing we use the SYNC_TIMEOUT to
-     * determine if it is down If the indexer is not syncing we use the PROCESS_TIMEOUT to determine
-     * if it is down
-     */
-    private fun getIndexerHealth(indexer: Indexer): Pair<HealthStatus, String> {
-        when (indexer.getStatus()) {
-            Status.PRUNING -> return HealthStatus.UP to "Indexer is pruning"
-            Status.NOT_INITIALISED -> return HealthStatus.UP to "Indexer is not initialised"
-            Status.INITIALISED -> return HealthStatus.UP to "Indexer is initialised but not started"
-            Status.SHUT_DOWN -> return HealthStatus.DOWN to "Indexer is shut down"
-            else -> {
-                // continue to check last processed time
-            }
-        }
-
-        val timeNow = LocalDateTime.now(ZoneOffset.UTC)
-
-        val timeout =
-            if (
-                indexer.getStatus() == Status.SYNCING || indexer.getStatus() == Status.FAST_SYNCING
-            ) {
-                inactiveThresholdSyncing
-            } else {
-                inactiveThresholdNotSyncing
-            }
-
-        val timeLastProcessed = if (indexer is BlockIndexer) indexer.timeLastProcessed else null
-        return if (timeLastProcessed != null) {
-            if (timeNow.minusSeconds(timeout) > timeLastProcessed) {
-                HealthStatus.DOWN to
-                    "Last processed at $timeLastProcessed which is more than $timeout seconds ago"
-            } else {
-                HealthStatus.UP to "Last processed at $timeLastProcessed"
-            }
-        } else {
-            HealthStatus.UNKNOWN to "No last processed time available"
         }
     }
 }

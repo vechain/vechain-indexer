@@ -1,4 +1,4 @@
-package org.vechain.indexer.config
+package org.vechain.indexer.config.metrics
 
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
