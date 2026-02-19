@@ -1,7 +1,5 @@
 package org.vechain.indexer.b3tr.treasury
 
-import com.fasterxml.jackson.annotation.JsonValue
-
 enum class TreasuryTransferCategory {
     EMISSION,
     SURPLUS,
@@ -10,7 +8,5 @@ enum class TreasuryTransferCategory {
     GOVERNANCE,
     IN,
     OUT,
-    OTHER;
-
-    @JsonValue fun toApiValue(): String = name.lowercase()
+    OTHER,
 }
