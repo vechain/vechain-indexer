@@ -37,6 +37,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 open class DelegationService(
     private val repository: DelegationRepository,
     private val archiveService: ArchiveService<Delegation>,
+    private val delegationPruner: TargetedPruner<Delegation>,
     private val validatorDelegationService: ValidatorDelegationService,
     @param:Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
     private val stakerSC: String,

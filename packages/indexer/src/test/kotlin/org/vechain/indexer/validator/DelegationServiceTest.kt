@@ -1,6 +1,7 @@
 package org.vechain.indexer.validator
 
 import io.mockk.*
+import io.mockk.mockk
 import java.math.BigInteger
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
@@ -21,6 +22,7 @@ class DelegationServiceTest {
     private val repository = mockk<DelegationRepository>()
     private val archiveService = mockk<ArchiveService<Delegation>>(relaxed = true)
 
+    private val delegationPruner = mockk<TargetedPruner<Delegation>>()
     private val validatorDelegationService = mockk<ValidatorDelegationService>()
 
     private lateinit var service: DelegationService

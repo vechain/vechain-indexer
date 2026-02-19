@@ -25,6 +25,7 @@ import org.vechain.indexer.validator.DelegationService
 class DelegationProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var delegationRepository: DelegationRepository
+    @Autowired lateinit var delegationPruner: TargetedPruner<Delegation>
     @Autowired lateinit var delegationService: DelegationService
     @Autowired lateinit var archiveService: ArchiveService<Delegation>
     @Autowired lateinit var checkpointService: CheckpointService

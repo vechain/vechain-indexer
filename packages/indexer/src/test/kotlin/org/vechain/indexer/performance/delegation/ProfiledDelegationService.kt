@@ -26,6 +26,7 @@ import org.vechain.indexer.validator.ValidatorDelegationService
 class ProfiledDelegationService(
     repository: DelegationRepository,
     archiveService: ArchiveService<Delegation>,
+    delegationPruner: TargetedPruner<Delegation>,
     validatorDelegationService: ValidatorDelegationService,
     stakerSC: String,
     private val profiler: DetailedProfiler,

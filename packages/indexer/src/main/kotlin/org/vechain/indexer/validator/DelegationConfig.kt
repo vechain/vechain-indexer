@@ -10,7 +10,6 @@ import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.pruner.PrunerService
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.validator.domain.ValidatorDecoder
 
@@ -28,7 +27,7 @@ open class DelegationConfig {
     open fun delegationPruner(
         delegationArchiveService: ArchiveService<Delegation>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): Pruner = PrunerService(delegationArchiveService, prunerRemovalChunkSize)
+    ) = PrunerService(delegationArchiveService, prunerRemovalChunkSize)
 
     @Bean
     open fun delegationIndexer(
