@@ -4,16 +4,21 @@ on:
   push:
     tags:
       - v.*
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g. v.1.0.0)'
+        required: true
+        type: string
 
 permissions:
   packages: write
   contents: read
 
 env:
-  versionTag: ${{ github.ref_name }}
+  versionTag: ${{ inputs.version || github.ref_name }}
   latestTag: 'latest'
   registry: ghcr.io
-  imagePrefix: vechain-
 
 jobs:
   build:
@@ -57,7 +62,7 @@ jobs:
           sbom: false
           cache-from: type=gha,scope=${{ matrix.packageName }}-${{ matrix.platform }}
           cache-to: type=gha,mode=max,scope=${{ matrix.packageName }}-${{ matrix.platform }}
-          outputs: type=image,name=${{ env.registry }}/${{ github.repository }}/${{ env.imagePrefix }}${{ matrix.packageName }},push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,name=${{ env.registry }}/${{ github.repository }}/${{ matrix.packageName }},push-by-digest=true,name-canonical=true,push=true
 
       - name: Export digest
         run: |
@@ -102,6 +107,6 @@ jobs:
         working-directory: /tmp/digests
         run: |
           docker buildx imagetools create \
-            -t ${{ env.registry }}/${{ github.repository }}/${{ env.imagePrefix }}${{ matrix.packageName }}:${{ env.versionTag }} \
-            -t ${{ env.registry }}/${{ github.repository }}/${{ env.imagePrefix }}${{ matrix.packageName }}:${{ env.latestTag }} \
-            $(printf '${{ env.registry }}/${{ github.repository }}/${{ env.imagePrefix }}${{ matrix.packageName }}@sha256:%s ' *)
+            -t ${{ env.registry }}/${{ github.repository }}/${{ matrix.packageName }}:${{ env.versionTag }} \
+            -t ${{ env.registry }}/${{ github.repository }}/${{ matrix.packageName }}:${{ env.latestTag }} \
+            $(printf '${{ env.registry }}/${{ github.repository }}/${{ matrix.packageName }}@sha256:%s ' *)
