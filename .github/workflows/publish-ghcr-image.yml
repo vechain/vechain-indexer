@@ -104,10 +104,35 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Extract version tags
+        id: version
+        run: |
+          # Strip v. prefix from version tag
+          VERSION=$(echo "${{ env.versionTag }}" | sed 's/^v\.//')
+          echo "full=$VERSION" >> "$GITHUB_OUTPUT"
+
+          # Only publish floating tags for stable versions (X.Y.Z)
+          if echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "stable=true" >> "$GITHUB_OUTPUT"
+            echo "major=$(echo "$VERSION" | cut -d. -f1)" >> "$GITHUB_OUTPUT"
+            echo "minor=$(echo "$VERSION" | cut -d. -f1-2)" >> "$GITHUB_OUTPUT"
+          else
+            echo "stable=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Create manifest list and push
         working-directory: /tmp/digests
+        env:
+          IMAGE: ${{ env.registry }}/${{ github.repository }}/${{ matrix.packageName }}
         run: |
+          TAGS="-t ${{ env.IMAGE }}:${{ steps.version.outputs.full }}"
+
+          if [ "${{ steps.version.outputs.stable }}" = "true" ]; then
+            TAGS="$TAGS -t ${{ env.IMAGE }}:${{ steps.version.outputs.minor }}"
+            TAGS="$TAGS -t ${{ env.IMAGE }}:${{ steps.version.outputs.major }}"
+            TAGS="$TAGS -t ${{ env.IMAGE }}:${{ env.latestTag }}"
+          fi
+
           docker buildx imagetools create \
-            -t ${{ env.registry }}/${{ github.repository }}/${{ matrix.packageName }}:${{ env.versionTag }} \
-            -t ${{ env.registry }}/${{ github.repository }}/${{ matrix.packageName }}:${{ env.latestTag }} \
-            $(printf '${{ env.registry }}/${{ github.repository }}/${{ matrix.packageName }}@sha256:%s ' *)
+            $TAGS \
+            $(printf '${{ env.IMAGE }}@sha256:%s ' *)
