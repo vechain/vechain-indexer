@@ -27,6 +27,30 @@ class IndexerMetricsReporter(
 
     @Scheduled(fixedDelayString = "\${indexer.healthcheck.report-interval-ms:60000}")
     fun reportMetrics() {
+        val bestBlockNumber = fetchBestBlockNumber()
+
+        val syncingEtas = mutableMapOf<String, Double>()
+        val initialisedIndexerNames = mutableListOf<String>()
+
+        indexers.forEach { indexer ->
+            reportIndexerHealth(indexer)
+
+            if (indexer.getStatus() == Status.INITIALISED) {
+                initialisedIndexerNames.add(indexer.name)
+            }
+
+            if (indexer is BlockIndexer) {
+                val eta = reportBlockIndexerMetrics(indexer, bestBlockNumber)
+                if (eta != null && indexer.getStatus() == Status.SYNCING) {
+                    syncingEtas[indexer.name] = eta
+                }
+            }
+        }
+
+        estimateInitialisedEtas(initialisedIndexerNames, syncingEtas)
+    }
+
+    private fun fetchBestBlockNumber(): Long? {
         val bestBlockNumber =
             try {
                 runBlocking { thorClient.getBlockUnexpanded(BlockRevision.Keyword.BEST).number }
@@ -43,55 +67,78 @@ class IndexerMetricsReporter(
             metrics.setBestBlockNumber(bestBlockNumber)
         }
 
-        indexers.forEach { indexer ->
-            val (status, _) = indexerHealthService.getIndexerHealth(indexer)
-            metrics.setComponentHealth(
-                indexer.name,
-                "indexer",
-                when (status) {
-                    HealthStatus.UP -> 1.0
-                    HealthStatus.DOWN -> 0.0
-                    HealthStatus.UNKNOWN -> -1.0
-                },
-            )
-            metrics.setIndexerSyncStatus(indexer.name, indexer.getStatus())
-            if (indexer is BlockIndexer) {
-                val currentBlockNumber = indexer.getCurrentBlockNumber()
-                metrics.setIndexerCurrentBlockByStatus(
-                    indexer.name,
-                    currentBlockNumber,
-                    indexer.getStatus(),
-                )
-                if (bestBlockNumber != null) {
-                    metrics.setIndexerSyncGap(indexer.name, bestBlockNumber - currentBlockNumber)
-                }
-                val previousBlock = previousBlockNumbers.put(indexer.name, currentBlockNumber)
-                if (previousBlock != null && currentBlockNumber > previousBlock) {
-                    metrics.incrementBlocksProcessed(
-                        indexer.name,
-                        (currentBlockNumber - previousBlock).toDouble(),
-                    )
-                }
+        return bestBlockNumber
+    }
 
-                val now = System.nanoTime()
-                val syncGap =
-                    if (bestBlockNumber != null) bestBlockNumber - currentBlockNumber else null
+    private fun reportIndexerHealth(indexer: Indexer) {
+        val (status, _) = indexerHealthService.getIndexerHealth(indexer)
+        metrics.setComponentHealth(
+            indexer.name,
+            "indexer",
+            when (status) {
+                HealthStatus.UP -> 1.0
+                HealthStatus.DOWN -> 0.0
+                HealthStatus.UNKNOWN -> -1.0
+            },
+        )
+        metrics.setIndexerSyncStatus(indexer.name, indexer.getStatus())
+    }
 
-                if (indexer.getStatus() == Status.FULLY_SYNCED) {
-                    metrics.setEstimatedTimeToSync(indexer.name, 0.0)
-                } else if (previousBlock != null && syncGap != null) {
-                    val previousTime = previousReportTimes[indexer.name]
-                    if (previousTime != null && currentBlockNumber > previousBlock) {
-                        val elapsedSeconds = (now - previousTime) / 1_000_000_000.0
-                        if (elapsedSeconds > 0) {
-                            val blocksPerSecond =
-                                (currentBlockNumber - previousBlock) / elapsedSeconds
-                            metrics.setEstimatedTimeToSync(indexer.name, syncGap / blocksPerSecond)
-                        }
-                    }
-                }
-                previousReportTimes[indexer.name] = now
-            }
+    private fun reportBlockIndexerMetrics(indexer: BlockIndexer, bestBlockNumber: Long?): Double? {
+        val currentBlockNumber = indexer.getCurrentBlockNumber()
+        metrics.setIndexerCurrentBlockByStatus(
+            indexer.name,
+            currentBlockNumber,
+            indexer.getStatus(),
+        )
+
+        if (bestBlockNumber != null) {
+            metrics.setIndexerSyncGap(indexer.name, bestBlockNumber - currentBlockNumber)
         }
+
+        val previousBlock = previousBlockNumbers.put(indexer.name, currentBlockNumber)
+        if (previousBlock != null && currentBlockNumber > previousBlock) {
+            metrics.incrementBlocksProcessed(
+                indexer.name,
+                (currentBlockNumber - previousBlock).toDouble(),
+            )
+        }
+
+        val now = System.nanoTime()
+        val eta = computeEta(indexer, bestBlockNumber, currentBlockNumber, previousBlock, now)
+        if (eta != null) {
+            metrics.setEstimatedTimeToSync(indexer.name, eta)
+        }
+        previousReportTimes[indexer.name] = now
+        return eta
+    }
+
+    private fun computeEta(
+        indexer: BlockIndexer,
+        bestBlockNumber: Long?,
+        currentBlockNumber: Long,
+        previousBlock: Long?,
+        now: Long,
+    ): Double? {
+        if (indexer.getStatus() == Status.FULLY_SYNCED) return 0.0
+
+        val syncGap = bestBlockNumber?.minus(currentBlockNumber) ?: return null
+        val previousTime = previousReportTimes[indexer.name] ?: return null
+        if (previousBlock == null || currentBlockNumber <= previousBlock) return null
+
+        val elapsedSeconds = (now - previousTime) / 1_000_000_000.0
+        if (elapsedSeconds <= 0) return null
+
+        val blocksPerSecond = (currentBlockNumber - previousBlock) / elapsedSeconds
+        return syncGap / blocksPerSecond
+    }
+
+    private fun estimateInitialisedEtas(
+        initialisedIndexerNames: List<String>,
+        syncingEtas: Map<String, Double>,
+    ) {
+        if (initialisedIndexerNames.isEmpty() || syncingEtas.isEmpty()) return
+        val maxEta = syncingEtas.values.filter { it > 0.0 }.maxOrNull() ?: return
+        initialisedIndexerNames.forEach { metrics.setEstimatedTimeToSync(it, maxEta) }
     }
 }

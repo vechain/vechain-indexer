@@ -1226,13 +1226,27 @@
       "pluginVersion": "12.3.0",
       "targets": [
         {
-          "expr": "indexer_sync_gap_gauge{indexer_name=~\"$indexer\"}",
+          "expr": "sort_desc(indexer_sync_gap_gauge{indexer_name=~\"$indexer\"})",
           "instant": true,
           "legendFormat": "{{indexer_name}}",
           "refId": "A"
         }
       ],
       "title": "Sync Gap per Indexer",
+      "transformations": [
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": true,
+                "field": "Value"
+              }
+            ]
+          }
+        }
+      ],
       "type": "bargauge"
     },
     {
