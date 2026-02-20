@@ -736,9 +736,9 @@
       }
     },
     {
-      "id": 6,
+      "id": 15,
       "definition": {
-        "title": "Events Processed Rate",
+        "title": "Blocks Per Second",
         "title_size": "16",
         "title_align": "left",
         "show_legend": true,
@@ -762,7 +762,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:processor_events_counter{indexer-id:$indexer-id.value} by {indexer_name}.as_rate()"
+                "query": "sum:indexer_blocks_processed_total{indexer-id:$indexer-id.value} by {indexer_name}.as_rate()"
               }
             ],
             "response_format": "timeseries",
@@ -833,53 +833,6 @@
       }
     },
     {
-      "id": 15,
-      "definition": {
-        "title": "Blocks Per Second",
-        "title_size": "16",
-        "title_align": "left",
-        "show_legend": true,
-        "legend_layout": "auto",
-        "legend_columns": [
-          "avg",
-          "min",
-          "max",
-          "value",
-          "sum"
-        ],
-        "type": "timeseries",
-        "requests": [
-          {
-            "formulas": [
-              {
-                "formula": "query1"
-              }
-            ],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "sum:indexer_blocks_processed_total{indexer-id:$indexer-id.value} by {indexer_name}.as_rate()"
-              }
-            ],
-            "response_format": "timeseries",
-            "style": {
-              "order_by": "values",
-              "line_type": "solid",
-              "line_width": "normal"
-            },
-            "display_type": "line"
-          }
-        ]
-      },
-      "layout": {
-        "x": 0,
-        "y": 17,
-        "width": 6,
-        "height": 4
-      }
-    },
-    {
       "id": 10,
       "definition": {
         "title": "Events by Indexer",
@@ -923,10 +876,57 @@
         }
       },
       "layout": {
-        "x": 6,
+        "x": 0,
         "y": 17,
         "width": 6,
         "height": 2
+      }
+    },
+    {
+      "id": 6,
+      "definition": {
+        "title": "Events Processed Rate",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "sum:processor_events_counter{indexer-id:$indexer-id.value} by {indexer_name}.as_rate()"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": {
+              "order_by": "values",
+              "line_type": "solid",
+              "line_width": "normal"
+            },
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": {
+        "x": 6,
+        "y": 17,
+        "width": 6,
+        "height": 4
       }
     }
   ],
