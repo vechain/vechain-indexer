@@ -668,7 +668,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:indexer_blocks_processed_total{indexer-id:$indexer-id.value} by {indexer_name}.as_rate()"
+                "query": "avg:indexer_blocks_per_second_gauge{indexer-id:$indexer-id.value} by {indexer_name}"
               }
             ],
             "response_format": "timeseries",

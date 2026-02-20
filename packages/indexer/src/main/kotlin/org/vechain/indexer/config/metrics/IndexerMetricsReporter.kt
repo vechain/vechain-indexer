@@ -105,7 +105,13 @@ class IndexerMetricsReporter(
         }
 
         val now = System.nanoTime()
-        val eta = computeEta(indexer, bestBlockNumber, currentBlockNumber, previousBlock, now)
+        val blocksPerSecond =
+            computeBlocksPerSecond(indexer.name, currentBlockNumber, previousBlock, now)
+        if (blocksPerSecond != null) {
+            metrics.setBlocksPerSecond(indexer.name, blocksPerSecond)
+        }
+
+        val eta = computeEta(indexer, bestBlockNumber, currentBlockNumber, blocksPerSecond)
         if (eta != null) {
             metrics.setEstimatedTimeToSync(indexer.name, eta)
         }
@@ -113,23 +119,32 @@ class IndexerMetricsReporter(
         return eta
     }
 
-    private fun computeEta(
-        indexer: BlockIndexer,
-        bestBlockNumber: Long?,
+    private fun computeBlocksPerSecond(
+        indexerName: String,
         currentBlockNumber: Long,
         previousBlock: Long?,
         now: Long,
     ): Double? {
-        if (indexer.getStatus() == Status.FULLY_SYNCED) return 0.0
-
-        val syncGap = bestBlockNumber?.minus(currentBlockNumber) ?: return null
-        val previousTime = previousReportTimes[indexer.name] ?: return null
+        val previousTime = previousReportTimes[indexerName] ?: return null
         if (previousBlock == null || currentBlockNumber <= previousBlock) return null
 
         val elapsedSeconds = (now - previousTime) / 1_000_000_000.0
         if (elapsedSeconds <= 0) return null
 
-        val blocksPerSecond = (currentBlockNumber - previousBlock) / elapsedSeconds
+        return (currentBlockNumber - previousBlock) / elapsedSeconds
+    }
+
+    private fun computeEta(
+        indexer: BlockIndexer,
+        bestBlockNumber: Long?,
+        currentBlockNumber: Long,
+        blocksPerSecond: Double?,
+    ): Double? {
+        if (indexer.getStatus() == Status.FULLY_SYNCED) return 0.0
+
+        val syncGap = bestBlockNumber?.minus(currentBlockNumber) ?: return null
+        if (blocksPerSecond == null || blocksPerSecond <= 0) return null
+
         return syncGap / blocksPerSecond
     }
 
