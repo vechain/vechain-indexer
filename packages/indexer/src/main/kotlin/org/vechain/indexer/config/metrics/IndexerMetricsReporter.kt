@@ -83,7 +83,7 @@ class IndexerMetricsReporter(
                     val previousTime = previousReportTimes[indexer.name]
                     if (previousTime != null && currentBlockNumber > previousBlock) {
                         val elapsedSeconds = (now - previousTime) / 1_000_000_000.0
-                        if (elapsedSeconds >= 1.0) {
+                        if (elapsedSeconds > 0) {
                             val blocksPerSecond =
                                 (currentBlockNumber - previousBlock) / elapsedSeconds
                             metrics.setEstimatedTimeToSync(indexer.name, syncGap / blocksPerSecond)
