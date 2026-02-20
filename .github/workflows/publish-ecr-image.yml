@@ -82,6 +82,8 @@ jobs:
           push: true
           context: ${{ env.workingDirectory }}
           provenance: false
+          cache-from: type=gha,scope=${{ matrix.packageName }}-ecr
+          cache-to: type=gha,mode=max,scope=${{ matrix.packageName }}-ecr
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/${{ env.projectName }}/${{ matrix.packageName }}:${{ env.versionTag }}
             ${{ steps.login-ecr.outputs.registry }}/${{ env.projectName }}/${{ matrix.packageName }}:${{ env.latestTag }}

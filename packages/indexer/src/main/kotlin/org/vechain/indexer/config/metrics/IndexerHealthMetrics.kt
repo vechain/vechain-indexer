@@ -21,6 +21,7 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
     private var bestBlockGaugeInitialized = false
     private val syncGapGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
     private val blocksProcessedCounters = ConcurrentHashMap<String, Counter>()
+    private val blocksPerSecondGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
     private val estimatedTimeToSyncGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
 
     fun setComponentHealth(name: String, type: String, value: Double) {
@@ -184,5 +185,21 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
                         .register(registry)
                 }
         counter.increment(count)
+    }
+
+    fun setBlocksPerSecond(indexerName: String, blocksPerSecond: Double) {
+        blocksPerSecondGauges
+            .computeIfAbsent(indexerName) { name ->
+                val ref = AtomicReference(0.0)
+                registry.gauge(
+                    "indexer_blocks_per_second_gauge",
+                    listOf(Tag.of("indexer_name", name)),
+                    ref,
+                ) {
+                    it.get()
+                }
+                ref
+            }
+            .set(blocksPerSecond)
     }
 }
