@@ -3,8 +3,15 @@ SHELL := /bin/bash
 help:
 	@egrep -h '\s#@\s' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?#@ "}; {printf "\033[36m  %-30s\033[0m %s\n", $$1, $$2}'
 
-format: #@ Format the code with Spotless.
+format: format-json #@ Format the code with Spotless.
 	./gradlew spotlessApply
+
+format-json: #@ Format JSON dashboard files with jq.
+	@for f in metrics/datadog/*.json metrics/grafana/provisioning/dashboards/*.json; do \
+		if [ -f "$$f" ]; then \
+			jq '.' "$$f" > "$$f.tmp" && mv "$$f.tmp" "$$f"; \
+		fi; \
+	done
 
 # Application Build (Gradle)
 build: format build-indexer build-api #@ Build the application with Gradle.
