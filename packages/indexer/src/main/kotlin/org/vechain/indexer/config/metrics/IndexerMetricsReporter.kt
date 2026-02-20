@@ -86,18 +86,20 @@ class IndexerMetricsReporter(
 
     private fun reportBlockIndexerMetrics(indexer: BlockIndexer, bestBlockNumber: Long?): Double? {
         val currentBlockNumber = indexer.getCurrentBlockNumber()
-        metrics.setIndexerCurrentBlockByStatus(
-            indexer.name,
-            currentBlockNumber,
-            indexer.getStatus(),
-        )
+        val status = indexer.getStatus()
+        metrics.setIndexerCurrentBlockByStatus(indexer.name, currentBlockNumber, status)
 
         if (bestBlockNumber != null) {
             metrics.setIndexerSyncGap(indexer.name, bestBlockNumber - currentBlockNumber)
         }
 
+        val isProcessing =
+            status == Status.SYNCING ||
+                status == Status.FAST_SYNCING ||
+                status == Status.FULLY_SYNCED
+
         val previousBlock = previousBlockNumbers.put(indexer.name, currentBlockNumber)
-        if (previousBlock != null && currentBlockNumber > previousBlock) {
+        if (isProcessing && previousBlock != null && currentBlockNumber > previousBlock) {
             metrics.incrementBlocksProcessed(
                 indexer.name,
                 (currentBlockNumber - previousBlock).toDouble(),
@@ -106,12 +108,14 @@ class IndexerMetricsReporter(
 
         val now = System.nanoTime()
         val blocksPerSecond =
-            computeBlocksPerSecond(indexer.name, currentBlockNumber, previousBlock, now)
-        if (blocksPerSecond != null) {
-            metrics.setBlocksPerSecond(indexer.name, blocksPerSecond)
-        }
+            if (isProcessing) {
+                computeBlocksPerSecond(indexer.name, currentBlockNumber, previousBlock, now)
+            } else {
+                null
+            }
+        metrics.setBlocksPerSecond(indexer.name, blocksPerSecond ?: 0.0)
 
-        val eta = computeEta(indexer, bestBlockNumber, currentBlockNumber, blocksPerSecond)
+        val eta = computeEta(status, bestBlockNumber, currentBlockNumber, blocksPerSecond)
         if (eta != null) {
             metrics.setEstimatedTimeToSync(indexer.name, eta)
         }
@@ -135,12 +139,12 @@ class IndexerMetricsReporter(
     }
 
     private fun computeEta(
-        indexer: BlockIndexer,
+        status: Status,
         bestBlockNumber: Long?,
         currentBlockNumber: Long,
         blocksPerSecond: Double?,
     ): Double? {
-        if (indexer.getStatus() == Status.FULLY_SYNCED) return 0.0
+        if (status == Status.FULLY_SYNCED) return 0.0
 
         val syncGap = bestBlockNumber?.minus(currentBlockNumber) ?: return null
         if (blocksPerSecond == null || blocksPerSecond <= 0) return null
