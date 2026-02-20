@@ -91,6 +91,7 @@ jobs:
         with:
           distribution: 'oracle'
           java-version: '21'
+          cache: 'gradle'
 
       - name: Unit Test
         if: needs.detect-code-changes.outputs.run-tests == 'true'
@@ -162,6 +163,7 @@ jobs:
         with:
           distribution: 'oracle'
           java-version: '21'
+          cache: 'gradle'
 
       - name: E2E Test
         if: needs.detect-code-changes.outputs.run-tests == 'true'
