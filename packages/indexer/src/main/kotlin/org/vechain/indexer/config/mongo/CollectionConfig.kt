@@ -15,14 +15,6 @@ abstract class CollectionConfig(
     val modelObj: Class<*>,
     val hasArchives: Boolean = false,
 ) {
-    companion object {
-        /**
-         * Default partial filter for IndexedDocument collections. Excludes checkpoint documents.
-         */
-        val INDEXED_DOCUMENT_PARTIAL_FILTER: Document =
-            Document("blockNumber", Document("\$exists", true))
-    }
-
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     abstract fun initCollection()
@@ -63,7 +55,6 @@ abstract class CollectionConfig(
         try {
             logger.info("⏱ Creating Index:    $indexName for ${entityClass.simpleName}️")
             val indexDef = index.named(indexName).background()
-            // Only apply the default partial filter if the index doesn't already have one set
             if (partialFilter != null && !indexHasPartialFilter(indexDef)) {
                 indexDef.partial(PartialIndexFilter.of(partialFilter))
             }
@@ -82,7 +73,7 @@ abstract class CollectionConfig(
     fun ensureIndexes(
         indexes: Collection<Pair<String, Index>>,
         entityClass: Class<*> = modelObj,
-        partialFilter: Document? = INDEXED_DOCUMENT_PARTIAL_FILTER,
+        partialFilter: Document? = null,
     ) {
         coroutineScope.launch {
             for ((indexName, index) in indexes) {
@@ -105,7 +96,6 @@ abstract class CollectionConfig(
                         .on("version", Sort.Direction.DESC),
             ),
             modelObj,
-            partialFilter = null,
         )
     }
 }
