@@ -34,6 +34,8 @@ build-k6: #@ Build the K6 docker image.
 
 test: #@ Run all the tests (excluding e2e).
 	./gradlew cleanTest test -x :packages:e2e:test
+test-ci: #@ Run all tests for CI (with caching, excludes e2e).
+	./gradlew test -x :packages:e2e:test
 test-e2e: #@ Run all the end-to-end tests.
 	./gradlew clean :package:e2e:test --stacktrace
 test-api: #@ Run all the API tests.
