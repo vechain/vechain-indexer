@@ -450,7 +450,7 @@
         "x": 6,
         "y": 0,
         "width": 6,
-        "height": 5
+        "height": 3
       }
     },
     {
@@ -497,8 +497,75 @@
       "layout": {
         "x": 0,
         "y": 1,
-        "width": 6,
-        "height": 4
+        "width": 3,
+        "height": 5
+      }
+    },
+    {
+      "id": 14,
+      "definition": {
+        "title": "Sync Gap per Indexer",
+        "title_size": "16",
+        "title_align": "left",
+        "type": "toplist",
+        "requests": [
+          {
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "max:indexer_sync_gap_gauge{indexer-id:$indexer-id.value} by {indexer_name}",
+                "aggregator": "last"
+              }
+            ],
+            "response_format": "scalar",
+            "conditional_formats": [
+              {
+                "comparator": "<",
+                "value": 10,
+                "palette": "white_on_green"
+              },
+              {
+                "comparator": ">=",
+                "value": 10000,
+                "palette": "white_on_red"
+              },
+              {
+                "comparator": ">=",
+                "value": 10,
+                "palette": "white_on_yellow"
+              }
+            ],
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "sort": {
+              "count": 50,
+              "order_by": [
+                {
+                  "type": "formula",
+                  "index": 0,
+                  "order": "desc"
+                }
+              ]
+            }
+          }
+        ],
+        "style": {
+          "display": {
+            "type": "stacked",
+            "legend": "automatic"
+          },
+          "scaling": "absolute"
+        }
+      },
+      "layout": {
+        "x": 3,
+        "y": 1,
+        "width": 3,
+        "height": 5
       }
     },
     {
@@ -568,77 +635,57 @@
         }
       },
       "layout": {
-        "x": 0,
-        "y": 5,
+        "x": 6,
+        "y": 3,
         "width": 6,
-        "height": 4
+        "height": 3
       }
     },
     {
-      "id": 14,
+      "id": 15,
       "definition": {
-        "title": "Sync Gap per Indexer",
+        "title": "Blocks Per Second",
         "title_size": "16",
         "title_align": "left",
-        "type": "toplist",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
+        "type": "timeseries",
         "requests": [
           {
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "max:indexer_sync_gap_gauge{indexer-id:$indexer-id.value} by {indexer_name}",
-                "aggregator": "last"
-              }
-            ],
-            "response_format": "scalar",
-            "conditional_formats": [
-              {
-                "comparator": "<",
-                "value": 10,
-                "palette": "white_on_green"
-              },
-              {
-                "comparator": ">=",
-                "value": 10000,
-                "palette": "white_on_red"
-              },
-              {
-                "comparator": ">=",
-                "value": 10,
-                "palette": "white_on_yellow"
-              }
-            ],
             "formulas": [
               {
                 "formula": "query1"
               }
             ],
-            "sort": {
-              "count": 50,
-              "order_by": [
-                {
-                  "type": "formula",
-                  "index": 0,
-                  "order": "desc"
-                }
-              ]
-            }
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "sum:indexer_blocks_processed_total{indexer-id:$indexer-id.value} by {indexer_name}.as_rate()"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": {
+              "order_by": "values",
+              "line_type": "solid",
+              "line_width": "normal"
+            },
+            "display_type": "line"
           }
-        ],
-        "style": {
-          "display": {
-            "type": "stacked",
-            "legend": "automatic"
-          },
-          "scaling": "absolute"
-        }
+        ]
       },
       "layout": {
-        "x": 6,
-        "y": 5,
-        "width": 6,
-        "height": 4
+        "x": 0,
+        "y": 6,
+        "width": 12,
+        "height": 3
       }
     },
     {
@@ -736,53 +783,6 @@
       }
     },
     {
-      "id": 15,
-      "definition": {
-        "title": "Blocks Per Second",
-        "title_size": "16",
-        "title_align": "left",
-        "show_legend": true,
-        "legend_layout": "auto",
-        "legend_columns": [
-          "avg",
-          "min",
-          "max",
-          "value",
-          "sum"
-        ],
-        "type": "timeseries",
-        "requests": [
-          {
-            "formulas": [
-              {
-                "formula": "query1"
-              }
-            ],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "sum:indexer_blocks_processed_total{indexer-id:$indexer-id.value} by {indexer_name}.as_rate()"
-              }
-            ],
-            "response_format": "timeseries",
-            "style": {
-              "order_by": "values",
-              "line_type": "solid",
-              "line_width": "normal"
-            },
-            "display_type": "line"
-          }
-        ]
-      },
-      "layout": {
-        "x": 0,
-        "y": 13,
-        "width": 6,
-        "height": 4
-      }
-    },
-    {
       "id": 11,
       "definition": {
         "title": "Avg Processing Time Per Block by Indexer (ms)",
@@ -826,7 +826,7 @@
         }
       },
       "layout": {
-        "x": 6,
+        "x": 0,
         "y": 13,
         "width": 6,
         "height": 4
@@ -876,8 +876,8 @@
         }
       },
       "layout": {
-        "x": 0,
-        "y": 17,
+        "x": 6,
+        "y": 13,
         "width": 6,
         "height": 2
       }
@@ -924,7 +924,7 @@
       },
       "layout": {
         "x": 6,
-        "y": 17,
+        "y": 15,
         "width": 6,
         "height": 4
       }
