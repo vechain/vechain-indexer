@@ -276,7 +276,7 @@ class IndexerMetricsReporterTest {
     }
 
     @Test
-    fun `setBlocksPerSecond is not called on first tick`() {
+    fun `setBlocksPerSecond is zero on first tick`() {
         val indexer = createBlockIndexer("test-indexer", 100L)
         stubBestBlock(1000L)
 
@@ -284,11 +284,11 @@ class IndexerMetricsReporterTest {
             IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
         reporter.reportMetrics()
 
-        verify(exactly = 0) { metrics.setBlocksPerSecond(any(), any()) }
+        verify { metrics.setBlocksPerSecond("test-indexer", 0.0) }
     }
 
     @Test
-    fun `setBlocksPerSecond is not called when block does not advance`() {
+    fun `setBlocksPerSecond is zero when block does not advance`() {
         val indexer = createBlockIndexer("test-indexer", 100L)
         stubBestBlock(1000L)
 
@@ -297,7 +297,41 @@ class IndexerMetricsReporterTest {
         reporter.reportMetrics()
         reporter.reportMetrics()
 
-        verify(exactly = 0) { metrics.setBlocksPerSecond(any(), any()) }
+        verify(exactly = 2) { metrics.setBlocksPerSecond("test-indexer", 0.0) }
+    }
+
+    @Test
+    fun `INITIALISED indexer reports zero blocks per second even when block number changes`() {
+        val indexer = createBlockIndexer("test-indexer", 0L)
+        every { indexer.getStatus() } returns Status.INITIALISED
+        stubBestBlock(1000L)
+
+        val reporter =
+            IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
+        reporter.reportMetrics()
+
+        every { indexer.getCurrentBlockNumber() } returns 400_000L
+        reporter.reportMetrics()
+
+        verify(exactly = 0) { metrics.incrementBlocksProcessed(any(), any()) }
+        verify(exactly = 2) { metrics.setBlocksPerSecond("test-indexer", 0.0) }
+    }
+
+    @Test
+    fun `FULLY_SYNCED indexer reports blocks per second when block advances`() {
+        val indexer = createBlockIndexer("test-indexer", 1000L)
+        every { indexer.getStatus() } returns Status.FULLY_SYNCED
+        stubBestBlock(1010L)
+
+        val reporter =
+            IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
+        reporter.reportMetrics()
+
+        every { indexer.getCurrentBlockNumber() } returns 1005L
+        reporter.reportMetrics()
+
+        verify { metrics.incrementBlocksProcessed("test-indexer", 5.0) }
+        verify { metrics.setBlocksPerSecond("test-indexer", match { it > 0.0 }) }
     }
 
     @Test
