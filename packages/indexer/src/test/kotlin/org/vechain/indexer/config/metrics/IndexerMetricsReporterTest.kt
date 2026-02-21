@@ -100,34 +100,20 @@ class IndexerMetricsReporterTest {
     }
 
     @Test
-    fun `INITIALISED indexer gets max ETA from syncing indexers`() {
-        val syncingA = createBlockIndexer("syncing-a", 100L)
-        val syncingB = createBlockIndexer("syncing-b", 500L)
+    fun `INITIALISED BlockIndexer gets ETA of zero`() {
         val initialised = createBlockIndexer("initialised-indexer", 0L)
         every { initialised.getStatus() } returns Status.INITIALISED
         stubBestBlock(1000L)
 
         val reporter =
-            IndexerMetricsReporter(
-                listOf(syncingA, syncingB, initialised),
-                metrics,
-                thorClient,
-                indexerHealthService,
-            )
+            IndexerMetricsReporter(listOf(initialised), metrics, thorClient, indexerHealthService)
         reporter.reportMetrics()
 
-        // Advance syncing indexers
-        every { syncingA.getCurrentBlockNumber() } returns 200L
-        every { syncingB.getCurrentBlockNumber() } returns 600L
-        reporter.reportMetrics()
-
-        // INITIALISED indexer should get the max ETA from syncing indexers
-        verify { metrics.setEstimatedTimeToSync("initialised-indexer", match { it > 0.0 }) }
+        verify { metrics.setEstimatedTimeToSync("initialised-indexer", 0.0) }
     }
 
     @Test
-    fun `INITIALISED non-BlockIndexer gets max ETA from syncing indexers`() {
-        val syncing = createBlockIndexer("syncing-indexer", 100L)
+    fun `INITIALISED non-BlockIndexer gets ETA of zero`() {
         val initialised = mockk<Indexer>()
         every { initialised.name } returns "initialised-plain"
         every { initialised.getStatus() } returns Status.INITIALISED
@@ -136,88 +122,10 @@ class IndexerMetricsReporterTest {
         stubBestBlock(1000L)
 
         val reporter =
-            IndexerMetricsReporter(
-                listOf(syncing, initialised),
-                metrics,
-                thorClient,
-                indexerHealthService,
-            )
+            IndexerMetricsReporter(listOf(initialised), metrics, thorClient, indexerHealthService)
         reporter.reportMetrics()
 
-        every { syncing.getCurrentBlockNumber() } returns 200L
-        reporter.reportMetrics()
-
-        verify { metrics.setEstimatedTimeToSync("initialised-plain", match { it > 0.0 }) }
-    }
-
-    @Test
-    fun `INITIALISED indexer gets no ETA when no syncing indexers exist`() {
-        val initialisedA = createBlockIndexer("init-a", 0L)
-        every { initialisedA.getStatus() } returns Status.INITIALISED
-        val initialisedB = createBlockIndexer("init-b", 0L)
-        every { initialisedB.getStatus() } returns Status.INITIALISED
-        stubBestBlock(1000L)
-
-        val reporter =
-            IndexerMetricsReporter(
-                listOf(initialisedA, initialisedB),
-                metrics,
-                thorClient,
-                indexerHealthService,
-            )
-        reporter.reportMetrics()
-        reporter.reportMetrics()
-
-        verify(exactly = 0) { metrics.setEstimatedTimeToSync("init-a", any()) }
-        verify(exactly = 0) { metrics.setEstimatedTimeToSync("init-b", any()) }
-    }
-
-    @Test
-    fun `INITIALISED indexer gets no ETA when all others are FULLY_SYNCED`() {
-        val fullySynced = createBlockIndexer("synced-indexer", 1000L)
-        every { fullySynced.getStatus() } returns Status.FULLY_SYNCED
-        val initialised = createBlockIndexer("initialised-indexer", 0L)
-        every { initialised.getStatus() } returns Status.INITIALISED
-        stubBestBlock(1000L)
-
-        val reporter =
-            IndexerMetricsReporter(
-                listOf(fullySynced, initialised),
-                metrics,
-                thorClient,
-                indexerHealthService,
-            )
-        reporter.reportMetrics()
-        reporter.reportMetrics()
-
-        // Only SYNCING ETAs are used for INITIALISED; FULLY_SYNCED is excluded
-        verify { metrics.setEstimatedTimeToSync("synced-indexer", 0.0) }
-        verify(exactly = 0) { metrics.setEstimatedTimeToSync("initialised-indexer", any()) }
-    }
-
-    @Test
-    fun `INITIALISED indexer gets no ETA when others are only FAST_SYNCING`() {
-        val fastSyncing = createBlockIndexer("fast-syncing-indexer", 100L)
-        every { fastSyncing.getStatus() } returns Status.FAST_SYNCING
-        val initialised = createBlockIndexer("initialised-indexer", 0L)
-        every { initialised.getStatus() } returns Status.INITIALISED
-        stubBestBlock(1000L)
-
-        val reporter =
-            IndexerMetricsReporter(
-                listOf(fastSyncing, initialised),
-                metrics,
-                thorClient,
-                indexerHealthService,
-            )
-        reporter.reportMetrics()
-
-        every { fastSyncing.getCurrentBlockNumber() } returns 200L
-        reporter.reportMetrics()
-
-        // FAST_SYNCING ETAs are not used for INITIALISED estimates
-        verify { metrics.setEstimatedTimeToSync("fast-syncing-indexer", match { it > 0.0 }) }
-        verify(exactly = 0) { metrics.setEstimatedTimeToSync("initialised-indexer", any()) }
+        verify { metrics.setEstimatedTimeToSync("initialised-plain", 0.0) }
     }
 
     @Test
@@ -331,6 +239,49 @@ class IndexerMetricsReporterTest {
         reporter.reportMetrics()
 
         verify { metrics.incrementBlocksProcessed("test-indexer", 5.0) }
+        verify { metrics.setBlocksPerSecond("test-indexer", match { it > 0.0 }) }
+    }
+
+    @Test
+    fun `transition from INITIALISED to SYNCING does not spike blocks per second`() {
+        val indexer = createBlockIndexer("test-indexer", 0L)
+        every { indexer.getStatus() } returns Status.INITIALISED
+        stubBestBlock(1_000_000L)
+
+        val reporter =
+            IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
+        reporter.reportMetrics()
+
+        // Indexer transitions to SYNCING and has caught up significantly
+        every { indexer.getStatus() } returns Status.SYNCING
+        every { indexer.getCurrentBlockNumber() } returns 500_000L
+        reporter.reportMetrics()
+
+        // Should not spike: first processing tick has no previous processing-state data
+        verify(exactly = 0) { metrics.incrementBlocksProcessed(any(), any()) }
+        verify(exactly = 2) { metrics.setBlocksPerSecond("test-indexer", 0.0) }
+    }
+
+    @Test
+    fun `transition from INITIALISED to SYNCING reports BPS on second syncing tick`() {
+        val indexer = createBlockIndexer("test-indexer", 0L)
+        every { indexer.getStatus() } returns Status.INITIALISED
+        stubBestBlock(1_000_000L)
+
+        val reporter =
+            IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
+        reporter.reportMetrics()
+
+        // Indexer transitions to SYNCING
+        every { indexer.getStatus() } returns Status.SYNCING
+        every { indexer.getCurrentBlockNumber() } returns 500_000L
+        reporter.reportMetrics()
+
+        // Block advances while still SYNCING — now BPS should be reported
+        every { indexer.getCurrentBlockNumber() } returns 600_000L
+        reporter.reportMetrics()
+
+        verify { metrics.incrementBlocksProcessed("test-indexer", 100_000.0) }
         verify { metrics.setBlocksPerSecond("test-indexer", match { it > 0.0 }) }
     }
 

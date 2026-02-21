@@ -36,25 +36,17 @@ class IndexerMetricsReporter(
     fun reportMetrics() {
         val bestBlockNumber = fetchBestBlockNumber()
 
-        val syncingEtas = mutableMapOf<String, Double>()
-        val initialisedIndexerNames = mutableListOf<String>()
-
         indexers.forEach { indexer ->
             reportIndexerHealth(indexer)
 
             if (indexer.getStatus() == Status.INITIALISED) {
-                initialisedIndexerNames.add(indexer.name)
+                metrics.setEstimatedTimeToSync(indexer.name, 0.0)
             }
 
             if (indexer is BlockIndexer) {
-                val eta = reportBlockIndexerMetrics(indexer, bestBlockNumber)
-                if (eta != null && indexer.getStatus() == Status.SYNCING) {
-                    syncingEtas[indexer.name] = eta
-                }
+                reportBlockIndexerMetrics(indexer, bestBlockNumber)
             }
         }
-
-        estimateInitialisedEtas(initialisedIndexerNames, syncingEtas)
     }
 
     private fun fetchBestBlockNumber(): Long? {
@@ -91,7 +83,7 @@ class IndexerMetricsReporter(
         metrics.setIndexerSyncStatus(indexer.name, indexer.getStatus())
     }
 
-    private fun reportBlockIndexerMetrics(indexer: BlockIndexer, bestBlockNumber: Long?): Double? {
+    private fun reportBlockIndexerMetrics(indexer: BlockIndexer, bestBlockNumber: Long?) {
         val currentBlockNumber = indexer.getCurrentBlockNumber()
         val status = indexer.getStatus()
         metrics.setIndexerCurrentBlockByStatus(indexer.name, currentBlockNumber, status)
@@ -105,29 +97,32 @@ class IndexerMetricsReporter(
                 status == Status.FAST_SYNCING ||
                 status == Status.FULLY_SYNCED
 
-        val previousBlock = previousBlockNumbers.put(indexer.name, currentBlockNumber)
-        if (isProcessing && previousBlock != null && currentBlockNumber > previousBlock) {
-            metrics.incrementBlocksProcessed(
-                indexer.name,
-                (currentBlockNumber - previousBlock).toDouble(),
-            )
+        val now = System.nanoTime()
+        var blocksPerSecond: Double? = null
+
+        if (isProcessing) {
+            val previousBlock = previousBlockNumbers[indexer.name]
+            if (previousBlock != null && currentBlockNumber > previousBlock) {
+                metrics.incrementBlocksProcessed(
+                    indexer.name,
+                    (currentBlockNumber - previousBlock).toDouble(),
+                )
+            }
+            blocksPerSecond =
+                computeBlocksPerSecond(indexer.name, currentBlockNumber, previousBlock, now)
+            previousBlockNumbers[indexer.name] = currentBlockNumber
+            previousReportTimes[indexer.name] = now
+        } else {
+            previousBlockNumbers.remove(indexer.name)
+            previousReportTimes.remove(indexer.name)
         }
 
-        val now = System.nanoTime()
-        val blocksPerSecond =
-            if (isProcessing) {
-                computeBlocksPerSecond(indexer.name, currentBlockNumber, previousBlock, now)
-            } else {
-                null
-            }
         metrics.setBlocksPerSecond(indexer.name, blocksPerSecond ?: 0.0)
 
         val eta = computeEta(status, bestBlockNumber, currentBlockNumber, blocksPerSecond)
         if (eta != null) {
             metrics.setEstimatedTimeToSync(indexer.name, eta)
         }
-        previousReportTimes[indexer.name] = now
-        return eta
     }
 
     private fun computeBlocksPerSecond(
@@ -157,14 +152,5 @@ class IndexerMetricsReporter(
         if (blocksPerSecond == null || blocksPerSecond <= 0) return null
 
         return syncGap / blocksPerSecond
-    }
-
-    private fun estimateInitialisedEtas(
-        initialisedIndexerNames: List<String>,
-        syncingEtas: Map<String, Double>,
-    ) {
-        if (initialisedIndexerNames.isEmpty() || syncingEtas.isEmpty()) return
-        val maxEta = syncingEtas.values.filter { it > 0.0 }.maxOrNull() ?: return
-        initialisedIndexerNames.forEach { metrics.setEstimatedTimeToSync(it, maxEta) }
     }
 }
