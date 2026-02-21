@@ -1,9 +1,6 @@
 name: Build & Publish Docker Image
 
 on:
-  push:
-    tags:
-      - v.*
   workflow_dispatch:
     inputs:
       workingDirectory:

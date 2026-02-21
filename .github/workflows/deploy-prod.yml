@@ -25,6 +25,7 @@ on:
 permissions:
   id-token: write # This is required for requesting the JWT
   contents: read # This is required for actions/checkout
+  packages: read # This is required for pulling images from GHCR
 
 jobs:
   identify-live-color:
@@ -105,6 +106,92 @@ jobs:
             fi
           fi
 
+  promote-to-ecr:
+    name: Promote GHCR Image to ECR - ${{ matrix.packageName }}
+    needs: [define-env-vars]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        packageName: ["api", "indexer"]
+    env:
+      GHCR_REGISTRY: ghcr.io
+      GHCR_REPO: ${{ github.repository }}
+      ECR_PROJECT: veworld
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.GHCR_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install crane
+        uses: imjasonh/setup-crane@v0.4
+
+      - name: Derive image tags
+        id: tags
+        env:
+          MAINNET_VERSION: ${{ needs.define-env-vars.outputs.MAINNET_VERSION }}
+          TESTNET_VERSION: ${{ needs.define-env-vars.outputs.TESTNET_VERSION }}
+        run: |
+          # GHCR tags have the v. prefix stripped (v.1.0.0 -> 1.0.0)
+          echo "MAINNET_GHCR_TAG=$(echo "$MAINNET_VERSION" | sed 's/^v\.//')" >> "$GITHUB_OUTPUT"
+          echo "TESTNET_GHCR_TAG=$(echo "$TESTNET_VERSION" | sed 's/^v\.//')" >> "$GITHUB_OUTPUT"
+          # ECR tags keep the original format (v.1.0.0)
+          echo "MAINNET_ECR_TAG=$MAINNET_VERSION" >> "$GITHUB_OUTPUT"
+          echo "TESTNET_ECR_TAG=$TESTNET_VERSION" >> "$GITHUB_OUTPUT"
+          # Check if versions differ
+          if [ "$MAINNET_VERSION" = "$TESTNET_VERSION" ]; then
+            echo "VERSIONS_DIFFER=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "VERSIONS_DIFFER=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Copy mainnet image from GHCR to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          crane copy \
+            "${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPO }}/${{ matrix.packageName }}:${{ steps.tags.outputs.MAINNET_GHCR_TAG }}" \
+            "${{ env.ECR_REGISTRY }}/${{ env.ECR_PROJECT }}/${{ matrix.packageName }}:${{ steps.tags.outputs.MAINNET_ECR_TAG }}"
+          crane tag \
+            "${{ env.ECR_REGISTRY }}/${{ env.ECR_PROJECT }}/${{ matrix.packageName }}:${{ steps.tags.outputs.MAINNET_ECR_TAG }}" \
+            latest
+
+      - name: Copy testnet image from GHCR to ECR
+        if: steps.tags.outputs.VERSIONS_DIFFER == 'true'
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          crane copy \
+            "${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPO }}/${{ matrix.packageName }}:${{ steps.tags.outputs.TESTNET_GHCR_TAG }}" \
+            "${{ env.ECR_REGISTRY }}/${{ env.ECR_PROJECT }}/${{ matrix.packageName }}:${{ steps.tags.outputs.TESTNET_ECR_TAG }}"
+
+      - name: Scan mainnet image in ECR
+        uses: alexjurkiewicz/ecr-scan-image@v1.7.1
+        with:
+          repository: ${{ env.ECR_PROJECT }}/${{ matrix.packageName }}
+          tag: ${{ steps.tags.outputs.MAINNET_ECR_TAG }}
+          fail_threshold: medium
+
+      - name: Scan testnet image in ECR
+        if: steps.tags.outputs.VERSIONS_DIFFER == 'true'
+        uses: alexjurkiewicz/ecr-scan-image@v1.7.1
+        with:
+          repository: ${{ env.ECR_PROJECT }}/${{ matrix.packageName }}
+          tag: ${{ steps.tags.outputs.TESTNET_ECR_TAG }}
+          fail_threshold: medium
+
   check-existing-release:
     name: Check Existing Releases
     runs-on: ubuntu-latest
@@ -125,7 +212,7 @@ jobs:
           echo "NEW_RELEASE=${NEW_RELEASE}" >> $GITHUB_OUTPUT
 
   deploy-env:
-    needs: [define-env-vars]
+    needs: [define-env-vars, promote-to-ecr]
     name: Run Deployment - ${{ inputs.network}}
     uses: ./.github/workflows/plan-or-apply-terraform.yml
     with:
