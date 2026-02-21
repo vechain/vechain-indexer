@@ -45,7 +45,7 @@ class IndexerHealthReporter(private val indexerHealthIndicator: IndexerHealthInd
                         indexerHealth.currentBlock,
                     )
                 HealthStatus.UP ->
-                    logger.info(
+                    logger.debug(
                         "Indexer {} is healthy (syncStatus={}, currentBlock={})",
                         indexerHealth.indexerName,
                         indexerHealth.syncStatus,
