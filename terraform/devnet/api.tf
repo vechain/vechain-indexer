@@ -753,6 +753,10 @@ module "ecs-backend-service" {
     {
       name  = "HEALTHCHECK_INACTIVE_THRESHOLD_NOT_SYNCING"
       value = each.value.indexer.healthcheck.inactive-threshold-not-syncing
+    },
+    {
+      name  = "HEALTHCHECK_REPORT_INTERVAL_MS"
+      value = each.value.indexer.healthcheck.report-interval-ms
     }
   ]
 }

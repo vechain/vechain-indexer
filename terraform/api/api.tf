@@ -895,6 +895,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.healthcheck.inactive-threshold-not-syncing
     },
     {
+      name  = "HEALTHCHECK_REPORT_INTERVAL_MS"
+      value = each.value.indexer.healthcheck.report-interval-ms
+    },
+    {
       name  = "METRICS_ID"
       value = "${local.env.environment}-${each.key}"
     },
