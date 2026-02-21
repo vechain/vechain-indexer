@@ -147,14 +147,15 @@ jobs:
           # ECR tags keep the original format (v.1.0.0)
           echo "MAINNET_ECR_TAG=$MAINNET_VERSION" >> "$GITHUB_OUTPUT"
           echo "TESTNET_ECR_TAG=$TESTNET_VERSION" >> "$GITHUB_OUTPUT"
-          # Check if versions differ
-          if [ "$MAINNET_VERSION" = "$TESTNET_VERSION" ]; then
-            echo "VERSIONS_DIFFER=false" >> "$GITHUB_OUTPUT"
+          # When deploying both, check if versions differ to avoid redundant copy
+          if [ "${{ inputs.network }}" = "both" ] && [ "$MAINNET_VERSION" = "$TESTNET_VERSION" ]; then
+            echo "SKIP_TESTNET=true" >> "$GITHUB_OUTPUT"
           else
-            echo "VERSIONS_DIFFER=true" >> "$GITHUB_OUTPUT"
+            echo "SKIP_TESTNET=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Copy mainnet image from GHCR to ECR
+        if: inputs.network == 'mainnet' || inputs.network == 'both'
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           GHCR_IMAGE: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPO }}/${{ matrix.packageName }}:${{ steps.tags.outputs.MAINNET_GHCR_TAG }}
@@ -167,7 +168,7 @@ jobs:
           docker push "$ECR_IMAGE:latest"
 
       - name: Copy testnet image from GHCR to ECR
-        if: steps.tags.outputs.VERSIONS_DIFFER == 'true'
+        if: (inputs.network == 'testnet' || inputs.network == 'both') && steps.tags.outputs.SKIP_TESTNET != 'true'
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           GHCR_IMAGE: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPO }}/${{ matrix.packageName }}:${{ steps.tags.outputs.TESTNET_GHCR_TAG }}
@@ -178,6 +179,7 @@ jobs:
           docker push "$ECR_IMAGE:${{ steps.tags.outputs.TESTNET_ECR_TAG }}"
 
       - name: Scan mainnet image in ECR
+        if: inputs.network == 'mainnet' || inputs.network == 'both'
         uses: alexjurkiewicz/ecr-scan-image@v1.7.1
         with:
           repository: ${{ env.ECR_PROJECT }}/${{ matrix.packageName }}
@@ -185,7 +187,7 @@ jobs:
           fail_threshold: medium
 
       - name: Scan testnet image in ECR
-        if: steps.tags.outputs.VERSIONS_DIFFER == 'true'
+        if: (inputs.network == 'testnet' || inputs.network == 'both') && steps.tags.outputs.SKIP_TESTNET != 'true'
         uses: alexjurkiewicz/ecr-scan-image@v1.7.1
         with:
           repository: ${{ env.ECR_PROJECT }}/${{ matrix.packageName }}
