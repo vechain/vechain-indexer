@@ -25,6 +25,7 @@ open class VetDelegatedByBlockProcessor(
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {
+            service.invalidateCache()
             return
         }
 

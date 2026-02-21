@@ -27,6 +27,7 @@ open class VthoGeneratedByBlockProcessor(
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {
+            service.invalidateCache()
             throw IllegalArgumentException("Block cannot be null")
         }
 
