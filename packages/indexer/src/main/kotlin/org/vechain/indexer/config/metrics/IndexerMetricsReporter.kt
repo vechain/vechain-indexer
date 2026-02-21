@@ -3,6 +3,7 @@ package org.vechain.indexer.config.metrics
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BlockIndexer
@@ -14,6 +15,12 @@ import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockRevision
 
 @Component
+@ConditionalOnProperty(
+    prefix = "management.prometheus.metrics.export",
+    name = ["enabled"],
+    havingValue = "true",
+    matchIfMissing = true,
+)
 class IndexerMetricsReporter(
     private val indexers: List<Indexer>,
     private val metrics: IndexerHealthMetrics,
