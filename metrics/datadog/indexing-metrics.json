@@ -97,7 +97,7 @@
             "response_format": "scalar"
           }
         ],
-        "autoscale": false,
+        "autoscale": true,
         "precision": 4
       },
       "layout": {
@@ -507,6 +507,7 @@
         "title": "Sync Gap per Indexer",
         "title_size": "16",
         "title_align": "left",
+        "time": {},
         "type": "toplist",
         "requests": [
           {
@@ -522,17 +523,17 @@
             "conditional_formats": [
               {
                 "comparator": "<",
-                "value": 10,
+                "value": 10000,
                 "palette": "white_on_green"
               },
               {
                 "comparator": ">=",
-                "value": 10000,
+                "value": 1000000,
                 "palette": "white_on_red"
               },
               {
                 "comparator": ">=",
-                "value": 10,
+                "value": 10000,
                 "palette": "white_on_yellow"
               }
             ],
@@ -788,6 +789,7 @@
         "title": "Avg Processing Time Per Block by Indexer (ms)",
         "title_size": "16",
         "title_align": "left",
+        "time": {},
         "type": "toplist",
         "requests": [
           {
@@ -800,6 +802,18 @@
               }
             ],
             "response_format": "scalar",
+            "conditional_formats": [
+              {
+                "comparator": ">",
+                "value": 500,
+                "palette": "white_on_red"
+              },
+              {
+                "comparator": ">",
+                "value": 200,
+                "palette": "white_on_yellow"
+              }
+            ],
             "formulas": [
               {
                 "formula": "query1"
