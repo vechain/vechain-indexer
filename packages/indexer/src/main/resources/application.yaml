@@ -200,7 +200,7 @@ indexer:
   healthcheck:
     inactive-threshold-syncing: ${HEALTHCHECK_INACTIVE_THRESHOLD_SYNCING:120}
     inactive-threshold-not-syncing: ${HEALTHCHECK_INACTIVE_THRESHOLD_NOT_SYNCING:600}
-    report-interval-ms: ${HEALTHCHECK_REPORT_INTERVAL_MS:60000}
+    report-interval-ms: ${HEALTHCHECK_REPORT_INTERVAL_MS:10000}
   vevote:
     test-proposals:
       "0xa6416a72f816d3a69f33d0814700545c8e3fe4be": [ 33, 32, 30, 29, 28, 27, 26, 24, 23, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 8, 7, 5, 2 ]

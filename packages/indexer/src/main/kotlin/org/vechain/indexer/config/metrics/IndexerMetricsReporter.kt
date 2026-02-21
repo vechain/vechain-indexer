@@ -25,7 +25,7 @@ class IndexerMetricsReporter(
     private val previousBlockNumbers = ConcurrentHashMap<String, Long>()
     private val previousReportTimes = ConcurrentHashMap<String, Long>()
 
-    @Scheduled(fixedDelayString = "\${indexer.healthcheck.report-interval-ms:60000}")
+    @Scheduled(fixedDelayString = "\${indexer.healthcheck.report-interval-ms:10000}")
     fun reportMetrics() {
         val bestBlockNumber = fetchBestBlockNumber()
 
