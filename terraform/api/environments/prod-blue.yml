@@ -189,6 +189,7 @@ enabled_nets:
       healthcheck:
         inactive-threshold-syncing: '120'
         inactive-threshold-not-syncing: '600'
+        report-interval-ms: '10000'
       version:
         contracts: '2'
         vet-balance: '1'
@@ -395,6 +396,7 @@ enabled_nets:
       healthcheck:
         inactive-threshold-syncing: '120'
         inactive-threshold-not-syncing: '600'
+        report-interval-ms: '10000'
       version:
         contracts: '2'
         vet-balance: '1'
