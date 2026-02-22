@@ -9,6 +9,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
@@ -27,6 +28,7 @@ class TokenRewardServiceTest {
         mockk<ArchiveService<TokenReward, TokenRewardArchive>>(relaxed = true)
     private val delegationRepository = mockk<DelegationRepository>(relaxed = true)
     private val thorClient = mockk<ThorClient>(relaxed = true)
+    private val pruner = mockk<TargetedPruner<TokenReward, TokenRewardArchive>>(relaxed = true)
 
     private lateinit var service: TokenRewardService
 
@@ -36,7 +38,15 @@ class TokenRewardServiceTest {
     fun setup() {
         clearAllMocks()
         service =
-            spyk(TokenRewardService(repository, archiveService, delegationRepository, thorClient))
+            spyk(
+                TokenRewardService(
+                    repository,
+                    archiveService,
+                    delegationRepository,
+                    thorClient,
+                    pruner,
+                )
+            )
     }
 
     private fun block(num: Long, signer: String = "0xVALIDATOR") =
