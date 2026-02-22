@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
+import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
@@ -37,6 +39,7 @@ open class TokenRewardService(
     private val archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
     private val delegationRepository: DelegationRepository,
     private val thorClient: ThorClient,
+    private val pruner: TargetedPruner<TokenReward, TokenRewardArchive>,
 ) {
     /**
      * @notice Cache of Stargate contract ABI functions.
@@ -51,6 +54,14 @@ open class TokenRewardService(
      *   delegation status, and effective stake totals. Keyed by validator address or ID.
      */
     val validatorCycleCache: MutableMap<String, CycleCache> = ConcurrentHashMap()
+
+    /**
+     * @notice In-memory cache of ALL-period reward trackers per validator.
+     * @dev Avoids re-reading the same reward documents from MongoDB every block. Keyed by validator
+     *   address, populated after each block's updateRewardInfo and invalidated on rollback or
+     *   restart (starts empty, falls through to DB on first miss).
+     */
+    private val rewardTrackerCache: MutableMap<String, List<TokenReward>> = ConcurrentHashMap()
 
     /**
      * @notice Cached VTHO total supply from the previous block.
@@ -107,24 +118,35 @@ open class TokenRewardService(
             getDelegatorsBlockReward(block, decodedInfo) ?: return Pair(emptyList(), emptyList())
 
         // Update reward info for each delegation and handle period rollovers
-        return updateRewardInfo(
-            currentTokenRewards = latestRewards,
-            totalBlockReward = delegatorBlockReward,
-            validator = block.signer,
-            blockNumber = block.number,
-            blockTimestamp = block.timestamp,
-            blockId = block.id,
-        )
+        val result =
+            updateRewardInfo(
+                currentTokenRewards = latestRewards,
+                totalBlockReward = delegatorBlockReward,
+                validator = block.signer,
+                blockNumber = block.number,
+                blockTimestamp = block.timestamp,
+                blockId = block.id,
+            )
+
+        // Cache updated ALL-period trackers so the next block skips the DB read
+        val allPeriodTrackers = result.first.filter { it.rewardPeriod == RewardPeriod.ALL }
+        if (allPeriodTrackers.isNotEmpty()) {
+            rewardTrackerCache[block.signer] = allPeriodTrackers
+        }
+
+        return result
     }
 
     /** @notice Persist a batch of reward records to MongoDB. */
     open fun save(rewards: List<TokenReward>, archive: List<TokenReward>) {
-        if (rewards.isEmpty()) return
-        repository.saveAll(rewards)
+        saveVersionedDocuments(rewards, archive, repository, archiveService, pruner)
+    }
 
-        if (archive.isNotEmpty()) {
-            archiveService.saveAll(archive)
-        }
+    /** @notice Clear all in-memory caches. Called on rollback to ensure consistency. */
+    open fun invalidateCache() {
+        rewardTrackerCache.clear()
+        validatorCycleCache.clear()
+        vthoTotalSupply = BigInteger.ZERO
     }
 
     /**
@@ -195,7 +217,13 @@ open class TokenRewardService(
             return getOrFetchRewardsNewCycle(validatorId, block, getTimeInfo(block.timestamp))
         }
 
-        // Otherwise try to return saved delegations for current cycle
+        // Try in-memory cache first (populated after each block's updateRewardInfo)
+        val cachedRewards = rewardTrackerCache[validatorId]
+        if (!cachedRewards.isNullOrEmpty() && cachedRewards[0].cycle == cached.currentCycle) {
+            return cachedRewards
+        }
+
+        // Cache miss — fall through to DB (happens once after restart)
         val rewards =
             repository.findAllByValidatorAndRewardPeriodAndCycle(
                 validatorId,

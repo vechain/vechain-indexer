@@ -14,6 +14,7 @@ import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.stargate.rewards.TokenRewardProcessor
 import org.vechain.indexer.stargate.rewards.TokenRewardService
 import org.vechain.indexer.stargate.tokenReward.TokenReward
@@ -29,6 +30,7 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var tokenRewardRepository: TokenRewardRepository
     @Autowired lateinit var tokenRewardService: TokenRewardService
     @Autowired lateinit var archiveService: ArchiveService<TokenReward, TokenRewardArchive>
+    @Autowired lateinit var pruner: TargetedPruner<TokenReward, TokenRewardArchive>
     @Autowired lateinit var delegationRepository: DelegationRepository
     @Autowired lateinit var checkpointService: CheckpointService
     @Autowired lateinit var processorMetrics: ProcessorMetrics
@@ -85,6 +87,7 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
                     archiveService = archiveService,
                     delegationRepository = delegationRepository,
                     thorClient = thorClient,
+                    pruner = pruner,
                     profiler = profiler,
                 )
             } else {
