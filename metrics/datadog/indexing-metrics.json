@@ -507,7 +507,6 @@
         "title": "Sync Gap per Indexer",
         "title_size": "16",
         "title_align": "left",
-        "time": {},
         "type": "toplist",
         "requests": [
           {
@@ -810,8 +809,13 @@
               },
               {
                 "comparator": ">",
-                "value": 200,
+                "value": 100,
                 "palette": "white_on_yellow"
+              },
+              {
+                "comparator": "<",
+                "value": 100,
+                "palette": "white_on_green"
               }
             ],
             "formulas": [
