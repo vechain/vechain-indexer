@@ -136,6 +136,7 @@ enabled_nets:
         b3tr:                       '100'
       channel-batch-size: '3'
       pruner:
+        enabled:                    'true'
         interval:                   '3000'
         removal-chunk-size:         '2000'
         record-limit: '50000'

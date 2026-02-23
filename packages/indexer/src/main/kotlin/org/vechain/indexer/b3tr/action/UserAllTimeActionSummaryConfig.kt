@@ -35,11 +35,13 @@ open class UserAllTimeActionSummaryConfig {
         userAllTimeActionSummaryArchiveService:
             ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
+        @Value("\${indexer.pruner.enabled}") prunerEnabled: Boolean,
     ): TargetedPruner<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive> =
         PrunerService(
             klass = UserAllTimeActionSummaryArchive::class,
             archiveService = userAllTimeActionSummaryArchiveService,
             prunerRemovalChunkSize = prunerRemovalChunkSize,
+            enabled = prunerEnabled,
         )
 
     @Bean

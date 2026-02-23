@@ -10,6 +10,7 @@ open class PrunerService<T : VersionedDocument, S : Archive<T>>(
     klass: KClass<S>,
     private val archiveService: ArchiveService<T, S>,
     private val prunerRemovalChunkSize: Int,
+    private val enabled: Boolean = true,
 ) : TargetedPruner<T, S> {
     private val logger = LoggerFactory.getLogger(PrunerService::class.java)
     private val targetObjectName = klass.simpleName ?: "Unknown"
@@ -17,6 +18,10 @@ open class PrunerService<T : VersionedDocument, S : Archive<T>>(
     override fun run(currentBlockNumber: Long) = run(currentBlockNumber, null)
 
     override fun run(currentBlockNumber: Long, idsToPrune: List<String>?) {
+        if (!enabled) {
+            logger.debug("Pruner is disabled, skipping pruning for $targetObjectName")
+            return
+        }
         val prunerEndBlock = currentBlockNumber - 10_000
         if (prunerEndBlock <= 0) {
             logger.debug("Skipping pruner for $targetObjectName, as not enough blocks to prune")

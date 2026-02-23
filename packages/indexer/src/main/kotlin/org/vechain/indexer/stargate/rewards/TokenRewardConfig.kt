@@ -38,8 +38,14 @@ open class TokenRewardConfig {
     open fun tokenRewardPruner(
         tokenRewardArchiveService: ArchiveService<TokenReward, TokenRewardArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
+        @Value("\${indexer.pruner.enabled}") prunerEnabled: Boolean,
     ): TargetedPruner<TokenReward, TokenRewardArchive> =
-        PrunerService(TokenRewardArchive::class, tokenRewardArchiveService, prunerRemovalChunkSize)
+        PrunerService(
+            TokenRewardArchive::class,
+            tokenRewardArchiveService,
+            prunerRemovalChunkSize,
+            prunerEnabled,
+        )
 
     @Bean
     open fun tokenRewardIndexer(

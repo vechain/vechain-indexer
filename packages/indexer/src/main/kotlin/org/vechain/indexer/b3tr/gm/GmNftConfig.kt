@@ -34,11 +34,13 @@ open class GmNftConfig {
     open fun gmNftPruner(
         gmNftArchiveService: ArchiveService<GmNft, GmNftArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
+        @Value("\${indexer.pruner.enabled}") prunerEnabled: Boolean,
     ): TargetedPruner<GmNft, GmNftArchive> =
         PrunerService(
             klass = GmNftArchive::class,
             archiveService = gmNftArchiveService,
             prunerRemovalChunkSize = prunerRemovalChunkSize,
+            enabled = prunerEnabled,
         )
 
     @Bean
