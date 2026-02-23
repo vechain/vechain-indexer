@@ -9,13 +9,13 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.vechain.indexer.VersionedDocumentAccumulator
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.thor.HexUtils.toHex
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Clause
@@ -26,10 +26,9 @@ import org.vechain.indexer.utils.BlockDetails
 internal class ProposalResultServiceTest {
     @MockK lateinit var repository: ProposalResultRepository
 
-    @MockK
-    lateinit var proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>
+    @MockK lateinit var mongoTemplate: MongoTemplate
 
-    @MockK lateinit var pruner: TargetedPruner<ProposalResult, ProposalResultArchive>
+    @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
 
     @MockK lateinit var thorClient: ThorClient
 
@@ -40,15 +39,15 @@ internal class ProposalResultServiceTest {
     // A testable subclass to expose protected methods for testing
     private class TestableProposalResultService(
         repository: ProposalResultRepository,
-        proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>,
-        proposalResultPruner: TargetedPruner<ProposalResult, ProposalResultArchive>,
+        mongoTemplate: MongoTemplate,
+        inlineVersioningProperties: InlineVersioningProperties,
         thorClient: ThorClient,
         governorContract: String,
     ) :
         ProposalResultService(
             repository,
-            proposalResultArchiveService,
-            proposalResultPruner,
+            mongoTemplate,
+            inlineVersioningProperties,
             thorClient,
             governorContract,
         ) {
@@ -62,11 +61,13 @@ internal class ProposalResultServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
+        every { inlineVersioningProperties.blockWindow } returns 10000L
+        every { inlineVersioningProperties.maxVersions } returns 100
         service =
             TestableProposalResultService(
                 repository,
-                proposalResultArchiveService,
-                pruner,
+                mongoTemplate,
+                inlineVersioningProperties,
                 thorClient,
                 "0x1234567890123456789012345678901234567890",
             )

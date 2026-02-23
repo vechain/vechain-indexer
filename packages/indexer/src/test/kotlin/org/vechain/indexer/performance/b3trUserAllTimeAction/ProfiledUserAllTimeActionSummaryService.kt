@@ -1,16 +1,15 @@
 package org.vechain.indexer.performance.b3trUserAllTimeAction
 
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.vechain.indexer.VersionedDocumentAccumulator
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionImpactConfig
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummary
-import org.vechain.indexer.b3tr.action.UserAllTimeActionSummaryArchive
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummaryService
 import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryRepository
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.performance.DetailedProfiler
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.utils.EventUtils
 
 /**
@@ -26,11 +25,17 @@ import org.vechain.indexer.utils.EventUtils
  */
 class ProfiledUserAllTimeActionSummaryService(
     private val repository: UserAllTimeActionSummaryRepository,
-    archiveService: ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
-    pruner: TargetedPruner<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
+    mongoTemplate: MongoTemplate,
+    inlineVersioningProperties: InlineVersioningProperties,
     impactConfig: ActionImpactConfig,
     private val profiler: DetailedProfiler,
-) : UserAllTimeActionSummaryService(repository, archiveService, pruner, impactConfig) {
+) :
+    UserAllTimeActionSummaryService(
+        repository,
+        mongoTemplate,
+        inlineVersioningProperties,
+        impactConfig,
+    ) {
 
     override fun processEvents(
         events: List<IndexedEvent>

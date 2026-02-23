@@ -1,30 +1,42 @@
 package org.vechain.indexer
 
+import com.mongodb.client.MongoCollection
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import org.bson.Document
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.mongodb.core.BulkOperations
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.convert.MongoConverter
-import org.vechain.indexer.archive.Archive
-import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.pruner.TargetedPruner
 
 @ExtendWith(MockKExtension::class)
 internal class VersionedDocumentPersistenceTest {
 
-    @MockK private lateinit var archiveService: ArchiveService<TestDocument, TestArchive>
-
-    @MockK(relaxed = true) private lateinit var pruner: TargetedPruner<TestDocument, TestArchive>
-
     @MockK(relaxed = true) private lateinit var mongoTemplate: MongoTemplate
 
-    @MockK(relaxed = true) private lateinit var bulkOps: BulkOperations
-
     @MockK(relaxed = true) private lateinit var converter: MongoConverter
+
+    @MockK(relaxed = true) private lateinit var collection: MongoCollection<Document>
+
+    companion object {
+        private const val BLOCK_WINDOW = 10000L
+        private const val MAX_VERSIONS = 100
+    }
+
+    @Test
+    fun `does nothing when updated list is empty`() {
+        saveVersionedDocuments(
+            emptyList<TestDocument>(),
+            emptyList(),
+            mongoTemplate,
+            BLOCK_WINDOW,
+            MAX_VERSIONS,
+        )
+
+        verify { mongoTemplate wasNot Called }
+    }
 
     @Test
     fun `saves only updated documents when no existing records`() {
@@ -39,88 +51,23 @@ internal class VersionedDocumentPersistenceTest {
                 )
             )
 
-        every { archiveService.mongoTemplate } returns mongoTemplate
-        every { mongoTemplate.bulkOps(any(), any<Class<*>>()) } returns bulkOps
+        every { mongoTemplate.getCollectionName(TestDocument::class.java) } returns "test_documents"
+        every { mongoTemplate.getCollection("test_documents") } returns collection
         every { mongoTemplate.converter } returns converter
-        every { archiveService.saveAll(any()) } just runs
-        saveVersionedDocuments(updated, emptyList(), archiveService, pruner)
+        every { converter.write(any(), any<Document>()) } just Runs
 
-        verify(exactly = 1) { bulkOps.execute() }
-        verify(exactly = 0) { archiveService.saveAll(any()) }
-        verify { pruner wasNot Called }
+        saveVersionedDocuments(updated, emptyList(), mongoTemplate, BLOCK_WINDOW, MAX_VERSIONS)
+
+        verify(exactly = 1) {
+            collection.bulkWrite(
+                any<List<com.mongodb.client.model.WriteModel<Document>>>(),
+                any<com.mongodb.client.model.BulkWriteOptions>(),
+            )
+        }
     }
 
     @Test
-    fun `archives existing documents without pruning when no older versions`() {
-        val updated =
-            listOf(
-                TestDocument(
-                    id = "doc-1",
-                    version = 1,
-                    blockNumber = 10,
-                    blockId = "b1",
-                    blockTimestamp = 1000,
-                )
-            )
-        val existing =
-            listOf(
-                TestDocument(
-                    id = "doc-2",
-                    version = 1,
-                    blockNumber = 8,
-                    blockId = "b2",
-                    blockTimestamp = 900,
-                )
-            )
-
-        every { archiveService.mongoTemplate } returns mongoTemplate
-        every { mongoTemplate.bulkOps(any(), any<Class<*>>()) } returns bulkOps
-        every { mongoTemplate.converter } returns converter
-        every { archiveService.saveAll(existing) } just runs
-
-        saveVersionedDocuments(updated, existing, archiveService, pruner)
-
-        verify(exactly = 1) { bulkOps.execute() }
-        verify(exactly = 1) { archiveService.saveAll(existing) }
-        verify { pruner wasNot Called }
-    }
-
-    @Test
-    fun `prunes older archives when previous versions exist`() {
-        val updated =
-            listOf(
-                TestDocument(
-                    id = "doc-1",
-                    version = 1,
-                    blockNumber = 20,
-                    blockId = "b1",
-                    blockTimestamp = 1000,
-                )
-            )
-        val existing =
-            listOf(
-                TestDocument(
-                    id = "doc-2",
-                    version = 2,
-                    blockNumber = 15,
-                    blockId = "b2",
-                    blockTimestamp = 900,
-                )
-            )
-
-        every { archiveService.mongoTemplate } returns mongoTemplate
-        every { mongoTemplate.bulkOps(any(), any<Class<*>>()) } returns bulkOps
-        every { mongoTemplate.converter } returns converter
-        every { archiveService.saveAll(existing) } just runs
-        saveVersionedDocuments(updated, existing, archiveService, pruner)
-
-        verify(exactly = 1) { bulkOps.execute() }
-        verify(exactly = 1) { archiveService.saveAll(existing) }
-        verify(exactly = 1) { pruner.run(20, listOf("doc-2")) }
-    }
-
-    @Test
-    fun `does not archive or prune when bulk upsert fails`() {
+    fun `performs bulk write with versioning when existing documents present`() {
         val updated =
             listOf(
                 TestDocument(
@@ -142,18 +89,65 @@ internal class VersionedDocumentPersistenceTest {
                 )
             )
 
-        every { archiveService.mongoTemplate } returns mongoTemplate
-        every { mongoTemplate.bulkOps(any(), any<Class<*>>()) } returns bulkOps
+        every { mongoTemplate.getCollectionName(TestDocument::class.java) } returns "test_documents"
+        every { mongoTemplate.getCollection("test_documents") } returns collection
         every { mongoTemplate.converter } returns converter
-        every { bulkOps.execute() } throws RuntimeException("write error")
+        every { converter.write(any(), any<Document>()) } just Runs
+
+        saveVersionedDocuments(updated, existing, mongoTemplate, BLOCK_WINDOW, MAX_VERSIONS)
+
+        verify(exactly = 1) {
+            collection.bulkWrite(
+                any<List<com.mongodb.client.model.WriteModel<Document>>>(),
+                any<com.mongodb.client.model.BulkWriteOptions>(),
+            )
+        }
+    }
+
+    @Test
+    fun `propagates exception when bulk write fails`() {
+        val updated =
+            listOf(
+                TestDocument(
+                    id = "doc-1",
+                    version = 2,
+                    blockNumber = 20,
+                    blockId = "b1",
+                    blockTimestamp = 1000,
+                )
+            )
+        val existing =
+            listOf(
+                TestDocument(
+                    id = "doc-1",
+                    version = 1,
+                    blockNumber = 15,
+                    blockId = "b0",
+                    blockTimestamp = 900,
+                )
+            )
+
+        every { mongoTemplate.getCollectionName(TestDocument::class.java) } returns "test_documents"
+        every { mongoTemplate.getCollection("test_documents") } returns collection
+        every { mongoTemplate.converter } returns converter
+        every { converter.write(any(), any<Document>()) } just Runs
+        every {
+            collection.bulkWrite(
+                any<List<com.mongodb.client.model.WriteModel<Document>>>(),
+                any<com.mongodb.client.model.BulkWriteOptions>(),
+            )
+        } throws RuntimeException("write error")
 
         assertThrows<RuntimeException> {
-            saveVersionedDocuments(updated, existing, archiveService, pruner)
+            saveVersionedDocuments(updated, existing, mongoTemplate, BLOCK_WINDOW, MAX_VERSIONS)
         }
 
-        verify(exactly = 1) { bulkOps.execute() }
-        verify(exactly = 0) { archiveService.saveAll(any()) }
-        verify { pruner wasNot Called }
+        verify(exactly = 1) {
+            collection.bulkWrite(
+                any<List<com.mongodb.client.model.WriteModel<Document>>>(),
+                any<com.mongodb.client.model.BulkWriteOptions>(),
+            )
+        }
     }
 
     private data class TestDocument(
@@ -165,7 +159,4 @@ internal class VersionedDocumentPersistenceTest {
     ) : VersionedDocument {
         override fun getDocumentId(): String = id
     }
-
-    private data class TestArchive(override val id: String, override val data: TestDocument) :
-        Archive<TestDocument>
 }

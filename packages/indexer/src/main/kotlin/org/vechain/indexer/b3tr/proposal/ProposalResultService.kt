@@ -7,11 +7,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.VersionedDocumentAccumulator
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getDescription
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getPower
@@ -23,10 +23,10 @@ import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.groupBySupport
 import org.vechain.indexer.b3tr.proposal.ProposalState.Companion.nonFinalizedStates
 import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
 import org.vechain.indexer.b3tr.voting.Support
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.thor.client.ThorClient
@@ -40,8 +40,8 @@ import org.vechain.indexer.utils.ContractUtils
 @Service
 open class ProposalResultService(
     private val repository: ProposalResultRepository,
-    private val proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>,
-    private val proposalResultPruner: TargetedPruner<ProposalResult, ProposalResultArchive>,
+    private val mongoTemplate: MongoTemplate,
+    private val inlineVersioningProperties: InlineVersioningProperties,
     private val thorClient: ThorClient,
     @param:Value("\${business-event.substitutions.B3TR_GOVERNOR_CONTRACT}")
     private val governorContract: String,
@@ -184,8 +184,9 @@ open class ProposalResultService(
         saveVersionedDocuments(
             updated,
             existing,
-            proposalResultArchiveService,
-            proposalResultPruner,
+            mongoTemplate,
+            inlineVersioningProperties.blockWindow,
+            inlineVersioningProperties.maxVersions,
         )
     }
 

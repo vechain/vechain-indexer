@@ -4,11 +4,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
@@ -17,8 +17,7 @@ import org.vechain.indexer.config.metrics.ProcessorMetrics
 @Profile("b3tr", "b3tr-actions", "b3tr-user-round-action-summary")
 open class UserRoundActionSummaryProcessor(
     private val repository: UserRoundActionSummaryRepository,
-    userRoundActionSummaryArchiveService:
-        ArchiveService<UserRoundActionSummary, UserRoundActionSummaryArchive>,
+    mongoTemplate: MongoTemplate,
     private val service: UserRoundActionSummaryService,
     @param:Value("\${indexer.start-round.b3tr-sustainable-actions}") private val startRound: Int,
     checkpointService: CheckpointService,
@@ -26,7 +25,7 @@ open class UserRoundActionSummaryProcessor(
 ) :
     BaseStatefulProcessor(
         repository = repository,
-        archiveService = userRoundActionSummaryArchiveService,
+        mongoTemplate = mongoTemplate,
         indexerName = IndexerNames.USER_ROUND_ACTION_SUMMARY.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.USER_ROUND_ACTION_SUMMARY.COLLECTION,

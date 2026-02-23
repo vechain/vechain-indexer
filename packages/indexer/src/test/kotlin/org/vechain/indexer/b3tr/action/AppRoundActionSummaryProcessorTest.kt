@@ -15,9 +15,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.AppRoundActionSummaryRepository
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
@@ -30,7 +30,7 @@ internal class AppRoundActionSummaryProcessorTest {
     // A small testable subclass to expose protected methods where useful
     private class TestableProcessor(
         repository: AppRoundActionSummaryRepository,
-        archiveService: ArchiveService<AppRoundActionSummary, AppRoundActionSummaryArchive>,
+        mongoTemplate: MongoTemplate,
         service: AppRoundActionSummaryService,
         startRound: Int,
         checkpointService: CheckpointService,
@@ -38,7 +38,7 @@ internal class AppRoundActionSummaryProcessorTest {
     ) :
         AppRoundActionSummaryProcessor(
             repository = repository,
-            appRoundActionSummaryArchiveService = archiveService,
+            mongoTemplate = mongoTemplate,
             service = service,
             startRound = startRound,
             checkpointService = checkpointService,
@@ -51,9 +51,7 @@ internal class AppRoundActionSummaryProcessorTest {
     inner class NoExistingRecord() {
         @MockK lateinit var repository: AppRoundActionSummaryRepository
 
-        @MockK
-        lateinit var archiveService:
-            ArchiveService<AppRoundActionSummary, AppRoundActionSummaryArchive>
+        @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
 
         @MockK lateinit var service: AppRoundActionSummaryService
 
@@ -70,7 +68,7 @@ internal class AppRoundActionSummaryProcessorTest {
             processor =
                 TestableProcessor(
                     repository,
-                    archiveService,
+                    mongoTemplate,
                     service = service,
                     startRound = 1,
                     checkpointService = checkpointService,
@@ -364,9 +362,7 @@ internal class AppRoundActionSummaryProcessorTest {
     inner class ExistingRecord() {
         @MockK lateinit var repository: AppRoundActionSummaryRepository
 
-        @MockK
-        lateinit var archiveService:
-            ArchiveService<AppRoundActionSummary, AppRoundActionSummaryArchive>
+        @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
 
         @MockK lateinit var service: AppRoundActionSummaryService
 
@@ -396,7 +392,7 @@ internal class AppRoundActionSummaryProcessorTest {
             processor =
                 TestableProcessor(
                     repository,
-                    archiveService,
+                    mongoTemplate,
                     service = service,
                     startRound = 1,
                     checkpointService = checkpointService,

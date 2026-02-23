@@ -3,11 +3,11 @@ package org.vechain.indexer.b3tr.gm
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.gm.repository.GmNftRepository
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
@@ -16,14 +16,14 @@ import org.vechain.indexer.config.metrics.ProcessorMetrics
 @Component
 open class GmNftProcessor(
     repository: GmNftRepository,
-    gmNftArchiveService: ArchiveService<GmNft, GmNftArchive>,
+    mongoTemplate: MongoTemplate,
     private val service: GmNftService,
     checkpointService: CheckpointService,
     processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = repository,
-        archiveService = gmNftArchiveService,
+        mongoTemplate = mongoTemplate,
         indexerName = IndexerNames.GM_NFT.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.GM_NFT.COLLECTION,

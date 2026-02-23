@@ -2,10 +2,12 @@ package org.vechain.indexer.stargate.nftHolders
 
 import java.math.BigInteger
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 import org.vechain.indexer.utils.ParamUtils.getAsString
@@ -16,7 +18,8 @@ import org.vechain.indexer.utils.RolloverUtils
 open class NftHoldersByBlockService(
     private val repository: NftHoldersByBlockRepository,
     private val ownerBalanceRepository: NftOwnerBalanceRepository,
-    private val archiveService: ArchiveService<NftOwnerBalance, NftOwnerBalanceArchive>,
+    private val mongoTemplate: MongoTemplate,
+    private val inlineVersioningProperties: InlineVersioningProperties,
 ) {
     /**
      * @param events The decoded on-chain events grouped across arbitrary blocks.
@@ -210,15 +213,16 @@ open class NftHoldersByBlockService(
     }
 
     private fun saveOwnerBalances() {
-        // Archive previous versions before saving new ones
-        if (ownerBalancesToArchive.isNotEmpty()) {
-            archiveService.saveAll(ownerBalancesToArchive)
-            ownerBalancesToArchive = emptyList()
-        }
-
         if (updatedOwnerBalances.isNotEmpty()) {
-            ownerBalanceRepository.saveAll(updatedOwnerBalances)
+            saveVersionedDocuments(
+                updatedOwnerBalances,
+                ownerBalancesToArchive,
+                mongoTemplate,
+                inlineVersioningProperties.blockWindow,
+                inlineVersioningProperties.maxVersions,
+            )
             updatedOwnerBalances = emptyList()
+            ownerBalancesToArchive = emptyList()
         }
     }
 }

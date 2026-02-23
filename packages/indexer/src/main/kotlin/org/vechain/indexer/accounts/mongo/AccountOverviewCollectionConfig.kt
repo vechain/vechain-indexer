@@ -16,7 +16,6 @@ import org.springframework.data.mongodb.core.query.Query
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.accounts.AccountOverview
-import org.vechain.indexer.accounts.AccountOverviewArchive
 import org.vechain.indexer.config.genesis.GenesisVetBalanceLoader
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
@@ -28,13 +27,7 @@ open class AccountOverviewCollectionConfig(
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
     private val genesisVetBalanceLoader: GenesisVetBalanceLoader,
-) :
-    CollectionConfig(
-        mongoTemplate,
-        appCoroutineScope,
-        AccountOverview::class.java,
-        AccountOverviewArchive::class.java,
-    ) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, AccountOverview::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.account-overview}") private val version: Int = 1
@@ -43,14 +36,11 @@ open class AccountOverviewCollectionConfig(
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
-        val dropped =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.ACCOUNT_OVERVIEW.NAME,
-                AccountOverview::class.java,
-                version,
-            )
-
-        if (dropped) indexerVersionService.dropArchiveCollection(AccountOverviewArchive::class.java)
+        indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            indexerName = IndexerNames.ACCOUNT_OVERVIEW.NAME,
+            AccountOverview::class.java,
+            version,
+        )
 
         ensureCollection()
 

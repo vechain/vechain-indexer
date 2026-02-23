@@ -13,7 +13,6 @@ import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.stargate.tokenReward.TokenReward
-import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("token-reward")
@@ -22,13 +21,7 @@ open class TokenRewardCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) :
-    CollectionConfig(
-        mongoTemplate,
-        appCoroutineScope,
-        TokenReward::class.java,
-        TokenRewardArchive::class.java,
-    ) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, TokenReward::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.token-rewards}") private val version: Int = 1
@@ -37,14 +30,11 @@ open class TokenRewardCollectionConfig(
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
-        val dropped =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.TOKEN_REWARD.NAME,
-                TokenReward::class.java,
-                version,
-            )
-
-        if (dropped) indexerVersionService.dropArchiveCollection(TokenRewardArchive::class.java)
+        indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            indexerName = IndexerNames.TOKEN_REWARD.NAME,
+            TokenReward::class.java,
+            version,
+        )
 
         ensureCollection()
 

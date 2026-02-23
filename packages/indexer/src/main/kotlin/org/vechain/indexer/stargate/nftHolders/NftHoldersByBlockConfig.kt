@@ -4,49 +4,20 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.config.BusinessEventProperties
-import org.vechain.indexer.pruner.PrunerService
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
 @Profile("stargate", "nft-holders-by-block")
 open class NftHoldersByBlockConfig {
-    @Bean
-    open fun nftOwnerBalanceArchiveService(
-        mongoTemplate: MongoTemplate,
-        @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
-    ): ArchiveService<NftOwnerBalance, NftOwnerBalanceArchive> =
-        ArchiveService(
-            mongoTemplate,
-            NftOwnerBalance::class.java,
-            NftOwnerBalanceArchive::class.java,
-            recordLimit,
-        )
-
-    @Bean
-    open fun nftOwnerBalancePruner(
-        nftOwnerBalanceArchiveService: ArchiveService<NftOwnerBalance, NftOwnerBalanceArchive>,
-        @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-        @Value("\${indexer.pruner.enabled}") prunerEnabled: Boolean,
-    ): TargetedPruner<NftOwnerBalance, NftOwnerBalanceArchive> =
-        PrunerService(
-            NftOwnerBalanceArchive::class,
-            nftOwnerBalanceArchiveService,
-            prunerRemovalChunkSize,
-            prunerEnabled,
-        )
 
     @Bean
     open fun nftHoldersByBlockIndexer(
         thorClient: ThorClient,
         processor: NftHoldersByBlockProcessor,
-        nftOwnerBalancePruner: TargetedPruner<NftOwnerBalance, NftOwnerBalanceArchive>,
         @Value("\${indexer.start-block.stargate}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
@@ -54,7 +25,6 @@ open class NftHoldersByBlockConfig {
         stargateNftContract: String,
         @Value("\${business-event.substitutions.STARGATE_DELEGATION_CONTRACT}")
         stargateDelegationContract: String,
-        @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
@@ -62,8 +32,6 @@ open class NftHoldersByBlockConfig {
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)
-            .pruner(nftOwnerBalancePruner)
-            .prunerInterval(prunerInterval)
             .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
             .businessEvents("business-events/stargate", "abis/stargate")

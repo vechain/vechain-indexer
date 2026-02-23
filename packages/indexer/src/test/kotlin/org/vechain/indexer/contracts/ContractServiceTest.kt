@@ -16,13 +16,13 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.vechain.indexer.archive.ArchiveService
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.contracts.repository.ContractRepository
 import org.vechain.indexer.contracts.specifications.Contracts
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.thor.client.AccountCodeResponse
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.utils.BlockDetails
@@ -32,9 +32,9 @@ import org.vechain.indexer.utils.ContractUtils
 internal class ContractServiceTest {
     @MockK lateinit var repository: ContractRepository
 
-    @MockK lateinit var archiveService: ArchiveService<Contract, ContractArchive>
+    @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
 
-    @MockK lateinit var pruner: TargetedPruner<Contract, ContractArchive>
+    @MockK lateinit var mongoTemplate: MongoTemplate
 
     @MockK lateinit var thorClient: ThorClient
 
@@ -45,10 +45,10 @@ internal class ContractServiceTest {
 
     private class TestableService(
         repository: ContractRepository,
-        archiveService: ArchiveService<Contract, ContractArchive>,
-        pruner: TargetedPruner<Contract, ContractArchive>,
+        inlineVersioningProperties: InlineVersioningProperties,
+        mongoTemplate: MongoTemplate,
         thorClient: ThorClient,
-    ) : ContractService(repository, archiveService, pruner, thorClient) {
+    ) : ContractService(repository, inlineVersioningProperties, mongoTemplate, thorClient) {
         suspend fun callCreateOrUpdateExisting(
             blockDetails: BlockDetails,
             contractAddress: String,
@@ -75,7 +75,9 @@ internal class ContractServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = TestableService(repository, archiveService, pruner, thorClient)
+        service = TestableService(repository, inlineVersioningProperties, mongoTemplate, thorClient)
+        every { inlineVersioningProperties.blockWindow } returns 10000L
+        every { inlineVersioningProperties.maxVersions } returns 100
     }
 
     private fun blockDetails(

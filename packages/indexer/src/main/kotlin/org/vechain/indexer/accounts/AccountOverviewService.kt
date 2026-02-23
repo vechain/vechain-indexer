@@ -5,18 +5,18 @@ import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.accounts.repository.AccountOverviewRepository
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.config.ForkConfig
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.NetworkDetectionService
 import org.vechain.indexer.config.VeChainNetwork
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.HexUtils.toBigInteger
 import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
@@ -72,8 +72,8 @@ private class ReadOnceCache<K, V> {
 @Service
 open class AccountOverviewService(
     private val repository: AccountOverviewRepository,
-    private val archiveService: ArchiveService<AccountOverview, AccountOverviewArchive>,
-    private val accountOverviewPruner: TargetedPruner<AccountOverview, AccountOverviewArchive>,
+    private val inlineVersioningProperties: InlineVersioningProperties,
+    private val mongoTemplate: MongoTemplate,
     private val forkConfig: ForkConfig,
     private val networkDetectionService: NetworkDetectionService,
     private val thorClient: ThorClient,
@@ -153,8 +153,9 @@ open class AccountOverviewService(
         saveVersionedDocuments(
             updated = updated,
             existing = existing,
-            archiveService = archiveService,
-            pruner = accountOverviewPruner,
+            mongoTemplate = mongoTemplate,
+            blockWindow = inlineVersioningProperties.blockWindow,
+            maxVersions = inlineVersioningProperties.maxVersions,
         )
     }
 

@@ -3,11 +3,11 @@ package org.vechain.indexer.validator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 
@@ -15,14 +15,14 @@ import org.vechain.indexer.config.metrics.ProcessorMetrics
 @Component
 open class DelegationProcessor(
     repository: DelegationRepository,
-    archiveService: ArchiveService<Delegation, DelegationArchive>,
+    mongoTemplate: MongoTemplate,
     checkpointService: CheckpointService,
     private val service: DelegationService,
     processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = repository,
-        archiveService = archiveService,
+        mongoTemplate = mongoTemplate,
         indexerName = IndexerNames.DELEGATION.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.DELEGATION.COLLECTION,

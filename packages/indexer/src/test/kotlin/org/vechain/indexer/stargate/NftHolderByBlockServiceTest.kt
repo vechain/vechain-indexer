@@ -9,14 +9,14 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.accounts.TimeFrame
-import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlock
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockService
 import org.vechain.indexer.stargate.nftHolders.NftOwnerBalance
-import org.vechain.indexer.stargate.nftHolders.NftOwnerBalanceArchive
 import org.vechain.indexer.stargate.nftHolders.NftOwnerBalanceRepository
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.utils.ParamUtils.getAsInt
@@ -29,14 +29,23 @@ import strikt.assertions.*
 class NftHolderByBlockServiceTest {
     @MockK lateinit var repository: NftHoldersByBlockRepository
     @MockK lateinit var ownerBalanceRepository: NftOwnerBalanceRepository
-    @MockK lateinit var archiveService: ArchiveService<NftOwnerBalance, NftOwnerBalanceArchive>
+    @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
+    @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
 
     private lateinit var service: NftHoldersByBlockService
 
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
-        service = NftHoldersByBlockService(repository, ownerBalanceRepository, archiveService)
+        every { inlineVersioningProperties.blockWindow } returns 10000L
+        every { inlineVersioningProperties.maxVersions } returns 100
+        service =
+            NftHoldersByBlockService(
+                repository,
+                ownerBalanceRepository,
+                mongoTemplate,
+                inlineVersioningProperties,
+            )
     }
 
     // ------------------------------------------------------------

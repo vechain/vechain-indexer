@@ -7,7 +7,6 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.thor.model.Views
 
 @Document(IndexerNames.NFT.COLLECTION)
@@ -33,9 +32,3 @@ constructor(
         return id
     }
 }
-
-@Document("nft_archives")
-@JsonView(Views.Public::class)
-data class NftArchive
-@ConstructorBinding
-constructor(@Id override val id: String, override val data: IndexedNft) : Archive<IndexedNft>
