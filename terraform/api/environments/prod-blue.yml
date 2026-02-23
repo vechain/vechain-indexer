@@ -181,7 +181,7 @@ enabled_nets:
         historic-proposals: '125'
       channel-batch-size: '3'
       pruner:
-        enabled: 'false'
+        enabled: 'true'
         interval: '60480'
         removal-chunk-size: '5000'
         record-limit: '1000000'
