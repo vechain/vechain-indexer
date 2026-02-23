@@ -3,6 +3,7 @@ package org.vechain.indexer.stargate.vetStaked
 import java.math.BigInteger
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
@@ -152,17 +153,10 @@ open class VetStakedByBlockService(private val repository: VetStakedByBlockRepos
     }
 
     /**
-     * @param record A fully prepared `VetStakedByBlock` document.
-     * @notice Persist a single per-block staking record.
-     */
-    open fun saveRecord(record: VetStakedByBlock) {
-        repository.save(record)
-    }
-
-    /**
      * @param records List of `VetStakedByBlock` entries.
      * @notice Persist a batch of per-block staking records.
      */
+    @Transactional(rollbackFor = [Exception::class])
     open fun saveRecords(records: List<VetStakedByBlock>) {
         repository.saveAll(records)
     }

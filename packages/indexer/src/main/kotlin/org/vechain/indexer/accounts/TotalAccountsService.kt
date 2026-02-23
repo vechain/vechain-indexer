@@ -50,7 +50,7 @@ open class TotalAccountsService(
      * @notice Persists new account records and archives in MongoDB.
      * @dev Skips persistence when no new accounts exist.
      */
-    @Transactional
+    @Transactional(rollbackFor = [Exception::class])
     open fun save(totalAccountsInfo: List<TotalAccounts>, archive: TotalAccounts) {
         if (totalAccountsInfo.isEmpty()) return
         repository.saveAll(totalAccountsInfo)

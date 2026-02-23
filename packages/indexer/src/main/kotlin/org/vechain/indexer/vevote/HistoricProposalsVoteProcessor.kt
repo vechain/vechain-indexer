@@ -1,5 +1,7 @@
 package org.vechain.indexer.vevote
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
@@ -17,7 +19,7 @@ open class HistoricProposalsVoteProcessor(
     private val historicProposalsResultsService: HistoricProposalsVoteService,
     private val historicProposalTallyService: HistoricProposalTallyService,
     private val indexerVersionService: IndexerVersionService,
-    @Value("\${indexer.stop-block.historic-proposals}") private val stopBlock: Long,
+    @param:Value("\${indexer.stop-block.historic-proposals}") private val stopBlock: Long,
     checkpointService: CheckpointService,
     processorMetrics: ProcessorMetrics,
 ) :
@@ -45,7 +47,7 @@ open class HistoricProposalsVoteProcessor(
 
         val votes = historicProposalsResultsService.processVotes(entry.events())
         if (votes.isNotEmpty()) {
-            repository.saveAll(votes)
+            withContext(Dispatchers.IO) { repository.saveAll(votes) }
         }
     }
 }

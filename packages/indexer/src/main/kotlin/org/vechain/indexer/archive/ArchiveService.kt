@@ -3,6 +3,7 @@ package org.vechain.indexer.archive
 import org.bson.Document
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Sort
+import org.springframework.data.mongodb.BulkOperationException
 import org.springframework.data.mongodb.core.BulkOperations
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.aggregation.Aggregation
@@ -37,7 +38,6 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
         buildArchiveId(document, document.version - 1)
 
     open fun saveAll(documents: List<T>) {
-
         if (documents.isEmpty()) return
 
         val archives =
@@ -46,7 +46,29 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
                     .getConstructor(String::class.java, it::class.java)
                     .newInstance(buildArchiveId(it, it.version), it)
             }
-        mongoTemplate.insert(archives, archiveClazz)
+
+        val bulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, archiveClazz)
+        bulkOps.insert(archives)
+
+        try {
+            bulkOps.execute()
+        } catch (e: BulkOperationException) {
+            val nonDuplicateErrors = e.errors.filter { it.code != DUPLICATE_KEY_ERROR_CODE }
+            if (nonDuplicateErrors.isNotEmpty()) {
+                throw e
+            }
+            val duplicateCount = e.errors.size - nonDuplicateErrors.size
+            logger.debug(
+                "{}: Skipped {} duplicate archive(s) out of {} documents",
+                archiveClazz.simpleName,
+                duplicateCount,
+                documents.size,
+            )
+        }
+    }
+
+    companion object {
+        private const val DUPLICATE_KEY_ERROR_CODE = 11000
     }
 
     open fun rollback(blockNumber: Long) {
