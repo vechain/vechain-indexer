@@ -35,11 +35,13 @@ open class VthoClaimedByAccountConfig {
         vthoClaimByAccountArchiveService:
             ArchiveService<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
+        @Value("\${indexer.pruner.enabled}") prunerEnabled: Boolean,
     ): TargetedPruner<VthoClaimedByAccount, VthoClaimedByAccountArchive> =
         PrunerService(
             VthoClaimedByAccountArchive::class,
             vthoClaimByAccountArchiveService,
             prunerRemovalChunkSize,
+            prunerEnabled,
         )
 
     @Bean

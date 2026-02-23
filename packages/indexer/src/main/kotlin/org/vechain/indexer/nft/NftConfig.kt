@@ -28,8 +28,9 @@ open class NftConfig() {
     open fun nftPruner(
         nftArchiveService: ArchiveService<IndexedNft, NftArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
+        @Value("\${indexer.pruner.enabled}") prunerEnabled: Boolean,
     ): TargetedPruner<IndexedNft, NftArchive> =
-        PrunerService(NftArchive::class, nftArchiveService, prunerRemovalChunkSize)
+        PrunerService(NftArchive::class, nftArchiveService, prunerRemovalChunkSize, prunerEnabled)
 
     @Bean
     open fun nftIndexer(

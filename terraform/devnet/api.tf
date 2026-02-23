@@ -455,6 +455,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-round.b3tr-sustainable-actions
     },
     {
+      name  = "PRUNER_ENABLED"
+      value = each.value.indexer.pruner.enabled
+    },
+    {
       name  = "PRUNER_INTERVAL"
       value = each.value.indexer.pruner.interval
     },

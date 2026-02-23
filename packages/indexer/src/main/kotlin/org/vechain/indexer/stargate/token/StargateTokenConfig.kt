@@ -33,11 +33,13 @@ open class StargateTokenConfig {
     open fun stargateTokenPruner(
         stargateTokenArchiveService: ArchiveService<StargateToken, StargateTokenArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
+        @Value("\${indexer.pruner.enabled}") prunerEnabled: Boolean,
     ): TargetedPruner<StargateToken, StargateTokenArchive> =
         PrunerService(
             StargateTokenArchive::class,
             stargateTokenArchiveService,
             prunerRemovalChunkSize,
+            prunerEnabled,
         )
 
     @Bean

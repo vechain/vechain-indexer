@@ -679,7 +679,11 @@
             },
             "display_type": "line"
           }
-        ]
+        ],
+        "yaxis": {
+          "include_zero": false,
+          "scale": "log"
+        }
       },
       "layout": {
         "x": 0,
@@ -804,17 +808,17 @@
             "conditional_formats": [
               {
                 "comparator": ">",
-                "value": 500,
+                "value": 200,
                 "palette": "white_on_red"
               },
               {
                 "comparator": ">",
-                "value": 100,
+                "value": 10,
                 "palette": "white_on_yellow"
               },
               {
                 "comparator": "<",
-                "value": 100,
+                "value": 10,
                 "palette": "white_on_green"
               }
             ],

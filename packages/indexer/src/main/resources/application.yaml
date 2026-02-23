@@ -154,6 +154,7 @@ indexer:
     historic-proposals: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_HISTORIC_PROPOSALS:100}
   channel-batch-size: ${INDEXER_CHANNEL_BATCH_SIZE:10}
   pruner:
+    enabled: ${PRUNER_ENABLED:true}
     interval: ${PRUNER_INTERVAL:3000}
     removal-chunk-size: ${PRUNER_REMOVAL_CHUNK_SIZE:10000}
     record-limit: ${PRUNER_RECORD_LIMIT:200000}

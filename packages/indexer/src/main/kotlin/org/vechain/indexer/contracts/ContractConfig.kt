@@ -32,8 +32,14 @@ open class ContractConfig {
     open fun contractPruner(
         contractArchiveService: ArchiveService<Contract, ContractArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
+        @Value("\${indexer.pruner.enabled}") prunerEnabled: Boolean,
     ): TargetedPruner<Contract, ContractArchive> =
-        PrunerService(ContractArchive::class, contractArchiveService, prunerRemovalChunkSize)
+        PrunerService(
+            ContractArchive::class,
+            contractArchiveService,
+            prunerRemovalChunkSize,
+            prunerEnabled,
+        )
 
     @Bean
     open fun contractIndexer(
