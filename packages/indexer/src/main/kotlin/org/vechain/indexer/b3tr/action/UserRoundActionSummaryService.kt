@@ -131,7 +131,6 @@ open class UserRoundActionSummaryService(
         saveVersionedDocuments(
             updated,
             existing,
-            repository,
             userRoundActionSummaryArchiveService,
             userRoundActionSummaryPruner,
         )

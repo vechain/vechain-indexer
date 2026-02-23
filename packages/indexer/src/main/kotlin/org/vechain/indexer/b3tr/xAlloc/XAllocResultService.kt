@@ -249,13 +249,7 @@ open class XAllocResultService(
 
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<XAllocResult>, existing: List<XAllocResult>) {
-        saveVersionedDocuments(
-            updated,
-            existing,
-            repository,
-            xAllocResultArchiveService,
-            xAllocResultPruner,
-        )
+        saveVersionedDocuments(updated, existing, xAllocResultArchiveService, xAllocResultPruner)
     }
 
     open suspend fun isQuadraticFundingEnabled(roundId: Int, bestBlockId: String): Boolean =

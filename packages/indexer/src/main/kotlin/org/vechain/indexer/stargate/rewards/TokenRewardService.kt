@@ -11,6 +11,7 @@ import kotlin.collections.isNotEmpty
 import kotlin.collections.set
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
@@ -138,8 +139,9 @@ open class TokenRewardService(
     }
 
     /** @notice Persist a batch of reward records to MongoDB. */
+    @Transactional(rollbackFor = [Exception::class])
     open fun save(rewards: List<TokenReward>, archive: List<TokenReward>) {
-        saveVersionedDocuments(rewards, archive, repository, archiveService, pruner)
+        saveVersionedDocuments(rewards, archive, archiveService, pruner)
     }
 
     /** @notice Clear all in-memory caches. Called on rollback to ensure consistency. */
@@ -164,7 +166,7 @@ open class TokenRewardService(
         // Get total VTHO issued at this block
         val blockTotalSupply = getTotalVTHOIssued(decodedInfo, block.id)
 
-        // Initialize cache on restart using the previous block’s reward
+        // Initialize cache on restart using the previous block's reward
         if (vthoTotalSupply == BigInteger.ZERO) {
             vthoTotalSupply = getTotalVTHOIssuedAtBlock(block.parentID)
         }
@@ -358,7 +360,7 @@ open class TokenRewardService(
 
     /**
      * @param currentTokenRewards List of ongoing reward trackers (from DB or new).
-     * @param totalBlockReward Total delegators’ reward for this block.
+     * @param totalBlockReward Total delegators' reward for this block.
      * @param validator Validator address (signer).
      * @param blockNumber Current block number.
      * @param blockTimestamp Current block timestamp (seconds).

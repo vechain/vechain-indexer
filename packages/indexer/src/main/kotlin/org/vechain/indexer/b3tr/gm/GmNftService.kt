@@ -56,6 +56,6 @@ open class GmNftService(
 
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<GmNft>, existing: List<GmNft>) {
-        saveVersionedDocuments(updated, existing, repository, gmNftArchiveService, gmNftPruner)
+        saveVersionedDocuments(updated, existing, gmNftArchiveService, gmNftPruner)
     }
 }

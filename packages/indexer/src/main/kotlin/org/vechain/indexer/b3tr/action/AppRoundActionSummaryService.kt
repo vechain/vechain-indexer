@@ -102,7 +102,6 @@ open class AppRoundActionSummaryService(
         saveVersionedDocuments(
             updated,
             existing,
-            repository,
             appRoundActionSummaryArchiveService,
             appRoundActionSummaryPruner,
         )

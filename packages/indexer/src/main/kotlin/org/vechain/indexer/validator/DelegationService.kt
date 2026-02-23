@@ -96,7 +96,7 @@ open class DelegationService(
 
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<Delegation>, existing: List<Delegation>) {
-        saveVersionedDocuments(updated, existing, repository, archiveService, delegationPruner)
+        saveVersionedDocuments(updated, existing, archiveService, delegationPruner)
     }
 
     open fun invalidateCache() {

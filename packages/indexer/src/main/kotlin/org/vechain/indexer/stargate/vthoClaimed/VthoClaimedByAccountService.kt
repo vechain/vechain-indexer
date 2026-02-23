@@ -36,7 +36,6 @@ open class VthoClaimedByAccountService(
         saveVersionedDocuments(
             updated,
             existing,
-            vthoClaimedByAccountRepository,
             vthoClaimedByAccountArchiveService,
             vthoClaimByAccountPruner,
         )
