@@ -76,7 +76,7 @@ open class StargateTokenService(
     }
 
     /** Persist updated token snapshots. */
-    @Transactional
+    @Transactional(rollbackFor = [Exception::class])
     open fun save(tokens: Collection<StargateToken>, archive: List<StargateToken>) {
         if (tokens.isEmpty()) return
         stargateTokenRepository.saveAll(tokens)
