@@ -53,15 +53,9 @@ open class VeVoteResultService(
         return accumulator.results()
     }
 
-    @Transactional
+    @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<VeVoteProposalResult>, existing: List<VeVoteProposalResult>) {
-        saveVersionedDocuments(
-            updated,
-            existing,
-            repository,
-            veVoteResultArchiveService,
-            veVoteResultPruner,
-        )
+        saveVersionedDocuments(updated, existing, veVoteResultArchiveService, veVoteResultPruner)
     }
 
     protected fun createOrUpdateExisting(

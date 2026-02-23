@@ -7,6 +7,9 @@ import java.math.BigInteger
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.BulkOperations
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.convert.MongoConverter
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.pruner.TargetedPruner
@@ -28,12 +31,18 @@ internal class VthoClaimByAccountServiceTest {
     lateinit var archiveService: ArchiveService<VthoClaimedByAccount, VthoClaimedByAccountArchive>
 
     @MockK lateinit var pruner: TargetedPruner<VthoClaimedByAccount, VthoClaimedByAccountArchive>
+    @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
+    @MockK(relaxed = true) lateinit var bulkOps: BulkOperations
+    @MockK(relaxed = true) lateinit var converter: MongoConverter
 
     private lateinit var service: VthoClaimedByAccountService
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
+        every { archiveService.mongoTemplate } returns mongoTemplate
+        every { mongoTemplate.bulkOps(any(), any<Class<*>>()) } returns bulkOps
+        every { mongoTemplate.converter } returns converter
         service = VthoClaimedByAccountService(repository, archiveService, pruner)
     }
 
@@ -284,12 +293,11 @@ internal class VthoClaimByAccountServiceTest {
                     id = "0xabc",
                 )
             )
-        every { repository.saveAll(update) } returns update
         every { archiveService.saveAll(existing) } just Runs
 
         service.save(update, existing)
 
-        verify(exactly = 1) { repository.saveAll(update) }
+        verify(exactly = 1) { bulkOps.execute() }
         verify(exactly = 1) { archiveService.saveAll(existing) }
     }
 
@@ -297,13 +305,11 @@ internal class VthoClaimByAccountServiceTest {
     fun `update does not save or archive empty lists`() {
         val update = emptyList<VthoClaimedByAccount>()
         val existing = emptyList<VthoClaimedByAccount>()
-        every { repository.saveAll(update) } returns update
-        every { archiveService.saveAll(existing) } just Runs
 
         service.save(update, existing)
 
-        verify(exactly = 0) { repository.saveAll(update) }
-        verify(exactly = 0) { archiveService.saveAll(existing) }
+        verify(exactly = 0) { bulkOps.execute() }
+        verify(exactly = 0) { archiveService.saveAll(any()) }
     }
 
     @Test

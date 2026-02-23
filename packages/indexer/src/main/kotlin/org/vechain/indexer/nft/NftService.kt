@@ -28,7 +28,7 @@ open class NftService(
 ) {
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<IndexedNft>, existing: List<IndexedNft>) {
-        saveVersionedDocuments(updated, existing, nftRepository, nftArchiveService, nftPruner)
+        saveVersionedDocuments(updated, existing, nftArchiveService, nftPruner)
     }
 
     open suspend fun parseRecords(
