@@ -14,9 +14,6 @@ import org.vechain.indexer.validator.domain.ValidatorDecoder.hasAbiData
 @Profile("stargate", "vtho-generated-by-block")
 @Service
 open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBlockRepository) {
-    private var latestRecordCache: VthoGeneratedByBlock? = null
-    private var cacheInitialized: Boolean = false
-
     /**
      * @param events List of decoded blockchain events for the block.
      * @param block Block metadata (timestamp, number, id).
@@ -73,14 +70,7 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
      * @dev Throws if the incoming block number <= last stored block number.
      */
     private fun validateAndLoadLatest(block: Block): VthoGeneratedByBlock? {
-        val latest =
-            if (cacheInitialized) latestRecordCache
-            else {
-                val loaded = repository.getLatestRecord()
-                latestRecordCache = loaded
-                cacheInitialized = true
-                loaded
-            }
+        val latest = repository.getLatestRecord()
 
         if (latest != null && block.number <= latest.blockNumber) {
             throw IllegalStateException(
@@ -155,12 +145,6 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
     open fun save(records: List<VthoGeneratedByBlock>) {
         if (records.isEmpty()) return
         repository.saveAll(records)
-        latestRecordCache = records.last()
-    }
-
-    open fun invalidateCache() {
-        latestRecordCache = null
-        cacheInitialized = false
     }
 
     /**

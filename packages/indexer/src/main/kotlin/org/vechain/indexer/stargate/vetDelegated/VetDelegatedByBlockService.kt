@@ -24,9 +24,6 @@ open class VetDelegatedByBlockService(
     private val repository: VetDelegatedByBlockRepository,
     private val delegationRepository: DelegationRepository,
 ) {
-    private var latestRecordCache: VetDelegatedByBlock? = null
-    private var cacheInitialized: Boolean = false
-
     /**
      * @param block The block to process.
      * @return List of `VetDelegatedByBlock` output snapshots (includes rollover if applicable).
@@ -38,14 +35,7 @@ open class VetDelegatedByBlockService(
      *     4. Generate a `VetDelegatedByBlock` snapshot
      */
     open fun processBlock(block: Block): List<VetDelegatedByBlock> {
-        val latest =
-            if (cacheInitialized) latestRecordCache
-            else {
-                val loaded = repository.getLatestRecord()
-                latestRecordCache = loaded
-                cacheInitialized = true
-                loaded
-            }
+        val latest = repository.getLatestRecord()
         val lastBlock = latest?.blockNumber
 
         if (lastBlock != null && block.number <= lastBlock) {
@@ -148,13 +138,5 @@ open class VetDelegatedByBlockService(
     @Transactional(rollbackFor = [Exception::class])
     open fun saveRecords(records: List<VetDelegatedByBlock>) {
         repository.saveAll(records)
-        if (records.isNotEmpty()) {
-            latestRecordCache = records.last()
-        }
-    }
-
-    open fun invalidateCache() {
-        latestRecordCache = null
-        cacheInitialized = false
     }
 }
