@@ -6,7 +6,6 @@ enum class TreasuryTransferCategory {
     GM_UPGRADE,
     GRANT,
     GOVERNANCE,
-    IN,
     OUT,
     OTHER,
 }

@@ -140,23 +140,9 @@ open class TreasuryTransferService(
             return TreasuryTransferCategory.GOVERNANCE to "Governance transfer"
         }
         if (from == treasury) {
-            val toKnown = known[to] != null || to == grantsManager || to == governanceTimelock
-            return if (toKnown) {
-                TreasuryTransferCategory.OUT to "B3TR Sent"
-            } else {
-                TreasuryTransferCategory.OTHER to "B3TR Sent"
-            }
+            return TreasuryTransferCategory.OUT to "B3TR Sent"
         }
-        if (to == treasury) {
-            val fromKnown = known[from] != null
-            return if (fromKnown) {
-                TreasuryTransferCategory.IN to "B3TR Received"
-            } else {
-                TreasuryTransferCategory.OTHER to "B3TR Received"
-            }
-        }
-        return TreasuryTransferCategory.OTHER to
-            (if (from == treasury) "B3TR Sent" else "B3TR Received")
+        return TreasuryTransferCategory.OTHER to "B3TR Received"
     }
 
     private fun levelNameToLabel(level: GmLevelName): String =
