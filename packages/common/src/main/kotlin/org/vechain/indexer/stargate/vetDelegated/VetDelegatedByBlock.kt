@@ -16,7 +16,7 @@ data class VetDelegatedByBlock
 @ConstructorBinding
 constructor(
     @JsonIgnore override val blockId: String,
-    @JsonIgnore @Id override val blockNumber: Long,
+    @JsonIgnore override val blockNumber: Long,
     @JsonIgnore override val blockTimestamp: Long,
     override val total: BigInteger,
     override val byLevel: Map<TokenLevel, BigInteger>,
@@ -34,6 +34,7 @@ constructor(
     @JsonIgnore override val weekTotal: BigInteger? = null,
     @JsonIgnore override val monthTotal: BigInteger? = null,
     @JsonIgnore override val yearTotal: BigInteger? = null,
+    @Id val id: String = blockNumber.toString(),
 ) : TimeFrameDocument, LevelledValue<BigInteger> {
     override fun valueForLevel(level: TokenLevel?): BigInteger =
         if (level == null) total else byLevel[level] ?: BigInteger.ZERO

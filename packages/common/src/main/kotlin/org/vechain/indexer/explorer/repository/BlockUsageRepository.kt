@@ -6,7 +6,7 @@ import org.vechain.indexer.BaseIndexedRepository
 import org.vechain.indexer.explorer.BlockUsage
 
 @Repository
-interface BlockUsageRepository : BaseIndexedRepository<BlockUsage, Long> {
+interface BlockUsageRepository : BaseIndexedRepository<BlockUsage, String> {
 
     /**
      * Find all block usage records within a timestamp range (inclusive).

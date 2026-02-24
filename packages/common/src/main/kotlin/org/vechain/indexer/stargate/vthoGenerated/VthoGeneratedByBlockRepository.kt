@@ -10,7 +10,7 @@ import org.vechain.indexer.stargate.timeFrame.TimeFrameRepo
 
 @Profile("stargate", "vtho-generated-by-block")
 interface VthoGeneratedByBlockRepository :
-    BaseIndexedRepository<VthoGeneratedByBlock, Long>, TimeFrameRepo<VthoGeneratedByBlock> {
+    BaseIndexedRepository<VthoGeneratedByBlock, String>, TimeFrameRepo<VthoGeneratedByBlock> {
     override fun findByTimeFramesContains(
         timeFrame: TimeFrame,
         pageable: Pageable,
@@ -49,9 +49,6 @@ interface VthoGeneratedByBlockRepository :
         blockTimestamp: Long,
         pageable: Pageable,
     ): Slice<VthoGeneratedByBlock>
-
-    @Aggregation(pipeline = ["{ '\$sort': { 'blockNumber': -1 } }", "{ '\$limit': 1 }"])
-    override fun getLatestRecord(): VthoGeneratedByBlock?
 
     @Aggregation(
         pipeline =
