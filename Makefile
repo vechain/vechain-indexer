@@ -3,8 +3,15 @@ SHELL := /bin/bash
 help:
 	@egrep -h '\s#@\s' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?#@ "}; {printf "\033[36m  %-30s\033[0m %s\n", $$1, $$2}'
 
-format: #@ Format the code with Spotless.
+format: format-json #@ Format the code with Spotless.
 	./gradlew spotlessApply
+
+format-json: #@ Format JSON dashboard files with jq.
+	@for f in metrics/datadog/*.json metrics/grafana/provisioning/dashboards/*.json; do \
+		if [ -f "$$f" ]; then \
+			jq '.' "$$f" > "$$f.tmp" && mv "$$f.tmp" "$$f"; \
+		fi; \
+	done
 
 # Application Build (Gradle)
 build: format build-indexer build-api #@ Build the application with Gradle.
@@ -27,6 +34,8 @@ build-k6: #@ Build the K6 docker image.
 
 test: #@ Run all the tests (excluding e2e).
 	./gradlew cleanTest test -x :packages:e2e:test
+test-ci: #@ Run all tests for CI (with caching, excludes e2e).
+	./gradlew test -x :packages:e2e:test
 test-e2e: #@ Run all the end-to-end tests.
 	./gradlew clean :package:e2e:test --stacktrace
 test-api: #@ Run all the API tests.

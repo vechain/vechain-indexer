@@ -32,11 +32,13 @@ open class TotalAccountsConfig {
     open fun totalAccountsPruner(
         totalAccountsArchiveService: ArchiveService<TotalAccounts, TotalAccountsArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
+        @Value("\${indexer.pruner.enabled}") prunerEnabled: Boolean,
     ): TargetedPruner<TotalAccounts, TotalAccountsArchive> =
         PrunerService(
             TotalAccountsArchive::class,
             totalAccountsArchiveService,
             prunerRemovalChunkSize,
+            prunerEnabled,
         )
 
     @Bean

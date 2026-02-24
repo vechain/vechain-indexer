@@ -463,6 +463,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-round.b3tr-sustainable-actions
     },
     {
+      name  = "PRUNER_ENABLED"
+      value = each.value.indexer.pruner.enabled
+    },
+    {
       name  = "PRUNER_INTERVAL"
       value = each.value.indexer.pruner.interval
     },
@@ -893,6 +897,10 @@ module "ecs-backend-service" {
     {
       name  = "HEALTHCHECK_INACTIVE_THRESHOLD_NOT_SYNCING"
       value = each.value.indexer.healthcheck.inactive-threshold-not-syncing
+    },
+    {
+      name  = "HEALTHCHECK_REPORT_INTERVAL_MS"
+      value = each.value.indexer.healthcheck.report-interval-ms
     },
     {
       name  = "METRICS_ID"

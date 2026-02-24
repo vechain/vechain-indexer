@@ -2,7 +2,9 @@ package org.vechain.indexer
 
 import kotlin.time.TimeSource
 import org.slf4j.LoggerFactory
+import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.thor.model.BlockIdentifier
 
 abstract class BaseProcessor(
@@ -10,6 +12,7 @@ abstract class BaseProcessor(
     private val indexerName: String,
     protected val checkpointService: CheckpointService,
     protected val collectionName: String,
+    private val processorMetrics: ProcessorMetrics,
 ) : IndexerProcessor {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -20,9 +23,9 @@ abstract class BaseProcessor(
         val start = TimeSource.Monotonic.markNow()
         try {
             processEntry(entry)
-            ProcessorMetrics.incrementEventsCounter(indexerName, entry.events().size.toDouble())
+            processorMetrics.incrementEventsCounter(indexerName, entry.events().size.toDouble())
         } finally {
-            ProcessorMetrics.observeProcessingDuration(indexerName, start.elapsedNow())
+            processorMetrics.observeProcessingDuration(indexerName, start.elapsedNow())
         }
     }
 
@@ -45,8 +48,9 @@ abstract class BaseProcessor(
         return listOfNotNull(latestRecord, checkpoint).maxByOrNull { it.number }
     }
 
+    @Transactional(rollbackFor = [Exception::class])
     override fun rollback(blockNumber: Long) {
-        checkpointService.saveCheckpoint(collectionName, blockNumber)
+        checkpointService.saveCheckpoint(collectionName, blockNumber - 1)
         repository.deleteAllByBlockNumberGreaterThanEqual(blockNumber)
     }
 }

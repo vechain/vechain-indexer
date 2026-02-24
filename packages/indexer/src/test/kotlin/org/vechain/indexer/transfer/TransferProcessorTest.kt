@@ -10,6 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 
 @ExtendWith(MockKExtension::class)
 class TransferProcessorTest {
@@ -19,6 +20,8 @@ class TransferProcessorTest {
 
     @MockK lateinit var checkpointService: CheckpointService
 
+    private val processorMetrics: ProcessorMetrics = mockk(relaxed = true)
+
     private lateinit var transferProcessor: TransferProcessor
 
     @BeforeEach
@@ -26,7 +29,12 @@ class TransferProcessorTest {
         MockKAnnotations.init(this)
 
         transferProcessor =
-            TransferProcessor(transferService, transferEventRepository, checkpointService)
+            TransferProcessor(
+                transferService,
+                transferEventRepository,
+                checkpointService,
+                processorMetrics,
+            )
     }
 
     @Test

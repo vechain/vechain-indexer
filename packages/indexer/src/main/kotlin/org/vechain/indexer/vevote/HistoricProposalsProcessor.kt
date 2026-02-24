@@ -6,6 +6,7 @@ import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 
 @Profile("vevote", "vevote-historic-proposals")
 @Component
@@ -13,12 +14,14 @@ open class HistoricProposalsProcessor(
     private val repository: HistoricProposalsRepository,
     private val historicProposalsService: HistoricProposalsService,
     checkpointService: CheckpointService,
+    processorMetrics: ProcessorMetrics,
 ) :
     BaseProcessor(
         repository = repository,
         indexerName = IndexerNames.HISTORIC_PROPOSALS.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.HISTORIC_PROPOSALS.COLLECTION,
+        processorMetrics = processorMetrics,
     ) {
 
     override suspend fun processEntry(entry: IndexingResult) {

@@ -123,7 +123,11 @@ class DelegationServiceTest {
                 validatorCycleLength = 0,
             )
 
-        every { repository.findByValidatorNextCycleInAndStatusIn(any(), any()) } returns listOf(due)
+        // Zero-cycle query returns nothing; block-specific query returns the due delegation
+        every { repository.findByValidatorNextCycleInAndStatusIn(listOf(0L), any()) } returns
+            emptyList()
+        every { repository.findByValidatorNextCycleInAndStatusIn(listOf(10L), any()) } returns
+            listOf(due)
 
         val (updates, archive) =
             service.processBlock(

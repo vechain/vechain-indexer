@@ -3,6 +3,7 @@ package org.vechain.indexer.performance.stargateRewards
 import java.math.BigInteger
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.performance.DetailedProfiler
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.stargate.rewards.TokenRewardService
 import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
@@ -32,8 +33,9 @@ class ProfiledTokenRewardService(
     archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
     delegationRepository: DelegationRepository,
     thorClient: ThorClient,
+    pruner: TargetedPruner<TokenReward, TokenRewardArchive>,
     private val profiler: DetailedProfiler,
-) : TokenRewardService(repository, archiveService, delegationRepository, thorClient) {
+) : TokenRewardService(repository, archiveService, delegationRepository, thorClient, pruner) {
 
     override suspend fun processBlock(
         block: Block,

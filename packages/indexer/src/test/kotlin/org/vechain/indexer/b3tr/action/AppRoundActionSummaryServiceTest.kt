@@ -13,6 +13,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.BulkOperations
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.convert.MongoConverter
 import org.springframework.data.repository.findByIdOrNull
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.AppRoundActionSummaryRepository
@@ -31,6 +34,10 @@ internal class AppRoundActionSummaryServiceTest {
     lateinit var archiveService: ArchiveService<AppRoundActionSummary, AppRoundActionSummaryArchive>
 
     @MockK lateinit var pruner: TargetedPruner<AppRoundActionSummary, AppRoundActionSummaryArchive>
+
+    @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
+    @MockK(relaxed = true) lateinit var bulkOps: BulkOperations
+    @MockK(relaxed = true) lateinit var converter: MongoConverter
 
     private lateinit var service: TestableService
 
@@ -64,6 +71,9 @@ internal class AppRoundActionSummaryServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
+        every { archiveService.mongoTemplate } returns mongoTemplate
+        every { mongoTemplate.bulkOps(any(), any<Class<*>>()) } returns bulkOps
+        every { mongoTemplate.converter } returns converter
         service = TestableService(repository, archiveService, pruner)
     }
 
@@ -447,19 +457,18 @@ internal class AppRoundActionSummaryServiceTest {
                 )
             )
 
-        every { repository.saveAll(updated) } returns updated
         every { archiveService.saveAll(archived) } just runs
 
         service.save(updated, archived)
 
-        verify(exactly = 1) { repository.saveAll(updated) }
+        verify(exactly = 1) { bulkOps.execute() }
         verify(exactly = 1) { archiveService.saveAll(archived) }
     }
 
     @Test
     fun `save with empty lists does not call repositories`() {
         service.save(emptyList(), emptyList())
-        verify(exactly = 0) { repository.saveAll(any<List<AppRoundActionSummary>>()) }
+        verify(exactly = 0) { bulkOps.execute() }
         verify(exactly = 0) { archiveService.saveAll(any<List<AppRoundActionSummary>>()) }
     }
 

@@ -33,11 +33,13 @@ open class XAllocResultConfig {
     open fun xAllocResultPruner(
         xAllocResultArchiveService: ArchiveService<XAllocResult, XAllocResultArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
+        @Value("\${indexer.pruner.enabled}") prunerEnabled: Boolean,
     ): TargetedPruner<XAllocResult, XAllocResultArchive> =
         PrunerService(
             klass = XAllocResultArchive::class,
             archiveService = xAllocResultArchiveService,
             prunerRemovalChunkSize = prunerRemovalChunkSize,
+            enabled = prunerEnabled,
         )
 
     @Bean

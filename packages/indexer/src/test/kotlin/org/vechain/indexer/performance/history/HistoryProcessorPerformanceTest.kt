@@ -9,6 +9,7 @@ import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.history.HistoryConfig
 import org.vechain.indexer.history.HistoryProcessor
 import org.vechain.indexer.history.HistoryRepository
@@ -30,6 +31,7 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var blacklistClient: NftBlacklistClient
 
     @Autowired lateinit var checkpointService: CheckpointService
+    @Autowired lateinit var processorMetrics: ProcessorMetrics
 
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
@@ -90,6 +92,7 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
                     historyService = profiledService,
                     profiler = profiler,
                     checkpointService = checkpointService,
+                    processorMetrics = processorMetrics,
                 )
             } else {
                 // Use standard processor
@@ -97,6 +100,7 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
                     repository = historyRepository,
                     historyService = historyService,
                     checkpointService = checkpointService,
+                    processorMetrics = processorMetrics,
                 )
             }
 
@@ -116,11 +120,13 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
         historyService: HistoryService,
         private val profiler: DetailedProfiler,
         checkpointService: CheckpointService,
+        processorMetrics: ProcessorMetrics,
     ) :
         HistoryProcessor(
             repository = repository,
             historyService = historyService,
             checkpointService = checkpointService,
+            processorMetrics = processorMetrics,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("HistoryProcessor.process (per block)") {

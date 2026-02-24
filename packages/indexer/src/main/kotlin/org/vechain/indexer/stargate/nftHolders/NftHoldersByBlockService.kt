@@ -3,6 +3,7 @@ package org.vechain.indexer.stargate.nftHolders
 import java.math.BigInteger
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.stargate.token.TokenLevel
@@ -202,6 +203,7 @@ open class NftHoldersByBlockService(
     private var ownerBalancesToArchive: List<NftOwnerBalance> = emptyList()
 
     /** @notice Persist multiple per-block NFT holder statistics records. */
+    @Transactional(rollbackFor = [Exception::class])
     open fun saveRecords(records: List<NftHoldersByBlock>) {
         repository.saveAll(records)
         saveOwnerBalances()

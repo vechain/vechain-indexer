@@ -103,7 +103,6 @@ open class UserDailyActionSummaryService(
         saveVersionedDocuments(
             updated,
             existing,
-            repository,
             userDailyActionSummaryArchiveService,
             userDailyActionSummaryPruner,
         )

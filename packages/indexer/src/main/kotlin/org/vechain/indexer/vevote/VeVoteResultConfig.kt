@@ -35,11 +35,13 @@ open class VeVoteResultConfig {
         veVoteResultArchiveService:
             ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
+        @Value("\${indexer.pruner.enabled}") prunerEnabled: Boolean,
     ): TargetedPruner<VeVoteProposalResult, VeVoteProposalResultArchive> =
         PrunerService(
             klass = VeVoteProposalResultArchive::class,
             archiveService = veVoteResultArchiveService,
             prunerRemovalChunkSize = prunerRemovalChunkSize,
+            enabled = prunerEnabled,
         )
 
     @Bean

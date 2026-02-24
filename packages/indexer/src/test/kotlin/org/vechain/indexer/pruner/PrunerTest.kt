@@ -18,11 +18,13 @@ internal class PrunerTest {
     @MockK lateinit var archiveService: ArchiveService<MyVersionedDocument, MyArchive>
 
     private lateinit var pruner: PrunerService<MyVersionedDocument, MyArchive>
+    private lateinit var disabledPruner: PrunerService<MyVersionedDocument, MyArchive>
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
         pruner = PrunerService(MyArchive::class, archiveService, 2)
+        disabledPruner = PrunerService(MyArchive::class, archiveService, 2, enabled = false)
     }
 
     @Test
@@ -53,6 +55,49 @@ internal class PrunerTest {
 
         verify(exactly = 1) { archiveService.findRecordsToPrune(any(), eq(2)) }
         verify(exactly = 3) { archiveService.removeAll(any()) }
+    }
+
+    @Test
+    fun `should skip pruning when disabled even with pruneable records`() {
+        every { archiveService.findRecordsToPrune(any(), any()) } returns
+            iteratorOf("1", "2", "3", "4", "5")
+        every { archiveService.removeAll(any()) } just Runs
+
+        disabledPruner.run(50_000)
+
+        verify(exactly = 0) { archiveService.findRecordsToPrune(any(), any()) }
+        verify(exactly = 0) { archiveService.removeAll(any()) }
+    }
+
+    @Test
+    fun `should skip pruning with targeted ids when disabled`() {
+        every { archiveService.findRecordsToPrune(any(), any(), any()) } returns
+            iteratorOf("1", "2", "3")
+        every { archiveService.removeAll(any()) } just Runs
+
+        disabledPruner.run(50_000, listOf("id1", "id2"))
+
+        verify(exactly = 0) { archiveService.findRecordsToPrune(any(), any(), any()) }
+        verify(exactly = 0) { archiveService.removeAll(any()) }
+    }
+
+    @Test
+    fun `enabled flag controls pruning - enabled prunes, disabled does not`() {
+        every { archiveService.findRecordsToPrune(any(), any()) } returns iteratorOf("1", "2", "3")
+        every { archiveService.removeAll(any()) } just Runs
+
+        val enabledPruner = PrunerService(MyArchive::class, archiveService, 2, enabled = true)
+        enabledPruner.run(50_000)
+
+        verify(exactly = 1) { archiveService.findRecordsToPrune(any(), eq(2)) }
+        verify(exactly = 2) { archiveService.removeAll(any()) }
+
+        clearMocks(archiveService)
+
+        disabledPruner.run(50_000)
+
+        verify(exactly = 0) { archiveService.findRecordsToPrune(any(), any()) }
+        verify(exactly = 0) { archiveService.removeAll(any()) }
     }
 }
 

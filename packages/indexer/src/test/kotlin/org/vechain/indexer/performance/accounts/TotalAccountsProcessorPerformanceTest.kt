@@ -16,6 +16,7 @@ import org.vechain.indexer.accounts.TotalAccountsService
 import org.vechain.indexer.accounts.repository.TotalAccountsRepository
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
 
@@ -28,6 +29,7 @@ class TotalAccountsProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var archiveService: ArchiveService<TotalAccounts, TotalAccountsArchive>
     @Autowired lateinit var mongoTemplate: MongoTemplate
     @Autowired lateinit var checkpointService: CheckpointService
+    @Autowired lateinit var processorMetrics: ProcessorMetrics
 
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
@@ -90,6 +92,7 @@ class TotalAccountsProcessorPerformanceTest : BasePerformanceTest() {
                     archiveService = archiveService,
                     profiler = profiler,
                     checkpointService = checkpointService,
+                    processorMetrics = processorMetrics,
                 )
             } else {
                 TotalAccountsProcessor(
@@ -97,6 +100,7 @@ class TotalAccountsProcessorPerformanceTest : BasePerformanceTest() {
                     repository = totalAccountsRepository,
                     archiveService = archiveService,
                     checkpointService = checkpointService,
+                    processorMetrics = processorMetrics,
                 )
             }
 
@@ -118,12 +122,14 @@ class TotalAccountsProcessorPerformanceTest : BasePerformanceTest() {
         archiveService: ArchiveService<TotalAccounts, TotalAccountsArchive>,
         private val profiler: DetailedProfiler,
         checkpointService: CheckpointService,
+        processorMetrics: ProcessorMetrics,
     ) :
         TotalAccountsProcessor(
             service = service,
             repository = repository,
             archiveService = archiveService,
             checkpointService = checkpointService,
+            processorMetrics = processorMetrics,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    AccountsProcessor.process (per block)") { super.processEntry(entry) }

@@ -44,6 +44,7 @@ open class DelegationService(
 ) {
     private val logger = LoggerFactory.getLogger(DelegationService::class.java)
     private var cachedValidators: Set<String> = emptySet()
+    private var zeroCycleDelegationsCache: MutableList<Delegation>? = null
 
     open fun findById(id: String): Delegation? = repository.findByIdOrNull(id)
 
@@ -88,12 +89,55 @@ open class DelegationService(
         )
         disappeared.forEach { handleValidatorDisappeared(it, block, accumulator, validatorToIds) }
 
-        return accumulator.results()
+        val results = accumulator.results()
+        updateZeroCycleCache(results.first)
+        return results
     }
 
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<Delegation>, existing: List<Delegation>) {
-        saveVersionedDocuments(updated, existing, repository, archiveService, delegationPruner)
+        saveVersionedDocuments(updated, existing, archiveService, delegationPruner)
+    }
+
+    open fun invalidateCache() {
+        zeroCycleDelegationsCache = null
+    }
+
+    // ------------------------------
+    // Cache maintenance
+    // ------------------------------
+
+    /**
+     * Updates the zero-cycle cache after a block is processed. Delegations that got a non-zero
+     * validatorNextCycle or are EXITED are removed. New delegations with validatorNextCycle == 0
+     * are added.
+     */
+    private fun updateZeroCycleCache(updatedDelegations: List<Delegation>) {
+        val cache = zeroCycleDelegationsCache ?: return
+        if (updatedDelegations.isEmpty()) return
+
+        val updatedById = updatedDelegations.associateBy { it.id }
+
+        // Single pass: update existing entries and remove those no longer zero-cycle
+        val cachedIds = mutableSetOf<String>()
+        val iter = cache.listIterator()
+        while (iter.hasNext()) {
+            val cached = iter.next()
+            val entry = updatedById[cached.id] ?: cached
+            if (entry.validatorNextCycle != 0L || entry.status == Status.EXITED) {
+                iter.remove()
+            } else {
+                if (entry !== cached) iter.set(entry)
+                cachedIds.add(entry.id)
+            }
+        }
+
+        // Add any new zero-cycle delegations not already in cache
+        updatedDelegations
+            .filter {
+                it.validatorNextCycle == 0L && it.status != Status.EXITED && it.id !in cachedIds
+            }
+            .forEach { cache.add(it) }
     }
 
     // ------------------------------
@@ -120,16 +164,30 @@ open class DelegationService(
     // ------------------------------
 
     private fun findDueDelegations(block: Block): Pair<List<Delegation>, List<Delegation>> {
-        val delegations =
+        // Zero-cycle delegations rarely change, so we cache them to avoid
+        // loading the same set from MongoDB on every single block.
+        val zeroCycle =
+            zeroCycleDelegationsCache
+                ?: run {
+                    val loaded =
+                        repository
+                            .findByValidatorNextCycleInAndStatusIn(
+                                listOf(0L),
+                                listOf(Status.QUEUED, Status.EXITING),
+                            )
+                            .toMutableList()
+                    zeroCycleDelegationsCache = loaded
+                    loaded
+                }
+
+        // Due-for-transition delegations: fast point lookup for this specific block number
+        val due =
             repository.findByValidatorNextCycleInAndStatusIn(
-                listOf(block.number, 0L),
+                listOf(block.number),
                 listOf(Status.QUEUED, Status.EXITING),
             )
 
-        val zeroCycle = delegations.filter { it.validatorNextCycle == 0L }
-        val nonZeroCycle = delegations - zeroCycle // everything else
-
-        return zeroCycle to nonZeroCycle
+        return zeroCycle to due
     }
 
     private fun findDelegationsFromEvents(events: List<IndexedEvent>): List<Delegation> {

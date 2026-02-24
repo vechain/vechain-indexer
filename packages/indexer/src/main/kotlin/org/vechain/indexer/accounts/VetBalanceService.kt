@@ -103,7 +103,7 @@ open class VetBalanceService(private val repository: VetBalanceRepository) {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor = [Exception::class])
     open fun save(records: List<VetBalance>) {
         if (records.isEmpty()) return
         repository.saveAll(records)

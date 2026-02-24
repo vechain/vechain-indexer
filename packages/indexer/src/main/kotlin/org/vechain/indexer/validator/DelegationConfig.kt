@@ -33,8 +33,14 @@ open class DelegationConfig {
     open fun delegationPruner(
         delegationArchiveService: ArchiveService<Delegation, DelegationArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
+        @Value("\${indexer.pruner.enabled}") prunerEnabled: Boolean,
     ): TargetedPruner<Delegation, DelegationArchive> =
-        PrunerService(DelegationArchive::class, delegationArchiveService, prunerRemovalChunkSize)
+        PrunerService(
+            DelegationArchive::class,
+            delegationArchiveService,
+            prunerRemovalChunkSize,
+            prunerEnabled,
+        )
 
     @Bean
     open fun delegationIndexer(

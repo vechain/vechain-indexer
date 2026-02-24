@@ -10,6 +10,7 @@ import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockIdentifier
 import org.vechain.indexer.thor.model.BlockRevision
@@ -21,12 +22,14 @@ open class AmnProcessor(
     private val amnService: AmnService,
     private val thorClient: ThorClient,
     checkpointService: CheckpointService,
+    processorMetrics: ProcessorMetrics,
 ) :
     BaseProcessor(
         repository,
         IndexerNames.AUTHORITY_NODE.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.AUTHORITY_NODE.COLLECTION,
+        processorMetrics = processorMetrics,
     ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)

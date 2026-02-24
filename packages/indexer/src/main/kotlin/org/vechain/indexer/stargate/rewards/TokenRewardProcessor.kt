@@ -1,5 +1,7 @@
 package org.vechain.indexer.stargate.rewards
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
@@ -7,6 +9,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
@@ -18,6 +21,7 @@ open class TokenRewardProcessor(
     repository: TokenRewardRepository,
     archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
     checkpointService: CheckpointService,
+    processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = repository,
@@ -25,15 +29,17 @@ open class TokenRewardProcessor(
         indexerName = IndexerNames.TOKEN_REWARD.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.TOKEN_REWARD.COLLECTION,
+        processorMetrics = processorMetrics,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {
+            service.invalidateCache()
             throw IllegalArgumentException("Block cannot be null")
         }
         val (updated, existing) = service.processBlock(entry.block, entry.callResults())
 
         if (updated.isNotEmpty() || existing.isNotEmpty()) {
-            service.save(updated, existing)
+            withContext(Dispatchers.IO) { service.save(updated, existing) }
         }
     }
 }

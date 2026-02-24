@@ -8,7 +8,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.BulkOperations
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.convert.MongoConverter
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_TRANSFER
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_TRANSFER_DUPLICATE
@@ -27,6 +29,8 @@ internal class NftServiceTest {
     @MockK lateinit var pruner: TargetedPruner<IndexedNft, NftArchive>
     @MockK lateinit var blacklistClient: NftBlacklistClient
     @MockK lateinit var mongoTemplate: MongoTemplate
+    @MockK(relaxed = true) lateinit var bulkOps: BulkOperations
+    @MockK(relaxed = true) lateinit var converter: MongoConverter
 
     private lateinit var nftService: NftService
 
@@ -36,6 +40,9 @@ internal class NftServiceTest {
         nftService =
             NftService(repository, nftArchiveService, pruner, blacklistClient, mongoTemplate)
         coEvery { blacklistClient.isBlacklisted(any(), any()) } returns false
+        every { nftArchiveService.mongoTemplate } returns mongoTemplate
+        every { mongoTemplate.bulkOps(any(), any<Class<*>>()) } returns bulkOps
+        every { mongoTemplate.converter } returns converter
     }
 
     // Update tests
@@ -71,12 +78,11 @@ internal class NftServiceTest {
                 )
             )
 
-        every { repository.saveAll(updated) } returns updated
         every { nftArchiveService.saveAll(existing) } just Runs
 
         nftService.save(updated, existing)
 
-        verify(exactly = 1) { repository.saveAll(updated) }
+        verify(exactly = 1) { bulkOps.execute() }
         verify(exactly = 1) { nftArchiveService.saveAll(existing) }
     }
 
@@ -98,12 +104,11 @@ internal class NftServiceTest {
                 )
             )
 
-        every { repository.saveAll(updated) } returns updated
         every { nftArchiveService.saveAll(existing) } just Runs
 
         nftService.save(updated, existing)
 
-        verify(exactly = 0) { repository.saveAll(updated) }
+        verify(exactly = 0) { bulkOps.execute() }
         verify(exactly = 1) { nftArchiveService.saveAll(existing) }
     }
 
@@ -125,13 +130,10 @@ internal class NftServiceTest {
             )
         val existing = emptyList<IndexedNft>()
 
-        every { repository.saveAll(updated) } returns updated
-        every { nftArchiveService.saveAll(existing) } just Runs
-
         nftService.save(updated, existing)
 
-        verify(exactly = 1) { repository.saveAll(updated) }
-        verify(exactly = 0) { nftArchiveService.saveAll(existing) }
+        verify(exactly = 1) { bulkOps.execute() }
+        verify(exactly = 0) { nftArchiveService.saveAll(any()) }
     }
 
     @Test
@@ -139,13 +141,10 @@ internal class NftServiceTest {
         val updated = emptyList<IndexedNft>()
         val existing = emptyList<IndexedNft>()
 
-        every { repository.saveAll(updated) } returns updated
-        every { nftArchiveService.saveAll(existing) } just Runs
-
         nftService.save(updated, existing)
 
-        verify(exactly = 0) { repository.saveAll(updated) }
-        verify(exactly = 0) { nftArchiveService.saveAll(existing) }
+        verify(exactly = 0) { bulkOps.execute() }
+        verify(exactly = 0) { nftArchiveService.saveAll(any()) }
     }
 
     // parseRecords

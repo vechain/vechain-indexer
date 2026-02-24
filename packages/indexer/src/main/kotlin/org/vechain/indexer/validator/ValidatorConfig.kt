@@ -33,8 +33,14 @@ open class ValidatorConfig {
     open fun validatorPruner(
         validatorArchiveService: ArchiveService<Validator, ValidatorArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
+        @Value("\${indexer.pruner.enabled}") prunerEnabled: Boolean,
     ): Pruner =
-        PrunerService(ValidatorArchive::class, validatorArchiveService, prunerRemovalChunkSize)
+        PrunerService(
+            ValidatorArchive::class,
+            validatorArchiveService,
+            prunerRemovalChunkSize,
+            prunerEnabled,
+        )
 
     @Bean
     open fun validatorIndexer(
@@ -59,7 +65,7 @@ open class ValidatorConfig {
             .includeFullBlock()
             .abis("abis/stargate")
             .abiContracts(listOf(builtinStakerAddress))
-            .abiEventNames(listOf("BeneficiarySet", "StakeDecreased"))
+            .abiEventNames(listOf("BeneficiarySet", "StakeDecreased", "ValidationWithdrawn"))
             .callDataClauses(buildClauses(getAllValidatorsAddress))
             .excludeVetTransfers()
             .build()

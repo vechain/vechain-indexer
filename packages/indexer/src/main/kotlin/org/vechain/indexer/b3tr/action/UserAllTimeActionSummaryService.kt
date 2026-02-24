@@ -103,7 +103,6 @@ open class UserAllTimeActionSummaryService(
         saveVersionedDocuments(
             updated,
             existing,
-            repository,
             userAllTimeActionSummaryArchiveService,
             userAllTimeActionSummaryPruner,
         )

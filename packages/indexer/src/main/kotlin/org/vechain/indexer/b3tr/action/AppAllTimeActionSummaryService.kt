@@ -72,7 +72,6 @@ open class AppAllTimeActionSummaryService(
         saveVersionedDocuments(
             updated,
             existing,
-            repository,
             appAllTimeActionSummaryArchiveService,
             appAllTimeActionSummaryPruner,
         )

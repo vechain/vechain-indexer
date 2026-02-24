@@ -1,5 +1,6 @@
-package org.vechain.indexer.config
+package org.vechain.indexer.config.metrics
 
+import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
 import java.util.Locale
@@ -19,6 +20,9 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
     private val bestBlockGauge = AtomicReference(0.0)
     private var bestBlockGaugeInitialized = false
     private val syncGapGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
+    private val blocksProcessedCounters = ConcurrentHashMap<String, Counter>()
+    private val blocksPerSecondGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
+    private val estimatedTimeToSyncGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
 
     fun setComponentHealth(name: String, type: String, value: Double) {
         val key = "$name:$type"
@@ -152,5 +156,50 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
                 ref
             }
             .set(gap.toDouble())
+    }
+
+    fun setEstimatedTimeToSync(indexerName: String, seconds: Double) {
+        val ref =
+            estimatedTimeToSyncGauges[indexerName]
+                ?: estimatedTimeToSyncGauges.computeIfAbsent(indexerName) { name ->
+                    val newRef = AtomicReference(Double.NaN)
+                    registry.gauge(
+                        "indexer_estimated_time_to_sync_seconds",
+                        listOf(Tag.of("indexer_name", name)),
+                        newRef,
+                    ) {
+                        it.get()
+                    }
+                    newRef
+                }
+        ref.set(seconds)
+    }
+
+    fun incrementBlocksProcessed(indexerName: String, count: Double) {
+        val counter =
+            blocksProcessedCounters[indexerName]
+                ?: blocksProcessedCounters.computeIfAbsent(indexerName) { name ->
+                    Counter.builder("indexer_blocks_processed_total")
+                        .description("Total blocks processed by indexer")
+                        .tag("indexer_name", name)
+                        .register(registry)
+                }
+        counter.increment(count)
+    }
+
+    fun setBlocksPerSecond(indexerName: String, blocksPerSecond: Double) {
+        blocksPerSecondGauges
+            .computeIfAbsent(indexerName) { name ->
+                val ref = AtomicReference(0.0)
+                registry.gauge(
+                    "indexer_blocks_per_second_gauge",
+                    listOf(Tag.of("indexer_name", name)),
+                    ref,
+                ) {
+                    it.get()
+                }
+                ref
+            }
+            .set(blocksPerSecond)
     }
 }

@@ -10,6 +10,7 @@ import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.gm.repository.GmNftRepository
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 
 @Profile("b3tr", "b3tr-gm-nft")
 @Component
@@ -18,6 +19,7 @@ open class GmNftProcessor(
     gmNftArchiveService: ArchiveService<GmNft, GmNftArchive>,
     private val service: GmNftService,
     checkpointService: CheckpointService,
+    processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = repository,
@@ -25,6 +27,7 @@ open class GmNftProcessor(
         indexerName = IndexerNames.GM_NFT.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.GM_NFT.COLLECTION,
+        processorMetrics = processorMetrics,
     ) {
 
     override suspend fun processEntry(entry: IndexingResult) {

@@ -1,8 +1,10 @@
 package org.vechain.indexer.stargate.vetDelegated
 
 import java.math.BigInteger
+import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.RolloverUtils
@@ -23,6 +25,9 @@ open class VetDelegatedByBlockService(
     private val repository: VetDelegatedByBlockRepository,
     private val delegationRepository: DelegationRepository,
 ) {
+    private val logger = LoggerFactory.getLogger(VetDelegatedByBlockService::class.java)
+    private var latestRecordCache: VetDelegatedByBlock? = null
+
     /**
      * @param block The block to process.
      * @return List of `VetDelegatedByBlock` output snapshots (includes rollover if applicable).
@@ -34,12 +39,7 @@ open class VetDelegatedByBlockService(
      *     4. Generate a `VetDelegatedByBlock` snapshot
      */
     open fun processBlock(block: Block): List<VetDelegatedByBlock> {
-        val latest = repository.getLatestRecord()
-        val lastBlock = latest?.blockNumber
-
-        if (lastBlock != null && block.number <= lastBlock) {
-            throw IllegalStateException("Block ${block.number} ≤ last persisted block $lastBlock")
-        }
+        val latest = validateAndLoadLatest(block)
 
         // Aggregate current delegation state (ACTIVE + EXITING)
         val activeByLevelResults = delegationRepository.aggregateActiveDelegationsByLevel()
@@ -94,6 +94,7 @@ open class VetDelegatedByBlockService(
 
         // If no change and not first record and no rollover, skip saving
         if (!hasChange && !isFirstRecord && !hasRollover) {
+            advanceCache(block, latest)
             return output
         }
 
@@ -134,7 +135,55 @@ open class VetDelegatedByBlockService(
      * @param records List of documents to store.
      * @notice Persist multiple delegation snapshots.
      */
+    @Transactional(rollbackFor = [Exception::class])
     open fun saveRecords(records: List<VetDelegatedByBlock>) {
         repository.saveAll(records)
+        if (records.isNotEmpty()) {
+            latestRecordCache = records.maxBy { it.blockNumber }
+        }
+    }
+
+    private fun advanceCache(block: Block, latest: VetDelegatedByBlock) {
+        latestRecordCache =
+            latest.copy(
+                blockId = block.id,
+                blockNumber = block.number,
+                blockTimestamp = block.timestamp,
+            )
+    }
+
+    private fun validateAndLoadLatest(block: Block): VetDelegatedByBlock? {
+        val latest = loadLatest(block) ?: return null
+
+        if (block.number != latest.blockNumber + 1) {
+            throw IllegalStateException(
+                "Block ${block.number} is not the next block after last persisted block ${latest.blockNumber}"
+            )
+        }
+
+        return latest
+    }
+
+    private fun loadLatest(block: Block): VetDelegatedByBlock? {
+        val cached = latestRecordCache
+        if (
+            cached != null &&
+                cached.blockNumber == block.number - 1 &&
+                cached.blockId == block.parentID
+        ) {
+            return cached
+        }
+
+        if (cached != null) {
+            logger.info(
+                "Cache miss for block {}: cached blockNumber={}, expected={}, parentID match={}",
+                block.number,
+                cached.blockNumber,
+                block.number - 1,
+                cached.blockId == block.parentID,
+            )
+        }
+
+        return repository.getLatestRecord()
     }
 }

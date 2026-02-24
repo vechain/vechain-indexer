@@ -33,11 +33,13 @@ open class NftHoldersByBlockConfig {
     open fun nftOwnerBalancePruner(
         nftOwnerBalanceArchiveService: ArchiveService<NftOwnerBalance, NftOwnerBalanceArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
+        @Value("\${indexer.pruner.enabled}") prunerEnabled: Boolean,
     ): TargetedPruner<NftOwnerBalance, NftOwnerBalanceArchive> =
         PrunerService(
             NftOwnerBalanceArchive::class,
             nftOwnerBalanceArchiveService,
             prunerRemovalChunkSize,
+            prunerEnabled,
         )
 
     @Bean

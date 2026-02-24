@@ -1,4 +1,4 @@
-package org.vechain.indexer.config
+package org.vechain.indexer.config.metrics
 
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.time.Duration
 import org.springframework.http.HttpMethod
 import org.springframework.stereotype.Component
+import org.vechain.indexer.config.DefaultMetrics
 
 @Component
 class ThorClientMetrics(private val registry: MeterRegistry) {

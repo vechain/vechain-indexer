@@ -2,15 +2,15 @@ package org.vechain.indexer.config
 
 import com.github.kittinunf.fuel.core.FuelError
 import kotlin.time.TimeSource
+import org.vechain.indexer.config.metrics.ThorClientMetrics
 import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.exception.RateLimitException
 import org.vechain.indexer.thor.client.AccountCodeResponse
-import org.vechain.indexer.thor.client.DefaultThorClient
 import org.vechain.indexer.thor.client.ExecuteAccountResponse
 import org.vechain.indexer.thor.model.*
 
 /**
- * Metrics decorator for [DefaultThorClient].
+ * Metrics decorator for [CachingThorClient].
  *
  * Overrides `getBlock`/`getBlockUnexpanded` so the inherited
  * `waitForBlock`/`waitForBlockUnexpanded` (which retry internally) record metrics for each
@@ -20,7 +20,7 @@ class MonitoredThorClient(
     private val metrics: ThorClientMetrics,
     baseUrl: String,
     vararg headers: Pair<String, Any>,
-) : DefaultThorClient(baseUrl, *headers) {
+) : CachingThorClient(baseUrl, *headers) {
 
     private suspend fun <T> withMetrics(method: String, path: String, block: suspend () -> T): T {
         val start = TimeSource.Monotonic.markNow()

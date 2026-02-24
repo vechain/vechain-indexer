@@ -8,6 +8,7 @@ import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 
 @Profile("vevote", "vevote-comments")
 @Component
@@ -16,12 +17,14 @@ open class VeVoteCommentProcessor(
     private val veVoteCommentService: VeVoteCommentService,
     private val mongoTemplate: MongoTemplate,
     checkpointService: CheckpointService,
+    processorMetrics: ProcessorMetrics,
 ) :
     BaseProcessor(
         repository = vevoteCommentRepository,
         indexerName = IndexerNames.VEVOTE_COMMENT.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.VEVOTE_COMMENT.COLLECTION,
+        processorMetrics = processorMetrics,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) return

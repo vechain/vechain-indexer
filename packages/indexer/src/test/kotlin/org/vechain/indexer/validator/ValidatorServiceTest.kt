@@ -1,6 +1,8 @@
 package org.vechain.indexer.validator
 
 import io.mockk.*
+import java.math.BigDecimal
+import java.math.BigInteger
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -375,5 +377,183 @@ class ValidatorServiceTest {
         coVerify(exactly = 1) { thorClient.inspectClauses(any(), any()) }
         verify(exactly = 0) { repository.findAllById(any<List<String>>()) }
         verify(exactly = 0) { repository.saveAll(any<List<Validator>>()) }
+    }
+
+    // --- ValidationWithdrawn tests ---
+
+    private fun makeStakeEvent(
+        blockNumber: Long,
+        validator: String,
+        type: String,
+        params: Map<String, Any>,
+    ): IndexedEvent =
+        IndexedEvent(
+            id = "evt-$type",
+            blockId = "0xBLOCK",
+            blockNumber = blockNumber,
+            blockTimestamp = 111,
+            txId = "0xTX",
+            origin = "0xORIGIN",
+            paid = null,
+            gasUsed = null,
+            gasPayer = null,
+            raw = null,
+            params = AbiEventParameters(returnValues = mapOf("validator" to validator) + params),
+            address = "0xcontract",
+            eventType = type,
+            clauseIndex = 0,
+            signature = null,
+        )
+
+    @Test
+    fun `ValidationWithdrawn reduces exitingValidatorVetStaked`() {
+        val validatorId = "0xVAL1"
+        val existingValidator =
+            Validator(
+                id = validatorId,
+                blockId = "oldBlock",
+                blockNumber = 100,
+                blockTimestamp = 123,
+                status = Status.ACTIVE,
+                exitingValidatorVetStaked = BigDecimal("25000000"),
+                startBlock = 1000L,
+                cyclePeriodLength = 60480L,
+                version = 1,
+            )
+
+        every { repository.findAllById(any<List<String>>()) } returns listOf(existingValidator)
+
+        val withdrawnWei = BigInteger("25000000000000000000000000")
+        val withdrawEvent =
+            makeStakeEvent(200, validatorId, "ValidationWithdrawn", mapOf("stake" to withdrawnWei))
+
+        val result =
+            service.processBlock(
+                block(200),
+                listOf(withdrawEvent),
+                emptyList(),
+                isFullySynced = false,
+            )
+
+        val updated = result.first.single()
+        assertThat(updated.exitingValidatorVetStaked).isEqualByComparingTo(BigDecimal.ZERO)
+    }
+
+    @Test
+    fun `ValidationWithdrawn partial reduction keeps remaining exitingValidatorVetStaked`() {
+        val validatorId = "0xVAL1"
+        val existingValidator =
+            Validator(
+                id = validatorId,
+                blockId = "oldBlock",
+                blockNumber = 100,
+                blockTimestamp = 123,
+                status = Status.ACTIVE,
+                exitingValidatorVetStaked = BigDecimal("25000000"),
+                startBlock = 1000L,
+                cyclePeriodLength = 60480L,
+                version = 1,
+            )
+
+        every { repository.findAllById(any<List<String>>()) } returns listOf(existingValidator)
+
+        val withdrawnWei = BigInteger("10000000000000000000000000")
+        val withdrawEvent =
+            makeStakeEvent(200, validatorId, "ValidationWithdrawn", mapOf("stake" to withdrawnWei))
+
+        val result =
+            service.processBlock(
+                block(200),
+                listOf(withdrawEvent),
+                emptyList(),
+                isFullySynced = false,
+            )
+
+        val updated = result.first.single()
+        assertThat(updated.exitingValidatorVetStaked).isEqualByComparingTo(BigDecimal("15000000"))
+    }
+
+    @Test
+    fun `ValidationWithdrawn does not go below zero`() {
+        val validatorId = "0xVAL1"
+        val existingValidator =
+            Validator(
+                id = validatorId,
+                blockId = "oldBlock",
+                blockNumber = 100,
+                blockTimestamp = 123,
+                status = Status.ACTIVE,
+                exitingValidatorVetStaked = BigDecimal("5000000"),
+                startBlock = 1000L,
+                cyclePeriodLength = 60480L,
+                version = 1,
+            )
+
+        every { repository.findAllById(any<List<String>>()) } returns listOf(existingValidator)
+
+        val withdrawnWei = BigInteger("25000000000000000000000000")
+        val withdrawEvent =
+            makeStakeEvent(200, validatorId, "ValidationWithdrawn", mapOf("stake" to withdrawnWei))
+
+        val result =
+            service.processBlock(
+                block(200),
+                listOf(withdrawEvent),
+                emptyList(),
+                isFullySynced = false,
+            )
+
+        val updated = result.first.single()
+        assertThat(updated.exitingValidatorVetStaked).isEqualByComparingTo(BigDecimal.ZERO)
+    }
+
+    @Test
+    fun `StakeDecreased then ValidationWithdrawn correctly tracks exitingValidatorVetStaked`() {
+        val validatorId = "0xVAL1"
+        val existingValidator =
+            Validator(
+                id = validatorId,
+                blockId = "oldBlock",
+                blockNumber = 100,
+                blockTimestamp = 123,
+                status = Status.ACTIVE,
+                exitingValidatorVetStaked = BigDecimal.ZERO,
+                startBlock = 1000L,
+                cyclePeriodLength = 60480L,
+                version = 1,
+            )
+
+        every { repository.findAllById(any<List<String>>()) } returns listOf(existingValidator)
+
+        val decreasedWei = BigInteger("25000000000000000000000000")
+        val decreaseEvent =
+            makeStakeEvent(150, validatorId, "StakeDecreased", mapOf("removed" to decreasedWei))
+
+        val result1 =
+            service.processBlock(
+                block(150),
+                listOf(decreaseEvent),
+                emptyList(),
+                isFullySynced = false,
+            )
+        val afterDecrease = result1.first.single()
+        assertThat(afterDecrease.exitingValidatorVetStaked)
+            .isEqualByComparingTo(BigDecimal("25000000"))
+
+        every { repository.findAllById(any<List<String>>()) } returns listOf(afterDecrease)
+
+        val withdrawnWei = BigInteger("25000000000000000000000000")
+        val withdrawEvent =
+            makeStakeEvent(200, validatorId, "ValidationWithdrawn", mapOf("stake" to withdrawnWei))
+
+        val result2 =
+            service.processBlock(
+                block(200),
+                listOf(withdrawEvent),
+                emptyList(),
+                isFullySynced = false,
+            )
+        val afterWithdraw = result2.first.single()
+        assertThat(afterWithdraw.exitingValidatorVetStaked).isEqualByComparingTo(BigDecimal.ZERO)
     }
 }

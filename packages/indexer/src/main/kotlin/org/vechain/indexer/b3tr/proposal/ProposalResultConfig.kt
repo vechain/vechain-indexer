@@ -33,11 +33,13 @@ open class ProposalResultConfig {
     open fun proposalResultPruner(
         proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
+        @Value("\${indexer.pruner.enabled}") prunerEnabled: Boolean,
     ): TargetedPruner<ProposalResult, ProposalResultArchive> =
         PrunerService(
             klass = ProposalResultArchive::class,
             archiveService = proposalResultArchiveService,
             prunerRemovalChunkSize = prunerRemovalChunkSize,
+            enabled = prunerEnabled,
         )
 
     @Bean

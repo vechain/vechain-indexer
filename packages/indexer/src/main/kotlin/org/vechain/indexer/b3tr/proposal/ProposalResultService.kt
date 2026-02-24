@@ -184,7 +184,6 @@ open class ProposalResultService(
         saveVersionedDocuments(
             updated,
             existing,
-            repository,
             proposalResultArchiveService,
             proposalResultPruner,
         )

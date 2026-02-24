@@ -6,6 +6,7 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.just
+import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.thor.model.BlockIdentifier
 
 @ExtendWith(MockKExtension::class)
@@ -27,17 +29,17 @@ class BaseProcessorTest {
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
-        processor = TestableBaseProcessor(repository, checkpointService)
+        processor = TestableBaseProcessor(repository, checkpointService, mockk(relaxed = true))
     }
 
     @Test
     fun `rollback - saves checkpoint and deletes blocks starting from requested height`() {
-        every { checkpointService.saveCheckpoint(TEST_COLLECTION, 10) } just Runs
+        every { checkpointService.saveCheckpoint(TEST_COLLECTION, 9) } just Runs
         every { repository.deleteAllByBlockNumberGreaterThanEqual(10) } just Runs
 
         processor.rollback(10)
 
-        verify { checkpointService.saveCheckpoint(TEST_COLLECTION, 10) }
+        verify { checkpointService.saveCheckpoint(TEST_COLLECTION, 9) }
         verify { repository.deleteAllByBlockNumberGreaterThanEqual(10) }
     }
 
@@ -98,7 +100,15 @@ class BaseProcessorTest {
     class TestableBaseProcessor(
         repository: BaseIndexedRepository<*, *>,
         checkpointService: CheckpointService,
-    ) : BaseProcessor(repository, TEST_INDEXER_NAME, checkpointService, TEST_COLLECTION) {
+        processorMetrics: ProcessorMetrics,
+    ) :
+        BaseProcessor(
+            repository,
+            TEST_INDEXER_NAME,
+            checkpointService,
+            TEST_COLLECTION,
+            processorMetrics,
+        ) {
 
         override suspend fun processEntry(entry: IndexingResult) {
             // no-op for tests

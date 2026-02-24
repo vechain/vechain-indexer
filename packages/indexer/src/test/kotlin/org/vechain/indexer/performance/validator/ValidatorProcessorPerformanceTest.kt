@@ -10,6 +10,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.validator.Validator
@@ -27,6 +28,7 @@ class ValidatorProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var validatorService: ValidatorService
     @Autowired lateinit var archiveService: ArchiveService<Validator, ValidatorArchive>
     @Autowired lateinit var checkpointService: CheckpointService
+    @Autowired lateinit var processorMetrics: ProcessorMetrics
 
     @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
     lateinit var builtinStakerAddress: String
@@ -98,6 +100,7 @@ class ValidatorProcessorPerformanceTest : BasePerformanceTest() {
                     archiveService = archiveService,
                     profiler = profiler,
                     checkpointService = checkpointService,
+                    processorMetrics = processorMetrics,
                 )
             } else {
                 ValidatorProcessor(
@@ -105,6 +108,7 @@ class ValidatorProcessorPerformanceTest : BasePerformanceTest() {
                     service = serviceToUse,
                     archiveService = archiveService,
                     checkpointService = checkpointService,
+                    processorMetrics = processorMetrics,
                 )
             }
 
@@ -128,12 +132,14 @@ class ValidatorProcessorPerformanceTest : BasePerformanceTest() {
         archiveService: ArchiveService<Validator, ValidatorArchive>,
         private val profiler: DetailedProfiler,
         checkpointService: CheckpointService,
+        processorMetrics: ProcessorMetrics,
     ) :
         ValidatorProcessor(
             repository = repository,
             service = service,
             archiveService = archiveService,
             checkpointService = checkpointService,
+            processorMetrics = processorMetrics,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    ValidatorProcessor.process (per block)") {

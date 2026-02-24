@@ -17,6 +17,7 @@ import org.vechain.indexer.b3tr.action.UserAllTimeActionSummaryProcessor
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummaryService
 import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryRepository
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.pruner.TargetedPruner
@@ -34,6 +35,7 @@ class UserAllTimeActionSummaryProcessorPerformanceTest : BasePerformanceTest() {
     lateinit var pruner: TargetedPruner<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>
     @Autowired lateinit var impactConfig: ActionImpactConfig
     @Autowired lateinit var checkpointService: CheckpointService
+    @Autowired lateinit var processorMetrics: ProcessorMetrics
 
     @Value("\${business-event.substitutions.B3TR_CONTRACT}") lateinit var b3trContract: String
 
@@ -100,6 +102,7 @@ class UserAllTimeActionSummaryProcessorPerformanceTest : BasePerformanceTest() {
                     service = serviceToUse,
                     profiler = profiler,
                     checkpointService = checkpointService,
+                    processorMetrics = processorMetrics,
                 )
             } else {
                 UserAllTimeActionSummaryProcessor(
@@ -107,6 +110,7 @@ class UserAllTimeActionSummaryProcessorPerformanceTest : BasePerformanceTest() {
                     userAllTimeActionSummaryArchiveService = archiveService,
                     service = serviceToUse,
                     checkpointService = checkpointService,
+                    processorMetrics = processorMetrics,
                 )
             }
 
@@ -131,12 +135,14 @@ class UserAllTimeActionSummaryProcessorPerformanceTest : BasePerformanceTest() {
         service: UserAllTimeActionSummaryService,
         private val profiler: DetailedProfiler,
         checkpointService: CheckpointService,
+        processorMetrics: ProcessorMetrics,
     ) :
         UserAllTimeActionSummaryProcessor(
             repository = repository,
             userAllTimeActionSummaryArchiveService = archiveService,
             service = service,
             checkpointService = checkpointService,
+            processorMetrics = processorMetrics,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    UserAllTimeActionSummaryProcessor.process (per block)") {

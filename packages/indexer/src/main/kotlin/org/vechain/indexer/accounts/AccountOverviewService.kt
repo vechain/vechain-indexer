@@ -148,12 +148,11 @@ open class AccountOverviewService(
         return accumulator.results()
     }
 
-    @Transactional
+    @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<AccountOverview>, existing: List<AccountOverview>) {
         saveVersionedDocuments(
             updated = updated,
             existing = existing,
-            repository = repository,
             archiveService = archiveService,
             pruner = accountOverviewPruner,
         )
