@@ -30,8 +30,8 @@ interface VthoGeneratedByBlockRepository :
     @Aggregation(
         pipeline =
             [
-                "{ '\$match': { 'blockNumber': { '\$lte': ?0 } } }",
-                "{ '\$sort': { 'blockNumber': -1 } }",
+                "{ '\$match': { '_id': { '\$lte': ?0 } } }",
+                "{ '\$sort': { '_id': -1 } }",
                 "{ '\$limit': 1 }",
             ]
     )
@@ -50,8 +50,8 @@ interface VthoGeneratedByBlockRepository :
         pageable: Pageable,
     ): Slice<VthoGeneratedByBlock>
 
-    @Aggregation(pipeline = ["{ '\$sort': { 'blockNumber': -1 } }", "{ '\$limit': 1 }"])
-    override fun getLatestRecord(): VthoGeneratedByBlock?
+    @Aggregation(pipeline = ["{ '\$sort': { '_id': -1 } }", "{ '\$limit': 1 }"])
+    fun findLatest(): VthoGeneratedByBlock?
 
     @Aggregation(
         pipeline =
