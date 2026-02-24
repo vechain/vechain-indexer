@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.stargate.token.TokenLevel
+import org.vechain.indexer.utils.CacheUtils
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 import org.vechain.indexer.utils.ParamUtils.getAsString
 import org.vechain.indexer.utils.RolloverUtils
@@ -18,6 +19,8 @@ open class NftHoldersByBlockService(
     private val ownerBalanceRepository: NftOwnerBalanceRepository,
     private val archiveService: ArchiveService<NftOwnerBalance, NftOwnerBalanceArchive>,
 ) {
+    private var latestRecordCache: NftHoldersByBlock? = null
+
     /**
      * @param events The decoded on-chain events grouped across arbitrary blocks.
      * @return A list of `NftHoldersByBlock` documents in ascending block order.
@@ -40,7 +43,7 @@ open class NftHoldersByBlockService(
     open fun processEvents(events: List<IndexedEvent>): List<NftHoldersByBlock> {
         if (events.isEmpty()) return emptyList()
 
-        val latest = repository.getLatestRecord()
+        val latest = latestRecordCache ?: repository.getLatestRecord()
         val lastBlock = latest?.blockNumber
 
         // Enforce strict ascending block ordering
@@ -207,6 +210,14 @@ open class NftHoldersByBlockService(
     open fun saveRecords(records: List<NftHoldersByBlock>) {
         repository.saveAll(records)
         saveOwnerBalances()
+        if (records.isNotEmpty()) {
+            val latest = records.maxBy { it.blockNumber }
+            CacheUtils.updateAfterCommit(
+                latest,
+                { latestRecordCache = it },
+                { latestRecordCache = null },
+            )
+        }
     }
 
     private fun saveOwnerBalances() {

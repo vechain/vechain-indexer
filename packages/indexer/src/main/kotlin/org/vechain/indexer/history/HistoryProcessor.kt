@@ -1,7 +1,5 @@
 package org.vechain.indexer.history
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
@@ -46,7 +44,7 @@ open class HistoryProcessor(
         val records = historyService.processEvents(historyEvents, entry.block)
 
         if (records.isNotEmpty()) {
-            withContext(Dispatchers.IO) { historyService.save(records) }
+            historyService.save(records)
         }
 
         if (blacklistEvents.isNotEmpty()) {

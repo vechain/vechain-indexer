@@ -1,8 +1,6 @@
 package org.vechain.indexer.amn
 
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
@@ -37,7 +35,7 @@ open class AmnProcessor(
     private var hasSynced = false
 
     override suspend fun processEntry(entry: IndexingResult) {
-        if (!hasSynced && withContext(Dispatchers.IO) { repository.count() } == 0L) {
+        if (!hasSynced && repository.count() == 0L) {
             logger.info("No Authority Nodes found – syncing after collection setup...")
             amnService.syncEndorsersForAllNodes()
             logger.info("Initial Authority Node sync complete.")
@@ -48,7 +46,7 @@ open class AmnProcessor(
         val toSave = amnService.processCandidateEvents(entry.events())
 
         if (toSave.isNotEmpty()) {
-            withContext(Dispatchers.IO) { amnService.save(toSave) }
+            amnService.save(toSave)
         }
     }
 
