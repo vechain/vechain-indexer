@@ -463,22 +463,6 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-round.b3tr-sustainable-actions
     },
     {
-      name  = "PRUNER_ENABLED"
-      value = each.value.indexer.pruner.enabled
-    },
-    {
-      name  = "PRUNER_INTERVAL"
-      value = each.value.indexer.pruner.interval
-    },
-    {
-      name  = "PRUNER_REMOVAL_CHUNK_SIZE"
-      value = each.value.indexer.pruner.removal-chunk-size
-    },
-    {
-      name  = "PRUNER_RECORD_LIMIT"
-      value = each.value.indexer.pruner.record-limit
-    },
-    {
       name  = "BLACKLIST_CONTRACT_ADDRESS"
       value = each.value.indexer.blacklist.contract-address
     },
