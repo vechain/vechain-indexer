@@ -16,7 +16,7 @@ data class NftHoldersByBlock
 @ConstructorBinding
 constructor(
     @JsonIgnore override val blockId: String,
-    @JsonIgnore @Id override val blockNumber: Long,
+    @JsonIgnore override val blockNumber: Long,
     @JsonIgnore override val blockTimestamp: Long,
     override val total: Long,
     override val byLevel: Map<TokenLevel, Long>,
@@ -32,6 +32,7 @@ constructor(
     @JsonIgnore override val weekTotal: BigInteger? = null,
     @JsonIgnore override val monthTotal: BigInteger? = null,
     @JsonIgnore override val yearTotal: BigInteger? = null,
+    @Id val id: String = blockNumber.toString(),
 ) : TimeFrameDocument, LevelledValue<Long> {
     override fun valueForLevel(level: TokenLevel?): Long =
         if (level == null) total else byLevel[level] ?: 0L

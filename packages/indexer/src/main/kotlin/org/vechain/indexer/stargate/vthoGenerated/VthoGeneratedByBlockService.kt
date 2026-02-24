@@ -100,7 +100,7 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
             )
         }
 
-        return repository.findLatest()
+        return repository.getLatestRecord()
     }
 
     /**

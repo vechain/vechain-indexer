@@ -15,7 +15,7 @@ data class BlockUsage
 @JsonCreator
 constructor(
     override val blockId: String,
-    @Id override val blockNumber: Long,
+    override val blockNumber: Long,
     override val blockTimestamp: Long,
     val cumulativeGasLimit: BigInteger,
     val cumulativeGasUsed: BigInteger,
@@ -26,4 +26,5 @@ constructor(
     @JsonIgnore val isDaily: Boolean?,
     @JsonIgnore val isWeekly: Boolean?,
     @JsonIgnore val isMonthly: Boolean?,
+    @Id val id: String = blockNumber.toString(),
 ) : IndexedDocument

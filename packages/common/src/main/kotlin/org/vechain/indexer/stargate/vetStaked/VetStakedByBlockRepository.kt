@@ -10,7 +10,7 @@ import org.vechain.indexer.stargate.timeFrame.TimeFrameRepo
 
 @Profile("stargate", "vet-staked-by-block")
 interface VetStakedByBlockRepository :
-    BaseIndexedRepository<VetStakedByBlock, Long>, TimeFrameRepo<VetStakedByBlock> {
+    BaseIndexedRepository<VetStakedByBlock, String>, TimeFrameRepo<VetStakedByBlock> {
     override fun findByTimeFramesContains(
         timeFrame: TimeFrame,
         pageable: Pageable,
@@ -49,9 +49,6 @@ interface VetStakedByBlockRepository :
         blockTimestamp: Long,
         pageable: Pageable,
     ): Slice<VetStakedByBlock>
-
-    @Aggregation(pipeline = ["{ '\$sort': { 'blockNumber': -1 } }", "{ '\$limit': 1 }"])
-    override fun getLatestRecord(): VetStakedByBlock?
 
     fun findByTimeFramesContainsAndBlockTimestampAfter(
         timeFrame: TimeFrame,

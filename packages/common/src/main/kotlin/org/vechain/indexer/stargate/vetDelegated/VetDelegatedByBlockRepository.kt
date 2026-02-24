@@ -10,7 +10,7 @@ import org.vechain.indexer.stargate.timeFrame.TimeFrameRepo
 
 @Profile("stargate", "vet-delegated-by-block")
 interface VetDelegatedByBlockRepository :
-    BaseIndexedRepository<VetDelegatedByBlock, Long>, TimeFrameRepo<VetDelegatedByBlock> {
+    BaseIndexedRepository<VetDelegatedByBlock, String>, TimeFrameRepo<VetDelegatedByBlock> {
     @Aggregation(
         pipeline =
             [
@@ -49,9 +49,6 @@ interface VetDelegatedByBlockRepository :
         blockTimestamp: Long,
         pageable: Pageable,
     ): Slice<VetDelegatedByBlock>
-
-    @Aggregation(pipeline = ["{ '\$sort': { 'blockNumber': -1 } }", "{ '\$limit': 1 }"])
-    override fun getLatestRecord(): VetDelegatedByBlock?
 
     @Aggregation(
         pipeline =
