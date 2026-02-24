@@ -707,6 +707,7 @@
           "value",
           "sum"
         ],
+        "time": {},
         "type": "timeseries",
         "requests": [
           {
@@ -730,7 +731,11 @@
             },
             "display_type": "line"
           }
-        ]
+        ],
+        "yaxis": {
+          "include_zero": false,
+          "scale": "log"
+        }
       },
       "layout": {
         "x": 0,
@@ -754,6 +759,7 @@
           "value",
           "sum"
         ],
+        "time": {},
         "type": "timeseries",
         "requests": [
           {
@@ -777,7 +783,11 @@
             },
             "display_type": "line"
           }
-        ]
+        ],
+        "yaxis": {
+          "include_zero": false,
+          "scale": "log"
+        }
       },
       "layout": {
         "x": 6,
@@ -792,7 +802,6 @@
         "title": "Avg Processing Time Per Block by Indexer (ms)",
         "title_size": "16",
         "title_align": "left",
-        "time": {},
         "type": "toplist",
         "requests": [
           {
