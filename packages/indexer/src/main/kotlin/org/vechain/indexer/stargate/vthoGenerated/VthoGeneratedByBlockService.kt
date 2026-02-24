@@ -1,6 +1,7 @@
 package org.vechain.indexer.stargate.vthoGenerated
 
 import java.math.BigInteger
+import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -14,8 +15,8 @@ import org.vechain.indexer.validator.domain.ValidatorDecoder.hasAbiData
 @Profile("stargate", "vtho-generated-by-block")
 @Service
 open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBlockRepository) {
+    private val logger = LoggerFactory.getLogger(VthoGeneratedByBlockService::class.java)
     private var latestRecordCache: VthoGeneratedByBlock? = null
-    private var cacheInitialized: Boolean = false
 
     /**
      * @param events List of decoded blockchain events for the block.
@@ -67,33 +68,44 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
         return mapToDocument(block, blockTotal, roll, latest)
     }
 
-    /**
-     * @notice Loads the latest persisted VTHO record and checks that the incoming block is strictly
-     *   newer.
-     * @dev Throws if the incoming block number <= last stored block number.
-     */
     private fun validateAndLoadLatest(block: Block): VthoGeneratedByBlock? {
-        val latest =
-            if (cacheInitialized) latestRecordCache
-            else {
-                val loaded = repository.getLatestRecord()
-                latestRecordCache = loaded
-                cacheInitialized = true
-                loaded
-            }
+        val latest = loadLatest(block) ?: return null
 
-        if (latest != null && block.number <= latest.blockNumber) {
+        if (block.number != latest.blockNumber + 1) {
             throw IllegalStateException(
-                "Block ${block.number} is <= last persisted block ${latest.blockNumber}"
+                "Block ${block.number} is not the next block after last persisted block ${latest.blockNumber}"
             )
         }
 
         return latest
     }
 
+    private fun loadLatest(block: Block): VthoGeneratedByBlock? {
+        val cached = latestRecordCache
+        if (
+            cached != null &&
+                cached.blockNumber == block.number - 1 &&
+                cached.blockId == block.parentID
+        ) {
+            return cached
+        }
+
+        if (cached != null) {
+            logger.info(
+                "Cache miss for block {}: cached blockNumber={}, expected={}, parentID match={}",
+                block.number,
+                cached.blockNumber,
+                block.number - 1,
+                cached.blockId == block.parentID,
+            )
+        }
+
+        return repository.getLatestRecord()
+    }
+
     /**
      * @param block The current block metadata (id, number, timestamp).
-     * @param totals Aggregated running totals and delta for this block.
+     * @param blockTotal Aggregated running totals and delta for this block.
      * @param roll Result of applying rollover logic (new period totals + timeframes crossed).
      * @param previous The latest persisted record before this block (null if none).
      * @return A list containing:
@@ -155,12 +167,7 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
     open fun save(records: List<VthoGeneratedByBlock>) {
         if (records.isEmpty()) return
         repository.saveAll(records)
-        latestRecordCache = records.last()
-    }
-
-    open fun invalidateCache() {
-        latestRecordCache = null
-        cacheInitialized = false
+        latestRecordCache = records.maxBy { it.blockNumber }
     }
 
     /**
