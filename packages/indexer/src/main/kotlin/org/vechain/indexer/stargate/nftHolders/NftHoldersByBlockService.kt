@@ -18,6 +18,8 @@ open class NftHoldersByBlockService(
     private val ownerBalanceRepository: NftOwnerBalanceRepository,
     private val archiveService: ArchiveService<NftOwnerBalance, NftOwnerBalanceArchive>,
 ) {
+    private var latestRecordCache: NftHoldersByBlock? = null
+
     /**
      * @param events The decoded on-chain events grouped across arbitrary blocks.
      * @return A list of `NftHoldersByBlock` documents in ascending block order.
@@ -40,7 +42,7 @@ open class NftHoldersByBlockService(
     open fun processEvents(events: List<IndexedEvent>): List<NftHoldersByBlock> {
         if (events.isEmpty()) return emptyList()
 
-        val latest = repository.getLatestRecord()
+        val latest = latestRecordCache ?: repository.getLatestRecord()
         val lastBlock = latest?.blockNumber
 
         // Enforce strict ascending block ordering
@@ -207,6 +209,9 @@ open class NftHoldersByBlockService(
     open fun saveRecords(records: List<NftHoldersByBlock>) {
         repository.saveAll(records)
         saveOwnerBalances()
+        if (records.isNotEmpty()) {
+            latestRecordCache = records.maxBy { it.blockNumber }
+        }
     }
 
     private fun saveOwnerBalances() {

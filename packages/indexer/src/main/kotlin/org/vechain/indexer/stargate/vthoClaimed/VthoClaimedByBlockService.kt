@@ -23,6 +23,7 @@ import org.vechain.indexer.utils.RolloverUtils
 @Profile("stargate", "vtho-claimed-by-block")
 @Service
 open class VthoClaimedByBlockService(private val repository: VthoClaimedByBlockRepository) {
+    private var latestRecordCache: VthoClaimedByBlock? = null
     /** @dev Event names representing legacy claim logic. */
     private val legacyEventNames =
         setOf("STARGATE_CLAIM_REWARDS_BASE_LEGACY", "STARGATE_CLAIM_REWARDS_DELEGATE_LEGACY")
@@ -45,7 +46,7 @@ open class VthoClaimedByBlockService(private val repository: VthoClaimedByBlockR
     open fun processEvents(events: List<IndexedEvent>): List<VthoClaimedByBlock> {
         if (events.isEmpty()) return emptyList()
 
-        val latest = repository.getLatestRecord()
+        val latest = latestRecordCache ?: repository.getLatestRecord()
         val lastBlock = latest?.blockNumber
 
         // Enforce correct ordering: monotonic block numbers only
@@ -140,6 +141,9 @@ open class VthoClaimedByBlockService(private val repository: VthoClaimedByBlockR
     @Transactional(rollbackFor = [Exception::class])
     open fun saveRecords(records: List<VthoClaimedByBlock>) {
         repository.saveAll(records)
+        if (records.isNotEmpty()) {
+            latestRecordCache = records.maxBy { it.blockNumber }
+        }
     }
 }
 
