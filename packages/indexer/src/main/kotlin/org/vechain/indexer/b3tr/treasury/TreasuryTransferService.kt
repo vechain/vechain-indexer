@@ -121,6 +121,8 @@ open class TreasuryTransferService(
         val emissions = businessEventProperties.substitutions["EMISSIONS"]?.lowercase() ?: ""
         val xAllocPool =
             businessEventProperties.substitutions["X_ALLOC_POOL_CONTRACT"]?.lowercase() ?: ""
+        val dbaPool =
+            businessEventProperties.substitutions["B3TR_DBA_POOL_CONTRACT"]?.lowercase() ?: ""
 
         if (txIdToNewLevel.containsKey(txId)) {
             val level = txIdToNewLevel[txId]!!
@@ -130,7 +132,7 @@ open class TreasuryTransferService(
         if (from == zeroAddress || from == emissions) {
             return TreasuryTransferCategory.EMISSION to "Weekly emission"
         }
-        if (from == xAllocPool) {
+        if (from == xAllocPool || from == dbaPool) {
             return TreasuryTransferCategory.SURPLUS to "App voting surplus"
         }
         if (to == grantsManager) {
