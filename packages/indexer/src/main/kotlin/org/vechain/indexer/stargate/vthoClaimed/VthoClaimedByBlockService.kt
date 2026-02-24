@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.utils.CacheUtils
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.RolloverUtils
 
@@ -142,7 +143,12 @@ open class VthoClaimedByBlockService(private val repository: VthoClaimedByBlockR
     open fun saveRecords(records: List<VthoClaimedByBlock>) {
         repository.saveAll(records)
         if (records.isNotEmpty()) {
-            latestRecordCache = records.maxBy { it.blockNumber }
+            val latest = records.maxBy { it.blockNumber }
+            CacheUtils.updateAfterCommit(
+                latest,
+                { latestRecordCache = it },
+                { latestRecordCache = null },
+            )
         }
     }
 }

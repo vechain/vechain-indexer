@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.stargate.token.TokenLevel
+import org.vechain.indexer.utils.CacheUtils
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 import org.vechain.indexer.utils.RolloverUtils
@@ -162,7 +163,12 @@ open class VetStakedByBlockService(private val repository: VetStakedByBlockRepos
     open fun saveRecords(records: List<VetStakedByBlock>) {
         repository.saveAll(records)
         if (records.isNotEmpty()) {
-            latestRecordCache = records.maxBy { it.blockNumber }
+            val latest = records.maxBy { it.blockNumber }
+            CacheUtils.updateAfterCommit(
+                latest,
+                { latestRecordCache = it },
+                { latestRecordCache = null },
+            )
         }
     }
 }
