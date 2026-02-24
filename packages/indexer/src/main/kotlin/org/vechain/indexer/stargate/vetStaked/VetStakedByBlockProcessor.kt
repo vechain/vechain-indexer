@@ -1,5 +1,7 @@
 package org.vechain.indexer.stargate.vetStaked
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
@@ -31,7 +33,7 @@ open class VetStakedByBlockProcessor(
         val newRecords = service.processEvents(entry.events())
 
         if (newRecords.isNotEmpty()) {
-            service.saveRecords(newRecords)
+            withContext(Dispatchers.IO) { service.saveRecords(newRecords) }
         }
     }
 }
