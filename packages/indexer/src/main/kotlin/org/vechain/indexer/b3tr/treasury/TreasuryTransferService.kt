@@ -137,7 +137,7 @@ open class TreasuryTransferService(
             return TreasuryTransferCategory.GRANT to "Grant funding"
         }
         if (to == governanceTimelock) {
-            return TreasuryTransferCategory.GOVERNANCE to "Governance transfer"
+            return TreasuryTransferCategory.OUT to "Governance transfer"
         }
         if (from == treasury) {
             return TreasuryTransferCategory.OUT to "B3TR Sent"
