@@ -64,7 +64,7 @@ open class BlockUsageService(private val repository: BlockUsageRepository) {
         }
 
         // Cache miss - fall back to database lookup
-        return repository.findByIdOrNull(blockNumber - 1)
+        return repository.findByIdOrNull((blockNumber - 1).toString())
     }
 
     /**

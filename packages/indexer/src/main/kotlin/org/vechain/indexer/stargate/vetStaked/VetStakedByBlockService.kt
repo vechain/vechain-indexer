@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.stargate.token.TokenLevel
+import org.vechain.indexer.utils.CacheUtils
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 import org.vechain.indexer.utils.RolloverUtils
@@ -30,6 +31,8 @@ import org.vechain.indexer.utils.RolloverUtils
 @Profile("stargate", "vet-staked-by-block")
 @Service
 open class VetStakedByBlockService(private val repository: VetStakedByBlockRepository) {
+    private var latestRecordCache: VetStakedByBlock? = null
+
     /**
      * @param events A list of decoded `IndexedEvent`s for multiple blocks.
      * @return Ordered list of `VetStakedByBlock` documents.
@@ -48,7 +51,7 @@ open class VetStakedByBlockService(private val repository: VetStakedByBlockRepos
     open fun processEvents(events: List<IndexedEvent>): List<VetStakedByBlock> {
         if (events.isEmpty()) return emptyList()
 
-        val latest = repository.getLatestRecord()
+        val latest = latestRecordCache ?: repository.getLatestRecord()
         val lastBlock = latest?.blockNumber
 
         if (lastBlock != null && events.any { it.blockNumber <= lastBlock }) {
@@ -159,6 +162,14 @@ open class VetStakedByBlockService(private val repository: VetStakedByBlockRepos
     @Transactional(rollbackFor = [Exception::class])
     open fun saveRecords(records: List<VetStakedByBlock>) {
         repository.saveAll(records)
+        if (records.isNotEmpty()) {
+            val latest = records.maxBy { it.blockNumber }
+            CacheUtils.updateAfterCommit(
+                latest,
+                { latestRecordCache = it },
+                { latestRecordCache = null },
+            )
+        }
     }
 }
 

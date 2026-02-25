@@ -14,7 +14,7 @@ data class VthoGeneratedByBlock
 @ConstructorBinding
 constructor(
     override val blockId: String,
-    @Id override val blockNumber: Long,
+    override val blockNumber: Long,
     override val blockTimestamp: Long,
     override val hourOfDay: Long,
     override val dayOfMonth: Long, // 25
@@ -29,4 +29,5 @@ constructor(
     @JsonIgnore override val monthTotal: BigInteger? = null,
     @JsonIgnore override val yearTotal: BigInteger? = null,
     val total: BigInteger,
+    @Id val id: String = blockNumber.toString(),
 ) : TimeFrameDocument

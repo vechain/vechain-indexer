@@ -3,8 +3,6 @@ package org.vechain.indexer.b3tr.proposal
 import java.math.BigInteger
 import kotlin.collections.component1
 import kotlin.collections.component2
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
@@ -64,7 +62,7 @@ open class ProposalResultService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<ProposalResult>,
     ) {
-        val proposals = withContext(Dispatchers.IO) { repository.findByStateIn(nonFinalizedStates) }
+        val proposals = repository.findByStateIn(nonFinalizedStates)
         if (proposals.isEmpty()) return
 
         proposals.chunked(50).forEach { batch ->

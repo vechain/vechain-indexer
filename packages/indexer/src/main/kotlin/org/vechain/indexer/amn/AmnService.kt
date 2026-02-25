@@ -2,8 +2,6 @@ package org.vechain.indexer.amn
 
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.plusAssign
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
@@ -126,9 +124,7 @@ open class AmnService(
 
             when (action) {
                 AmnUtils.ACTION_ADDED -> {
-                    val existing =
-                        withContext(Dispatchers.IO) { amnRepository.findById(nodeMaster) }
-                            .orElse(null)
+                    val existing = amnRepository.findById(nodeMaster).orElse(null)
                     if (existing != null) {
                         logger.info("Authority Node $nodeMaster already exists. Skipping insert.")
                         continue
@@ -169,7 +165,7 @@ open class AmnService(
                 }
 
                 AmnUtils.ACTION_REVOKED -> {
-                    withContext(Dispatchers.IO) { amnRepository.deleteById(nodeMaster) }
+                    amnRepository.deleteById(nodeMaster)
                 }
 
                 else -> {

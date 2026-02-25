@@ -1,6 +1,7 @@
 services:
 
   vechain-indexer:
+#    image: ghcr.io/vechain/vechain-indexer/indexer:5.15.4
     build:
       context: .
       args:
@@ -24,6 +25,7 @@ services:
       - vechain-database
 
   vechain-indexer-api:
+#    image: ghcr.io/vechain/vechain-indexer/api:5.15.4
     build:
       context: .
       args:

@@ -35,10 +35,12 @@ class VetDelegatedByBlockServiceTest {
         blockNumber: Long,
         timestamp: Long,
         blockId: String = "block-$blockNumber",
+        parentID: String = "block-${blockNumber - 1}",
     ): Block = mockk {
         every { number } returns blockNumber
         every { this@mockk.timestamp } returns timestamp
         every { id } returns blockId
+        every { this@mockk.parentID } returns parentID
     }
 
     private fun mockActiveAggregation(vararg levels: Pair<TokenLevel, String>) {
@@ -72,7 +74,8 @@ class VetDelegatedByBlockServiceTest {
         val block = mockBlock(10, 1100) // EXACT SAME BLOCK → FAIL
 
         val ex = assertThrows<IllegalStateException> { service.processBlock(block) }
-        expectThat(ex.message).isEqualTo("Block 10 ≤ last persisted block 10")
+        expectThat(ex.message)
+            .isEqualTo("Block 10 is not the next block after last persisted block 10")
     }
 
     @Test
@@ -208,6 +211,129 @@ class VetDelegatedByBlockServiceTest {
         expectThat(result).hasSize(1)
         expectThat(result[0].total).isEqualTo(BigInteger("20"))
     }
+
+    // ---------------------------------------------------------
+    // CACHE BEHAVIOUR
+    // ---------------------------------------------------------
+
+    @Test
+    fun `cache is advanced on skipped blocks and used for next block`() {
+        // Block 100 is the latest in DB
+        val latestRecord =
+            VetDelegatedByBlock(
+                "block-100",
+                100,
+                1735560000,
+                total = BigInteger("10"),
+                byLevel = mapOf(TokenLevel.Strength to BigInteger("10")),
+                hourOfDay = 12,
+                dayOfMonth = 30,
+                weekOfYear = 53,
+                month = 12,
+                year = 2024,
+                timeFrames = emptyList(),
+                blockTotal = BigInteger.ZERO,
+                hourTotal = BigInteger.ZERO,
+                dayTotal = BigInteger.ZERO,
+                weekTotal = BigInteger.ZERO,
+                monthTotal = BigInteger.ZERO,
+                yearTotal = BigInteger.ZERO,
+            )
+        every { repository.getLatestRecord() } returns latestRecord
+
+        // Block 101: no change → skipped, cache advanced
+        mockActiveAggregation(TokenLevel.Strength to "10")
+        val block101 = mockBlock(101, 1735560010)
+        val result101 = service.processBlock(block101)
+        expectThat(result101).isEmpty()
+
+        // Block 102: no change → skipped, should use cache (not DB)
+        val block102 = mockBlock(102, 1735560020)
+        val result102 = service.processBlock(block102)
+        expectThat(result102).isEmpty()
+
+        // DB should only have been called once (for block 101)
+        verify(exactly = 1) { repository.getLatestRecord() }
+    }
+
+    @Test
+    fun `cache is advanced across multiple skipped blocks then used for saved block`() {
+        val latestRecord =
+            VetDelegatedByBlock(
+                "block-100",
+                100,
+                1735560000,
+                total = BigInteger("10"),
+                byLevel = mapOf(TokenLevel.Strength to BigInteger("10")),
+                hourOfDay = 12,
+                dayOfMonth = 30,
+                weekOfYear = 53,
+                month = 12,
+                year = 2024,
+                timeFrames = emptyList(),
+                blockTotal = BigInteger.ZERO,
+                hourTotal = BigInteger.ZERO,
+                dayTotal = BigInteger.ZERO,
+                weekTotal = BigInteger.ZERO,
+                monthTotal = BigInteger.ZERO,
+                yearTotal = BigInteger.ZERO,
+            )
+        every { repository.getLatestRecord() } returns latestRecord
+
+        // Blocks 101-103: no change → skipped
+        mockActiveAggregation(TokenLevel.Strength to "10")
+        service.processBlock(mockBlock(101, 1735560010))
+        service.processBlock(mockBlock(102, 1735560020))
+        service.processBlock(mockBlock(103, 1735560030))
+
+        // Block 104: delegation changes → should produce a record using cached state
+        mockActiveAggregation(TokenLevel.Strength to "20")
+        val result = service.processBlock(mockBlock(104, 1735560040))
+
+        expectThat(result).hasSize(1)
+        expectThat(result[0].total).isEqualTo(BigInteger("20"))
+        expectThat(result[0].blockNumber).isEqualTo(104)
+
+        // DB should only have been called once (for block 101)
+        verify(exactly = 1) { repository.getLatestRecord() }
+    }
+
+    @Test
+    fun `cache falls back to DB when parentID does not match`() {
+        val latestRecord =
+            VetDelegatedByBlock(
+                "block-100",
+                100,
+                1735560000,
+                total = BigInteger("10"),
+                byLevel = mapOf(TokenLevel.Strength to BigInteger("10")),
+                hourOfDay = 12,
+                dayOfMonth = 30,
+                weekOfYear = 53,
+                month = 12,
+                year = 2024,
+                timeFrames = emptyList(),
+                blockTotal = BigInteger.ZERO,
+                hourTotal = BigInteger.ZERO,
+                dayTotal = BigInteger.ZERO,
+                weekTotal = BigInteger.ZERO,
+                monthTotal = BigInteger.ZERO,
+                yearTotal = BigInteger.ZERO,
+            )
+        every { repository.getLatestRecord() } returns latestRecord
+        mockActiveAggregation(TokenLevel.Strength to "10")
+
+        // Block 101 with mismatched parentID
+        val block = mockBlock(101, 1735560010, parentID = "wrong-parent-id")
+        service.processBlock(block)
+
+        // Should have fallen back to DB
+        verify(exactly = 1) { repository.getLatestRecord() }
+    }
+
+    // ---------------------------------------------------------
+    // SAVE
+    // ---------------------------------------------------------
 
     @Test
     fun `save delegates to repository`() {
