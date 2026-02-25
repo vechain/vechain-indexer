@@ -186,7 +186,7 @@ enabled_nets:
         historic-proposals: '50'
       channel-batch-size: '3'
       pruner:
-        enabled: 'true'
+        enabled: 'false'
         interval: '60480'
         removal-chunk-size: '5000'
         record-limit: '1000000'
@@ -399,7 +399,7 @@ enabled_nets:
         historic-proposals: '20'
       channel-batch-size: '3'
       pruner:
-        enabled: 'true'
+        enabled: 'false'
         interval: '60480'
         removal-chunk-size: '5000'
         record-limit: '1000000'
