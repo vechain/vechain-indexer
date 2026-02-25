@@ -165,6 +165,11 @@ enabled_nets:
         b3tr-proposal:              '19036184'
         validator:                  '23414400'
         delegation:                 '23415258'
+        vtho-generated-by-block:    '23474870'
+        vtho-claimed-by-block:      '22083602'
+        vet-staked-by-block:        '22083535'
+        vet-delegated-by-block:     '23415238'
+        nft-holders-by-block:       '22083535'
       start-round:
         b3tr-sustainable-actions:   '4'
       sync-log-interval: '100'
