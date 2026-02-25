@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM amazoncorretto:21-alpine3.20 AS builder
 
 RUN apk update && apk upgrade

@@ -55,14 +55,11 @@ val extractContractAddress = tasks.register("extractContractAddress") {
     }
 }
 
-val buildJars = tasks.register<Exec>("buildJars") {
-    dependsOn(extractContractAddress)
-    workingDir(rootDir)
-    commandLine("./gradlew", "packages:api:build", "packages:indexer:build", "-x", "test")
-}
+val buildApiJar = tasks.getByPath(":packages:api:build")
+val buildIndexerJar = tasks.getByPath(":packages:indexer:build")
 
 val startApp = tasks.register<Exec>("startApp") {
-    dependsOn(buildJars)
+    dependsOn(extractContractAddress, buildApiJar, buildIndexerJar)
     workingDir(rootDir)
 
     doFirst {

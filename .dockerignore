@@ -32,7 +32,8 @@ mvnw.cmd
 
 ### Build stuff
 build/
-!packages/*/build/libs/
+!packages/*/build/
+!packages/*/build/libs/**
 build.sh
 build.bat
 
