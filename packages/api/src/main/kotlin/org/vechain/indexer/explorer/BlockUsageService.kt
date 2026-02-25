@@ -49,11 +49,11 @@ open class BlockUsageService(private val blockUsageRepository: BlockUsageReposit
                 blockUsageRepository.findDailyInTimestampRange(startTimestamp, endTimestamp)
             }
             timeRange <= MONTHLY_THRESHOLD -> {
-                // Return weekly aggregates
+                // Return daily aggregates
                 blockUsageRepository.findDailyInTimestampRange(startTimestamp, endTimestamp)
             }
             else -> {
-                // Return monthly aggregates
+                // Return weekly aggregates
                 blockUsageRepository.findWeeklyInTimestampRange(startTimestamp, endTimestamp)
             }
         }

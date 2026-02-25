@@ -166,6 +166,11 @@ enabled_nets:
         b3tr-proposal:              '19036184'
         validator:                  '23414400'
         delegation:                 '23415258'
+        vtho-generated-by-block:    '23474870'
+        vtho-claimed-by-block:      '22083602'
+        vet-staked-by-block:        '22083535'
+        vet-delegated-by-block:     '23415238'
+        nft-holders-by-block:       '22083535'
       start-round:
         b3tr-sustainable-actions:   '4'
       sync-log-interval: '100'
@@ -374,6 +379,11 @@ enabled_nets:
         historic-proposals:         '22087000'
         validator:                  '23221800'
         delegation:                 '23222706'
+        vtho-generated-by-block:    '23282270'
+        vtho-claimed-by-block:      '23212348'
+        vet-staked-by-block:        '23188723'
+        vet-delegated-by-block:     '23222700'
+        nft-holders-by-block:       '23188723'
       start-round:
         b3tr-sustainable-actions:   '4'
       sync-log-interval: '100'
