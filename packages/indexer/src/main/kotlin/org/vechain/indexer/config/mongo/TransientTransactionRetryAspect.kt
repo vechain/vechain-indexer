@@ -30,6 +30,7 @@ open class TransientTransactionRetryAspect(private val retryMetrics: Transaction
         val targetClass = joinPoint.signature.declaringType.simpleName
 
         for (attempt in 1..MAX_RETRIES) {
+            val startNanos = System.nanoTime()
             try {
                 return joinPoint.proceed()
             } catch (e: Exception) { // Intentionally Exception, not Throwable: Errors (OOM, etc.)
@@ -38,11 +39,29 @@ open class TransientTransactionRetryAspect(private val retryMetrics: Transaction
                     throw e
                 }
 
-                retryMetrics.incrementRetry(targetClass)
+                val elapsedMs = (System.nanoTime() - startNanos) / 1_000_000
+                val mongoEx = findMongoException(e)
+                val errorCode = mongoEx?.code ?: -1
+                val errorLabels = mongoEx?.errorLabels?.joinToString() ?: "none"
+
+                retryMetrics.incrementRetry(targetClass, errorCode)
                 lastException = e
 
                 if (attempt == MAX_RETRIES) {
                     retryMetrics.incrementExhausted(targetClass)
+                    logger.error(
+                        "Transient transaction error persisted after {}/{} attempts for {}.{} " +
+                            "[errorCode={}, labels=[{}], elapsed={}ms, thread={}, args={}]",
+                        attempt,
+                        MAX_RETRIES,
+                        targetClass,
+                        joinPoint.signature.name,
+                        errorCode,
+                        errorLabels,
+                        elapsedMs,
+                        Thread.currentThread().name,
+                        summarizeArgs(joinPoint.args),
+                    )
                     throw RuntimeException(
                         "Transient transaction error persisted after $MAX_RETRIES attempts for " +
                             "$targetClass.${joinPoint.signature.name}",
@@ -51,11 +70,17 @@ open class TransientTransactionRetryAspect(private val retryMetrics: Transaction
                 }
 
                 logger.warn(
-                    "Transient transaction error on attempt {}/{} for {}.{}, retrying...",
+                    "Transient transaction error on attempt {}/{} for {}.{} " +
+                        "[errorCode={}, labels=[{}], elapsed={}ms, thread={}, args={}], retrying...",
                     attempt,
                     MAX_RETRIES,
                     targetClass,
                     joinPoint.signature.name,
+                    errorCode,
+                    errorLabels,
+                    elapsedMs,
+                    Thread.currentThread().name,
+                    summarizeArgs(joinPoint.args),
                 )
                 // Thread.sleep is intentional: AOP around-advice cannot be a suspend
                 // function, and the intercepted @Transactional methods are synchronous.
@@ -91,5 +116,24 @@ open class TransientTransactionRetryAspect(private val retryMetrics: Transaction
             }
             return false
         }
+
+        fun findMongoException(e: Throwable): MongoException? {
+            var cause: Throwable? = e
+            while (cause != null) {
+                if (cause is MongoException) return cause
+                cause = cause.cause
+            }
+            return null
+        }
+
+        fun summarizeArgs(args: Array<Any?>): String =
+            args.joinToString { arg ->
+                when (arg) {
+                    null -> "null"
+                    is Collection<*> -> "${arg.javaClass.simpleName}(size=${arg.size})"
+                    is Array<*> -> "Array(size=${arg.size})"
+                    else -> arg.javaClass.simpleName
+                }
+            }
     }
 }

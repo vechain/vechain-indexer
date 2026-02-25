@@ -11,12 +11,14 @@ class TransactionRetryMetrics(private val registry: MeterRegistry) {
     private val retryCounters = ConcurrentHashMap<String, Counter>()
     private val exhaustedCounters = ConcurrentHashMap<String, Counter>()
 
-    fun incrementRetry(targetClass: String) {
+    fun incrementRetry(targetClass: String, errorCode: Int) {
+        val key = "$targetClass:$errorCode"
         retryCounters
-            .computeIfAbsent(targetClass) {
+            .computeIfAbsent(key) {
                 Counter.builder("transaction_retry_total")
                     .description("Total transient transaction retries")
                     .tag("target_class", targetClass)
+                    .tag("error_code", errorCode.toString())
                     .register(registry)
             }
             .increment()
