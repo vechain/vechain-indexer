@@ -55,8 +55,8 @@ val extractContractAddress = tasks.register("extractContractAddress") {
     }
 }
 
-val buildApiJar = tasks.getByPath(":packages:api:build")
-val buildIndexerJar = tasks.getByPath(":packages:indexer:build")
+val buildApiJar = tasks.getByPath(":packages:api:bootJar")
+val buildIndexerJar = tasks.getByPath(":packages:indexer:bootJar")
 
 val startApp = tasks.register<Exec>("startApp") {
     dependsOn(extractContractAddress, buildApiJar, buildIndexerJar)
