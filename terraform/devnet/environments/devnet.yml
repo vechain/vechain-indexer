@@ -186,6 +186,8 @@ enabled_nets:
         stargate-token: '5'
         token-rewards: '5'
         delegation: '6'
+        total-accounts: '2'
+        account-overview: '4'
         accounts: '3'
       business-event:
         substitutions:
