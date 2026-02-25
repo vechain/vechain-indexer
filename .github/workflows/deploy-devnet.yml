@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version to deploy (format v.X.Y.Z-dev). Leave empty to use the existing config from the branch."
-        required: false
+        description: Version to deploy (format v.X.Y.Z-dev)
+        required: true
         type: string
-        default: ""
+        default: v.0.0.0-dev
 
 # Required for authentication through GitHub OIDC
 permissions:
@@ -30,7 +30,6 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Validate version input
-        if: inputs.version != ''
         run: |
           if [[ ! "${{ inputs.version }}" =~ ^v\.[0-9]+\.[0-9]+\.[0-9]+-dev$ ]]; then
             echo "Version must match v.X.Y.Z-dev"
@@ -65,7 +64,6 @@ jobs:
         run: terraform validate
 
       - name: Update image_version
-        if: inputs.version != ''
         run: |
           sed -i '/dev:/,/image_version:/s/image_version:.*/image_version: ${{ inputs.version }}/' environments/${{ env.ENVIRONMENT }}.yml
           cat environments/${{ env.ENVIRONMENT }}.yml
@@ -75,4 +73,3 @@ jobs:
 
       - name: Terraform Apply
         run: terraform apply "apply.plan"
-
