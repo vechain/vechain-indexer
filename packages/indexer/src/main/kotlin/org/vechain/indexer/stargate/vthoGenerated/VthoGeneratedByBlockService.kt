@@ -72,9 +72,18 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
     private fun validateAndLoadLatest(block: Block): VthoGeneratedByBlock? {
         val latest = loadLatest(block) ?: return null
 
-        if (block.number != latest.blockNumber + 1) {
+        if (block.number <= latest.blockNumber) {
             throw IllegalStateException(
-                "Block ${block.number} is not the next block after last persisted block ${latest.blockNumber}"
+                "Block ${block.number} is at or before last persisted block ${latest.blockNumber}"
+            )
+        }
+
+        if (block.number > latest.blockNumber + 1) {
+            logger.warn(
+                "Forward gap detected: block {} is {} blocks ahead of last persisted block {}",
+                block.number,
+                block.number - latest.blockNumber,
+                latest.blockNumber,
             )
         }
 
