@@ -43,7 +43,15 @@ open class TransientTransactionRetryAspect {
                     lastException = e
                     // Thread.sleep is intentional: AOP around-advice cannot be a suspend
                     // function, and the intercepted @Transactional methods are synchronous.
-                    Thread.sleep(BACKOFF_MS * attempt)
+                    try {
+                        Thread.sleep(BACKOFF_MS * attempt)
+                    } catch (ie: InterruptedException) {
+                        Thread.currentThread().interrupt()
+                        throw RuntimeException(
+                            "Thread interrupted during Mongo transient transaction retry backoff",
+                            ie,
+                        )
+                    }
                 } else {
                     throw e
                 }
