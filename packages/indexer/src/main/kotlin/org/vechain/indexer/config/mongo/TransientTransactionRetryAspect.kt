@@ -25,12 +25,12 @@ open class TransientTransactionRetryAspect {
 
     @Around("@annotation(org.springframework.transaction.annotation.Transactional)")
     fun retryOnTransientTransactionError(joinPoint: ProceedingJoinPoint): Any? {
-        var lastException: Exception? = null
+        var lastException: Throwable? = null
 
         for (attempt in 1..MAX_RETRIES) {
             try {
                 return joinPoint.proceed()
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 if (attempt < MAX_RETRIES && isTransientTransactionError(e)) {
                     logger.warn(
                         "Transient transaction error on attempt {}/{} for {}.{}, retrying...",
