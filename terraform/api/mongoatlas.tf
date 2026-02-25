@@ -74,6 +74,9 @@ resource "mongodbatlas_cloud_backup_schedule" "main_net" {
   reference_minute_of_hour = 0
   restore_window_days      = 1
 
+  auto_export_enabled                  = true
+  use_org_and_group_names_in_export_prefix = true
+
   policy_item_daily {
     frequency_interval = 1
     retention_unit     = "days"
@@ -90,6 +93,11 @@ resource "mongodbatlas_cloud_backup_schedule" "main_net" {
     frequency_interval = 1
     retention_unit     = "months"
     retention_value    = 3
+  }
+
+  export {
+    export_bucket_id = data.terraform_remote_state.vpc.outputs.atlas_export_bucket_id
+    frequency_type   = "daily"
   }
 }
 
@@ -102,6 +110,9 @@ resource "mongodbatlas_cloud_backup_schedule" "test_net" {
   reference_minute_of_hour = 0
   restore_window_days      = 1
 
+  auto_export_enabled                  = true
+  use_org_and_group_names_in_export_prefix = true
+
   policy_item_daily {
     frequency_interval = 1
     retention_unit     = "days"
@@ -118,6 +129,11 @@ resource "mongodbatlas_cloud_backup_schedule" "test_net" {
     frequency_interval = 1
     retention_unit     = "months"
     retention_value    = 3
+  }
+
+  export {
+    export_bucket_id = data.terraform_remote_state.vpc.outputs.atlas_export_bucket_id
+    frequency_type   = "daily"
   }
 }
 
