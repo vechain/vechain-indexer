@@ -53,6 +53,9 @@ open class TokenRewardCollectionConfig(
         // Ensure indexes
         ensureIndexes(
             listOf(
+                // For getLatestRecord() and deleteAllByBlockNumberGreaterThanEqual()
+                "blockNumber_-1" to
+                    Index().on(IndexedDocument::blockNumber.name, Sort.Direction.DESC),
                 // For global queries (all validators, sorted by timestamp)
                 "blockTimestamp_-1" to
                     Index().on(IndexedDocument::blockTimestamp.name, Sort.Direction.DESC),
