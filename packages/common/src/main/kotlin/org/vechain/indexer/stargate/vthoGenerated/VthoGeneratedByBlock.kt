@@ -29,5 +29,5 @@ constructor(
     @JsonIgnore override val monthTotal: BigInteger? = null,
     @JsonIgnore override val yearTotal: BigInteger? = null,
     val total: BigInteger,
-    @Id val id: String = blockNumber.toString(),
+    @JsonIgnore @Id val id: String = blockNumber.toString(),
 ) : TimeFrameDocument
