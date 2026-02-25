@@ -7,8 +7,6 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.data.mongodb.core.query.Update
-import org.springframework.transaction.support.TransactionSynchronization
-import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.pruner.TargetedPruner
@@ -18,15 +16,10 @@ import org.vechain.indexer.pruner.TargetedPruner
 /**
  * Shared persistence helper for versioned documents.
  *
- * Handles saving current records, archiving previous versions, and deferring pruning of older
- * archives to after the transaction commits. Callers are expected to annotate their `save()`
- * methods with `@Transactional` so that a failure at any step triggers a rollback when transactions
- * are available.
- *
- * Pruning is deferred to after the transaction commits to avoid inflating the transaction duration.
- * MongoDB Atlas enforces a 60-second transaction lifetime limit; including pruning (which queries
- * and deletes potentially thousands of archive records) inside the transaction was a primary cause
- * of TransientTransactionError failures.
+ * Handles saving current records, archiving previous versions, and invoking the pruner when older
+ * archives can be removed. Callers are expected to annotate their `save()` methods with
+ * `@Transactional` so that a failure at any step triggers a rollback when transactions are
+ * available.
  */
 inline fun <reified T, S> saveVersionedDocuments(
     updated: List<T>,
@@ -47,20 +40,7 @@ inline fun <reified T, S> saveVersionedDocuments(
 
     val latestBlock =
         (updated.asSequence() + existing.asSequence()).maxOfOrNull { it.blockNumber } ?: 0L
-
-    // Defer pruning to after the transaction commits so it doesn't contribute to
-    // transaction duration. Falls back to inline execution if no transaction is active.
-    if (TransactionSynchronizationManager.isSynchronizationActive()) {
-        TransactionSynchronizationManager.registerSynchronization(
-            object : TransactionSynchronization {
-                override fun afterCommit() {
-                    pruner.run(latestBlock, idsToPrune)
-                }
-            }
-        )
-    } else {
-        pruner.run(latestBlock, idsToPrune)
-    }
+    pruner.run(latestBlock, idsToPrune)
 }
 
 @PublishedApi
