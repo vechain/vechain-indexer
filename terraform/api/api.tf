@@ -459,6 +459,26 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.delegation
     },
     {
+      name  = "INDEXER_START_BLOCK_VTHO_GENERATED_BY_BLOCK"
+      value = each.value.indexer.start-block.vtho-generated-by-block
+    },
+    {
+      name  = "INDEXER_START_BLOCK_VTHO_CLAIMED_BY_BLOCK"
+      value = each.value.indexer.start-block.vtho-claimed-by-block
+    },
+    {
+      name  = "INDEXER_START_BLOCK_VET_STAKED_BY_BLOCK"
+      value = each.value.indexer.start-block.vet-staked-by-block
+    },
+    {
+      name  = "INDEXER_START_BLOCK_VET_DELEGATED_BY_BLOCK"
+      value = each.value.indexer.start-block.vet-delegated-by-block
+    },
+    {
+      name  = "INDEXER_START_BLOCK_NFT_HOLDERS_BY_BLOCK"
+      value = each.value.indexer.start-block.nft-holders-by-block
+    },
+    {
       name  = "START_ROUND_B3TR_SUSTAINABLE_ACTIONS"
       value = each.value.indexer.start-round.b3tr-sustainable-actions
     },
