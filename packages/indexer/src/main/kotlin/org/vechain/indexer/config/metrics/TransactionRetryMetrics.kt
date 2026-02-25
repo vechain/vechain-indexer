@@ -14,7 +14,7 @@ class TransactionRetryMetrics(private val registry: MeterRegistry) {
     fun incrementRetry(targetClass: String) {
         retryCounters
             .computeIfAbsent(targetClass) {
-                Counter.builder("transaction_retry_total")
+                Counter.builder("transaction_retry")
                     .description("Total transient transaction retries")
                     .tag("target_class", targetClass)
                     .register(registry)
@@ -25,7 +25,7 @@ class TransactionRetryMetrics(private val registry: MeterRegistry) {
     fun incrementExhausted(targetClass: String) {
         exhaustedCounters
             .computeIfAbsent(targetClass) {
-                Counter.builder("transaction_retry_exhausted_total")
+                Counter.builder("transaction_retry_exhausted")
                     .description("Total transient transaction retries that exhausted all attempts")
                     .tag("target_class", targetClass)
                     .register(registry)
