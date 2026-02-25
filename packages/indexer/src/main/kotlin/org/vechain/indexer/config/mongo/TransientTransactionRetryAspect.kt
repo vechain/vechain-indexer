@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
+import org.vechain.indexer.config.metrics.TransactionRetryMetrics
 
 /**
  * Retries methods annotated with @Transactional when MongoDB raises a TransientTransactionError.
@@ -19,13 +20,14 @@ import org.springframework.stereotype.Component
 @Aspect
 @Component
 @Order(Ordered.LOWEST_PRECEDENCE - 1)
-open class TransientTransactionRetryAspect {
+open class TransientTransactionRetryAspect(private val retryMetrics: TransactionRetryMetrics) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Around("@annotation(org.springframework.transaction.annotation.Transactional)")
     fun retryOnTransientTransactionError(joinPoint: ProceedingJoinPoint): Any? {
         var lastException: Exception? = null
+        val targetClass = joinPoint.signature.declaringType.simpleName
 
         for (attempt in 1..MAX_RETRIES) {
             try {
@@ -33,11 +35,12 @@ open class TransientTransactionRetryAspect {
             } catch (e: Exception) { // Intentionally Exception, not Throwable: Errors (OOM, etc.)
                 // should not be retried.
                 if (attempt < MAX_RETRIES && isTransientTransactionError(e)) {
+                    retryMetrics.incrementRetry(targetClass)
                     logger.warn(
                         "Transient transaction error on attempt {}/{} for {}.{}, retrying...",
                         attempt,
                         MAX_RETRIES,
-                        joinPoint.signature.declaringType.simpleName,
+                        targetClass,
                         joinPoint.signature.name,
                     )
                     lastException = e
@@ -57,9 +60,10 @@ open class TransientTransactionRetryAspect {
                 }
             }
         }
+        retryMetrics.incrementExhausted(targetClass)
         throw RuntimeException(
             "Transient transaction error persisted after $MAX_RETRIES attempts for " +
-                "${joinPoint.signature.declaringType.simpleName}.${joinPoint.signature.name}",
+                "$targetClass.${joinPoint.signature.name}",
             lastException,
         )
     }
