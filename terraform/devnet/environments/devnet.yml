@@ -120,6 +120,11 @@ enabled_nets:
         b3tr-proposal:              '0'
         historic-proposals:         '0'
         delegation:                 '0'
+        vtho-generated-by-block:    '0'
+        vtho-claimed-by-block:      '0'
+        vet-staked-by-block:        '0'
+        vet-delegated-by-block:     '0'
+        nft-holders-by-block:       '0'
         validator:                  '1000'
       start-round:
         b3tr-sustainable-actions:   '0'
