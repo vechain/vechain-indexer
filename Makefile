@@ -37,7 +37,7 @@ test: #@ Run all the tests (excluding e2e).
 test-ci: #@ Run all tests for CI (with caching, excludes e2e).
 	./gradlew test -x :packages:e2e:test
 test-e2e: #@ Run all the end-to-end tests.
-	./gradlew clean :package:e2e:test --stacktrace
+	./gradlew :packages:e2e:test --stacktrace
 test-api: #@ Run all the API tests.
 	./gradlew clean :package:api:test
 test-indexer: #@ Run all the indexer tests.

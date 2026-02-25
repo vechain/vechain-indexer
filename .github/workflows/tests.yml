@@ -152,6 +152,8 @@ jobs:
     name: E2E Tests
     runs-on: docker-build-arm64
     needs: detect-code-changes
+    env:
+      CACHE_SCOPE_PREFIX: "e2e-"
     steps:
       - name: No code changes detected
         if: needs.detect-code-changes.outputs.run-tests != 'true'

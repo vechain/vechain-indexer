@@ -55,8 +55,14 @@ val extractContractAddress = tasks.register("extractContractAddress") {
     }
 }
 
-val startApp = tasks.register<Exec>("startApp") {
+val buildJars = tasks.register<Exec>("buildJars") {
     dependsOn(extractContractAddress)
+    workingDir(rootDir)
+    commandLine("./gradlew", "packages:api:build", "packages:indexer:build", "-x", "test")
+}
+
+val startApp = tasks.register<Exec>("startApp") {
+    dependsOn(buildJars)
     workingDir(rootDir)
 
     doFirst {
@@ -73,6 +79,7 @@ val startApp = tasks.register<Exec>("startApp") {
         "docker", "compose",
         "-f", "docker-compose.yaml",
         "-f", "packages/e2e/docker-compose.yaml",
+        "-f", "docker-compose.prebuilt.yaml",
         "up", "--build", "-d", "--wait"
     )
 }
@@ -83,6 +90,7 @@ val stopApp = tasks.register<Exec>("stopApp") {
         "docker", "compose",
         "-f", "docker-compose.yaml",
         "-f", "packages/e2e/docker-compose.yaml",
+        "-f", "docker-compose.prebuilt.yaml",
         "down"
     )
 }
