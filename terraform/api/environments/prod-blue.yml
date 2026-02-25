@@ -147,6 +147,7 @@ enabled_nets:
         app-log-level: 'INFO'
         timing-log-level: 'INFO'
         pruner-log-level: 'INFO'
+        mongo-driver-log-level: 'INFO'
       timing:
         warn-threshold-ms: '1000'
         very-slow-threshold-ms: '10000'
@@ -360,6 +361,7 @@ enabled_nets:
         app-log-level: 'INFO'
         timing-log-level: 'INFO'
         pruner-log-level: 'INFO'
+        mongo-driver-log-level: 'INFO'
       timing:
         warn-threshold-ms: '1000'
         very-slow-threshold-ms: '10000'
