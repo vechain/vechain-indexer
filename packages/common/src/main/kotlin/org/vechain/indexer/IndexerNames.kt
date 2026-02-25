@@ -186,6 +186,11 @@ object IndexerNames {
         const val COLLECTION = "vet_balances"
     }
 
+    object VOT3_BALANCE {
+        const val NAME = "Vot3BalanceIndexer"
+        const val COLLECTION = "vot3_balances"
+    }
+
     /** Returns a map of indexer NAME → COLLECTION for every nested object that defines both. */
     fun nameToCollection(): Map<String, String> =
         IndexerNames::class
