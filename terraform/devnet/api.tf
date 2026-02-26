@@ -339,8 +339,8 @@ module "ecs-backend-service" {
     pattern = filter.pattern
   }]
   healthcheck = {
-    command     = ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health"]
-    start_delay = 30
+    command     = ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health/liveness"]
+    start_delay = 120
   }
   environment_variables = [
     {
