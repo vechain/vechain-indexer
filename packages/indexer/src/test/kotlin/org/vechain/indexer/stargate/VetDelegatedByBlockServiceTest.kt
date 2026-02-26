@@ -49,7 +49,7 @@ class VetDelegatedByBlockServiceTest {
     }
 
     @Test
-    fun `block order violation throws`() {
+    fun `duplicate block throws`() {
         every { repository.getLatestRecord() } returns
             VetDelegatedByBlock(
                 "block-10",
@@ -74,8 +74,68 @@ class VetDelegatedByBlockServiceTest {
         val block = mockBlock(10, 1100) // EXACT SAME BLOCK → FAIL
 
         val ex = assertThrows<IllegalStateException> { service.processBlock(block) }
-        expectThat(ex.message)
-            .isEqualTo("Block 10 is not the next block after last persisted block 10")
+        expectThat(ex.message).isEqualTo("Block 10 is at or before last persisted block 10")
+    }
+
+    @Test
+    fun `backward block throws`() {
+        every { repository.getLatestRecord() } returns
+            VetDelegatedByBlock(
+                "block-10",
+                10,
+                1000,
+                total = BigInteger("100"),
+                byLevel = emptyMap(),
+                hourOfDay = 1,
+                dayOfMonth = 1,
+                weekOfYear = 1,
+                month = 1,
+                year = 2025,
+                timeFrames = emptyList(),
+                blockTotal = BigInteger.ZERO,
+                hourTotal = BigInteger.ZERO,
+                dayTotal = BigInteger.ZERO,
+                weekTotal = BigInteger.ZERO,
+                monthTotal = BigInteger.ZERO,
+                yearTotal = BigInteger.ZERO,
+            )
+
+        val block = mockBlock(5, 900) // EARLIER BLOCK → FAIL
+
+        val ex = assertThrows<IllegalStateException> { service.processBlock(block) }
+        expectThat(ex.message).isEqualTo("Block 5 is at or before last persisted block 10")
+    }
+
+    @Test
+    fun `forward gap logs warning but does not throw`() {
+        every { repository.getLatestRecord() } returns
+            VetDelegatedByBlock(
+                "block-10",
+                10,
+                1735560000, // Dec 30 2024 @ 12:00 UTC
+                total = BigInteger("100"),
+                byLevel = emptyMap(),
+                hourOfDay = 12,
+                dayOfMonth = 30,
+                weekOfYear = 53,
+                month = 12,
+                year = 2024,
+                timeFrames = emptyList(),
+                blockTotal = BigInteger.ZERO,
+                hourTotal = BigInteger.ZERO,
+                dayTotal = BigInteger.ZERO,
+                weekTotal = BigInteger.ZERO,
+                monthTotal = BigInteger.ZERO,
+                yearTotal = BigInteger.ZERO,
+            )
+        mockActiveAggregation(TokenLevel.Strength to "100")
+
+        // Block 15 with a gap of 5, same hour → should NOT throw
+        val block = mockBlock(15, 1735560050)
+        val result = service.processBlock(block)
+
+        // No change in total, no rollover → empty result, but no exception
+        expectThat(result).isEmpty()
     }
 
     @Test

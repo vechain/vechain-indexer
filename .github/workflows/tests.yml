@@ -64,11 +64,9 @@ jobs:
         with:
           distribution: "oracle"
           java-version: "21"
-          cache: "gradle"
 
-      - name: Grant execute permissions to Gradle wrapper
+      - uses: gradle/actions/setup-gradle@v4
         if: needs.detect-code-changes.outputs.run-tests == 'true'
-        run: chmod +x ./gradlew
 
       - name: Gradle Spotless
         if: needs.detect-code-changes.outputs.run-tests == 'true'
@@ -95,7 +93,9 @@ jobs:
         with:
           distribution: 'oracle'
           java-version: '21'
-          cache: 'gradle'
+
+      - uses: gradle/actions/setup-gradle@v4
+        if: needs.detect-code-changes.outputs.run-tests == 'true'
 
       - name: Unit Test (${{ matrix.package }})
         if: needs.detect-code-changes.outputs.run-tests == 'true'
@@ -152,6 +152,8 @@ jobs:
     name: E2E Tests
     runs-on: docker-build-arm64
     needs: detect-code-changes
+    env:
+      CACHE_SCOPE_PREFIX: "e2e-"
     steps:
       - name: No code changes detected
         if: needs.detect-code-changes.outputs.run-tests != 'true'
@@ -165,7 +167,9 @@ jobs:
         with:
           distribution: 'oracle'
           java-version: '21'
-          cache: 'gradle'
+
+      - uses: gradle/actions/setup-gradle@v4
+        if: needs.detect-code-changes.outputs.run-tests == 'true'
 
       - name: E2E Test
         if: needs.detect-code-changes.outputs.run-tests == 'true'

@@ -19,7 +19,7 @@ open class VetDelegatedByBlockConfig {
         thorClient: ThorClient,
         processor: VetDelegatedByBlockProcessor,
         @Qualifier("delegationIndexer") delegationIndexer: Indexer,
-        @Value("\${indexer.start-block.delegation}") startBlock: Long,
+        @Value("\${indexer.start-block.vet-delegated-by-block}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
     ): BlockIndexer =
         IndexerFactory()

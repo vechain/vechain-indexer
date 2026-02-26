@@ -26,5 +26,5 @@ constructor(
     @JsonIgnore val isDaily: Boolean?,
     @JsonIgnore val isWeekly: Boolean?,
     @JsonIgnore val isMonthly: Boolean?,
-    @Id val id: String = blockNumber.toString(),
+    @JsonIgnore @Id val id: String = blockNumber.toString(),
 ) : IndexedDocument

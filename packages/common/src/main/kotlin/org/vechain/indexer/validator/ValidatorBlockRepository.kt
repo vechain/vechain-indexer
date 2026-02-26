@@ -65,7 +65,7 @@ interface ValidatorBlockRepository : BaseIndexedRepository<ValidatorBlock, Strin
 
     @Query(
         value =
-            "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 }, 'status': 'VALIDATED', 'validator': ?2, \$or: [{ 'isHourly': true }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }",
+            "{ \$or: [{ 'isHourly': true, 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': { \$gte: ?0, \$lte: ?1 } }, { 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': ?0 }, { 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': ?1 }] }",
         sort = "{ 'blockTimestamp': 1 }",
     )
     fun findHourlyInTimestampRange(
@@ -76,7 +76,7 @@ interface ValidatorBlockRepository : BaseIndexedRepository<ValidatorBlock, Strin
 
     @Query(
         value =
-            "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 }, 'status': 'VALIDATED', 'validator': ?2, \$or: [{ 'isDaily': true }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }",
+            "{ \$or: [{ 'isDaily': true, 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': { \$gte: ?0, \$lte: ?1 } }, { 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': ?0 }, { 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': ?1 }] }",
         sort = "{ 'blockTimestamp': 1 }",
     )
     fun findDailyInTimestampRange(
@@ -87,7 +87,7 @@ interface ValidatorBlockRepository : BaseIndexedRepository<ValidatorBlock, Strin
 
     @Query(
         value =
-            "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 }, 'status': 'VALIDATED', 'validator': ?2, \$or: [{ 'isWeekly': true }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }",
+            "{ \$or: [{ 'isWeekly': true, 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': { \$gte: ?0, \$lte: ?1 } }, { 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': ?0 }, { 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': ?1 }] }",
         sort = "{ 'blockTimestamp': 1 }",
     )
     fun findWeeklyInTimestampRange(
@@ -98,7 +98,7 @@ interface ValidatorBlockRepository : BaseIndexedRepository<ValidatorBlock, Strin
 
     @Query(
         value =
-            "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 }, 'status': 'VALIDATED', 'validator': ?2, \$or: [{ 'isMonthly': true }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }",
+            "{ \$or: [{ 'isMonthly': true, 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': { \$gte: ?0, \$lte: ?1 } }, { 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': ?0 }, { 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': ?1 }] }",
         sort = "{ 'blockTimestamp': 1 }",
     )
     fun findMonthlyInTimestampRange(
