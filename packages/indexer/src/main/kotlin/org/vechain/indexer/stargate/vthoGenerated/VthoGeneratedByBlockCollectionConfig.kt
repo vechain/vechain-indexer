@@ -41,6 +41,10 @@ open class VthoGeneratedByBlockCollectionConfig(
         // Ensure indexes
         ensureIndexes(
             listOf(
+                "blockNumber_1_unique" to
+                    Index().on(IndexedDocument::blockNumber.name, Sort.Direction.ASC).unique(),
+                "blockNumber_-1" to
+                    Index().on(IndexedDocument::blockNumber.name, Sort.Direction.DESC),
                 "blockTimestamp_1" to
                     Index().on(IndexedDocument::blockTimestamp.name, Sort.Direction.ASC),
                 "timeFrames_1_blockTimestamp_1" to

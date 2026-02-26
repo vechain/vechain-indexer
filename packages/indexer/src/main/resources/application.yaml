@@ -31,7 +31,7 @@ logging:
         '*': ${APP_LOG_LEVEL:INFO}
       springframework:
         data: INFO
-#      mongodb.driver.protocol.command: DEBUG
+      mongodb.driver.protocol.command: ${MONGO_DRIVER_LOG_LEVEL:INFO}
 
 management:
   endpoints:
@@ -136,6 +136,11 @@ indexer:
     historic-proposals: ${INDEXER_START_BLOCK_HISTORIC_PROPOSALS:0}
     validator: ${INDEXER_START_BLOCK_VALIDATOR:0}
     delegation: ${INDEXER_START_BLOCK_DELEGATION:0}
+    vtho-generated-by-block: ${INDEXER_START_BLOCK_VTHO_GENERATED_BY_BLOCK:0}
+    vtho-claimed-by-block: ${INDEXER_START_BLOCK_VTHO_CLAIMED_BY_BLOCK:0}
+    vet-staked-by-block: ${INDEXER_START_BLOCK_VET_STAKED_BY_BLOCK:0}
+    vet-delegated-by-block: ${INDEXER_START_BLOCK_VET_DELEGATED_BY_BLOCK:0}
+    nft-holders-by-block: ${INDEXER_START_BLOCK_NFT_HOLDERS_BY_BLOCK:0}
   validator-stats-threshold-blocks: ${INDEXER_VALIDATOR_STATS_THRESHOLD_BLOCKS:25}
   stop-block:
     historic-proposals: ${INDEXER_STOP_BLOCK_HISTORIC_PROPOSALS:22948372}

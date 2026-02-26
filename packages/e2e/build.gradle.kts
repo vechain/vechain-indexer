@@ -55,8 +55,11 @@ val extractContractAddress = tasks.register("extractContractAddress") {
     }
 }
 
+val buildApiJar = tasks.getByPath(":packages:api:bootJar")
+val buildIndexerJar = tasks.getByPath(":packages:indexer:bootJar")
+
 val startApp = tasks.register<Exec>("startApp") {
-    dependsOn(extractContractAddress)
+    dependsOn(extractContractAddress, buildApiJar, buildIndexerJar)
     workingDir(rootDir)
 
     doFirst {
@@ -73,6 +76,7 @@ val startApp = tasks.register<Exec>("startApp") {
         "docker", "compose",
         "-f", "docker-compose.yaml",
         "-f", "packages/e2e/docker-compose.yaml",
+        "-f", "docker-compose.prebuilt.yaml",
         "up", "--build", "-d", "--wait"
     )
 }
@@ -83,6 +87,7 @@ val stopApp = tasks.register<Exec>("stopApp") {
         "docker", "compose",
         "-f", "docker-compose.yaml",
         "-f", "packages/e2e/docker-compose.yaml",
+        "-f", "docker-compose.prebuilt.yaml",
         "down"
     )
 }

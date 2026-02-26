@@ -47,6 +47,8 @@ open class NftHoldersByBlockCollectionConfig(
         // Ensure indexes
         ensureIndexes(
             listOf(
+                "blockNumber_1_unique" to
+                    Index().on(IndexedDocument::blockNumber.name, Sort.Direction.ASC).unique(),
                 "blockTimestamp_1" to
                     Index().on(IndexedDocument::blockTimestamp.name, Sort.Direction.ASC),
                 "timeFrames_1_blockTimestamp_1" to

@@ -18,7 +18,7 @@ open class VthoClaimedByBlockConfig {
     open fun vthoClaimedByBlockIndexer(
         thorClient: ThorClient,
         processor: VthoClaimedByBlockProcessor,
-        @Value("\${indexer.start-block.stargate}") startBlock: Long,
+        @Value("\${indexer.start-block.vtho-claimed-by-block}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")

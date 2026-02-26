@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM amazoncorretto:21-alpine3.20 AS builder
 
 RUN apk update && apk upgrade
@@ -11,7 +12,9 @@ WORKDIR /usr/app
 COPY gradle ./gradle
 COPY gradlew ./
 
-RUN ./gradlew
+RUN --mount=type=cache,target=/root/.gradle/caches \
+    --mount=type=cache,target=/root/.gradle/wrapper \
+    ./gradlew
 
 COPY build.gradle.kts ./
 COPY settings.gradle.kts ./
@@ -26,7 +29,9 @@ ENV APP_VERSION=$APP_VERSION
 # Ensure the version is in the form v.X.Y.Z
 RUN echo "$APP_VERSION" | grep -Eq '^v\.[0-9]+\.[0-9]+\.[0-9]+(-dev)?$' || (echo "APP_VERSION $APP_VERSION is not of the form v.X.Y.Z or v.X.Y.Z-dev" && exit 1)
 
-RUN ./gradlew packages:$PACKAGE_NAME:build -x test
+RUN --mount=type=cache,target=/root/.gradle/caches \
+    --mount=type=cache,target=/root/.gradle/wrapper \
+    ./gradlew packages:$PACKAGE_NAME:build -x test
 
 FROM amazoncorretto:21-alpine3.20 AS prod
 

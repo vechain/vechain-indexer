@@ -1,8 +1,6 @@
 package org.vechain.indexer.accounts
 
 import kotlin.collections.isNotEmpty
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
@@ -37,7 +35,7 @@ open class TotalAccountsProcessor(
         val (updated, existing) = service.processBlock(entry.block, entry.callResults())
 
         if (updated.isNotEmpty()) {
-            withContext(Dispatchers.IO) { service.save(updated, existing) }
+            service.save(updated, existing)
         }
     }
 }

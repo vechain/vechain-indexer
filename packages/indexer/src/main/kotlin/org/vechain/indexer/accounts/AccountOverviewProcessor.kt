@@ -1,7 +1,5 @@
 package org.vechain.indexer.accounts
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.PageRequest
@@ -48,13 +46,13 @@ open class AccountOverviewProcessor(
 
         // At the Hayabusa fork block, settle passive VTHO for all accounts with VET balance
         if (service.isHayabusaBlock(block.number)) {
-            withContext(Dispatchers.IO) { settleAllAccountsAtHayabusa(block) }
+            settleAllAccountsAtHayabusa(block)
         }
 
         val (updated, existing) = service.processBlock(block, entry.events)
 
         if (updated.isNotEmpty() || existing.isNotEmpty()) {
-            withContext(Dispatchers.IO) { service.save(updated, existing) }
+            service.save(updated, existing)
         }
     }
 

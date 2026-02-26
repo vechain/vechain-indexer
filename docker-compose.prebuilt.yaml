@@ -1,0 +1,7 @@
+services:
+  vechain-indexer:
+    build:
+      dockerfile: Dockerfile.prebuilt
+  vechain-indexer-api:
+    build:
+      dockerfile: Dockerfile.prebuilt
