@@ -331,10 +331,9 @@ module "ecs-backend-service" {
   desired_capacity                   = each.value.indexer.enabled ? 1 : 0
   containerPort                      = 8080
   hostPort                           = 8080
-  deployment_minimum_healthy_percent  = 0
-  deployment_maximum_percent          = 100
-  namespace_id                        = aws_service_discovery_private_dns_namespace.ns.id
-  health_check_grace_period_seconds   = 300
+  deployment_minimum_healthy_percent = 0
+  deployment_maximum_percent         = 100
+  namespace_id                       = aws_service_discovery_private_dns_namespace.ns.id
   log_metric_filters = [for filter in each.value.indexer.log_metric_filters : {
     name    = filter.name
     pattern = filter.pattern
@@ -788,4 +787,23 @@ module "ecs-backend-service" {
       value = each.value.indexer.healthcheck.report-interval-ms
     }
   ]
+}
+
+################################################################################
+# Workaround: set health_check_grace_period_seconds on the indexer service.
+# The ecs-backend-service module (v.3.0.3) does not expose this parameter.
+# Remove this resource once the module is updated to support it natively.
+################################################################################
+resource "null_resource" "indexer_health_check_grace_period" {
+  for_each = local.env.enabled_nets
+
+  triggers = {
+    service_name = module.ecs-backend-service[each.key].service_name
+  }
+
+  provisioner "local-exec" {
+    command = "aws ecs update-service --cluster ${module.ecs-cluster.name} --service ${module.ecs-backend-service[each.key].service_name} --health-check-grace-period-seconds 300 --region ${local.env.region}"
+  }
+
+  depends_on = [module.ecs-backend-service]
 }
