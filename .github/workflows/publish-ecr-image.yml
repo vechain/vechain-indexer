@@ -26,6 +26,7 @@ on:
 permissions:
   id-token: write  # This is required for requesting the JWT
   contents: read   # This is required for actions/checkout
+  packages: read   # This is required for pulling GitHub Packages dependencies
 
 env:
   latestTag: 'latest'
@@ -81,6 +82,9 @@ jobs:
           provenance: false
           cache-from: type=gha,scope=${{ matrix.packageName }}-ecr
           cache-to: type=gha,mode=max,scope=${{ matrix.packageName }}-ecr
+          secrets: |
+            "gradle_props=gpr.user=${{ github.actor }}
+            gpr.key=${{ secrets.GITHUB_TOKEN }}"
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/${{ env.projectName }}/${{ matrix.packageName }}:${{ env.versionTag }}
             ${{ steps.login-ecr.outputs.registry }}/${{ env.projectName }}/${{ matrix.packageName }}:${{ env.latestTag }}
