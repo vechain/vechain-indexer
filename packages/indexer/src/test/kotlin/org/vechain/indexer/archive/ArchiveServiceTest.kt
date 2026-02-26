@@ -1,24 +1,19 @@
 package org.vechain.indexer.archive
 
-import com.mongodb.MongoBulkWriteException
-import com.mongodb.bulk.BulkWriteError
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import org.bson.BsonDocument
+import org.bson.Document
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.mongodb.BulkOperationException
 import org.springframework.data.mongodb.core.BulkOperations
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.convert.MongoConverter
 import org.springframework.data.mongodb.core.query.Query
+import org.springframework.data.mongodb.core.query.Update
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.utils.buildArchiveId
-import strikt.api.expect
-import strikt.assertions.hasSize
-import strikt.assertions.isEqualTo
 
 class TestVersionedDocument : VersionedDocument {
     override var version: Int = 1
@@ -42,6 +37,7 @@ class TestArchive(override val data: TestVersionedDocument) : Archive<TestVersio
 internal class ArchiveServiceTest {
     @MockK private lateinit var mongoTemplate: MongoTemplate
     @MockK private lateinit var bulkOps: BulkOperations
+    @MockK private lateinit var mongoConverter: MongoConverter
 
     private lateinit var archiveService: ArchiveService<TestVersionedDocument, TestArchive>
 
@@ -66,15 +62,20 @@ internal class ArchiveServiceTest {
     }
 
     @Test
-    fun `saveAll - non-empty list should save documents`() {
+    fun `saveAll - non-empty list should upsert documents`() {
         val documents = listOf(TestVersionedDocument(), TestVersionedDocument())
-        val archives = documents.map { TestArchive(buildArchiveId(it, it.version), it) }
-        val slot = slot<List<TestArchive>>()
 
         every {
             mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, TestArchive::class.java)
         } returns bulkOps
-        every { bulkOps.insert(capture(slot)) } returns bulkOps
+        every { mongoTemplate.converter } returns mongoConverter
+        every { mongoConverter.write(any(), any<Document>()) } answers
+            {
+                val doc = secondArg<Document>()
+                doc["_id"] = "test-archive-id"
+                doc["data"] = "test-data"
+            }
+        every { bulkOps.upsert(any<Query>(), any<Update>()) } returns bulkOps
         every { bulkOps.execute() } returns mockk()
 
         archiveService.saveAll(documents)
@@ -82,67 +83,8 @@ internal class ArchiveServiceTest {
         verify(exactly = 1) {
             mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, TestArchive::class.java)
         }
-        verify(exactly = 1) { bulkOps.insert(any<List<TestArchive>>()) }
+        verify(exactly = 2) { bulkOps.upsert(any<Query>(), any<Update>()) }
         verify(exactly = 1) { bulkOps.execute() }
-
-        expect {
-            that(slot.captured).hasSize(2)
-            that(slot.captured[0].id).isEqualTo(archives[0].id)
-            that(slot.captured[1].id).isEqualTo(archives[1].id)
-        }
-    }
-
-    @Test
-    fun `saveAll - duplicate key errors are silently skipped`() {
-        val documents = listOf(TestVersionedDocument())
-        val duplicateError = BulkWriteError(11000, "duplicate key", BsonDocument(), 0)
-        val bulkOperationException = buildBulkOperationException(listOf(duplicateError))
-
-        every {
-            mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, TestArchive::class.java)
-        } returns bulkOps
-        every { bulkOps.insert(any<List<TestArchive>>()) } returns bulkOps
-        every { bulkOps.execute() } throws bulkOperationException
-
-        archiveService.saveAll(documents)
-    }
-
-    @Test
-    fun `saveAll - non-duplicate errors are re-thrown`() {
-        val documents = listOf(TestVersionedDocument())
-        val otherError = BulkWriteError(12345, "some other error", BsonDocument(), 0)
-        val bulkOperationException = buildBulkOperationException(listOf(otherError))
-
-        every {
-            mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, TestArchive::class.java)
-        } returns bulkOps
-        every { bulkOps.insert(any<List<TestArchive>>()) } returns bulkOps
-        every { bulkOps.execute() } throws bulkOperationException
-
-        assertThrows<BulkOperationException> { archiveService.saveAll(documents) }
-    }
-
-    @Test
-    fun `saveAll - mixed errors with any non-duplicate are re-thrown`() {
-        val documents = listOf(TestVersionedDocument())
-        val duplicateError = BulkWriteError(11000, "duplicate key", BsonDocument(), 0)
-        val otherError = BulkWriteError(12345, "some other error", BsonDocument(), 1)
-        val bulkOperationException = buildBulkOperationException(listOf(duplicateError, otherError))
-
-        every {
-            mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, TestArchive::class.java)
-        } returns bulkOps
-        every { bulkOps.insert(any<List<TestArchive>>()) } returns bulkOps
-        every { bulkOps.execute() } throws bulkOperationException
-
-        assertThrows<BulkOperationException> { archiveService.saveAll(documents) }
-    }
-
-    private fun buildBulkOperationException(errors: List<BulkWriteError>): BulkOperationException {
-        val mongoBulkWriteException = mockk<MongoBulkWriteException>()
-        every { mongoBulkWriteException.writeErrors } returns errors
-        every { mongoBulkWriteException.writeResult } returns mockk()
-        return BulkOperationException("Bulk write error", mongoBulkWriteException)
     }
 
     @Test

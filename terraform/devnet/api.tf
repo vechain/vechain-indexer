@@ -371,6 +371,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.logging.pruner-log-level
     },
     {
+      name  = "MONGO_DRIVER_LOG_LEVEL"
+      value = each.value.indexer.logging.mongo-driver-log-level
+    },
+    {
       name  = "TIMING_WARN_THRESHOLD_MS"
       value = each.value.indexer.timing.warn-threshold-ms
     },

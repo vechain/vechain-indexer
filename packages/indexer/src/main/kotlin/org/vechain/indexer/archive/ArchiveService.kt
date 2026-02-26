@@ -3,7 +3,6 @@ package org.vechain.indexer.archive
 import org.bson.Document
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Sort
-import org.springframework.data.mongodb.BulkOperationException
 import org.springframework.data.mongodb.core.BulkOperations
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.aggregation.Aggregation
@@ -12,6 +11,7 @@ import org.springframework.data.mongodb.core.aggregation.AggregationOperationCon
 import org.springframework.data.mongodb.core.aggregation.AggregationOptions
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
+import org.springframework.data.mongodb.core.query.Update
 import org.springframework.data.util.CloseableIterator
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.IndexedDocument
@@ -48,27 +48,15 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
             }
 
         val bulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, archiveClazz)
-        bulkOps.insert(archives)
-
-        try {
-            bulkOps.execute()
-        } catch (e: BulkOperationException) {
-            val nonDuplicateErrors = e.errors.filter { it.code != DUPLICATE_KEY_ERROR_CODE }
-            if (nonDuplicateErrors.isNotEmpty()) {
-                throw e
-            }
-            val duplicateCount = e.errors.size - nonDuplicateErrors.size
-            logger.debug(
-                "{}: Skipped {} duplicate archive(s) out of {} documents",
-                archiveClazz.simpleName,
-                duplicateCount,
-                documents.size,
-            )
+        archives.forEach { archive ->
+            val bson = Document()
+            mongoTemplate.converter.write(archive, bson)
+            val query = Query(Criteria.where("_id").`is`(bson["_id"]))
+            val update = Update()
+            bson.forEach { (k, v) -> if (k != "_id") update.set(k, v) }
+            bulkOps.upsert(query, update)
         }
-    }
-
-    companion object {
-        private const val DUPLICATE_KEY_ERROR_CODE = 11000
+        bulkOps.execute()
     }
 
     open fun rollback(blockNumber: Long) {

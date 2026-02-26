@@ -31,7 +31,7 @@ logging:
         '*': ${APP_LOG_LEVEL:INFO}
       springframework:
         data: INFO
-#      mongodb.driver.protocol.command: DEBUG
+      mongodb.driver.protocol.command: ${MONGO_DRIVER_LOG_LEVEL:INFO}
 
 management:
   endpoints:
