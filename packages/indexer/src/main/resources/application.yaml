@@ -42,6 +42,9 @@ management:
   endpoint:
     health:
       show-details: always
+      group:
+        liveness:
+          include: ping
   metrics:
     tags:
       indexer-id: ${METRICS_ID:local-indexer}
