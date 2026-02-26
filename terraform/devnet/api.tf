@@ -331,9 +331,10 @@ module "ecs-backend-service" {
   desired_capacity                   = each.value.indexer.enabled ? 1 : 0
   containerPort                      = 8080
   hostPort                           = 8080
-  deployment_minimum_healthy_percent = 0
-  deployment_maximum_percent         = 100
-  namespace_id                       = aws_service_discovery_private_dns_namespace.ns.id
+  deployment_minimum_healthy_percent  = 0
+  deployment_maximum_percent          = 100
+  namespace_id                        = aws_service_discovery_private_dns_namespace.ns.id
+  health_check_grace_period_seconds   = 300
   log_metric_filters = [for filter in each.value.indexer.log_metric_filters : {
     name    = filter.name
     pattern = filter.pattern
