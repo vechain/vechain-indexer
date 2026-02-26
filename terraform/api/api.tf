@@ -954,6 +954,25 @@ module "ecs-backend-service" {
 }
 
 ################################################################################
+# Workaround: set health_check_grace_period_seconds on the indexer service.
+# The ecs-backend-service module (v.3.0.3) does not expose this parameter.
+# Remove this resource once the module is updated to support it natively.
+################################################################################
+resource "null_resource" "indexer_health_check_grace_period" {
+  for_each = local.env.enabled_nets
+
+  triggers = {
+    service_name = module.ecs-backend-service[each.key].service_name
+  }
+
+  provisioner "local-exec" {
+    command = "aws ecs update-service --cluster ${module.ecs-cluster.name} --service ${module.ecs-backend-service[each.key].service_name} --health-check-grace-period-seconds 300 --region ${local.env.region}"
+  }
+
+  depends_on = [module.ecs-backend-service]
+}
+
+################################################################################
 # Datadog Secrets
 ################################################################################
 
