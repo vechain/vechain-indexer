@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.utils.CacheUtils
 import org.vechain.indexer.utils.RolloverUtils
 import org.vechain.indexer.validator.DelegationRepository
 
@@ -139,7 +140,12 @@ open class VetDelegatedByBlockService(
     open fun saveRecords(records: List<VetDelegatedByBlock>) {
         repository.saveAll(records)
         if (records.isNotEmpty()) {
-            latestRecordCache = records.maxBy { it.blockNumber }
+            val latest = records.maxBy { it.blockNumber }
+            CacheUtils.updateAfterCommit(
+                latest,
+                { latestRecordCache = it },
+                { latestRecordCache = null },
+            )
         }
     }
 
@@ -155,9 +161,18 @@ open class VetDelegatedByBlockService(
     private fun validateAndLoadLatest(block: Block): VetDelegatedByBlock? {
         val latest = loadLatest(block) ?: return null
 
-        if (block.number != latest.blockNumber + 1) {
+        if (block.number <= latest.blockNumber) {
             throw IllegalStateException(
-                "Block ${block.number} is not the next block after last persisted block ${latest.blockNumber}"
+                "Block ${block.number} is at or before last persisted block ${latest.blockNumber}"
+            )
+        }
+
+        if (block.number > latest.blockNumber + 1) {
+            logger.warn(
+                "Forward gap detected: block {} is {} blocks ahead of last persisted block {}",
+                block.number,
+                block.number - latest.blockNumber,
+                latest.blockNumber,
             )
         }
 

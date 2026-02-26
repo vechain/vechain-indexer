@@ -1,7 +1,5 @@
 package org.vechain.indexer.b3tr.proposal
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
@@ -36,7 +34,7 @@ open class ProposalCommentProcessor(
 
         // Save the updated NFTs and archives
         if (comments.isNotEmpty()) {
-            withContext(Dispatchers.IO) { service.save(comments) }
+            service.save(comments)
         }
     }
 }

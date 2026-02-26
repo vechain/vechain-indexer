@@ -1,0 +1,10 @@
+FROM amazoncorretto:21-alpine3.20
+RUN apk update && apk upgrade && apk add --no-cache curl
+ARG PACKAGE_NAME
+ARG APP_VERSION
+RUN test -n "$PACKAGE_NAME" || (echo "ERROR: PACKAGE_NAME build arg must be set and non-empty" >&2 && exit 1); \
+    test -n "$APP_VERSION" || (echo "ERROR: APP_VERSION build arg must be set and non-empty" >&2 && exit 1)
+ENV APP_VERSION=$APP_VERSION
+WORKDIR /usr/app
+COPY packages/${PACKAGE_NAME}/build/libs/${PACKAGE_NAME}*.jar /usr/app/app.jar
+CMD java -Dapp.version=$APP_VERSION -jar /usr/app/app.jar

@@ -6,7 +6,7 @@ import org.vechain.indexer.BaseIndexedRepository
 import org.vechain.indexer.explorer.BlockUsage
 
 @Repository
-interface BlockUsageRepository : BaseIndexedRepository<BlockUsage, Long> {
+interface BlockUsageRepository : BaseIndexedRepository<BlockUsage, String> {
 
     /**
      * Find all block usage records within a timestamp range (inclusive).
@@ -32,7 +32,7 @@ interface BlockUsageRepository : BaseIndexedRepository<BlockUsage, Long> {
      */
     @Query(
         value =
-            "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 }, \$or: [{ 'isHourly': true }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }",
+            "{ \$or: [{ 'isHourly': true, 'blockTimestamp': { \$gte: ?0, \$lte: ?1 } }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }",
         sort = "{ 'blockTimestamp': 1 }",
     )
     fun findHourlyInTimestampRange(startTimestamp: Long, endTimestamp: Long): List<BlockUsage>
@@ -47,7 +47,7 @@ interface BlockUsageRepository : BaseIndexedRepository<BlockUsage, Long> {
      */
     @Query(
         value =
-            "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 }, \$or: [{ 'isDaily': true }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }",
+            "{ \$or: [{ 'isDaily': true, 'blockTimestamp': { \$gte: ?0, \$lte: ?1 } }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }",
         sort = "{ 'blockTimestamp': 1 }",
     )
     fun findDailyInTimestampRange(startTimestamp: Long, endTimestamp: Long): List<BlockUsage>
@@ -62,7 +62,7 @@ interface BlockUsageRepository : BaseIndexedRepository<BlockUsage, Long> {
      */
     @Query(
         value =
-            "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 }, \$or: [{ 'isWeekly': true }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }}",
+            "{ \$or: [{ 'isWeekly': true, 'blockTimestamp': { \$gte: ?0, \$lte: ?1 } }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }",
         sort = "{ 'blockTimestamp': 1 }",
     )
     fun findWeeklyInTimestampRange(startTimestamp: Long, endTimestamp: Long): List<BlockUsage>
@@ -77,7 +77,7 @@ interface BlockUsageRepository : BaseIndexedRepository<BlockUsage, Long> {
      */
     @Query(
         value =
-            "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 }, \$or: [{ 'isMonthly': true }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }",
+            "{ \$or: [{ 'isMonthly': true, 'blockTimestamp': { \$gte: ?0, \$lte: ?1 } }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }",
         sort = "{ 'blockTimestamp': 1 }",
     )
     fun findMonthlyInTimestampRange(startTimestamp: Long, endTimestamp: Long): List<BlockUsage>

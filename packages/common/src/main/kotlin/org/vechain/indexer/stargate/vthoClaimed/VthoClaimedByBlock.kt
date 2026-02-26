@@ -14,7 +14,7 @@ data class VthoClaimedByBlock
 @ConstructorBinding
 constructor(
     override val blockId: String,
-    @Id override val blockNumber: Long,
+    override val blockNumber: Long,
     override val blockTimestamp: Long,
     val total: BigInteger,
     val legacyRewards: BigInteger,
@@ -30,4 +30,5 @@ constructor(
     @JsonIgnore override val weekTotal: BigInteger? = null,
     @JsonIgnore override val monthTotal: BigInteger? = null,
     @JsonIgnore override val yearTotal: BigInteger? = null,
+    @JsonIgnore @Id val id: String = blockNumber.toString(),
 ) : TimeFrameDocument

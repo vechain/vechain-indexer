@@ -9,6 +9,7 @@ import org.vechain.indexer.event.model.abi.InputOutput
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
+import org.vechain.indexer.utils.CacheUtils
 import org.vechain.indexer.utils.RolloverUtils
 import org.vechain.indexer.validator.domain.ValidatorDecoder.hasAbiData
 
@@ -71,9 +72,18 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
     private fun validateAndLoadLatest(block: Block): VthoGeneratedByBlock? {
         val latest = loadLatest(block) ?: return null
 
-        if (block.number != latest.blockNumber + 1) {
+        if (block.number <= latest.blockNumber) {
             throw IllegalStateException(
-                "Block ${block.number} is not the next block after last persisted block ${latest.blockNumber}"
+                "Block ${block.number} is at or before last persisted block ${latest.blockNumber}"
+            )
+        }
+
+        if (block.number > latest.blockNumber + 1) {
+            logger.warn(
+                "Forward gap detected: block {} is {} blocks ahead of last persisted block {}",
+                block.number,
+                block.number - latest.blockNumber,
+                latest.blockNumber,
             )
         }
 
@@ -167,7 +177,12 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
     open fun save(records: List<VthoGeneratedByBlock>) {
         if (records.isEmpty()) return
         repository.saveAll(records)
-        latestRecordCache = records.maxBy { it.blockNumber }
+        val latest = records.maxBy { it.blockNumber }
+        CacheUtils.updateAfterCommit(
+            latest,
+            { latestRecordCache = it },
+            { latestRecordCache = null },
+        )
     }
 
     /**

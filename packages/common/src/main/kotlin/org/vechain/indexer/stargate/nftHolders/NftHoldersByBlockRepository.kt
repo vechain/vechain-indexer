@@ -10,7 +10,7 @@ import org.vechain.indexer.stargate.timeFrame.TimeFrameRepo
 
 @Profile("stargate", "nft-holders-by-block")
 interface NftHoldersByBlockRepository :
-    BaseIndexedRepository<NftHoldersByBlock, Long>, TimeFrameRepo<NftHoldersByBlock> {
+    BaseIndexedRepository<NftHoldersByBlock, String>, TimeFrameRepo<NftHoldersByBlock> {
     @Aggregation(
         pipeline =
             [
@@ -49,9 +49,6 @@ interface NftHoldersByBlockRepository :
         blockTimestamp: Long,
         pageable: Pageable,
     ): Slice<NftHoldersByBlock>
-
-    @Aggregation(pipeline = ["{ '\$sort': { 'blockNumber': -1 } }", "{ '\$limit': 1 }"])
-    override fun getLatestRecord(): NftHoldersByBlock?
 
     @Aggregation(
         pipeline =

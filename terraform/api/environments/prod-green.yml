@@ -146,6 +146,7 @@ enabled_nets:
         app-log-level: 'INFO'
         timing-log-level: 'INFO'
         pruner-log-level: 'INFO'
+        mongo-driver-log-level: 'INFO'
       timing:
         warn-threshold-ms: '1000'
         very-slow-threshold-ms: '10000'
@@ -165,6 +166,11 @@ enabled_nets:
         b3tr-proposal:              '19036184'
         validator:                  '23414400'
         delegation:                 '23415258'
+        vtho-generated-by-block:    '23474870'
+        vtho-claimed-by-block:      '22083602'
+        vet-staked-by-block:        '22083535'
+        vet-delegated-by-block:     '23415238'
+        nft-holders-by-block:       '22083535'
       start-round:
         b3tr-sustainable-actions:   '4'
       sync-log-interval: '100'
@@ -202,11 +208,11 @@ enabled_nets:
         vevote-comments: '1'
         vevote-results: '3'
         authority-node-endorser: '1'
-        stargate-vtho-claimed-by-block: '4'
-        stargate-vtho-generated-by-block: '8'
+        stargate-vtho-claimed-by-block: '5'
+        stargate-vtho-generated-by-block: '9'
         stargate-vtho-claimed-by-account: '4'
-        stargate-nft-holders-by-block: '5'
-        stargate-vet-staked-by-block: '5'
+        stargate-nft-holders-by-block: '7'
+        stargate-vet-staked-by-block: '7'
         stargate-vet-delegated-by-block: '8'
         b3tr-proposal-comments: '1'
         b3tr-proposal-results: '5'
@@ -275,12 +281,12 @@ enabled_nets:
       fqdn: mainnet.rsmhw.mongodb.net
       proto: mongodb+srv
       opts: retryWrites=true&w=majority
-      cluster_tier: M60_NVME
+      cluster_tier: M50
       disk_size_gb: 1000
       iops: 2000
       secret_arn: arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
-      auto_scaling_compute_max_instance_size: M80_NVME
-      auto_scaling_compute_min_instance_size: M60_NVME
+      auto_scaling_compute_max_instance_size: M60
+      auto_scaling_compute_min_instance_size: M40
   test:
     image_version: latest
     thor_url: https://testnet.vechain.org
@@ -354,6 +360,7 @@ enabled_nets:
         app-log-level: 'INFO'
         timing-log-level: 'INFO'
         pruner-log-level: 'INFO'
+        mongo-driver-log-level: 'INFO'
       timing:
         warn-threshold-ms: '1000'
         very-slow-threshold-ms: '10000'
@@ -373,6 +380,11 @@ enabled_nets:
         historic-proposals:         '22087000'
         validator:                  '23221800'
         delegation:                 '23222706'
+        vtho-generated-by-block:    '23282270'
+        vtho-claimed-by-block:      '23212348'
+        vet-staked-by-block:        '23188723'
+        vet-delegated-by-block:     '23222700'
+        nft-holders-by-block:       '23188723'
       start-round:
         b3tr-sustainable-actions:   '4'
       sync-log-interval: '100'
@@ -410,11 +422,11 @@ enabled_nets:
         vevote-comments: '1'
         vevote-results: '3'
         authority-node-endorser: '1'
-        stargate-vtho-claimed-by-block: '6'
-        stargate-vtho-generated-by-block: '8'
+        stargate-vtho-claimed-by-block: '7'
+        stargate-vtho-generated-by-block: '9'
         stargate-vtho-claimed-by-account: '6'
-        stargate-nft-holders-by-block: '5'
-        stargate-vet-staked-by-block: '5'
+        stargate-nft-holders-by-block: '7'
+        stargate-vet-staked-by-block: '7'
         stargate-vet-delegated-by-block: '8'
         b3tr-proposal-comments: '1'
         b3tr-proposal-results: '5'
