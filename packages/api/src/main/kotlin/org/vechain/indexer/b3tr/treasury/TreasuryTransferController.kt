@@ -43,7 +43,7 @@ open class TreasuryTransferController(
         name = "category",
         schema = Schema(enumAsRef = true, implementation = TreasuryTransferCategory::class),
         description =
-            "Filter by category: emission, surplus, gm_upgrade, grant, governance, in, out, other. " +
+            "Filter by category: emission, surplus, gm_upgrade, grant, out, other. " +
                 "If omitted, returns all.",
     )
     @AfterParameter
