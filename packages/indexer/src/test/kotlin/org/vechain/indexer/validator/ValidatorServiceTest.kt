@@ -1,10 +1,14 @@
 package org.vechain.indexer.validator
 
+import com.mongodb.client.MongoCollection
+import com.mongodb.client.model.BulkWriteOptions
+import com.mongodb.client.model.WriteModel
 import io.mockk.*
 import java.math.BigDecimal
 import java.math.BigInteger
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
+import org.bson.Document
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.data.mongodb.core.MongoTemplate
@@ -202,9 +206,15 @@ class ValidatorServiceTest {
                 version = 1,
             )
 
+        val collection = mockk<MongoCollection<Document>>(relaxed = true)
+        every { mongoTemplate.getCollectionName(Validator::class.java) } returns "validators"
+        every { mongoTemplate.getCollection("validators") } returns collection
+
         service.save(listOf(v1), listOf(v1))
 
-        verify { mongoTemplate.getCollectionName(any<Class<*>>()) }
+        verify(exactly = 1) {
+            collection.bulkWrite(any<List<WriteModel<Document>>>(), any<BulkWriteOptions>())
+        }
     }
 
     // --- Queue Initialization Tests ---
