@@ -147,8 +147,8 @@ internal class B3trRichlistServiceTest {
         val result = service.getRichlist(size = 20, direction = "DESC", scope = RichlistScope.ALL)
 
         assertEquals(0, result.data.size)
-        assertEquals(false, result.hasNext)
-        assertEquals(null, result.cursor)
+        assertEquals(false, result.pagination.hasNext)
+        assertEquals(null, result.pagination.cursor)
     }
 
     @Test

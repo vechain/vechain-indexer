@@ -4,6 +4,7 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import java.math.BigInteger
+import java.util.Optional
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -59,7 +60,7 @@ internal class B3trBalanceServiceTest {
                 b3trContractAddress = b3trContract,
                 vot3ContractAddress = vot3Contract,
             )
-        every { repository.findByIdOrNull(any()) } returns null
+        every { repository.findById(any<String>()) } returns Optional.empty()
     }
 
     @Test
@@ -211,18 +212,20 @@ internal class B3trBalanceServiceTest {
         val blockDetails = BlockDetails("0xblock", 10L, 1000L)
         val from = "0xfrom0000000000000000000000000000000001"
         val to = "0xto000000000000000000000000000000000002"
-        every { repository.findByIdOrNull(from) } returns
-            B3trBalance(
-                address = from,
-                blockId = "0xprev",
-                blockNumber = 9L,
-                blockTimestamp = 900L,
-                version = 1,
-                vot3Balance = BigInteger("200"),
-                b3trBalance = BigInteger("50"),
-                totalBalance = BigInteger("250"),
+        every { repository.findById(from) } returns
+            Optional.of(
+                B3trBalance(
+                    address = from,
+                    blockId = "0xprev",
+                    blockNumber = 9L,
+                    blockTimestamp = 900L,
+                    version = 1,
+                    vot3Balance = BigInteger("200"),
+                    b3trBalance = BigInteger("50"),
+                    totalBalance = BigInteger("250"),
+                )
             )
-        every { repository.findByIdOrNull(to) } returns null
+        every { repository.findById(to) } returns Optional.empty()
         val events =
             listOf(
                 transferEvent(
