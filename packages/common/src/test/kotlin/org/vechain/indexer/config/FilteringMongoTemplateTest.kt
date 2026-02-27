@@ -15,6 +15,7 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.aggregation.TypedAggregation
 import org.springframework.data.mongodb.core.convert.MongoConverter
 import org.springframework.data.mongodb.core.mapping.Document as MongoDocument
+import org.springframework.data.mongodb.core.query.BasicQuery
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.test.context.ActiveProfiles
@@ -591,6 +592,16 @@ internal class FilteringMongoTemplateTest {
             val fieldsObject = query.fields().fieldsObject
             expectThat(fieldsObject.containsKey("_previousVersions")).isTrue()
             expectThat(fieldsObject["_previousVersions"]).isEqualTo(0)
+        }
+
+        @Test
+        fun `exclusion is skipped when BasicQuery has inclusion projection from @Query annotation`() {
+            val query = BasicQuery(Document(), Document("validator", 1).append("_id", 0))
+
+            template.addVersionExclusionProjection(query, TestVersionedDoc::class.java)
+
+            val fieldsObject = query.getFieldsObject()
+            expectThat(fieldsObject.containsKey("_previousVersions")).isEqualTo(false)
         }
 
         @Test
