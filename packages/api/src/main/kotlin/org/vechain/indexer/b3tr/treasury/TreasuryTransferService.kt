@@ -8,10 +8,14 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
+import org.vechain.indexer.IndexerService
 
 @Profile("b3tr")
 @Service
-open class TreasuryTransferService(private val mongoTemplate: MongoTemplate) {
+open class TreasuryTransferService(
+    private val mongoTemplate: MongoTemplate,
+    private val repository: TreasuryTransferRepository,
+) : IndexerService {
 
     fun find(
         category: TreasuryTransferCategory? = null,
@@ -55,4 +59,7 @@ open class TreasuryTransferService(private val mongoTemplate: MongoTemplate) {
 
         return SliceImpl(content, pageable, hasNext)
     }
+
+    override fun getLatestIndexedBlocks(): Map<String, Long> =
+        mapOf("TreasuryTransfer" to (repository.getLatestRecord()?.blockNumber ?: 0))
 }
