@@ -320,7 +320,7 @@ module "ecs-lb-service-api" {
 module "ecs-backend-service" {
   depends_on                         = [module.ecs-cluster]
   for_each                           = local.env.enabled_nets
-  source                             = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.3.0.3"
+  source                             = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.3.1.28"
   vpc_id                             = data.terraform_remote_state.vpc.outputs.vpc_id
   region                             = local.env.region
   cluster                            = module.ecs-cluster.name
@@ -342,13 +342,14 @@ module "ecs-backend-service" {
   deployment_minimum_healthy_percent = 0
   deployment_maximum_percent         = 100
   namespace_id                       = aws_service_discovery_private_dns_namespace.ns.id
+  health_check_grace_period_seconds  = 300
   log_metric_filters = [for filter in each.value.indexer.log_metric_filters : {
     name    = filter.name
     pattern = filter.pattern
   }]
   healthcheck = {
-    command     = ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health"]
-    start_delay = 30
+    command     = ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health/liveness"]
+    start_delay = 120
   }
   environment_variables = [
     {
