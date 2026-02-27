@@ -116,6 +116,8 @@ enabled_nets:
         vevote:                     '0'
         stargate:                   '0'
         b3tr:                       '0'
+        b3tr-treasury:              '0'
+        b3tr-balance:               '0'
         b3tr-x-alloc-result:        '0'
         b3tr-sustainable-actions:   '0'
         b3tr-proposal:              '0'

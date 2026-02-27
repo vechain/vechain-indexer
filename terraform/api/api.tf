@@ -440,6 +440,14 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.b3tr
     },
     {
+      name  = "INDEXER_START_BLOCK_B3TR_TREASURY"
+      value = each.value.indexer.start-block.b3tr-treasury
+    },
+    {
+      name  = "INDEXER_START_BLOCK_B3TR_BALANCE"
+      value = each.value.indexer.start-block.b3tr-balance
+    },
+    {
       name  = "INDEXER_START_BLOCK_B3TR_PROPOSAL"
       value = each.value.indexer.start-block.b3tr-proposal
     },
