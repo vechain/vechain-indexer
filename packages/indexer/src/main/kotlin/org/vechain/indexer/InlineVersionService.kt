@@ -10,7 +10,6 @@ import com.mongodb.client.model.WriteModel
 import org.bson.Document
 import org.slf4j.LoggerFactory
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.archive.ArchiveException
 
 object InlineVersionService {
 
@@ -137,7 +136,7 @@ object InlineVersionService {
      * - If version > 1 and _previousVersions is non-empty: restore the first entry from
      *   _previousVersions and set _previousVersions to the remaining entries.
      * - If version <= initialVersion (1): delete the document.
-     * - If version > 1 but _previousVersions is empty: throw ArchiveException.
+     * - If version > 1 but _previousVersions is empty: throw RollbackException.
      *
      * Uses raw MongoDB driver to bypass FilteringMongoTemplate's projection exclusion.
      */
@@ -176,7 +175,7 @@ object InlineVersionService {
                         collectionName,
                         docId,
                     )
-                    throw ArchiveException("Could not find previous document for rollback")
+                    throw RollbackException("Could not find previous document for rollback")
                 }
 
                 // Take the first entry as the restored version

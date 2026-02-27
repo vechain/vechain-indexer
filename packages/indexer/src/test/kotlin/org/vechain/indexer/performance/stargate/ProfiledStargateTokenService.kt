@@ -51,7 +51,7 @@ class ProfiledStargateTokenService(
         }
     }
 
-    override fun save(tokens: Collection<StargateToken>, archive: List<StargateToken>) {
-        profiler.time("      StargateTokenService.save (MongoDB)") { super.save(tokens, archive) }
+    override fun save(tokens: Collection<StargateToken>, existing: List<StargateToken>) {
+        profiler.time("      StargateTokenService.save (MongoDB)") { super.save(tokens, existing) }
     }
 }

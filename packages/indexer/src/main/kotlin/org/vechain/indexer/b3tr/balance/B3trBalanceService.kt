@@ -3,14 +3,14 @@ package org.vechain.indexer.b3tr.balance
 import java.math.BigInteger
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.VersionedDocumentAccumulator
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.balance.repository.B3trBalanceRepository
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.model.Block
@@ -22,8 +22,8 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 @Service
 open class B3trBalanceService(
     private val repository: B3trBalanceRepository,
-    private val archiveService: ArchiveService<B3trBalance, B3trBalanceArchive>,
-    private val pruner: TargetedPruner<B3trBalance, B3trBalanceArchive>,
+    private val mongoTemplate: MongoTemplate,
+    private val inlineVersioningProperties: InlineVersioningProperties,
     @Value("\${business-event.substitutions.B3TR_CONTRACT}")
     private val b3trContractAddress: String,
     @Value("\${business-event.substitutions.VOT3_CONTRACT}") private val vot3ContractAddress: String,
@@ -139,8 +139,9 @@ open class B3trBalanceService(
         saveVersionedDocuments(
             updated = updated,
             existing = existing,
-            archiveService = archiveService,
-            pruner = pruner,
+            mongoTemplate,
+            inlineVersioningProperties.blockWindow,
+            inlineVersioningProperties.maxVersions,
         )
     }
 }

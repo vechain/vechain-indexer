@@ -9,19 +9,19 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.vechain.indexer.archive.ArchiveService
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.b3tr.balance.repository.B3trBalanceRepository
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.utils.BlockDetails
 
 @ExtendWith(MockKExtension::class)
 internal class B3trBalanceServiceTest {
 
     @MockK lateinit var repository: B3trBalanceRepository
-    @MockK lateinit var archiveService: ArchiveService<B3trBalance, B3trBalanceArchive>
-    @MockK lateinit var pruner: TargetedPruner<B3trBalance, B3trBalanceArchive>
+    @MockK lateinit var mongoTemplate: MongoTemplate
+    @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
 
     private val b3trContract = "0xb3tr0000000000000000000000000000000001"
     private val vot3Contract = "0xvot30000000000000000000000000000000001"
@@ -55,8 +55,8 @@ internal class B3trBalanceServiceTest {
         service =
             B3trBalanceService(
                 repository = repository,
-                archiveService = archiveService,
-                pruner = pruner,
+                mongoTemplate = mongoTemplate,
+                inlineVersioningProperties = inlineVersioningProperties,
                 b3trContractAddress = b3trContract,
                 vot3ContractAddress = vot3Contract,
             )

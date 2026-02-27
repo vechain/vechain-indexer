@@ -60,8 +60,8 @@ open class NftHoldersByBlockService(
         val existingBalancesByOwner = existingBalances.associateBy { it.owner }
         val ownerBalances = existingBalancesByOwner.toMutableMap()
 
-        // Track balances to archive (existing balances that will be updated)
-        val balancesToArchive = mutableListOf<NftOwnerBalance>()
+        // Track previous balances for inline versioning
+        val previousBalances = mutableListOf<NftOwnerBalance>()
 
         var runningTotal = latest?.total ?: 0L
         val runningByLevel = latest?.byLevel?.toMutableMap() ?: mutableMapOf<TokenLevel, Long>()
@@ -84,9 +84,9 @@ open class NftHoldersByBlockService(
 
                 val currentVersion = currentBalance?.version ?: 0
 
-                // Archive existing balance if it will be updated
-                if (currentBalance != null && !balancesToArchive.any { it.owner == owner }) {
-                    balancesToArchive += currentBalance
+                // Track previous balance for inline versioning
+                if (currentBalance != null && !previousBalances.any { it.owner == owner }) {
+                    previousBalances += currentBalance
                 }
 
                 when (evt.eventType) {
@@ -197,16 +197,16 @@ open class NftHoldersByBlockService(
             prev = doc
         }
 
-        // Store updated owner balances and those to archive
+        // Store updated owner balances and their previous versions
         updatedOwnerBalances = ownerBalances.values.toList()
-        ownerBalancesToArchive = balancesToArchive
+        ownerPreviousBalances = previousBalances
 
         return output
     }
 
     // Temporary storage for updated balances to be saved with records
     private var updatedOwnerBalances: List<NftOwnerBalance> = emptyList()
-    private var ownerBalancesToArchive: List<NftOwnerBalance> = emptyList()
+    private var ownerPreviousBalances: List<NftOwnerBalance> = emptyList()
 
     /** @notice Persist multiple per-block NFT holder statistics records. */
     @Transactional(rollbackFor = [Exception::class])
@@ -227,13 +227,13 @@ open class NftHoldersByBlockService(
         if (updatedOwnerBalances.isNotEmpty()) {
             saveVersionedDocuments(
                 updatedOwnerBalances,
-                ownerBalancesToArchive,
+                ownerPreviousBalances,
                 mongoTemplate,
                 inlineVersioningProperties.blockWindow,
                 inlineVersioningProperties.maxVersions,
             )
             updatedOwnerBalances = emptyList()
-            ownerBalancesToArchive = emptyList()
+            ownerPreviousBalances = emptyList()
         }
     }
 }

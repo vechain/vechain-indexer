@@ -39,8 +39,7 @@ open class IndexerVersionService(
                 )
                 updateIndexerVersion(indexerName, collectionName, newVersion)
                 // Do not treat this as a "reset" of the collection; it only bootstraps the version
-                // document. Returning true here causes callers to drop archive collections even
-                // though the main collection hasn't been dropped.
+                // document.
                 return false
             }
 

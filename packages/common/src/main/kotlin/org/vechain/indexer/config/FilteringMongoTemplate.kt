@@ -26,9 +26,9 @@ import org.vechain.indexer.VersionedDocument
  * Exclusion rules are composed in [buildExclusionCriteria]. Currently, this includes:
  * - **Checkpoint filter**: excludes checkpoint documents (which lack a `blockNumber` field)
  *
- * To add a new exclusion rule (e.g. archive filtering), add a [Criteria] to the list returned by
- * [buildExclusionCriteria]. The [addExclusionFilters] method automatically skips any criteria whose
- * field already appears in the query, preventing duplicate-key exceptions from Spring Data.
+ * To add a new exclusion rule, add a [Criteria] to the list returned by [buildExclusionCriteria].
+ * The [addExclusionFilters] method automatically skips any criteria whose field already appears in
+ * the query, preventing duplicate-key exceptions from Spring Data.
  *
  * **Not overridden** (intentionally):
  * - All write methods (`save`, `insert`, `remove`, `update*`) — the indexer writes checkpoints via
@@ -134,7 +134,7 @@ open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: Mo
 
     /**
      * Builds all exclusion criteria for an entity class. This is the extension point for adding new
-     * exclusion rules (e.g. archive filtering).
+     * exclusion rules.
      */
     internal fun buildExclusionCriteria(entityClass: Class<*>? = null): List<Criteria> {
         val criteria = mutableListOf<Criteria>()
