@@ -8,6 +8,9 @@ terraform {
       source  = "mongodb/mongodbatlas"
       version = "~> 2.0"
     }
+    null = {
+      source = "hashicorp/null"
+    }
   }
 
   backend "s3" {
