@@ -136,6 +136,11 @@ object IndexerNames {
         const val COLLECTION = "b3tr_x_alloc_results"
     }
 
+    object TREASURY_TRANSFER {
+        const val NAME = "TreasuryTransferIndexer"
+        const val COLLECTION = "b3tr_treasury_transfers"
+    }
+
     object VALIDATOR {
         const val NAME = "ValidatorIndexer"
         const val COLLECTION = "validators"
@@ -184,6 +189,11 @@ object IndexerNames {
     object VET_BALANCE {
         const val NAME = "VetBalanceIndexer"
         const val COLLECTION = "vet_balances"
+    }
+
+    object B3TR_BALANCE {
+        const val NAME = "B3trBalanceIndexer"
+        const val COLLECTION = "b3tr_balances"
     }
 
     /** Returns a map of indexer NAME → COLLECTION for every nested object that defines both. */
