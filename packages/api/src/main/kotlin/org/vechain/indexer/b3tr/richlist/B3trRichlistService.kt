@@ -104,14 +104,16 @@ open class B3trRichlistService(
         }
 
         val first = page.first()
-        val firstCombined = first.getLong("combined")
-        val firstAddress = first.getString("_id")!!
+        val firstCombined = first.getLong("combined") ?: 0L
+        val firstAddress =
+            first.getString("_id")
+                ?: return paginatedResponse(data = emptyList(), hasNext = false, cursor = null)
         val startRank = countCombinedAbove(firstCombined, firstAddress, sortDesc) + 1
 
         val items =
             page.mapIndexed { index, doc ->
                 B3trRichlistItem(
-                    address = doc.getString("_id")!!,
+                    address = doc.getString("_id") ?: "",
                     balance = BigInteger.valueOf(doc.getLong("combined") ?: 0L),
                     rank = startRank + index,
                 )
@@ -120,10 +122,11 @@ open class B3trRichlistService(
         val nextCursor =
             if (results.size > pageSize) {
                 val last = results[pageSize - 1]
-                CursorPaginationUtils.generateCursor(
-                    last.getLong("combined")!!,
-                    last.getString("_id")!!,
-                )
+                val lastCombined = last.getLong("combined")
+                val lastId = last.getString("_id")
+                if (lastCombined != null && lastId != null) {
+                    CursorPaginationUtils.generateCursor(lastCombined, lastId)
+                } else null
             } else null
 
         return paginatedResponse(
@@ -193,16 +196,18 @@ open class B3trRichlistService(
     private fun getAddressRankMerged(address: String): B3trRankResponse {
         val vot3Balance = vot3Repository.findById(address).orElse(null)
         val b3trBalance = b3trRepository.findById(address).orElse(null)
-        val combined =
-            (vot3Balance?.balance?.toLong() ?: 0L) + (b3trBalance?.balance?.toLong() ?: 0L)
-        if (combined <= 0) {
+        val combinedBi =
+            (vot3Balance?.balance ?: BigInteger.ZERO) + (b3trBalance?.balance ?: BigInteger.ZERO)
+        if (combinedBi <= BigInteger.ZERO) {
             throw ResourceNotFoundException("Address not found in B3TR/VOT3 holders: $address")
         }
+        val combined = safeToLong(combinedBi)
         val rank = countCombinedRank(combined, address)
         val total = countCombinedTotal()
         val topPct = if (total > 0) (rank.toDouble() / total) * 100 else 0.0
         return B3trRankResponse(
             address = address,
+            balance = combinedBi,
             rank = rank,
             totalHolders = total,
             topPercentage = topPct,
@@ -239,6 +244,7 @@ open class B3trRichlistService(
         val topPct = if (total > 0) (rank.toDouble() / total) * 100 else 0.0
         return B3trRankResponse(
             address = address,
+            balance = balance,
             rank = rank,
             totalHolders = total,
             topPercentage = topPct,
@@ -272,14 +278,24 @@ open class B3trRichlistService(
     ): List<AggregationOperation> {
         val stages = mutableListOf<AggregationOperation>()
 
+        val balanceToLong =
+            Document(
+                "\$convert",
+                Document()
+                    .append("input", "\$balance")
+                    .append("to", "long")
+                    .append("onError", 0L)
+                    .append("onNull", 0L),
+            )
+        val zeroLong = Document("\$literal", 0L)
         stages.add(
             rawStage(
                 Document(
                     "\$project",
                     Document()
                         .append("_id", "\$_id")
-                        .append("vot3Long", Document("\$toLong", "\$balance"))
-                        .append("b3trLong", 0L),
+                        .append("vot3Long", balanceToLong)
+                        .append("b3trLong", zeroLong),
                 )
             )
         )
@@ -296,8 +312,8 @@ open class B3trRichlistService(
                                     "\$project",
                                     Document()
                                         .append("_id", "\$_id")
-                                        .append("vot3Long", 0L)
-                                        .append("b3trLong", Document("\$toLong", "\$balance")),
+                                        .append("vot3Long", zeroLong)
+                                        .append("b3trLong", balanceToLong),
                                 )
                             ),
                         ),
@@ -402,6 +418,12 @@ open class B3trRichlistService(
 
     private fun countCombinedRank(combined: Long, address: String): Long =
         countCombinedAbove(combined, address, sortDesc = true) + 1
+
+    private fun safeToLong(value: BigInteger): Long {
+        if (value > BigInteger.valueOf(Long.MAX_VALUE)) return Long.MAX_VALUE
+        if (value < BigInteger.valueOf(Long.MIN_VALUE)) return Long.MIN_VALUE
+        return value.toLong()
+    }
 
     private fun rawStage(doc: Document): AggregationOperation =
         object : AggregationOperation {
