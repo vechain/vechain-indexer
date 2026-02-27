@@ -149,6 +149,7 @@ open class TreasuryTransferService(
 
     private fun levelNameToLabel(level: GmLevelName): String =
         when (level) {
+            GmLevelName.ALL -> "All"
             GmLevelName.EARTH -> "Earth"
             GmLevelName.MOON -> "Moon"
             GmLevelName.MERCURY -> "Mercury"
@@ -159,7 +160,6 @@ open class TreasuryTransferService(
             GmLevelName.URANUS -> "Uranus"
             GmLevelName.NEPTUNE -> "Neptune"
             GmLevelName.GALAXY -> "Galaxy"
-            else -> level.name.lowercase().replaceFirstChar { it.uppercase() }
         }
 
     @Transactional(rollbackFor = [Exception::class])

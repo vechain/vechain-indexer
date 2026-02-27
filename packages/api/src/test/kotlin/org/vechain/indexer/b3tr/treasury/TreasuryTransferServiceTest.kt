@@ -10,13 +10,15 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Query
 import strikt.api.expectThat
 import strikt.assertions.hasSize
+import strikt.assertions.isEqualTo
 import strikt.assertions.isFalse
 import strikt.assertions.isTrue
 
 class TreasuryTransferServiceTest {
 
     private val mongoTemplate: MongoTemplate = mockk()
-    private val service = TreasuryTransferService(mongoTemplate)
+    private val repository: TreasuryTransferRepository = mockk()
+    private val service = TreasuryTransferService(mongoTemplate, repository)
 
     private val pageable =
         PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "blockTimestamp", "txId", "_id"))
@@ -149,6 +151,24 @@ class TreasuryTransferServiceTest {
 
         expectThat(result.content).hasSize(1)
         expectThat(result.hasNext()).isFalse()
+    }
+
+    @Test
+    fun `getLatestIndexedBlocks returns block number from latest record`() {
+        every { repository.getLatestRecord() } returns transfer("t1")
+
+        val result = service.getLatestIndexedBlocks()
+
+        expectThat(result["TreasuryTransfer"]).isEqualTo(100L)
+    }
+
+    @Test
+    fun `getLatestIndexedBlocks returns 0 when no records exist`() {
+        every { repository.getLatestRecord() } returns null
+
+        val result = service.getLatestIndexedBlocks()
+
+        expectThat(result["TreasuryTransfer"]).isEqualTo(0L)
     }
 
     private fun transfer(

@@ -12,13 +12,6 @@
           "secondOperand": "${GM_NFT_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
-        },
-        {
-          "firstOperand": "tokenId",
-          "isFirstStatic": false,
-          "secondOperand": "0",
-          "isSecondStatic": true,
-          "operator": "GE"
         }
       ]
     }
