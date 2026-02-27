@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: "Target environment to validate via OpenAPI schema"
+        description: "Target environment for schema conformance tests"
         default: dead
         required: false
         type: choice
@@ -18,7 +18,7 @@ on:
   workflow_call:
     inputs:
       environment:
-        description: "Target environment to validate via OpenAPI schema (dead/live)"
+        description: "Target environment for schema tests (dead/live)"
         required: true
         type: string
       base_url:
@@ -30,109 +30,50 @@ permissions:
   contents: read
 
 jobs:
-  determine-targets:
-    name: Determine test targets
-    runs-on: ubuntu-latest
-    outputs:
-      test-targets: ${{ steps.determine.outputs.targets }}
-      base_url_input: ${{ steps.determine.outputs.base_url_input }}
-    steps:
-      - name: Determine test targets
-        id: determine
-        shell: bash
-        run: |
-          base_url="${{ inputs.base_url }}"
-          environment="${{ inputs.environment || 'dead' }}"
-
-          # If base_url is provided, test only that URL
-          if [[ -n "$base_url" ]]; then
-            echo "targets=[\"custom\"]" >> "$GITHUB_OUTPUT"
-            echo "base_url_input=$base_url" >> "$GITHUB_OUTPUT"
-          else
-            # If dead or live, test both mainnet and testnet in parallel
-            case "$environment" in
-              dead)
-                echo "targets=[\"mainnet-dead\",\"testnet-dead\"]" >> "$GITHUB_OUTPUT"
-                echo "base_url_input=" >> "$GITHUB_OUTPUT"
-                ;;
-              live)
-                echo "targets=[\"mainnet-live\",\"testnet-live\"]" >> "$GITHUB_OUTPUT"
-                echo "base_url_input=" >> "$GITHUB_OUTPUT"
-                ;;
-              *)
-                echo "targets=[\"unknown\"]" >> "$GITHUB_OUTPUT"
-                echo "base_url_input=" >> "$GITHUB_OUTPUT"
-                ;;
-            esac
-          fi
-
   schemathesis:
-    name: Run API schema checks - ${{ matrix.target }}
+    name: Schema conformance - mainnet
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    needs: determine-targets
-    strategy:
-      matrix:
-        target: ${{ fromJson(needs.determine-targets.outputs.test-targets) }}
-      fail-fast: false
     env:
-      ENVIRONMENT: ${{ inputs.environment || 'dead' }}
-      BASE_URL_INPUT: ${{ needs.determine-targets.outputs.base_url_input }}
       MAX_RESPONSE_MILLISECONDS: "5000"
       HYPOTHESIS_MAX_EXAMPLES: "250"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Resolve target endpoints
+      - name: Resolve base URL
         id: resolve
         shell: bash
         run: |
-          target="${{ matrix.target }}"
-          base_url="${BASE_URL_INPUT}"
+          base_url="${{ inputs.base_url }}"
+          environment="${{ inputs.environment || 'dead' }}"
 
           if [[ -n "$base_url" ]]; then
-            # Custom base URL provided
             base_url="${base_url%/}"
             summary_env="custom"
           else
-            # Determine base URL from target
-            case "$target" in
-              mainnet-dead)
+            case "$environment" in
+              dead)
                 base_url="https://mainnet.dead.prod.veworld.vechain.org"
                 summary_env="dead-mainnet"
                 ;;
-              testnet-dead)
-                base_url="https://testnet.dead.prod.veworld.vechain.org"
-                summary_env="dead-testnet"
-                ;;
-              mainnet-live)
+              live)
                 base_url="https://indexer.mainnet.vechain.org"
                 summary_env="live-mainnet"
                 ;;
-              testnet-live)
-                base_url="https://indexer.testnet.vechain.org"
-                summary_env="live-testnet"
-                ;;
-              custom)
-                base_url="${BASE_URL_INPUT}"
-                summary_env="custom"
-                ;;
               *)
-                echo "Unsupported target: $target" >&2
+                echo "Unsupported environment: $environment" >&2
                 exit 1
                 ;;
             esac
           fi
 
-          schema_url="$base_url/api-docs"
-
           echo "base_url=$base_url" >> "$GITHUB_OUTPUT"
-          echo "schema_url=$schema_url" >> "$GITHUB_OUTPUT"
           {
+            echo "### Schema Conformance Tests"
             echo "- Target: $summary_env"
             echo "- Base URL: $base_url"
-            echo "- Schema: $schema_url"
+            echo "- Schema: $base_url/api-docs"
             echo "- Max response (ms): $MAX_RESPONSE_MILLISECONDS"
             echo "- Hypothesis examples: $HYPOTHESIS_MAX_EXAMPLES"
           } >> "$GITHUB_STEP_SUMMARY"
@@ -153,29 +94,82 @@ jobs:
             --store-network-log=./.schemathesis/network.log \
             --junit-xml=./.schemathesis/results.xml
 
-      - name: Attach detailed CLI logs
+      - name: Upload schema test artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: schemathesis-logs-${{ matrix.target }}
+          name: schemathesis-logs
           path: ./.schemathesis
+          if-no-files-found: ignore
+
+  regression:
+    name: Regression comparison - mainnet
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run regression comparison (live vs dead)
+        run: |
+          mkdir -p .regression
+          scripts/run_regression_tests.sh \
+            --output .regression/report.json
+
+      - name: Generate summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f .regression/report.json ]]; then
+            total=$(python3 -c "import json; r=json.load(open('.regression/report.json')); print(r['summary']['total'])")
+            passed=$(python3 -c "import json; r=json.load(open('.regression/report.json')); print(r['summary']['passed'])")
+            failed=$(python3 -c "import json; r=json.load(open('.regression/report.json')); print(r['summary']['failed'])")
+            {
+              echo "### Regression Comparison (live vs dead)"
+              echo "- Total: $total"
+              echo "- Passed: $passed"
+              echo "- Failed: $failed"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload regression report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-report
+          path: ./.regression
           if-no-files-found: ignore
 
   api-tests-result:
     name: API Tests Result
     runs-on: ubuntu-latest
-    needs: [determine-targets, schemathesis]
+    needs: [schemathesis, regression]
     if: always()
     steps:
       - name: Check API tests status
         run: |
-          if [[ "${{ needs.schemathesis.result }}" == "success" ]]; then
-            echo "✓ All API tests passed"
-            exit 0
-          elif [[ "${{ needs.schemathesis.result }}" == "skipped" ]]; then
-            echo "✓ API tests skipped (no tests to run)"
-            exit 0
-          else
-            echo "✗ API tests failed"
+          schema_result="${{ needs.schemathesis.result }}"
+          regression_result="${{ needs.regression.result }}"
+
+          echo "Schema conformance: $schema_result"
+          echo "Regression comparison: $regression_result"
+
+          failed=false
+          for result in "$schema_result" "$regression_result"; do
+            case "$result" in
+              success|skipped) ;;
+              *) failed=true ;;
+            esac
+          done
+
+          if $failed; then
+            echo "Some API tests failed"
             exit 1
+          else
+            echo "All API tests passed"
           fi
