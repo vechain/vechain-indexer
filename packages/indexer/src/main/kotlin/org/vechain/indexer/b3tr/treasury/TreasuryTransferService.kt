@@ -28,7 +28,7 @@ open class TreasuryTransferService(
                 (sub["X_ALLOC_POOL_CONTRACT"] ?: "").lowercase() to "X-Allocation Pool",
                 (sub["GM_NFT_CONTRACT"] ?: "").lowercase() to "Galaxy Member",
                 (sub["VOTER_REWARDS_CONTRACT"] ?: "").lowercase() to "Voter Rewards",
-                (sub["X2EARN_REWARDS_POOL_CONTRACT"] ?: "").lowercase() to "X-Allocation Pool",
+                (sub["X2EARN_REWARDS_POOL_CONTRACT"] ?: "").lowercase() to "X2Earn Rewards Pool",
             )
             .filter { it.key.isNotEmpty() }
     }
