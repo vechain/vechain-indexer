@@ -14,6 +14,7 @@ import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
@@ -28,8 +29,16 @@ open class B3trBalanceService(
     @Value("\${business-event.substitutions.VOT3_CONTRACT}") private val vot3ContractAddress: String,
 ) {
 
+    /** Entry point when full block is available (IndexingResult.Normal). */
     open fun processBlock(
         block: Block,
+        events: List<IndexedEvent>,
+    ): Pair<List<B3trBalance>, List<B3trBalance>> =
+        processBlock(BlockDetails(block.id, block.number, block.timestamp), events)
+
+    /** Entry point for fast sync (events only) or when block is available as BlockDetails. */
+    open fun processBlock(
+        blockDetails: BlockDetails,
         events: List<IndexedEvent>,
     ): Pair<List<B3trBalance>, List<B3trBalance>> {
         val transfers = filterB3trAndVot3Transfers(events)
@@ -60,7 +69,7 @@ open class B3trBalanceService(
                 if (address.equals(Address.ZERO_ADDRESS, ignoreCase = true)) return@forEach
                 if (!isVot3 && address.equals(vot3ContractAddress, ignoreCase = true))
                     return@forEach
-                val updated = resolveForMutation(address, block, accumulator, resolved)
+                val updated = resolveForMutation(address, blockDetails, accumulator, resolved)
                 if (isVot3) {
                     updated.vot3Balance += delta
                 } else {
@@ -82,7 +91,7 @@ open class B3trBalanceService(
 
     protected fun resolveForMutation(
         recordId: String,
-        block: Block,
+        block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<B3trBalance>,
         resolved: MutableMap<String, B3trBalance>,
     ): B3trBalance {
@@ -96,9 +105,9 @@ open class B3trBalanceService(
                 val copy =
                     existing.copy(
                         version = nextVersion,
-                        blockId = block.id,
-                        blockNumber = block.number,
-                        blockTimestamp = block.timestamp,
+                        blockId = block.blockId,
+                        blockNumber = block.blockNumber,
+                        blockTimestamp = block.blockTimestamp,
                         vot3Balance = existing.vot3Balance,
                         b3trBalance = existing.b3trBalance,
                         totalBalance = existing.totalBalance,
@@ -109,9 +118,9 @@ open class B3trBalanceService(
                 val newRecord =
                     B3trBalance(
                         address = recordId,
-                        blockId = block.id,
-                        blockNumber = block.number,
-                        blockTimestamp = block.timestamp,
+                        blockId = block.blockId,
+                        blockNumber = block.blockNumber,
+                        blockTimestamp = block.blockTimestamp,
                         version = nextVersion,
                         vot3Balance = BigInteger.ZERO,
                         b3trBalance = BigInteger.ZERO,

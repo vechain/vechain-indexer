@@ -94,8 +94,20 @@ open class B3trRichlistService(
                 )
         val sortField = sortFieldForScope(scope)
         val balance = balanceForScope(doc, scope)
+        val totalHolders =
+            mongoTemplate.count(
+                Query(Criteria.where(sortField).gt("0")),
+                B3trBalance::class.java,
+                collection,
+            )
         if (balance <= BigInteger.ZERO) {
-            throw ResourceNotFoundException("Address has no balance for scope $scope: $address")
+            return B3trRankResponse(
+                address = address,
+                balance = BigInteger.ZERO,
+                rank = totalHolders + 1,
+                totalHolders = totalHolders,
+                topPercentage = if (totalHolders > 0) 100.0 else 0.0,
+            )
         }
         val balanceStr = balance.toString()
         val rank =
@@ -104,12 +116,6 @@ open class B3trRichlistService(
                 B3trBalance::class.java,
                 collection,
             ) + 1
-        val totalHolders =
-            mongoTemplate.count(
-                Query(Criteria.where(sortField).gt("0")),
-                B3trBalance::class.java,
-                collection,
-            )
         val topPercentage = if (totalHolders > 0) (rank.toDouble() / totalHolders) * 100 else 0.0
         return B3trRankResponse(
             address = address,

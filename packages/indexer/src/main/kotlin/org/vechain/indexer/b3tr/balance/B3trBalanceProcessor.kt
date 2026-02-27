@@ -9,6 +9,7 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.balance.repository.B3trBalanceRepository
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
+import org.vechain.indexer.utils.EventUtils.groupByBlock
 
 @Profile("b3tr", "b3tr-balance")
 @Component
@@ -29,18 +30,21 @@ open class B3trBalanceProcessor(
     ) {
 
     override suspend fun processEntry(entry: IndexingResult) {
-        if (entry !is IndexingResult.Normal) {
-            throw IllegalArgumentException("Block cannot be null")
-        }
-
-        val nonRevertedTxIds =
-            entry.block.transactions.filter { !it.reverted }.map { it.id }.toSet()
-        val confirmedEvents = entry.events.filter { it.txId in nonRevertedTxIds }
-
-        val (updated, existing) = service.processBlock(entry.block, confirmedEvents)
-
-        if (updated.isNotEmpty() || existing.isNotEmpty()) {
-            service.save(updated, existing)
+        if (entry is IndexingResult.Normal) {
+            val nonRevertedTxIds =
+                entry.block.transactions.filter { !it.reverted }.map { it.id }.toSet()
+            val confirmedEvents = entry.events.filter { it.txId in nonRevertedTxIds }
+            val (updated, existing) = service.processBlock(entry.block, confirmedEvents)
+            if (updated.isNotEmpty() || existing.isNotEmpty()) {
+                service.save(updated, existing)
+            }
+        } else if (entry.events().isNotEmpty()) {
+            groupByBlock(entry.events()).forEach { (blockDetails, blockEvents) ->
+                val (updated, existing) = service.processBlock(blockDetails, blockEvents)
+                if (updated.isNotEmpty() || existing.isNotEmpty()) {
+                    service.save(updated, existing)
+                }
+            }
         }
     }
 }
