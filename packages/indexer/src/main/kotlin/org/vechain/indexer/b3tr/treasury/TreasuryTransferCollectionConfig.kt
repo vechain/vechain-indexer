@@ -40,8 +40,6 @@ open class TreasuryTransferCollectionConfig(
 
         ensureIndexes(
             listOf(
-                "blockNumber_-1" to
-                    Index().on(TreasuryTransfer::blockNumber.name, Sort.Direction.DESC),
                 "treasury_transfer_blockNumber_-1" to
                     Index().on(TreasuryTransfer::blockNumber.name, Sort.Direction.DESC),
                 "treasury_transfer_category_1_blockTimestamp_-1__id_-1" to
