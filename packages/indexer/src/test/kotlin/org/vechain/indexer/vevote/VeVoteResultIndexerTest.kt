@@ -10,7 +10,6 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_NO_CLAUSES
@@ -18,10 +17,6 @@ import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_NO_CLAUSES
 @ExtendWith(MockKExtension::class)
 class VeVoteResultIndexerTest {
     @MockK lateinit var veVoteProposalResultRepository: VeVoteProposalResultRepository
-
-    @MockK
-    lateinit var veVoteProposalResultArchive:
-        ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>
 
     @MockK lateinit var veVoteResultService: VeVoteResultService
 
@@ -41,7 +36,7 @@ class VeVoteResultIndexerTest {
             VeVoteResultProcessor(
                 service = veVoteResultService,
                 repository = veVoteProposalResultRepository,
-                veVoteResultArchiveService = veVoteProposalResultArchive,
+                mongoTemplate = mongoTemplate,
                 checkpointService = checkpointService,
                 processorMetrics = processorMetrics,
             )

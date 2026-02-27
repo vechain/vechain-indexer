@@ -1,10 +1,10 @@
 package org.vechain.indexer.performance.accounts
 
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.accounts.TotalAccounts
-import org.vechain.indexer.accounts.TotalAccountsArchive
 import org.vechain.indexer.accounts.TotalAccountsService
 import org.vechain.indexer.accounts.repository.TotalAccountsRepository
-import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
@@ -20,9 +20,10 @@ import org.vechain.indexer.thor.model.InspectionResult
  */
 class ProfiledTotalAccountsService(
     repository: TotalAccountsRepository,
-    archiveService: ArchiveService<TotalAccounts, TotalAccountsArchive>,
+    inlineVersioningProperties: InlineVersioningProperties,
+    mongoTemplate: MongoTemplate,
     private val profiler: DetailedProfiler,
-) : TotalAccountsService(repository, archiveService) {
+) : TotalAccountsService(repository, inlineVersioningProperties, mongoTemplate) {
 
     override fun processBlock(
         block: Block,

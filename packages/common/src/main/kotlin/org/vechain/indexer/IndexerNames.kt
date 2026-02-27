@@ -61,6 +61,11 @@ object IndexerNames {
         const val COLLECTION = "stargate_total_nft_holders_by_block"
     }
 
+    object NFT_OWNER_BALANCE {
+        const val NAME = "NftOwnerBalanceIndexer"
+        const val COLLECTION = "stargate_nft_owner_balances"
+    }
+
     object PROPOSAL_COMMENT {
         const val NAME = "ProposalCommentIndexer"
         const val COLLECTION = "b3tr_proposal_comments"

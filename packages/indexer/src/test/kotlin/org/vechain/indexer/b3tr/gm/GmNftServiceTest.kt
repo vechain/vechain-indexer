@@ -9,27 +9,29 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.gm.repository.GmNftRepository
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
 
 @ExtendWith(MockKExtension::class)
 internal class GmNftServiceTest {
     @MockK lateinit var repository: GmNftRepository
 
-    @MockK lateinit var gmNftArchiveService: ArchiveService<GmNft, GmNftArchive>
+    @MockK lateinit var mongoTemplate: MongoTemplate
 
-    @MockK lateinit var pruner: TargetedPruner<GmNft, GmNftArchive>
+    @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
 
     private lateinit var service: GmNftService
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = GmNftService(repository, gmNftArchiveService, pruner)
+        every { inlineVersioningProperties.blockWindow } returns 10000L
+        every { inlineVersioningProperties.maxVersions } returns 100
+        service = GmNftService(repository, mongoTemplate, inlineVersioningProperties)
     }
 
     @Test

@@ -11,7 +11,6 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.b3tr.action.UserRoundActionSummary
-import org.vechain.indexer.b3tr.action.UserRoundActionSummaryArchive
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
@@ -22,13 +21,7 @@ open class UserRoundActionSummaryCollectionConfig(
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
     @param:Value("\${indexer.version.b3tr-user-round-action-summary}") private val version: Int,
-) :
-    CollectionConfig(
-        mongoTemplate,
-        appCoroutineScope,
-        UserRoundActionSummary::class.java,
-        UserRoundActionSummaryArchive::class.java,
-    ) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, UserRoundActionSummary::class.java) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -36,16 +29,11 @@ open class UserRoundActionSummaryCollectionConfig(
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
-        val dropped =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.USER_ROUND_ACTION_SUMMARY.NAME,
-                UserRoundActionSummary::class.java,
-                version,
-            )
-
-        if (dropped) {
-            indexerVersionService.dropArchiveCollection(UserRoundActionSummaryArchive::class.java)
-        }
+        indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            indexerName = IndexerNames.USER_ROUND_ACTION_SUMMARY.NAME,
+            UserRoundActionSummary::class.java,
+            version,
+        )
 
         this.ensureCollection()
 

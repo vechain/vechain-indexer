@@ -37,12 +37,9 @@ open class NftHoldersByBlockCollectionConfig(
             )
 
         if (dropped) {
-            val ownerDropped =
-                indexerVersionService.dropCollection(
-                    indexerVersionService.getCollectionName(NftOwnerBalance::class.java)
-                )
-            if (ownerDropped)
-                indexerVersionService.dropArchiveCollection(NftOwnerBalanceArchive::class.java)
+            indexerVersionService.dropCollection(
+                indexerVersionService.getCollectionName(NftOwnerBalance::class.java)
+            )
         }
 
         ensureCollection()

@@ -8,7 +8,6 @@ import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.core.mapping.Field
 import org.springframework.data.mongodb.core.mapping.FieldType
 import org.vechain.indexer.IndexerNames
-import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.b3tr.shared.UserActionSummaryDocument
 import org.vechain.indexer.utils.IdUtils.generateId
@@ -62,9 +61,3 @@ constructor(
 
     @JsonIgnore override fun getDocumentId(): String = id
 }
-
-@Document(collection = "b3tr_user_action_summaries_round_archives")
-data class UserRoundActionSummaryArchive(
-    @Id override val id: String,
-    override val data: UserRoundActionSummary,
-) : Archive<UserRoundActionSummary>

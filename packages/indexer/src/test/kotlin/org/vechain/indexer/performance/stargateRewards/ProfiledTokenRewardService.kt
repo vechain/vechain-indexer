@@ -1,12 +1,11 @@
 package org.vechain.indexer.performance.stargateRewards
 
 import java.math.BigInteger
-import org.vechain.indexer.archive.ArchiveService
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.performance.DetailedProfiler
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.stargate.rewards.TokenRewardService
 import org.vechain.indexer.stargate.tokenReward.TokenReward
-import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
@@ -30,12 +29,19 @@ import org.vechain.indexer.validator.models.DecodedValidatorInfo
  */
 class ProfiledTokenRewardService(
     repository: TokenRewardRepository,
-    archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
+    mongoTemplate: MongoTemplate,
+    inlineVersioningProperties: InlineVersioningProperties,
     delegationRepository: DelegationRepository,
     thorClient: ThorClient,
-    pruner: TargetedPruner<TokenReward, TokenRewardArchive>,
     private val profiler: DetailedProfiler,
-) : TokenRewardService(repository, archiveService, delegationRepository, thorClient, pruner) {
+) :
+    TokenRewardService(
+        repository,
+        mongoTemplate,
+        inlineVersioningProperties,
+        delegationRepository,
+        thorClient,
+    ) {
 
     override suspend fun processBlock(
         block: Block,

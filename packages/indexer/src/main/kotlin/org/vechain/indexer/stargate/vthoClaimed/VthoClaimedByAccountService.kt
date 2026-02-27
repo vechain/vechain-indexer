@@ -5,11 +5,11 @@ import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.maxByOrNull
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
@@ -19,10 +19,8 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 @Service
 open class VthoClaimedByAccountService(
     private val vthoClaimedByAccountRepository: VthoClaimedByAccountRepository,
-    private val vthoClaimedByAccountArchiveService:
-        ArchiveService<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
-    private val vthoClaimByAccountPruner:
-        TargetedPruner<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
+    private val mongoTemplate: MongoTemplate,
+    private val inlineVersioningProperties: InlineVersioningProperties,
 ) {
     private val legacyEvents =
         setOf("STARGATE_CLAIM_REWARDS_BASE_LEGACY", "STARGATE_CLAIM_REWARDS_DELEGATE_LEGACY")
@@ -36,8 +34,9 @@ open class VthoClaimedByAccountService(
         saveVersionedDocuments(
             updated,
             existing,
-            vthoClaimedByAccountArchiveService,
-            vthoClaimByAccountPruner,
+            mongoTemplate,
+            inlineVersioningProperties.blockWindow,
+            inlineVersioningProperties.maxVersions,
         )
     }
 

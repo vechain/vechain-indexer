@@ -8,7 +8,6 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.thor.model.Views
 
 @Document(collection = IndexerNames.B3TR_BALANCE.COLLECTION)
@@ -26,7 +25,3 @@ data class B3trBalance(
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = address
 }
-
-@Document(collection = "b3tr_balance_archives")
-data class B3trBalanceArchive(@Id override val id: String, override val data: B3trBalance) :
-    Archive<B3trBalance>

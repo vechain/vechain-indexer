@@ -1,11 +1,11 @@
 package org.vechain.indexer.performance.stargate
 
-import org.vechain.indexer.archive.ArchiveService
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.stargate.token.StargateEventService
 import org.vechain.indexer.stargate.token.StargateToken
-import org.vechain.indexer.stargate.token.StargateTokenArchive
 import org.vechain.indexer.stargate.token.StargateTokenRepository
 import org.vechain.indexer.stargate.token.StargateTokenService
 import org.vechain.indexer.thor.model.Block
@@ -29,9 +29,17 @@ class ProfiledStargateTokenService(
     repository: StargateTokenRepository,
     eventService: StargateEventService,
     validatorDelegationService: ValidatorDelegationService,
-    archiveService: ArchiveService<StargateToken, StargateTokenArchive>,
+    mongoTemplate: MongoTemplate,
+    inlineVersioningProperties: InlineVersioningProperties,
     private val profiler: DetailedProfiler,
-) : StargateTokenService(repository, eventService, validatorDelegationService, archiveService) {
+) :
+    StargateTokenService(
+        repository,
+        eventService,
+        validatorDelegationService,
+        mongoTemplate,
+        inlineVersioningProperties,
+    ) {
 
     override suspend fun processBlock(
         block: Block,
@@ -43,7 +51,7 @@ class ProfiledStargateTokenService(
         }
     }
 
-    override fun save(tokens: Collection<StargateToken>, archive: List<StargateToken>) {
-        profiler.time("      StargateTokenService.save (MongoDB)") { super.save(tokens, archive) }
+    override fun save(tokens: Collection<StargateToken>, existing: List<StargateToken>) {
+        profiler.time("      StargateTokenService.save (MongoDB)") { super.save(tokens, existing) }
     }
 }

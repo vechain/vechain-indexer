@@ -1,20 +1,21 @@
 package org.vechain.indexer.stargate
 
+import com.mongodb.client.MongoCollection
+import com.mongodb.client.model.BulkWriteOptions
+import com.mongodb.client.model.WriteModel
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import java.math.BigInteger
+import org.bson.Document
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.mongodb.core.BulkOperations
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.convert.MongoConverter
-import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccount
-import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountArchive
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountService
 import org.vechain.indexer.utils.IdUtils
@@ -27,23 +28,22 @@ import strikt.assertions.isEqualTo
 internal class VthoClaimByAccountServiceTest {
     @MockK lateinit var repository: VthoClaimedByAccountRepository
 
-    @MockK
-    lateinit var archiveService: ArchiveService<VthoClaimedByAccount, VthoClaimedByAccountArchive>
-
-    @MockK lateinit var pruner: TargetedPruner<VthoClaimedByAccount, VthoClaimedByAccountArchive>
     @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
-    @MockK(relaxed = true) lateinit var bulkOps: BulkOperations
+    @MockK(relaxed = true) lateinit var mongoCollection: MongoCollection<Document>
     @MockK(relaxed = true) lateinit var converter: MongoConverter
+    @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
 
     private lateinit var service: VthoClaimedByAccountService
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        every { archiveService.mongoTemplate } returns mongoTemplate
-        every { mongoTemplate.bulkOps(any(), any<Class<*>>()) } returns bulkOps
+        every { inlineVersioningProperties.blockWindow } returns 10000L
+        every { inlineVersioningProperties.maxVersions } returns 100
+        every { mongoTemplate.getCollectionName(any<Class<*>>()) } returns "test_collection"
+        every { mongoTemplate.getCollection(any()) } returns mongoCollection
         every { mongoTemplate.converter } returns converter
-        service = VthoClaimedByAccountService(repository, archiveService, pruner)
+        service = VthoClaimedByAccountService(repository, mongoTemplate, inlineVersioningProperties)
     }
 
     @Test
@@ -293,12 +293,12 @@ internal class VthoClaimByAccountServiceTest {
                     id = "0xabc",
                 )
             )
-        every { archiveService.saveAll(existing) } just Runs
 
         service.save(update, existing)
 
-        verify(exactly = 1) { bulkOps.execute() }
-        verify(exactly = 1) { archiveService.saveAll(existing) }
+        verify(exactly = 1) {
+            mongoCollection.bulkWrite(any<List<WriteModel<Document>>>(), any<BulkWriteOptions>())
+        }
     }
 
     @Test
@@ -308,8 +308,9 @@ internal class VthoClaimByAccountServiceTest {
 
         service.save(update, existing)
 
-        verify(exactly = 0) { bulkOps.execute() }
-        verify(exactly = 0) { archiveService.saveAll(any()) }
+        verify(exactly = 0) {
+            mongoCollection.bulkWrite(any<List<WriteModel<Document>>>(), any<BulkWriteOptions>())
+        }
     }
 
     @Test

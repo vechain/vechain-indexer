@@ -13,9 +13,9 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.UserDailyActionSummaryRepository
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.checkpoint.CheckpointService
@@ -27,9 +27,7 @@ import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 internal class UserDailyActionSummaryProcessorTest {
     @MockK lateinit var repository: UserDailyActionSummaryRepository
 
-    @MockK
-    lateinit var archiveService:
-        ArchiveService<UserDailyActionSummary, UserDailyActionSummaryArchive>
+    @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
 
     @MockK lateinit var service: UserDailyActionSummaryService
 
@@ -45,7 +43,7 @@ internal class UserDailyActionSummaryProcessorTest {
         processor =
             UserDailyActionSummaryProcessor(
                 repository = repository,
-                userDailyActionSummaryArchiveService = archiveService,
+                mongoTemplate = mongoTemplate,
                 service = service,
                 checkpointService = checkpointService,
                 processorMetrics = processorMetrics,

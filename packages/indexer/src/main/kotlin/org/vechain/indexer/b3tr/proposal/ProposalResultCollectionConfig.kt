@@ -20,13 +20,7 @@ open class ProposalResultCollectionConfig(
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
     @param:Value("\${indexer.version.b3tr-proposal-results}") private val version: Int,
-) :
-    CollectionConfig(
-        mongoTemplate,
-        appCoroutineScope,
-        ProposalResult::class.java,
-        ProposalResultArchive::class.java,
-    ) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, ProposalResult::class.java) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -34,14 +28,11 @@ open class ProposalResultCollectionConfig(
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
-        val dropped =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.PROPOSAL_RESULT.NAME,
-                ProposalResult::class.java,
-                version,
-            )
-
-        if (dropped) indexerVersionService.dropArchiveCollection(ProposalResultArchive::class.java)
+        indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            indexerName = IndexerNames.PROPOSAL_RESULT.NAME,
+            ProposalResult::class.java,
+            version,
+        )
 
         this.ensureCollection()
 

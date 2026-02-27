@@ -5,47 +5,17 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.config.BusinessEventProperties
-import org.vechain.indexer.pruner.PrunerService
-import org.vechain.indexer.pruner.TargetedPruner
-import org.vechain.indexer.stargate.tokenReward.TokenReward
-import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.validator.domain.ValidatorDecoder
 
 @Configuration
 @Profile("token-reward")
 open class TokenRewardConfig {
-    @Bean
-    open fun tokenRewardArchiveService(
-        mongoTemplate: MongoTemplate,
-        @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
-    ): ArchiveService<TokenReward, TokenRewardArchive> =
-        ArchiveService(
-            mongoTemplate,
-            TokenReward::class.java,
-            TokenRewardArchive::class.java,
-            recordLimit,
-        )
-
-    @Bean
-    open fun tokenRewardPruner(
-        tokenRewardArchiveService: ArchiveService<TokenReward, TokenRewardArchive>,
-        @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-        @Value("\${indexer.pruner.enabled}") prunerEnabled: Boolean,
-    ): TargetedPruner<TokenReward, TokenRewardArchive> =
-        PrunerService(
-            TokenRewardArchive::class,
-            tokenRewardArchiveService,
-            prunerRemovalChunkSize,
-            prunerEnabled,
-        )
 
     @Bean
     open fun tokenRewardIndexer(

@@ -1,13 +1,18 @@
 package org.vechain.indexer.validator
 
+import com.mongodb.client.MongoCollection
+import com.mongodb.client.model.BulkWriteOptions
+import com.mongodb.client.model.WriteModel
 import io.mockk.*
 import java.math.BigDecimal
 import java.math.BigInteger
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
+import org.bson.Document
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.archive.ArchiveService
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
@@ -20,7 +25,8 @@ import org.vechain.indexer.validator.logic.ValidatorAssembler.getLatestValidator
 
 class ValidatorServiceTest {
     private val repository = mockk<ValidatorRepository>()
-    private val archiveService = mockk<ArchiveService<Validator, ValidatorArchive>>(relaxed = true)
+    private val mongoTemplate = mockk<MongoTemplate>(relaxed = true)
+    private val inlineVersioningProperties = mockk<InlineVersioningProperties>()
     private val thorClient = mockk<ThorClient>()
 
     private lateinit var service: ValidatorService
@@ -28,7 +34,19 @@ class ValidatorServiceTest {
     @BeforeEach
     fun setup() {
         clearAllMocks()
-        service = spyk(ValidatorService(repository, archiveService, thorClient, 25L, "0xcontract"))
+        every { inlineVersioningProperties.blockWindow } returns 10000L
+        every { inlineVersioningProperties.maxVersions } returns 100
+        service =
+            spyk(
+                ValidatorService(
+                    repository,
+                    mongoTemplate,
+                    inlineVersioningProperties,
+                    thorClient,
+                    25L,
+                    "0xcontract",
+                )
+            )
     }
 
     private fun inspectionResult(data: String): InspectionResult =
@@ -178,7 +196,7 @@ class ValidatorServiceTest {
     // --- saveAndDelete tests ---
 
     @Test
-    fun `saveAndDelete persists updates, archives, and deletes`() {
+    fun `saveAndDelete persists updates and archives`() {
         val v1 =
             Validator(
                 id = "0xVAL1",
@@ -188,16 +206,15 @@ class ValidatorServiceTest {
                 version = 1,
             )
 
-        every { repository.saveAll(any<List<Validator>>()) } returns listOf(v1)
-        every { repository.deleteAllById(any<List<String>>()) } just Runs
-        every { archiveService.saveAll(any<List<Validator>>()) } just Runs
+        val collection = mockk<MongoCollection<Document>>(relaxed = true)
+        every { mongoTemplate.getCollectionName(Validator::class.java) } returns "validators"
+        every { mongoTemplate.getCollection("validators") } returns collection
 
         service.save(listOf(v1), listOf(v1))
 
-        verify {
-            repository.saveAll(withArg<List<Validator>> { list -> assertThat(list).contains(v1) })
+        verify(exactly = 1) {
+            collection.bulkWrite(any<List<WriteModel<Document>>>(), any<BulkWriteOptions>())
         }
-        verify { archiveService.saveAll(match { it.isNotEmpty() }) }
     }
 
     // --- Queue Initialization Tests ---

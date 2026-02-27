@@ -4,53 +4,19 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.config.BusinessEventProperties
-import org.vechain.indexer.pruner.PrunerService
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
 @Profile("b3tr", "b3tr-actions", "b3tr-user-round-action-summary")
 open class UserRoundActionSummaryConfig {
     @Bean
-    open fun userRoundActionSummaryArchiveService(
-        mongoTemplate: MongoTemplate,
-        @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
-    ): ArchiveService<UserRoundActionSummary, UserRoundActionSummaryArchive> {
-        return ArchiveService(
-            mongoTemplate = mongoTemplate,
-            clazz = UserRoundActionSummary::class.java,
-            archiveClazz = UserRoundActionSummaryArchive::class.java,
-            queryLimit = recordLimit,
-        )
-    }
-
-    @Bean
-    open fun userRoundActionSummaryPruner(
-        userRoundActionSummaryArchiveService:
-            ArchiveService<UserRoundActionSummary, UserRoundActionSummaryArchive>,
-        @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-        @Value("\${indexer.pruner.enabled}") prunerEnabled: Boolean,
-    ): TargetedPruner<UserRoundActionSummary, UserRoundActionSummaryArchive> =
-        PrunerService(
-            klass = UserRoundActionSummaryArchive::class,
-            archiveService = userRoundActionSummaryArchiveService,
-            prunerRemovalChunkSize = prunerRemovalChunkSize,
-            enabled = prunerEnabled,
-        )
-
-    @Bean
     open fun userRoundActionSummaryIndexer(
         thorClient: ThorClient,
         processor: UserRoundActionSummaryProcessor,
-        userRoundActionSummaryPruner:
-            TargetedPruner<UserRoundActionSummary, UserRoundActionSummaryArchive>,
-        @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.b3tr-sustainable-actions}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.b3tr}") syncBlockBatchSize: Long,
@@ -64,8 +30,6 @@ open class UserRoundActionSummaryConfig {
             .name(IndexerNames.USER_ROUND_ACTION_SUMMARY.NAME)
             .thorClient(thorClient)
             .processor(processor)
-            .pruner(userRoundActionSummaryPruner)
-            .prunerInterval(prunerInterval)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)

@@ -5,12 +5,14 @@ import java.math.BigInteger
 import java.util.concurrent.ConcurrentHashMap
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.BlockRevision
@@ -27,7 +29,8 @@ import org.vechain.indexer.validator.logic.ValidatorCalculator
 @Service
 open class ValidatorService(
     private val repository: ValidatorRepository,
-    private val archiveService: ArchiveService<Validator, ValidatorArchive>,
+    private val mongoTemplate: MongoTemplate,
+    private val inlineVersioningProperties: InlineVersioningProperties,
     private val thorClient: ThorClient,
     @Value("\${indexer.validator-stats-threshold-blocks}") private val statsStartThreshold: Long,
     @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}") private val stakerSC: String,
@@ -106,11 +109,13 @@ open class ValidatorService(
      */
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updates: List<Validator>, archive: List<Validator>) {
-        repository.saveAll(updates)
-
-        if (archive.isNotEmpty()) {
-            archiveService.saveAll(archive)
-        }
+        saveVersionedDocuments(
+            updates,
+            archive,
+            mongoTemplate,
+            inlineVersioningProperties.blockWindow,
+            inlineVersioningProperties.maxVersions,
+        )
     }
 
     /**

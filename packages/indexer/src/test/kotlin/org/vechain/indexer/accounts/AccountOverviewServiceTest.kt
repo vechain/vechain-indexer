@@ -15,18 +15,18 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.accounts.repository.AccountOverviewRepository
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.config.DetectedNetwork
 import org.vechain.indexer.config.ForkConfig
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.NetworkDetectionService
 import org.vechain.indexer.config.VeChainNetwork
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
 import org.vechain.indexer.thor.client.ExecuteAccountResponse
 import org.vechain.indexer.thor.client.ThorClient
@@ -40,9 +40,9 @@ import org.vechain.indexer.thor.model.Transaction
 internal class AccountOverviewServiceTest {
     @MockK lateinit var repository: AccountOverviewRepository
 
-    @MockK lateinit var archiveService: ArchiveService<AccountOverview, AccountOverviewArchive>
+    @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
 
-    @MockK lateinit var pruner: TargetedPruner<AccountOverview, AccountOverviewArchive>
+    @MockK lateinit var mongoTemplate: MongoTemplate
 
     @MockK lateinit var forkConfig: ForkConfig
 
@@ -54,16 +54,16 @@ internal class AccountOverviewServiceTest {
 
     private class TestableService(
         repository: AccountOverviewRepository,
-        archiveService: ArchiveService<AccountOverview, AccountOverviewArchive>,
-        pruner: TargetedPruner<AccountOverview, AccountOverviewArchive>,
+        inlineVersioningProperties: InlineVersioningProperties,
+        mongoTemplate: MongoTemplate,
         forkConfig: ForkConfig,
         networkDetectionService: NetworkDetectionService,
         thorClient: ThorClient,
     ) :
         AccountOverviewService(
             repository,
-            archiveService,
-            pruner,
+            inlineVersioningProperties,
+            mongoTemplate,
             forkConfig,
             networkDetectionService,
             thorClient,
@@ -139,12 +139,14 @@ internal class AccountOverviewServiceTest {
         service =
             TestableService(
                 repository,
-                archiveService,
-                pruner,
+                inlineVersioningProperties,
+                mongoTemplate,
                 forkConfig,
                 networkDetectionService,
                 thorClient,
             )
+        every { inlineVersioningProperties.blockWindow } returns 10000L
+        every { inlineVersioningProperties.maxVersions } returns 100
     }
 
     private fun block(number: Long = 1L, transactions: List<Transaction> = emptyList()) =

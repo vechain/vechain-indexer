@@ -4,21 +4,19 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.stargate.rewards.TokenRewardProcessor
 import org.vechain.indexer.stargate.rewards.TokenRewardService
-import org.vechain.indexer.stargate.tokenReward.TokenReward
-import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
 import org.vechain.indexer.validator.DelegationRepository
 import org.vechain.indexer.validator.domain.ValidatorDecoder
@@ -29,8 +27,8 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var tokenRewardRepository: TokenRewardRepository
     @Autowired lateinit var tokenRewardService: TokenRewardService
-    @Autowired lateinit var archiveService: ArchiveService<TokenReward, TokenRewardArchive>
-    @Autowired lateinit var pruner: TargetedPruner<TokenReward, TokenRewardArchive>
+    @Autowired lateinit var inlineVersioningProperties: InlineVersioningProperties
+    @Autowired lateinit var mongoTemplate: MongoTemplate
     @Autowired lateinit var delegationRepository: DelegationRepository
     @Autowired lateinit var checkpointService: CheckpointService
     @Autowired lateinit var processorMetrics: ProcessorMetrics
@@ -84,10 +82,10 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
             if (profiler != null) {
                 ProfiledTokenRewardService(
                     repository = tokenRewardRepository,
-                    archiveService = archiveService,
+                    mongoTemplate = mongoTemplate,
+                    inlineVersioningProperties = inlineVersioningProperties,
                     delegationRepository = delegationRepository,
                     thorClient = thorClient,
-                    pruner = pruner,
                     profiler = profiler,
                 )
             } else {
@@ -99,7 +97,7 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
                 ProfiledTokenRewardProcessor(
                     service = serviceToUse,
                     repository = tokenRewardRepository,
-                    archiveService = archiveService,
+                    mongoTemplate = mongoTemplate,
                     profiler = profiler,
                     checkpointService = checkpointService,
                     processorMetrics = processorMetrics,
@@ -108,7 +106,7 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
                 TokenRewardProcessor(
                     service = serviceToUse,
                     repository = tokenRewardRepository,
-                    archiveService = archiveService,
+                    mongoTemplate = mongoTemplate,
                     checkpointService = checkpointService,
                     processorMetrics = processorMetrics,
                 )
@@ -130,7 +128,7 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
     private class ProfiledTokenRewardProcessor(
         service: TokenRewardService,
         repository: TokenRewardRepository,
-        archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
+        mongoTemplate: MongoTemplate,
         private val profiler: DetailedProfiler,
         checkpointService: CheckpointService,
         processorMetrics: ProcessorMetrics,
@@ -138,7 +136,7 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
         TokenRewardProcessor(
             service = service,
             repository = repository,
-            archiveService = archiveService,
+            mongoTemplate = mongoTemplate,
             checkpointService = checkpointService,
             processorMetrics = processorMetrics,
         ) {

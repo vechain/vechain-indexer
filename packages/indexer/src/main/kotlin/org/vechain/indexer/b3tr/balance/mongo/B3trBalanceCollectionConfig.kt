@@ -12,7 +12,6 @@ import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.b3tr.balance.B3trBalance
-import org.vechain.indexer.b3tr.balance.B3trBalanceArchive
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
@@ -22,13 +21,7 @@ open class B3trBalanceCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) :
-    CollectionConfig(
-        mongoTemplate,
-        appCoroutineScope,
-        B3trBalance::class.java,
-        B3trBalanceArchive::class.java,
-    ) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, B3trBalance::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.b3tr-balance}") private val version: Int = 1
@@ -37,14 +30,11 @@ open class B3trBalanceCollectionConfig(
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
-        val dropped =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.B3TR_BALANCE.NAME,
-                B3trBalance::class.java,
-                version,
-            )
-
-        if (dropped) indexerVersionService.dropArchiveCollection(B3trBalanceArchive::class.java)
+        indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            indexerName = IndexerNames.B3TR_BALANCE.NAME,
+            B3trBalance::class.java,
+            version,
+        )
 
         ensureCollection()
 

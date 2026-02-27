@@ -4,12 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonView
 import java.math.BigInteger
-import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.thor.model.Views
 
 @Document(collection = IndexerNames.TOKEN_REWARD.COLLECTION)
@@ -39,9 +37,3 @@ data class TokenReward(
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = id
 }
-
-@Document("stargate_token_rewards_archives")
-@JsonView(Views.Public::class)
-data class TokenRewardArchive
-@ConstructorBinding
-constructor(@Id override val id: String, override val data: TokenReward) : Archive<TokenReward>

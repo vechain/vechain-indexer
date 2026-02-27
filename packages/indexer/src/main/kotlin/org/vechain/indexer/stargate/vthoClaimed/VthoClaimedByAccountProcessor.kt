@@ -1,11 +1,11 @@
 package org.vechain.indexer.stargate.vthoClaimed
 
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 
@@ -13,15 +13,14 @@ import org.vechain.indexer.config.metrics.ProcessorMetrics
 @Component
 open class VthoClaimedByAccountProcessor(
     private val service: VthoClaimedByAccountService,
-    vthoClaimByAccountArchiveService:
-        ArchiveService<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
+    mongoTemplate: MongoTemplate,
     repository: VthoClaimedByAccountRepository,
     checkpointService: CheckpointService,
     processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = repository,
-        archiveService = vthoClaimByAccountArchiveService,
+        mongoTemplate = mongoTemplate,
         indexerName = IndexerNames.VTHO_CLAIMED_BY_ACCOUNT.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.VTHO_CLAIMED_BY_ACCOUNT.COLLECTION,

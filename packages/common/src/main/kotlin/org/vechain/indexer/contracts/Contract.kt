@@ -7,7 +7,6 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.thor.model.Views
 
 @Document(collection = IndexerNames.CONTRACTS.COLLECTION)
@@ -29,8 +28,3 @@ data class Contract(
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = address
 }
-
-@Document("contract_archives")
-@JsonView(Views.Public::class)
-data class ContractArchive(@Id override val id: String, override val data: Contract) :
-    Archive<Contract>
