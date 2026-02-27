@@ -1,61 +1,53 @@
-# Datadog Dashboards
+# Datadog Dashboard
 
 ## Overview
 
-This directory contains Datadog dashboard JSON files that can be imported directly into Datadog.
+This directory contains a single unified Datadog dashboard JSON file (`dashboard.json`) that serves as the production "single pane of glass" for the VeChain Indexer.
 
-## Available Dashboards
+## Dashboard Sections
 
-| Dashboard               | Description                                            |
-|-------------------------|--------------------------------------------------------|
-| `mongodb-metrics.json`  | MongoDB driver and Spring Data repository metrics      |
-| `indexing-metrics.json` | Indexer processing metrics (events, blocks, durations) |
-| `client-metrics.json`   | Thor client HTTP request/response metrics              |
-| `jvm-metrics.json`      | JVM memory, threads, garbage collection metrics        |
+| Section | Status | Content |
+|---------|--------|---------|
+| **Health & SLOs** | Always open | SLO widgets, log-based alerting (ReOrgs, failures, restarts, unhealthy) |
+| **Indexer Sync & Processing** | Always open | Sync status per indexer, sync gap, blocks/sec, ETA |
+| **API Performance** | Always open | Response times by endpoint (ELB logs), top APIs, ALB p95 latency |
+| **Traffic & CDN** | Always open | CloudFront metrics (mainnet + testnet), WAF blocked requests |
+| **Resource Utilization** | Always open | ECS CPU/Memory for API + Indexer (blue/green) |
+| **Indexing Metrics (Detailed)** | Collapsible | Deep-dive indexer processing: events, blocks, durations, sync details |
+| **Thor Client Metrics** | Collapsible | Thor client HTTP request/response by endpoint, error rates |
+| **JVM Metrics** | Collapsible | Heap/non-heap memory, GC, threads, classes, buffers |
+| **MongoDB Metrics** | Collapsible | Connection pool, command latency, Spring Data repository invocations |
+| **Origin & Security** | Always open | Geo map of request origins, top user IPs |
 
-## How These Dashboards Were Generated
+## Data Sources
 
-These dashboards were generated using **Claude Code** by converting the existing Grafana dashboards located in
-`metrics/grafana/provisioning/dashboards/`.
+The dashboard pulls from multiple data sources:
 
-### Process
+- **Datadog SLOs** - P95/P50 latency SLOs
+- **Log queries** - ELB access logs, application logs (via `host:$host`)
+- **AWS CloudWatch metrics** - CloudFront, ALB, ECS, WAF (via Datadog AWS integration)
+- **Prometheus/Micrometer metrics** - Application metrics exported to Datadog via `micrometer-registry-datadog` (e.g., `indexer_sync_gap_gauge`, `jvm.memory.used`, `mongodb.driver.commands.*`)
 
-1. **Reference Grafana Dashboards**: Each Grafana dashboard JSON was used as the source of truth for widget layouts,
-   queries, and visualizations.
+## Template Variables
 
-2. **Metric Name Verification**: The actual metric names being sent to Datadog were verified against
-   `sent-metrics.json` (a capture of metrics sent to the Datadog API). This was critical because:
-    - Prometheus metrics use underscores (e.g., `jvm_memory_used_bytes`)
-    - Datadog metrics from Micrometer use dots (e.g., `jvm.memory.used`)
-    - Some metrics have different suffixes (e.g., `.sum`, `.count`, `.avg`, `.max`)
+| Variable | Tag | Default | Purpose |
+|----------|-----|---------|---------|
+| `$host` | `indexer-id` | `prod-blue-main*` | Filters log queries and Prometheus metrics by deployment |
 
-   **To regenerate `sent-metrics.json`:**
-    1. Run the application locally
-    2. Set a breakpoint in `io.micrometer.datadog.DatadogMeterRegistry.publish()`
-    3. Copy the `body` variable contents
-    4. Paste into a new `sent-metrics.json` file
+Available values: `prod-blue-main*`, `prod-green-main*`, `prod-blue-test*`, `prod-green-test*`
 
-3. **Query Translation**: Prometheus/PromQL queries were translated to Datadog query syntax:
-    - `rate(metric[$__rate_interval])` → `metric{*}.as_rate()`
-    - `sum by(label)` → `sum:metric{*} by {label}`
-    - `histogram_quantile(0.95, ...)` → `p95:metric{*}` (where available)
+## Importing
 
-4. **Widget Type Mapping**:
-    - Grafana `stat` → Datadog `query_value`
-    - Grafana `timeseries` → Datadog `timeseries`
-    - Grafana `bargauge` → Datadog `toplist`
-    - Grafana `table` → Datadog `toplist` (simplified)
-
-### Key Learnings
-
-- Datadog timeseries widgets require `formulas` before `queries` in the request object
-- Use `"order_by": "values"` in style for timeseries (not `"palette": "dog_classic"`)
-- Timer metrics in Datadog have `.sum`, `.count`, `.avg`, `.max` suffixes
-- Counter metrics can use `.as_rate()` for per-second rates
-
-## Importing Dashboards
-
-1. Go to Datadog → Dashboards → New Dashboard
-2. Click the gear icon → Import dashboard JSON
-3. Paste the contents of any JSON file from this directory
+1. Go to Datadog > Dashboards > New Dashboard
+2. Click the gear icon > Import dashboard JSON
+3. Paste the contents of `dashboard.json`
 4. Click Import
+
+## How the Detailed Sections Were Generated
+
+The collapsible detailed sections (Indexing, Client, JVM, MongoDB) were originally generated by converting the Grafana dashboards in `metrics/grafana/provisioning/dashboards/`. Key translations:
+
+- Prometheus metrics use underscores (`jvm_memory_used_bytes`); Datadog uses dots (`jvm.memory.used`)
+- `rate(metric[$__rate_interval])` becomes `metric{*}.as_rate()`
+- `sum by(label)` becomes `sum:metric{*} by {label}`
+- Timer metrics in Datadog have `.sum`, `.count`, `.avg`, `.max` suffixes

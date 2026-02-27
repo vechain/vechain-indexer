@@ -47,10 +47,18 @@ management:
       group:
         liveness:
           include: ping
+  metrics:
+    tags:
+      indexer-id: ${METRICS_ID:local-api}
   datadog:
     metrics:
       export:
-        enabled: false
+        enabled: ${DD_METRICS_ENABLED:false}
+        apiKey: ${DD_API_KEY:#{null}}
+        applicationKey: ${DD_APP_KEY:#{null}}
+        uri: ${DD_API_URL:https://api.datadoghq.eu}
+        step: 10s
+        hostTag: ${DD_HOST_TAG:#{null}}
   prometheus:
     metrics:
       export:
