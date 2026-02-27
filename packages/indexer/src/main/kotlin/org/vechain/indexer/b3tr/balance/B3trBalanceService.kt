@@ -1,4 +1,4 @@
-package org.vechain.indexer.b3tr.vot3
+package org.vechain.indexer.b3tr.balance
 
 import java.math.BigInteger
 import org.springframework.beans.factory.annotation.Value
@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.b3tr.vot3.repository.Vot3BalanceRepository
+import org.vechain.indexer.b3tr.balance.repository.B3trBalanceRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
@@ -17,42 +17,45 @@ import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
-@Profile("b3tr", "vot3-balance")
+@Profile("b3tr", "b3tr-balance")
 @Service
-open class Vot3BalanceService(
-    private val repository: Vot3BalanceRepository,
-    private val archiveService: ArchiveService<Vot3Balance, Vot3BalanceArchive>,
-    private val pruner: TargetedPruner<Vot3Balance, Vot3BalanceArchive>,
+open class B3trBalanceService(
+    private val repository: B3trBalanceRepository,
+    private val archiveService: ArchiveService<B3trBalance, B3trBalanceArchive>,
+    private val pruner: TargetedPruner<B3trBalance, B3trBalanceArchive>,
+    @Value("\${business-event.substitutions.B3TR_CONTRACT}")
+    private val b3trContractAddress: String,
     @Value("\${business-event.substitutions.VOT3_CONTRACT}") private val vot3ContractAddress: String,
 ) {
 
     open fun processBlock(
         block: Block,
         events: List<IndexedEvent>,
-    ): Pair<List<Vot3Balance>, List<Vot3Balance>> {
-        val vot3Transfers = filterVot3Transfers(events)
-        if (vot3Transfers.isEmpty()) return emptyList<Vot3Balance>() to emptyList()
+    ): Pair<List<B3trBalance>, List<B3trBalance>> {
+        val b3trTransfers = filterB3trTransfers(events)
+        if (b3trTransfers.isEmpty()) return emptyList<B3trBalance>() to emptyList()
 
         val accumulator =
-            VersionedDocumentAccumulator<Vot3Balance>(
+            VersionedDocumentAccumulator<B3trBalance>(
                 repository::findByIdOrNull,
                 initialVersion = 1,
             )
         accumulator.startBlock()
-        val resolved = mutableMapOf<String, Vot3Balance>()
+        val resolved = mutableMapOf<String, B3trBalance>()
 
-        vot3Transfers.forEach { event ->
+        b3trTransfers.forEach { event ->
             val from =
                 event.params.getAsString("from")
-                    ?: error("Invalid VOT3 Transfer event: missing 'from' param (${event.id})")
+                    ?: error("Invalid B3TR Transfer event: missing 'from' param (${event.id})")
             val to =
                 event.params.getAsString("to")
-                    ?: error("Invalid VOT3 Transfer event: missing 'to' param (${event.id})")
+                    ?: error("Invalid B3TR Transfer event: missing 'to' param (${event.id})")
             val value = event.params.getAsBigInteger("value") ?: BigInteger.ZERO
             if (value == BigInteger.ZERO) return@forEach
             if (from == to) return@forEach
 
             listOf(from to value.negate(), to to value).forEach { (address, delta) ->
+                if (address.equals(vot3ContractAddress, ignoreCase = true)) return@forEach
                 if (address.equals(Address.ZERO_ADDRESS, ignoreCase = true)) return@forEach
                 val updated = resolveForMutation(address, block, accumulator, resolved)
                 updated.balance += delta
@@ -62,17 +65,17 @@ open class Vot3BalanceService(
         return accumulator.results()
     }
 
-    protected fun filterVot3Transfers(events: List<IndexedEvent>): List<IndexedEvent> =
+    protected fun filterB3trTransfers(events: List<IndexedEvent>): List<IndexedEvent> =
         events.filter {
-            it.eventType == "Transfer" && it.address.equals(vot3ContractAddress, ignoreCase = true)
+            it.eventType == "Transfer" && it.address.equals(b3trContractAddress, ignoreCase = true)
         }
 
     protected fun resolveForMutation(
         recordId: String,
         block: Block,
-        accumulator: VersionedDocumentAccumulator<Vot3Balance>,
-        resolved: MutableMap<String, Vot3Balance>,
-    ): Vot3Balance {
+        accumulator: VersionedDocumentAccumulator<B3trBalance>,
+        resolved: MutableMap<String, B3trBalance>,
+    ): B3trBalance {
         resolved[recordId]?.let {
             return it
         }
@@ -92,7 +95,7 @@ open class Vot3BalanceService(
                 copy
             } else {
                 val newRecord =
-                    Vot3Balance(
+                    B3trBalance(
                         address = recordId,
                         blockId = block.id,
                         blockNumber = block.number,
@@ -109,7 +112,7 @@ open class Vot3BalanceService(
     }
 
     @Transactional(rollbackFor = [Exception::class])
-    open fun save(updated: List<Vot3Balance>, existing: List<Vot3Balance>) {
+    open fun save(updated: List<B3trBalance>, existing: List<B3trBalance>) {
         saveVersionedDocuments(
             updated = updated,
             existing = existing,

@@ -1,4 +1,4 @@
-package org.vechain.indexer.b3tr.vot3
+package org.vechain.indexer.b3tr.balance
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
@@ -6,25 +6,25 @@ import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.b3tr.vot3.repository.Vot3BalanceRepository
+import org.vechain.indexer.b3tr.balance.repository.B3trBalanceRepository
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 
-@Profile("b3tr", "vot3-balance")
+@Profile("b3tr", "b3tr-balance")
 @Component
-open class Vot3BalanceProcessor(
-    private val service: Vot3BalanceService,
-    repository: Vot3BalanceRepository,
-    archiveService: ArchiveService<Vot3Balance, Vot3BalanceArchive>,
+open class B3trBalanceProcessor(
+    private val service: B3trBalanceService,
+    repository: B3trBalanceRepository,
+    archiveService: ArchiveService<B3trBalance, B3trBalanceArchive>,
     checkpointService: CheckpointService,
     processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = repository,
         archiveService = archiveService,
-        indexerName = IndexerNames.VOT3_BALANCE.NAME,
+        indexerName = IndexerNames.B3TR_BALANCE.NAME,
         checkpointService = checkpointService,
-        collectionName = IndexerNames.VOT3_BALANCE.COLLECTION,
+        collectionName = IndexerNames.B3TR_BALANCE.COLLECTION,
         processorMetrics = processorMetrics,
     ) {
 
