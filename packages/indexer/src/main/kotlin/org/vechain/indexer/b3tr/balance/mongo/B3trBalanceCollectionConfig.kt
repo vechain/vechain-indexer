@@ -54,9 +54,17 @@ open class B3trBalanceCollectionConfig(
             listOf(
                 "blockNumber_-1" to
                     Index().on(IndexedDocument::blockNumber.name, Sort.Direction.DESC),
-                "balance_-1_id_1" to
+                "totalBalance_-1_id_1" to
                     Index()
-                        .on(B3trBalance::balance.name, Sort.Direction.DESC)
+                        .on(B3trBalance::totalBalance.name, Sort.Direction.DESC)
+                        .on("_id", Sort.Direction.ASC),
+                "vot3Balance_-1_id_1" to
+                    Index()
+                        .on(B3trBalance::vot3Balance.name, Sort.Direction.DESC)
+                        .on("_id", Sort.Direction.ASC),
+                "b3trBalance_-1_id_1" to
+                    Index()
+                        .on(B3trBalance::b3trBalance.name, Sort.Direction.DESC)
                         .on("_id", Sort.Direction.ASC),
             )
         )

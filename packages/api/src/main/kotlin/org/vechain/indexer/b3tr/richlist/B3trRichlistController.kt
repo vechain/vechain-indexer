@@ -22,7 +22,7 @@ import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidCursor
 import org.vechain.indexer.validation.ValidPageSize
 
-@Profile("b3tr", "vot3-balance", "b3tr-balance")
+@Profile("b3tr", "b3tr-balance")
 @Tag(
     name = "B3TR - Richlist",
     description = "Combined VOT3 and B3TR balance richlist and holder rank.",

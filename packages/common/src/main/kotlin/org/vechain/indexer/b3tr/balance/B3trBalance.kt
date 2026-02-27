@@ -20,7 +20,9 @@ data class B3trBalance(
     @JsonIgnore override val blockNumber: Long,
     @JsonIgnore override val blockTimestamp: Long,
     @JsonIgnore @field:JsonView(Views.Internal::class) override val version: Int,
-    var balance: BigInteger,
+    var vot3Balance: BigInteger,
+    var b3trBalance: BigInteger,
+    var totalBalance: BigInteger,
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = address
 }

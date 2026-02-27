@@ -186,11 +186,6 @@ object IndexerNames {
         const val COLLECTION = "vet_balances"
     }
 
-    object VOT3_BALANCE {
-        const val NAME = "Vot3BalanceIndexer"
-        const val COLLECTION = "vot3_balances"
-    }
-
     object B3TR_BALANCE {
         const val NAME = "B3trBalanceIndexer"
         const val COLLECTION = "b3tr_balances"

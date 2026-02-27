@@ -52,6 +52,7 @@ open class B3trBalanceConfig {
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.b3tr-balance}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.B3TR_CONTRACT}") b3trContract: String,
+        @Value("\${business-event.substitutions.VOT3_CONTRACT}") vot3Contract: String,
     ): BlockIndexer =
         IndexerFactory()
             .name(IndexerNames.B3TR_BALANCE.NAME)
@@ -62,9 +63,8 @@ open class B3trBalanceConfig {
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
-            .includeFullBlock()
             .abis("abis/b3tr")
             .abiEventNames(listOf("Transfer"))
-            .abiContracts(listOf(b3trContract))
+            .abiContracts(listOf(b3trContract, vot3Contract))
             .build()
 }
