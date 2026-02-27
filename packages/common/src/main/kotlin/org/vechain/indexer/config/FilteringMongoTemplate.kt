@@ -149,7 +149,15 @@ open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: Mo
      */
     internal fun addVersionExclusionProjection(query: Query, entityClass: Class<*>?) {
         if (entityClass != null && isVersionedDocument(entityClass)) {
-            query.fields().exclude(PREVIOUS_VERSIONS_FIELD)
+            // If the query already uses inclusion projections, _previousVersions is
+            // implicitly excluded — adding an explicit exclusion would cause MongoDB
+            // error 31254 ("Cannot do exclusion on field in inclusion projection").
+            val fieldsObject = query.fields().fieldsObject
+            val hasInclusionProjection =
+                fieldsObject.any { (key, value) -> key != "_id" && (value == 1 || value == true) }
+            if (!hasInclusionProjection) {
+                query.fields().exclude(PREVIOUS_VERSIONS_FIELD)
+            }
         }
     }
 
