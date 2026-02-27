@@ -148,6 +148,7 @@ indexer:
     vet-staked-by-block: ${INDEXER_START_BLOCK_VET_STAKED_BY_BLOCK:0}
     vet-delegated-by-block: ${INDEXER_START_BLOCK_VET_DELEGATED_BY_BLOCK:0}
     nft-holders-by-block: ${INDEXER_START_BLOCK_NFT_HOLDERS_BY_BLOCK:0}
+    nft-owner-balance: ${INDEXER_START_BLOCK_NFT_OWNER_BALANCE:0}
   validator-stats-threshold-blocks: ${INDEXER_VALIDATOR_STATS_THRESHOLD_BLOCKS:25}
   stop-block:
     historic-proposals: ${INDEXER_STOP_BLOCK_HISTORIC_PROPOSALS:22948372}
@@ -186,6 +187,7 @@ indexer:
     stargate-vtho-claimed-by-block: ${VERSION_STARGATE_VTHO_CLAIMED_BY_BLOCK:1}
     stargate-vtho-generated-by-block: ${VERSION_STARGATE_VTHO_GENERATED_BY_BLOCK:1}
     stargate-vtho-claimed-by-account: ${VERSION_STARGATE_VTHO_CLAIMED_BY_ACCOUNT:1}
+    stargate-nft-owner-balance: ${VERSION_STARGATE_NFT_OWNER_BALANCE:1}
     stargate-nft-holders-by-block: ${VERSION_STARGATE_NFT_HOLDERS_BY_BLOCK:1}
     stargate-vet-staked-by-block: ${VERSION_STARGATE_VET_STAKED_BY_BLOCK:1}
     stargate-vet-delegated-by-block: ${VERSION_STARGATE_VET_DELEGATED_BY_BLOCK:1}

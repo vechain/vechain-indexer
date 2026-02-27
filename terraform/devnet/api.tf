@@ -476,6 +476,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.nft-holders-by-block
     },
     {
+      name  = "INDEXER_START_BLOCK_NFT_OWNER_BALANCE"
+      value = each.value.indexer.start-block.nft-owner-balance
+    },
+    {
       name  = "START_ROUND_B3TR_SUSTAINABLE_ACTIONS"
       value = each.value.indexer.start-round.b3tr-sustainable-actions
     },
@@ -546,6 +550,10 @@ module "ecs-backend-service" {
     {
       name  = "VERSION_STARGATE_VET_DELEGATED_BY_BLOCK"
       value = each.value.indexer.version.stargate-vet-delegated-by-block
+    },
+    {
+      name  = "VERSION_STARGATE_NFT_OWNER_BALANCE"
+      value = each.value.indexer.version.stargate-nft-owner-balance
     },
     {
       name  = "VERSION_HISTORIC_PROPOSALS"

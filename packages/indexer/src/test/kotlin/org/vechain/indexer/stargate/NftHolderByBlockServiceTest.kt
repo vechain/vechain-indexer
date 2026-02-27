@@ -9,9 +9,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.accounts.TimeFrame
-import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlock
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
@@ -29,23 +27,13 @@ import strikt.assertions.*
 class NftHolderByBlockServiceTest {
     @MockK lateinit var repository: NftHoldersByBlockRepository
     @MockK lateinit var ownerBalanceRepository: NftOwnerBalanceRepository
-    @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
-    @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
 
     private lateinit var service: NftHoldersByBlockService
 
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
-        every { inlineVersioningProperties.blockWindow } returns 10000L
-        every { inlineVersioningProperties.maxVersions } returns 100
-        service =
-            NftHoldersByBlockService(
-                repository,
-                ownerBalanceRepository,
-                mongoTemplate,
-                inlineVersioningProperties,
-            )
+        service = NftHoldersByBlockService(repository, ownerBalanceRepository)
     }
 
     // ------------------------------------------------------------
@@ -140,7 +128,8 @@ class NftHolderByBlockServiceTest {
             )
 
         every { repository.getLatestRecord() } returns null
-        every { ownerBalanceRepository.findByOwnerIn(any()) } returns emptyList()
+        every { ownerBalanceRepository.findLatestBalancesBeforeBlock(any(), any()) } returns
+            emptyList()
 
         val result = service.processEvents(events)
         expectThat(result).hasSize(3)
@@ -179,7 +168,8 @@ class NftHolderByBlockServiceTest {
             )
 
         every { repository.getLatestRecord() } returns null
-        every { ownerBalanceRepository.findByOwnerIn(any()) } returns emptyList()
+        every { ownerBalanceRepository.findLatestBalancesBeforeBlock(any(), any()) } returns
+            emptyList()
 
         val result = service.processEvents(events)
         expectThat(result).hasSize(3)
@@ -227,7 +217,6 @@ class NftHolderByBlockServiceTest {
                 blockNumber = 8,
                 blockId = "block8",
                 blockTimestamp = 800,
-                version = 2,
             )
 
         every { repository.getLatestRecord() } returns
@@ -238,7 +227,8 @@ class NftHolderByBlockServiceTest {
                 total = 1,
                 by = mapOf(TokenLevel.Strength to 1, TokenLevel.Thunder to 1),
             )
-        every { ownerBalanceRepository.findByOwnerIn(any()) } returns listOf(existingBalance)
+        every { ownerBalanceRepository.findLatestBalancesBeforeBlock(any(), any()) } returns
+            listOf(existingBalance)
 
         val result = service.processEvents(events)
 
@@ -276,7 +266,8 @@ class NftHolderByBlockServiceTest {
 
         every { repository.getLatestRecord() } returns latestRecord
         // New owners with no existing balance
-        every { ownerBalanceRepository.findByOwnerIn(any()) } returns emptyList()
+        every { ownerBalanceRepository.findLatestBalancesBeforeBlock(any(), any()) } returns
+            emptyList()
 
         val events =
             listOf(
@@ -339,7 +330,8 @@ class NftHolderByBlockServiceTest {
     @Test
     fun `throws on missing levelId`() {
         every { repository.getLatestRecord() } returns null
-        every { ownerBalanceRepository.findByOwnerIn(any()) } returns emptyList()
+        every { ownerBalanceRepository.findLatestBalancesBeforeBlock(any(), any()) } returns
+            emptyList()
 
         val events = listOf(mockEvent("b1", 10, 1000, "STARGATE_STAKE", null))
 
@@ -351,7 +343,8 @@ class NftHolderByBlockServiceTest {
     @Test
     fun `throws on invalid levelId`() {
         every { repository.getLatestRecord() } returns null
-        every { ownerBalanceRepository.findByOwnerIn(any()) } returns emptyList()
+        every { ownerBalanceRepository.findLatestBalancesBeforeBlock(any(), any()) } returns
+            emptyList()
 
         val events = listOf(mockEvent("b1", 10, 1000, "STARGATE_STAKE", 999))
 
@@ -363,7 +356,8 @@ class NftHolderByBlockServiceTest {
     @Test
     fun `throws on unknown event type`() {
         every { repository.getLatestRecord() } returns null
-        every { ownerBalanceRepository.findByOwnerIn(any()) } returns emptyList()
+        every { ownerBalanceRepository.findLatestBalancesBeforeBlock(any(), any()) } returns
+            emptyList()
 
         val events = listOf(mockEvent("b1", 10, 1000, "WTF", 1))
 
@@ -373,12 +367,10 @@ class NftHolderByBlockServiceTest {
     }
 
     @Test
-    fun `saveRecords delegates and saves owner balances`() {
+    fun `saveRecords delegates to repository`() {
         val records = listOf(nftBlock("A", 1, 100, 1), nftBlock("B", 2, 200, 2))
 
         every { repository.saveAll(records) } returns records
-        // No owner balances to save after direct saveRecords call
-        every { ownerBalanceRepository.saveAll(emptyList<NftOwnerBalance>()) } returns emptyList()
 
         service.saveRecords(records)
 
