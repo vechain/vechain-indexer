@@ -44,7 +44,12 @@ internal class B3trRichlistServiceTest {
                 totalBalance = BigInteger("150"),
             )
         every { b3trRepository.findById(address) } returns Optional.of(doc)
-        every { mongoTemplate.count(any<Query>(), any(), any<String>()) } returns 4 andThen 100
+        var countInvocations = 0
+        every { mongoTemplate.count(any<Query>(), any(), any<String>()) } answers
+            {
+                countInvocations++
+                if (countInvocations == 1) 100L else 4L
+            }
 
         val result = service.getAddressRank(address, RichlistScope.ALL)
 
@@ -70,7 +75,12 @@ internal class B3trRichlistServiceTest {
                 totalBalance = BigInteger("200"),
             )
         every { b3trRepository.findById(address) } returns Optional.of(doc)
-        every { mongoTemplate.count(any<Query>(), any(), any<String>()) } returns 1 andThen 50
+        var countInvocations = 0
+        every { mongoTemplate.count(any<Query>(), any(), any<String>()) } answers
+            {
+                countInvocations++
+                if (countInvocations == 1) 50L else 1L
+            }
 
         val result = service.getAddressRank(address, RichlistScope.VOT3)
 
@@ -94,7 +104,12 @@ internal class B3trRichlistServiceTest {
                 totalBalance = BigInteger("75"),
             )
         every { b3trRepository.findById(address) } returns Optional.of(doc)
-        every { mongoTemplate.count(any<Query>(), any(), any<String>()) } returns 3 andThen 80
+        var countInvocations = 0
+        every { mongoTemplate.count(any<Query>(), any(), any<String>()) } answers
+            {
+                countInvocations++
+                if (countInvocations == 1) 80L else 3L
+            }
 
         val result = service.getAddressRank(address, RichlistScope.B3TR)
 
