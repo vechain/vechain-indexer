@@ -187,7 +187,7 @@ enabled_nets:
         authority-nodes: '125'
         b3tr: '75'
         historic-proposals: '125'
-      channel-batch-size: '3'
+      channel-batch-size: '15'
       pruner:
         enabled: 'true'
         interval: '60480'
@@ -405,7 +405,7 @@ enabled_nets:
         authority-nodes: '125'
         b3tr: '75'
         historic-proposals: '125'
-      channel-batch-size: '3'
+      channel-batch-size: '15'
       pruner:
         enabled: 'true'
         interval: '60480'
