@@ -521,6 +521,92 @@
       ],
       "target": "http.url_details.api_category",
       "type": "category-processor"
+    },
+    {
+      "type": "category-processor",
+      "name": "Categorize endpoint group",
+      "is_enabled": true,
+      "categories": [
+        {
+          "filter": {
+            "query": "@http.url_details.path:/api/v1/accounts*"
+          },
+          "name": "accounts"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:/api/v1/authority-endorsers*"
+          },
+          "name": "authority-endorsers"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:/api/v1/b3tr* OR @http.url_details.path:/api/v2/b3tr*"
+          },
+          "name": "b3tr"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:/api/v1/contracts*"
+          },
+          "name": "contracts"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:/api/v1/explorer*"
+          },
+          "name": "explorer"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:/api/v1/history* OR @http.url_details.path:/api/v2/history*"
+          },
+          "name": "history"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:/api/v1/nfts*"
+          },
+          "name": "nfts"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:/api/v1/stargate*"
+          },
+          "name": "stargate"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:/api/v1/transactions*"
+          },
+          "name": "transactions"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:/api/v1/transfers*"
+          },
+          "name": "transfers"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:/api/v1/validators*"
+          },
+          "name": "validators"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:/api/v1/vevote*"
+          },
+          "name": "vevote"
+        },
+        {
+          "filter": {
+            "query": "*"
+          },
+          "name": "unknown"
+        }
+      ],
+      "target": "endpoint_group"
     }
   ],
   "tags": []
