@@ -29,6 +29,12 @@ resource "mongodbatlas_advanced_cluster" "main_net" {
       }
     }]
   }]
+
+  lifecycle {
+    ignore_changes = [
+      replication_specs[0].region_configs[0].electable_specs[0].disk_size_gb,
+    ]
+  }
 }
 
 resource "mongodbatlas_advanced_cluster" "test_net" {
@@ -59,6 +65,12 @@ resource "mongodbatlas_advanced_cluster" "test_net" {
       }
     }]
   }]
+
+  lifecycle {
+    ignore_changes = [
+      replication_specs[0].region_configs[0].electable_specs[0].disk_size_gb,
+    ]
+  }
 }
 
 ################################################################################
