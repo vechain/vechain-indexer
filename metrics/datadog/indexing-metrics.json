@@ -504,108 +504,101 @@
     {
       "id": 14,
       "definition": {
-        "title": "Sync Gap per Indexer",
+        "title": "Indexer Sync Overview",
         "title_size": "16",
         "title_align": "left",
-        "type": "toplist",
+        "type": "query_table",
         "requests": [
           {
             "queries": [
               {
                 "data_source": "metrics",
-                "name": "query1",
+                "name": "status",
+                "query": "max:indexer_sync_status_code_gauge{indexer-id:$indexer-id.value} by {indexer_name}",
+                "aggregator": "last"
+              },
+              {
+                "data_source": "metrics",
+                "name": "gap",
                 "query": "max:indexer_sync_gap_gauge{indexer-id:$indexer-id.value} by {indexer_name}",
                 "aggregator": "last"
-              }
-            ],
-            "response_format": "scalar",
-            "conditional_formats": [
-              {
-                "comparator": "<",
-                "value": 10000,
-                "palette": "white_on_green"
               },
-              {
-                "comparator": ">=",
-                "value": 1000000,
-                "palette": "white_on_red"
-              },
-              {
-                "comparator": ">=",
-                "value": 10000,
-                "palette": "white_on_yellow"
-              }
-            ],
-            "formulas": [
-              {
-                "formula": "query1"
-              }
-            ],
-            "sort": {
-              "count": 50,
-              "order_by": [
-                {
-                  "type": "formula",
-                  "index": 0,
-                  "order": "desc"
-                }
-              ]
-            }
-          }
-        ],
-        "style": {
-          "display": {
-            "type": "stacked",
-            "legend": "automatic"
-          },
-          "scaling": "absolute"
-        }
-      },
-      "layout": {
-        "x": 3,
-        "y": 1,
-        "width": 3,
-        "height": 5
-      }
-    },
-    {
-      "id": 16,
-      "definition": {
-        "title": "Estimated Time to Sync",
-        "title_size": "16",
-        "title_align": "left",
-        "type": "toplist",
-        "requests": [
-          {
-            "queries": [
               {
                 "data_source": "metrics",
-                "name": "query1",
+                "name": "eta",
                 "query": "max:indexer_estimated_time_to_sync_seconds{indexer-id:$indexer-id.value} by {indexer_name}",
                 "aggregator": "last"
               }
             ],
             "response_format": "scalar",
-            "conditional_formats": [
-              {
-                "comparator": "<=",
-                "value": 0,
-                "palette": "white_on_green"
-              },
-              {
-                "comparator": ">=",
-                "value": 21600,
-                "palette": "white_on_red"
-              },
-              {
-                "comparator": ">",
-                "value": 0,
-                "palette": "white_on_yellow"
-              }
-            ],
             "formulas": [
               {
-                "formula": "query1",
+                "alias": "Status",
+                "formula": "status",
+                "conditional_formats": [
+                  {
+                    "comparator": "<",
+                    "value": 0,
+                    "palette": "white_on_green"
+                  },
+                  {
+                    "comparator": ">=",
+                    "value": 5,
+                    "palette": "white_on_red"
+                  },
+                  {
+                    "comparator": ">",
+                    "value": 0,
+                    "palette": "white_on_yellow"
+                  },
+                  {
+                    "comparator": "<=",
+                    "value": 0,
+                    "palette": "white_on_red"
+                  }
+                ]
+              },
+              {
+                "alias": "Sync Gap",
+                "formula": "gap",
+                "conditional_formats": [
+                  {
+                    "comparator": "<",
+                    "value": 10000,
+                    "palette": "white_on_green"
+                  },
+                  {
+                    "comparator": ">=",
+                    "value": 1000000,
+                    "palette": "white_on_red"
+                  },
+                  {
+                    "comparator": ">=",
+                    "value": 10000,
+                    "palette": "white_on_yellow"
+                  }
+                ]
+              },
+              {
+                "alias": "Est. Time to Sync",
+                "formula": "eta",
+                "conditional_formats": [
+                  {
+                    "comparator": "<=",
+                    "value": 0,
+                    "palette": "white_on_green"
+                  },
+                  {
+                    "comparator": ">=",
+                    "value": 21600,
+                    "palette": "white_on_red"
+                  },
+                  {
+                    "comparator": ">",
+                    "value": 0,
+                    "palette": "white_on_yellow"
+                  }
+                ],
                 "number_format": {
                   "unit": {
                     "type": "canonical_unit",
@@ -619,25 +612,19 @@
               "order_by": [
                 {
                   "type": "formula",
-                  "index": 0,
+                  "index": 1,
                   "order": "desc"
                 }
               ]
             }
           }
         ],
-        "style": {
-          "display": {
-            "type": "stacked",
-            "legend": "automatic"
-          },
-          "scaling": "absolute"
-        }
+        "has_search_bar": "auto"
       },
       "layout": {
-        "x": 6,
+        "x": 3,
         "y": 3,
-        "width": 6,
+        "width": 9,
         "height": 3
       }
     },
