@@ -28,6 +28,14 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r metrics/datadog/scripts/requirements.txt
 
+      - name: Push dashboard to Datadog
+        if: github.event_name == 'release'
+        env:
+          DD_API_KEY: ${{ secrets.DD_API_KEY }}
+          DD_APP_KEY: ${{ secrets.DD_APP_KEY }}
+          DD_SITE: ${{ secrets.DD_SITE }}
+        run: python metrics/datadog/scripts/manage_pipeline.py push-dashboard
+
       - name: Fetch pipeline config
         env:
           DD_API_KEY: ${{ secrets.DD_API_KEY }}
