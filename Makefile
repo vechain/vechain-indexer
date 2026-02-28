@@ -14,7 +14,7 @@ format-json: #@ Format JSON dashboard files with jq.
 	done
 
 # Application Build (Gradle)
-build: format build-indexer build-api #@ Build the application with Gradle.
+build: format build-indexer build-api dd-generate-openapi dd-update-categories format-json #@ Build the application with Gradle.
 	echo "Build completed."
 .PHONY:build
 build-indexer: #@ Build the application with Gradle.
@@ -130,7 +130,7 @@ metrics-restart-grafana: #@ Restart only Grafana service.
 	docker kill grafana; docker rm grafana; docker volume rm metrics_grafana_data; make metrics-up
 
 # Datadog
-DD_SCRIPT=python metrics/datadog/scripts/manage_pipeline.py
+DD_SCRIPT=python3 metrics/datadog/scripts/manage_pipeline.py
 
 dd-get-pipeline: #@ Fetch Datadog pipeline config.
 	$(DD_SCRIPT) get
