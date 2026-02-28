@@ -1,11 +1,13 @@
 name: Sync Datadog Config
 
 on:
-  release:
-    types: [published]
+  workflow_run:
+    workflows: ["Prod Deployment Workflow"]
+    types: [completed]
 
 jobs:
   push:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
