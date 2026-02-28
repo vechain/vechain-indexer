@@ -7,7 +7,6 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.utils.IdUtils.generateId
 
 @Document(collection = IndexerNames.VEVOTE_RESULT.COLLECTION)
@@ -47,9 +46,3 @@ constructor(
 
     @JsonIgnore override fun getDocumentId(): String = id
 }
-
-@Document(collection = "vevote_proposal_results_archives")
-data class VeVoteProposalResultArchive(
-    @Id override val id: String,
-    override val data: VeVoteProposalResult,
-) : Archive<VeVoteProposalResult>

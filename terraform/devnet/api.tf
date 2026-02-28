@@ -432,6 +432,14 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.b3tr
     },
     {
+      name  = "INDEXER_START_BLOCK_B3TR_TREASURY"
+      value = each.value.indexer.start-block.b3tr-treasury
+    },
+    {
+      name  = "INDEXER_START_BLOCK_B3TR_BALANCE"
+      value = each.value.indexer.start-block.b3tr-balance
+    },
+    {
       name  = "INDEXER_START_BLOCK_B3TR_PROPOSAL"
       value = each.value.indexer.start-block.b3tr-proposal
     },
@@ -476,24 +484,12 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.nft-holders-by-block
     },
     {
+      name  = "INDEXER_START_BLOCK_NFT_OWNER_BALANCE"
+      value = each.value.indexer.start-block.nft-owner-balance
+    },
+    {
       name  = "START_ROUND_B3TR_SUSTAINABLE_ACTIONS"
       value = each.value.indexer.start-round.b3tr-sustainable-actions
-    },
-    {
-      name  = "PRUNER_ENABLED"
-      value = each.value.indexer.pruner.enabled
-    },
-    {
-      name  = "PRUNER_INTERVAL"
-      value = each.value.indexer.pruner.interval
-    },
-    {
-      name  = "PRUNER_REMOVAL_CHUNK_SIZE"
-      value = each.value.indexer.pruner.removal-chunk-size
-    },
-    {
-      name  = "PRUNER_RECORD_LIMIT"
-      value = each.value.indexer.pruner.record-limit
     },
     {
       name  = "BLACKLIST_CONTRACT_ADDRESS"
@@ -562,6 +558,10 @@ module "ecs-backend-service" {
     {
       name  = "VERSION_STARGATE_VET_DELEGATED_BY_BLOCK"
       value = each.value.indexer.version.stargate-vet-delegated-by-block
+    },
+    {
+      name  = "VERSION_STARGATE_NFT_OWNER_BALANCE"
+      value = each.value.indexer.version.stargate-nft-owner-balance
     },
     {
       name  = "VERSION_HISTORIC_PROPOSALS"

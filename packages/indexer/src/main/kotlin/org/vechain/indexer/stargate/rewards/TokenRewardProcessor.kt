@@ -1,15 +1,13 @@
 package org.vechain.indexer.stargate.rewards
 
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
-import org.vechain.indexer.stargate.tokenReward.TokenReward
-import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
 
 @Profile("token-reward")
@@ -17,13 +15,13 @@ import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
 open class TokenRewardProcessor(
     private val service: TokenRewardService,
     repository: TokenRewardRepository,
-    archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
+    mongoTemplate: MongoTemplate,
     checkpointService: CheckpointService,
     processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = repository,
-        archiveService = archiveService,
+        mongoTemplate = mongoTemplate,
         indexerName = IndexerNames.TOKEN_REWARD.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.TOKEN_REWARD.COLLECTION,

@@ -1,11 +1,11 @@
 package org.vechain.indexer.stargate.token
 
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 
@@ -14,13 +14,13 @@ import org.vechain.indexer.config.metrics.ProcessorMetrics
 open class StargateTokenProcessor(
     private val service: StargateTokenService,
     stargateTokenRepository: StargateTokenRepository,
-    archiveService: ArchiveService<StargateToken, StargateTokenArchive>,
+    mongoTemplate: MongoTemplate,
     checkpointService: CheckpointService,
     processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = stargateTokenRepository,
-        archiveService = archiveService,
+        mongoTemplate = mongoTemplate,
         indexerName = IndexerNames.STARGATE_TOKEN.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.STARGATE_TOKEN.COLLECTION,

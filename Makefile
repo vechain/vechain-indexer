@@ -23,12 +23,14 @@ build-api: #@ Build the application with Gradle.
 	./gradlew :package:api:build -x test
 
 # Application Build (Docker)
+comma := ,
+GRADLE_SECRET := $(if $(wildcard $(HOME)/.gradle/gradle.properties),--secret id=gradle_props$(comma)src=$(HOME)/.gradle/gradle.properties,)
 build-image: build-image-indexer build-image-api #@ Build the application with Docker.
 	echo "Build completed."
 build-image-indexer: #@ Build the application with Docker.
-	docker build --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=indexer -t veworld-indexer .
+	docker build $(GRADLE_SECRET) --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=indexer -t veworld-indexer .
 build-image-api: #@ Build the application with Docker.
-	docker build --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=api -t veworld-api .
+	docker build $(GRADLE_SECRET) --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=api -t veworld-api .
 build-k6: #@ Build the K6 docker image.
 	docker build --build-arg APP_VERSION=v.1.0.0 -t veworld-k6 load-testing
 

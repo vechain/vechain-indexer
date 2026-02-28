@@ -15,11 +15,13 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.aggregation.TypedAggregation
 import org.springframework.data.mongodb.core.convert.MongoConverter
 import org.springframework.data.mongodb.core.mapping.Document as MongoDocument
+import org.springframework.data.mongodb.core.query.BasicQuery
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import org.vechain.indexer.IndexedDocument
+import org.vechain.indexer.VersionedDocument
 import strikt.api.expectThat
 import strikt.assertions.containsExactlyInAnyOrder
 import strikt.assertions.isEmpty
@@ -47,6 +49,17 @@ data class TestCustomIdDoc(
     override val blockNumber: Long = 1L,
     override val blockTimestamp: Long = 1000L,
 ) : IndexedDocument
+
+@MongoDocument(collection = "test_versioned_docs")
+data class TestVersionedDoc(
+    @Id val id: String,
+    override val blockId: String = "0xblock",
+    override val blockNumber: Long = 1L,
+    override val blockTimestamp: Long = 1000L,
+    override val version: Int = 1,
+) : VersionedDocument {
+    override fun getDocumentId(): String = id
+}
 
 // --- Test configuration ---
 
@@ -538,6 +551,67 @@ internal class FilteringMongoTemplateTest {
             val result = template.findAll(TestIndexedDoc::class.java)
 
             expectThat(result).isEmpty()
+        }
+    }
+
+    // --- 9. Version exclusion projection ---
+
+    @Nested
+    inner class VersionExclusionProjection {
+
+        @Test
+        fun `exclusion is skipped when query already has inclusion projection`() {
+            val query = Query()
+            query.fields().include("validator").exclude("_id")
+
+            template.addVersionExclusionProjection(query, TestVersionedDoc::class.java)
+
+            val fieldsObject = query.fields().fieldsObject
+            expectThat(fieldsObject.containsKey("_previousVersions")).isEqualTo(false)
+        }
+
+        @Test
+        fun `exclusion is skipped when query has boolean true inclusion projection`() {
+            val query = Query()
+            query.fields().include("validator")
+            // Simulate a boolean-true projection as raw BSON would allow
+            query.fields().fieldsObject["status"] = true
+
+            template.addVersionExclusionProjection(query, TestVersionedDoc::class.java)
+
+            val fieldsObject = query.fields().fieldsObject
+            expectThat(fieldsObject.containsKey("_previousVersions")).isEqualTo(false)
+        }
+
+        @Test
+        fun `exclusion is added when query has no inclusion projection`() {
+            val query = Query()
+
+            template.addVersionExclusionProjection(query, TestVersionedDoc::class.java)
+
+            val fieldsObject = query.fields().fieldsObject
+            expectThat(fieldsObject.containsKey("_previousVersions")).isTrue()
+            expectThat(fieldsObject["_previousVersions"]).isEqualTo(0)
+        }
+
+        @Test
+        fun `exclusion is skipped when BasicQuery has inclusion projection from @Query annotation`() {
+            val query = BasicQuery(Document(), Document("validator", 1).append("_id", 0))
+
+            template.addVersionExclusionProjection(query, TestVersionedDoc::class.java)
+
+            val fieldsObject = query.getFieldsObject()
+            expectThat(fieldsObject.containsKey("_previousVersions")).isEqualTo(false)
+        }
+
+        @Test
+        fun `exclusion is not added for non-versioned entity`() {
+            val query = Query()
+
+            template.addVersionExclusionProjection(query, TestIndexedDoc::class.java)
+
+            val fieldsObject = query.fields().fieldsObject
+            expectThat(fieldsObject.containsKey("_previousVersions")).isEqualTo(false)
         }
     }
 }

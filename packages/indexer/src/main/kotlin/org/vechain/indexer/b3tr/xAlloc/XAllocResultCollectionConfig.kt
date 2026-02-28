@@ -20,13 +20,7 @@ open class XAllocResultCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) :
-    CollectionConfig(
-        mongoTemplate,
-        appCoroutineScope,
-        XAllocResult::class.java,
-        XAllocResultArchive::class.java,
-    ) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, XAllocResult::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.b3tr-x-alloc-result}") private val version: Int = 1
@@ -35,14 +29,11 @@ open class XAllocResultCollectionConfig(
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
-        val dropped =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.X_ALLOC_RESULT.NAME,
-                XAllocResult::class.java,
-                version,
-            )
-
-        if (dropped) indexerVersionService.dropArchiveCollection(XAllocResultArchive::class.java)
+        indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            indexerName = IndexerNames.X_ALLOC_RESULT.NAME,
+            XAllocResult::class.java,
+            version,
+        )
 
         this.ensureCollection()
 

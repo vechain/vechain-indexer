@@ -20,13 +20,7 @@ open class GmNftCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) :
-    CollectionConfig(
-        mongoTemplate,
-        appCoroutineScope,
-        GmNft::class.java,
-        GmNftArchive::class.java,
-    ) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, GmNft::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.b3tr-gm-nft}") private val version: Int = 1
@@ -35,14 +29,11 @@ open class GmNftCollectionConfig(
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
-        val dropped =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.GM_NFT.NAME,
-                GmNft::class.java,
-                version,
-            )
-
-        if (dropped) indexerVersionService.dropArchiveCollection(GmNftArchive::class.java)
+        indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            indexerName = IndexerNames.GM_NFT.NAME,
+            GmNft::class.java,
+            version,
+        )
 
         this.ensureCollection()
 

@@ -7,9 +7,9 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_MINT
@@ -19,7 +19,7 @@ internal class NftProcessorTest {
 
     @MockK lateinit var nftRepository: NftRepository
 
-    @MockK lateinit var archiveService: ArchiveService<IndexedNft, NftArchive>
+    @MockK lateinit var mongoTemplate: MongoTemplate
 
     @MockK lateinit var nftService: NftService
 
@@ -36,7 +36,7 @@ internal class NftProcessorTest {
         processor =
             NftProcessor(
                 nftService = nftService,
-                nftArchiveService = archiveService,
+                mongoTemplate = mongoTemplate,
                 repository = nftRepository,
                 checkpointService = checkpointService,
                 processorMetrics = processorMetrics,

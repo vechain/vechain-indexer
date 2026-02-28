@@ -1,11 +1,11 @@
 package org.vechain.indexer.b3tr.action
 
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.AppDailyActionSummaryRepository
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
@@ -14,15 +14,14 @@ import org.vechain.indexer.config.metrics.ProcessorMetrics
 @Profile("b3tr", "b3tr-actions", "b3tr-app-daily-action-summary")
 open class AppDailyActionSummaryProcessor(
     repository: AppDailyActionSummaryRepository,
-    appDailyActionSummaryArchiveService:
-        ArchiveService<AppDailyActionSummary, AppDailyActionSummaryArchive>,
+    mongoTemplate: MongoTemplate,
     private val service: AppDailyActionSummaryService,
     checkpointService: CheckpointService,
     processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = repository,
-        archiveService = appDailyActionSummaryArchiveService,
+        mongoTemplate = mongoTemplate,
         indexerName = IndexerNames.APP_DAILY_ACTION_SUMMARY.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.APP_DAILY_ACTION_SUMMARY.COLLECTION,

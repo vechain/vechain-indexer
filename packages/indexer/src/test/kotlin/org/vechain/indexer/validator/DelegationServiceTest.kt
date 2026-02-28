@@ -6,10 +6,10 @@ import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.archive.ArchiveService
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
@@ -19,10 +19,8 @@ import strikt.assertions.isEqualTo
 
 class DelegationServiceTest {
     private val repository = mockk<DelegationRepository>()
-    private val archiveService =
-        mockk<ArchiveService<Delegation, DelegationArchive>>(relaxed = true)
-    private val delegationPruner =
-        mockk<TargetedPruner<Delegation, DelegationArchive>>(relaxed = true)
+    private val mongoTemplate = mockk<MongoTemplate>(relaxed = true)
+    private val inlineVersioningProperties = mockk<InlineVersioningProperties>()
 
     private val validatorDelegationService = mockk<ValidatorDelegationService>()
 
@@ -31,12 +29,14 @@ class DelegationServiceTest {
     @BeforeEach
     fun setup() {
         clearAllMocks()
+        every { inlineVersioningProperties.blockWindow } returns 10000L
+        every { inlineVersioningProperties.maxVersions } returns 100
         service =
             spyk(
                 DelegationService(
                     repository,
-                    archiveService,
-                    delegationPruner,
+                    mongoTemplate,
+                    inlineVersioningProperties,
                     validatorDelegationService,
                     stakerSC = "0xSTAKER",
                 )

@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.E2E_PATH
 import org.vechain.indexer.nft.IndexedNft
-import org.vechain.indexer.nft.NftArchive
 import org.vechain.indexer.thor.model.Views
 import org.vechain.indexer.transfer.IndexedTransferEvent
 
@@ -16,13 +15,6 @@ import org.vechain.indexer.transfer.IndexedTransferEvent
 @RestController
 @RequestMapping(E2E_PATH)
 open class E2EController(private val e2EService: E2EService) {
-
-    @GetMapping("/nft-archives")
-    @JsonView(Views.Internal::class)
-    @TestOnly
-    open fun getNFTArchives(): List<NftArchive> {
-        return e2EService.getNftArchives()
-    }
 
     @GetMapping("/transfers")
     @TestOnly

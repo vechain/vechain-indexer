@@ -63,6 +63,18 @@ allprojects {
         maven {
             url = uri("https://central.sonatype.com/repository/maven-snapshots/")
         }
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/vechain/indexer-core")
+            credentials {
+                username =
+                    project.findProperty("gpr.user") as String?
+                        ?: System.getenv("GITHUB_ACTOR")
+                password =
+                    project.findProperty("gpr.key") as String?
+                        ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
     }
 
     tasks.register("installGitHooks") {
@@ -223,7 +235,7 @@ allprojects {
         implementation("io.micrometer:micrometer-registry-datadog:1.14.5")
 
         // Core indexer dependency
-        implementation("org.vechain:indexer-core:7.0.1")
+        implementation("org.vechain:indexer-core:7.2.0")
 
         // Test dependencies
         testImplementation("org.springframework.boot:spring-boot-starter-test:3.4.5")

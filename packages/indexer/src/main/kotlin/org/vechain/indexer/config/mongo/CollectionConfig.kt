@@ -4,7 +4,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.bson.Document
 import org.slf4j.LoggerFactory
-import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
 import org.springframework.data.mongodb.core.index.PartialIndexFilter
@@ -13,7 +12,6 @@ abstract class CollectionConfig(
     private val mongoTemplate: MongoTemplate,
     private val coroutineScope: CoroutineScope,
     val modelObj: Class<*>,
-    val archiveObj: Class<*>? = null,
 ) {
     companion object {
         /**
@@ -31,32 +29,15 @@ abstract class CollectionConfig(
         // Create the collection if it does not exist
         if (!mongoTemplate.collectionExists(modelObj)) {
             try {
-                logger.info("⏱ Creating Collection: ${modelObj.simpleName}")
+                logger.info("Creating Collection: ${modelObj.simpleName}")
                 mongoTemplate.createCollection(modelObj)
-                logger.info("✅ Creation Success:   ${modelObj.simpleName}.")
+                logger.info("Creation Success:   ${modelObj.simpleName}.")
             } catch (e: Exception) {
-                logger.error("⛔ Creation Failed:  ${modelObj.simpleName}", e)
+                logger.error("Creation Failed:  ${modelObj.simpleName}", e)
                 throw e
             }
         } else {
             logger.debug("Collection ${modelObj.simpleName} already exists.")
-        }
-
-        // Create the archive collection if it does not exist and an archive class is provided
-        if (archiveObj != null) {
-            if (!mongoTemplate.collectionExists(archiveObj)) {
-                try {
-                    logger.info("⏱ Creating Archive:  ${archiveObj.simpleName}")
-                    mongoTemplate.createCollection(archiveObj)
-                    logger.info("✅ Creation Success: ${archiveObj.simpleName}.")
-                } catch (e: Exception) {
-                    logger.error("⛔ Creation Failed:  ${archiveObj.simpleName}", e)
-                    throw e
-                }
-            } else {
-                logger.debug("Collection ${archiveObj.simpleName} already exists.")
-            }
-            ensureArchiveIndexes()
         }
     }
 
@@ -73,15 +54,15 @@ abstract class CollectionConfig(
         partialFilter: Document? = null,
     ) {
         try {
-            logger.info("⏱ Creating Index:    $indexName for ${entityClass.simpleName}️")
+            logger.info("Creating Index:    $indexName for ${entityClass.simpleName}")
             val indexDef = index.named(indexName).background()
             if (partialFilter != null) {
                 indexDef.partial(PartialIndexFilter.of(partialFilter))
             }
             mongoTemplate.indexOps(entityClass).ensureIndex(indexDef)
-            logger.info("✅ Creation Success: $indexName for ${entityClass.simpleName}.")
+            logger.info("Creation Success: $indexName for ${entityClass.simpleName}.")
         } catch (e: Exception) {
-            logger.error("⛔ Creation Failed:  $indexName for ${entityClass.simpleName}️", e)
+            logger.error("Creation Failed:  $indexName for ${entityClass.simpleName}", e)
         }
     }
 
@@ -95,22 +76,5 @@ abstract class CollectionConfig(
                 ensureIndex(indexName, index, entityClass, partialFilter)
             }
         }
-    }
-
-    private fun ensureArchiveIndexes() {
-        if (archiveObj == null) {
-            throw RuntimeException("Archive object is null")
-        }
-        ensureIndexes(
-            listOf(
-                "data.blockNumber_-1" to Index().on("data.blockNumber", Sort.Direction.DESC),
-                "data._id_1_data.version_-1" to
-                    Index()
-                        .on("data._id", Sort.Direction.ASC)
-                        .on("data.version", Sort.Direction.DESC),
-            ),
-            archiveObj,
-            partialFilter = null,
-        )
     }
 }

@@ -1,13 +1,12 @@
 package org.vechain.indexer.performance.delegation
 
-import org.vechain.indexer.archive.ArchiveService
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.performance.DetailedProfiler
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.Delegation
-import org.vechain.indexer.validator.DelegationArchive
 import org.vechain.indexer.validator.DelegationRepository
 import org.vechain.indexer.validator.DelegationService
 import org.vechain.indexer.validator.ValidatorDelegationService
@@ -26,16 +25,16 @@ import org.vechain.indexer.validator.ValidatorDelegationService
  */
 class ProfiledDelegationService(
     repository: DelegationRepository,
-    archiveService: ArchiveService<Delegation, DelegationArchive>,
-    delegationPruner: TargetedPruner<Delegation, DelegationArchive>,
+    mongoTemplate: MongoTemplate,
+    inlineVersioningProperties: InlineVersioningProperties,
     validatorDelegationService: ValidatorDelegationService,
     stakerSC: String,
     private val profiler: DetailedProfiler,
 ) :
     DelegationService(
         repository,
-        archiveService,
-        delegationPruner,
+        mongoTemplate,
+        inlineVersioningProperties,
         validatorDelegationService,
         stakerSC,
     ) {

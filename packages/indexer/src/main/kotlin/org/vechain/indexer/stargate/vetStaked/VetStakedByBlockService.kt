@@ -5,10 +5,10 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.stargate.requireLevel
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.utils.CacheUtils
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
-import org.vechain.indexer.utils.ParamUtils.getAsInt
 import org.vechain.indexer.utils.RolloverUtils
 
 /**
@@ -182,15 +182,3 @@ private fun IndexedEvent.requireValue(): BigInteger =
         ?: throw IllegalStateException(
             "Event for block $blockNumber (blockId=$blockId) is missing required 'value'"
         )
-
-/**
- * @notice Require and decode a valid `levelId` parameter.
- * @dev Converts `levelId` → TokenLevel or fails loudly.
- */
-private fun IndexedEvent.requireLevel(): TokenLevel {
-    val id =
-        this.params.getAsInt("levelId")
-            ?: throw IllegalArgumentException("Missing levelId in event params")
-
-    return TokenLevel.fromOrdinal(id) ?: throw IllegalArgumentException("Invalid levelId: $id")
-}

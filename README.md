@@ -21,6 +21,15 @@
 - Docker
 - Java (v21)
 
+### GitHub Packages Authentication (optional)
+
+Some dependencies (e.g. `org.vechain:indexer-core`) are hosted on GitHub Packages, which requires authentication even for public repositories. If your build fails to resolve these dependencies, create a [GitHub Personal Access Token (classic)](https://github.com/settings/tokens/new?scopes=read:packages) with the `read:packages` scope and add the following to `~/.gradle/gradle.properties`:
+
+```properties
+gpr.user=your-github-username
+gpr.key=your-github-pat
+```
+
 ## Getting Started
 
 - To see a list of all available commands, run `make help`

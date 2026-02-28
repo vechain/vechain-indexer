@@ -39,8 +39,7 @@ open class IndexerVersionService(
                 )
                 updateIndexerVersion(indexerName, collectionName, newVersion)
                 // Do not treat this as a "reset" of the collection; it only bootstraps the version
-                // document. Returning true here causes callers to drop archive collections even
-                // though the main collection hasn't been dropped.
+                // document.
                 return false
             }
 
@@ -54,24 +53,6 @@ open class IndexerVersionService(
         } catch (e: Exception) {
             logger.error("Error checking or resetting collection version for $indexerName", e)
             return false
-        }
-    }
-
-    /**
-     * Drop the archive collection.
-     *
-     * @param clazz The archive model class annotated with @Document.
-     */
-    fun dropArchiveCollection(clazz: Class<*>) {
-        val archiveCollectionName = getCollectionName(clazz)
-        logger.info("Dropping archive collection $archiveCollectionName if it exists.")
-        try {
-            mongoTemplate.dropCollection(archiveCollectionName)
-            logger.info("Successfully dropped archive collection: $archiveCollectionName.")
-        } catch (e: Exception) {
-            logger.warn(
-                "Failed to drop archive collection: $archiveCollectionName. Exception: ${e.message}"
-            )
         }
     }
 

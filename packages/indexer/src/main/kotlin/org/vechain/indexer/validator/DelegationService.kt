@@ -4,13 +4,13 @@ import java.math.BigInteger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.VersionedDocumentAccumulator
-import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Block
@@ -36,8 +36,8 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 @Service
 open class DelegationService(
     private val repository: DelegationRepository,
-    private val archiveService: ArchiveService<Delegation, DelegationArchive>,
-    private val delegationPruner: TargetedPruner<Delegation, DelegationArchive>,
+    private val mongoTemplate: MongoTemplate,
+    private val inlineVersioningProperties: InlineVersioningProperties,
     private val validatorDelegationService: ValidatorDelegationService,
     @param:Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
     private val stakerSC: String,
@@ -96,7 +96,13 @@ open class DelegationService(
 
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<Delegation>, existing: List<Delegation>) {
-        saveVersionedDocuments(updated, existing, archiveService, delegationPruner)
+        saveVersionedDocuments(
+            updated,
+            existing,
+            mongoTemplate,
+            inlineVersioningProperties.blockWindow,
+            inlineVersioningProperties.maxVersions,
+        )
     }
 
     open fun invalidateCache() {

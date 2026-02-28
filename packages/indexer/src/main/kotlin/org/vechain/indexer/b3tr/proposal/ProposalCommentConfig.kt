@@ -17,7 +17,6 @@ open class ProposalCommentConfig {
     open fun proposalCommentIndexer(
         thorClient: ThorClient,
         processor: ProposalCommentProcessor,
-        @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.b3tr-proposal}") startBlock: Long,
         @Value("\${indexer.sync-block-batch-size.b3tr}") syncBlockBatchSize: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,

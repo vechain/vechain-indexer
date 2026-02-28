@@ -1,11 +1,11 @@
 package org.vechain.indexer.nft
 
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 
@@ -13,14 +13,14 @@ import org.vechain.indexer.config.metrics.ProcessorMetrics
 @Component
 open class NftProcessor(
     private val nftService: NftService,
-    nftArchiveService: ArchiveService<IndexedNft, NftArchive>,
+    mongoTemplate: MongoTemplate,
     repository: NftRepository,
     checkpointService: CheckpointService,
     processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = repository,
-        archiveService = nftArchiveService,
+        mongoTemplate = mongoTemplate,
         indexerName = IndexerNames.NFT.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.NFT.COLLECTION,

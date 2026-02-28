@@ -4,17 +4,16 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
-import org.vechain.indexer.validator.Validator
-import org.vechain.indexer.validator.ValidatorArchive
 import org.vechain.indexer.validator.ValidatorConfig
 import org.vechain.indexer.validator.ValidatorProcessor
 import org.vechain.indexer.validator.ValidatorRepository
@@ -26,7 +25,8 @@ class ValidatorProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var validatorRepository: ValidatorRepository
     @Autowired lateinit var validatorService: ValidatorService
-    @Autowired lateinit var archiveService: ArchiveService<Validator, ValidatorArchive>
+    @Autowired lateinit var inlineVersioningProperties: InlineVersioningProperties
+    @Autowired lateinit var mongoTemplate: MongoTemplate
     @Autowired lateinit var checkpointService: CheckpointService
     @Autowired lateinit var processorMetrics: ProcessorMetrics
 
@@ -82,7 +82,8 @@ class ValidatorProcessorPerformanceTest : BasePerformanceTest() {
             if (profiler != null) {
                 ProfiledValidatorService(
                     repository = validatorRepository,
-                    archiveService = archiveService,
+                    mongoTemplate = mongoTemplate,
+                    inlineVersioningProperties = inlineVersioningProperties,
                     thorClient = thorClient,
                     statsStartThreshold = 25L, // Same as validatorStatsThresholdBlocks
                     stakerSC = builtinStakerAddress,
@@ -96,8 +97,8 @@ class ValidatorProcessorPerformanceTest : BasePerformanceTest() {
             if (profiler != null) {
                 ProfiledValidatorProcessor(
                     repository = validatorRepository,
+                    mongoTemplate = mongoTemplate,
                     service = serviceToUse,
-                    archiveService = archiveService,
                     profiler = profiler,
                     checkpointService = checkpointService,
                     processorMetrics = processorMetrics,
@@ -105,9 +106,9 @@ class ValidatorProcessorPerformanceTest : BasePerformanceTest() {
             } else {
                 ValidatorProcessor(
                     repository = validatorRepository,
-                    service = serviceToUse,
-                    archiveService = archiveService,
+                    mongoTemplate = mongoTemplate,
                     checkpointService = checkpointService,
+                    service = serviceToUse,
                     processorMetrics = processorMetrics,
                 )
             }
@@ -128,17 +129,17 @@ class ValidatorProcessorPerformanceTest : BasePerformanceTest() {
     /** Profiled wrapper for ValidatorProcessor */
     private class ProfiledValidatorProcessor(
         repository: ValidatorRepository,
+        mongoTemplate: MongoTemplate,
         service: ValidatorService,
-        archiveService: ArchiveService<Validator, ValidatorArchive>,
         private val profiler: DetailedProfiler,
         checkpointService: CheckpointService,
         processorMetrics: ProcessorMetrics,
     ) :
         ValidatorProcessor(
             repository = repository,
-            service = service,
-            archiveService = archiveService,
+            mongoTemplate = mongoTemplate,
             checkpointService = checkpointService,
+            service = service,
             processorMetrics = processorMetrics,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {
