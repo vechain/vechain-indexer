@@ -1,0 +1,33 @@
+name: Validate Datadog Categories
+
+on:
+  pull_request:
+    paths:
+      - "packages/api/src/main/kotlin/**"
+      - "metrics/datadog/pipeline.json"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: pip install -r metrics/datadog/scripts/requirements.txt
+
+      - name: Generate OpenAPI spec
+        run: ./gradlew :packages:api:generateOpenApiSpec
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate categories match API endpoints
+        run: python metrics/datadog/scripts/manage_pipeline.py validate-categories

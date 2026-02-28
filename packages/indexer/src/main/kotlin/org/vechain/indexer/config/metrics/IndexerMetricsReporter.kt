@@ -89,7 +89,7 @@ class IndexerMetricsReporter(
         metrics.setIndexerCurrentBlockByStatus(indexer.name, currentBlockNumber, status)
 
         if (bestBlockNumber != null) {
-            metrics.setIndexerSyncGap(indexer.name, bestBlockNumber - currentBlockNumber)
+            metrics.setIndexerSyncGap(indexer.name, maxOf(0L, bestBlockNumber - currentBlockNumber))
         }
 
         val isProcessing =

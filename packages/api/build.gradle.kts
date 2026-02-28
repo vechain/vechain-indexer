@@ -17,6 +17,8 @@ dependencies {
     // Caffeine cache
     implementation("org.springframework.boot:spring-boot-starter-cache:3.4.5")
     implementation("com.github.ben-manes.caffeine:caffeine:3.1.7")
+
+    testImplementation("de.flapdoodle.embed:de.flapdoodle.embed.mongo.spring3x:4.23.0")
 }
 
 tasks.getByName<BootJar>("bootJar") {
@@ -25,4 +27,17 @@ tasks.getByName<BootJar>("bootJar") {
 
 tasks.getByName<Jar>("jar") {
     enabled = false
+}
+
+// Exclude the openapi generation test from the normal test task
+tasks.test {
+    useJUnitPlatform { excludeTags("openapi") }
+}
+
+tasks.register<Test>("generateOpenApiSpec") {
+    description = "Boot the API with embedded MongoDB and export the OpenAPI spec"
+    group = "documentation"
+    useJUnitPlatform { includeTags("openapi") }
+    testLogging.showStandardStreams = true
+    systemProperty("openapi.output.path", rootProject.file("metrics/datadog/api-docs.json").absolutePath)
 }

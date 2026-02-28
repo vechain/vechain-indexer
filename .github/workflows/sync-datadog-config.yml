@@ -1,0 +1,71 @@
+name: Sync Datadog Config
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: pip install -r metrics/datadog/scripts/requirements.txt
+
+      - name: Push dashboard to Datadog
+        if: github.event_name == 'release'
+        env:
+          DD_API_KEY: ${{ secrets.DD_API_KEY }}
+          DD_APP_KEY: ${{ secrets.DD_APP_KEY }}
+          DD_SITE: ${{ secrets.DD_SITE }}
+        run: python metrics/datadog/scripts/manage_pipeline.py push-dashboard
+
+      - name: Fetch pipeline config
+        env:
+          DD_API_KEY: ${{ secrets.DD_API_KEY }}
+          DD_APP_KEY: ${{ secrets.DD_APP_KEY }}
+          DD_SITE: ${{ secrets.DD_SITE }}
+        run: python metrics/datadog/scripts/manage_pipeline.py get
+
+      - name: Fetch dashboard config
+        env:
+          DD_API_KEY: ${{ secrets.DD_API_KEY }}
+          DD_APP_KEY: ${{ secrets.DD_APP_KEY }}
+          DD_SITE: ${{ secrets.DD_SITE }}
+        run: python metrics/datadog/scripts/manage_pipeline.py get-dashboard
+
+      - name: Format JSON
+        run: |
+          for f in metrics/datadog/pipeline.json metrics/datadog/dashboard.json; do
+            if [ -f "$f" ]; then
+              jq '.' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+            fi
+          done
+
+      - name: Commit and push if changed
+        run: |
+          if git diff --quiet metrics/datadog/*.json; then
+            echo "No changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add metrics/datadog/pipeline.json metrics/datadog/dashboard.json
+          git commit -m "chore: sync Datadog pipeline and dashboard configs"
+          git push

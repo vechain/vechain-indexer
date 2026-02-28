@@ -1,0 +1,5 @@
+{
+  "pipeline_name": "AWS ELB Access Veworld",
+  "dashboard_title": "Vechain Indexer Dashboard",
+  "category_processor_name": "Categorize endpoint group"
+}
