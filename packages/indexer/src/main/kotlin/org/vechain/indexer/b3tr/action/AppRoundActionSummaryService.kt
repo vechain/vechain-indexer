@@ -46,8 +46,35 @@ open class AppRoundActionSummaryService(
             "EmissionDistributedV2",
         )
 
+        // Pre-collect all record IDs by simulating round discovery
+        val allRecordIds = mutableSetOf<String>()
+        var preloadRoundId = roundId
+        groupByBlock(events).forEach { (_, blockEvents) ->
+            val roundChangeEvents =
+                blockEvents.filter {
+                    it.eventType == "EmissionDistributed" || it.eventType == "EmissionDistributedV2"
+                }
+            val rewardDistributedEvents = blockEvents.filter { it.eventType == "B3TR_ActionReward" }
+            preloadRoundId = discoverRoundId(roundChangeEvents, preloadRoundId)
+            if (rewardDistributedEvents.isNotEmpty()) {
+                groupByAppId(rewardDistributedEvents).forEach { (appId, appEvents) ->
+                    groupByReceiver(appEvents).forEach { (receiverId, _) ->
+                        allRecordIds.add(generateId(appId, receiverId, "$preloadRoundId"))
+                    }
+                }
+            }
+        }
+        val preloaded =
+            if (allRecordIds.isNotEmpty()) {
+                repository.findAllById(allRecordIds).associateBy { it.getDocumentId() }
+            } else {
+                emptyMap()
+            }
+
         val accumulator =
-            VersionedDocumentAccumulator<AppRoundActionSummary>(repository::findByIdOrNull)
+            VersionedDocumentAccumulator<AppRoundActionSummary>(
+                findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) }
+            )
         var updatedRoundId = roundId
 
         groupByBlock(events).forEach { (blockDetails, blockEvents) ->

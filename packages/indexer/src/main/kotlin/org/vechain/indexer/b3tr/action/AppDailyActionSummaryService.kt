@@ -40,8 +40,27 @@ open class AppDailyActionSummaryService(
     ): Pair<List<AppDailyActionSummary>, List<AppDailyActionSummary>> {
         assertEventTypes(events, "B3TR_ActionReward")
 
+        // Pre-collect all record IDs and batch-load from DB
+        val allRecordIds = mutableSetOf<String>()
+        groupByBlock(events).forEach { (blockDetails, blockEvents) ->
+            val date = BlockUtils.getDateAtUTC(blockDetails.blockTimestamp)
+            groupByAppId(blockEvents).forEach { (appId, appEvents) ->
+                groupByReceiver(appEvents).forEach { (receiverId, _) ->
+                    allRecordIds.add(generateId(appId, receiverId, date))
+                }
+            }
+        }
+        val preloaded =
+            if (allRecordIds.isNotEmpty()) {
+                repository.findAllById(allRecordIds).associateBy { it.getDocumentId() }
+            } else {
+                emptyMap()
+            }
+
         val accumulator =
-            VersionedDocumentAccumulator<AppDailyActionSummary>(repository::findByIdOrNull)
+            VersionedDocumentAccumulator<AppDailyActionSummary>(
+                findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) }
+            )
 
         groupByBlock(events).forEach { (blockDetails, blockEvents) ->
             accumulator.startBlock()

@@ -78,6 +78,7 @@ internal class UserRoundActionSummaryServiceTest {
         MockKAnnotations.init(this)
         every { inlineVersioningProperties.blockWindow } returns 10000L
         every { inlineVersioningProperties.maxVersions } returns 100
+        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
         every { mongoTemplate.getCollectionName(any<Class<*>>()) } returns "test_collection"
         every { mongoTemplate.getCollection(any()) } returns mongoCollection
         every { mongoTemplate.converter } returns converter

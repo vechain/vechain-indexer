@@ -78,6 +78,7 @@ internal class AppRoundActionSummaryServiceTest {
         every { inlineVersioningProperties.maxVersions } returns 100
         every { mongoTemplate.getCollectionName(any<Class<*>>()) } returns "test_collection"
         every { mongoTemplate.getCollection(any()) } returns mongoCollection
+        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
         every { mongoTemplate.converter } returns converter
         service = TestableService(repository, mongoTemplate, inlineVersioningProperties)
     }

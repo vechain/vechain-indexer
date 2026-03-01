@@ -54,6 +54,10 @@ open class StargateTokenCollectionConfig(
                     Index()
                         .on(StargateToken::delegationNextPeriod.name, Sort.Direction.ASC)
                         .on(StargateToken::delegationStatus.name, Sort.Direction.ASC),
+                "validatorId_1_blockNumber_1" to
+                    Index()
+                        .on(StargateToken::validatorId.name, Sort.Direction.ASC)
+                        .on(StargateToken::blockNumber.name, Sort.Direction.ASC),
             )
         )
     }

@@ -853,10 +853,47 @@
                       "name": "events",
                       "query": "sum:processor_events_counter{indexer-id:$host.value} by {indexer_name}",
                       "aggregator": "sum"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "status",
+                      "query": "max:indexer_sync_status_code_gauge{indexer-id:$host.value} by {indexer_name}",
+                      "aggregator": "last"
                     }
                   ],
                   "response_format": "scalar",
                   "formulas": [
+                    {
+                      "alias": "Sync Status",
+                      "formula": "status",
+                      "conditional_formats": [
+                        {
+                          "comparator": ">=",
+                          "value": 5,
+                          "palette": "white_on_red"
+                        },
+                        {
+                          "comparator": ">=",
+                          "value": 4,
+                          "palette": "white_on_yellow"
+                        },
+                        {
+                          "comparator": ">=",
+                          "value": 2,
+                          "palette": "white_on_green"
+                        },
+                        {
+                          "comparator": ">=",
+                          "value": 1,
+                          "palette": "white_on_yellow"
+                        },
+                        {
+                          "comparator": "<=",
+                          "value": 0,
+                          "palette": "white_on_red"
+                        }
+                      ]
+                    },
                     {
                       "alias": "Sync Gap",
                       "formula": "gap",
