@@ -38,8 +38,29 @@ open class UserDailyActionSummaryService(
         events: List<IndexedEvent>
     ): Pair<List<UserDailyActionSummary>, List<UserDailyActionSummary>> {
 
+        // Pre-collect all record IDs and batch-load from DB
+        val allRecordIds = mutableSetOf<String>()
+        groupByBlock(events).forEach { (blockDetails, blockEvents) ->
+            val date = BlockUtils.getDateAtUTC(blockDetails.blockTimestamp)
+            groupByReceiver(blockEvents).forEach { (userId, _) ->
+                allRecordIds.add(generateId(userId, date))
+            }
+            groupByAppId(blockEvents).forEach { (appId, _) ->
+                allRecordIds.add(generateId(appId, date))
+            }
+            allRecordIds.add(generateId(EntityType.GLOBAL.name, date))
+        }
+        val preloaded =
+            if (allRecordIds.isNotEmpty()) {
+                repository.findAllById(allRecordIds).associateBy { it.getDocumentId() }
+            } else {
+                emptyMap()
+            }
+
         val accumulator =
-            VersionedDocumentAccumulator<UserDailyActionSummary>(repository::findByIdOrNull)
+            VersionedDocumentAccumulator<UserDailyActionSummary>(
+                findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) }
+            )
 
         groupByBlock(events).forEach { (blockDetails, blockEvents) ->
             accumulator.startBlock()

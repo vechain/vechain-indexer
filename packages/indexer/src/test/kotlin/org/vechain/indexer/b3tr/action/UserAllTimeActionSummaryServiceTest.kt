@@ -70,6 +70,7 @@ internal class UserAllTimeActionSummaryServiceTest {
         every { mongoTemplate.getCollectionName(any<Class<*>>()) } returns "test_collection"
         every { mongoTemplate.getCollection(any()) } returns mongoCollection
         every { mongoTemplate.converter } returns converter
+        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
         service = TestableService(repository, mongoTemplate, inlineVersioningProperties)
     }
 
