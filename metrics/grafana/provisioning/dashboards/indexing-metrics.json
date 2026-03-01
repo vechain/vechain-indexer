@@ -632,35 +632,35 @@
       "pluginVersion": "12.3.0",
       "targets": [
         {
-          "expr": "indexer_sync_status_code_gauge{indexer_name=~\"$indexer\"}",
+          "expr": "max by(indexer_name) (indexer_sync_status_code_gauge{indexer_name=~\"$indexer\"}) and on(indexer_name) (max by(indexer_name) (indexer_sync_status_gauge{status_readable=~\"$sync_status\"} == 1))",
           "format": "table",
           "instant": true,
           "legendFormat": "__auto",
           "refId": "A"
         },
         {
-          "expr": "indexer_sync_gap_gauge{indexer_name=~\"$indexer\"}",
+          "expr": "indexer_sync_gap_gauge{indexer_name=~\"$indexer\"} and on(indexer_name) (max by(indexer_name) (indexer_sync_status_gauge{status_readable=~\"$sync_status\"} == 1))",
           "format": "table",
           "instant": true,
           "legendFormat": "__auto",
           "refId": "B"
         },
         {
-          "expr": "indexer_estimated_time_to_sync_seconds{indexer_name=~\"$indexer\"}",
+          "expr": "indexer_estimated_time_to_sync_seconds{indexer_name=~\"$indexer\"} and on(indexer_name) (max by(indexer_name) (indexer_sync_status_gauge{status_readable=~\"$sync_status\"} == 1))",
           "format": "table",
           "instant": true,
           "legendFormat": "__auto",
           "refId": "C"
         },
         {
-          "expr": "1000 * sum by(indexer_name) (increase(processor_duration_seconds_sum{indexer_name=~\"$indexer\"}[$__range])) / sum by(indexer_name) (increase(indexer_blocks_processed_total{indexer_name=~\"$indexer\"}[$__range])) and sum by(indexer_name) (increase(indexer_blocks_processed_total{indexer_name=~\"$indexer\"}[$__range])) > 0",
+          "expr": "1000 * sum by(indexer_name) (increase(processor_duration_seconds_sum{indexer_name=~\"$indexer\"}[$__range])) / sum by(indexer_name) (increase(indexer_blocks_processed_total{indexer_name=~\"$indexer\"}[$__range])) and sum by(indexer_name) (increase(indexer_blocks_processed_total{indexer_name=~\"$indexer\"}[$__range])) > 0 and on(indexer_name) (max by(indexer_name) (indexer_sync_status_gauge{status_readable=~\"$sync_status\"} == 1))",
           "format": "table",
           "instant": true,
           "legendFormat": "__auto",
           "refId": "D"
         },
         {
-          "expr": "sum by(indexer_name) (increase(processor_events_counter_total{indexer_name=~\"$indexer\"}[$__range]))",
+          "expr": "sum by(indexer_name) (increase(processor_events_counter_total{indexer_name=~\"$indexer\"}[$__range])) and on(indexer_name) (max by(indexer_name) (indexer_sync_status_gauge{status_readable=~\"$sync_status\"} == 1))",
           "format": "table",
           "instant": true,
           "legendFormat": "__auto",
@@ -1244,6 +1244,35 @@
         "query": {
           "qryType": 1,
           "query": "label_values(indexer_sync_status_code_gauge,indexer_name)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(indexer_sync_status_gauge,status_readable)",
+        "includeAll": true,
+        "label": "Sync Status",
+        "multi": true,
+        "name": "sync_status",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(indexer_sync_status_gauge,status_readable)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 2,

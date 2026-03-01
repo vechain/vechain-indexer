@@ -16,8 +16,13 @@ abstract class BaseProcessor(
 ) : IndexerProcessor {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
+    private var lastProcessedBlock: Long = -1L
 
     abstract suspend fun processEntry(entry: IndexingResult)
+
+    protected fun resetProcessingState() {
+        lastProcessedBlock = -1L
+    }
 
     override suspend fun process(entry: IndexingResult) {
         val start = TimeSource.Monotonic.markNow()
@@ -25,7 +30,25 @@ abstract class BaseProcessor(
             processEntry(entry)
             processorMetrics.incrementEventsCounter(indexerName, entry.events().size.toDouble())
         } finally {
-            processorMetrics.observeProcessingDuration(indexerName, start.elapsedNow())
+            val duration = start.elapsedNow()
+            val currentBlock = entry.latestBlockNumber()
+            val blocksInEntry =
+                when (entry) {
+                    is IndexingResult.Normal -> 1
+                    is IndexingResult.EventsOnly -> {
+                        if (lastProcessedBlock >= 0 && currentBlock > lastProcessedBlock) {
+                            (currentBlock - lastProcessedBlock).toInt()
+                        } else {
+                            1
+                        }
+                    }
+                }
+            lastProcessedBlock = currentBlock
+
+            val perBlockDuration = duration / blocksInEntry
+            repeat(blocksInEntry) {
+                processorMetrics.observeProcessingDuration(indexerName, perBlockDuration)
+            }
         }
     }
 
@@ -50,6 +73,7 @@ abstract class BaseProcessor(
 
     @Transactional(rollbackFor = [Exception::class])
     override fun rollback(blockNumber: Long) {
+        resetProcessingState()
         checkpointService.saveCheckpoint(collectionName, blockNumber - 1)
         repository.deleteAllByBlockNumberGreaterThanEqual(blockNumber)
     }

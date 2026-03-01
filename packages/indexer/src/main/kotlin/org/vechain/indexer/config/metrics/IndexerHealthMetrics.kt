@@ -101,19 +101,27 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
     }
 
     private fun setIndexerSyncStatusCode(indexerName: String, syncStatus: Status) {
-        syncStatusCodeGauges
-            .computeIfAbsent(indexerName) { name ->
-                val ref = AtomicReference(-1.0)
-                registry.gauge(
-                    "indexer_sync_status_code_gauge",
-                    listOf(Tag.of("indexer_name", name)),
-                    ref,
-                ) {
-                    it.get()
+        Status.entries.forEach { status ->
+            val key = "$indexerName:${status.name}"
+            val statusReadable = status.name.toReadableEnumLabel()
+            syncStatusCodeGauges
+                .computeIfAbsent(key) {
+                    val ref = AtomicReference(Double.NaN)
+                    registry.gauge(
+                        "indexer_sync_status_code_gauge",
+                        listOf(
+                            Tag.of("indexer_name", indexerName),
+                            Tag.of("status", status.name),
+                            Tag.of("status_readable", statusReadable),
+                        ),
+                        ref,
+                    ) {
+                        it.get()
+                    }
+                    ref
                 }
-                ref
-            }
-            .set(syncStatus.toStatusCode())
+                .set(if (status == syncStatus) syncStatus.toStatusCode() else Double.NaN)
+        }
     }
 
     private fun Status.toStatusCode(): Double =
