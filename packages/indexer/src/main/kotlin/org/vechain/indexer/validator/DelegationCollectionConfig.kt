@@ -59,6 +59,10 @@ open class DelegationCollectionConfig(
                         .on(Delegation::status.name, Sort.Direction.ASC)
                         .on(Delegation::tokenLevel.name, Sort.Direction.ASC)
                         .on(Delegation::stakedAmount.name, Sort.Direction.ASC),
+                "notify_1_blockNumber_1" to
+                    Index()
+                        .on(Delegation::notify.name, Sort.Direction.ASC)
+                        .on(Delegation::blockNumber.name, Sort.Direction.ASC),
             )
         )
     }
