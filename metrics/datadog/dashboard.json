@@ -859,19 +859,13 @@
                       "name": "status",
                       "query": "max:indexer_sync_status_code_gauge{indexer-id:$host.value} by {indexer_name,status_readable}",
                       "aggregator": "last"
-                    },
-                    {
-                      "data_source": "metrics",
-                      "name": "filter_status",
-                      "query": "max:indexer_sync_status_gauge{indexer-id:$host.value,status_readable:$sync_status.value} by {indexer_name,status_readable}",
-                      "aggregator": "last"
                     }
                   ],
                   "response_format": "scalar",
                   "formulas": [
                     {
                       "alias": "Sync Status",
-                      "formula": "status * (filter_status / filter_status)",
+                      "formula": "status",
                       "conditional_formats": [
                         {
                           "comparator": ">=",
@@ -907,7 +901,7 @@
                     },
                     {
                       "alias": "Sync Gap",
-                      "formula": "gap * (filter_status / filter_status)",
+                      "formula": "gap * (status / status)",
                       "conditional_formats": [
                         {
                           "comparator": "<",
@@ -928,7 +922,7 @@
                     },
                     {
                       "alias": "Est. Time to Sync",
-                      "formula": "eta * (filter_status / filter_status)",
+                      "formula": "eta * (status / status)",
                       "conditional_formats": [
                         {
                           "comparator": "<=",
@@ -955,7 +949,7 @@
                     },
                     {
                       "alias": "Avg Block Time (ms)",
-                      "formula": "avg_time * (filter_status / filter_status)",
+                      "formula": "avg_time * (status / status)",
                       "conditional_formats": [
                         {
                           "comparator": ">",
@@ -976,7 +970,7 @@
                     },
                     {
                       "alias": "Events",
-                      "formula": "events * (filter_status / filter_status)"
+                      "formula": "events * (status / status)"
                     }
                   ],
                   "sort": {
@@ -5925,12 +5919,6 @@
         "prod-green-test*"
       ],
       "default": "prod-blue-main*"
-    },
-    {
-      "name": "sync_status",
-      "prefix": "status_readable",
-      "available_values": [],
-      "default": "*"
     }
   ],
   "layout_type": "ordered",
