@@ -16,6 +16,7 @@ abstract class BaseProcessor(
 ) : IndexerProcessor {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
+    private var lastProcessedBlock: Long = -1L
 
     abstract suspend fun processEntry(entry: IndexingResult)
 
@@ -25,7 +26,20 @@ abstract class BaseProcessor(
             processEntry(entry)
             processorMetrics.incrementEventsCounter(indexerName, entry.events().size.toDouble())
         } finally {
-            processorMetrics.observeProcessingDuration(indexerName, start.elapsedNow())
+            val duration = start.elapsedNow()
+            val currentBlock = entry.latestBlockNumber()
+            val blocksInEntry =
+                if (lastProcessedBlock >= 0 && currentBlock > lastProcessedBlock) {
+                    (currentBlock - lastProcessedBlock).toInt()
+                } else {
+                    1
+                }
+            lastProcessedBlock = currentBlock
+
+            val perBlockDuration = duration / blocksInEntry
+            repeat(blocksInEntry) {
+                processorMetrics.observeProcessingDuration(indexerName, perBlockDuration)
+            }
         }
     }
 
