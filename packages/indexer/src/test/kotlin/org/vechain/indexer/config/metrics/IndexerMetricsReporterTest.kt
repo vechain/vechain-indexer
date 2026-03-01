@@ -58,7 +58,7 @@ class IndexerMetricsReporterTest {
     }
 
     @Test
-    fun `first tick does not set estimated time to sync`() {
+    fun `first tick sets estimated time to sync to NaN when blocksPerSecond is unknown`() {
         val indexer = createBlockIndexer("test-indexer", 100L)
         stubBestBlock(1000L)
 
@@ -66,7 +66,8 @@ class IndexerMetricsReporterTest {
             IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
         reporter.reportMetrics()
 
-        verify(exactly = 0) { metrics.setEstimatedTimeToSync(any(), any()) }
+        verify { metrics.setEstimatedTimeToSync("test-indexer", match { it.isNaN() }) }
+        verify(exactly = 0) { metrics.setEstimatedTimeToSync(any(), match { !it.isNaN() }) }
     }
 
     @Test
@@ -85,7 +86,7 @@ class IndexerMetricsReporterTest {
     }
 
     @Test
-    fun `no block progress does not update estimated time to sync`() {
+    fun `no block progress keeps estimated time to sync as NaN`() {
         val indexer = createBlockIndexer("test-indexer", 100L)
         stubBestBlock(1000L)
 
@@ -96,7 +97,7 @@ class IndexerMetricsReporterTest {
         // Block number stays the same on second tick
         reporter.reportMetrics()
 
-        verify(exactly = 0) { metrics.setEstimatedTimeToSync(any(), any()) }
+        verify(exactly = 0) { metrics.setEstimatedTimeToSync(any(), match { !it.isNaN() }) }
     }
 
     @Test
@@ -205,7 +206,8 @@ class IndexerMetricsReporterTest {
         reporter.reportMetrics()
         reporter.reportMetrics()
 
-        verify(exactly = 2) { metrics.setBlocksPerSecond("test-indexer", 0.0) }
+        // 3 calls: 1 from gauge init + 2 from report ticks
+        verify(exactly = 3) { metrics.setBlocksPerSecond("test-indexer", 0.0) }
     }
 
     @Test
@@ -222,7 +224,8 @@ class IndexerMetricsReporterTest {
         reporter.reportMetrics()
 
         verify(exactly = 0) { metrics.incrementBlocksProcessed(any(), any()) }
-        verify(exactly = 2) { metrics.setBlocksPerSecond("test-indexer", 0.0) }
+        // 3 calls: 1 from gauge init + 2 from report ticks
+        verify(exactly = 3) { metrics.setBlocksPerSecond("test-indexer", 0.0) }
     }
 
     @Test
@@ -259,7 +262,8 @@ class IndexerMetricsReporterTest {
 
         // Should not spike: first processing tick has no previous processing-state data
         verify(exactly = 0) { metrics.incrementBlocksProcessed(any(), any()) }
-        verify(exactly = 2) { metrics.setBlocksPerSecond("test-indexer", 0.0) }
+        // 3 calls: 1 from gauge init + 1 from INITIALISED tick + 1 from first SYNCING tick
+        verify(exactly = 3) { metrics.setBlocksPerSecond("test-indexer", 0.0) }
     }
 
     @Test
