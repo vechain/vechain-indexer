@@ -111,6 +111,7 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
                         "indexer_sync_status_code_gauge",
                         listOf(
                             Tag.of("indexer_name", indexerName),
+                            Tag.of("status", status.name),
                             Tag.of("status_readable", statusReadable),
                         ),
                         ref,
