@@ -211,6 +211,17 @@
                 }
               },
               "type": "value"
+            },
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "orange",
+                  "index": 8,
+                  "text": "Unknown"
+                }
+              },
+              "type": "special"
             }
           ],
           "thresholds": {
@@ -431,6 +442,17 @@
                       }
                     },
                     "type": "value"
+                  },
+                  {
+                    "options": {
+                      "match": "null+nan",
+                      "result": {
+                        "color": "orange",
+                        "index": 8,
+                        "text": "Unknown"
+                      }
+                    },
+                    "type": "special"
                   }
                 ]
               },
@@ -648,8 +670,11 @@
       "title": "Indexer Overview",
       "transformations": [
         {
-          "id": "merge",
-          "options": {}
+          "id": "joinByField",
+          "options": {
+            "byField": "indexer_name",
+            "mode": "outer"
+          }
         },
         {
           "id": "organize",
