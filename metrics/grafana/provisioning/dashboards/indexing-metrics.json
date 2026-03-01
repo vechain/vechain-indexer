@@ -632,7 +632,7 @@
       "pluginVersion": "12.3.0",
       "targets": [
         {
-          "expr": "indexer_sync_status_code_gauge{indexer_name=~\"$indexer\"}",
+          "expr": "max by(indexer_name) (indexer_sync_status_code_gauge{indexer_name=~\"$indexer\"})",
           "format": "table",
           "instant": true,
           "legendFormat": "__auto",
