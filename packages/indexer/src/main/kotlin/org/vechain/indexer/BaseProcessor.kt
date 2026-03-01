@@ -20,6 +20,10 @@ abstract class BaseProcessor(
 
     abstract suspend fun processEntry(entry: IndexingResult)
 
+    protected fun resetProcessingState() {
+        lastProcessedBlock = -1L
+    }
+
     override suspend fun process(entry: IndexingResult) {
         val start = TimeSource.Monotonic.markNow()
         try {
@@ -29,10 +33,15 @@ abstract class BaseProcessor(
             val duration = start.elapsedNow()
             val currentBlock = entry.latestBlockNumber()
             val blocksInEntry =
-                if (lastProcessedBlock >= 0 && currentBlock > lastProcessedBlock) {
-                    (currentBlock - lastProcessedBlock).toInt()
-                } else {
-                    1
+                when (entry) {
+                    is IndexingResult.Normal -> 1
+                    is IndexingResult.EventsOnly -> {
+                        if (lastProcessedBlock >= 0 && currentBlock > lastProcessedBlock) {
+                            (currentBlock - lastProcessedBlock).toInt()
+                        } else {
+                            1
+                        }
+                    }
                 }
             lastProcessedBlock = currentBlock
 
@@ -64,6 +73,7 @@ abstract class BaseProcessor(
 
     @Transactional(rollbackFor = [Exception::class])
     override fun rollback(blockNumber: Long) {
+        resetProcessingState()
         checkpointService.saveCheckpoint(collectionName, blockNumber - 1)
         repository.deleteAllByBlockNumberGreaterThanEqual(blockNumber)
     }

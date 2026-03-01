@@ -4,8 +4,8 @@ import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.TimeUnit
 import kotlin.time.Duration
+import kotlin.time.toJavaDuration
 import org.springframework.stereotype.Component
 import org.vechain.indexer.config.DefaultMetrics
 
@@ -23,7 +23,7 @@ class ProcessorMetrics(private val registry: MeterRegistry) {
                     .tag("indexer_name", indexerName)
                     .register(registry)
             }
-            .record(duration.inWholeMilliseconds, TimeUnit.MILLISECONDS)
+            .record(duration.toJavaDuration())
     }
 
     fun incrementEventsCounter(indexerName: String, count: Double) {

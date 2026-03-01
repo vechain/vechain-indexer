@@ -15,6 +15,7 @@ abstract class BaseStatefulProcessor(
 ) : BaseProcessor(repository, indexerName, checkpointService, collectionName, processorMetrics) {
     @Transactional(rollbackFor = [Exception::class])
     override fun rollback(blockNumber: Long) {
+        resetProcessingState()
         checkpointService.saveCheckpoint(collectionName, blockNumber - 1)
         InlineVersionService.rollback(collectionName, blockNumber, mongoTemplate)
     }

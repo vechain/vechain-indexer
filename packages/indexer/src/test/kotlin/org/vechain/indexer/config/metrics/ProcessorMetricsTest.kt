@@ -1,6 +1,8 @@
 package org.vechain.indexer.config.metrics
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.microseconds
 import kotlin.time.Duration.Companion.milliseconds
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -25,6 +27,17 @@ class ProcessorMetricsTest {
 
         assertThat(timer).isNotNull
         assertThat(timer!!.count()).isEqualTo(1)
+    }
+
+    @Test
+    fun `observeProcessingDuration preserves sub-millisecond precision`() {
+        metrics.observeProcessingDuration("test-indexer", 500.microseconds)
+
+        val timer = registry.find("processor_duration").tag("indexer_name", "test-indexer").timer()
+
+        assertThat(timer).isNotNull
+        assertThat(timer!!.count()).isEqualTo(1)
+        assertThat(timer.totalTime(TimeUnit.MICROSECONDS)).isEqualTo(500.0)
     }
 
     @Test
