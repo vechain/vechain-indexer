@@ -670,8 +670,11 @@
       "title": "Indexer Overview",
       "transformations": [
         {
-          "id": "merge",
-          "options": {}
+          "id": "joinByField",
+          "options": {
+            "byField": "indexer_name",
+            "mode": "outer"
+          }
         },
         {
           "id": "organize",
