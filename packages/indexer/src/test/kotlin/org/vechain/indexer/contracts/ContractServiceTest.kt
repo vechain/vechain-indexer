@@ -78,6 +78,7 @@ internal class ContractServiceTest {
         service = TestableService(repository, inlineVersioningProperties, mongoTemplate, thorClient)
         every { inlineVersioningProperties.blockWindow } returns 10000L
         every { inlineVersioningProperties.maxVersions } returns 100
+        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
     }
 
     private fun blockDetails(

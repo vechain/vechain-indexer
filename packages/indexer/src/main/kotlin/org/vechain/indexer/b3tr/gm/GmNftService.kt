@@ -13,6 +13,7 @@ import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.EventUtils.groupByBlock
+import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Profile("b3tr", "b3tr-gm-nft")
 @Service
@@ -35,7 +36,24 @@ open class GmNftService(
     open fun processEvents(events: List<IndexedEvent>): Pair<List<GmNft>, List<GmNft>> {
         if (events.isEmpty()) return emptyList<GmNft>() to emptyList()
 
-        val accumulator = VersionedDocumentAccumulator<GmNft>(repository::findByIdOrNull)
+        // Pre-collect all token IDs and batch-load from DB
+        val allTokenIds =
+            events
+                .mapNotNull {
+                    it.params.getAsString("tokenId")?.lowercase(java.util.Locale.getDefault())
+                }
+                .toSet()
+        val preloaded =
+            if (allTokenIds.isNotEmpty()) {
+                repository.findAllById(allTokenIds).associateBy { it.getDocumentId() }
+            } else {
+                emptyMap()
+            }
+
+        val accumulator =
+            VersionedDocumentAccumulator<GmNft>(
+                findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) }
+            )
 
         groupByBlock(events).forEach { (_, blockEvents) ->
             accumulator.startBlock()

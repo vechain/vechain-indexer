@@ -36,8 +36,25 @@ open class ContractService(
     ): Pair<List<Contract>, List<Contract>> {
         assertEventTypes(events, "\$Master")
 
+        // Pre-collect all record IDs and batch-load from DB
+        val allRecordIds = mutableSetOf<String>()
+        groupByBlock(events).forEach { (blockDetails, blockEvents) ->
+            groupByContractAddress(blockEvents).forEach { (contractAddress, _) ->
+                allRecordIds.add(generateId(blockDetails.blockId, contractAddress))
+            }
+        }
+        val preloaded =
+            if (allRecordIds.isNotEmpty()) {
+                repository.findAllById(allRecordIds).associateBy { it.getDocumentId() }
+            } else {
+                emptyMap()
+            }
+
         val accumulator =
-            VersionedDocumentAccumulator<Contract>(repository::findByIdOrNull, initialVersion = 0)
+            VersionedDocumentAccumulator<Contract>(
+                findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) },
+                initialVersion = 0,
+            )
         groupByBlock(events).forEach { (blockDetails, blockEvents) ->
             accumulator.startBlock()
             groupByContractAddress(blockEvents).forEach { (contractAddress, contractEvents) ->

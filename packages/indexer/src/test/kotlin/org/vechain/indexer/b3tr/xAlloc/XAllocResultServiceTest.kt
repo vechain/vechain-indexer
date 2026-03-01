@@ -118,6 +118,7 @@ internal class XAllocResultServiceTest {
         MockKAnnotations.init(this)
         every { inlineVersioningProperties.blockWindow } returns 10000L
         every { inlineVersioningProperties.maxVersions } returns 100
+        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
 
         val bestBlock = mockk<BlockUnexpanded> { every { id } returns blockId(999) }
         coEvery { thorClient.getBlockUnexpanded(BlockRevision.Keyword.BEST) } returns bestBlock

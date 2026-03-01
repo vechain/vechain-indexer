@@ -44,9 +44,22 @@ open class B3trBalanceService(
         val transfers = filterB3trAndVot3Transfers(events)
         if (transfers.isEmpty()) return emptyList<B3trBalance>() to emptyList()
 
+        // Pre-collect all addresses and batch-load from DB
+        val allAddresses = mutableSetOf<String>()
+        transfers.forEach { event ->
+            event.params.getAsString("from")?.let { allAddresses.add(it) }
+            event.params.getAsString("to")?.let { allAddresses.add(it) }
+        }
+        val preloaded =
+            if (allAddresses.isNotEmpty()) {
+                repository.findAllById(allAddresses).associateBy { it.getDocumentId() }
+            } else {
+                emptyMap()
+            }
+
         val accumulator =
             VersionedDocumentAccumulator<B3trBalance>(
-                repository::findByIdOrNull,
+                findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) },
                 initialVersion = 1,
             )
         accumulator.startBlock()

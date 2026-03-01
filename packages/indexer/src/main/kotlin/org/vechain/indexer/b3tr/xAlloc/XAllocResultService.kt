@@ -65,7 +65,36 @@ open class XAllocResultService(
     open suspend fun processEvents(
         events: List<IndexedEvent>
     ): Pair<List<XAllocResult>, List<XAllocResult>> {
-        val accumulator = VersionedDocumentAccumulator<XAllocResult>(repository::findByIdOrNull)
+        // Pre-collect all record IDs and batch-load from DB
+        val allRecordIds = mutableSetOf<String>()
+        groupByBlock(events).forEach { (_, blockEvents) ->
+            groupByRoundId(blockEvents).forEach { (roundId, roundEvents) ->
+                val appIds = mutableSetOf<String>()
+                roundEvents
+                    .filter { it.eventType == "B3TR_XAllocationVote" }
+                    .forEach { event ->
+                        XAllocEventUtils.getAppIds(event).forEach { appIds.add(it) }
+                    }
+                roundEvents
+                    .filter {
+                        it.eventType == "B3TR_XAllocationRewardsClaimed" ||
+                            it.eventType == "B3TR_DBAFundsDistributed"
+                    }
+                    .forEach { event -> appIds.add(getAppId(event)) }
+                appIds.forEach { appId -> allRecordIds.add(generateId("$roundId", appId)) }
+            }
+        }
+        val preloaded =
+            if (allRecordIds.isNotEmpty()) {
+                repository.findAllById(allRecordIds).associateBy { it.getDocumentId() }
+            } else {
+                emptyMap()
+            }
+
+        val accumulator =
+            VersionedDocumentAccumulator<XAllocResult>(
+                findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) }
+            )
         val bestBlockId = thorClient.getBlockUnexpanded(BlockRevision.Keyword.BEST).id
 
         groupByBlock(events).forEach { (blockDetails, blockEvents) ->
