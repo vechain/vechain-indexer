@@ -857,13 +857,13 @@
                     {
                       "data_source": "metrics",
                       "name": "status",
-                      "query": "max:indexer_sync_status_code_gauge{indexer-id:$host.value} by {indexer_name}",
+                      "query": "max:indexer_sync_status_code_gauge{indexer-id:$host.value} by {indexer_name,status_readable}",
                       "aggregator": "last"
                     },
                     {
                       "data_source": "metrics",
                       "name": "filter_status",
-                      "query": "max:indexer_sync_status_gauge{indexer-id:$host.value,status_readable:$sync_status.value} by {indexer_name}",
+                      "query": "max:indexer_sync_status_gauge{indexer-id:$host.value,status_readable:$sync_status.value} by {indexer_name,status_readable}",
                       "aggregator": "last"
                     }
                   ],
