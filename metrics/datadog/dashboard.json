@@ -853,55 +853,13 @@
                       "name": "events",
                       "query": "sum:processor_events_counter{indexer-id:$host.value} by {indexer_name}",
                       "aggregator": "sum"
-                    },
-                    {
-                      "data_source": "metrics",
-                      "name": "status",
-                      "query": "max:indexer_sync_status_code_gauge{indexer-id:$host.value} by {indexer_name,status_readable}",
-                      "aggregator": "last"
                     }
                   ],
                   "response_format": "scalar",
                   "formulas": [
                     {
-                      "alias": "Sync Status",
-                      "formula": "status",
-                      "conditional_formats": [
-                        {
-                          "comparator": ">=",
-                          "value": 6,
-                          "palette": "white_on_green"
-                        },
-                        {
-                          "comparator": ">=",
-                          "value": 5,
-                          "palette": "white_on_red"
-                        },
-                        {
-                          "comparator": ">=",
-                          "value": 4,
-                          "palette": "white_on_yellow"
-                        },
-                        {
-                          "comparator": ">=",
-                          "value": 2,
-                          "palette": "white_on_green"
-                        },
-                        {
-                          "comparator": ">=",
-                          "value": 1,
-                          "palette": "white_on_yellow"
-                        },
-                        {
-                          "comparator": "<=",
-                          "value": 0,
-                          "palette": "white_on_red"
-                        }
-                      ]
-                    },
-                    {
                       "alias": "Sync Gap",
-                      "formula": "gap * (status / status)",
+                      "formula": "gap",
                       "conditional_formats": [
                         {
                           "comparator": "<",
@@ -922,7 +880,7 @@
                     },
                     {
                       "alias": "Est. Time to Sync",
-                      "formula": "eta * (status / status)",
+                      "formula": "eta",
                       "conditional_formats": [
                         {
                           "comparator": "<=",
@@ -949,7 +907,7 @@
                     },
                     {
                       "alias": "Avg Block Time (ms)",
-                      "formula": "avg_time * (status / status)",
+                      "formula": "avg_time",
                       "conditional_formats": [
                         {
                           "comparator": ">",
@@ -970,7 +928,7 @@
                     },
                     {
                       "alias": "Events",
-                      "formula": "events * (status / status)"
+                      "formula": "events"
                     }
                   ],
                   "sort": {
@@ -4587,32 +4545,58 @@
                   "queries": [
                     {
                       "name": "query1",
-                      "data_source": "metrics",
-                      "query": "avg:http.server.requests.avg{indexer_id:$host.value} by {uri}",
-                      "aggregator": "avg"
+                      "data_source": "logs",
+                      "search": {
+                        "query": "source:elb (name:prod-green-main-api-veworld-alb OR name:prod-blue-main-api-veworld-alb)"
+                      },
+                      "indexes": [
+                        "*"
+                      ],
+                      "group_by": [
+                        {
+                          "facet": "@http.url_details.api_category",
+                          "limit": 100,
+                          "sort": {
+                            "aggregation": "avg",
+                            "metric": "@duration",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "compute": {
+                        "aggregation": "avg",
+                        "metric": "@duration"
+                      },
+                      "storage": "hot"
                     }
                   ],
                   "response_format": "scalar",
                   "conditional_formats": [
                     {
                       "comparator": ">",
-                      "value": 500,
+                      "value": 500000000,
                       "palette": "white_on_red"
                     },
                     {
                       "comparator": ">",
-                      "value": 100,
+                      "value": 100000000,
                       "palette": "white_on_yellow"
                     },
                     {
                       "comparator": "<",
-                      "value": 30,
+                      "value": 30000000,
                       "palette": "white_on_green"
                     }
                   ],
                   "formulas": [
                     {
-                      "formula": "query1"
+                      "formula": "query1",
+                      "number_format": {
+                        "unit": {
+                          "type": "canonical_unit",
+                          "unit_name": "nanosecond"
+                        }
+                      }
                     }
                   ],
                   "sort": {
@@ -4654,9 +4638,27 @@
                   "queries": [
                     {
                       "name": "query1",
-                      "data_source": "metrics",
-                      "query": "sum:http.server.requests.count{indexer_id:$host.value} by {uri}.as_count()",
-                      "aggregator": "sum"
+                      "data_source": "logs",
+                      "search": {
+                        "query": "source:elb (name:prod-green-main-api-veworld-alb OR name:prod-blue-main-api-veworld-alb)"
+                      },
+                      "indexes": [
+                        "*"
+                      ],
+                      "group_by": [
+                        {
+                          "facet": "@http.url_details.api_category",
+                          "limit": 100,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "storage": "hot"
                     }
                   ],
                   "response_format": "scalar",
