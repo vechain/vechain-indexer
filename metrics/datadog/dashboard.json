@@ -832,6 +832,12 @@
                   "queries": [
                     {
                       "data_source": "metrics",
+                      "name": "status",
+                      "query": "max:indexer_sync_status_code_gauge{indexer-id:$host.value} by {indexer_name,status_readable}",
+                      "aggregator": "last"
+                    },
+                    {
+                      "data_source": "metrics",
                       "name": "gap",
                       "query": "max:indexer_sync_gap_gauge{indexer-id:$host.value} by {indexer_name}",
                       "aggregator": "last"
@@ -859,7 +865,7 @@
                   "formulas": [
                     {
                       "alias": "Sync Gap",
-                      "formula": "gap",
+                      "formula": "gap + (status * 0)",
                       "conditional_formats": [
                         {
                           "comparator": "<",
@@ -880,7 +886,7 @@
                     },
                     {
                       "alias": "Est. Time to Sync",
-                      "formula": "eta",
+                      "formula": "eta + (status * 0)",
                       "conditional_formats": [
                         {
                           "comparator": "<=",
@@ -907,7 +913,7 @@
                     },
                     {
                       "alias": "Avg Block Time (ms)",
-                      "formula": "avg_time",
+                      "formula": "avg_time + (status * 0)",
                       "conditional_formats": [
                         {
                           "comparator": ">",
@@ -928,7 +934,7 @@
                     },
                     {
                       "alias": "Events",
-                      "formula": "events"
+                      "formula": "events + (status * 0)"
                     }
                   ],
                   "sort": {
@@ -4547,7 +4553,7 @@
                       "name": "query1",
                       "data_source": "logs",
                       "search": {
-                        "query": "source:elb (name:prod-green-main-api-veworld-alb OR name:prod-blue-main-api-veworld-alb)"
+                        "query": "source:elb name:$host"
                       },
                       "indexes": [
                         "*"
@@ -4640,7 +4646,7 @@
                       "name": "query1",
                       "data_source": "logs",
                       "search": {
-                        "query": "source:elb (name:prod-green-main-api-veworld-alb OR name:prod-blue-main-api-veworld-alb)"
+                        "query": "source:elb name:$host"
                       },
                       "indexes": [
                         "*"
