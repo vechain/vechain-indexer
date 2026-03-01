@@ -121,7 +121,8 @@ internal class AccountOverviewServiceTest {
             events: List<IndexedEvent>,
             accumulator: VersionedDocumentAccumulator<AccountOverview>,
             resolved: MutableMap<String, AccountOverview>,
-        ) = vthoBlockRewardsRule(block, events, accumulator, resolved)
+            preloaded: Map<String, AccountOverview> = emptyMap(),
+        ) = vthoBlockRewardsRule(block, events, accumulator, resolved, preloaded)
 
         fun callCalculatePassiveVthoForBlock(
             vetBalance: BigInteger,
@@ -147,6 +148,7 @@ internal class AccountOverviewServiceTest {
             )
         every { inlineVersioningProperties.blockWindow } returns 10000L
         every { inlineVersioningProperties.maxVersions } returns 100
+        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
     }
 
     private fun block(number: Long = 1L, transactions: List<Transaction> = emptyList()) =
@@ -748,8 +750,9 @@ internal class AccountOverviewServiceTest {
 
             val accumulator = newAccumulator()
             val resolved = mutableMapOf<String, AccountOverview>()
+            val preloaded = mapOf(beneficiary to existingAccount)
 
-            service.callVthoBlockRewardsRule(b, emptyList(), accumulator, resolved)
+            service.callVthoBlockRewardsRule(b, emptyList(), accumulator, resolved, preloaded)
 
             val (updatedList, archivedList) = accumulator.results()
             val record = updatedList.find { it.address == beneficiary }!!
@@ -796,8 +799,9 @@ internal class AccountOverviewServiceTest {
 
             val accumulator = newAccumulator()
             val resolved = mutableMapOf<String, AccountOverview>()
+            val preloaded = mapOf(beneficiary to existingAccount)
 
-            service.callVthoBlockRewardsRule(b, emptyList(), accumulator, resolved)
+            service.callVthoBlockRewardsRule(b, emptyList(), accumulator, resolved, preloaded)
 
             // Reward should be negative (passive generation > balance increase), so no update
             val (updatedList, _) = accumulator.results()
@@ -849,8 +853,9 @@ internal class AccountOverviewServiceTest {
 
         val accumulator = newAccumulator()
         val resolved = mutableMapOf<String, AccountOverview>()
+        val preloaded = mapOf(beneficiary to existingAccount)
 
-        service.callVthoBlockRewardsRule(b, emptyList(), accumulator, resolved)
+        service.callVthoBlockRewardsRule(b, emptyList(), accumulator, resolved, preloaded)
 
         val (updatedList, _) = accumulator.results()
         val record = updatedList.find { it.address == beneficiary }!!
@@ -893,8 +898,9 @@ internal class AccountOverviewServiceTest {
 
         val accumulator = newAccumulator()
         val resolved = mutableMapOf<String, AccountOverview>()
+        val preloaded = mapOf(beneficiary to existingAccount)
 
-        service.callVthoBlockRewardsRule(b, emptyList(), accumulator, resolved)
+        service.callVthoBlockRewardsRule(b, emptyList(), accumulator, resolved, preloaded)
 
         val (updatedList, _) = accumulator.results()
         val record = updatedList.find { it.address == beneficiary }!!

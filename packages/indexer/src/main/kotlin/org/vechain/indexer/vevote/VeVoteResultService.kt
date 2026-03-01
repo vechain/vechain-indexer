@@ -32,8 +32,26 @@ open class VeVoteResultService(
     ): Pair<List<VeVoteProposalResult>, List<VeVoteProposalResult>> {
         assertEventTypes(events, "VoteCast")
 
+        // Pre-collect all record IDs and batch-load from DB
+        val allRecordIds = mutableSetOf<String>()
+        groupByBlock(events).forEach { (_, blockEvents) ->
+            groupByProposalId(blockEvents).forEach { (proposalId, proposalEvents) ->
+                groupBySupport(proposalEvents).forEach { (support, _) ->
+                    allRecordIds.add(generateId(proposalId, support.name))
+                }
+            }
+        }
+        val preloaded =
+            if (allRecordIds.isNotEmpty()) {
+                repository.findAllById(allRecordIds).associateBy { it.getDocumentId() }
+            } else {
+                emptyMap()
+            }
+
         val accumulator =
-            VersionedDocumentAccumulator<VeVoteProposalResult>(repository::findByIdOrNull)
+            VersionedDocumentAccumulator<VeVoteProposalResult>(
+                findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) }
+            )
 
         groupByBlock(events).forEach { (blockDetails, blockEvents) ->
             accumulator.startBlock()

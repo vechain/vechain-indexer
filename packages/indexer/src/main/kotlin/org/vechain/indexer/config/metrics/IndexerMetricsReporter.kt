@@ -31,9 +31,15 @@ class IndexerMetricsReporter(
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val previousBlockNumbers = ConcurrentHashMap<String, Long>()
     private val previousReportTimes = ConcurrentHashMap<String, Long>()
+    private var gaugesInitialized = false
 
     @Scheduled(fixedDelayString = "\${indexer.healthcheck.report-interval-ms:10000}")
     fun reportMetrics() {
+        if (!gaugesInitialized) {
+            initializeGauges()
+            gaugesInitialized = true
+        }
+
         val bestBlockNumber = fetchBestBlockNumber()
 
         indexers.forEach { indexer ->
@@ -45,6 +51,16 @@ class IndexerMetricsReporter(
 
             if (indexer is BlockIndexer) {
                 reportBlockIndexerMetrics(indexer, bestBlockNumber)
+            }
+        }
+    }
+
+    private fun initializeGauges() {
+        indexers.forEach { indexer ->
+            if (indexer is BlockIndexer) {
+                metrics.setIndexerSyncGap(indexer.name, 0L)
+                metrics.setEstimatedTimeToSync(indexer.name, Double.NaN)
+                metrics.setBlocksPerSecond(indexer.name, 0.0)
             }
         }
     }
@@ -120,9 +136,7 @@ class IndexerMetricsReporter(
         metrics.setBlocksPerSecond(indexer.name, blocksPerSecond ?: 0.0)
 
         val eta = computeEta(status, bestBlockNumber, currentBlockNumber, blocksPerSecond)
-        if (eta != null) {
-            metrics.setEstimatedTimeToSync(indexer.name, eta)
-        }
+        metrics.setEstimatedTimeToSync(indexer.name, eta ?: Double.NaN)
     }
 
     private fun computeBlocksPerSecond(

@@ -61,6 +61,7 @@ internal class B3trBalanceServiceTest {
                 vot3ContractAddress = vot3Contract,
             )
         every { repository.findById(any<String>()) } returns Optional.empty()
+        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
     }
 
     @Test

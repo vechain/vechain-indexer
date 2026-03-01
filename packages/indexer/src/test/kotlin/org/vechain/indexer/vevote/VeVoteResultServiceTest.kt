@@ -49,6 +49,7 @@ class VeVoteResultServiceTest {
         MockKAnnotations.init(this)
         every { inlineVersioningProperties.blockWindow } returns 10000L
         every { inlineVersioningProperties.maxVersions } returns 100
+        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
         service = TestableService(repository, mongoTemplate, inlineVersioningProperties)
     }
 

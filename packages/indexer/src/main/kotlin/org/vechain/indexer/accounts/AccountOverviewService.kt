@@ -116,9 +116,31 @@ open class AccountOverviewService(
     ): Pair<List<AccountOverview>, List<AccountOverview>> {
         assertEventTypes(events, "VET_TRANSFER", "Transfer")
 
+        // Pre-collect all addresses that will be needed and batch-load from DB
+        val allAddresses = mutableSetOf<String>()
+        block.transactions.forEach { tx ->
+            allAddresses.add(tx.origin)
+            allAddresses.add(tx.gasPayer)
+        }
+        events
+            .filter { it.eventType == "VET_TRANSFER" }
+            .forEach { event ->
+                event.params.getAsString("from")?.let { allAddresses.add(it) }
+                event.params.getAsString("to")?.let { allAddresses.add(it) }
+            }
+        if (block.number > 0L) {
+            allAddresses.add(block.beneficiary)
+        }
+        val preloaded =
+            if (allAddresses.isNotEmpty()) {
+                repository.findAllById(allAddresses).associateBy { it.getDocumentId() }
+            } else {
+                emptyMap()
+            }
+
         val accumulator =
             VersionedDocumentAccumulator<AccountOverview>(
-                repository::findByIdOrNull,
+                findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) },
                 initialVersion = 0,
             )
         accumulator.startBlock()
@@ -143,7 +165,7 @@ open class AccountOverviewService(
         }
 
         // Calculate and apply block rewards for pre-Hayabusa blocks
-        vthoBlockRewardsRule(block, events, accumulator, resolved)
+        vthoBlockRewardsRule(block, events, accumulator, resolved, preloaded)
 
         return accumulator.results()
     }
@@ -435,6 +457,7 @@ open class AccountOverviewService(
         events: List<IndexedEvent>,
         accumulator: VersionedDocumentAccumulator<AccountOverview>,
         resolved: MutableMap<String, AccountOverview>,
+        preloaded: Map<String, AccountOverview> = emptyMap(),
     ) {
         // Skip genesis block (no parent block to compare against)
         if (block.number == 0L) {
@@ -449,8 +472,8 @@ open class AccountOverviewService(
         val vetAtNMinus1 = accountStateAtNMinus1.balance.hexToBigInteger()
 
         // 2. Calculate passive VTHO generation from timestamp(n-1) to timestamp(n)
-        // Direct DB read needed here for pre-block state (not the accumulator's cached copy)
-        val beneficiaryAccount = repository.findByIdOrNull(beneficiary)
+        // Use the pre-block DB state (from batch preload) to check lastVthoSettlement
+        val beneficiaryAccount = preloaded[beneficiary]
         val passiveVtho =
             calculatePassiveVthoForBlock(vetAtNMinus1, block.number, beneficiaryAccount)
 
