@@ -15,8 +15,7 @@ format-json: #@ Format JSON dashboard files with jq.
 	done
 
 # Application Build (Gradle)
-build: format build-indexer build-api dd-generate-openapi dd-update-categories #@ Build the application with Gradle.
-	$(MAKE) format-json
+build: format build-indexer build-api #@ Build the application with Gradle.
 	echo "Build completed."
 .PHONY:build
 build-indexer: #@ Build the application with Gradle.
