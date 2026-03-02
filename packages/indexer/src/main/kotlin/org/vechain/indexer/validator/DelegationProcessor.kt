@@ -29,7 +29,9 @@ open class DelegationProcessor(
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.BlockResult) {
             service.invalidateCache()
-            throw IllegalArgumentException("Block cannot be null")
+            throw IllegalArgumentException(
+                "Expected IndexingResult.BlockResult with full block data but got ${entry::class.qualifiedName}"
+            )
         }
 
         val (updated, existing) =
