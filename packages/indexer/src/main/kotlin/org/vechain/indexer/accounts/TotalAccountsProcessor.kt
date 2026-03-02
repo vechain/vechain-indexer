@@ -30,7 +30,7 @@ open class TotalAccountsProcessor(
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.BlockResult) {
-            throw IllegalArgumentException("Block cannot be null")
+            throw IllegalArgumentException("Entry must be an IndexingResult.BlockResult")
         }
         val (updated, existing) = service.processBlock(entry.block, entry.callResults())
 
