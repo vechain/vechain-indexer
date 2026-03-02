@@ -740,6 +740,7 @@
               "legend_columns": [
                 "value"
               ],
+              "time": {},
               "type": "timeseries",
               "requests": [
                 {
@@ -762,8 +763,36 @@
                     "line_width": "thick"
                   },
                   "display_type": "line"
+                },
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "data_source": "events",
+                      "name": "dashboard_events_overlay",
+                      "indexes": [
+                        "*"
+                      ],
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "group_by": [],
+                      "search": {
+                        "query": "host:$host"
+                      }
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "dashboard_events_overlay"
+                    }
+                  ],
+                  "display_type": "overlay"
                 }
-              ]
+              ],
+              "yaxis": {
+                "include_zero": false
+              }
             },
             "layout": {
               "x": 0,
@@ -832,6 +861,12 @@
                   "queries": [
                     {
                       "data_source": "metrics",
+                      "name": "status",
+                      "query": "max:indexer_sync_status_code_gauge{indexer-id:$host.value} by {indexer_name,status_readable}",
+                      "aggregator": "last"
+                    },
+                    {
+                      "data_source": "metrics",
                       "name": "gap",
                       "query": "max:indexer_sync_gap_gauge{indexer-id:$host.value} by {indexer_name}",
                       "aggregator": "last"
@@ -853,55 +888,23 @@
                       "name": "events",
                       "query": "sum:processor_events_counter{indexer-id:$host.value} by {indexer_name}",
                       "aggregator": "sum"
-                    },
-                    {
-                      "data_source": "metrics",
-                      "name": "status",
-                      "query": "max:indexer_sync_status_code_gauge{indexer-id:$host.value} by {indexer_name,status_readable}",
-                      "aggregator": "last"
                     }
                   ],
                   "response_format": "scalar",
+                  "sort": {
+                    "count": 50,
+                    "order_by": [
+                      {
+                        "type": "formula",
+                        "index": 0,
+                        "order": "desc"
+                      }
+                    ]
+                  },
                   "formulas": [
                     {
-                      "alias": "Sync Status",
-                      "formula": "status",
-                      "conditional_formats": [
-                        {
-                          "comparator": ">=",
-                          "value": 6,
-                          "palette": "white_on_green"
-                        },
-                        {
-                          "comparator": ">=",
-                          "value": 5,
-                          "palette": "white_on_red"
-                        },
-                        {
-                          "comparator": ">=",
-                          "value": 4,
-                          "palette": "white_on_yellow"
-                        },
-                        {
-                          "comparator": ">=",
-                          "value": 2,
-                          "palette": "white_on_green"
-                        },
-                        {
-                          "comparator": ">=",
-                          "value": 1,
-                          "palette": "white_on_yellow"
-                        },
-                        {
-                          "comparator": "<=",
-                          "value": 0,
-                          "palette": "white_on_red"
-                        }
-                      ]
-                    },
-                    {
                       "alias": "Sync Gap",
-                      "formula": "gap * (status / status)",
+                      "formula": "gap + (default_zero(status) * 0)",
                       "conditional_formats": [
                         {
                           "comparator": "<",
@@ -922,7 +925,7 @@
                     },
                     {
                       "alias": "Est. Time to Sync",
-                      "formula": "eta * (status / status)",
+                      "formula": "eta + (default_zero(status) * 0)",
                       "conditional_formats": [
                         {
                           "comparator": "<=",
@@ -949,7 +952,7 @@
                     },
                     {
                       "alias": "Avg Block Time (ms)",
-                      "formula": "avg_time * (status / status)",
+                      "formula": "avg_time + (default_zero(status) * 0)",
                       "conditional_formats": [
                         {
                           "comparator": ">",
@@ -970,19 +973,9 @@
                     },
                     {
                       "alias": "Events",
-                      "formula": "events * (status / status)"
+                      "formula": "events + (default_zero(status) * 0)"
                     }
-                  ],
-                  "sort": {
-                    "count": 50,
-                    "order_by": [
-                      {
-                        "type": "formula",
-                        "index": 0,
-                        "order": "desc"
-                      }
-                    ]
-                  }
+                  ]
                 }
               ],
               "has_search_bar": "auto"
@@ -1200,7 +1193,7 @@
         "x": 0,
         "y": 1,
         "width": 12,
-        "height": 1
+        "height": 21
       }
     },
     {
@@ -1764,7 +1757,7 @@
       },
       "layout": {
         "x": 0,
-        "y": 2,
+        "y": 22,
         "width": 12,
         "height": 1
       }
@@ -3335,7 +3328,7 @@
       },
       "layout": {
         "x": 0,
-        "y": 3,
+        "y": 23,
         "width": 12,
         "height": 1
       }
@@ -4561,7 +4554,7 @@
       },
       "layout": {
         "x": 0,
-        "y": 4,
+        "y": 24,
         "width": 12,
         "height": 1
       }
@@ -4578,43 +4571,65 @@
           {
             "id": 305460665345712,
             "definition": {
-              "title": "Average Response Times",
+              "title": "API Performance Overview",
               "title_size": "16",
               "title_align": "left",
-              "type": "toplist",
+              "type": "query_table",
               "requests": [
                 {
                   "queries": [
                     {
-                      "name": "query1",
-                      "data_source": "metrics",
-                      "query": "avg:http.server.requests.avg{indexer_id:$host.value} by {uri}",
-                      "aggregator": "avg"
+                      "name": "count_query",
+                      "data_source": "logs",
+                      "search": {
+                        "query": "source:elb name:$host"
+                      },
+                      "indexes": [
+                        "*"
+                      ],
+                      "group_by": [
+                        {
+                          "facet": "@http.url_details.api_category",
+                          "limit": 100,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "storage": "hot"
+                    },
+                    {
+                      "name": "avg_query",
+                      "data_source": "logs",
+                      "search": {
+                        "query": "source:elb name:$host"
+                      },
+                      "indexes": [
+                        "*"
+                      ],
+                      "group_by": [
+                        {
+                          "facet": "@http.url_details.api_category",
+                          "limit": 100,
+                          "sort": {
+                            "aggregation": "avg",
+                            "metric": "@duration",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "compute": {
+                        "aggregation": "avg",
+                        "metric": "@duration"
+                      },
+                      "storage": "hot"
                     }
                   ],
                   "response_format": "scalar",
-                  "conditional_formats": [
-                    {
-                      "comparator": ">",
-                      "value": 500,
-                      "palette": "white_on_red"
-                    },
-                    {
-                      "comparator": ">",
-                      "value": 100,
-                      "palette": "white_on_yellow"
-                    },
-                    {
-                      "comparator": "<",
-                      "value": 30,
-                      "palette": "white_on_green"
-                    }
-                  ],
-                  "formulas": [
-                    {
-                      "formula": "query1"
-                    }
-                  ],
                   "sort": {
                     "count": 100,
                     "order_by": [
@@ -4624,72 +4639,49 @@
                         "order": "desc"
                       }
                     ]
-                  }
+                  },
+                  "formulas": [
+                    {
+                      "formula": "count_query",
+                      "alias": "Requests"
+                    },
+                    {
+                      "formula": "avg_query",
+                      "alias": "Avg Response Time",
+                      "number_format": {
+                        "unit": {
+                          "type": "canonical_unit",
+                          "unit_name": "nanosecond"
+                        }
+                      },
+                      "conditional_formats": [
+                        {
+                          "comparator": ">",
+                          "value": 300000000,
+                          "palette": "white_on_red"
+                        },
+                        {
+                          "comparator": ">",
+                          "value": 100000000,
+                          "palette": "white_on_orange"
+                        },
+                        {
+                          "comparator": "<",
+                          "value": 100000000,
+                          "palette": "white_on_green"
+                        }
+                      ]
+                    }
+                  ]
                 }
               ],
-              "style": {
-                "display": {
-                  "type": "stacked",
-                  "legend": "automatic"
-                },
-                "scaling": "absolute"
-              }
+              "has_search_bar": "auto"
             },
             "layout": {
               "x": 0,
               "y": 0,
               "width": 12,
-              "height": 5
-            }
-          },
-          {
-            "id": 2261067469133799,
-            "definition": {
-              "title": "Top APIs",
-              "title_size": "16",
-              "title_align": "left",
-              "type": "toplist",
-              "requests": [
-                {
-                  "queries": [
-                    {
-                      "name": "query1",
-                      "data_source": "metrics",
-                      "query": "sum:http.server.requests.count{indexer_id:$host.value} by {uri}.as_count()",
-                      "aggregator": "sum"
-                    }
-                  ],
-                  "response_format": "scalar",
-                  "formulas": [
-                    {
-                      "formula": "query1"
-                    }
-                  ],
-                  "sort": {
-                    "count": 100,
-                    "order_by": [
-                      {
-                        "type": "formula",
-                        "index": 0,
-                        "order": "desc"
-                      }
-                    ]
-                  }
-                }
-              ],
-              "style": {
-                "display": {
-                  "type": "stacked",
-                  "legend": "automatic"
-                },
-                "scaling": "relative"
-              }
-            },
-            "layout": {
-              "x": 0,
-              "y": 5,
-              "width": 12,
-              "height": 7
+              "height": 6
             }
           },
           {
@@ -4772,7 +4764,7 @@
             },
             "layout": {
               "x": 0,
-              "y": 12,
+              "y": 6,
               "width": 12,
               "height": 4
             }
@@ -4783,7 +4775,7 @@
         "x": 0,
         "y": 0,
         "width": 12,
-        "height": 1,
+        "height": 11,
         "is_column_break": true
       }
     },
@@ -5066,7 +5058,7 @@
       },
       "layout": {
         "x": 0,
-        "y": 1,
+        "y": 11,
         "width": 12,
         "height": 1
       }
@@ -5224,7 +5216,7 @@
       },
       "layout": {
         "x": 0,
-        "y": 2,
+        "y": 12,
         "width": 12,
         "height": 1
       }
@@ -5903,7 +5895,7 @@
       },
       "layout": {
         "x": 0,
-        "y": 3,
+        "y": 13,
         "width": 12,
         "height": 1
       }

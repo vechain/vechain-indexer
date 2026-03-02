@@ -47,10 +47,6 @@ management:
       group:
         liveness:
           include: ping
-  datadog:
-    metrics:
-      export:
-        enabled: false
   prometheus:
     metrics:
       export:
