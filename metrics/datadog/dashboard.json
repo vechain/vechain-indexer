@@ -778,7 +778,7 @@
                       },
                       "group_by": [],
                       "search": {
-                        "query": ""
+                        "query": "host:$host"
                       }
                     }
                   ],
