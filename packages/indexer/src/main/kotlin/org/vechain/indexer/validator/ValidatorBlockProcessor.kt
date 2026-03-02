@@ -25,7 +25,7 @@ open class ValidatorBlockProcessor(
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.BlockResult) {
-            throw IllegalArgumentException("Block cannot be null")
+            throw IllegalArgumentException("Expected entry to be an IndexingResult.BlockResult")
         }
 
         val newRecords = service.processBlock(entry.block, entry.callResults())
