@@ -33,7 +33,7 @@ open class ProposalResultProcessor(
     override suspend fun processEntry(entry: IndexingResult) {
         val accumulator = VersionedDocumentAccumulator<ProposalResult>(service::findByProposalId)
 
-        if (entry is IndexingResult.Normal) {
+        if (entry is IndexingResult.BlockResult) {
             val blockDetails =
                 BlockDetails(
                     blockId = entry.block.id,

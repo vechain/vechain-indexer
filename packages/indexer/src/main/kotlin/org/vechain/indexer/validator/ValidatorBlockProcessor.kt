@@ -24,7 +24,7 @@ open class ValidatorBlockProcessor(
         processorMetrics = processorMetrics,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
-        if (entry !is IndexingResult.Normal) {
+        if (entry !is IndexingResult.BlockResult) {
             throw IllegalArgumentException("Block cannot be null")
         }
 

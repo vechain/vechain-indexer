@@ -29,7 +29,7 @@ open class B3trBalanceService(
     @Value("\${business-event.substitutions.VOT3_CONTRACT}") private val vot3ContractAddress: String,
 ) {
 
-    /** Entry point when full block is available (IndexingResult.Normal). */
+    /** Entry point when full block is available (IndexingResult.BlockResult). */
     open fun processBlock(
         block: Block,
         events: List<IndexedEvent>,

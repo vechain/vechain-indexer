@@ -64,6 +64,7 @@ internal class AppRoundActionSummaryProcessorTest {
         @BeforeEach
         fun setUp() {
             MockKAnnotations.init(this)
+            every { checkpointService.saveCheckpoint(any(), any()) } just Runs
             every { repository.findFirstByOrderByBlockNumberDesc() } returns null
             processor =
                 TestableProcessor(
@@ -79,7 +80,7 @@ internal class AppRoundActionSummaryProcessorTest {
         @Test
         fun `process empty events doesn't save any records`() {
             runBlocking {
-                processor.process(IndexingResult.EventsOnly(100, emptyList(), Status.SYNCING))
+                processor.process(IndexingResult.LogResult(100, emptyList(), Status.SYNCING))
             }
 
             // Verify that service.save is not called
@@ -140,7 +141,7 @@ internal class AppRoundActionSummaryProcessorTest {
             // Verify that service.save is called with the correct parameters
             runBlocking {
                 processor.process(
-                    IndexingResult.EventsOnly(
+                    IndexingResult.LogResult(
                         events.maxOf { it.blockNumber },
                         events,
                         Status.SYNCING,
@@ -219,7 +220,7 @@ internal class AppRoundActionSummaryProcessorTest {
             // Verify that service.save is called with the correct parameters
             runBlocking {
                 processor.process(
-                    IndexingResult.EventsOnly(
+                    IndexingResult.LogResult(
                         events.maxOf { it.blockNumber },
                         events,
                         Status.SYNCING,
@@ -299,7 +300,7 @@ internal class AppRoundActionSummaryProcessorTest {
             // Verify that service.save is called with the correct parameters
             runBlocking {
                 processor.process(
-                    IndexingResult.EventsOnly(
+                    IndexingResult.LogResult(
                         events.maxOf { it.blockNumber },
                         events,
                         Status.SYNCING,
@@ -345,7 +346,7 @@ internal class AppRoundActionSummaryProcessorTest {
             // Verify roundId is updated and empty results are saved
             runBlocking {
                 processor.process(
-                    IndexingResult.EventsOnly(
+                    IndexingResult.LogResult(
                         events.maxOf { it.blockNumber },
                         events,
                         Status.SYNCING,
@@ -375,6 +376,7 @@ internal class AppRoundActionSummaryProcessorTest {
         @BeforeEach
         fun setUp() {
             MockKAnnotations.init(this)
+            every { checkpointService.saveCheckpoint(any(), any()) } just Runs
             val latestRecord =
                 AppRoundActionSummary(
                     version = 2,
@@ -452,7 +454,7 @@ internal class AppRoundActionSummaryProcessorTest {
             // Verify that service.save is called with the correct parameters
             runBlocking {
                 processor.process(
-                    IndexingResult.EventsOnly(
+                    IndexingResult.LogResult(
                         events.maxOf { it.blockNumber },
                         events,
                         Status.SYNCING,

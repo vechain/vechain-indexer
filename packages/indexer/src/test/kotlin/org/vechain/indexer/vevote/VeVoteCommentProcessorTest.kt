@@ -31,6 +31,7 @@ class VeVoteCommentProcessorTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
+        every { checkpointService.saveCheckpoint(any(), any()) } just Runs
 
         vevoteCommentProcessor =
             VeVoteCommentProcessor(
@@ -46,7 +47,7 @@ class VeVoteCommentProcessorTest {
     fun `process block with no comment events`() {
         runBlocking {
             vevoteCommentProcessor.process(
-                IndexingResult.Normal(
+                IndexingResult.BlockResult(
                     events = emptyList(),
                     block = BLOCK_NO_CLAUSES,
                     callResults = emptyList(),

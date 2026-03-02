@@ -228,7 +228,6 @@ class IndexerHealthMetricsTest {
                 Status.INITIALISED to 1.0,
                 Status.SYNCING to 2.0,
                 Status.FAST_SYNCING to 3.0,
-                Status.PRUNING to 4.0,
                 Status.SHUT_DOWN to 5.0,
                 Status.FULLY_SYNCED to 6.0,
             )

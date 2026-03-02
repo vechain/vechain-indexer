@@ -1,11 +1,13 @@
 package org.vechain.indexer.amn
 
 import io.mockk.MockKAnnotations
+import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
@@ -37,6 +39,7 @@ class AmnProcessorTest {
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
+        every { checkpointService.saveCheckpoint(any(), any()) } just Runs
 
         processor =
             AmnProcessor(
@@ -79,7 +82,7 @@ class AmnProcessorTest {
         coEvery { amnService.processCandidateEvents(any()) } returns emptyList()
 
         runBlocking {
-            processor.process(IndexingResult.EventsOnly(100, emptyList(), Status.SYNCING))
+            processor.process(IndexingResult.LogResult(100, emptyList(), Status.SYNCING))
         }
 
         coVerify { amnService.syncEndorsersForAllNodes() }
@@ -93,10 +96,10 @@ class AmnProcessorTest {
         coEvery { amnService.processCandidateEvents(any()) } returns emptyList()
 
         runBlocking {
-            processor.process(IndexingResult.EventsOnly(100, emptyList(), Status.SYNCING))
+            processor.process(IndexingResult.LogResult(100, emptyList(), Status.SYNCING))
         }
         runBlocking {
-            processor.process(IndexingResult.EventsOnly(100, emptyList(), Status.SYNCING))
+            processor.process(IndexingResult.LogResult(100, emptyList(), Status.SYNCING))
         }
 
         coVerify(exactly = 1) { amnService.syncEndorsersForAllNodes() }

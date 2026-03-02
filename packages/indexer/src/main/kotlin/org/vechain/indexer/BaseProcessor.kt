@@ -28,14 +28,15 @@ abstract class BaseProcessor(
         val start = TimeSource.Monotonic.markNow()
         try {
             processEntry(entry)
+            checkpointService.saveCheckpoint(collectionName, entry.latestBlockNumber())
             processorMetrics.incrementEventsCounter(indexerName, entry.events().size.toDouble())
         } finally {
             val duration = start.elapsedNow()
             val currentBlock = entry.latestBlockNumber()
             val blocksInEntry =
                 when (entry) {
-                    is IndexingResult.Normal -> 1
-                    is IndexingResult.EventsOnly -> {
+                    is IndexingResult.BlockResult -> 1
+                    is IndexingResult.LogResult -> {
                         if (lastProcessedBlock >= 0 && currentBlock > lastProcessedBlock) {
                             (currentBlock - lastProcessedBlock).toInt()
                         } else {

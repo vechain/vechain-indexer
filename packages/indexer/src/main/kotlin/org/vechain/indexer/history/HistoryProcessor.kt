@@ -25,7 +25,7 @@ open class HistoryProcessor(
     ) {
 
     override suspend fun processEntry(entry: IndexingResult) {
-        if (entry !is IndexingResult.Normal) {
+        if (entry !is IndexingResult.BlockResult) {
             throw IllegalArgumentException("Block cannot be null")
         }
         // If no events or transactions, do nothing

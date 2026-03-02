@@ -28,7 +28,7 @@ open class TransactionProcessor(
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     override suspend fun processEntry(entry: IndexingResult) {
-        if (entry !is IndexingResult.Normal) {
+        if (entry !is IndexingResult.BlockResult) {
             throw IllegalArgumentException("Block must be a normal block.")
         }
         val unknownEvents = entry.events().filter { it.address == null }

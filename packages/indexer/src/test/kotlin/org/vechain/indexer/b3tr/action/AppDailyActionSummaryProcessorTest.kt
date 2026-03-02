@@ -39,6 +39,7 @@ internal class AppDailyActionSummaryProcessorTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
+        every { checkpointService.saveCheckpoint(any(), any()) } just Runs
         processor =
             AppDailyActionSummaryProcessor(
                 repository = repository,
@@ -52,7 +53,7 @@ internal class AppDailyActionSummaryProcessorTest {
     @Test
     fun `process empty events doesn't save any records`() {
         runBlocking {
-            processor.process(IndexingResult.EventsOnly(100, emptyList(), Status.SYNCING))
+            processor.process(IndexingResult.LogResult(100, emptyList(), Status.SYNCING))
         }
 
         // Verify that service.save is not called
@@ -109,7 +110,7 @@ internal class AppDailyActionSummaryProcessorTest {
         // Verify that service.save is called with the correct parameters
         runBlocking {
             processor.process(
-                IndexingResult.EventsOnly(events.maxOf { it.blockNumber }, events, Status.SYNCING)
+                IndexingResult.LogResult(events.maxOf { it.blockNumber }, events, Status.SYNCING)
             )
         }
         verify(exactly = 1) { service.processEvents(events) }
