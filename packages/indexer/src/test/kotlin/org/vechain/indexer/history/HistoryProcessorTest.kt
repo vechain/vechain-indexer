@@ -41,7 +41,7 @@ internal class HistoryProcessorTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        every { checkpointService.saveCheckpoint(any(), any()) } just Runs
+        every { checkpointService.trySaveCheckpoint(any(), any()) } just Runs
 
         processor =
             HistoryProcessor(
@@ -117,7 +117,10 @@ internal class HistoryProcessorTest {
                 )
             }
         } catch (e: IllegalArgumentException) {
-            expect { that(e.message).isEqualTo("Block cannot be null") }
+            expect {
+                that(e.message)
+                    .isEqualTo("Expected IndexingResult.BlockResult (full block result required)")
+            }
         }
 
         verify { historyService wasNot Called }

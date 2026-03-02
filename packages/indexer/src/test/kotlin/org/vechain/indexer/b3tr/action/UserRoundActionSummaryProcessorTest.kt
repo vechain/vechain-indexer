@@ -66,7 +66,7 @@ internal class UserRoundActionSummaryProcessorTest {
         @BeforeEach
         fun setUp() {
             MockKAnnotations.init(this)
-            every { checkpointService.saveCheckpoint(any(), any()) } just Runs
+            every { checkpointService.trySaveCheckpoint(any(), any()) } just Runs
             every { repository.findFirstByOrderByBlockNumberDesc() } returns null
             processor =
                 TestableProcessor(
@@ -174,7 +174,7 @@ internal class UserRoundActionSummaryProcessorTest {
         @BeforeEach
         fun setUp() {
             MockKAnnotations.init(this)
-            every { checkpointService.saveCheckpoint(any(), any()) } just Runs
+            every { checkpointService.trySaveCheckpoint(any(), any()) } just Runs
             val latestRecord =
                 UserRoundActionSummary(
                     version = 2,

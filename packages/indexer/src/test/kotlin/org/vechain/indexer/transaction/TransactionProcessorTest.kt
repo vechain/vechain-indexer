@@ -37,7 +37,7 @@ internal class TransactionProcessorTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        every { checkpointService.saveCheckpoint(any(), any()) } just Runs
+        every { checkpointService.trySaveCheckpoint(any(), any()) } just Runs
         transactionProcessor =
             TransactionProcessor(
                 transactionService = transactionService,

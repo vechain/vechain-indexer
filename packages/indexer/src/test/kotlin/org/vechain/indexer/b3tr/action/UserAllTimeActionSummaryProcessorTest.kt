@@ -40,7 +40,7 @@ internal class UserAllTimeActionSummaryProcessorTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        every { checkpointService.saveCheckpoint(any(), any()) } just Runs
+        every { checkpointService.trySaveCheckpoint(any(), any()) } just Runs
         processor =
             UserAllTimeActionSummaryProcessor(
                 repository = repository,

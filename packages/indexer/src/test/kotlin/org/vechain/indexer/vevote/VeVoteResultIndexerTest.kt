@@ -31,7 +31,7 @@ class VeVoteResultIndexerTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        every { checkpointService.saveCheckpoint(any(), any()) } just Runs
+        every { checkpointService.trySaveCheckpoint(any(), any()) } just Runs
 
         voteResultsIndexer =
             VeVoteResultProcessor(

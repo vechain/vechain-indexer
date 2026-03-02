@@ -39,7 +39,7 @@ internal class AppDailyActionSummaryProcessorTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        every { checkpointService.trySaveCheckpoint(any(), any()) } returns true
+        every { checkpointService.trySaveCheckpoint(any(), any()) } just Runs
         processor =
             AppDailyActionSummaryProcessor(
                 repository = repository,
