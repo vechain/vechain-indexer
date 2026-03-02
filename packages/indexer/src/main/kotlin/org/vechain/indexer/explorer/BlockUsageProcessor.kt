@@ -27,7 +27,9 @@ open class BlockUsageProcessor(
 
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.BlockResult) {
-            throw IllegalArgumentException("Expected IndexingResult.BlockResult with full block data")
+            throw IllegalArgumentException(
+                "Expected IndexingResult.BlockResult with full block data"
+            )
         }
         val blockUsageRecord = service.processBlock(entry.block)
 

@@ -169,6 +169,11 @@
           "mappings": [
             {
               "options": {
+                "-1": {
+                  "color": "orange",
+                  "index": 0,
+                  "text": "Unknown"
+                },
                 "0": {
                   "color": "yellow",
                   "index": 1,
@@ -203,11 +208,6 @@
                   "color": "green",
                   "index": 7,
                   "text": "Fully Synced"
-                },
-                "-1": {
-                  "color": "orange",
-                  "index": 0,
-                  "text": "Unknown"
                 }
               },
               "type": "value"
@@ -459,8 +459,8 @@
               {
                 "id": "custom.cellOptions",
                 "value": {
-                  "type": "color-background",
-                  "mode": "basic"
+                  "mode": "basic",
+                  "type": "color-background"
                 }
               }
             ]
@@ -502,8 +502,8 @@
               {
                 "id": "custom.cellOptions",
                 "value": {
-                  "type": "color-background",
-                  "mode": "basic"
+                  "mode": "basic",
+                  "type": "color-background"
                 }
               }
             ]
@@ -545,8 +545,8 @@
               {
                 "id": "custom.cellOptions",
                 "value": {
-                  "type": "color-background",
-                  "mode": "basic"
+                  "mode": "basic",
+                  "type": "color-background"
                 }
               }
             ]
@@ -588,8 +588,8 @@
               {
                 "id": "custom.cellOptions",
                 "value": {
-                  "type": "color-background",
-                  "mode": "basic"
+                  "mode": "basic",
+                  "type": "color-background"
                 }
               }
             ]
@@ -688,12 +688,12 @@
               "job": true
             },
             "indexByName": {
-              "indexer_name": 0,
               "Value #A": 1,
               "Value #B": 2,
               "Value #C": 3,
               "Value #D": 4,
-              "Value #E": 5
+              "Value #E": 5,
+              "indexer_name": 0
             },
             "renameByName": {
               "indexer_name": "Indexer"

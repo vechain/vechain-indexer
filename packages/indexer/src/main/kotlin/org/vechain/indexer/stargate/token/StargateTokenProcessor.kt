@@ -28,7 +28,9 @@ open class StargateTokenProcessor(
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.BlockResult) {
-            throw IllegalArgumentException("Expected entry of type IndexingResult.BlockResult (full block entry required)")
+            throw IllegalArgumentException(
+                "Expected entry of type IndexingResult.BlockResult (full block entry required)"
+            )
         }
 
         val (updated, existing) =

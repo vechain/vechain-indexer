@@ -1,60 +1,57 @@
 {
-  "id": "uW-eeiofTRm3QAUSOMKvFA",
-  "type": "pipeline",
-  "name": "AWS ELB Access Veworld",
-  "is_enabled": true,
-  "is_read_only": false,
   "filter": {
     "query": "source:elb (name:prod-green-main-api-veworld-alb OR name:prod-blue-main-api-veworld-alb OR name:prod-green-test-api-veworld-alb OR name:prod-blue-test-api-veworld-alb)"
   },
+  "id": "uW-eeiofTRm3QAUSOMKvFA",
+  "is_enabled": true,
+  "is_read_only": false,
+  "name": "AWS ELB Access Veworld",
   "processors": [
     {
-      "name": "Parsing ELB access logs",
+      "grok": {
+        "match_rules": "elb.http %{_date_access} %{_elb_name}\\s+(?:%{_client_ip}:%{_client_port}|-) (?:%{_destination_ip}:%{_destination_port}|-) (?>-1|%{_request_processing_time}) (?>-1|%{_backend_processing_time}) (?>-1|%{_reponse_processing_time}) (?:%{_status_code}|-) (?:%{_backend_status_code}|-) %{_bytes_read} %{_bytes_written}\\s+\"(?>%{_method} |- )%{_url}(?> %{_version}| -\\s*)\" \"%{_user_agent}\" %{_ssl_cipher} %{_ssl_protocol}( %{_arn} %{_requestID})?\n\nalb %{_http_protocol} %{elb.http}.*\n",
+        "support_rules": "_elb_name %{notSpace:elb.name}\n_http_protocol %{word:http.protocol}\n_backend_status_code %{integer:elb.backend_status_code}\n_request_processing_time %{number:elb.performance.request_processing_time:scale(1000)}\n_backend_processing_time %{number:elb.performance.backend_processing_time:scale(1000)}\n_reponse_processing_time %{number:elb.performance.response_processing_time:scale(1000)}\n_ssl_cipher %{notSpace:http.ssl.cipher:nullIf(\"-\")}\n_ssl_protocol %{notSpace:http.ssl.protocol:nullIf(\"-\")}\n_bytes_written %{integer:network.bytes_written}\n_bytes_read %{integer:network.bytes_read}\n_client_ip %{ipOrHost:network.client.ip}\n_client_port %{integer:network.client.port}\n_destination_ip %{ipOrHost:network.destination.ip}\n_destination_port %{integer:network.destination.port}\n_duration %{number:duration:scale(1000000)}\n_version HTTP\\/%{regex(\"\\\\d+\\\\.\\\\d+\"):http.version}\n_url %{notSpace:http.url:nullIf(\"-\")}\n_user_agent %{regex(\"[^\\\\\\\"]*\"):http.useragent:nullIf(\"-\")}\n_status_code %{integer:http.status_code}\n_method %{word:http.method}\n_date_access %{date(\"yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ\"):date_access}\n_arn %{notSpace:aws.arn}\n_requestID \"Root\\=%{notSpace:TraceId}\"\n"
+      },
       "is_enabled": true,
-      "source": "message",
+      "name": "Parsing ELB access logs",
       "samples": [
         "2015-05-13T23:39:43.945958Z my-loadbalancer 192.168.131.39:2817 10.0.0.1:80 0.000073 0.001048 0.000057 200 200 0 29 \"GET http://www.example.com:80/ HTTP/1.1\" \"curl/7.38.0\" - -",
         "2015-05-13T23:39:43.945958Z my-loadbalancer 192.168.131.39:2817 10.0.0.1:80 0.000086 0.001048 0.001337 200 200 0 57 \"GET https://www.example.com:443/ HTTP/1.1\" \"curl/7.38.0\" DHE-RSA-AES128-SHA TLSv1.2",
         "2015-05-13T23:39:43.945958Z my-loadbalancer 192.168.131.39:2817 10.0.0.1:80 0.001069 0.000028 0.000041 - - 82 305 \"- - - \" \"-\" - -",
         "2015-05-13T23:39:43.945958Z my-loadbalancer 192.168.131.39:2817 10.0.0.1:80 0.001065 0.000015 0.000023 - - 57 502 \"- - - \" \"-\" ECDHE-ECDSA-AES128-GCM-SHA256 TLSv1.2"
       ],
-      "grok": {
-        "support_rules": "_elb_name %{notSpace:elb.name}\n_http_protocol %{word:http.protocol}\n_backend_status_code %{integer:elb.backend_status_code}\n_request_processing_time %{number:elb.performance.request_processing_time:scale(1000)}\n_backend_processing_time %{number:elb.performance.backend_processing_time:scale(1000)}\n_reponse_processing_time %{number:elb.performance.response_processing_time:scale(1000)}\n_ssl_cipher %{notSpace:http.ssl.cipher:nullIf(\"-\")}\n_ssl_protocol %{notSpace:http.ssl.protocol:nullIf(\"-\")}\n_bytes_written %{integer:network.bytes_written}\n_bytes_read %{integer:network.bytes_read}\n_client_ip %{ipOrHost:network.client.ip}\n_client_port %{integer:network.client.port}\n_destination_ip %{ipOrHost:network.destination.ip}\n_destination_port %{integer:network.destination.port}\n_duration %{number:duration:scale(1000000)}\n_version HTTP\\/%{regex(\"\\\\d+\\\\.\\\\d+\"):http.version}\n_url %{notSpace:http.url:nullIf(\"-\")}\n_user_agent %{regex(\"[^\\\\\\\"]*\"):http.useragent:nullIf(\"-\")}\n_status_code %{integer:http.status_code}\n_method %{word:http.method}\n_date_access %{date(\"yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ\"):date_access}\n_arn %{notSpace:aws.arn}\n_requestID \"Root\\=%{notSpace:TraceId}\"\n",
-        "match_rules": "elb.http %{_date_access} %{_elb_name}\\s+(?:%{_client_ip}:%{_client_port}|-) (?:%{_destination_ip}:%{_destination_port}|-) (?>-1|%{_request_processing_time}) (?>-1|%{_backend_processing_time}) (?>-1|%{_reponse_processing_time}) (?:%{_status_code}|-) (?:%{_backend_status_code}|-) %{_bytes_read} %{_bytes_written}\\s+\"(?>%{_method} |- )%{_url}(?> %{_version}| -\\s*)\" \"%{_user_agent}\" %{_ssl_cipher} %{_ssl_protocol}( %{_arn} %{_requestID})?\n\nalb %{_http_protocol} %{elb.http}.*\n"
-      },
+      "source": "message",
       "type": "grok-parser"
     },
     {
-      "name": "",
       "is_enabled": true,
+      "is_encoded": false,
+      "name": "",
       "sources": [
         "http.useragent"
       ],
       "target": "http.useragent_details",
-      "is_encoded": false,
       "type": "user-agent-parser"
     },
     {
-      "name": "",
       "is_enabled": true,
+      "name": "",
+      "normalize_ending_slashes": false,
       "sources": [
         "http.url"
       ],
       "target": "http.url_details",
-      "normalize_ending_slashes": false,
       "type": "url-parser"
     },
     {
-      "name": "Define `date_access` as the official date of the log",
       "is_enabled": true,
+      "name": "Define `date_access` as the official date of the log",
       "sources": [
         "date_access"
       ],
       "type": "date-remapper"
     },
     {
-      "name": "Categorise status code",
-      "is_enabled": true,
       "categories": [
         {
           "filter": {
@@ -81,28 +78,28 @@
           "name": "error"
         }
       ],
+      "is_enabled": true,
+      "name": "Categorise status code",
       "target": "http.status_category",
       "type": "category-processor"
     },
     {
-      "name": "Calculate request response time",
-      "is_enabled": true,
       "expression": "(elb.performance.request_processing_time + elb.performance.backend_processing_time + elb.performance.response_processing_time)*1000000",
-      "target": "duration",
+      "is_enabled": true,
       "is_replace_missing": false,
+      "name": "Calculate request response time",
+      "target": "duration",
       "type": "arithmetic-processor"
     },
     {
-      "name": "Define `http.status_category` as the official status of the log",
       "is_enabled": true,
+      "name": "Define `http.status_category` as the official status of the log",
       "sources": [
         "http.status_category"
       ],
       "type": "status-remapper"
     },
     {
-      "name": "Categorising the api calls",
-      "is_enabled": true,
       "categories": [
         {
           "filter": {
@@ -519,13 +516,12 @@
           "name": "Unknown"
         }
       ],
+      "is_enabled": true,
+      "name": "Categorising the api calls",
       "target": "http.url_details.api_category",
       "type": "category-processor"
     },
     {
-      "type": "category-processor",
-      "name": "Categorize endpoint group",
-      "is_enabled": true,
       "categories": [
         {
           "filter": {
@@ -606,8 +602,12 @@
           "name": "unknown"
         }
       ],
-      "target": "endpoint_group"
+      "is_enabled": true,
+      "name": "Categorize endpoint group",
+      "target": "endpoint_group",
+      "type": "category-processor"
     }
   ],
-  "tags": []
+  "tags": [],
+  "type": "pipeline"
 }
