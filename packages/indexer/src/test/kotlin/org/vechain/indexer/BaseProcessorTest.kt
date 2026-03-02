@@ -143,7 +143,7 @@ class BaseProcessorTest {
 
         @BeforeEach
         fun setup() {
-            every { checkpointService.saveCheckpoint(any(), any()) } just Runs
+            every { checkpointService.trySaveCheckpoint(any(), any()) } just Runs
         }
 
         private fun block(number: Long): Block {
@@ -158,14 +158,14 @@ class BaseProcessorTest {
                 IndexingResult.BlockResult(block(100), emptyList(), emptyList(), Status.SYNCING)
             )
 
-            verify { checkpointService.saveCheckpoint(TEST_COLLECTION, 100) }
+            verify { checkpointService.trySaveCheckpoint(TEST_COLLECTION, 100) }
         }
 
         @Test
         fun `process saves checkpoint with endBlock for LogResult`() = runBlocking {
             processor.process(IndexingResult.LogResult(250, emptyList(), Status.SYNCING))
 
-            verify { checkpointService.saveCheckpoint(TEST_COLLECTION, 250) }
+            verify { checkpointService.trySaveCheckpoint(TEST_COLLECTION, 250) }
         }
 
         @Test
@@ -186,7 +186,7 @@ class BaseProcessorTest {
                 }
             }
 
-            verify(exactly = 0) { checkpointService.saveCheckpoint(any(), any()) }
+            verify(exactly = 0) { checkpointService.trySaveCheckpoint(any(), any()) }
         }
     }
 
@@ -199,7 +199,7 @@ class BaseProcessorTest {
         @BeforeEach
         fun setup() {
             meterRegistry = SimpleMeterRegistry()
-            every { checkpointService.saveCheckpoint(any(), any()) } just Runs
+            every { checkpointService.trySaveCheckpoint(any(), any()) } just Runs
             metricsProcessor =
                 TestableBaseProcessor(
                     repository,

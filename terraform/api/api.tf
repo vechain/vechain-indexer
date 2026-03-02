@@ -916,6 +916,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.channel-batch-size
     },
     {
+      name  = "INDEXER_CHECKPOINT_SAVE_INTERVAL_SECONDS"
+      value = each.value.indexer.checkpoint-save-interval-seconds
+    },
+    {
       name  = "HEALTHCHECK_INACTIVE_THRESHOLD_SYNCING"
       value = each.value.indexer.healthcheck.inactive-threshold-syncing
     },

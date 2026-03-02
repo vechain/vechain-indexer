@@ -28,7 +28,7 @@ abstract class BaseProcessor(
         val start = TimeSource.Monotonic.markNow()
         try {
             processEntry(entry)
-            checkpointService.saveCheckpoint(collectionName, entry.latestBlockNumber())
+            checkpointService.trySaveCheckpoint(collectionName, entry.latestBlockNumber())
             processorMetrics.incrementEventsCounter(indexerName, entry.events().size.toDouble())
         } finally {
             val duration = start.elapsedNow()

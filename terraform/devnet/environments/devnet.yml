@@ -144,6 +144,7 @@ enabled_nets:
         historic-proposals:         '100'
         b3tr:                       '100'
       channel-batch-size: '15'
+      checkpoint-save-interval-seconds: '60'
       pruner:
         enabled:                    'true'
         interval:                   '3000'
