@@ -25,7 +25,7 @@ open class VthoGeneratedByBlockProcessor(
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.BlockResult) {
-            throw IllegalArgumentException("Block cannot be null")
+            throw IllegalArgumentException("Expected entry of type IndexingResult.BlockResult")
         }
 
         val newRecord = service.processBlock(entry.block, entry.callResults())
