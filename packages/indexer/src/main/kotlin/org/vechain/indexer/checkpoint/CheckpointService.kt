@@ -47,10 +47,10 @@ open class CheckpointService(
             lastSaveTimeNanos[collectionName] = now
         } catch (e: Exception) {
             logger.warn(
-                "Failed to save checkpoint for {} at block {}: {}",
+                "Failed to save checkpoint for {} at block {}",
                 collectionName,
                 blockNumber,
-                e.message,
+                e,
             )
         }
     }
