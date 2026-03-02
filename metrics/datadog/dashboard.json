@@ -919,7 +919,7 @@
                       }
                     },
                     {
-                      "alias": "Avg Block Time (ms)",
+                      "alias": "Block Processing (ms)",
                       "conditional_formats": [
                         {
                           "comparator": ">",
@@ -938,6 +938,27 @@
                         }
                       ],
                       "formula": "avg_time * cutoff_min(status, 0.5)"
+                    },
+                    {
+                      "alias": "Block Cycle Time (ms)",
+                      "conditional_formats": [
+                        {
+                          "comparator": ">",
+                          "palette": "white_on_red",
+                          "value": 200
+                        },
+                        {
+                          "comparator": ">",
+                          "palette": "white_on_yellow",
+                          "value": 10
+                        },
+                        {
+                          "comparator": "<",
+                          "palette": "white_on_green",
+                          "value": 10
+                        }
+                      ],
+                      "formula": "cycle_time * cutoff_min(status, 0.5)"
                     },
                     {
                       "alias": "Events",
@@ -968,6 +989,12 @@
                       "data_source": "metrics",
                       "name": "avg_time",
                       "query": "avg:processor_duration.avg{indexer-id:$host.value} by {indexer_name}"
+                    },
+                    {
+                      "aggregator": "avg",
+                      "data_source": "metrics",
+                      "name": "cycle_time",
+                      "query": "avg:processor_cycle_time.avg{indexer-id:$host.value} by {indexer_name}"
                     },
                     {
                       "aggregator": "sum",

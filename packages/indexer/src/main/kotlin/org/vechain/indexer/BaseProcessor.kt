@@ -1,5 +1,6 @@
 package org.vechain.indexer
 
+import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 import org.slf4j.LoggerFactory
 import org.springframework.transaction.annotation.Transactional
@@ -17,11 +18,13 @@ abstract class BaseProcessor(
 
     private val logger = LoggerFactory.getLogger(this::class.java)
     private var lastProcessedBlock: Long = -1L
+    private var lastIterationEnd: TimeMark? = null
 
     abstract suspend fun processEntry(entry: IndexingResult)
 
     protected fun resetProcessingState() {
         lastProcessedBlock = -1L
+        lastIterationEnd = null
     }
 
     override suspend fun process(entry: IndexingResult) {
@@ -43,13 +46,22 @@ abstract class BaseProcessor(
                             1
                         }
                     }
-                }
+                }.coerceAtLeast(1)
             lastProcessedBlock = currentBlock
 
             val perBlockDuration = duration / blocksInEntry
             repeat(blocksInEntry) {
                 processorMetrics.observeProcessingDuration(indexerName, perBlockDuration)
             }
+
+            lastIterationEnd?.let { previousEnd ->
+                val cycleTime = previousEnd.elapsedNow()
+                val perBlockCycleTime = cycleTime / blocksInEntry
+                repeat(blocksInEntry) {
+                    processorMetrics.observeBlockCycleTime(indexerName, perBlockCycleTime)
+                }
+            }
+            lastIterationEnd = TimeSource.Monotonic.markNow()
         }
     }
 
