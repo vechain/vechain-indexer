@@ -26,7 +26,7 @@ open class HistoryProcessor(
 
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.BlockResult) {
-            throw IllegalArgumentException("Block cannot be null")
+            throw IllegalArgumentException("Expected IndexingResult.BlockResult (full block result required)")
         }
         // If no events or transactions, do nothing
         if (entry.events().isEmpty() && entry.block.transactions.isEmpty()) {
