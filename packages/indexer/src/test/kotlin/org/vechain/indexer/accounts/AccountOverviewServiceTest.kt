@@ -2,6 +2,7 @@ package org.vechain.indexer.accounts
 
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
@@ -1196,5 +1197,34 @@ internal class AccountOverviewServiceTest {
             val (updatedList, _) = accumulator.results()
             val record = updatedList.find { it.address == beneficiary }!!
             assertEquals(BigInteger("500"), record.vthoBlockRewards)
+        }
+
+    @Test
+    fun `processBlock with empty block still computes block rewards for beneficiary`() =
+        runBlocking {
+            val beneficiary = "0xBENEFICIARY"
+            val b = block(number = 100L)
+            val parentRevision = BlockRevision.Id(b.parentID)
+            val blockRevision = BlockRevision.Id(b.id)
+
+            mockNetworkDetection(hayabusaBlock = 1000L)
+            every { repository.findAllById(listOf(beneficiary)) } returns emptyList()
+            every { repository.findByIdOrNull(beneficiary) } returns null
+
+            // Mock VTHO balances: 1000 at block n-1, 1500 at block n -> reward = 500
+            coEvery { thorClient.getAccountState(beneficiary, parentRevision) } returns
+                ExecuteAccountResponse(balance = "0x0", energy = "0x3e8", hasCode = false)
+            coEvery { thorClient.getAccountState(beneficiary, blockRevision) } returns
+                ExecuteAccountResponse(balance = "0x0", energy = "0x5dc", hasCode = false)
+
+            val (updated, _) = service.processBlock(b, emptyList())
+
+            // Beneficiary should receive block reward even with no transactions
+            val record = updated.find { it.address == beneficiary }!!
+            assertEquals(BigInteger("500"), record.vthoBlockRewards)
+
+            // Both API calls should have been made
+            coVerify(exactly = 1) { thorClient.getAccountState(beneficiary, parentRevision) }
+            coVerify(exactly = 1) { thorClient.getAccountState(beneficiary, blockRevision) }
         }
 }

@@ -889,7 +889,7 @@
                           "value": 10000
                         }
                       ],
-                      "formula": "gap + (default_zero(status) * 0)"
+                      "formula": "gap * cutoff_min(status, 0.5)"
                     },
                     {
                       "alias": "Est. Time to Sync",
@@ -910,7 +910,7 @@
                           "value": 0
                         }
                       ],
-                      "formula": "eta + (default_zero(status) * 0)",
+                      "formula": "eta * cutoff_min(status, 0.5)",
                       "number_format": {
                         "unit": {
                           "type": "canonical_unit",
@@ -937,11 +937,11 @@
                           "value": 10
                         }
                       ],
-                      "formula": "avg_time + (default_zero(status) * 0)"
+                      "formula": "avg_time * cutoff_min(status, 0.5)"
                     },
                     {
                       "alias": "Events",
-                      "formula": "events + (default_zero(status) * 0)"
+                      "formula": "events * cutoff_min(status, 0.5)"
                     }
                   ],
                   "queries": [
@@ -949,7 +949,7 @@
                       "aggregator": "last",
                       "data_source": "metrics",
                       "name": "status",
-                      "query": "max:indexer_sync_status_code_gauge{indexer-id:$host.value} by {indexer_name,status_readable}"
+                      "query": "max:indexer_sync_status_gauge{indexer-id:$host.value} by {indexer_name,status_readable}"
                     },
                     {
                       "aggregator": "last",
