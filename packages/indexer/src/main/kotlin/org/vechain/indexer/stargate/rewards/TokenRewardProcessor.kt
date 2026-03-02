@@ -28,9 +28,13 @@ open class TokenRewardProcessor(
         processorMetrics = processorMetrics,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
-        if (entry !is IndexingResult.Normal) {
+        if (entry !is IndexingResult.BlockResult) {
             service.invalidateCache()
-            throw IllegalArgumentException("Block cannot be null")
+            throw IllegalArgumentException(
+                "Expected full block (IndexingResult.BlockResult) but got " +
+                    "${entry::class.simpleName ?: "non-block result"}; " +
+                    "full block is required for token reward processing"
+            )
         }
         val (updated, existing) = service.processBlock(entry.block, entry.callResults())
 

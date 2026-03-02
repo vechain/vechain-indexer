@@ -30,7 +30,7 @@ open class B3trBalanceProcessor(
     ) {
 
     override suspend fun processEntry(entry: IndexingResult) {
-        if (entry is IndexingResult.Normal) {
+        if (entry is IndexingResult.BlockResult) {
             val nonRevertedTxIds =
                 entry.block.transactions.filter { !it.reverted }.map { it.id }.toSet()
             val confirmedEvents = entry.events.filter { it.txId in nonRevertedTxIds }

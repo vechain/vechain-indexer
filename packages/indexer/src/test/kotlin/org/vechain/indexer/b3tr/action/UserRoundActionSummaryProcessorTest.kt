@@ -66,6 +66,7 @@ internal class UserRoundActionSummaryProcessorTest {
         @BeforeEach
         fun setUp() {
             MockKAnnotations.init(this)
+            every { checkpointService.trySaveCheckpoint(any(), any()) } just Runs
             every { repository.findFirstByOrderByBlockNumberDesc() } returns null
             processor =
                 TestableProcessor(
@@ -81,7 +82,7 @@ internal class UserRoundActionSummaryProcessorTest {
         @Test
         fun `process empty events doesn't save any records`() {
             runBlocking {
-                processor.process(IndexingResult.EventsOnly(100, emptyList(), Status.SYNCING))
+                processor.process(IndexingResult.LogResult(100, emptyList(), Status.SYNCING))
             }
 
             // Verify that service.save is not called
@@ -142,7 +143,7 @@ internal class UserRoundActionSummaryProcessorTest {
             // Verify that service.save is called with the correct parameters
             runBlocking {
                 processor.process(
-                    IndexingResult.EventsOnly(
+                    IndexingResult.LogResult(
                         events.maxOf { it.blockNumber },
                         events,
                         Status.SYNCING,
@@ -173,6 +174,7 @@ internal class UserRoundActionSummaryProcessorTest {
         @BeforeEach
         fun setUp() {
             MockKAnnotations.init(this)
+            every { checkpointService.trySaveCheckpoint(any(), any()) } just Runs
             val latestRecord =
                 UserRoundActionSummary(
                     version = 2,
@@ -251,7 +253,7 @@ internal class UserRoundActionSummaryProcessorTest {
             // Verify that service.save is called with the correct parameters
             runBlocking {
                 processor.process(
-                    IndexingResult.EventsOnly(
+                    IndexingResult.LogResult(
                         events.maxOf { it.blockNumber },
                         events,
                         Status.SYNCING,

@@ -38,8 +38,10 @@ open class AccountOverviewProcessor(
     }
 
     override suspend fun processEntry(entry: IndexingResult) {
-        if (entry !is IndexingResult.Normal) {
-            throw IllegalArgumentException("Block cannot be null")
+        if (entry !is IndexingResult.BlockResult) {
+            throw IllegalArgumentException(
+                "Expected IndexingResult.BlockResult entry (full block result)"
+            )
         }
 
         val block = entry.block

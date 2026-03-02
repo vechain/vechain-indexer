@@ -37,6 +37,7 @@ internal class TransactionProcessorTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
+        every { checkpointService.trySaveCheckpoint(any(), any()) } just Runs
         transactionProcessor =
             TransactionProcessor(
                 transactionService = transactionService,
@@ -52,7 +53,7 @@ internal class TransactionProcessorTest {
         assertThrows<IllegalArgumentException> {
             runBlocking {
                 transactionProcessor.process(
-                    IndexingResult.EventsOnly(100, emptyList(), Status.SYNCING)
+                    IndexingResult.LogResult(100, emptyList(), Status.SYNCING)
                 )
             }
         }
@@ -62,7 +63,7 @@ internal class TransactionProcessorTest {
     fun `process - If no transactions shouldn't do anything`() {
         runBlocking {
             transactionProcessor.process(
-                IndexingResult.Normal(
+                IndexingResult.BlockResult(
                     BlockFixtures.BLOCK_NO_CLAUSES,
                     emptyList(),
                     emptyList(),
@@ -83,7 +84,7 @@ internal class TransactionProcessorTest {
 
         runBlocking {
             transactionProcessor.process(
-                IndexingResult.Normal(block, events, emptyList(), Status.FULLY_SYNCED)
+                IndexingResult.BlockResult(block, events, emptyList(), Status.FULLY_SYNCED)
             )
         }
 
@@ -99,7 +100,7 @@ internal class TransactionProcessorTest {
 
         runBlocking {
             transactionProcessor.process(
-                IndexingResult.Normal(block, events, emptyList(), Status.FULLY_SYNCED)
+                IndexingResult.BlockResult(block, events, emptyList(), Status.FULLY_SYNCED)
             )
         }
 

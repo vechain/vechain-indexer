@@ -117,7 +117,7 @@ class TransactionProcessorPerformanceTest : BasePerformanceTest() {
         ) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    TransactionProcessor.process (per block)") {
-                if (entry !is IndexingResult.Normal) {
+                if (entry !is IndexingResult.BlockResult) {
                     throw IllegalArgumentException("Block must be a normal block.")
                 }
 

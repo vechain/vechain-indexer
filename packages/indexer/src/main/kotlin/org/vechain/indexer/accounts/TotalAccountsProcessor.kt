@@ -29,8 +29,8 @@ open class TotalAccountsProcessor(
         processorMetrics = processorMetrics,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
-        if (entry !is IndexingResult.Normal) {
-            throw IllegalArgumentException("Block cannot be null")
+        if (entry !is IndexingResult.BlockResult) {
+            throw IllegalArgumentException("Entry must be an IndexingResult.BlockResult")
         }
         val (updated, existing) = service.processBlock(entry.block, entry.callResults())
 

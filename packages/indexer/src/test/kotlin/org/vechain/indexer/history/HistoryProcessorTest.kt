@@ -2,11 +2,13 @@ package org.vechain.indexer.history
 
 import io.mockk.Called
 import io.mockk.MockKAnnotations
+import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.runBlocking
@@ -39,6 +41,7 @@ internal class HistoryProcessorTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
+        every { checkpointService.trySaveCheckpoint(any(), any()) } just Runs
 
         processor =
             HistoryProcessor(
@@ -53,7 +56,7 @@ internal class HistoryProcessorTest {
     fun `process - if no events or transaction ar present then historyService shouldn't be called`() {
         runBlocking {
             processor.process(
-                IndexingResult.Normal(
+                IndexingResult.BlockResult(
                     BlockFixtures.BLOCK_NO_CLAUSES,
                     emptyList(),
                     emptyList(),
@@ -74,7 +77,7 @@ internal class HistoryProcessorTest {
 
         runBlocking {
             processor.process(
-                IndexingResult.Normal(block, events, emptyList(), Status.FULLY_SYNCED)
+                IndexingResult.BlockResult(block, events, emptyList(), Status.FULLY_SYNCED)
             )
         }
 
@@ -92,7 +95,7 @@ internal class HistoryProcessorTest {
 
         runBlocking {
             processor.process(
-                IndexingResult.Normal(block, events, emptyList(), Status.FULLY_SYNCED)
+                IndexingResult.BlockResult(block, events, emptyList(), Status.FULLY_SYNCED)
             )
         }
 
@@ -106,7 +109,7 @@ internal class HistoryProcessorTest {
         try {
             runBlocking {
                 processor.process(
-                    IndexingResult.EventsOnly(
+                    IndexingResult.LogResult(
                         events.maxBy { it.blockNumber }.blockNumber,
                         events,
                         Status.SYNCING,
@@ -114,7 +117,10 @@ internal class HistoryProcessorTest {
                 )
             }
         } catch (e: IllegalArgumentException) {
-            expect { that(e.message).isEqualTo("Block cannot be null") }
+            expect {
+                that(e.message)
+                    .isEqualTo("Expected IndexingResult.BlockResult (full block result required)")
+            }
         }
 
         verify { historyService wasNot Called }
@@ -131,7 +137,7 @@ internal class HistoryProcessorTest {
 
         runBlocking {
             processor.process(
-                IndexingResult.Normal(block, events, emptyList(), Status.FULLY_SYNCED)
+                IndexingResult.BlockResult(block, events, emptyList(), Status.FULLY_SYNCED)
             )
         }
 

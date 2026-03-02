@@ -24,7 +24,7 @@ open class VetDelegatedByBlockProcessor(
         processorMetrics = processorMetrics,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
-        if (entry !is IndexingResult.Normal) {
+        if (entry !is IndexingResult.BlockResult) {
             return
         }
 

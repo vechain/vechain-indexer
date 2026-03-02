@@ -188,6 +188,7 @@ enabled_nets:
         b3tr: '75'
         historic-proposals: '125'
       channel-batch-size: '15'
+      checkpoint-save-interval-seconds: '60'
       pruner:
         enabled: 'true'
         interval: '60480'
@@ -406,6 +407,7 @@ enabled_nets:
         b3tr: '75'
         historic-proposals: '125'
       channel-batch-size: '15'
+      checkpoint-save-interval-seconds: '60'
       pruner:
         enabled: 'true'
         interval: '60480'

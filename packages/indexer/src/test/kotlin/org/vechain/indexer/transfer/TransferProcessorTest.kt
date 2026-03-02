@@ -27,6 +27,7 @@ class TransferProcessorTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
+        every { checkpointService.trySaveCheckpoint(any(), any()) } just Runs
 
         transferProcessor =
             TransferProcessor(
@@ -41,7 +42,7 @@ class TransferProcessorTest {
     fun `process - if no events should not do anything`() {
         runBlocking {
             transferProcessor.process(
-                IndexingResult.EventsOnly(
+                IndexingResult.LogResult(
                     events = emptyList(),
                     endBlock = 100,
                     status = Status.SYNCING,

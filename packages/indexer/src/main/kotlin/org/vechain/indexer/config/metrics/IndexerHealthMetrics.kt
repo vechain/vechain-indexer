@@ -130,10 +130,8 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
             Status.INITIALISED -> 1.0
             Status.SYNCING -> 2.0
             Status.FAST_SYNCING -> 3.0
-            Status.PRUNING -> 4.0
             Status.SHUT_DOWN -> 5.0
             Status.FULLY_SYNCED -> 6.0
-            else -> -1.0
         }
 
     private fun String.toReadableEnumLabel(): String =

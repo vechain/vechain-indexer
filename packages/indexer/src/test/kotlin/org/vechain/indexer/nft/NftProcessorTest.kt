@@ -32,6 +32,7 @@ internal class NftProcessorTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
+        every { checkpointService.trySaveCheckpoint(any(), any()) } just Runs
 
         processor =
             NftProcessor(
@@ -53,7 +54,7 @@ internal class NftProcessorTest {
 
         runBlocking {
             processor.process(
-                IndexingResult.EventsOnly(
+                IndexingResult.LogResult(
                     events.maxBy { it.blockNumber }.blockNumber,
                     events,
                     Status.SYNCING,
@@ -104,7 +105,7 @@ internal class NftProcessorTest {
 
         runBlocking {
             processor.process(
-                IndexingResult.EventsOnly(
+                IndexingResult.LogResult(
                     events.maxBy { it.blockNumber }.blockNumber,
                     events,
                     Status.SYNCING,
@@ -142,7 +143,7 @@ internal class NftProcessorTest {
 
         runBlocking {
             processor.process(
-                IndexingResult.EventsOnly(
+                IndexingResult.LogResult(
                     events.maxBy { it.blockNumber }.blockNumber,
                     events,
                     Status.SYNCING,
@@ -180,7 +181,7 @@ internal class NftProcessorTest {
 
         runBlocking {
             processor.process(
-                IndexingResult.EventsOnly(
+                IndexingResult.LogResult(
                     events.maxBy { it.blockNumber }.blockNumber,
                     events,
                     Status.SYNCING,

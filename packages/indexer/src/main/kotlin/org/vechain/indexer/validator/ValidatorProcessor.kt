@@ -29,8 +29,10 @@ open class ValidatorProcessor(
     ) {
 
     override suspend fun processEntry(entry: IndexingResult) {
-        if (entry !is IndexingResult.Normal) {
-            throw IllegalArgumentException("Block cannot be null")
+        if (entry !is IndexingResult.BlockResult) {
+            throw IllegalArgumentException(
+                "Expected IndexingResult.BlockResult (full block result) but got ${entry::class.simpleName}"
+            )
         }
 
         // Initialize queue positions from contract if any queued validators still have null

@@ -31,6 +31,7 @@ class VeVoteResultIndexerTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
+        every { checkpointService.trySaveCheckpoint(any(), any()) } just Runs
 
         voteResultsIndexer =
             VeVoteResultProcessor(
@@ -46,7 +47,7 @@ class VeVoteResultIndexerTest {
     fun `process block with no vote events`() {
         runBlocking {
             voteResultsIndexer.process(
-                IndexingResult.Normal(
+                IndexingResult.BlockResult(
                     events = emptyList(),
                     block = BLOCK_NO_CLAUSES,
                     callResults = emptyList(),

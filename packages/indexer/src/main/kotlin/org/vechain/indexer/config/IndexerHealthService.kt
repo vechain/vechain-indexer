@@ -23,7 +23,6 @@ class IndexerHealthService(
      */
     fun getIndexerHealth(indexer: Indexer): Pair<HealthStatus, String> {
         when (indexer.getStatus()) {
-            Status.PRUNING -> return HealthStatus.UP to "Indexer is pruning"
             Status.NOT_INITIALISED -> return HealthStatus.UP to "Indexer is not initialised"
             Status.INITIALISED -> return HealthStatus.UP to "Indexer is initialised but not started"
             Status.SHUT_DOWN -> return HealthStatus.DOWN to "Indexer is shut down"
