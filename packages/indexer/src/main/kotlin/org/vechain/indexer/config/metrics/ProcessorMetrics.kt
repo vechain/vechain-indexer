@@ -30,7 +30,7 @@ class ProcessorMetrics(private val registry: MeterRegistry) {
     fun observeBlockCycleTime(indexerName: String, duration: Duration) {
         cycleTimeTimers
             .computeIfAbsent(indexerName) {
-                DefaultMetrics.newTimer("processor_cycle_time")
+                DefaultMetrics.newCycleTimeTimer("processor_cycle_time")
                     .description("Wall-clock cycle time between block processing iterations")
                     .tag("indexer_name", indexerName)
                     .register(registry)
