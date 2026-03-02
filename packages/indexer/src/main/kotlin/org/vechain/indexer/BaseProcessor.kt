@@ -1,6 +1,5 @@
 package org.vechain.indexer
 
-import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 import org.slf4j.LoggerFactory
 import org.springframework.transaction.annotation.Transactional
