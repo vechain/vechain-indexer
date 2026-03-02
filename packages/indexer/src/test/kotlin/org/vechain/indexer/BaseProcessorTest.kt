@@ -332,6 +332,66 @@ class BaseProcessorTest {
         }
 
         @Test
+        fun `does not record cycle time when fully synced`() = runBlocking {
+            metricsProcessor.process(
+                IndexingResult.BlockResult(
+                    block(100),
+                    emptyList(),
+                    emptyList(),
+                    Status.FULLY_SYNCED,
+                )
+            )
+            metricsProcessor.process(
+                IndexingResult.BlockResult(
+                    block(101),
+                    emptyList(),
+                    emptyList(),
+                    Status.FULLY_SYNCED,
+                )
+            )
+
+            val timer =
+                meterRegistry
+                    .find("processor_cycle_time")
+                    .tag("indexer_name", TEST_INDEXER_NAME)
+                    .timer()
+
+            assertNull(timer)
+        }
+
+        @Test
+        fun `transition from syncing to fully synced stops cycle time tracking`() = runBlocking {
+            metricsProcessor.process(
+                IndexingResult.BlockResult(block(100), emptyList(), emptyList(), Status.SYNCING)
+            )
+            metricsProcessor.process(
+                IndexingResult.BlockResult(block(101), emptyList(), emptyList(), Status.SYNCING)
+            )
+            // Transition to FULLY_SYNCED — should not record and should reset lastIterationEnd
+            metricsProcessor.process(
+                IndexingResult.BlockResult(
+                    block(102),
+                    emptyList(),
+                    emptyList(),
+                    Status.FULLY_SYNCED,
+                )
+            )
+            // Back to SYNCING — should not record (no previous end after reset)
+            metricsProcessor.process(
+                IndexingResult.BlockResult(block(103), emptyList(), emptyList(), Status.SYNCING)
+            )
+
+            val timer =
+                meterRegistry
+                    .find("processor_cycle_time")
+                    .tag("indexer_name", TEST_INDEXER_NAME)
+                    .timer()!!
+
+            // Only the second SYNCING call (block 101) should have recorded
+            assertEquals(1L, timer.count())
+        }
+
+        @Test
         fun `rollback resets cycle time tracking`() = runBlocking {
             every { checkpointService.saveCheckpoint(TEST_COLLECTION, 99) } just Runs
             every { repository.deleteAllByBlockNumberGreaterThanEqual(100) } just Runs
