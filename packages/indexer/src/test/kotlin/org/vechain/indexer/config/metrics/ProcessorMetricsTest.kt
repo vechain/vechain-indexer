@@ -41,6 +41,17 @@ class ProcessorMetricsTest {
     }
 
     @Test
+    fun `observeBlockCycleTime records timer`() {
+        metrics.observeBlockCycleTime("test-indexer", 100.milliseconds)
+
+        val timer =
+            registry.find("processor_cycle_time").tag("indexer_name", "test-indexer").timer()
+
+        assertThat(timer).isNotNull
+        assertThat(timer!!.count()).isEqualTo(1)
+    }
+
+    @Test
     fun `incrementEventsCounter increments by count`() {
         metrics.incrementEventsCounter("test-indexer", 5.0)
 

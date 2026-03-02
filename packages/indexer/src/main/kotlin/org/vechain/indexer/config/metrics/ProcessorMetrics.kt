@@ -13,6 +13,7 @@ import org.vechain.indexer.config.DefaultMetrics
 class ProcessorMetrics(private val registry: MeterRegistry) {
 
     private val processingDurationTimers = ConcurrentHashMap<String, Timer>()
+    private val cycleTimeTimers = ConcurrentHashMap<String, Timer>()
     private val eventsCounters = ConcurrentHashMap<String, Counter>()
 
     fun observeProcessingDuration(indexerName: String, duration: Duration) {
@@ -20,6 +21,17 @@ class ProcessorMetrics(private val registry: MeterRegistry) {
             .computeIfAbsent(indexerName) {
                 DefaultMetrics.newTimer("processor_duration")
                     .description("Duration of indexer processing")
+                    .tag("indexer_name", indexerName)
+                    .register(registry)
+            }
+            .record(duration.toJavaDuration())
+    }
+
+    fun observeBlockCycleTime(indexerName: String, duration: Duration) {
+        cycleTimeTimers
+            .computeIfAbsent(indexerName) {
+                DefaultMetrics.newTimer("processor_cycle_time")
+                    .description("Wall-clock cycle time between block processing iterations")
                     .tag("indexer_name", indexerName)
                     .register(registry)
             }

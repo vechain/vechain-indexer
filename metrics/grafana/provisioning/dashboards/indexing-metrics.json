@@ -278,7 +278,7 @@
           "refId": "A"
         }
       ],
-      "title": "Avg. Processing Time Per Block",
+      "title": "Avg. Block Processing Time",
       "type": "stat"
     },
     {
@@ -559,7 +559,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Avg Block Time"
+                "value": "Block Processing Time"
               },
               {
                 "id": "unit",
@@ -607,6 +607,49 @@
               {
                 "id": "unit",
                 "value": "locale"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #F"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Block Cycle Time"
+              },
+              {
+                "id": "unit",
+                "value": "ms"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 10
+                    },
+                    {
+                      "color": "red",
+                      "value": 200
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "basic",
+                  "type": "color-background"
+                }
               }
             ]
           }
@@ -665,6 +708,13 @@
           "instant": true,
           "legendFormat": "__auto",
           "refId": "E"
+        },
+        {
+          "expr": "1000 * sum by(indexer_name) (increase(processor_cycle_time_seconds_sum{indexer_name=~\"$indexer\"}[$__range])) / sum by(indexer_name) (increase(indexer_blocks_processed_total{indexer_name=~\"$indexer\"}[$__range])) and sum by(indexer_name) (increase(indexer_blocks_processed_total{indexer_name=~\"$indexer\"}[$__range])) > 0",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "__auto",
+          "refId": "F"
         }
       ],
       "title": "Indexer Overview",
@@ -692,7 +742,8 @@
               "Value #B": 2,
               "Value #C": 3,
               "Value #D": 4,
-              "Value #E": 5,
+              "Value #E": 6,
+              "Value #F": 5,
               "indexer_name": 0
             },
             "renameByName": {
@@ -985,6 +1036,188 @@
       "fieldConfig": {
         "defaults": {
           "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "log": 2,
+              "type": "log"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 33
+      },
+      "id": 18,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.0",
+      "targets": [
+        {
+          "expr": "1000 * sum by(indexer_name) (rate(processor_cycle_time_seconds_sum{indexer_name=~\"$indexer\"}[5m])) / sum by(indexer_name) (rate(indexer_blocks_processed_total{indexer_name=~\"$indexer\"}[5m])) and sum by(indexer_name) (rate(indexer_blocks_processed_total{indexer_name=~\"$indexer\"}[5m])) > 0",
+          "legendFormat": "{{indexer_name}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Block Cycle Time Per Block (Avg)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "log": 2,
+              "type": "log"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 33
+      },
+      "id": 19,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.0",
+      "targets": [
+        {
+          "expr": "1000 * histogram_quantile(0.95, sum by(le, indexer_name) (rate(processor_cycle_time_seconds_bucket{indexer_name=~\"$indexer\"}[$__rate_interval])))",
+          "legendFormat": "{{indexer_name}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Block Cycle Time P95",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
             "mode": "thresholds"
           },
           "mappings": [],
@@ -1014,7 +1247,7 @@
         "h": 10,
         "w": 12,
         "x": 12,
-        "y": 33
+        "y": 41
       },
       "id": 11,
       "options": {
@@ -1050,7 +1283,7 @@
           "refId": "A"
         }
       ],
-      "title": "Avg Processing Time Per Block by Indexer",
+      "title": "Avg Block Processing Time by Indexer",
       "type": "bargauge"
     },
     {
@@ -1083,7 +1316,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 39
+        "y": 47
       },
       "id": 10,
       "options": {
@@ -1184,7 +1417,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 43
+        "y": 51
       },
       "id": 6,
       "options": {
