@@ -1,6 +1,6 @@
 {
   "filter": {
-    "query": "source:cloudwatch service:(*api OR *indexer)"
+    "query": "service:cloudwatch host:veworld-*"
   },
   "id": "7sMIt-hoT-C2VxXZ50G49w",
   "is_enabled": true,
