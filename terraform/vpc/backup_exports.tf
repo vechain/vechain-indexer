@@ -65,9 +65,9 @@ resource "mongodbatlas_cloud_provider_access_setup" "backup_export" {
   provider_name = "AWS"
 }
 
-resource "aws_iam_role" "atlas_backup_export" {
+resource "aws_iam_role" "atlas_export_backup_role" {
   count = local.env.environment == "prod" ? 1 : 0
-  name  = "veworld-atlas-backup-export"
+  name  = "veworld-atlas-export-backup-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -91,7 +91,7 @@ resource "aws_iam_role" "atlas_backup_export" {
   }
 }
 
-resource "aws_iam_role_policy" "atlas_backup_export_s3" {
+resource "aws_iam_role_policy" "atlas_export_backup_s3" {
   count = local.env.environment == "prod" ? 1 : 0
   name  = "atlas-backup-export-s3-access"
   role  = aws_iam_role.atlas_backup_export[0].id
