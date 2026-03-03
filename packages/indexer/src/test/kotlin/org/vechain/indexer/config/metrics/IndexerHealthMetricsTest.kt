@@ -148,26 +148,7 @@ class IndexerHealthMetricsTest {
     // --- indexer_sync_status_code_gauge tests ---
 
     @Test
-    fun `setIndexerSyncStatus creates status code gauge per status with correct tags`() {
-        metrics.setIndexerSyncStatus("test-indexer", Status.SYNCING)
-
-        Status.entries.forEach { status ->
-            val gauge =
-                registry
-                    .find("indexer_sync_status_code_gauge")
-                    .tag("indexer_name", "test-indexer")
-                    .tag("status", status.name)
-                    .gauge()
-
-            assertThat(gauge).describedAs("gauge for status ${status.name} should exist").isNotNull
-            assertThat(gauge!!.id.getTag("status_readable"))
-                .describedAs("status_readable tag should be present for ${status.name}")
-                .isNotNull
-        }
-    }
-
-    @Test
-    fun `setIndexerSyncStatus active status reports expected code while others are NaN`() {
+    fun `setIndexerSyncStatus creates status code gauge only for active status`() {
         metrics.setIndexerSyncStatus("test-indexer", Status.SYNCING)
 
         val activeGauge =
@@ -177,8 +158,10 @@ class IndexerHealthMetricsTest {
                 .tag("status", Status.SYNCING.name)
                 .gauge()
 
-        assertThat(activeGauge).isNotNull
-        assertThat(activeGauge!!.value()).isEqualTo(2.0)
+        assertThat(activeGauge).describedAs("gauge for active status should exist").isNotNull
+        assertThat(activeGauge!!.id.getTag("status_readable"))
+            .describedAs("status_readable tag should be present")
+            .isNotNull
 
         Status.entries
             .filter { it != Status.SYNCING }
@@ -190,11 +173,25 @@ class IndexerHealthMetricsTest {
                         .tag("status", status.name)
                         .gauge()
 
-                assertThat(gauge).isNotNull
-                assertThat(gauge!!.value())
-                    .describedAs("inactive status ${status.name} should be NaN")
-                    .isNaN()
+                assertThat(gauge)
+                    .describedAs("gauge for inactive status ${status.name} should not exist")
+                    .isNull()
             }
+    }
+
+    @Test
+    fun `setIndexerSyncStatus active status reports expected code`() {
+        metrics.setIndexerSyncStatus("test-indexer", Status.SYNCING)
+
+        val activeGauge =
+            registry
+                .find("indexer_sync_status_code_gauge")
+                .tag("indexer_name", "test-indexer")
+                .tag("status", Status.SYNCING.name)
+                .gauge()
+
+        assertThat(activeGauge).isNotNull
+        assertThat(activeGauge!!.value()).isEqualTo(2.0)
     }
 
     @Test
@@ -253,26 +250,41 @@ class IndexerHealthMetricsTest {
     // --- indexer_sync_status_gauge tests ---
 
     @Test
-    fun `setIndexerSyncStatus creates sync status gauge per status with correct tags`() {
+    fun `setIndexerSyncStatus creates sync status gauge only for active status`() {
         metrics.setIndexerSyncStatus("test-indexer", Status.SYNCING)
 
-        Status.entries.forEach { status ->
-            val gauge =
-                registry
-                    .find("indexer_sync_status_gauge")
-                    .tag("indexer_name", "test-indexer")
-                    .tag("status", status.name)
-                    .gauge()
+        val activeGauge =
+            registry
+                .find("indexer_sync_status_gauge")
+                .tag("indexer_name", "test-indexer")
+                .tag("status", Status.SYNCING.name)
+                .gauge()
 
-            assertThat(gauge)
-                .describedAs("sync status gauge for ${status.name} should exist")
-                .isNotNull
-            assertThat(gauge!!.id.getTag("status_readable")).isNotNull
-        }
+        assertThat(activeGauge)
+            .describedAs("sync status gauge for active status should exist")
+            .isNotNull
+        assertThat(activeGauge!!.id.getTag("status_readable")).isNotNull
+
+        Status.entries
+            .filter { it != Status.SYNCING }
+            .forEach { status ->
+                val gauge =
+                    registry
+                        .find("indexer_sync_status_gauge")
+                        .tag("indexer_name", "test-indexer")
+                        .tag("status", status.name)
+                        .gauge()
+
+                assertThat(gauge)
+                    .describedAs(
+                        "sync status gauge for inactive status ${status.name} should not exist"
+                    )
+                    .isNull()
+            }
     }
 
     @Test
-    fun `setIndexerSyncStatus active status is 1 while others are 0`() {
+    fun `setIndexerSyncStatus active status is 1`() {
         metrics.setIndexerSyncStatus("test-indexer", Status.FAST_SYNCING)
 
         val activeGauge =
@@ -283,21 +295,29 @@ class IndexerHealthMetricsTest {
                 .gauge()
 
         assertThat(activeGauge!!.value()).isEqualTo(1.0)
+    }
 
-        Status.entries
-            .filter { it != Status.FAST_SYNCING }
-            .forEach { status ->
-                val gauge =
-                    registry
-                        .find("indexer_sync_status_gauge")
-                        .tag("indexer_name", "test-indexer")
-                        .tag("status", status.name)
-                        .gauge()
+    @Test
+    fun `setIndexerSyncStatus switching status sets previous sync status gauge to NaN`() {
+        metrics.setIndexerSyncStatus("test-indexer", Status.SYNCING)
+        metrics.setIndexerSyncStatus("test-indexer", Status.FULLY_SYNCED)
 
-                assertThat(gauge!!.value())
-                    .describedAs("inactive status ${status.name} should be 0")
-                    .isEqualTo(0.0)
-            }
+        val syncingGauge =
+            registry
+                .find("indexer_sync_status_gauge")
+                .tag("indexer_name", "test-indexer")
+                .tag("status", Status.SYNCING.name)
+                .gauge()
+
+        val fullySyncedGauge =
+            registry
+                .find("indexer_sync_status_gauge")
+                .tag("indexer_name", "test-indexer")
+                .tag("status", Status.FULLY_SYNCED.name)
+                .gauge()
+
+        assertThat(syncingGauge!!.value()).isNaN()
+        assertThat(fullySyncedGauge!!.value()).isEqualTo(1.0)
     }
 
     // --- indexer_current_block_by_status_gauge tests ---

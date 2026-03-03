@@ -17,6 +17,7 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
     private val syncStatusCodeGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
     private val currentBlockByStatusGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
     private val lastBlockStatusByIndexer = ConcurrentHashMap<String, Status>()
+    private val lastSyncStatusByIndexer = ConcurrentHashMap<String, Status>()
     private val bestBlockGauge = AtomicReference(0.0)
     private var bestBlockGaugeInitialized = false
     private val syncGapGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
@@ -44,26 +45,12 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
     fun setIndexerSyncStatus(indexerName: String, syncStatus: Status) {
         setIndexerSyncStatusCode(indexerName, syncStatus)
 
-        Status.entries.forEach { status ->
-            val key = "$indexerName:${status.name}"
-            val statusReadable = status.name.toReadableEnumLabel()
-            syncStatusGauges
-                .computeIfAbsent(key) {
-                    val ref = AtomicReference(0.0)
-                    registry.gauge(
-                        "indexer_sync_status_gauge",
-                        listOf(
-                            Tag.of("indexer_name", indexerName),
-                            Tag.of("status", status.name),
-                            Tag.of("status_readable", statusReadable),
-                        ),
-                        ref,
-                    ) {
-                        it.get()
-                    }
-                    ref
-                }
-                .set(if (status == syncStatus) 1.0 else 0.0)
+        lastSyncStatusByIndexer.compute(indexerName) { _, previousStatus ->
+            if (previousStatus != null && previousStatus != syncStatus) {
+                getOrCreateSyncStatusGauge(indexerName, previousStatus).set(Double.NaN)
+            }
+            getOrCreateSyncStatusGauge(indexerName, syncStatus).set(1.0)
+            syncStatus
         }
     }
 
@@ -101,26 +88,57 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
     }
 
     private fun setIndexerSyncStatusCode(indexerName: String, syncStatus: Status) {
-        Status.entries.forEach { status ->
-            val key = "$indexerName:${status.name}"
-            val statusReadable = status.name.toReadableEnumLabel()
-            syncStatusCodeGauges
-                .computeIfAbsent(key) {
-                    val ref = AtomicReference(Double.NaN)
-                    registry.gauge(
-                        "indexer_sync_status_code_gauge",
-                        listOf(
-                            Tag.of("indexer_name", indexerName),
-                            Tag.of("status", status.name),
-                            Tag.of("status_readable", statusReadable),
-                        ),
-                        ref,
-                    ) {
-                        it.get()
-                    }
-                    ref
-                }
-                .set(if (status == syncStatus) syncStatus.toStatusCode() else Double.NaN)
+        // Reuses lastSyncStatusByIndexer tracked by setIndexerSyncStatus (called first)
+        val previousStatus = lastSyncStatusByIndexer[indexerName]
+        if (previousStatus != null && previousStatus != syncStatus) {
+            getOrCreateSyncStatusCodeGauge(indexerName, previousStatus).set(Double.NaN)
+        }
+        getOrCreateSyncStatusCodeGauge(indexerName, syncStatus).set(syncStatus.toStatusCode())
+    }
+
+    private fun getOrCreateSyncStatusGauge(
+        indexerName: String,
+        status: Status,
+    ): AtomicReference<Double> {
+        val key = "$indexerName:${status.name}"
+        val statusReadable = status.name.toReadableEnumLabel()
+        return syncStatusGauges.computeIfAbsent(key) {
+            val ref = AtomicReference(Double.NaN)
+            registry.gauge(
+                "indexer_sync_status_gauge",
+                listOf(
+                    Tag.of("indexer_name", indexerName),
+                    Tag.of("status", status.name),
+                    Tag.of("status_readable", statusReadable),
+                ),
+                ref,
+            ) {
+                it.get()
+            }
+            ref
+        }
+    }
+
+    private fun getOrCreateSyncStatusCodeGauge(
+        indexerName: String,
+        status: Status,
+    ): AtomicReference<Double> {
+        val key = "$indexerName:${status.name}"
+        val statusReadable = status.name.toReadableEnumLabel()
+        return syncStatusCodeGauges.computeIfAbsent(key) {
+            val ref = AtomicReference(Double.NaN)
+            registry.gauge(
+                "indexer_sync_status_code_gauge",
+                listOf(
+                    Tag.of("indexer_name", indexerName),
+                    Tag.of("status", status.name),
+                    Tag.of("status_readable", statusReadable),
+                ),
+                ref,
+            ) {
+                it.get()
+            }
+            ref
         }
     }
 
