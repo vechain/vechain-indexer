@@ -7,12 +7,14 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
 import io.mockk.verify
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.vechain.indexer.archive.Archive
-import org.vechain.indexer.archive.ArchiveService
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 
@@ -20,7 +22,7 @@ import org.vechain.indexer.config.metrics.ProcessorMetrics
 class BaseStatefulProcessorTest {
     @MockK lateinit var repository: BaseIndexedRepository<TestDocument, String>
 
-    @MockK lateinit var archiveService: ArchiveService<TestDocument, TestDocumentArchive>
+    @MockK lateinit var mongoTemplate: MongoTemplate
 
     @MockK lateinit var checkpointService: CheckpointService
 
@@ -29,25 +31,31 @@ class BaseStatefulProcessorTest {
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
+        mockkObject(InlineVersionService)
 
         processor =
             TestableBaseStatefulProcessor(
                 repository,
-                archiveService,
+                mongoTemplate,
                 checkpointService,
                 mockk(relaxed = true),
             )
     }
 
+    @AfterEach
+    fun tearDown() {
+        unmockkObject(InlineVersionService)
+    }
+
     @Test
-    fun `rollback - saves checkpoint and rolls back archives`() {
+    fun `rollback - saves checkpoint and rolls back inline versions`() {
         every { checkpointService.saveCheckpoint(TEST_COLLECTION, 9) } just Runs
-        every { archiveService.rollback(10) } just Runs
+        every { InlineVersionService.rollback(TEST_COLLECTION, 10, mongoTemplate) } just Runs
 
         processor.rollback(10)
 
         verify(exactly = 1) { checkpointService.saveCheckpoint(TEST_COLLECTION, 9) }
-        verify(exactly = 1) { archiveService.rollback(10) }
+        verify(exactly = 1) { InlineVersionService.rollback(TEST_COLLECTION, 10, mongoTemplate) }
     }
 
     data class TestDocument(
@@ -61,18 +69,15 @@ class BaseStatefulProcessorTest {
         }
     }
 
-    data class TestDocumentArchive(override val id: String, override val data: TestDocument) :
-        Archive<TestDocument>
-
     class TestableBaseStatefulProcessor(
         repository: BaseIndexedRepository<*, *>,
-        archiveService: ArchiveService<*, *>,
+        mongoTemplate: MongoTemplate,
         checkpointService: CheckpointService,
         processorMetrics: ProcessorMetrics,
     ) :
         BaseStatefulProcessor(
             repository,
-            archiveService,
+            mongoTemplate,
             TEST_INDEXER_NAME,
             checkpointService,
             TEST_COLLECTION,

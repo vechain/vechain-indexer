@@ -1,26 +1,27 @@
 package org.vechain.indexer.accounts
 
 import java.math.BigInteger
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.accounts.repository.AccountOverviewRepository
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.config.ForkConfig
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.NetworkDetectionService
 import org.vechain.indexer.config.VeChainNetwork
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.HexUtils.toBigInteger
 import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
-import org.vechain.indexer.thor.client.ExecuteAccountResponse
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.BlockRevision
@@ -28,52 +29,12 @@ import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
-/**
- * A simple read-once cache that clears entries after they are consumed. Useful for caching values
- * that will be needed exactly once in a subsequent operation.
- */
-private class ReadOnceCache<K, V> {
-    private val cache = mutableMapOf<K, V>()
-
-    /**
-     * Get a cached value if present (removes it from cache), or fetch and cache a new value.
-     *
-     * @param key The cache key
-     * @param fetcher Function to fetch the value if not cached
-     * @return The cached or fetched value
-     */
-    suspend fun getOrFetch(key: K, fetcher: suspend () -> V): V {
-        val cached = cache.remove(key)
-        if (cached != null) {
-            return cached
-        }
-        val fetched = fetcher()
-        cache[key] = fetched
-        return fetched
-    }
-
-    /**
-     * Store a value in the cache for later retrieval.
-     *
-     * @param key The cache key
-     * @param value The value to cache
-     */
-    fun put(key: K, value: V) {
-        cache[key] = value
-    }
-
-    /** Clear all cached entries. */
-    fun clear() {
-        cache.clear()
-    }
-}
-
 @Profile("accounts", "account-overview")
 @Service
 open class AccountOverviewService(
     private val repository: AccountOverviewRepository,
-    private val archiveService: ArchiveService<AccountOverview, AccountOverviewArchive>,
-    private val accountOverviewPruner: TargetedPruner<AccountOverview, AccountOverviewArchive>,
+    private val inlineVersioningProperties: InlineVersioningProperties,
+    private val mongoTemplate: MongoTemplate,
     private val forkConfig: ForkConfig,
     private val networkDetectionService: NetworkDetectionService,
     private val thorClient: ThorClient,
@@ -81,33 +42,8 @@ open class AccountOverviewService(
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    /**
-     * Cache for account states keyed by (address, blockId). Used to avoid redundant API calls when
-     * the state fetched for block N can be reused as the parent state for block N+1.
-     */
-    private val accountStateCache = ReadOnceCache<Pair<String, String>, ExecuteAccountResponse>()
-
     private val detectedNetwork: VeChainNetwork by lazy {
         networkDetectionService.detectBlocking().network
-    }
-
-    /**
-     * Get account state with caching support. Fetches account state and caches it. If a cached
-     * value exists for the key, it is returned and removed from the cache (read-once behavior).
-     *
-     * @param address The account address
-     * @param blockId The block ID to query state at
-     * @return The account state
-     */
-    private suspend fun getAccountStateWithCache(
-        address: String,
-        blockId: String,
-    ): ExecuteAccountResponse {
-        return accountStateCache.getOrFetch(address to blockId) {
-            thorClient.getAccountState(address, BlockRevision.Id(blockId)).also {
-                accountStateCache.put(address to blockId, it)
-            }
-        }
     }
 
     open suspend fun processBlock(
@@ -116,9 +52,31 @@ open class AccountOverviewService(
     ): Pair<List<AccountOverview>, List<AccountOverview>> {
         assertEventTypes(events, "VET_TRANSFER", "Transfer")
 
+        // Pre-collect all addresses that will be needed and batch-load from DB
+        val allAddresses = mutableSetOf<String>()
+        block.transactions.forEach { tx ->
+            allAddresses.add(tx.origin)
+            allAddresses.add(tx.gasPayer)
+        }
+        events
+            .filter { it.eventType == "VET_TRANSFER" }
+            .forEach { event ->
+                event.params.getAsString("from")?.let { allAddresses.add(it) }
+                event.params.getAsString("to")?.let { allAddresses.add(it) }
+            }
+        if (block.number > 0L) {
+            allAddresses.add(block.beneficiary)
+        }
+        val preloaded =
+            if (allAddresses.isNotEmpty()) {
+                repository.findAllById(allAddresses).associateBy { it.getDocumentId() }
+            } else {
+                emptyMap()
+            }
+
         val accumulator =
             VersionedDocumentAccumulator<AccountOverview>(
-                repository::findByIdOrNull,
+                findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) },
                 initialVersion = 0,
             )
         accumulator.startBlock()
@@ -143,7 +101,7 @@ open class AccountOverviewService(
         }
 
         // Calculate and apply block rewards for pre-Hayabusa blocks
-        vthoBlockRewardsRule(block, events, accumulator, resolved)
+        vthoBlockRewardsRule(block, events, accumulator, resolved, preloaded)
 
         return accumulator.results()
     }
@@ -153,8 +111,9 @@ open class AccountOverviewService(
         saveVersionedDocuments(
             updated = updated,
             existing = existing,
-            archiveService = archiveService,
-            pruner = accountOverviewPruner,
+            mongoTemplate = mongoTemplate,
+            blockWindow = inlineVersioningProperties.blockWindow,
+            maxVersions = inlineVersioningProperties.maxVersions,
         )
     }
 
@@ -434,6 +393,7 @@ open class AccountOverviewService(
         events: List<IndexedEvent>,
         accumulator: VersionedDocumentAccumulator<AccountOverview>,
         resolved: MutableMap<String, AccountOverview>,
+        preloaded: Map<String, AccountOverview> = emptyMap(),
     ) {
         // Skip genesis block (no parent block to compare against)
         if (block.number == 0L) {
@@ -442,22 +402,31 @@ open class AccountOverviewService(
 
         val beneficiary = block.beneficiary
 
-        // 1. Get account state at block n-1 (VTHO and VET balances)
-        val accountStateAtNMinus1 = getAccountStateWithCache(beneficiary, block.parentID)
+        // 1. Fetch account state at block n-1 and block n in parallel
+        val (accountStateAtNMinus1, accountStateAtN) =
+            coroutineScope {
+                val deferredNMinus1 = async {
+                    thorClient.getAccountState(beneficiary, BlockRevision.Id(block.parentID))
+                }
+                val deferredN = async {
+                    thorClient.getAccountState(beneficiary, BlockRevision.Id(block.id))
+                }
+                deferredNMinus1.await() to deferredN.await()
+            }
+
         val vthoAtNMinus1 = accountStateAtNMinus1.energy.hexToBigInteger()
         val vetAtNMinus1 = accountStateAtNMinus1.balance.hexToBigInteger()
 
         // 2. Calculate passive VTHO generation from timestamp(n-1) to timestamp(n)
-        // Direct DB read needed here for pre-block state (not the accumulator's cached copy)
-        val beneficiaryAccount = repository.findByIdOrNull(beneficiary)
+        // Use the pre-block DB state (from batch preload) to check lastVthoSettlement
+        val beneficiaryAccount = preloaded[beneficiary]
         val passiveVtho =
             calculatePassiveVthoForBlock(vetAtNMinus1, block.number, beneficiaryAccount)
 
         // 3. Calculate Btrue (settled balance at n-1 plus passive generation up to block n)
         val btrue = vthoAtNMinus1 + passiveVtho
 
-        // 4. Get VTHO balance at block n
-        val accountStateAtN = getAccountStateWithCache(beneficiary, block.id)
+        // 4. Get VTHO balance at block n (already fetched above)
         val vthoAtN = accountStateAtN.energy.hexToBigInteger()
 
         // 5. Calculate VTHO transfer delta in block n

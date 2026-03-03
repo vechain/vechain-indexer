@@ -13,9 +13,9 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.UserDailyActionSummaryRepository
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.checkpoint.CheckpointService
@@ -27,9 +27,7 @@ import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 internal class UserDailyActionSummaryProcessorTest {
     @MockK lateinit var repository: UserDailyActionSummaryRepository
 
-    @MockK
-    lateinit var archiveService:
-        ArchiveService<UserDailyActionSummary, UserDailyActionSummaryArchive>
+    @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
 
     @MockK lateinit var service: UserDailyActionSummaryService
 
@@ -42,10 +40,11 @@ internal class UserDailyActionSummaryProcessorTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
+        every { checkpointService.trySaveCheckpoint(any(), any()) } just Runs
         processor =
             UserDailyActionSummaryProcessor(
                 repository = repository,
-                userDailyActionSummaryArchiveService = archiveService,
+                mongoTemplate = mongoTemplate,
                 service = service,
                 checkpointService = checkpointService,
                 processorMetrics = processorMetrics,
@@ -55,7 +54,7 @@ internal class UserDailyActionSummaryProcessorTest {
     @Test
     fun `process empty events doesn't save any records`() {
         runBlocking {
-            processor.process(IndexingResult.EventsOnly(100, emptyList(), Status.SYNCING))
+            processor.process(IndexingResult.LogResult(100, emptyList(), Status.SYNCING))
         }
 
         // Verify that service.save is not called
@@ -112,7 +111,7 @@ internal class UserDailyActionSummaryProcessorTest {
         // Verify that service.save is called with the correct parameters
         runBlocking {
             processor.process(
-                IndexingResult.EventsOnly(events.maxOf { it.blockNumber }, events, Status.SYNCING)
+                IndexingResult.LogResult(events.maxOf { it.blockNumber }, events, Status.SYNCING)
             )
         }
 

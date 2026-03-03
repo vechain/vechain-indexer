@@ -62,9 +62,9 @@ class HistoryIndexerTest {
 
             val result = indexingResult.captured
 
-            expectThat(result is IndexingResult.Normal).isTrue()
+            expectThat(result is IndexingResult.BlockResult).isTrue()
 
-            val normalResult = result as IndexingResult.Normal
+            val normalResult = result as IndexingResult.BlockResult
 
             expectThat(normalResult.block.number).isEqualTo(20614874L)
             expect { that(normalResult.events()).hasSize(5) }
@@ -108,8 +108,8 @@ class HistoryIndexerTest {
         SimpleBlockIndexerCoordinator.launch(indexer = indexer, blocks = listOf(dexBlock))
 
         val result = indexingResult.captured
-        expectThat(result is IndexingResult.Normal).isTrue()
-        val normalResult = result as IndexingResult.Normal
+        expectThat(result is IndexingResult.BlockResult).isTrue()
+        val normalResult = result as IndexingResult.BlockResult
 
         expect { that(normalResult.events).hasSize(7) }
         val eventTypes = normalResult.events.map { it.eventType }
@@ -153,8 +153,8 @@ class HistoryIndexerTest {
         SimpleBlockIndexerCoordinator.launch(indexer = indexer, blocks = listOf(mpSales))
 
         val result = indexingResult.captured
-        expectThat(result is IndexingResult.Normal).isTrue()
-        val normalResult = result as IndexingResult.Normal
+        expectThat(result is IndexingResult.BlockResult).isTrue()
+        val normalResult = result as IndexingResult.BlockResult
 
         expect { that(normalResult.events).hasSize(6) }
         val eventTypes = normalResult.events.map { it.eventType }
@@ -210,7 +210,7 @@ class HistoryIndexerTest {
         expectThat(capturedResults).hasSize(stargateBlocks.size)
 
         val allEvents =
-            capturedResults.filterIsInstance<IndexingResult.Normal>().flatMap { it.events }
+            capturedResults.filterIsInstance<IndexingResult.BlockResult>().flatMap { it.events }
 
         val eventTypes = allEvents.map { it.eventType }
         expect {
@@ -270,7 +270,7 @@ class HistoryIndexerTest {
         expectThat(capturedResults).hasSize(stargateBlocks.size)
 
         val allEvents =
-            capturedResults.filterIsInstance<IndexingResult.Normal>().flatMap { it.events }
+            capturedResults.filterIsInstance<IndexingResult.BlockResult>().flatMap { it.events }
 
         val eventTypes = allEvents.map { it.eventType }
         expect {

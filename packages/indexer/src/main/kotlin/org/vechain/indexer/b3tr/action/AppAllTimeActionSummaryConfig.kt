@@ -4,54 +4,20 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.config.BusinessEventProperties
-import org.vechain.indexer.pruner.PrunerService
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
 @Profile("b3tr", "b3tr-actions", "b3tr-app-all-time-action-summary")
 open class AppAllTimeActionSummaryConfig {
     @Bean
-    open fun appAllTimeActionSummaryArchiveService(
-        mongoTemplate: MongoTemplate,
-        @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
-    ): ArchiveService<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive> {
-        return ArchiveService(
-            mongoTemplate = mongoTemplate,
-            clazz = AppAllTimeActionSummary::class.java,
-            archiveClazz = AppAllTimeActionSummaryArchive::class.java,
-            queryLimit = recordLimit,
-        )
-    }
-
-    @Bean
-    open fun appAllTimeActionSummaryPruner(
-        appAllTimeActionSummaryArchiveService:
-            ArchiveService<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>,
-        @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-        @Value("\${indexer.pruner.enabled}") prunerEnabled: Boolean,
-    ): TargetedPruner<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive> =
-        PrunerService(
-            klass = AppAllTimeActionSummaryArchive::class,
-            archiveService = appAllTimeActionSummaryArchiveService,
-            prunerRemovalChunkSize = prunerRemovalChunkSize,
-            enabled = prunerEnabled,
-        )
-
-    @Bean
     open fun appAllTimeActionSummaryIndexer(
         thorClient: ThorClient,
         processor: AppAllTimeActionSummaryProcessor,
-        appAllTimeActionSummaryPruner:
-            TargetedPruner<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>,
-        @Value("\${indexer.pruner.interval}") prunerInterval: Long,
-        @Value("\${indexer.start-block.b3tr}") startBlock: Long,
+        @Value("\${indexer.start-block.b3tr-sustainable-actions}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.b3tr}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.B3TR_CONTRACT}") b3trContract: String,
@@ -63,8 +29,6 @@ open class AppAllTimeActionSummaryConfig {
             .name(IndexerNames.APP_ALL_TIME_ACTION_SUMMARY.NAME)
             .thorClient(thorClient)
             .processor(processor)
-            .pruner(appAllTimeActionSummaryPruner)
-            .prunerInterval(prunerInterval)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)

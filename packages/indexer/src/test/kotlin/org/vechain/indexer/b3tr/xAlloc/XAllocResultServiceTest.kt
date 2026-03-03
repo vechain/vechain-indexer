@@ -14,13 +14,13 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.xAlloc.repository.XAllocResultRepository
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.thor.HexUtils.toHex
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockRevision
@@ -31,9 +31,9 @@ import org.vechain.indexer.thor.model.InspectionResult
 internal class XAllocResultServiceTest {
     @MockK lateinit var repository: XAllocResultRepository
 
-    @MockK lateinit var archiveService: ArchiveService<XAllocResult, XAllocResultArchive>
+    @MockK lateinit var mongoTemplate: MongoTemplate
 
-    @MockK lateinit var pruner: TargetedPruner<XAllocResult, XAllocResultArchive>
+    @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
 
     @MockK lateinit var thorClient: ThorClient
 
@@ -46,11 +46,18 @@ internal class XAllocResultServiceTest {
     // Test wrapper to access protected functions directly
     private inner class TestableXAllocResultService(
         repository: XAllocResultRepository,
-        archiveService: ArchiveService<XAllocResult, XAllocResultArchive>,
-        pruner: TargetedPruner<XAllocResult, XAllocResultArchive>,
+        mongoTemplate: MongoTemplate,
+        inlineVersioningProperties: InlineVersioningProperties,
         thorClient: ThorClient,
         xAllocPoolContract: String,
-    ) : XAllocResultService(repository, archiveService, pruner, thorClient, xAllocPoolContract) {
+    ) :
+        XAllocResultService(
+            repository,
+            mongoTemplate,
+            inlineVersioningProperties,
+            thorClient,
+            xAllocPoolContract,
+        ) {
         fun testAddOrCreateVoteResult(
             roundId: Int,
             appId: String,
@@ -109,6 +116,9 @@ internal class XAllocResultServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
+        every { inlineVersioningProperties.blockWindow } returns 10000L
+        every { inlineVersioningProperties.maxVersions } returns 100
+        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
 
         val bestBlock = mockk<BlockUnexpanded> { every { id } returns blockId(999) }
         coEvery { thorClient.getBlockUnexpanded(BlockRevision.Keyword.BEST) } returns bestBlock
@@ -128,12 +138,18 @@ internal class XAllocResultServiceTest {
                 )
             )
         service =
-            XAllocResultService(repository, archiveService, pruner, thorClient, xAllocPoolContract)
+            XAllocResultService(
+                repository,
+                mongoTemplate,
+                inlineVersioningProperties,
+                thorClient,
+                xAllocPoolContract,
+            )
         testableService =
             TestableXAllocResultService(
                 repository,
-                archiveService,
-                pruner,
+                mongoTemplate,
+                inlineVersioningProperties,
                 thorClient,
                 xAllocPoolContract,
             )

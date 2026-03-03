@@ -1,0 +1,5947 @@
+{
+  "description": "[[suggested_dashboards]]",
+  "id": "dtw-gbp-hwh",
+  "layout_type": "ordered",
+  "notify_list": [],
+  "pause_auto_refresh": false,
+  "reflow_type": "fixed",
+  "template_variables": [
+    {
+      "available_values": [
+        "prod-blue-main*",
+        "prod-green-main*",
+        "prod-blue-test*",
+        "prod-green-test*"
+      ],
+      "default": "prod-blue-main*",
+      "name": "host"
+    }
+  ],
+  "title": "Vechain Indexer Dashboard",
+  "widgets": [
+    {
+      "definition": {
+        "background_color": "vivid_purple",
+        "layout_type": "ordered",
+        "show_title": true,
+        "title": "Health & SLOs",
+        "type": "group",
+        "widgets": [
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 2,
+              "requests": [
+                {
+                  "conditional_formats": [
+                    {
+                      "comparator": ">",
+                      "palette": "white_on_green",
+                      "value": 99.5
+                    },
+                    {
+                      "comparator": "<",
+                      "palette": "white_on_red",
+                      "value": 99.5
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "slo",
+                      "group_mode": "overall",
+                      "measure": "slo_status",
+                      "name": "query1",
+                      "slo_id": "00a722239a2d5e34bf0f1751916cd5ac",
+                      "slo_query_type": "time_slice"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "timeseries_background": {
+                "type": "area"
+              },
+              "title": "P95 SLO 30 Days",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 3593691313383892,
+            "layout": {
+              "height": 1,
+              "width": 6,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 2,
+              "requests": [
+                {
+                  "conditional_formats": [
+                    {
+                      "comparator": ">",
+                      "palette": "white_on_green",
+                      "value": 99.5
+                    },
+                    {
+                      "comparator": "<",
+                      "palette": "white_on_red",
+                      "value": 99.5
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "slo",
+                      "group_mode": "overall",
+                      "measure": "slo_status",
+                      "name": "query1",
+                      "slo_id": "becafc738cdb54eda5f5992577979e89",
+                      "slo_query_type": "time_slice"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "timeseries_background": {
+                "type": "area"
+              },
+              "title": "P50 SLO 30 Days",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2605482685466889,
+            "layout": {
+              "height": 1,
+              "width": 6,
+              "x": 6,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "conditional_formats": [
+                    {
+                      "comparator": ">",
+                      "palette": "white_on_red",
+                      "value": 50
+                    },
+                    {
+                      "comparator": ">",
+                      "palette": "white_on_yellow",
+                      "value": 1
+                    },
+                    {
+                      "comparator": "<=",
+                      "palette": "white_on_green",
+                      "value": 1
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "default_zero(query1)"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "query1",
+                      "search": {
+                        "query": "host:$host AND \"REORG\""
+                      },
+                      "storage": "hot"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "timeseries_background": {
+                "type": "bars",
+                "yaxis": {}
+              },
+              "title": "ReOrgs detected",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2128139456568415,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 0,
+              "y": 1
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "conditional_formats": [
+                    {
+                      "comparator": "=",
+                      "palette": "white_on_green",
+                      "value": 0
+                    },
+                    {
+                      "comparator": "<=",
+                      "palette": "white_on_yellow",
+                      "value": 2
+                    },
+                    {
+                      "comparator": ">",
+                      "palette": "white_on_red",
+                      "value": 2
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "default_zero(query1)"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "query1",
+                      "search": {
+                        "query": "host:$host AND \"Failed to fetch block\""
+                      },
+                      "storage": "hot"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "timeseries_background": {
+                "type": "bars",
+                "yaxis": {}
+              },
+              "title": "Block fetch failure",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 644961137524591,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 3,
+              "y": 1
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "conditional_formats": [
+                    {
+                      "comparator": "=",
+                      "palette": "white_on_green",
+                      "value": 0
+                    },
+                    {
+                      "comparator": ">",
+                      "palette": "white_on_yellow",
+                      "value": 0
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "default_zero(query1)"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "query1",
+                      "search": {
+                        "query": "host:$host AND (\"Using fallback parser for proof\")"
+                      },
+                      "storage": "hot"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "timeseries_background": {
+                "type": "bars",
+                "yaxis": {}
+              },
+              "title": "Invalid Proof Detected",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 8685004910904589,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 6,
+              "y": 1
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "conditional_formats": [
+                    {
+                      "comparator": "=",
+                      "palette": "white_on_green",
+                      "value": 0
+                    },
+                    {
+                      "comparator": ">",
+                      "palette": "white_on_red",
+                      "value": 0
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "default_zero(query1)"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "query1",
+                      "search": {
+                        "query": "host:$host AND (\"Impact exceeds threshold\")"
+                      },
+                      "storage": "hot"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "timeseries_background": {
+                "type": "bars",
+                "yaxis": {}
+              },
+              "title": "Impact exceeds threshold",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2689526695652863,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 9,
+              "y": 1
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "conditional_formats": [
+                    {
+                      "comparator": "=",
+                      "palette": "white_on_green",
+                      "value": 0
+                    },
+                    {
+                      "comparator": ">",
+                      "palette": "white_on_red",
+                      "value": 0
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "default_zero(query1)"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "query1",
+                      "search": {
+                        "query": "host:$host AND \"Commencing graceful shutdown\""
+                      },
+                      "storage": "hot"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "timeseries_background": {
+                "type": "bars",
+                "yaxis": {}
+              },
+              "title": "Indexer service shutdown",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 6057518186721598,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 0,
+              "y": 3
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "conditional_formats": [
+                    {
+                      "comparator": "=",
+                      "palette": "white_on_green",
+                      "value": 0
+                    },
+                    {
+                      "comparator": ">",
+                      "palette": "white_on_red",
+                      "value": 0
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "default_zero(query1)"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "query1",
+                      "search": {
+                        "query": "host:$host AND \"Application is UNHEALTHY\""
+                      },
+                      "storage": "hot"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "timeseries_background": {
+                "type": "bars",
+                "yaxis": {}
+              },
+              "title": "Application flagging as unhealthy",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 5939618140206887,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 3,
+              "y": 3
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "conditional_formats": [
+                    {
+                      "comparator": "=",
+                      "palette": "white_on_green",
+                      "value": 0
+                    },
+                    {
+                      "comparator": ">",
+                      "palette": "white_on_red",
+                      "value": 0
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "default_zero(query1)"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "query1",
+                      "search": {
+                        "query": "host:$host AND \"Error while processing block\""
+                      },
+                      "storage": "hot"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "timeseries_background": {
+                "type": "bars",
+                "yaxis": {}
+              },
+              "title": "Errors when processing blocks",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 994123667891429,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 6,
+              "y": 3
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "conditional_formats": [
+                    {
+                      "comparator": "=",
+                      "palette": "white_on_green",
+                      "value": 0
+                    },
+                    {
+                      "comparator": ">",
+                      "palette": "white_on_red",
+                      "value": 0
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "default_zero(query1)"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "query1",
+                      "search": {
+                        "query": "host:$host AND (\"Restarting indexer\" OR \"Successfully Restarted @ Block\" or \"\")"
+                      },
+                      "storage": "hot"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "timeseries_background": {
+                "type": "bars",
+                "yaxis": {}
+              },
+              "title": "Indexer Restarts",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 8922567732136919,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 9,
+              "y": 3
+            }
+          }
+        ]
+      },
+      "id": 3820863994244755,
+      "layout": {
+        "height": 1,
+        "width": 12,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "definition": {
+        "background_color": "vivid_purple",
+        "layout_type": "ordered",
+        "show_title": true,
+        "title": "Indexer Sync & Processing",
+        "type": "group",
+        "widgets": [
+          {
+            "definition": {
+              "autoscale": false,
+              "precision": 0,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "last",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "max:thor_best_block_number_gauge{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Best Block Number",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2000000000000013,
+            "layout": {
+              "height": 1,
+              "width": 4,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 2,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "avg",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:processor_events_counter{indexer-id:$host.value}.as_rate()"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Events Per Second",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2000000000000003,
+            "layout": {
+              "height": 1,
+              "width": 4,
+              "x": 4,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 4,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "avg",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:processor_duration.avg{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Avg. Processing Time Per Block (ms)",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2000000000000002,
+            "layout": {
+              "height": 1,
+              "width": 4,
+              "x": 8,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "value"
+              ],
+              "legend_layout": "vertical",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "alias": "Synced to block",
+                      "formula": "a"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "a",
+                      "query": "max:indexer_current_block_by_status_gauge{indexer-id:$host.value} by {indexer_name}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_width": "thick",
+                    "palette": "dog_classic"
+                  }
+                },
+                {
+                  "display_type": "overlay",
+                  "formulas": [
+                    {
+                      "formula": "dashboard_events_overlay"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "events",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "dashboard_events_overlay",
+                      "search": {
+                        "query": "host:$host"
+                      }
+                    }
+                  ],
+                  "response_format": "timeseries"
+                }
+              ],
+              "show_legend": true,
+              "time": {},
+              "title": "Sync Status per Indexer",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries",
+              "yaxis": {
+                "include_zero": false
+              }
+            },
+            "id": 8455566819524122,
+            "layout": {
+              "height": 5,
+              "width": 12,
+              "x": 0,
+              "y": 1
+            }
+          },
+          {
+            "definition": {
+              "legend": {
+                "type": "automatic"
+              },
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "last",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:indexer_sync_status_gauge{indexer-id:$host.value} by {status_readable}"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "sort": {
+                    "order_by": [
+                      {
+                        "index": 0,
+                        "order": "desc",
+                        "type": "formula"
+                      }
+                    ]
+                  },
+                  "style": {
+                    "palette": "datadog16"
+                  }
+                }
+              ],
+              "title": "Sync Status",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "sunburst"
+            },
+            "id": 2000000000000012,
+            "layout": {
+              "height": 4,
+              "width": 4,
+              "x": 0,
+              "y": 6
+            }
+          },
+          {
+            "definition": {
+              "has_search_bar": "auto",
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "alias": "Sync Gap",
+                      "conditional_formats": [
+                        {
+                          "comparator": "<",
+                          "palette": "white_on_green",
+                          "value": 10000
+                        },
+                        {
+                          "comparator": ">=",
+                          "palette": "white_on_red",
+                          "value": 1000000
+                        },
+                        {
+                          "comparator": ">=",
+                          "palette": "white_on_yellow",
+                          "value": 10000
+                        }
+                      ],
+                      "formula": "gap * cutoff_min(status, 0.5)"
+                    },
+                    {
+                      "alias": "Est. Time to Sync",
+                      "conditional_formats": [
+                        {
+                          "comparator": "<=",
+                          "palette": "white_on_green",
+                          "value": 0
+                        },
+                        {
+                          "comparator": ">=",
+                          "palette": "white_on_red",
+                          "value": 21600
+                        },
+                        {
+                          "comparator": ">",
+                          "palette": "white_on_yellow",
+                          "value": 0
+                        }
+                      ],
+                      "formula": "eta * cutoff_min(status, 0.5)",
+                      "number_format": {
+                        "unit": {
+                          "type": "canonical_unit",
+                          "unit_name": "second"
+                        }
+                      }
+                    },
+                    {
+                      "alias": "Block Processing (ms)",
+                      "conditional_formats": [
+                        {
+                          "comparator": ">",
+                          "palette": "white_on_red",
+                          "value": 200
+                        },
+                        {
+                          "comparator": ">",
+                          "palette": "white_on_yellow",
+                          "value": 10
+                        },
+                        {
+                          "comparator": "<",
+                          "palette": "white_on_green",
+                          "value": 10
+                        }
+                      ],
+                      "formula": "avg_time * cutoff_min(status, 0.5)"
+                    },
+                    {
+                      "alias": "Block Cycle Time (ms)",
+                      "conditional_formats": [
+                        {
+                          "comparator": ">",
+                          "palette": "white_on_red",
+                          "value": 200
+                        },
+                        {
+                          "comparator": ">",
+                          "palette": "white_on_yellow",
+                          "value": 10
+                        },
+                        {
+                          "comparator": "<",
+                          "palette": "white_on_green",
+                          "value": 10
+                        }
+                      ],
+                      "formula": "cycle_time * cutoff_min(status, 0.5)"
+                    },
+                    {
+                      "alias": "Events",
+                      "formula": "events * cutoff_min(status, 0.5)"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "last",
+                      "data_source": "metrics",
+                      "name": "status",
+                      "query": "max:indexer_sync_status_gauge{indexer-id:$host.value} by {indexer_name,status_readable}"
+                    },
+                    {
+                      "aggregator": "last",
+                      "data_source": "metrics",
+                      "name": "gap",
+                      "query": "max:indexer_sync_gap_gauge{indexer-id:$host.value} by {indexer_name}"
+                    },
+                    {
+                      "aggregator": "last",
+                      "data_source": "metrics",
+                      "name": "eta",
+                      "query": "max:indexer_estimated_time_to_sync_seconds{indexer-id:$host.value} by {indexer_name}"
+                    },
+                    {
+                      "aggregator": "avg",
+                      "data_source": "metrics",
+                      "name": "avg_time",
+                      "query": "avg:processor_duration.avg{indexer-id:$host.value} by {indexer_name}"
+                    },
+                    {
+                      "aggregator": "avg",
+                      "data_source": "metrics",
+                      "name": "cycle_time",
+                      "query": "avg:processor_cycle_time.avg{indexer-id:$host.value} by {indexer_name}"
+                    },
+                    {
+                      "aggregator": "sum",
+                      "data_source": "metrics",
+                      "name": "events",
+                      "query": "sum:processor_events_counter{indexer-id:$host.value} by {indexer_name}"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "sort": {
+                    "count": 50,
+                    "order_by": [
+                      {
+                        "index": 0,
+                        "order": "desc",
+                        "type": "formula"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "title": "Indexer Overview",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_table"
+            },
+            "id": 2000000000000100,
+            "layout": {
+              "height": 4,
+              "width": 8,
+              "x": 4,
+              "y": 6
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:indexer_blocks_per_second_gauge{indexer-id:$host.value} by {indexer_name}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Blocks Per Second",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries",
+              "yaxis": {
+                "include_zero": false,
+                "scale": "log"
+              }
+            },
+            "id": 2000000000000015,
+            "layout": {
+              "height": 3,
+              "width": 12,
+              "x": 0,
+              "y": 10
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:processor_duration.avg{indexer-id:$host.value} by {indexer_name}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Processing Duration Per Block (Avg) ms",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries",
+              "yaxis": {
+                "include_zero": false,
+                "scale": "log"
+              }
+            },
+            "id": 2000000000000007,
+            "layout": {
+              "height": 4,
+              "width": 6,
+              "x": 0,
+              "y": 13
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:processor_duration.percentile{indexer-id:$host.value , phi:0.95} by {indexer_name}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Processing Duration P95 (ms)",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries",
+              "yaxis": {
+                "include_zero": false,
+                "scale": "log"
+              }
+            },
+            "id": 2000000000000008,
+            "layout": {
+              "height": 4,
+              "width": 6,
+              "x": 6,
+              "y": 13
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:processor_events_counter{indexer-id:$host.value} by {indexer_name}.as_rate()"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Events Processed Rate",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2000000000000006,
+            "layout": {
+              "height": 3,
+              "width": 12,
+              "x": 0,
+              "y": 17
+            }
+          }
+        ]
+      },
+      "id": 550306260802215,
+      "layout": {
+        "height": 21,
+        "width": 12,
+        "x": 0,
+        "y": 1
+      }
+    },
+    {
+      "definition": {
+        "background_color": "vivid_purple",
+        "layout_type": "ordered",
+        "show_title": true,
+        "title": "Traffic & CDN",
+        "type": "group",
+        "widgets": [
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 2,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "sum",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:aws.cloudfront.requests{distributionid:e15q64ms368tl}.as_count()"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "timeseries_background": {
+                "type": "area"
+              },
+              "title": "Mainnet Total Requests",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 4662930097529674,
+            "layout": {
+              "height": 2,
+              "width": 4,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 2,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "avg",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:aws.cloudfront.cache_hit_rate{distributionid:e15q64ms368tl}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "timeseries_background": {
+                "type": "area"
+              },
+              "title": "Mainnet Cache Hit Rate",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 8238719607864667,
+            "layout": {
+              "height": 2,
+              "width": 4,
+              "x": 4,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 2,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "avg",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:aws.cloudfront.requests{distributionid:e15q64ms368tl}.as_rate()"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "timeseries_background": {
+                "type": "area"
+              },
+              "title": "Mainnet Request Rate",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 8878135249779147,
+            "layout": {
+              "height": 2,
+              "width": 4,
+              "x": 8,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "autoscale": false,
+              "precision": 2,
+              "requests": [
+                {
+                  "conditional_formats": [
+                    {
+                      "comparator": ">",
+                      "palette": "white_on_red",
+                      "value": 5
+                    },
+                    {
+                      "comparator": ">",
+                      "palette": "white_on_yellow",
+                      "value": 0.5
+                    },
+                    {
+                      "comparator": "<=",
+                      "palette": "white_on_green",
+                      "value": 0.5
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "avg",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:aws.cloudfront.4xx_error_rate{distributionid:e15q64ms368tl}.weighted()"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "timeseries_background": {
+                "type": "area"
+              },
+              "title": "Mainnet 4XX Rate",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 4894099257041758,
+            "layout": {
+              "height": 2,
+              "width": 4,
+              "x": 0,
+              "y": 2
+            }
+          },
+          {
+            "definition": {
+              "autoscale": false,
+              "precision": 2,
+              "requests": [
+                {
+                  "conditional_formats": [
+                    {
+                      "comparator": ">",
+                      "palette": "white_on_red",
+                      "value": 5
+                    },
+                    {
+                      "comparator": ">",
+                      "palette": "white_on_yellow",
+                      "value": 0.5
+                    },
+                    {
+                      "comparator": "<=",
+                      "palette": "white_on_green",
+                      "value": 0.5
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "avg",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:aws.cloudfront.5xx_error_rate{distributionid:e15q64ms368tl}.weighted()"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "timeseries_background": {
+                "type": "area"
+              },
+              "title": "Mainnet 5XX Rate",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 8078944674866998,
+            "layout": {
+              "height": 2,
+              "width": 4,
+              "x": 4,
+              "y": 2
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 2,
+              "requests": [
+                {
+                  "conditional_formats": [
+                    {
+                      "comparator": ">",
+                      "palette": "white_on_red",
+                      "value": 0.5
+                    },
+                    {
+                      "comparator": ">",
+                      "palette": "white_on_yellow",
+                      "value": 0.1
+                    },
+                    {
+                      "comparator": "<=",
+                      "palette": "white_on_green",
+                      "value": 0.1
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "avg",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:aws.applicationelb.target_response_time.average{name:prod-blue-main-api-veworld-alb OR name:prod-green-main-api-veworld-alb}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "timeseries_background": {
+                "type": "area"
+              },
+              "title": "Mainnet Avg Response Time",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 1716573706838324,
+            "layout": {
+              "height": 2,
+              "width": 4,
+              "x": 8,
+              "y": 2
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 2,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "sum",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:aws.cloudfront.requests{distributionid:e1m1pcq9gh0m5o}.as_count()"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "timeseries_background": {
+                "type": "area"
+              },
+              "title": "Testnet Total Requests",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 1100000000000010,
+            "layout": {
+              "height": 2,
+              "width": 4,
+              "x": 0,
+              "y": 4
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 2,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "avg",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:aws.cloudfront.cache_hit_rate{distributionid:e1m1pcq9gh0m5o}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "timeseries_background": {
+                "type": "area"
+              },
+              "title": "Testnet Cache Hit Rate",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 1100000000000011,
+            "layout": {
+              "height": 2,
+              "width": 4,
+              "x": 4,
+              "y": 4
+            }
+          },
+          {
+            "definition": {
+              "autoscale": false,
+              "precision": 2,
+              "requests": [
+                {
+                  "conditional_formats": [
+                    {
+                      "comparator": ">",
+                      "palette": "white_on_red",
+                      "value": 5
+                    },
+                    {
+                      "comparator": ">",
+                      "palette": "white_on_yellow",
+                      "value": 0.5
+                    },
+                    {
+                      "comparator": "<=",
+                      "palette": "white_on_green",
+                      "value": 0.5
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "avg",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:aws.cloudfront.5xx_error_rate{distributionid:e1m1pcq9gh0m5o}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "timeseries_background": {
+                "type": "area"
+              },
+              "title": "Testnet 5XX Rate",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 1100000000000012,
+            "layout": {
+              "height": 2,
+              "width": 4,
+              "x": 8,
+              "y": 4
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "markers": [],
+              "requests": [
+                {
+                  "display_type": "bars",
+                  "formulas": [
+                    {
+                      "alias": "Cache Hits",
+                      "formula": "query2 * (query3 / 100)",
+                      "style": {
+                        "palette": "green",
+                        "palette_index": 2
+                      }
+                    },
+                    {
+                      "alias": "Cache Misses",
+                      "formula": "query2 - (query2 * (query3 / 100))",
+                      "style": {
+                        "palette": "classic",
+                        "palette_index": 0
+                      }
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "sum:aws.cloudfront.requests{distributionid:e15q64ms368tl}.rollup(sum, 60)"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query3",
+                      "query": "avg:aws.cloudfront.cache_hit_rate{distributionid:e15q64ms368tl}.rollup(avg, 60)"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Mainnet Requests (Cache Hits vs Misses)",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries",
+              "yaxis": {
+                "include_zero": true
+              }
+            },
+            "id": 8709832708167496,
+            "layout": {
+              "height": 4,
+              "width": 12,
+              "x": 0,
+              "y": 6
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "markers": [],
+              "requests": [
+                {
+                  "display_type": "bars",
+                  "formulas": [
+                    {
+                      "alias": "Allowed",
+                      "formula": "query2",
+                      "style": {
+                        "palette": "classic",
+                        "palette_index": 3
+                      }
+                    },
+                    {
+                      "alias": "Blocked",
+                      "formula": "query1",
+                      "style": {
+                        "palette": "classic",
+                        "palette_index": 4
+                      }
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "sum:aws.wafv2.allowed_requests{aws_account:905964754131}.rollup(sum, 60).as_count()"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:aws.wafv2.blocked_requests{aws_account:905964754131}.rollup(sum, 60).as_count()"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Blocked Requests (WAF)",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries",
+              "yaxis": {
+                "include_zero": true
+              }
+            },
+            "id": 3854925227894235,
+            "layout": {
+              "height": 4,
+              "width": 12,
+              "x": 0,
+              "y": 10
+            }
+          }
+        ]
+      },
+      "id": 8172624935724998,
+      "layout": {
+        "height": 1,
+        "width": 12,
+        "x": 0,
+        "y": 22
+      }
+    },
+    {
+      "definition": {
+        "background_color": "vivid_yellow",
+        "layout_type": "ordered",
+        "show_title": true,
+        "title": "MongoDB Metrics",
+        "type": "group",
+        "widgets": [
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 2,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "avg",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:mongodb.driver.pool.size{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Connection Pool Size",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2300000000000004,
+            "layout": {
+              "height": 2,
+              "width": 4,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "avg",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:mongodb.driver.pool.waitqueuesize{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Wait Queue Size",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2300000000000054,
+            "layout": {
+              "height": 2,
+              "width": 4,
+              "x": 4,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "sum",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:mongodb.driver.pool.checkoutfailed{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Checkout Failed",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2300000000000055,
+            "layout": {
+              "height": 2,
+              "width": 4,
+              "x": 8,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:mongodb.driver.commands.avg{indexer-id:$host.value} by {command}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "palette": "dog_classic"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "MongoDB Command Avg Latency by Command",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2300000000000009,
+            "layout": {
+              "height": 3,
+              "width": 12,
+              "x": 0,
+              "y": 2
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "alias": "Pool Size",
+                      "formula": "query1"
+                    },
+                    {
+                      "alias": "Checked Out",
+                      "formula": "query2"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:mongodb.driver.pool.size{indexer-id:$host.value}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "avg:mongodb.driver.pool.checkedout{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "palette": "dog_classic"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Connection Pool Over Time",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2300000000000005,
+            "layout": {
+              "height": 2,
+              "width": 12,
+              "x": 0,
+              "y": 5
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "sum",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:mongodb.driver.commands.count{indexer-id:$host.value} by {collection}"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "sort": {
+                    "count": 10,
+                    "order_by": [
+                      {
+                        "index": 0,
+                        "order": "desc",
+                        "type": "formula"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "style": {
+                "display": {
+                  "legend": "automatic",
+                  "type": "stacked"
+                },
+                "scaling": "relative"
+              },
+              "title": "Commands by Collection",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "toplist"
+            },
+            "id": 2300000000000006,
+            "layout": {
+              "height": 4,
+              "width": 6,
+              "x": 0,
+              "y": 7
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:spring.data.repository.invocations.count{indexer-id:$host.value} by {repository}.as_rate()"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "palette": "dog_classic"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Spring Data Repository Invocations",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2300000000000007,
+            "layout": {
+              "height": 4,
+              "width": 6,
+              "x": 6,
+              "y": 7
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "avg",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:spring.data.repository.invocations.avg{indexer-id:$host.value} by {repository,method}"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "sort": {
+                    "count": 10,
+                    "order_by": [
+                      {
+                        "index": 0,
+                        "order": "desc",
+                        "type": "formula"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "style": {
+                "display": {
+                  "legend": "automatic",
+                  "type": "stacked"
+                },
+                "scaling": "absolute"
+              },
+              "title": "Slowest Repositories (Avg Latency)",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "toplist"
+            },
+            "id": 2300000000000010,
+            "layout": {
+              "height": 4,
+              "width": 6,
+              "x": 0,
+              "y": 11
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "bars",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:mongodb.driver.commands.count{indexer-id:$host.value} by {status}.as_rate()"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "palette": "dog_classic"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "MongoDB Commands Rate by Status",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2300000000000011,
+            "layout": {
+              "height": 4,
+              "width": 6,
+              "x": 6,
+              "y": 11
+            }
+          },
+          {
+            "definition": {
+              "background_color": "blue",
+              "content": "## MongoDB Pool Stats",
+              "font_size": "14",
+              "has_padding": true,
+              "show_tick": false,
+              "text_align": "left",
+              "tick_edge": "left",
+              "tick_pos": "50%",
+              "type": "note",
+              "vertical_align": "center"
+            },
+            "id": 2300000000000008,
+            "layout": {
+              "height": 1,
+              "width": 12,
+              "x": 0,
+              "y": 15
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "sum",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:mongodb.driver.commands.count{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Total Commands",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2300000000000012,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 0,
+              "y": 16
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 2,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "max",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "max:mongodb.driver.commands.max{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Max Command Latency",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2300000000000013,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 3,
+              "y": 16
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "max:spring.data.repository.invocations.max{indexer-id:$host.value} by {repository}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "palette": "dog_classic"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Spring Data Max Latency by Repository",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2300000000000014,
+            "layout": {
+              "height": 2,
+              "width": 6,
+              "x": 6,
+              "y": 16
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "sum",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:mongodb.driver.commands.count{indexer-id:$host.value} by {command}"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "sort": {
+                    "count": 10,
+                    "order_by": [
+                      {
+                        "index": 0,
+                        "order": "desc",
+                        "type": "formula"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "style": {
+                "display": {
+                  "legend": "automatic",
+                  "type": "stacked"
+                },
+                "scaling": "relative"
+              },
+              "title": "Commands by Type",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "toplist"
+            },
+            "id": 2300000000000015,
+            "layout": {
+              "height": 4,
+              "width": 6,
+              "x": 0,
+              "y": 18
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "sum",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:spring.data.repository.invocations.count{indexer-id:$host.value} by {state}"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "sort": {
+                    "count": 10,
+                    "order_by": [
+                      {
+                        "index": 0,
+                        "order": "desc",
+                        "type": "formula"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "style": {
+                "display": {
+                  "legend": "automatic",
+                  "type": "stacked"
+                },
+                "scaling": "relative"
+              },
+              "title": "Spring Data Invocations by State",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "toplist"
+            },
+            "id": 2300000000000016,
+            "layout": {
+              "height": 4,
+              "width": 6,
+              "x": 6,
+              "y": 18
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "bars",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:mongodb.driver.commands.sum{indexer-id:$host.value} by {command}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "palette": "dog_classic"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "MongoDB Command Total Time by Command",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2300000000000017,
+            "layout": {
+              "height": 3,
+              "width": 12,
+              "x": 0,
+              "y": 22
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "bars",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:spring.data.repository.invocations.sum{indexer-id:$host.value} by {repository}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "palette": "dog_classic"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Spring Data Total Time by Repository",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2300000000000018,
+            "layout": {
+              "height": 3,
+              "width": 12,
+              "x": 0,
+              "y": 25
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:spring.data.repository.invocations.avg{indexer-id:$host.value} by {repository}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Spring Data Avg Latency by Repository",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2300000000000019,
+            "layout": {
+              "height": 3,
+              "width": 12,
+              "x": 0,
+              "y": 28
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:mongodb.driver.commands.count{indexer-id:$host.value} by {collection}.as_rate()"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "MongoDB Commands Rate by Collection",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2300000000000020,
+            "layout": {
+              "height": 3,
+              "width": 12,
+              "x": 0,
+              "y": 31
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "avg",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:mongodb.driver.commands.avg{indexer-id:$host.value} by {command,collection}"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "sort": {
+                    "count": 10,
+                    "order_by": [
+                      {
+                        "index": 0,
+                        "order": "desc",
+                        "type": "formula"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "style": {
+                "display": {
+                  "legend": "automatic",
+                  "type": "stacked"
+                },
+                "scaling": "absolute"
+              },
+              "title": "Slowest MongoDB Commands (Avg Latency)",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "toplist"
+            },
+            "id": 2300000000000021,
+            "layout": {
+              "height": 4,
+              "width": 6,
+              "x": 0,
+              "y": 34
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "sum",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:spring.data.repository.invocations.count{indexer-id:$host.value} by {method}"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "sort": {
+                    "count": 10,
+                    "order_by": [
+                      {
+                        "index": 0,
+                        "order": "desc",
+                        "type": "formula"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "style": {
+                "display": {
+                  "legend": "automatic",
+                  "type": "stacked"
+                },
+                "scaling": "relative"
+              },
+              "title": "Spring Data Invocations by Method",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "toplist"
+            },
+            "id": 2300000000000022,
+            "layout": {
+              "height": 4,
+              "width": 6,
+              "x": 6,
+              "y": 34
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "sum",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:spring.data.repository.invocations.count{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Total Spring Data Invocations",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2300000000000023,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 0,
+              "y": 38
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 2,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "max",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "max:spring.data.repository.invocations.max{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Max Spring Data Latency",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2300000000000024,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 3,
+              "y": 38
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "max:mongodb.driver.commands.max{indexer-id:$host.value} by {command}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "MongoDB Max Latency Over Time",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2300000000000025,
+            "layout": {
+              "height": 2,
+              "width": 6,
+              "x": 6,
+              "y": 38
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "sum",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:spring.data.repository.invocations.count{indexer-id:$host.value} by {repository}"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "sort": {
+                    "count": 10,
+                    "order_by": [
+                      {
+                        "index": 0,
+                        "order": "desc",
+                        "type": "formula"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "style": {
+                "display": {
+                  "legend": "automatic",
+                  "type": "stacked"
+                },
+                "scaling": "relative"
+              },
+              "title": "Spring Data Invocations by Repository",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "toplist"
+            },
+            "id": 2300000000000026,
+            "layout": {
+              "height": 4,
+              "width": 6,
+              "x": 0,
+              "y": 40
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:spring.data.repository.invocations.count{indexer-id:$host.value} by {method}.as_rate()"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Spring Data Invocations Rate by Method",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2300000000000027,
+            "layout": {
+              "height": 4,
+              "width": 6,
+              "x": 6,
+              "y": 40
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "avg",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:mongodb.driver.pool.checkedout{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Connections In Use",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2300000000000028,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 0,
+              "y": 44
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 2,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "avg",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:mongodb.driver.commands.count{indexer-id:$host.value}.as_rate()"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Commands/sec",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2300000000000029,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 3,
+              "y": 44
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 2,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "avg",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:spring.data.repository.invocations.count{indexer-id:$host.value}.as_rate()"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Repository Calls/sec",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2300000000000030,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 6,
+              "y": 44
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 2,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "avg",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:spring.data.repository.invocations.count{state:ERROR, indexer-id:$host.value}.as_rate()"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Errors/sec (Non-SUCCESS)",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2300000000000031,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 9,
+              "y": 44
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:mongodb.driver.commands.avg{indexer-id:$host.value} by {collection}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Top 10 Slowest Collections (Avg Latency)",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2300000000000032,
+            "layout": {
+              "height": 3,
+              "width": 12,
+              "x": 0,
+              "y": 46
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:mongodb.driver.commands.avg{command IN (committransaction,aborttransaction) AND indexer-id:$host.value} by {command}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Transaction Commit/Abort Latency",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2300000000000033,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 0,
+              "y": 49
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "bars",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:mongodb.driver.commands.count{command IN (committransaction,aborttransaction) AND indexer-id:$host.value} by {command}.as_rate()"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Transaction Commit/Abort Rate",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2300000000000034,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 6,
+              "y": 49
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:spring.data.repository.invocations.avg{indexer-id:$host.value} by {method}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Top 10 Slowest Methods (Avg Latency)",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2300000000000035,
+            "layout": {
+              "height": 3,
+              "width": 12,
+              "x": 0,
+              "y": 52
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "max:spring.data.repository.invocations.max{indexer-id:$host.value} by {repository,method}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Max Latency by Repository.Method",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2300000000000036,
+            "layout": {
+              "height": 3,
+              "width": 12,
+              "x": 0,
+              "y": 55
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 2,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "avg",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:spring.data.repository.invocations.avg{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Avg Spring Data Latency",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2300000000000037,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 0,
+              "y": 58
+            }
+          }
+        ]
+      },
+      "id": 2400000000000003,
+      "layout": {
+        "height": 1,
+        "width": 12,
+        "x": 0,
+        "y": 23
+      }
+    },
+    {
+      "definition": {
+        "background_color": "vivid_green",
+        "layout_type": "ordered",
+        "show_title": true,
+        "title": "JVM Metrics",
+        "type": "group",
+        "widgets": [
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 1,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "100 * query1 / query2"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "last",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:jvm.memory.used{area:heap , indexer-id:$host.value}"
+                    },
+                    {
+                      "aggregator": "last",
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "avg:jvm.memory.max{area:heap ,indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Heap Usage %",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2200000000000003,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 2,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1",
+                      "number_format": {
+                        "unit": {
+                          "label": "bytes",
+                          "type": "custom_unit_label"
+                        }
+                      }
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "last",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:jvm.memory.used{area:heap , indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Heap Used",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2200000000000004,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 3,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "last",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:jvm.threads.live{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Active Threads",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2200000000000005,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 6,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "last",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:jvm.classes.loaded{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Loaded Classes",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2200000000000006,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 9,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "alias": "Used",
+                      "formula": "query1"
+                    },
+                    {
+                      "alias": "Committed",
+                      "formula": "query2"
+                    },
+                    {
+                      "alias": "Max",
+                      "formula": "query3"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:jvm.memory.used{area:heap , indexer-id:$host.value}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "avg:jvm.memory.committed{area:heap , indexer-id:$host.value}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query3",
+                      "query": "avg:jvm.memory.max{area:heap ,indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Heap Memory",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2200000000000007,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 0,
+              "y": 2
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "alias": "Used",
+                      "formula": "query1"
+                    },
+                    {
+                      "alias": "Committed",
+                      "formula": "query2"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:jvm.memory.used{area:nonheap , indexer-id:$host.value}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "avg:jvm.memory.committed{area:nonheap , indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Non-Heap Memory (Metaspace)",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2200000000000008,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 6,
+              "y": 2
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:jvm.memory.used{indexer-id:$host.value} by {id}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Memory Pools by ID",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2200000000000009,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 0,
+              "y": 5
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "alias": "Live",
+                      "formula": "query1"
+                    },
+                    {
+                      "alias": "Daemon",
+                      "formula": "query2"
+                    },
+                    {
+                      "alias": "Peak",
+                      "formula": "query3"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:jvm.threads.live{indexer-id:$host.value}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "avg:jvm.threads.daemon{indexer-id:$host.value}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query3",
+                      "query": "avg:jvm.threads.peak{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Thread Count",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2200000000000010,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 6,
+              "y": 5
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "area",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:jvm.threads.states{indexer-id:$host.value} by {state}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Thread States",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2200000000000011,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 0,
+              "y": 8
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:jvm.gc.pause.count{indexer-id:$host.value} by {action}.as_rate()"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "GC Pause Rate",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2200000000000012,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 6,
+              "y": 8
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1 / query2"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:jvm.gc.pause.sum{indexer-id:$host.value} by {action}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "sum:jvm.gc.pause.count{indexer-id:$host.value} by {action}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "GC Pause Time (ms)",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2200000000000013,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 0,
+              "y": 11
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "100 * query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:jvm.gc.overhead{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "GC Overhead %",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2200000000000014,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 6,
+              "y": 11
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "sum",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:jvm.gc.pause.count{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Total GC Pauses",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2200000000000015,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 0,
+              "y": 14
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 2,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "avg",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:jvm.gc.pause.avg{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Avg GC Pause (ms)",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2200000000000016,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 3,
+              "y": 14
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 2,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "max",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "max:jvm.gc.pause.max{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Max GC Pause (ms)",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2200000000000017,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 6,
+              "y": 14
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "last",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:jvm.buffer.count{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Buffer Count",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2200000000000018,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 9,
+              "y": 14
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:jvm.buffer.memory.used{indexer-id:$host.value} by {id}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Buffer Memory",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2200000000000019,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 0,
+              "y": 16
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:jvm.buffer.total.capacity{indexer-id:$host.value} by {id}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Buffer Total Capacity",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2200000000000020,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 6,
+              "y": 16
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "alias": "Live Data Size",
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:jvm.gc.live.data.size{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Live Data Size vs Max",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2200000000000021,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 0,
+              "y": 19
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:jvm.memory.usage.after.gc{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Memory Usage After GC",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2200000000000022,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 6,
+              "y": 19
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:jvm.gc.memory.promoted{indexer-id:$host.value}.as_rate()"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Memory Promoted to Old Gen",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2200000000000023,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 0,
+              "y": 22
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "alias": "Loaded",
+                      "formula": "query1"
+                    },
+                    {
+                      "alias": "Unloaded",
+                      "formula": "query2"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:jvm.classes.loaded{indexer-id:$host.value}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "sum:jvm.classes.unloaded{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Classes Loaded/Unloaded",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2200000000000024,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 6,
+              "y": 22
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:jvm.threads.started{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Threads Started",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2200000000000025,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 0,
+              "y": 25
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:jvm.gc.concurrent.phase.time.avg{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "GC Concurrent Phase Time",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2200000000000026,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 6,
+              "y": 25
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "last",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:jvm.memory.used{indexer-id:$host.value} by {id}"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "sort": {
+                    "count": 20,
+                    "order_by": [
+                      {
+                        "index": 0,
+                        "order": "desc",
+                        "type": "formula"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "style": {
+                "display": {
+                  "legend": "automatic",
+                  "type": "stacked"
+                },
+                "scaling": "absolute"
+              },
+              "title": "Memory Used by Pool",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "toplist"
+            },
+            "id": 2200000000000027,
+            "layout": {
+              "height": 4,
+              "width": 6,
+              "x": 0,
+              "y": 28
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "last",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:jvm.threads.states{indexer-id:$host.value} by {state}"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "sort": {
+                    "count": 20,
+                    "order_by": [
+                      {
+                        "index": 0,
+                        "order": "desc",
+                        "type": "formula"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "style": {
+                "display": {
+                  "legend": "automatic",
+                  "type": "stacked"
+                },
+                "scaling": "absolute"
+              },
+              "title": "Thread States Distribution",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "toplist"
+            },
+            "id": 2200000000000028,
+            "layout": {
+              "height": 4,
+              "width": 6,
+              "x": 6,
+              "y": 28
+            }
+          }
+        ]
+      },
+      "id": 2300000000000002,
+      "layout": {
+        "height": 1,
+        "width": 12,
+        "x": 0,
+        "y": 24
+      }
+    },
+    {
+      "definition": {
+        "background_color": "vivid_purple",
+        "layout_type": "ordered",
+        "show_title": true,
+        "title": "API Performance",
+        "type": "group",
+        "widgets": [
+          {
+            "definition": {
+              "has_search_bar": "auto",
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "alias": "Requests",
+                      "formula": "count_query"
+                    },
+                    {
+                      "alias": "Avg Response Time",
+                      "conditional_formats": [
+                        {
+                          "comparator": ">",
+                          "palette": "white_on_red",
+                          "value": 300000000
+                        },
+                        {
+                          "comparator": ">",
+                          "palette": "white_on_orange",
+                          "value": 100000000
+                        },
+                        {
+                          "comparator": "<",
+                          "palette": "white_on_green",
+                          "value": 100000000
+                        }
+                      ],
+                      "formula": "avg_query",
+                      "number_format": {
+                        "unit": {
+                          "type": "canonical_unit",
+                          "unit_name": "nanosecond"
+                        }
+                      }
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [
+                        {
+                          "facet": "@http.url_details.api_category",
+                          "limit": 100,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "count_query",
+                      "search": {
+                        "query": "source:elb name:$host"
+                      },
+                      "storage": "hot"
+                    },
+                    {
+                      "compute": {
+                        "aggregation": "avg",
+                        "metric": "@duration"
+                      },
+                      "data_source": "logs",
+                      "group_by": [
+                        {
+                          "facet": "@http.url_details.api_category",
+                          "limit": 100,
+                          "sort": {
+                            "aggregation": "avg",
+                            "metric": "@duration",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "avg_query",
+                      "search": {
+                        "query": "source:elb name:$host"
+                      },
+                      "storage": "hot"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "sort": {
+                    "count": 100,
+                    "order_by": [
+                      {
+                        "index": 0,
+                        "order": "desc",
+                        "type": "formula"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "title": "API Performance Overview",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_table"
+            },
+            "id": 305460665345712,
+            "layout": {
+              "height": 6,
+              "width": 12,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "alias": "green",
+                      "formula": "query3",
+                      "number_format": {
+                        "unit": {
+                          "type": "canonical_unit",
+                          "unit_name": "second"
+                        },
+                        "unit_scale": {
+                          "type": "canonical_unit",
+                          "unit_name": "second"
+                        }
+                      },
+                      "style": {
+                        "palette": "green",
+                        "palette_index": 0
+                      }
+                    },
+                    {
+                      "alias": "blue",
+                      "formula": "query4",
+                      "number_format": {
+                        "unit": {
+                          "type": "canonical_unit",
+                          "unit_name": "second"
+                        },
+                        "unit_scale": {
+                          "type": "canonical_unit",
+                          "unit_name": "second"
+                        }
+                      },
+                      "style": {
+                        "palette": "classic",
+                        "palette_index": 0
+                      }
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query3",
+                      "query": "avg:aws.applicationelb.target_response_time.p95{name:prod-green-main-api-veworld-alb}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query4",
+                      "query": "avg:aws.applicationelb.target_response_time.p95{name:prod-blue-main-api-veworld-alb}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Target Response Time p95 (s)",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 6137833448167272,
+            "layout": {
+              "height": 4,
+              "width": 12,
+              "x": 0,
+              "y": 6
+            }
+          }
+        ]
+      },
+      "id": 7120742133508725,
+      "layout": {
+        "height": 11,
+        "is_column_break": true,
+        "width": 12,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "definition": {
+        "background_color": "vivid_purple",
+        "layout_type": "ordered",
+        "show_title": true,
+        "title": "Resource Utilization",
+        "type": "group",
+        "widgets": [
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "alias": "CPU utilisation Blue",
+                      "formula": "query1",
+                      "style": {
+                        "palette": "classic",
+                        "palette_index": 0
+                      }
+                    },
+                    {
+                      "alias": "CPU Utilisation Green",
+                      "formula": "query2",
+                      "style": {
+                        "palette": "green",
+                        "palette_index": 0
+                      }
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:aws.ecs.service.cpuutilization{servicename:prod-blue-veworld-main-api-service}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "avg:aws.ecs.service.cpuutilization{servicename:prod-green-veworld-main-api-service}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "API CPU Utilisation",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 6146670062358810,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "alias": "CPU utilisation Blue",
+                      "formula": "query1",
+                      "style": {
+                        "palette": "classic",
+                        "palette_index": 0
+                      }
+                    },
+                    {
+                      "alias": "CPU Utilisation Green",
+                      "formula": "query2",
+                      "style": {
+                        "palette": "green",
+                        "palette_index": 0
+                      }
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:aws.ecs.service.cpuutilization{servicename:prod-blue-veworld-main-indexer-service}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "avg:aws.ecs.service.cpuutilization{servicename:prod-green-veworld-main-indexer-service}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Indexer CPU Utilisation",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2032945807418209,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 6,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "alias": "Memory Utilisation Blue",
+                      "formula": "query2",
+                      "style": {
+                        "palette": "classic",
+                        "palette_index": 0
+                      }
+                    },
+                    {
+                      "alias": "Memory Utilisation Green",
+                      "formula": "query3",
+                      "style": {
+                        "palette": "green",
+                        "palette_index": 0
+                      }
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "avg:aws.ecs.service.memory_utilization{servicename:prod-blue-veworld-main-api-service}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query3",
+                      "query": "avg:aws.ecs.service.memory_utilization{servicename:prod-green-veworld-main-api-service}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "API Memory Utilisation",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries",
+              "yaxis": {
+                "include_zero": false
+              }
+            },
+            "id": 825293357162818,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 0,
+              "y": 3
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "alias": "Memory Utilisation Blue",
+                      "formula": "query1",
+                      "style": {
+                        "palette": "classic",
+                        "palette_index": 0
+                      }
+                    },
+                    {
+                      "alias": "Memory Utilisation Green",
+                      "formula": "query2",
+                      "style": {
+                        "palette": "green",
+                        "palette_index": 4
+                      }
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:aws.ecs.service.memory_utilization{servicename:prod-blue-veworld-main-indexer-service}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "avg:aws.ecs.service.memory_utilization{servicename:prod-green-veworld-main-indexer-service}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Indexer Memory Utilisation",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries",
+              "yaxis": {
+                "include_zero": false
+              }
+            },
+            "id": 6439491787408258,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 6,
+              "y": 3
+            }
+          }
+        ]
+      },
+      "id": 1968310664816332,
+      "layout": {
+        "height": 1,
+        "width": 12,
+        "x": 0,
+        "y": 11
+      }
+    },
+    {
+      "definition": {
+        "background_color": "vivid_purple",
+        "layout_type": "ordered",
+        "show_title": true,
+        "title": "Origin & Security",
+        "type": "group",
+        "widgets": [
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [
+                        {
+                          "facet": "@network.client.geoip.country.iso_code",
+                          "limit": 5000,
+                          "should_exclude_missing": true,
+                          "sort": {
+                            "aggregation": "count",
+                            "metric": "count",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "query1",
+                      "search": {
+                        "query": "source:elb (prod-blue-main-api-veworld-alb OR prod-green-main-api-veworld-alb)"
+                      },
+                      "storage": "hot"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "sort": {
+                    "count": 5000,
+                    "order_by": [
+                      {
+                        "index": 0,
+                        "order": "desc",
+                        "type": "formula"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "style": {
+                "palette": "hostmap_blues",
+                "palette_flip": false
+              },
+              "title": "Request Origins",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "geomap",
+              "view": {
+                "focus": "WORLD"
+              }
+            },
+            "id": 6480970930035069,
+            "layout": {
+              "height": 4,
+              "width": 6,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [
+                        {
+                          "facet": "@c-ip",
+                          "limit": 10,
+                          "should_exclude_missing": true,
+                          "sort": {
+                            "aggregation": "count",
+                            "metric": "count",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "query1",
+                      "search": {
+                        "query": "log_tag:veworld host:prod-cloudfront-mainnet -@sc-status:403"
+                      },
+                      "storage": "hot"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "sort": {
+                    "count": 10,
+                    "order_by": [
+                      {
+                        "index": 0,
+                        "order": "desc",
+                        "type": "formula"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "style": {
+                "display": {
+                  "legend": "automatic",
+                  "type": "stacked"
+                },
+                "scaling": "relative"
+              },
+              "title": "Top User IPs",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "toplist"
+            },
+            "id": 1189331658278187,
+            "layout": {
+              "height": 6,
+              "width": 6,
+              "x": 6,
+              "y": 0
+            }
+          }
+        ]
+      },
+      "id": 4678692179654102,
+      "layout": {
+        "height": 1,
+        "width": 12,
+        "x": 0,
+        "y": 12
+      }
+    },
+    {
+      "definition": {
+        "background_color": "vivid_orange",
+        "layout_type": "ordered",
+        "show_title": true,
+        "title": "Thor Client Metrics",
+        "type": "group",
+        "widgets": [
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "sum",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:thor_client_response_codes_total{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Total Requests",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2100000000000002,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 2,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1 / query2"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "sum",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:thor_client_request_duration.sum{indexer-id:$host.value}"
+                    },
+                    {
+                      "aggregator": "sum",
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "sum:thor_client_request_duration.count{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Avg. Response Time (ms)",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2100000000000003,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 3,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 2,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "100 * query1 / query2"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "sum",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:thor_client_response_codes_total{code:200 , indexer-id:$host.value}"
+                    },
+                    {
+                      "aggregator": "sum",
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "sum:thor_client_response_codes_total{indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Success Rate (%)",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2100000000000004,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 6,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "autoscale": true,
+              "precision": 0,
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "sum",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:thor_client_response_codes_total{!code:200 , indexer-id:$host.value}"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "title": "Error Count (non-200)",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_value"
+            },
+            "id": 2100000000000005,
+            "layout": {
+              "height": 2,
+              "width": 3,
+              "x": 9,
+              "y": 0
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:thor_client_response_codes_total{indexer-id:$host.value} by {endpoint}.as_rate()"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Request Rate by Endpoint",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2100000000000006,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 0,
+              "y": 2
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1 / query2"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:thor_client_request_duration.sum{indexer-id:$host.value} by {endpoint}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "sum:thor_client_request_duration.count{indexer-id:$host.value} by {endpoint}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Response Time by Endpoint (ms)",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2100000000000007,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 6,
+              "y": 2
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "alias": "2xx (Success)",
+                      "formula": "query1"
+                    },
+                    {
+                      "alias": "4xx (Client Error)",
+                      "formula": "query2"
+                    },
+                    {
+                      "alias": "5xx (Server Error)",
+                      "formula": "query3"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:thor_client_response_codes_total{code:200 , indexer-id:$host.value}.as_rate()"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "sum:thor_client_response_codes_total{code:4* , indexer-id:$host.value}.as_rate()"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query3",
+                      "query": "sum:thor_client_response_codes_total{code:5* , indexer-id:$host.value}.as_rate()"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Response Codes (Success vs Error)",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2100000000000008,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 0,
+              "y": 5
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "max:thor_client_request_duration.max{indexer-id:$host.value} by {endpoint}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Max Response Time by Endpoint (ms)",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2100000000000009,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 6,
+              "y": 5
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "max:thor_client_request_duration.percentile{indexer-id:$host.value, phi:0.95} by {endpoint}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Response time (p95)",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 6206623178559912,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 0,
+              "y": 8
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "max:thor_client_request_duration.percentile{indexer-id:$host.value, phi:0.75} by {endpoint}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Response time (p75)",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2421214731188266,
+            "layout": {
+              "height": 3,
+              "width": 6,
+              "x": 6,
+              "y": 8
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "sum",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:thor_client_response_codes_total{indexer-id:$host.value} by {endpoint}"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "sort": {
+                    "count": 50,
+                    "order_by": [
+                      {
+                        "index": 0,
+                        "order": "desc",
+                        "type": "formula"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "style": {
+                "display": {
+                  "legend": "automatic",
+                  "type": "stacked"
+                },
+                "scaling": "relative"
+              },
+              "title": "Requests by Endpoint",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "toplist"
+            },
+            "id": 2100000000000010,
+            "layout": {
+              "height": 4,
+              "width": 6,
+              "x": 0,
+              "y": 11
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1 / query2"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "sum",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:thor_client_request_duration.sum{indexer-id:$host.value} by {endpoint}"
+                    },
+                    {
+                      "aggregator": "sum",
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "sum:thor_client_request_duration.count{indexer-id:$host.value} by {endpoint}"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "sort": {
+                    "count": 50,
+                    "order_by": [
+                      {
+                        "index": 0,
+                        "order": "desc",
+                        "type": "formula"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "style": {
+                "display": {
+                  "legend": "automatic",
+                  "type": "stacked"
+                },
+                "scaling": "relative"
+              },
+              "title": "Avg Response Time by Endpoint (ms)",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "toplist"
+            },
+            "id": 2100000000000011,
+            "layout": {
+              "height": 4,
+              "width": 6,
+              "x": 6,
+              "y": 11
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "sum",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:thor_client_response_codes_total{indexer-id:$host.value} by {code}"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "sort": {
+                    "count": 50,
+                    "order_by": [
+                      {
+                        "index": 0,
+                        "order": "desc",
+                        "type": "formula"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "style": {
+                "display": {
+                  "legend": "automatic",
+                  "type": "stacked"
+                },
+                "scaling": "relative"
+              },
+              "title": "Requests by Response Code",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "toplist"
+            },
+            "id": 2100000000000012,
+            "layout": {
+              "height": 4,
+              "width": 6,
+              "x": 0,
+              "y": 15
+            }
+          },
+          {
+            "definition": {
+              "legend_columns": [
+                "avg",
+                "min",
+                "max",
+                "value",
+                "sum"
+              ],
+              "legend_layout": "auto",
+              "requests": [
+                {
+                  "display_type": "line",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:thor_client_response_codes_total{!code:200 , indexer-id:$host.value} by {endpoint}.as_rate()"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "line_type": "solid",
+                    "line_width": "normal",
+                    "order_by": "values"
+                  }
+                }
+              ],
+              "show_legend": true,
+              "title": "Error Rate by Endpoint",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "timeseries"
+            },
+            "id": 2100000000000013,
+            "layout": {
+              "height": 4,
+              "width": 6,
+              "x": 6,
+              "y": 15
+            }
+          }
+        ]
+      },
+      "id": 2200000000000001,
+      "layout": {
+        "height": 1,
+        "width": 12,
+        "x": 0,
+        "y": 13
+      }
+    }
+  ]
+}

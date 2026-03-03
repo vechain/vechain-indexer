@@ -9,13 +9,11 @@ import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.accounts.TotalAccounts
-import org.vechain.indexer.accounts.TotalAccountsArchive
 import org.vechain.indexer.accounts.TotalAccountsProcessor
 import org.vechain.indexer.accounts.TotalAccountsService
 import org.vechain.indexer.accounts.repository.TotalAccountsRepository
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
@@ -26,7 +24,7 @@ class TotalAccountsProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var totalAccountsRepository: TotalAccountsRepository
     @Autowired lateinit var totalAccountsService: TotalAccountsService
-    @Autowired lateinit var archiveService: ArchiveService<TotalAccounts, TotalAccountsArchive>
+    @Autowired lateinit var inlineVersioningProperties: InlineVersioningProperties
     @Autowired lateinit var mongoTemplate: MongoTemplate
     @Autowired lateinit var checkpointService: CheckpointService
     @Autowired lateinit var processorMetrics: ProcessorMetrics
@@ -77,7 +75,8 @@ class TotalAccountsProcessorPerformanceTest : BasePerformanceTest() {
             if (profiler != null) {
                 ProfiledTotalAccountsService(
                     repository = totalAccountsRepository,
-                    archiveService = archiveService,
+                    inlineVersioningProperties = inlineVersioningProperties,
+                    mongoTemplate = mongoTemplate,
                     profiler = profiler,
                 )
             } else {
@@ -89,7 +88,7 @@ class TotalAccountsProcessorPerformanceTest : BasePerformanceTest() {
                 ProfiledTotalAccountsProcessor(
                     service = serviceToUse,
                     repository = totalAccountsRepository,
-                    archiveService = archiveService,
+                    mongoTemplate = mongoTemplate,
                     profiler = profiler,
                     checkpointService = checkpointService,
                     processorMetrics = processorMetrics,
@@ -98,7 +97,7 @@ class TotalAccountsProcessorPerformanceTest : BasePerformanceTest() {
                 TotalAccountsProcessor(
                     service = serviceToUse,
                     repository = totalAccountsRepository,
-                    archiveService = archiveService,
+                    mongoTemplate = mongoTemplate,
                     checkpointService = checkpointService,
                     processorMetrics = processorMetrics,
                 )
@@ -119,7 +118,7 @@ class TotalAccountsProcessorPerformanceTest : BasePerformanceTest() {
     private class ProfiledTotalAccountsProcessor(
         service: TotalAccountsService,
         repository: TotalAccountsRepository,
-        archiveService: ArchiveService<TotalAccounts, TotalAccountsArchive>,
+        mongoTemplate: MongoTemplate,
         private val profiler: DetailedProfiler,
         checkpointService: CheckpointService,
         processorMetrics: ProcessorMetrics,
@@ -127,7 +126,7 @@ class TotalAccountsProcessorPerformanceTest : BasePerformanceTest() {
         TotalAccountsProcessor(
             service = service,
             repository = repository,
-            archiveService = archiveService,
+            mongoTemplate = mongoTemplate,
             checkpointService = checkpointService,
             processorMetrics = processorMetrics,
         ) {

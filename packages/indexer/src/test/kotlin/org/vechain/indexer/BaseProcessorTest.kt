@@ -1,5 +1,6 @@
 package org.vechain.indexer
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.MockKAnnotations
 import io.mockk.Runs
 import io.mockk.every
@@ -8,13 +9,17 @@ import io.mockk.junit5.MockKExtension
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
+import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.BlockIdentifier
 
 @ExtendWith(MockKExtension::class)
@@ -112,6 +117,308 @@ class BaseProcessorTest {
 
         override suspend fun processEntry(entry: IndexingResult) {
             // no-op for tests
+        }
+    }
+
+    class ThrowingBaseProcessor(
+        repository: BaseIndexedRepository<*, *>,
+        checkpointService: CheckpointService,
+        processorMetrics: ProcessorMetrics,
+    ) :
+        BaseProcessor(
+            repository,
+            TEST_INDEXER_NAME,
+            checkpointService,
+            TEST_COLLECTION,
+            processorMetrics,
+        ) {
+
+        override suspend fun processEntry(entry: IndexingResult) {
+            throw RuntimeException("processEntry failed")
+        }
+    }
+
+    @Nested
+    inner class CheckpointSaving {
+
+        @BeforeEach
+        fun setup() {
+            every { checkpointService.trySaveCheckpoint(any(), any()) } just Runs
+        }
+
+        private fun block(number: Long): Block {
+            val block = mockk<Block>()
+            every { block.number } returns number
+            return block
+        }
+
+        @Test
+        fun `process saves checkpoint with block number for BlockResult`() = runBlocking {
+            processor.process(
+                IndexingResult.BlockResult(block(100), emptyList(), emptyList(), Status.SYNCING)
+            )
+
+            verify { checkpointService.trySaveCheckpoint(TEST_COLLECTION, 100) }
+        }
+
+        @Test
+        fun `process saves checkpoint with endBlock for LogResult`() = runBlocking {
+            processor.process(IndexingResult.LogResult(250, emptyList(), Status.SYNCING))
+
+            verify { checkpointService.trySaveCheckpoint(TEST_COLLECTION, 250) }
+        }
+
+        @Test
+        fun `process does not save checkpoint if processEntry throws`() {
+            val throwingProcessor =
+                ThrowingBaseProcessor(repository, checkpointService, mockk(relaxed = true))
+
+            assertThrows<RuntimeException> {
+                runBlocking {
+                    throwingProcessor.process(
+                        IndexingResult.BlockResult(
+                            block(100),
+                            emptyList(),
+                            emptyList(),
+                            Status.SYNCING,
+                        )
+                    )
+                }
+            }
+
+            verify(exactly = 0) { checkpointService.trySaveCheckpoint(any(), any()) }
+        }
+    }
+
+    @Nested
+    inner class ProcessingDurationMetrics {
+
+        private lateinit var meterRegistry: SimpleMeterRegistry
+        private lateinit var metricsProcessor: TestableBaseProcessor
+
+        @BeforeEach
+        fun setup() {
+            meterRegistry = SimpleMeterRegistry()
+            every { checkpointService.trySaveCheckpoint(any(), any()) } just Runs
+            metricsProcessor =
+                TestableBaseProcessor(
+                    repository,
+                    checkpointService,
+                    ProcessorMetrics(meterRegistry),
+                )
+        }
+
+        private fun block(number: Long): Block {
+            val block = mockk<Block>()
+            every { block.number } returns number
+            return block
+        }
+
+        @Test
+        fun `BlockResult always records exactly one observation per call`() = runBlocking {
+            // Process block 100, then block 200 — BlockResult should always be 1 block
+            metricsProcessor.process(
+                IndexingResult.BlockResult(block(100), emptyList(), emptyList(), Status.SYNCING)
+            )
+            metricsProcessor.process(
+                IndexingResult.BlockResult(block(200), emptyList(), emptyList(), Status.SYNCING)
+            )
+
+            val timer =
+                meterRegistry
+                    .find("processor_duration")
+                    .tag("indexer_name", TEST_INDEXER_NAME)
+                    .timer()!!
+
+            assertEquals(2L, timer.count())
+        }
+
+        @Test
+        fun `LogResult computes block count from delta`() = runBlocking {
+            metricsProcessor.process(IndexingResult.LogResult(100, emptyList(), Status.SYNCING))
+            metricsProcessor.process(IndexingResult.LogResult(110, emptyList(), Status.SYNCING))
+
+            val timer =
+                meterRegistry
+                    .find("processor_duration")
+                    .tag("indexer_name", TEST_INDEXER_NAME)
+                    .timer()!!
+
+            // First call: blocksInEntry=1 (no previous), second call: blocksInEntry=10
+            assertEquals(11L, timer.count())
+        }
+
+        @Test
+        fun `rollback resets lastProcessedBlock so next entry uses blocksInEntry of 1`() =
+            runBlocking {
+                every { checkpointService.saveCheckpoint(TEST_COLLECTION, 99) } just Runs
+                every { repository.deleteAllByBlockNumberGreaterThanEqual(100) } just Runs
+
+                // Process to block 200
+                metricsProcessor.process(IndexingResult.LogResult(200, emptyList(), Status.SYNCING))
+
+                // Rollback to block 100
+                metricsProcessor.rollback(100)
+
+                // Process block 50 (below previous lastProcessedBlock of 200)
+                metricsProcessor.process(IndexingResult.LogResult(50, emptyList(), Status.SYNCING))
+
+                val timer =
+                    meterRegistry
+                        .find("processor_duration")
+                        .tag("indexer_name", TEST_INDEXER_NAME)
+                        .timer()!!
+
+                // First call: 1, after rollback + second call: 1 (reset, not skewed)
+                assertEquals(2L, timer.count())
+            }
+    }
+
+    @Nested
+    inner class BlockCycleTimeMetrics {
+
+        private lateinit var meterRegistry: SimpleMeterRegistry
+        private lateinit var metricsProcessor: TestableBaseProcessor
+
+        @BeforeEach
+        fun setup() {
+            meterRegistry = SimpleMeterRegistry()
+            every { checkpointService.trySaveCheckpoint(any(), any()) } just Runs
+            metricsProcessor =
+                TestableBaseProcessor(
+                    repository,
+                    checkpointService,
+                    ProcessorMetrics(meterRegistry),
+                )
+        }
+
+        private fun block(number: Long): Block {
+            val block = mockk<Block>()
+            every { block.number } returns number
+            return block
+        }
+
+        @Test
+        fun `first call does not record cycle time`() = runBlocking {
+            metricsProcessor.process(
+                IndexingResult.BlockResult(block(100), emptyList(), emptyList(), Status.SYNCING)
+            )
+
+            val timer =
+                meterRegistry
+                    .find("processor_cycle_time")
+                    .tag("indexer_name", TEST_INDEXER_NAME)
+                    .timer()
+
+            assertNull(timer)
+        }
+
+        @Test
+        fun `second call records cycle time`() = runBlocking {
+            metricsProcessor.process(
+                IndexingResult.BlockResult(block(100), emptyList(), emptyList(), Status.SYNCING)
+            )
+            metricsProcessor.process(
+                IndexingResult.BlockResult(block(101), emptyList(), emptyList(), Status.SYNCING)
+            )
+
+            val timer =
+                meterRegistry
+                    .find("processor_cycle_time")
+                    .tag("indexer_name", TEST_INDEXER_NAME)
+                    .timer()!!
+
+            assertEquals(1L, timer.count())
+        }
+
+        @Test
+        fun `does not record cycle time when fully synced`() = runBlocking {
+            metricsProcessor.process(
+                IndexingResult.BlockResult(
+                    block(100),
+                    emptyList(),
+                    emptyList(),
+                    Status.FULLY_SYNCED,
+                )
+            )
+            metricsProcessor.process(
+                IndexingResult.BlockResult(
+                    block(101),
+                    emptyList(),
+                    emptyList(),
+                    Status.FULLY_SYNCED,
+                )
+            )
+
+            val timer =
+                meterRegistry
+                    .find("processor_cycle_time")
+                    .tag("indexer_name", TEST_INDEXER_NAME)
+                    .timer()
+
+            assertNull(timer)
+        }
+
+        @Test
+        fun `transition from syncing to fully synced stops cycle time tracking`() = runBlocking {
+            metricsProcessor.process(
+                IndexingResult.BlockResult(block(100), emptyList(), emptyList(), Status.SYNCING)
+            )
+            metricsProcessor.process(
+                IndexingResult.BlockResult(block(101), emptyList(), emptyList(), Status.SYNCING)
+            )
+            // Transition to FULLY_SYNCED — should not record and should reset lastIterationEnd
+            metricsProcessor.process(
+                IndexingResult.BlockResult(
+                    block(102),
+                    emptyList(),
+                    emptyList(),
+                    Status.FULLY_SYNCED,
+                )
+            )
+            // Back to SYNCING — should not record (no previous end after reset)
+            metricsProcessor.process(
+                IndexingResult.BlockResult(block(103), emptyList(), emptyList(), Status.SYNCING)
+            )
+
+            val timer =
+                meterRegistry
+                    .find("processor_cycle_time")
+                    .tag("indexer_name", TEST_INDEXER_NAME)
+                    .timer()!!
+
+            // Only the second SYNCING call (block 101) should have recorded
+            assertEquals(1L, timer.count())
+        }
+
+        @Test
+        fun `rollback resets cycle time tracking`() = runBlocking {
+            every { checkpointService.saveCheckpoint(TEST_COLLECTION, 99) } just Runs
+            every { repository.deleteAllByBlockNumberGreaterThanEqual(100) } just Runs
+
+            metricsProcessor.process(
+                IndexingResult.BlockResult(block(100), emptyList(), emptyList(), Status.SYNCING)
+            )
+            metricsProcessor.process(
+                IndexingResult.BlockResult(block(101), emptyList(), emptyList(), Status.SYNCING)
+            )
+
+            // Rollback resets tracking
+            metricsProcessor.rollback(100)
+
+            // This should NOT record cycle time (first call after reset)
+            metricsProcessor.process(
+                IndexingResult.BlockResult(block(100), emptyList(), emptyList(), Status.SYNCING)
+            )
+
+            val timer =
+                meterRegistry
+                    .find("processor_cycle_time")
+                    .tag("indexer_name", TEST_INDEXER_NAME)
+                    .timer()!!
+
+            // Only the second call before rollback should have recorded
+            assertEquals(1L, timer.count())
         }
     }
 

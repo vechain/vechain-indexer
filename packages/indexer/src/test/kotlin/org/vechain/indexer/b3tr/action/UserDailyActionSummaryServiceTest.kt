@@ -1,24 +1,29 @@
 package org.vechain.indexer.b3tr.action
 
+import com.mongodb.client.MongoCollection
+import com.mongodb.client.model.BulkWriteOptions
+import com.mongodb.client.model.WriteModel
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.verify
 import java.math.BigDecimal
+import org.bson.Document
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.convert.MongoConverter
 import org.springframework.data.repository.findByIdOrNull
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.UserDailyActionSummaryRepository
 import org.vechain.indexer.b3tr.shared.EntityType
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.IdUtils.generateId
 
@@ -26,22 +31,27 @@ import org.vechain.indexer.utils.IdUtils.generateId
 internal class UserDailyActionSummaryServiceTest {
     @MockK lateinit var repository: UserDailyActionSummaryRepository
 
-    @MockK
-    lateinit var archiveService:
-        ArchiveService<UserDailyActionSummary, UserDailyActionSummaryArchive>
+    @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
 
-    @MockK
-    lateinit var pruner: TargetedPruner<UserDailyActionSummary, UserDailyActionSummaryArchive>
+    @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
+    @MockK(relaxed = true) lateinit var mongoCollection: MongoCollection<Document>
+    @MockK(relaxed = true) lateinit var converter: MongoConverter
 
     private lateinit var service: TestableService
 
     // A small testable subclass to expose protected methods where useful
     private class TestableService(
         repository: UserDailyActionSummaryRepository,
-        archive: ArchiveService<UserDailyActionSummary, UserDailyActionSummaryArchive>,
-        pruner: TargetedPruner<UserDailyActionSummary, UserDailyActionSummaryArchive>,
+        mongoTemplate: MongoTemplate,
+        inlineVersioningProperties: InlineVersioningProperties,
         impactConfig: ActionImpactConfig = ActionImpactConfig(),
-    ) : UserDailyActionSummaryService(repository, archive, pruner, impactConfig) {
+    ) :
+        UserDailyActionSummaryService(
+            repository,
+            mongoTemplate,
+            inlineVersioningProperties,
+            impactConfig,
+        ) {
         fun callCreateOrUpdateExisting(
             entity: String,
             entityType: EntityType,
@@ -55,7 +65,13 @@ internal class UserDailyActionSummaryServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = TestableService(repository, archiveService, pruner)
+        every { inlineVersioningProperties.blockWindow } returns 10000L
+        every { inlineVersioningProperties.maxVersions } returns 100
+        every { mongoTemplate.getCollectionName(any<Class<*>>()) } returns "test_collection"
+        every { mongoTemplate.getCollection(any()) } returns mongoCollection
+        every { mongoTemplate.converter } returns converter
+        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
+        service = TestableService(repository, mongoTemplate, inlineVersioningProperties)
     }
 
     @Test
@@ -255,8 +271,9 @@ internal class UserDailyActionSummaryServiceTest {
     @Test
     fun `save with empty lists does not call repositories`() {
         service.save(emptyList(), emptyList())
-        verify(exactly = 0) { repository.save(any()) }
-        verify(exactly = 0) { archiveService.saveAll(any()) }
+        verify(exactly = 0) {
+            mongoCollection.bulkWrite(any<List<WriteModel<Document>>>(), any<BulkWriteOptions>())
+        }
     }
 
     @Test

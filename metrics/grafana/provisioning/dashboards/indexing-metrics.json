@@ -61,7 +61,7 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 5,
+        "w": 8,
         "x": 0,
         "y": 1
       },
@@ -122,8 +122,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 3,
-        "x": 5,
+        "w": 8,
+        "x": 8,
         "y": 1
       },
       "id": 3,
@@ -169,6 +169,11 @@
           "mappings": [
             {
               "options": {
+                "-1": {
+                  "color": "orange",
+                  "index": 0,
+                  "text": "Unknown"
+                },
                 "0": {
                   "color": "yellow",
                   "index": 1,
@@ -199,13 +204,24 @@
                   "index": 6,
                   "text": "Shut Down"
                 },
-                "-1": {
-                  "color": "orange",
-                  "index": 0,
-                  "text": "Unknown"
+                "6": {
+                  "color": "green",
+                  "index": 7,
+                  "text": "Fully Synced"
                 }
               },
               "type": "value"
+            },
+            {
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "orange",
+                  "index": 8,
+                  "text": "Unknown"
+                }
+              },
+              "type": "special"
             }
           ],
           "thresholds": {
@@ -231,8 +247,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 5,
-        "x": 8,
+        "w": 8,
+        "x": 16,
         "y": 1
       },
       "id": 2,
@@ -262,203 +278,8 @@
           "refId": "A"
         }
       ],
-      "title": "Avg. Processing Time Per Block",
+      "title": "Avg. Block Processing Time",
       "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "footer": {
-              "reducers": []
-            },
-            "inspect": false
-          },
-          "decimals": 0,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              }
-            ]
-          },
-          "unit": "locale"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Time"
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom.viz",
-                "value": true
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "indexer_id"
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom.viz",
-                "value": true
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "indexer-id"
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom.viz",
-                "value": true
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "__name__"
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom.viz",
-                "value": true
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "instance"
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom.viz",
-                "value": true
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "job"
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom.viz",
-                "value": true
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "indexer_name"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Indexer"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Value"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Block"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "status_readable"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Sync Status"
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 11,
-        "x": 13,
-        "y": 1
-      },
-      "id": 5,
-      "options": {
-        "cellHeight": "sm",
-        "showHeader": true,
-        "sortBy": [
-          {
-            "desc": true,
-            "displayName": "Block"
-          }
-        ]
-      },
-      "pluginVersion": "12.3.0",
-      "targets": [
-        {
-          "expr": "sort_desc(indexer_current_block_by_status_gauge{indexer_name=~\"$indexer\"} == indexer_current_block_by_status_gauge{indexer_name=~\"$indexer\"})",
-          "format": "table",
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "title": "",
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true,
-              "__name__": true,
-              "indexer-id": true,
-              "indexer_id": true,
-              "instance": true,
-              "job": true,
-              "status": true
-            },
-            "indexByName": {},
-            "renameByName": {
-              "Value": "Block",
-              "indexer_name": "Indexer",
-              "status_readable": "Sync Status"
-            }
-          }
-        }
-      ],
-      "type": "table"
     },
     {
       "datasource": {
@@ -541,163 +362,397 @@
           "color": {
             "mode": "thresholds"
           },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
           "decimals": 0,
           "mappings": [],
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
-                "value": 0
-              },
-              {
-                "color": "yellow",
-                "value": 10
-              },
-              {
-                "color": "red",
-                "value": 100
-              }
-            ]
-          },
-          "unit": "none"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 12,
-        "w": 9,
-        "x": 4,
-        "y": 5
-      },
-      "id": 14,
-      "options": {
-        "displayMode": "gradient",
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": false
-        },
-        "maxVizHeight": 300,
-        "minVizHeight": 16,
-        "minVizWidth": 8,
-        "namePlacement": "auto",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showUnfilled": true,
-        "sizing": "auto",
-        "valueMode": "color"
-      },
-      "pluginVersion": "12.3.0",
-      "targets": [
-        {
-          "expr": "sort_desc(indexer_sync_gap_gauge{indexer_name=~\"$indexer\"})",
-          "instant": true,
-          "legendFormat": "{{indexer_name}}",
-          "refId": "A"
-        }
-      ],
-      "title": "Sync Gap per Indexer",
-      "transformations": [
-        {
-          "id": "sortBy",
-          "options": {
-            "fields": {},
-            "sort": [
-              {
-                "desc": true,
-                "field": "Value"
+                "value": null
               }
             ]
           }
-        }
-      ],
-      "type": "bargauge"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "decimals": 0,
-          "mappings": [],
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #A"
+            },
+            "properties": [
               {
-                "color": "green",
-                "value": 0
+                "id": "displayName",
+                "value": "Sync Status"
               },
               {
-                "color": "yellow",
-                "value": 3600
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "-1": {
+                        "color": "orange",
+                        "index": 0,
+                        "text": "Unknown"
+                      },
+                      "0": {
+                        "color": "yellow",
+                        "index": 1,
+                        "text": "Not Initialised"
+                      },
+                      "1": {
+                        "color": "yellow",
+                        "index": 2,
+                        "text": "Initialised"
+                      },
+                      "2": {
+                        "color": "blue",
+                        "index": 3,
+                        "text": "Syncing"
+                      },
+                      "3": {
+                        "color": "blue",
+                        "index": 4,
+                        "text": "Fast Syncing"
+                      },
+                      "4": {
+                        "color": "purple",
+                        "index": 5,
+                        "text": "Pruning"
+                      },
+                      "5": {
+                        "color": "red",
+                        "index": 6,
+                        "text": "Shut Down"
+                      },
+                      "6": {
+                        "color": "green",
+                        "index": 7,
+                        "text": "Fully Synced"
+                      }
+                    },
+                    "type": "value"
+                  },
+                  {
+                    "options": {
+                      "match": "null+nan",
+                      "result": {
+                        "color": "orange",
+                        "index": 8,
+                        "text": "Unknown"
+                      }
+                    },
+                    "type": "special"
+                  }
+                ]
               },
               {
-                "color": "red",
-                "value": 21600
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "basic",
+                  "type": "color-background"
+                }
               }
             ]
           },
-          "unit": "s"
-        },
-        "overrides": []
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #B"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sync Gap"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 10000
+                    },
+                    {
+                      "color": "red",
+                      "value": 1000000
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "basic",
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #C"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Est. Time to Sync"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 1
+                    },
+                    {
+                      "color": "red",
+                      "value": 21600
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "basic",
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #D"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Block Processing Time"
+              },
+              {
+                "id": "unit",
+                "value": "ms"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 10
+                    },
+                    {
+                      "color": "red",
+                      "value": 200
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "basic",
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #E"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Events"
+              },
+              {
+                "id": "unit",
+                "value": "locale"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #F"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Block Cycle Time"
+              },
+              {
+                "id": "unit",
+                "value": "ms"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 10
+                    },
+                    {
+                      "color": "red",
+                      "value": 200
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "basic",
+                  "type": "color-background"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 8,
-        "w": 11,
-        "x": 13,
-        "y": 9
+        "h": 12,
+        "w": 20,
+        "x": 4,
+        "y": 5
       },
-      "id": 16,
+      "id": 17,
       "options": {
-        "displayMode": "gradient",
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": false
-        },
-        "maxVizHeight": 300,
-        "minVizHeight": 16,
-        "minVizWidth": 8,
-        "namePlacement": "auto",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showUnfilled": true,
-        "sizing": "auto",
-        "valueMode": "color"
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Sync Gap"
+          }
+        ]
       },
       "pluginVersion": "12.3.0",
       "targets": [
         {
-          "expr": "sort_desc(indexer_estimated_time_to_sync_seconds{indexer_name=~\"$indexer\"})",
+          "expr": "max by(indexer_name) (indexer_sync_status_code_gauge{indexer_name=~\"$indexer\"})",
+          "format": "table",
           "instant": true,
-          "legendFormat": "{{indexer_name}}",
+          "legendFormat": "__auto",
           "refId": "A"
+        },
+        {
+          "expr": "indexer_sync_gap_gauge{indexer_name=~\"$indexer\"}",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "__auto",
+          "refId": "B"
+        },
+        {
+          "expr": "indexer_estimated_time_to_sync_seconds{indexer_name=~\"$indexer\"}",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "__auto",
+          "refId": "C"
+        },
+        {
+          "expr": "1000 * sum by(indexer_name) (increase(processor_duration_seconds_sum{indexer_name=~\"$indexer\"}[$__range])) / sum by(indexer_name) (increase(indexer_blocks_processed_total{indexer_name=~\"$indexer\"}[$__range])) and sum by(indexer_name) (increase(indexer_blocks_processed_total{indexer_name=~\"$indexer\"}[$__range])) > 0",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "__auto",
+          "refId": "D"
+        },
+        {
+          "expr": "sum by(indexer_name) (increase(processor_events_counter_total{indexer_name=~\"$indexer\"}[$__range]))",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "__auto",
+          "refId": "E"
+        },
+        {
+          "expr": "1000 * sum by(indexer_name) (increase(processor_cycle_time_seconds_sum{indexer_name=~\"$indexer\"}[$__range])) / sum by(indexer_name) (increase(indexer_blocks_processed_total{indexer_name=~\"$indexer\"}[$__range])) and sum by(indexer_name) (increase(indexer_blocks_processed_total{indexer_name=~\"$indexer\"}[$__range])) > 0",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "__auto",
+          "refId": "F"
         }
       ],
-      "title": "Estimated Time to Sync",
-      "type": "bargauge"
+      "title": "Indexer Overview",
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "indexer_name",
+            "mode": "outer"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "indexer-id": true,
+              "indexer_id": true,
+              "instance": true,
+              "job": true
+            },
+            "indexByName": {
+              "Value #A": 1,
+              "Value #B": 2,
+              "Value #C": 3,
+              "Value #D": 4,
+              "Value #E": 6,
+              "Value #F": 5,
+              "indexer_name": 0
+            },
+            "renameByName": {
+              "indexer_name": "Indexer"
+            }
+          }
+        }
+      ],
+      "type": "table"
     },
     {
       "datasource": {
@@ -981,6 +1036,188 @@
       "fieldConfig": {
         "defaults": {
           "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "log": 2,
+              "type": "log"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 33
+      },
+      "id": 18,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.0",
+      "targets": [
+        {
+          "expr": "1000 * sum by(indexer_name) (rate(processor_cycle_time_seconds_sum{indexer_name=~\"$indexer\"}[5m])) / sum by(indexer_name) (rate(indexer_blocks_processed_total{indexer_name=~\"$indexer\"}[5m])) and sum by(indexer_name) (rate(indexer_blocks_processed_total{indexer_name=~\"$indexer\"}[5m])) > 0",
+          "legendFormat": "{{indexer_name}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Block Cycle Time Per Block (Avg)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "log": 2,
+              "type": "log"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 33
+      },
+      "id": 19,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.0",
+      "targets": [
+        {
+          "expr": "1000 * histogram_quantile(0.95, sum by(le, indexer_name) (rate(processor_cycle_time_seconds_bucket{indexer_name=~\"$indexer\"}[$__rate_interval])))",
+          "legendFormat": "{{indexer_name}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Block Cycle Time P95",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
             "mode": "thresholds"
           },
           "mappings": [],
@@ -1010,7 +1247,7 @@
         "h": 10,
         "w": 12,
         "x": 12,
-        "y": 33
+        "y": 41
       },
       "id": 11,
       "options": {
@@ -1046,7 +1283,7 @@
           "refId": "A"
         }
       ],
-      "title": "Avg Processing Time Per Block by Indexer",
+      "title": "Avg Block Processing Time by Indexer",
       "type": "bargauge"
     },
     {
@@ -1079,7 +1316,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 39
+        "y": 47
       },
       "id": 10,
       "options": {
@@ -1180,7 +1417,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 43
+        "y": 51
       },
       "id": 6,
       "options": {

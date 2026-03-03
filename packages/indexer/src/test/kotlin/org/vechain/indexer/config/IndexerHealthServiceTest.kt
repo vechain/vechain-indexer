@@ -28,17 +28,6 @@ class IndexerHealthServiceTest {
     // --- Status-based early returns ---
 
     @Test
-    fun `PRUNING status returns UP`() {
-        val indexer = mockk<Indexer>()
-        every { indexer.getStatus() } returns Status.PRUNING
-
-        val (status, message) = service.getIndexerHealth(indexer)
-
-        assertThat(status).isEqualTo(HealthStatus.UP)
-        assertThat(message).isEqualTo("Indexer is pruning")
-    }
-
-    @Test
     fun `NOT_INITIALISED status returns UP`() {
         val indexer = mockk<Indexer>()
         every { indexer.getStatus() } returns Status.NOT_INITIALISED

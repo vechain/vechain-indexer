@@ -8,11 +8,10 @@ import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.pruner.TargetedPruner
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
-import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
 import org.vechain.indexer.thor.HexUtils.toHex
 import org.vechain.indexer.thor.client.ThorClient
@@ -24,11 +23,10 @@ import org.vechain.indexer.validator.models.DecodedValidatorInfo
 
 class TokenRewardServiceTest {
     private val repository = mockk<TokenRewardRepository>(relaxed = true)
-    private val archiveService =
-        mockk<ArchiveService<TokenReward, TokenRewardArchive>>(relaxed = true)
+    private val mongoTemplate = mockk<MongoTemplate>(relaxed = true)
+    private val inlineVersioningProperties = mockk<InlineVersioningProperties>()
     private val delegationRepository = mockk<DelegationRepository>(relaxed = true)
     private val thorClient = mockk<ThorClient>(relaxed = true)
-    private val pruner = mockk<TargetedPruner<TokenReward, TokenRewardArchive>>(relaxed = true)
 
     private lateinit var service: TokenRewardService
 
@@ -37,14 +35,16 @@ class TokenRewardServiceTest {
     @BeforeEach
     fun setup() {
         clearAllMocks()
+        every { inlineVersioningProperties.blockWindow } returns 10000L
+        every { inlineVersioningProperties.maxVersions } returns 100
         service =
             spyk(
                 TokenRewardService(
                     repository,
-                    archiveService,
+                    mongoTemplate,
+                    inlineVersioningProperties,
                     delegationRepository,
                     thorClient,
-                    pruner,
                 )
             )
     }

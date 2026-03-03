@@ -11,10 +11,10 @@ import java.util.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.archive.ArchiveService
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.IdUtils.generateId
 import org.vechain.indexer.utils.ParamUtils.getAsBigDecimal
@@ -24,20 +24,17 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 class VeVoteResultServiceTest {
     @MockK lateinit var repository: VeVoteProposalResultRepository
 
-    @MockK
-    lateinit var veVoteProposalResultArchive:
-        ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>
+    @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
 
-    @MockK lateinit var pruner: TargetedPruner<VeVoteProposalResult, VeVoteProposalResultArchive>
+    @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
 
     private lateinit var service: TestableService
 
     private class TestableService(
         repository: VeVoteProposalResultRepository,
-        veVoteProposalResultArchive:
-            ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
-        pruner: TargetedPruner<VeVoteProposalResult, VeVoteProposalResultArchive>,
-    ) : VeVoteResultService(repository, veVoteProposalResultArchive, pruner) {
+        mongoTemplate: MongoTemplate,
+        inlineVersioningProperties: InlineVersioningProperties,
+    ) : VeVoteResultService(repository, mongoTemplate, inlineVersioningProperties) {
 
         fun callCreateOrUpdateExisting(
             blockDetails: BlockDetails,
@@ -50,7 +47,10 @@ class VeVoteResultServiceTest {
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
-        service = TestableService(repository, veVoteProposalResultArchive, pruner)
+        every { inlineVersioningProperties.blockWindow } returns 10000L
+        every { inlineVersioningProperties.maxVersions } returns 100
+        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
+        service = TestableService(repository, mongoTemplate, inlineVersioningProperties)
     }
 
     @Test

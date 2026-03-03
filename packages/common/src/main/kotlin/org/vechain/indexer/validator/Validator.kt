@@ -2,17 +2,13 @@ package org.vechain.indexer.validator
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.annotation.JsonView
 import java.math.BigDecimal
 import org.bson.types.Decimal128
-import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.stargate.token.TokenLevel
-import org.vechain.indexer.thor.model.Views
 
 @Document(collection = IndexerNames.VALIDATOR.COLLECTION)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -84,9 +80,3 @@ data class Validator(
                 version = this.version,
             )
 }
-
-@Document("validators_archives")
-@JsonView(Views.Public::class)
-data class ValidatorArchive
-@ConstructorBinding
-constructor(@Id override val id: String, override val data: Validator) : Archive<Validator>

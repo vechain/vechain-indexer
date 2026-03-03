@@ -4,19 +4,18 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.stargate.token.StargateEventService
-import org.vechain.indexer.stargate.token.StargateToken
-import org.vechain.indexer.stargate.token.StargateTokenArchive
 import org.vechain.indexer.stargate.token.StargateTokenProcessor
 import org.vechain.indexer.stargate.token.StargateTokenRepository
 import org.vechain.indexer.stargate.token.StargateTokenService
@@ -31,7 +30,8 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var stargateTokenService: StargateTokenService
     @Autowired lateinit var stargateEventService: StargateEventService
     @Autowired lateinit var validatorDelegationService: ValidatorDelegationService
-    @Autowired lateinit var archiveService: ArchiveService<StargateToken, StargateTokenArchive>
+    @Autowired lateinit var inlineVersioningProperties: InlineVersioningProperties
+    @Autowired lateinit var mongoTemplate: MongoTemplate
     @Autowired lateinit var checkpointService: CheckpointService
     @Autowired lateinit var processorMetrics: ProcessorMetrics
 
@@ -98,7 +98,8 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
                     repository = stargateTokenRepository,
                     eventService = stargateEventService,
                     validatorDelegationService = validatorDelegationService,
-                    archiveService = archiveService,
+                    mongoTemplate = mongoTemplate,
+                    inlineVersioningProperties = inlineVersioningProperties,
                     profiler = profiler,
                 )
             } else {
@@ -110,7 +111,7 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
                 ProfiledStargateTokenProcessor(
                     service = serviceToUse,
                     stargateTokenRepository = stargateTokenRepository,
-                    archiveService = archiveService,
+                    mongoTemplate = mongoTemplate,
                     profiler = profiler,
                     checkpointService = checkpointService,
                     processorMetrics = processorMetrics,
@@ -119,7 +120,7 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
                 StargateTokenProcessor(
                     service = serviceToUse,
                     stargateTokenRepository = stargateTokenRepository,
-                    archiveService = archiveService,
+                    mongoTemplate = mongoTemplate,
                     checkpointService = checkpointService,
                     processorMetrics = processorMetrics,
                 )
@@ -166,7 +167,7 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
     private class ProfiledStargateTokenProcessor(
         service: StargateTokenService,
         stargateTokenRepository: StargateTokenRepository,
-        archiveService: ArchiveService<StargateToken, StargateTokenArchive>,
+        mongoTemplate: MongoTemplate,
         private val profiler: DetailedProfiler,
         checkpointService: CheckpointService,
         processorMetrics: ProcessorMetrics,
@@ -174,7 +175,7 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
         StargateTokenProcessor(
             service = service,
             stargateTokenRepository = stargateTokenRepository,
-            archiveService = archiveService,
+            mongoTemplate = mongoTemplate,
             checkpointService = checkpointService,
             processorMetrics = processorMetrics,
         ) {

@@ -29,6 +29,12 @@ resource "mongodbatlas_advanced_cluster" "main_net" {
       }
     }]
   }]
+
+  lifecycle {
+    ignore_changes = [
+      replication_specs[0].region_configs[0].electable_specs[0].disk_size_gb,
+    ]
+  }
 }
 
 resource "mongodbatlas_advanced_cluster" "test_net" {
@@ -49,7 +55,6 @@ resource "mongodbatlas_advanced_cluster" "test_net" {
       electable_specs = {
         instance_size = local.env.enabled_nets.test.mongodb.cluster_tier
         node_count    = 3
-        disk_size_gb  = local.env.enabled_nets.test.mongodb.disk_size_gb
       }
 
       auto_scaling = {
@@ -59,6 +64,12 @@ resource "mongodbatlas_advanced_cluster" "test_net" {
       }
     }]
   }]
+
+  lifecycle {
+    ignore_changes = [
+      replication_specs[0].region_configs[0].electable_specs[0].disk_size_gb,
+    ]
+  }
 }
 
 ################################################################################

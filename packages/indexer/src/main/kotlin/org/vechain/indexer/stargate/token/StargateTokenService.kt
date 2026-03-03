@@ -2,10 +2,12 @@ package org.vechain.indexer.stargate.token
 
 import kotlin.collections.plus
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
@@ -30,7 +32,8 @@ open class StargateTokenService(
     private val stargateTokenRepository: StargateTokenRepository,
     private val eventService: StargateEventService,
     private val validatorDelegationService: ValidatorDelegationService,
-    private val archiveService: ArchiveService<StargateToken, StargateTokenArchive>,
+    private val mongoTemplate: MongoTemplate,
+    private val inlineVersioningProperties: InlineVersioningProperties,
 ) {
     private var cachedValidators: Set<String> = emptySet()
 
@@ -55,35 +58,37 @@ open class StargateTokenService(
                 validatorSnapshots,
             )
 
-        val tokensToArchive = mutableListOf<StargateToken>()
+        val existingTokens = mutableListOf<StargateToken>()
 
         // Mutations
-        processDelegationStatusTransitions(block, latestTokenSnapshots, tokensToArchive)
+        processDelegationStatusTransitions(block, latestTokenSnapshots, existingTokens)
         handleValidatorsDisappearedSnapshots(
             removedValidators,
             block,
             latestTokenSnapshots,
-            tokensToArchive,
+            existingTokens,
         )
         eventService.handleStargateEvents(
             events,
             latestTokenSnapshots,
             validatorSnapshots,
-            tokensToArchive,
+            existingTokens,
         )
 
-        return latestTokenSnapshots.values to tokensToArchive
+        return latestTokenSnapshots.values to existingTokens
     }
 
     /** Persist updated token snapshots. */
     @Transactional(rollbackFor = [Exception::class])
-    open fun save(tokens: Collection<StargateToken>, archive: List<StargateToken>) {
+    open fun save(tokens: Collection<StargateToken>, existing: List<StargateToken>) {
         if (tokens.isEmpty()) return
-        stargateTokenRepository.saveAll(tokens)
-
-        if (archive.isNotEmpty()) {
-            archiveService.saveAll(archive)
-        }
+        saveVersionedDocuments(
+            tokens.toList(),
+            existing,
+            mongoTemplate,
+            inlineVersioningProperties.blockWindow,
+            inlineVersioningProperties.maxVersions,
+        )
     }
 
     // ------------------------------------------------------------------------
@@ -147,7 +152,7 @@ open class StargateTokenService(
     fun processDelegationStatusTransitions(
         block: Block,
         latestTokenSnapshots: MutableMap<String, StargateToken>,
-        archive: MutableList<StargateToken>,
+        existingTokens: MutableList<StargateToken>,
     ) {
         latestTokenSnapshots.values
             .filter {
@@ -155,7 +160,7 @@ open class StargateTokenService(
                     it.delegationNextPeriod == block.number
             }
             .forEach { token ->
-                archive.add(token)
+                existingTokens.add(token)
                 latestTokenSnapshots[token.tokenId] =
                     token.copy(
                         version = token.version + 1,
@@ -236,12 +241,12 @@ open class StargateTokenService(
         validatorIds: Set<String>,
         block: Block,
         latestTokenSnapshots: MutableMap<String, StargateToken>,
-        tokensToArchive: MutableList<StargateToken>,
+        existingTokens: MutableList<StargateToken>,
     ) {
         latestTokenSnapshots.values
             .filter { it.validatorId in validatorIds }
             .forEach { token ->
-                tokensToArchive.add(token)
+                existingTokens.add(token)
                 latestTokenSnapshots[token.tokenId] =
                     token.copy(
                         version = token.version + 1,

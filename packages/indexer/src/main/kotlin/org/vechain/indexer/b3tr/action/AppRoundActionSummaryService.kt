@@ -3,11 +3,11 @@ package org.vechain.indexer.b3tr.action
 import kotlin.collections.component1
 import kotlin.collections.component2
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.VersionedDocumentAccumulator
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.accumulateImpacts
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getAction
@@ -19,8 +19,8 @@ import org.vechain.indexer.b3tr.action.ActionSummaryUtils.groupByReceiver
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.validateAndFilterImpacts
 import org.vechain.indexer.b3tr.action.repository.AppRoundActionSummaryRepository
 import org.vechain.indexer.b3tr.round.RoundUtils.discoverRoundId
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.EventUtils.groupByBlock
@@ -30,10 +30,8 @@ import org.vechain.indexer.utils.IdUtils.generateId
 @Profile("b3tr", "b3tr-actions", "b3tr-app-round-action-summary")
 open class AppRoundActionSummaryService(
     private val repository: AppRoundActionSummaryRepository,
-    private val appRoundActionSummaryArchiveService:
-        ArchiveService<AppRoundActionSummary, AppRoundActionSummaryArchive>,
-    private val appRoundActionSummaryPruner:
-        TargetedPruner<AppRoundActionSummary, AppRoundActionSummaryArchive>,
+    private val mongoTemplate: MongoTemplate,
+    private val inlineVersioningProperties: InlineVersioningProperties,
     private val impactConfig: ActionImpactConfig,
 ) {
 
@@ -48,8 +46,35 @@ open class AppRoundActionSummaryService(
             "EmissionDistributedV2",
         )
 
+        // Pre-collect all record IDs by simulating round discovery
+        val allRecordIds = mutableSetOf<String>()
+        var preloadRoundId = roundId
+        groupByBlock(events).forEach { (_, blockEvents) ->
+            val roundChangeEvents =
+                blockEvents.filter {
+                    it.eventType == "EmissionDistributed" || it.eventType == "EmissionDistributedV2"
+                }
+            val rewardDistributedEvents = blockEvents.filter { it.eventType == "B3TR_ActionReward" }
+            preloadRoundId = discoverRoundId(roundChangeEvents, preloadRoundId)
+            if (rewardDistributedEvents.isNotEmpty()) {
+                groupByAppId(rewardDistributedEvents).forEach { (appId, appEvents) ->
+                    groupByReceiver(appEvents).forEach { (receiverId, _) ->
+                        allRecordIds.add(generateId(appId, receiverId, "$preloadRoundId"))
+                    }
+                }
+            }
+        }
+        val preloaded =
+            if (allRecordIds.isNotEmpty()) {
+                repository.findAllById(allRecordIds).associateBy { it.getDocumentId() }
+            } else {
+                emptyMap()
+            }
+
         val accumulator =
-            VersionedDocumentAccumulator<AppRoundActionSummary>(repository::findByIdOrNull)
+            VersionedDocumentAccumulator<AppRoundActionSummary>(
+                findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) }
+            )
         var updatedRoundId = roundId
 
         groupByBlock(events).forEach { (blockDetails, blockEvents) ->
@@ -102,8 +127,9 @@ open class AppRoundActionSummaryService(
         saveVersionedDocuments(
             updated,
             existing,
-            appRoundActionSummaryArchiveService,
-            appRoundActionSummaryPruner,
+            mongoTemplate,
+            inlineVersioningProperties.blockWindow,
+            inlineVersioningProperties.maxVersions,
         )
     }
 

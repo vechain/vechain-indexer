@@ -7,10 +7,9 @@ import org.springframework.data.mongodb.core.query.Query
 import org.springframework.data.mongodb.core.query.Update
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.EventUtils
@@ -21,14 +20,19 @@ import org.vechain.indexer.utils.buildNftId
 @Service
 open class NftService(
     private val nftRepository: NftRepository,
-    private val nftArchiveService: ArchiveService<IndexedNft, NftArchive>,
-    private val nftPruner: TargetedPruner<IndexedNft, NftArchive>,
+    private val inlineVersioningProperties: InlineVersioningProperties,
     private val blacklistClient: NftBlacklistClient,
     private val mongoTemplate: MongoTemplate,
 ) {
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<IndexedNft>, existing: List<IndexedNft>) {
-        saveVersionedDocuments(updated, existing, nftArchiveService, nftPruner)
+        saveVersionedDocuments(
+            updated,
+            existing,
+            mongoTemplate,
+            inlineVersioningProperties.blockWindow,
+            inlineVersioningProperties.maxVersions,
+        )
     }
 
     open suspend fun parseRecords(

@@ -1,11 +1,11 @@
 package org.vechain.indexer.contracts
 
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.contracts.repository.ContractRepository
@@ -15,13 +15,13 @@ import org.vechain.indexer.contracts.repository.ContractRepository
 open class ContractProcessor(
     private val service: ContractService,
     repository: ContractRepository,
-    archiveService: ArchiveService<Contract, ContractArchive>,
+    mongoTemplate: MongoTemplate,
     checkpointService: CheckpointService,
     processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = repository,
-        archiveService = archiveService,
+        mongoTemplate = mongoTemplate,
         indexerName = IndexerNames.CONTRACTS.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.CONTRACTS.COLLECTION,

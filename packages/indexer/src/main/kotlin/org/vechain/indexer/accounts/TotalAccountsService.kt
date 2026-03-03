@@ -5,10 +5,12 @@ import java.time.Instant
 import java.time.ZoneOffset
 import java.time.temporal.WeekFields
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.accounts.repository.TotalAccountsRepository
-import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.config.InlineVersioningProperties
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
@@ -17,7 +19,8 @@ import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
 @Service
 open class TotalAccountsService(
     private val repository: TotalAccountsRepository,
-    private val archiveService: ArchiveService<TotalAccounts, TotalAccountsArchive>,
+    private val inlineVersioningProperties: InlineVersioningProperties,
+    private val mongoTemplate: MongoTemplate,
 ) {
     val ONE_VET: BigInteger = BigInteger.TEN.pow(18)
 
@@ -53,8 +56,13 @@ open class TotalAccountsService(
     @Transactional(rollbackFor = [Exception::class])
     open fun save(totalAccountsInfo: List<TotalAccounts>, archive: TotalAccounts) {
         if (totalAccountsInfo.isEmpty()) return
-        repository.saveAll(totalAccountsInfo)
-        archiveService.saveAll(listOf(archive))
+        saveVersionedDocuments(
+            totalAccountsInfo,
+            listOf(archive),
+            mongoTemplate,
+            inlineVersioningProperties.blockWindow,
+            inlineVersioningProperties.maxVersions,
+        )
     }
 
     /**

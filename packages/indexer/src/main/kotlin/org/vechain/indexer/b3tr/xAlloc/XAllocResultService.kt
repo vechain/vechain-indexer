@@ -9,11 +9,11 @@ import kotlin.collections.set
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.VersionedDocumentAccumulator
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.getAmountAsDecimal
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.getAppId
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.getRewardsAllocationAmountAsDecimal
@@ -23,11 +23,11 @@ import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.getUnallocatedAmountAsDe
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.groupByRoundId
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.parseVotes
 import org.vechain.indexer.b3tr.xAlloc.repository.XAllocResultRepository
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockRevision
@@ -40,8 +40,8 @@ import org.vechain.indexer.utils.IdUtils.generateId
 @Service
 open class XAllocResultService(
     private val repository: XAllocResultRepository,
-    private val xAllocResultArchiveService: ArchiveService<XAllocResult, XAllocResultArchive>,
-    private val xAllocResultPruner: TargetedPruner<XAllocResult, XAllocResultArchive>,
+    private val mongoTemplate: MongoTemplate,
+    private val inlineVersioningProperties: InlineVersioningProperties,
     private val thorClient: ThorClient,
     @param:Value("\${business-event.substitutions.X_ALLOC_POOL_CONTRACT}")
     private val xAllocPoolContract: String,
@@ -65,7 +65,36 @@ open class XAllocResultService(
     open suspend fun processEvents(
         events: List<IndexedEvent>
     ): Pair<List<XAllocResult>, List<XAllocResult>> {
-        val accumulator = VersionedDocumentAccumulator<XAllocResult>(repository::findByIdOrNull)
+        // Pre-collect all record IDs and batch-load from DB
+        val allRecordIds = mutableSetOf<String>()
+        groupByBlock(events).forEach { (_, blockEvents) ->
+            groupByRoundId(blockEvents).forEach { (roundId, roundEvents) ->
+                val appIds = mutableSetOf<String>()
+                roundEvents
+                    .filter { it.eventType == "B3TR_XAllocationVote" }
+                    .forEach { event ->
+                        XAllocEventUtils.getAppIds(event).forEach { appIds.add(it) }
+                    }
+                roundEvents
+                    .filter {
+                        it.eventType == "B3TR_XAllocationRewardsClaimed" ||
+                            it.eventType == "B3TR_DBAFundsDistributed"
+                    }
+                    .forEach { event -> appIds.add(getAppId(event)) }
+                appIds.forEach { appId -> allRecordIds.add(generateId("$roundId", appId)) }
+            }
+        }
+        val preloaded =
+            if (allRecordIds.isNotEmpty()) {
+                repository.findAllById(allRecordIds).associateBy { it.getDocumentId() }
+            } else {
+                emptyMap()
+            }
+
+        val accumulator =
+            VersionedDocumentAccumulator<XAllocResult>(
+                findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) }
+            )
         val bestBlockId = thorClient.getBlockUnexpanded(BlockRevision.Keyword.BEST).id
 
         groupByBlock(events).forEach { (blockDetails, blockEvents) ->
@@ -249,7 +278,13 @@ open class XAllocResultService(
 
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<XAllocResult>, existing: List<XAllocResult>) {
-        saveVersionedDocuments(updated, existing, xAllocResultArchiveService, xAllocResultPruner)
+        saveVersionedDocuments(
+            updated,
+            existing,
+            mongoTemplate,
+            inlineVersioningProperties.blockWindow,
+            inlineVersioningProperties.maxVersions,
+        )
     }
 
     open suspend fun isQuadraticFundingEnabled(roundId: Int, bestBlockId: String): Boolean =

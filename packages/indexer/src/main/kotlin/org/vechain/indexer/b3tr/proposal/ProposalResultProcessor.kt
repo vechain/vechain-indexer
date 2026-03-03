@@ -1,12 +1,12 @@
 package org.vechain.indexer.b3tr.proposal
 
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.VersionedDocumentAccumulator
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
@@ -17,14 +17,14 @@ import org.vechain.indexer.utils.EventUtils.groupByBlock
 @Component
 open class ProposalResultProcessor(
     repository: ProposalResultRepository,
-    proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>,
+    mongoTemplate: MongoTemplate,
     private val service: ProposalResultService,
     checkpointService: CheckpointService,
     processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = repository,
-        archiveService = proposalResultArchiveService,
+        mongoTemplate = mongoTemplate,
         indexerName = IndexerNames.PROPOSAL_RESULT.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.PROPOSAL_RESULT.COLLECTION,
@@ -33,7 +33,7 @@ open class ProposalResultProcessor(
     override suspend fun processEntry(entry: IndexingResult) {
         val accumulator = VersionedDocumentAccumulator<ProposalResult>(service::findByProposalId)
 
-        if (entry is IndexingResult.Normal) {
+        if (entry is IndexingResult.BlockResult) {
             val blockDetails =
                 BlockDetails(
                     blockId = entry.block.id,

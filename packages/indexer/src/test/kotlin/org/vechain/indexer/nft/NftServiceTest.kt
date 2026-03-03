@@ -1,22 +1,24 @@
 package org.vechain.indexer.nft
 
+import com.mongodb.client.MongoCollection
+import com.mongodb.client.model.BulkWriteOptions
+import com.mongodb.client.model.WriteModel
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import kotlinx.coroutines.runBlocking
+import org.bson.Document
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.mongodb.core.BulkOperations
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.convert.MongoConverter
-import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_TRANSFER
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_TRANSFER_DUPLICATE
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_TRANSFER_MISSING_TOKEN_ID_PARAM
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_TRANSFER_MISSING_TO_PARAM
-import org.vechain.indexer.pruner.TargetedPruner
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
@@ -25,11 +27,10 @@ import strikt.assertions.isNotNull
 @ExtendWith(MockKExtension::class)
 internal class NftServiceTest {
     @MockK lateinit var repository: NftRepository
-    @MockK lateinit var nftArchiveService: ArchiveService<IndexedNft, NftArchive>
-    @MockK lateinit var pruner: TargetedPruner<IndexedNft, NftArchive>
+    @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
     @MockK lateinit var blacklistClient: NftBlacklistClient
     @MockK lateinit var mongoTemplate: MongoTemplate
-    @MockK(relaxed = true) lateinit var bulkOps: BulkOperations
+    @MockK(relaxed = true) lateinit var mongoCollection: MongoCollection<Document>
     @MockK(relaxed = true) lateinit var converter: MongoConverter
 
     private lateinit var nftService: NftService
@@ -38,11 +39,14 @@ internal class NftServiceTest {
     fun setUp() {
         MockKAnnotations.init(this)
         nftService =
-            NftService(repository, nftArchiveService, pruner, blacklistClient, mongoTemplate)
+            NftService(repository, inlineVersioningProperties, blacklistClient, mongoTemplate)
         coEvery { blacklistClient.isBlacklisted(any(), any()) } returns false
-        every { nftArchiveService.mongoTemplate } returns mongoTemplate
-        every { mongoTemplate.bulkOps(any(), any<Class<*>>()) } returns bulkOps
+        every { inlineVersioningProperties.blockWindow } returns 10000L
+        every { inlineVersioningProperties.maxVersions } returns 100
+        every { mongoTemplate.getCollectionName(IndexedNft::class.java) } returns "indexed_nfts"
+        every { mongoTemplate.getCollection("indexed_nfts") } returns mongoCollection
         every { mongoTemplate.converter } returns converter
+        every { converter.write(any(), any<Document>()) } just Runs
     }
 
     // Update tests
@@ -78,16 +82,15 @@ internal class NftServiceTest {
                 )
             )
 
-        every { nftArchiveService.saveAll(existing) } just Runs
-
         nftService.save(updated, existing)
 
-        verify(exactly = 1) { bulkOps.execute() }
-        verify(exactly = 1) { nftArchiveService.saveAll(existing) }
+        verify(exactly = 1) {
+            mongoCollection.bulkWrite(any<List<WriteModel<Document>>>(), any<BulkWriteOptions>())
+        }
     }
 
     @Test
-    fun `update - shouldn't call saveAll if updated is empty`() {
+    fun `update - shouldn't save if updated is empty`() {
         val updated = emptyList<IndexedNft>()
         val existing =
             listOf(
@@ -104,16 +107,16 @@ internal class NftServiceTest {
                 )
             )
 
-        every { nftArchiveService.saveAll(existing) } just Runs
-
         nftService.save(updated, existing)
 
-        verify(exactly = 0) { bulkOps.execute() }
-        verify(exactly = 1) { nftArchiveService.saveAll(existing) }
+        // With inline versioning, when updated is empty, saveVersionedDocuments returns early
+        verify(exactly = 0) {
+            mongoCollection.bulkWrite(any<List<WriteModel<Document>>>(), any<BulkWriteOptions>())
+        }
     }
 
     @Test
-    fun `update - shouldn't call saveAll if existing is empty`() {
+    fun `update - should save if existing is empty but updated is not`() {
         val updated =
             listOf(
                 IndexedNft(
@@ -132,19 +135,21 @@ internal class NftServiceTest {
 
         nftService.save(updated, existing)
 
-        verify(exactly = 1) { bulkOps.execute() }
-        verify(exactly = 0) { nftArchiveService.saveAll(any()) }
+        verify(exactly = 1) {
+            mongoCollection.bulkWrite(any<List<WriteModel<Document>>>(), any<BulkWriteOptions>())
+        }
     }
 
     @Test
-    fun `update - shouldn't call saveAll with empty lists`() {
+    fun `update - shouldn't save with empty lists`() {
         val updated = emptyList<IndexedNft>()
         val existing = emptyList<IndexedNft>()
 
         nftService.save(updated, existing)
 
-        verify(exactly = 0) { bulkOps.execute() }
-        verify(exactly = 0) { nftArchiveService.saveAll(any()) }
+        verify(exactly = 0) {
+            mongoCollection.bulkWrite(any<List<WriteModel<Document>>>(), any<BulkWriteOptions>())
+        }
     }
 
     // parseRecords

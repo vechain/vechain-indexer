@@ -2,6 +2,7 @@ package org.vechain.indexer.accounts
 
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
@@ -15,18 +16,18 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.accounts.repository.AccountOverviewRepository
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.config.DetectedNetwork
 import org.vechain.indexer.config.ForkConfig
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.NetworkDetectionService
 import org.vechain.indexer.config.VeChainNetwork
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
 import org.vechain.indexer.thor.client.ExecuteAccountResponse
 import org.vechain.indexer.thor.client.ThorClient
@@ -40,9 +41,9 @@ import org.vechain.indexer.thor.model.Transaction
 internal class AccountOverviewServiceTest {
     @MockK lateinit var repository: AccountOverviewRepository
 
-    @MockK lateinit var archiveService: ArchiveService<AccountOverview, AccountOverviewArchive>
+    @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
 
-    @MockK lateinit var pruner: TargetedPruner<AccountOverview, AccountOverviewArchive>
+    @MockK lateinit var mongoTemplate: MongoTemplate
 
     @MockK lateinit var forkConfig: ForkConfig
 
@@ -54,16 +55,16 @@ internal class AccountOverviewServiceTest {
 
     private class TestableService(
         repository: AccountOverviewRepository,
-        archiveService: ArchiveService<AccountOverview, AccountOverviewArchive>,
-        pruner: TargetedPruner<AccountOverview, AccountOverviewArchive>,
+        inlineVersioningProperties: InlineVersioningProperties,
+        mongoTemplate: MongoTemplate,
         forkConfig: ForkConfig,
         networkDetectionService: NetworkDetectionService,
         thorClient: ThorClient,
     ) :
         AccountOverviewService(
             repository,
-            archiveService,
-            pruner,
+            inlineVersioningProperties,
+            mongoTemplate,
             forkConfig,
             networkDetectionService,
             thorClient,
@@ -121,7 +122,8 @@ internal class AccountOverviewServiceTest {
             events: List<IndexedEvent>,
             accumulator: VersionedDocumentAccumulator<AccountOverview>,
             resolved: MutableMap<String, AccountOverview>,
-        ) = vthoBlockRewardsRule(block, events, accumulator, resolved)
+            preloaded: Map<String, AccountOverview> = emptyMap(),
+        ) = vthoBlockRewardsRule(block, events, accumulator, resolved, preloaded)
 
         fun callCalculatePassiveVthoForBlock(
             vetBalance: BigInteger,
@@ -139,12 +141,15 @@ internal class AccountOverviewServiceTest {
         service =
             TestableService(
                 repository,
-                archiveService,
-                pruner,
+                inlineVersioningProperties,
+                mongoTemplate,
                 forkConfig,
                 networkDetectionService,
                 thorClient,
             )
+        every { inlineVersioningProperties.blockWindow } returns 10000L
+        every { inlineVersioningProperties.maxVersions } returns 100
+        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
     }
 
     private fun block(number: Long = 1L, transactions: List<Transaction> = emptyList()) =
@@ -746,8 +751,9 @@ internal class AccountOverviewServiceTest {
 
             val accumulator = newAccumulator()
             val resolved = mutableMapOf<String, AccountOverview>()
+            val preloaded = mapOf(beneficiary to existingAccount)
 
-            service.callVthoBlockRewardsRule(b, emptyList(), accumulator, resolved)
+            service.callVthoBlockRewardsRule(b, emptyList(), accumulator, resolved, preloaded)
 
             val (updatedList, archivedList) = accumulator.results()
             val record = updatedList.find { it.address == beneficiary }!!
@@ -794,8 +800,9 @@ internal class AccountOverviewServiceTest {
 
             val accumulator = newAccumulator()
             val resolved = mutableMapOf<String, AccountOverview>()
+            val preloaded = mapOf(beneficiary to existingAccount)
 
-            service.callVthoBlockRewardsRule(b, emptyList(), accumulator, resolved)
+            service.callVthoBlockRewardsRule(b, emptyList(), accumulator, resolved, preloaded)
 
             // Reward should be negative (passive generation > balance increase), so no update
             val (updatedList, _) = accumulator.results()
@@ -847,8 +854,9 @@ internal class AccountOverviewServiceTest {
 
         val accumulator = newAccumulator()
         val resolved = mutableMapOf<String, AccountOverview>()
+        val preloaded = mapOf(beneficiary to existingAccount)
 
-        service.callVthoBlockRewardsRule(b, emptyList(), accumulator, resolved)
+        service.callVthoBlockRewardsRule(b, emptyList(), accumulator, resolved, preloaded)
 
         val (updatedList, _) = accumulator.results()
         val record = updatedList.find { it.address == beneficiary }!!
@@ -891,8 +899,9 @@ internal class AccountOverviewServiceTest {
 
         val accumulator = newAccumulator()
         val resolved = mutableMapOf<String, AccountOverview>()
+        val preloaded = mapOf(beneficiary to existingAccount)
 
-        service.callVthoBlockRewardsRule(b, emptyList(), accumulator, resolved)
+        service.callVthoBlockRewardsRule(b, emptyList(), accumulator, resolved, preloaded)
 
         val (updatedList, _) = accumulator.results()
         val record = updatedList.find { it.address == beneficiary }!!
@@ -1188,5 +1197,34 @@ internal class AccountOverviewServiceTest {
             val (updatedList, _) = accumulator.results()
             val record = updatedList.find { it.address == beneficiary }!!
             assertEquals(BigInteger("500"), record.vthoBlockRewards)
+        }
+
+    @Test
+    fun `processBlock with empty block still computes block rewards for beneficiary`() =
+        runBlocking {
+            val beneficiary = "0xBENEFICIARY"
+            val b = block(number = 100L)
+            val parentRevision = BlockRevision.Id(b.parentID)
+            val blockRevision = BlockRevision.Id(b.id)
+
+            mockNetworkDetection(hayabusaBlock = 1000L)
+            every { repository.findAllById(listOf(beneficiary)) } returns emptyList()
+            every { repository.findByIdOrNull(beneficiary) } returns null
+
+            // Mock VTHO balances: 1000 at block n-1, 1500 at block n -> reward = 500
+            coEvery { thorClient.getAccountState(beneficiary, parentRevision) } returns
+                ExecuteAccountResponse(balance = "0x0", energy = "0x3e8", hasCode = false)
+            coEvery { thorClient.getAccountState(beneficiary, blockRevision) } returns
+                ExecuteAccountResponse(balance = "0x0", energy = "0x5dc", hasCode = false)
+
+            val (updated, _) = service.processBlock(b, emptyList())
+
+            // Beneficiary should receive block reward even with no transactions
+            val record = updated.find { it.address == beneficiary }!!
+            assertEquals(BigInteger("500"), record.vthoBlockRewards)
+
+            // Both API calls should have been made
+            coVerify(exactly = 1) { thorClient.getAccountState(beneficiary, parentRevision) }
+            coVerify(exactly = 1) { thorClient.getAccountState(beneficiary, blockRevision) }
         }
 }

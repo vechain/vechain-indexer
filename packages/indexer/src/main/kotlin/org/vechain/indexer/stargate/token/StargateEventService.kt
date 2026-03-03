@@ -38,7 +38,7 @@ class StargateEventService(
         events: List<IndexedEvent>,
         latestTokenSnapshots: MutableMap<String, StargateToken>,
         validatorSnapshots: Map<String, ValidatorSnapshot>,
-        tokensToArchive: MutableList<StargateToken>,
+        existingTokens: MutableList<StargateToken>,
     ) {
         // Handle validator exit events separately
         val validatorEvents = events.filter { it.eventType == "ValidatorExitRequested" }
@@ -47,7 +47,7 @@ class StargateEventService(
                 event,
                 latestTokenSnapshots,
                 validatorSnapshots,
-                tokensToArchive,
+                existingTokens,
             )
         }
 
@@ -74,7 +74,7 @@ class StargateEventService(
             var current: StargateToken? = latestTokenSnapshots[id]
 
             tokenEvents.forEach { event ->
-                current = processEvent(event, tokenId, current, validatorSnapshots, tokensToArchive)
+                current = processEvent(event, tokenId, current, validatorSnapshots, existingTokens)
             }
             if (current != null) latestTokenSnapshots[tokenId] = current
         }
@@ -86,22 +86,22 @@ class StargateEventService(
         tokenId: String,
         base: StargateToken?,
         validatorSnapshots: Map<String, ValidatorSnapshot>,
-        tokensToArchive: MutableList<StargateToken>,
+        existingTokens: MutableList<StargateToken>,
     ): StargateToken? =
         when (event.eventType) {
             "TokenMinted" -> handleTokenMinted(event, tokenId)
-            "TokenBurned" -> handleTokenUnstaked(event, base!!, tokensToArchive)
-            "Transfer" -> handleTokenTransfer(event, base!!, tokensToArchive)
+            "TokenBurned" -> handleTokenUnstaked(event, base!!, existingTokens)
+            "Transfer" -> handleTokenTransfer(event, base!!, existingTokens)
             "DelegationInitiated" ->
-                handleDelegate(event, base!!, validatorSnapshots, tokensToArchive)
-            "DelegationExitRequested" -> handleDelegateExitRequest(event, base!!, tokensToArchive)
-            "DelegationWithdrawn" -> handleExitDelegate(base!!, tokensToArchive)
-            "TokenManagerAdded" -> handleManagerAdded(event, base!!, tokensToArchive)
-            "TokenManagerRemoved" -> handleManagerRemoved(event, base!!, tokensToArchive)
-            "MaturityPeriodBoosted" -> handleTokenBoosted(event, base!!, tokensToArchive)
-            "NodeDelegated" -> handleNodeManagementEvent(event, base, tokensToArchive)
+                handleDelegate(event, base!!, validatorSnapshots, existingTokens)
+            "DelegationExitRequested" -> handleDelegateExitRequest(event, base!!, existingTokens)
+            "DelegationWithdrawn" -> handleExitDelegate(base!!, existingTokens)
+            "TokenManagerAdded" -> handleManagerAdded(event, base!!, existingTokens)
+            "TokenManagerRemoved" -> handleManagerRemoved(event, base!!, existingTokens)
+            "MaturityPeriodBoosted" -> handleTokenBoosted(event, base!!, existingTokens)
+            "NodeDelegated" -> handleNodeManagementEvent(event, base, existingTokens)
             "BaseVTHORewardsClaimed",
-            "DelegationRewardsClaimed" -> handleRewardsClaimed(event, base!!, tokensToArchive)
+            "DelegationRewardsClaimed" -> handleRewardsClaimed(event, base!!, existingTokens)
             else -> base
         }
 
@@ -113,23 +113,23 @@ class StargateEventService(
     private fun handleNodeManagementEvent(
         event: IndexedEvent,
         base: StargateToken?,
-        tokensToArchive: MutableList<StargateToken>,
+        existingTokens: MutableList<StargateToken>,
     ): StargateToken? =
         if (base == null) {
             null
         } else if (event.params.getAsBoolean("delegated") == true) {
-            handleManagerAdded(event, base, tokensToArchive)
+            handleManagerAdded(event, base, existingTokens)
         } else {
-            handleManagerRemoved(event, base, tokensToArchive)
+            handleManagerRemoved(event, base, existingTokens)
         }
 
     // Rewards claimed event
     private fun handleManagerAdded(
         event: IndexedEvent,
         base: StargateToken,
-        tokensToArchive: MutableList<StargateToken>,
+        existingTokens: MutableList<StargateToken>,
     ): StargateToken {
-        tokensToArchive.add(base)
+        existingTokens.add(base)
         return base.copy(
             version = base.version + 1,
             blockId = event.blockId,
@@ -147,9 +147,9 @@ class StargateEventService(
     fun handleManagerRemoved(
         event: IndexedEvent,
         base: StargateToken,
-        tokensToArchive: MutableList<StargateToken>,
+        existingTokens: MutableList<StargateToken>,
     ): StargateToken {
-        tokensToArchive.add(base)
+        existingTokens.add(base)
         return base.copy(
             version = base.version + 1,
             blockId = event.blockId,
@@ -163,7 +163,7 @@ class StargateEventService(
     fun handleRewardsClaimed(
         event: IndexedEvent,
         base: StargateToken,
-        tokensToArchive: MutableList<StargateToken>,
+        existingTokens: MutableList<StargateToken>,
     ): StargateToken {
         if (event.address == stargateDelegationContract) {
             val rewards =
@@ -172,13 +172,13 @@ class StargateEventService(
                 } else {
                     event.params.getAsBigInteger("rewards")!!
                 }
-            tokensToArchive.add(base)
+            existingTokens.add(base)
             return base.copy(
                 totalBootstrapRewardsClaimed = base.totalBootstrapRewardsClaimed + rewards,
                 version = base.version + 1,
             )
         } else {
-            tokensToArchive.add(base)
+            existingTokens.add(base)
             return base.copy(
                 totalRewardsClaimed =
                     base.totalRewardsClaimed + event.params.getAsBigInteger("amount")!!,
@@ -190,13 +190,13 @@ class StargateEventService(
     // Delegation withdrawn event
     private fun handleExitDelegate(
         base: StargateToken,
-        tokensToArchive: MutableList<StargateToken>,
+        existingTokens: MutableList<StargateToken>,
     ): StargateToken {
         if (base.delegationStatus == Status.NONE) {
             return base
         }
 
-        tokensToArchive.add(base)
+        existingTokens.add(base)
         return base.copy(
             version = base.version + 1,
             delegationStatus = Status.NONE,
@@ -209,7 +209,7 @@ class StargateEventService(
         event: IndexedEvent,
         base: StargateToken,
         validatorSnapshots: Map<String, ValidatorSnapshot>,
-        tokensToArchive: MutableList<StargateToken>,
+        existingTokens: MutableList<StargateToken>,
     ): StargateToken {
         val validator =
             event.params.getAsString("validator")
@@ -218,7 +218,7 @@ class StargateEventService(
         val (periodLength, nextCycleStart) =
             resolveCycleInfo(validator, event.blockNumber, validatorSnapshots)
 
-        tokensToArchive.add(base)
+        existingTokens.add(base)
         return base.copy(
             validatorId = validator,
             delegationStatus = Status.QUEUED,
@@ -232,9 +232,9 @@ class StargateEventService(
     private fun handleTokenBoosted(
         event: IndexedEvent,
         base: StargateToken,
-        tokensToArchive: MutableList<StargateToken>,
+        existingTokens: MutableList<StargateToken>,
     ): StargateToken {
-        tokensToArchive.add(base)
+        existingTokens.add(base)
         return base.copy(
             version = base.version + 1,
             blockId = event.blockId,
@@ -248,7 +248,7 @@ class StargateEventService(
     private fun handleDelegateExitRequest(
         event: IndexedEvent,
         base: StargateToken,
-        tokensToArchive: MutableList<StargateToken>,
+        existingTokens: MutableList<StargateToken>,
     ): StargateToken {
         // Legacy delegation contract - no state changes
         if (event.address == stargateDelegationContract) return base
@@ -257,7 +257,7 @@ class StargateEventService(
             Status.NONE -> base
 
             Status.QUEUED -> {
-                tokensToArchive.add(base)
+                existingTokens.add(base)
                 base.copy(
                     version = base.version + 1,
                     blockId = event.blockId,
@@ -268,7 +268,7 @@ class StargateEventService(
             }
 
             else -> {
-                tokensToArchive.add(base)
+                existingTokens.add(base)
                 base.copy(
                     version = base.version + 1,
                     delegationStatus = Status.EXITING,
@@ -287,9 +287,9 @@ class StargateEventService(
     private fun handleTokenTransfer(
         event: IndexedEvent,
         base: StargateToken,
-        tokensToArchive: MutableList<StargateToken>,
+        existingTokens: MutableList<StargateToken>,
     ): StargateToken {
-        tokensToArchive.add(base)
+        existingTokens.add(base)
         return base.copy(
             version = base.version + 1,
             blockId = event.blockId,
@@ -303,9 +303,9 @@ class StargateEventService(
     private fun handleTokenUnstaked(
         event: IndexedEvent,
         base: StargateToken,
-        tokensToArchive: MutableList<StargateToken>,
+        existingTokens: MutableList<StargateToken>,
     ): StargateToken {
-        tokensToArchive.add(base)
+        existingTokens.add(base)
         return base.copy(
             version = base.version + 1,
             blockId = event.blockId,
@@ -341,7 +341,7 @@ class StargateEventService(
         event: IndexedEvent,
         latestTokenSnapshots: MutableMap<String, StargateToken>,
         validatorSnapshots: Map<String, ValidatorSnapshot>,
-        tokensToArchive: MutableList<StargateToken>,
+        existingTokens: MutableList<StargateToken>,
     ) {
         val validatorId =
             event.params.getAsString("validatorId")
@@ -360,7 +360,7 @@ class StargateEventService(
                 }
             }
             .forEach { token ->
-                tokensToArchive.add(token)
+                existingTokens.add(token)
                 val snapshot =
                     token.copy(
                         version = token.version + 1,

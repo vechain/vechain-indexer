@@ -3,15 +3,15 @@ package org.vechain.indexer.vevote
 import kotlin.collections.component1
 import kotlin.collections.component2
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.VersionedDocumentAccumulator
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getProposalId
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.EventUtils.groupByBlock
@@ -24,18 +24,34 @@ import org.vechain.indexer.vevote.VeVoteEventUtils.groupBySupport
 @Service
 open class VeVoteResultService(
     private val repository: VeVoteProposalResultRepository,
-    private val veVoteResultArchiveService:
-        ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
-    private val veVoteResultPruner:
-        TargetedPruner<VeVoteProposalResult, VeVoteProposalResultArchive>,
+    private val mongoTemplate: MongoTemplate,
+    private val inlineVersioningProperties: InlineVersioningProperties,
 ) {
     open fun processEvents(
         events: List<IndexedEvent>
     ): Pair<List<VeVoteProposalResult>, List<VeVoteProposalResult>> {
         assertEventTypes(events, "VoteCast")
 
+        // Pre-collect all record IDs and batch-load from DB
+        val allRecordIds = mutableSetOf<String>()
+        groupByBlock(events).forEach { (_, blockEvents) ->
+            groupByProposalId(blockEvents).forEach { (proposalId, proposalEvents) ->
+                groupBySupport(proposalEvents).forEach { (support, _) ->
+                    allRecordIds.add(generateId(proposalId, support.name))
+                }
+            }
+        }
+        val preloaded =
+            if (allRecordIds.isNotEmpty()) {
+                repository.findAllById(allRecordIds).associateBy { it.getDocumentId() }
+            } else {
+                emptyMap()
+            }
+
         val accumulator =
-            VersionedDocumentAccumulator<VeVoteProposalResult>(repository::findByIdOrNull)
+            VersionedDocumentAccumulator<VeVoteProposalResult>(
+                findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) }
+            )
 
         groupByBlock(events).forEach { (blockDetails, blockEvents) ->
             accumulator.startBlock()
@@ -55,7 +71,13 @@ open class VeVoteResultService(
 
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<VeVoteProposalResult>, existing: List<VeVoteProposalResult>) {
-        saveVersionedDocuments(updated, existing, veVoteResultArchiveService, veVoteResultPruner)
+        saveVersionedDocuments(
+            updated,
+            existing,
+            mongoTemplate,
+            inlineVersioningProperties.blockWindow,
+            inlineVersioningProperties.maxVersions,
+        )
     }
 
     protected fun createOrUpdateExisting(

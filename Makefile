@@ -3,13 +3,14 @@ SHELL := /bin/bash
 help:
 	@egrep -h '\s#@\s' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?#@ "}; {printf "\033[36m  %-30s\033[0m %s\n", $$1, $$2}'
 
-format: format-json #@ Format the code with Spotless.
+format: #@ Format the code with Spotless.
 	./gradlew spotlessApply
+	$(MAKE) format-json
 
 format-json: #@ Format JSON dashboard files with jq.
 	@for f in metrics/datadog/*.json metrics/grafana/provisioning/dashboards/*.json; do \
 		if [ -f "$$f" ]; then \
-			jq '.' "$$f" > "$$f.tmp" && mv "$$f.tmp" "$$f"; \
+			jq -S '.' "$$f" > "$$f.tmp" && mv "$$f.tmp" "$$f"; \
 		fi; \
 	done
 
@@ -23,12 +24,14 @@ build-api: #@ Build the application with Gradle.
 	./gradlew :package:api:build -x test
 
 # Application Build (Docker)
+comma := ,
+GRADLE_SECRET := $(if $(wildcard $(HOME)/.gradle/gradle.properties),--secret id=gradle_props$(comma)src=$(HOME)/.gradle/gradle.properties,)
 build-image: build-image-indexer build-image-api #@ Build the application with Docker.
 	echo "Build completed."
 build-image-indexer: #@ Build the application with Docker.
-	docker build --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=indexer -t veworld-indexer .
+	docker build $(GRADLE_SECRET) --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=indexer -t veworld-indexer .
 build-image-api: #@ Build the application with Docker.
-	docker build --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=api -t veworld-api .
+	docker build $(GRADLE_SECRET) --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=api -t veworld-api .
 build-k6: #@ Build the K6 docker image.
 	docker build --build-arg APP_VERSION=v.1.0.0 -t veworld-k6 load-testing
 
@@ -126,6 +129,26 @@ metrics-logs: #@ Attach to the metrics logs.
 	$(METRICS_COMMAND) logs -f
 metrics-restart-grafana: #@ Restart only Grafana service.
 	docker kill grafana; docker rm grafana; docker volume rm metrics_grafana_data; make metrics-up
+
+# Datadog
+DD_SCRIPT=python3 metrics/datadog/scripts/manage_pipeline.py
+
+dd-get-pipeline: #@ Fetch Datadog pipeline config.
+	$(DD_SCRIPT) get
+dd-get-dashboard: #@ Fetch Datadog dashboard config.
+	$(DD_SCRIPT) get-dashboard
+dd-generate-openapi: #@ Generate OpenAPI spec from API with embedded MongoDB.
+	./gradlew :packages:api:generateOpenApiSpec
+dd-push-pipeline: #@ Push pipeline config to Datadog.
+	$(DD_SCRIPT) push-pipeline
+dd-push-dashboard: #@ Push dashboard config to Datadog.
+	$(DD_SCRIPT) push-dashboard
+dd-update-categories: #@ Update pipeline categories from api-docs.json.
+	$(DD_SCRIPT) update-categories
+dd-validate-categories: #@ Validate pipeline categories match api-docs.json.
+	$(DD_SCRIPT) validate-categories
+dd-sync: dd-get-pipeline dd-get-dashboard #@ Fetch pipeline and dashboard from Datadog.
+dd-push: dd-push-pipeline dd-push-dashboard #@ Push pipeline and dashboard to Datadog.
 
 # Database
 DB_COMMAND=docker compose -f database/docker-compose-mongo.yaml

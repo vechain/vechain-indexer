@@ -1,0 +1,44 @@
+{
+  "name": "B3TR_TreasuryTransferIn",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "Transfer",
+      "alias": "transferEvent",
+      "conditions": [
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${B3TR_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        },
+        {
+          "firstOperand": "to",
+          "isFirstStatic": false,
+          "secondOperand": "${TREASURY_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": [
+    {
+      "name": "from",
+      "eventName": "transferEvent",
+      "businessEventName": "from"
+    },
+    {
+      "name": "to",
+      "eventName": "transferEvent",
+      "businessEventName": "to"
+    },
+    {
+      "name": "value",
+      "eventName": "transferEvent",
+      "businessEventName": "value"
+    }
+  ]
+}

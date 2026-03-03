@@ -67,6 +67,9 @@ jobs:
           sbom: false
           cache-from: type=gha,scope=${{ matrix.packageName }}-${{ matrix.platform }}
           cache-to: type=gha,mode=max,scope=${{ matrix.packageName }}-${{ matrix.platform }}
+          secrets: |
+            "gradle_props=gpr.user=${{ github.actor }}
+            gpr.key=${{ secrets.GITHUB_TOKEN }}"
           outputs: type=image,name=${{ env.registry }}/${{ github.repository }}/${{ matrix.packageName }},push-by-digest=true,name-canonical=true,push=true
 
       - name: Export digest

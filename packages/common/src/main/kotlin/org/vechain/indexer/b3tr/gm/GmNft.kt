@@ -7,7 +7,6 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.archive.Archive
 
 @Document(collection = IndexerNames.GM_NFT.COLLECTION)
 data class GmNft
@@ -47,6 +46,3 @@ constructor(
 
     @JsonIgnore override fun getDocumentId(): String = id
 }
-
-@Document(collection = "b3tr_gm_nfts_archives")
-data class GmNftArchive(@Id override val id: String, override val data: GmNft) : Archive<GmNft>

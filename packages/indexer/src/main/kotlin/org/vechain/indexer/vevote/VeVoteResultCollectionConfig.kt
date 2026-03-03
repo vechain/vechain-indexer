@@ -20,28 +20,18 @@ open class VeVoteResultCollectionConfig(
     appCoroutineScope: CoroutineScope,
     @param:Value("\${indexer.version.vevote-results}") private val version: Int,
     private val indexerVersionService: IndexerVersionService,
-) :
-    CollectionConfig(
-        mongoTemplate,
-        appCoroutineScope,
-        VeVoteProposalResult::class.java,
-        VeVoteProposalResultArchive::class.java,
-    ) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, VeVoteProposalResult::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @PostConstruct
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
-        val dropped =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.VEVOTE_RESULT.NAME,
-                VeVoteProposalResult::class.java,
-                version,
-            )
-
-        if (dropped)
-            indexerVersionService.dropArchiveCollection(VeVoteProposalResultArchive::class.java)
+        indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            indexerName = IndexerNames.VEVOTE_RESULT.NAME,
+            VeVoteProposalResult::class.java,
+            version,
+        )
 
         this.ensureCollection()
 

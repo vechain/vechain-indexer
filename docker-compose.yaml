@@ -7,16 +7,18 @@ services:
       args:
         PACKAGE_NAME: indexer
         APP_VERSION: "v.0.0.1" # This is hardcode for the local env but will pick up the build tag version when building in the pipeline
+      secrets:
+        - gradle_props
     container_name: vechain-indexer
     restart: "no"
     env_file: ${INDEXER_ENV_FILE_NAME:-packages/indexer/.env}
     hostname: vechain-indexer
     healthcheck:
-      test: "curl --fail localhost:8080/actuator/health"
-      interval: 5s
-      timeout: 3s
+      test: "curl --fail localhost:8080/actuator/health/liveness"
+      interval: 10s
+      timeout: 5s
       retries: 6
-      start_period: 10s
+      start_period: 30s
     tty: true
     ports:
       - "8081:8080"
@@ -31,22 +33,28 @@ services:
       args:
         PACKAGE_NAME: api
         APP_VERSION: "v.0.0.1" # This is hardcode for the local env but will pick up the build tag version when building in the pipeline
+      secrets:
+        - gradle_props
     container_name: vechain-indexer-api
     restart: "no"
     hostname: vechain-indexer-api
     env_file: ${API_ENV_FILE_NAME:-packages/api/.env}
     healthcheck:
-      test: "curl --fail localhost:8080/actuator/health"
-      interval: 5s
-      timeout: 3s
+      test: "curl --fail localhost:8080/actuator/health/liveness"
+      interval: 10s
+      timeout: 5s
       retries: 6
-      start_period: 10s
+      start_period: 30s
     ports:
       - "8080:8080"
     tty: true
     networks:
       - vechain
       - vechain-database
+
+secrets:
+  gradle_props:
+    file: ${HOME}/.gradle/gradle.properties
 
 networks:
   vechain:

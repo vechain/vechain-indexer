@@ -10,13 +10,9 @@ import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.ApplicationContext
 import org.springframework.context.event.ContextClosedEvent
 import org.springframework.context.event.EventListener
-import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.vechain.indexer.Indexer
-import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexerRunner
-import org.vechain.indexer.Status
-import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.thor.client.ThorClient
 
 @Component
@@ -25,11 +21,9 @@ open class IndexManager(
     private val appCoroutineScope: CoroutineScope,
     private val thorClient: ThorClient,
     private val applicationContext: ApplicationContext,
-    private val checkpointService: CheckpointService,
     @param:Value("\${indexer.channel-batch-size}") private val channelBatchSize: Int,
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    private val nameToCollection = IndexerNames.nameToCollection()
 
     @EventListener(ApplicationReadyEvent::class)
     open fun start() {
@@ -52,29 +46,6 @@ open class IndexManager(
                     }
                 }
             }
-    }
-
-    @Scheduled(fixedDelay = 60_000)
-    @EventListener(ContextClosedEvent::class)
-    open fun saveCheckpoints() {
-        val activeSyncStatuses = setOf(Status.FAST_SYNCING, Status.SYNCING, Status.FULLY_SYNCED)
-
-        indexers.forEach { indexer ->
-            if (indexer.getStatus() !in activeSyncStatuses) return@forEach
-
-            val collection =
-                nameToCollection[indexer.name]
-                    ?: error("No collection mapping found for indexer '${indexer.name}'")
-
-            val lastProcessedBlock = indexer.getCurrentBlockNumber() - 1
-            if (lastProcessedBlock >= 0) {
-                try {
-                    checkpointService.saveCheckpoint(collection, lastProcessedBlock)
-                } catch (e: Exception) {
-                    logger.error("Failed to save checkpoint for ${indexer.name}", e)
-                }
-            }
-        }
     }
 
     @EventListener(ContextClosedEvent::class)

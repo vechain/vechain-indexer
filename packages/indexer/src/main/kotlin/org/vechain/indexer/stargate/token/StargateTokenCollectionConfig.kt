@@ -19,13 +19,7 @@ open class StargateTokenCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) :
-    CollectionConfig(
-        mongoTemplate,
-        appCoroutineScope,
-        StargateToken::class.java,
-        StargateTokenArchive::class.java,
-    ) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, StargateToken::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.stargate-token}") private var version: Int = 1
@@ -34,14 +28,11 @@ open class StargateTokenCollectionConfig(
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
-        val dropped =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.STARGATE_TOKEN.NAME,
-                StargateToken::class.java,
-                version,
-            )
-
-        if (dropped) indexerVersionService.dropArchiveCollection(StargateTokenArchive::class.java)
+        indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            indexerName = IndexerNames.STARGATE_TOKEN.NAME,
+            StargateToken::class.java,
+            version,
+        )
 
         ensureCollection()
 
@@ -63,6 +54,10 @@ open class StargateTokenCollectionConfig(
                     Index()
                         .on(StargateToken::delegationNextPeriod.name, Sort.Direction.ASC)
                         .on(StargateToken::delegationStatus.name, Sort.Direction.ASC),
+                "validatorId_1_blockNumber_1" to
+                    Index()
+                        .on(StargateToken::validatorId.name, Sort.Direction.ASC)
+                        .on(StargateToken::blockNumber.name, Sort.Direction.ASC),
             )
         )
     }

@@ -320,7 +320,7 @@ module "ecs-lb-service-api" {
 module "ecs-backend-service" {
   depends_on                         = [module.ecs-cluster]
   for_each                           = local.env.enabled_nets
-  source                             = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.3.0.3"
+  source                             = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.3.1.28"
   vpc_id                             = data.terraform_remote_state.vpc.outputs.vpc_id
   region                             = local.env.region
   cluster                            = module.ecs-cluster.name
@@ -342,13 +342,14 @@ module "ecs-backend-service" {
   deployment_minimum_healthy_percent = 0
   deployment_maximum_percent         = 100
   namespace_id                       = aws_service_discovery_private_dns_namespace.ns.id
+  health_check_grace_period_seconds  = 300
   log_metric_filters = [for filter in each.value.indexer.log_metric_filters : {
     name    = filter.name
     pattern = filter.pattern
   }]
   healthcheck = {
-    command     = ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health"]
-    start_delay = 30
+    command     = ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health/liveness"]
+    start_delay = 120
   }
   environment_variables = [
     {
@@ -439,6 +440,14 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.b3tr
     },
     {
+      name  = "INDEXER_START_BLOCK_B3TR_TREASURY"
+      value = each.value.indexer.start-block.b3tr-treasury
+    },
+    {
+      name  = "INDEXER_START_BLOCK_B3TR_BALANCE"
+      value = each.value.indexer.start-block.b3tr-balance
+    },
+    {
       name  = "INDEXER_START_BLOCK_B3TR_PROPOSAL"
       value = each.value.indexer.start-block.b3tr-proposal
     },
@@ -483,24 +492,12 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.nft-holders-by-block
     },
     {
+      name  = "INDEXER_START_BLOCK_NFT_OWNER_BALANCE"
+      value = each.value.indexer.start-block.nft-owner-balance
+    },
+    {
       name  = "START_ROUND_B3TR_SUSTAINABLE_ACTIONS"
       value = each.value.indexer.start-round.b3tr-sustainable-actions
-    },
-    {
-      name  = "PRUNER_ENABLED"
-      value = each.value.indexer.pruner.enabled
-    },
-    {
-      name  = "PRUNER_INTERVAL"
-      value = each.value.indexer.pruner.interval
-    },
-    {
-      name  = "PRUNER_REMOVAL_CHUNK_SIZE"
-      value = each.value.indexer.pruner.removal-chunk-size
-    },
-    {
-      name  = "PRUNER_RECORD_LIMIT"
-      value = each.value.indexer.pruner.record-limit
     },
     {
       name  = "BLACKLIST_CONTRACT_ADDRESS"
@@ -693,6 +690,10 @@ module "ecs-backend-service" {
     {
       name  = "VERSION_STARGATE_NFT_HOLDERS_BY_BLOCK"
       value = each.value.indexer.version.stargate-nft-holders-by-block
+    },
+    {
+      name  = "VERSION_STARGATE_NFT_OWNER_BALANCE"
+      value = each.value.indexer.version.stargate-nft-owner-balance
     },
     {
       name  = "VERSION_STARGATE_VET_DELEGATED_BY_BLOCK"
@@ -913,6 +914,10 @@ module "ecs-backend-service" {
     {
       name  = "INDEXER_CHANNEL_BATCH_SIZE"
       value = each.value.indexer.channel-batch-size
+    },
+    {
+      name  = "INDEXER_CHECKPOINT_SAVE_INTERVAL_SECONDS"
+      value = each.value.indexer.checkpoint-save-interval-seconds
     },
     {
       name  = "HEALTHCHECK_INACTIVE_THRESHOLD_SYNCING"

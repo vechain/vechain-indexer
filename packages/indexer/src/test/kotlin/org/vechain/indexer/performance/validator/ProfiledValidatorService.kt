@@ -1,13 +1,13 @@
 package org.vechain.indexer.performance.validator
 
-import org.vechain.indexer.archive.ArchiveService
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.Validator
-import org.vechain.indexer.validator.ValidatorArchive
 import org.vechain.indexer.validator.ValidatorRepository
 import org.vechain.indexer.validator.ValidatorService
 import org.vechain.indexer.validator.domain.ValidatorDecoder.hasAbiData
@@ -24,12 +24,21 @@ import org.vechain.indexer.validator.logic.ValidatorAssembler
  */
 class ProfiledValidatorService(
     repository: ValidatorRepository,
-    archiveService: ArchiveService<Validator, ValidatorArchive>,
+    mongoTemplate: MongoTemplate,
+    inlineVersioningProperties: InlineVersioningProperties,
     thorClient: ThorClient,
     statsStartThreshold: Long,
     stakerSC: String,
     private val profiler: DetailedProfiler,
-) : ValidatorService(repository, archiveService, thorClient, statsStartThreshold, stakerSC) {
+) :
+    ValidatorService(
+        repository,
+        mongoTemplate,
+        inlineVersioningProperties,
+        thorClient,
+        statsStartThreshold,
+        stakerSC,
+    ) {
 
     override fun processBlock(
         block: Block,

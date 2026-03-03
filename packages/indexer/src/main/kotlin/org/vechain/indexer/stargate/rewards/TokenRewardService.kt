@@ -10,16 +10,15 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.isNotEmpty
 import kotlin.collections.set
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
-import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
-import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
@@ -37,10 +36,10 @@ import org.vechain.indexer.validator.models.DecodedValidatorInfo
 @Service
 open class TokenRewardService(
     private val repository: TokenRewardRepository,
-    private val archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
+    private val mongoTemplate: MongoTemplate,
+    private val inlineVersioningProperties: InlineVersioningProperties,
     private val delegationRepository: DelegationRepository,
     private val thorClient: ThorClient,
-    private val pruner: TargetedPruner<TokenReward, TokenRewardArchive>,
 ) {
     /**
      * @notice Cache of Stargate contract ABI functions.
@@ -141,7 +140,13 @@ open class TokenRewardService(
     /** @notice Persist a batch of reward records to MongoDB. */
     @Transactional(rollbackFor = [Exception::class])
     open fun save(rewards: List<TokenReward>, archive: List<TokenReward>) {
-        saveVersionedDocuments(rewards, archive, archiveService, pruner)
+        saveVersionedDocuments(
+            rewards,
+            archive,
+            mongoTemplate,
+            inlineVersioningProperties.blockWindow,
+            inlineVersioningProperties.maxVersions,
+        )
     }
 
     /** @notice Clear all in-memory caches. Called on rollback to ensure consistency. */

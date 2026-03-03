@@ -13,9 +13,9 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.AppAllTimeActionSummaryRepository
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
@@ -26,9 +26,7 @@ import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 internal class AppAllTimeActionSummaryProcessorTest {
     @MockK lateinit var repository: AppAllTimeActionSummaryRepository
 
-    @MockK
-    lateinit var archiveService:
-        ArchiveService<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>
+    @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
 
     @MockK lateinit var service: AppAllTimeActionSummaryService
 
@@ -41,10 +39,11 @@ internal class AppAllTimeActionSummaryProcessorTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
+        every { checkpointService.trySaveCheckpoint(any(), any()) } just Runs
         processor =
             AppAllTimeActionSummaryProcessor(
                 repository = repository,
-                appAllTimeActionSummaryArchiveService = archiveService,
+                mongoTemplate = mongoTemplate,
                 service = service,
                 checkpointService = checkpointService,
                 processorMetrics = processorMetrics,
@@ -54,7 +53,7 @@ internal class AppAllTimeActionSummaryProcessorTest {
     @Test
     fun `process empty events doesn't save any records`() {
         runBlocking {
-            processor.process(IndexingResult.EventsOnly(100, emptyList(), Status.SYNCING))
+            processor.process(IndexingResult.LogResult(100, emptyList(), Status.SYNCING))
         }
 
         // Verify that service.save is not called
@@ -110,7 +109,7 @@ internal class AppAllTimeActionSummaryProcessorTest {
         // Verify that service.save is called with the correct parameters
         runBlocking {
             processor.process(
-                IndexingResult.EventsOnly(events.maxOf { it.blockNumber }, events, Status.SYNCING)
+                IndexingResult.LogResult(events.maxOf { it.blockNumber }, events, Status.SYNCING)
             )
         }
 

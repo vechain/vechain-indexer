@@ -4,8 +4,8 @@ import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.TimeUnit
 import kotlin.time.Duration
+import kotlin.time.toJavaDuration
 import org.springframework.stereotype.Component
 import org.vechain.indexer.config.DefaultMetrics
 
@@ -13,6 +13,7 @@ import org.vechain.indexer.config.DefaultMetrics
 class ProcessorMetrics(private val registry: MeterRegistry) {
 
     private val processingDurationTimers = ConcurrentHashMap<String, Timer>()
+    private val cycleTimeTimers = ConcurrentHashMap<String, Timer>()
     private val eventsCounters = ConcurrentHashMap<String, Counter>()
 
     fun observeProcessingDuration(indexerName: String, duration: Duration) {
@@ -23,7 +24,18 @@ class ProcessorMetrics(private val registry: MeterRegistry) {
                     .tag("indexer_name", indexerName)
                     .register(registry)
             }
-            .record(duration.inWholeMilliseconds, TimeUnit.MILLISECONDS)
+            .record(duration.toJavaDuration())
+    }
+
+    fun observeBlockCycleTime(indexerName: String, duration: Duration) {
+        cycleTimeTimers
+            .computeIfAbsent(indexerName) {
+                DefaultMetrics.newCycleTimeTimer("processor_cycle_time")
+                    .description("Wall-clock cycle time between block processing iterations")
+                    .tag("indexer_name", indexerName)
+                    .register(registry)
+            }
+            .record(duration.toJavaDuration())
     }
 
     fun incrementEventsCounter(indexerName: String, count: Double) {
