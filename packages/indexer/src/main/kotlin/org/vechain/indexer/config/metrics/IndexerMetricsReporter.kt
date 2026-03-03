@@ -45,10 +45,6 @@ class IndexerMetricsReporter(
         indexers.forEach { indexer ->
             reportIndexerHealth(indexer)
 
-            if (indexer.getStatus() == Status.INITIALISED) {
-                metrics.setEstimatedTimeToSync(indexer.name, 0.0)
-            }
-
             if (indexer is BlockIndexer) {
                 reportBlockIndexerMetrics(indexer, bestBlockNumber)
             }
@@ -59,7 +55,6 @@ class IndexerMetricsReporter(
         indexers.forEach { indexer ->
             if (indexer is BlockIndexer) {
                 metrics.setIndexerSyncGap(indexer.name, 0L)
-                metrics.setEstimatedTimeToSync(indexer.name, Double.NaN)
                 metrics.setBlocksPerSecond(indexer.name, 0.0)
             }
         }
@@ -134,9 +129,6 @@ class IndexerMetricsReporter(
         }
 
         metrics.setBlocksPerSecond(indexer.name, blocksPerSecond ?: 0.0)
-
-        val eta = computeEta(status, bestBlockNumber, currentBlockNumber, blocksPerSecond)
-        metrics.setEstimatedTimeToSync(indexer.name, eta ?: Double.NaN)
     }
 
     private fun computeBlocksPerSecond(
@@ -152,19 +144,5 @@ class IndexerMetricsReporter(
         if (elapsedSeconds <= 0) return null
 
         return (currentBlockNumber - previousBlock) / elapsedSeconds
-    }
-
-    private fun computeEta(
-        status: Status,
-        bestBlockNumber: Long?,
-        currentBlockNumber: Long,
-        blocksPerSecond: Double?,
-    ): Double? {
-        if (status == Status.FULLY_SYNCED) return 0.0
-
-        val syncGap = bestBlockNumber?.minus(currentBlockNumber) ?: return null
-        if (blocksPerSecond == null || blocksPerSecond <= 0) return null
-
-        return syncGap / blocksPerSecond
     }
 }
