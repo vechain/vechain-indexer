@@ -34,8 +34,6 @@ provider "aws" {
     tags = {
       Terraform = "true"
       Project   = var.project
-      Workspace = terraform.workspace
-      UpdatedAt = formatdate("YYYY-MM-DD", timestamp())
     }
   }
 }
