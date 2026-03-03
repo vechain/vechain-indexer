@@ -878,6 +878,32 @@
                 {
                   "formulas": [
                     {
+                      "alias": "Status",
+                      "conditional_formats": [
+                        {
+                          "comparator": "=",
+                          "palette": "white_on_green",
+                          "value": 6
+                        },
+                        {
+                          "comparator": "=",
+                          "palette": "white_on_red",
+                          "value": 5
+                        },
+                        {
+                          "comparator": ">=",
+                          "palette": "white_on_yellow",
+                          "value": 2
+                        },
+                        {
+                          "comparator": "<",
+                          "palette": "white_on_yellow",
+                          "value": 2
+                        }
+                      ],
+                      "formula": "status"
+                    },
+                    {
                       "alias": "Sync Gap",
                       "conditional_formats": [
                         {
@@ -977,7 +1003,7 @@
                       "aggregator": "last",
                       "data_source": "metrics",
                       "name": "status",
-                      "query": "max:indexer_sync_status_gauge{indexer-id:$host.value} by {indexer_name,status_readable}"
+                      "query": "max:indexer_sync_status_code_gauge{indexer-id:$host.value} by {indexer_name}"
                     },
                     {
                       "aggregator": "last",
