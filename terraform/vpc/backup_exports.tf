@@ -5,8 +5,7 @@
 # backup exports survive blue/green cluster teardowns. The api module's
 # backup schedules reference the export_bucket_id via remote state.
 ################################################################################
-
-resource "aws_s3_bucket" "atlas_backups" {
+resource "aws_s3_bucket" "atlas_export_backups" {
   count  = local.env.environment == "prod" ? 1 : 0
   bucket = "veworld-indexer-atlas-backups"
 
@@ -17,9 +16,9 @@ resource "aws_s3_bucket" "atlas_backups" {
   }
 }
 
-resource "aws_s3_bucket_server_side_encryption_configuration" "atlas_backups" {
+resource "aws_s3_bucket_server_side_encryption_configuration" "atlas_export_backups" {
   count  = local.env.environment == "prod" ? 1 : 0
-  bucket = aws_s3_bucket.atlas_backups[0].id
+  bucket = aws_s3_bucket.atlas_export_backups[0].id
 
   rule {
     apply_server_side_encryption_by_default {
@@ -29,9 +28,9 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "atlas_backups" {
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "atlas_backups" {
+resource "aws_s3_bucket_public_access_block" "atlas_export_backups" {
   count  = local.env.environment == "prod" ? 1 : 0
-  bucket = aws_s3_bucket.atlas_backups[0].id
+  bucket = aws_s3_bucket.atlas_export_backups[0].id
 
   block_public_acls       = true
   block_public_policy     = true
@@ -39,9 +38,9 @@ resource "aws_s3_bucket_public_access_block" "atlas_backups" {
   restrict_public_buckets = true
 }
 
-resource "aws_s3_bucket_lifecycle_configuration" "atlas_backups" {
+resource "aws_s3_bucket_lifecycle_configuration" "atlas_export_backups" {
   count  = local.env.environment == "prod" ? 1 : 0
-  bucket = aws_s3_bucket.atlas_backups[0].id
+  bucket = aws_s3_bucket.atlas_export_backups[0].id
 
   rule {
     id     = "expire-after-2-days"
@@ -59,7 +58,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "atlas_backups" {
 # Atlas Cloud Provider Access (IAM trust relationship)
 ################################################################################
 
-resource "mongodbatlas_cloud_provider_access_setup" "backup_export" {
+resource "mongodbatlas_cloud_provider_access_setup" "export_backup" {
   count         = local.env.environment == "prod" ? 1 : 0
   project_id    = local.env.mongoatlas_project_id
   provider_name = "AWS"
@@ -74,12 +73,12 @@ resource "aws_iam_role" "atlas_export_backup_role" {
     Statement = [{
       Effect = "Allow"
       Principal = {
-        AWS = mongodbatlas_cloud_provider_access_setup.backup_export[0].aws_config[0].atlas_aws_account_arn
+        AWS = mongodbatlas_cloud_provider_access_setup.export_backup[0].aws_config[0].atlas_aws_account_arn
       }
       Action = "sts:AssumeRole"
       Condition = {
         StringEquals = {
-          "sts:ExternalId" = mongodbatlas_cloud_provider_access_setup.backup_export[0].aws_config[0].atlas_assumed_role_external_id
+          "sts:ExternalId" = mongodbatlas_cloud_provider_access_setup.export_backup[0].aws_config[0].atlas_assumed_role_external_id
         }
       }
     }]
@@ -91,9 +90,9 @@ resource "aws_iam_role" "atlas_export_backup_role" {
   }
 }
 
-resource "aws_iam_role_policy" "atlas_export_backup_s3" {
+resource "aws_iam_role_policy" "atlas_export_backup_s3_policy" {
   count = local.env.environment == "prod" ? 1 : 0
-  name  = "atlas-backup-export-s3-access"
+  name  = "atlas-export-backup-s3-access"
   role  = aws_iam_role.atlas_export_backup_role[0].id
 
   policy = jsonencode({
@@ -105,7 +104,7 @@ resource "aws_iam_role_policy" "atlas_export_backup_s3" {
           "s3:ListBucket",
           "s3:GetBucketLocation"
         ]
-        Resource = aws_s3_bucket.atlas_backups[0].arn
+        Resource = aws_s3_bucket.atlas_export_backups[0].arn
       },
       {
         Effect = "Allow"
@@ -114,16 +113,16 @@ resource "aws_iam_role_policy" "atlas_export_backup_s3" {
           "s3:GetObject",
           "s3:DeleteObject"
         ]
-        Resource = "${aws_s3_bucket.atlas_backups[0].arn}/*"
+        Resource = "${aws_s3_bucket.atlas_export_backups[0].arn}/*"
       }
     ]
   })
 }
 
-resource "mongodbatlas_cloud_provider_access_authorization" "backup_export" {
+resource "mongodbatlas_cloud_provider_access_authorization" "export_backup" {
   count      = local.env.environment == "prod" ? 1 : 0
   project_id = local.env.mongoatlas_project_id
-  role_id    = mongodbatlas_cloud_provider_access_setup.backup_export[0].role_id
+  role_id    = mongodbatlas_cloud_provider_access_setup.export_backup[0].role_id
 
   aws {
     iam_assumed_role_arn = aws_iam_role.atlas_export_backup_role[0].arn
@@ -137,7 +136,7 @@ resource "mongodbatlas_cloud_provider_access_authorization" "backup_export" {
 resource "mongodbatlas_cloud_backup_snapshot_export_bucket" "main" {
   count          = local.env.environment == "prod" ? 1 : 0
   project_id     = local.env.mongoatlas_project_id
-  iam_role_id    = mongodbatlas_cloud_provider_access_authorization.backup_export[0].role_id
-  bucket_name    = aws_s3_bucket.atlas_backups[0].id
+  iam_role_id    = mongodbatlas_cloud_provider_access_authorization.export_backup[0].role_id
+  bucket_name    = aws_s3_bucket.atlas_export_backups[0].id
   cloud_provider = "AWS"
 }
