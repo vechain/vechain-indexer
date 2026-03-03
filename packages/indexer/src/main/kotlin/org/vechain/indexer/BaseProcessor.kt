@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
+import org.vechain.indexer.config.metrics.ProcessorMetricsRecorder
 import org.vechain.indexer.thor.model.BlockIdentifier
 
 abstract class BaseProcessor(
@@ -16,12 +17,12 @@ abstract class BaseProcessor(
 ) : IndexerProcessor {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
-    private val metricsTracker = ProcessingMetricsTracker(indexerName, processorMetrics)
+    private val metricsRecorder = ProcessorMetricsRecorder(indexerName, processorMetrics)
 
     abstract suspend fun processEntry(entry: IndexingResult)
 
     protected fun resetProcessingState() {
-        metricsTracker.reset()
+        metricsRecorder.reset()
     }
 
     override suspend fun process(entry: IndexingResult) {
@@ -29,9 +30,9 @@ abstract class BaseProcessor(
         try {
             processEntry(entry)
             checkpointService.trySaveCheckpoint(collectionName, entry.latestBlockNumber())
-            metricsTracker.recordEvents(entry.events().size)
+            metricsRecorder.recordEvents(entry.events().size)
         } finally {
-            metricsTracker.record(entry, start.elapsedNow())
+            metricsRecorder.record(entry, start.elapsedNow())
         }
     }
 
