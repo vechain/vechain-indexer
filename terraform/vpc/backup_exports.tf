@@ -94,7 +94,7 @@ resource "aws_iam_role" "atlas_export_backup_role" {
 resource "aws_iam_role_policy" "atlas_export_backup_s3" {
   count = local.env.environment == "prod" ? 1 : 0
   name  = "atlas-backup-export-s3-access"
-  role  = aws_iam_role.atlas_backup_export[0].id
+  role  = aws_iam_role.atlas_export_backup_role[0].id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -126,7 +126,7 @@ resource "mongodbatlas_cloud_provider_access_authorization" "backup_export" {
   role_id    = mongodbatlas_cloud_provider_access_setup.backup_export[0].role_id
 
   aws {
-    iam_assumed_role_arn = aws_iam_role.atlas_backup_export[0].arn
+    iam_assumed_role_arn = aws_iam_role.atlas_export_backup_role[0].arn
   }
 }
 
