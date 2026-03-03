@@ -52,6 +52,17 @@ resource "aws_s3_bucket_lifecycle_configuration" "atlas_export_backups" {
       days = 2
     }
   }
+
+  rule {
+    id     = "abort-incomplete-uploads"
+    status = "Enabled"
+
+    filter {}
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 1
+    }
+  }
 }
 
 ################################################################################
