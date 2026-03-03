@@ -542,7 +542,7 @@
                       ],
                       "name": "query1",
                       "search": {
-                        "query": "host:veworld-$host AND \"Error while processing block\""
+                        "query": "host:veworld-$host AND \"ERROR\""
                       },
                       "storage": "hot"
                     }
@@ -555,7 +555,7 @@
                 "type": "bars",
                 "yaxis": {}
               },
-              "title": "Errors when processing blocks",
+              "title": "Errors reported in Indexer",
               "title_align": "left",
               "title_size": "16",
               "type": "query_value"
@@ -603,7 +603,7 @@
                       ],
                       "name": "query1",
                       "search": {
-                        "query": "host:veworld-$host AND (\"Restarting indexer\" OR \"Successfully Restarted @ Block\" or \"\")"
+                        "query": "host:veworld-$host AND (\"Restarting indexer\" OR \"Successfully Restarted @ Block\")"
                       },
                       "storage": "hot"
                     }
@@ -896,7 +896,7 @@
                           "value": 10000
                         }
                       ],
-                      "formula": "gap * cutoff_min(status, 0.5)"
+                      "formula": "gap"
                     },
                     {
                       "alias": "Est. Time to Sync",
@@ -917,7 +917,7 @@
                           "value": 0
                         }
                       ],
-                      "formula": "eta * cutoff_min(status, 0.5)",
+                      "formula": "eta",
                       "number_format": {
                         "unit": {
                           "type": "canonical_unit",
@@ -944,7 +944,7 @@
                           "value": 10
                         }
                       ],
-                      "formula": "avg_time * cutoff_min(status, 0.5)"
+                      "formula": "avg_time"
                     },
                     {
                       "alias": "Block Cycle Time (ms)",
@@ -965,11 +965,11 @@
                           "value": 10
                         }
                       ],
-                      "formula": "cycle_time * cutoff_min(status, 0.5)"
+                      "formula": "cycle_time"
                     },
                     {
                       "alias": "Events",
-                      "formula": "events * cutoff_min(status, 0.5)"
+                      "formula": "events"
                     }
                   ],
                   "queries": [
@@ -4826,7 +4826,7 @@
         "is_column_break": true,
         "width": 12,
         "x": 0,
-        "y": 30
+        "y": 0
       }
     },
     {
@@ -5110,7 +5110,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 41
+        "y": 11
       }
     },
     {
@@ -5268,7 +5268,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 42
+        "y": 12
       }
     },
     {
@@ -5947,7 +5947,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 43
+        "y": 13
       }
     }
   ]
