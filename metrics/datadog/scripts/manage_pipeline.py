@@ -3,8 +3,10 @@
 
 Subcommands:
     get                  Fetch pipeline from Datadog API, save to pipeline.json
+    get-app-pipeline     Fetch app pipeline from Datadog API, save to app-pipeline.json
     get-dashboard        Fetch dashboard from Datadog API, save to dashboard.json
     push-pipeline        Push pipeline.json back to Datadog
+    push-app-pipeline    Push app-pipeline.json to Datadog (creates or updates idempotently)
     push-dashboard       Push dashboard.json back to Datadog
     update-categories    Parse api-docs.json, regenerate category processor in pipeline.json
     validate-categories  Compare pipeline.json categories against api-docs.json
@@ -224,14 +226,25 @@ def cmd_get_app_pipeline(args):
 # ---------------------------------------------------------------------------
 
 
+def _find_pipeline_by_name(headers, site, name):
+    """Look up a pipeline by name. Returns the id if found, None otherwise."""
+    url = f"https://api.{site}/api/v1/logs/config/pipelines"
+    resp = requests.get(url, headers=headers)
+    resp.raise_for_status()
+    matches = [p for p in resp.json() if p["name"] == name]
+    return matches[0]["id"] if matches else None
+
+
 def cmd_push_app_pipeline(args):
-    """Push app-pipeline.json back to Datadog (creates if no id present)."""
+    """Push app-pipeline.json to Datadog (creates or updates idempotently)."""
     if not APP_PIPELINE_PATH.exists():
         print(
-            f"Error: {APP_PIPELINE_PATH} not found.", file=sys.stderr
+            f"Error: {APP_PIPELINE_PATH} not found. Run 'get-app-pipeline' first.",
+            file=sys.stderr,
         )
         sys.exit(1)
 
+    config = load_config()
     headers = get_dd_headers()
     site = get_dd_site()
 
@@ -240,9 +253,18 @@ def cmd_push_app_pipeline(args):
 
     pipeline_id = pipeline.get("id")
 
+    # If no id in the file, check if the pipeline already exists by name
+    if not pipeline_id:
+        pipeline_name = config["app_pipeline_name"]
+        print(f"No id in app-pipeline.json, looking up '{pipeline_name}' ...")
+        pipeline_id = _find_pipeline_by_name(headers, site, pipeline_name)
+        if pipeline_id:
+            print(f"Found existing pipeline (id={pipeline_id})")
+
+    body = {k: v for k, v in pipeline.items() if k not in READONLY_FIELDS}
+
     if pipeline_id:
         # Update existing pipeline
-        body = {k: v for k, v in pipeline.items() if k not in READONLY_FIELDS}
         url = f"https://api.{site}/api/v1/logs/config/pipelines/{pipeline_id}"
         print(f"Updating app pipeline at {url} ...")
 
@@ -255,7 +277,6 @@ def cmd_push_app_pipeline(args):
         print("App pipeline updated successfully.")
     else:
         # Create new pipeline
-        body = {k: v for k, v in pipeline.items() if k not in READONLY_FIELDS}
         url = f"https://api.{site}/api/v1/logs/config/pipelines"
         print(f"Creating app pipeline at {url} ...")
 
@@ -266,13 +287,7 @@ def cmd_push_app_pipeline(args):
             sys.exit(1)
 
         created = resp.json()
-        pipeline["id"] = created["id"]
-
-        with open(APP_PIPELINE_PATH, "w") as f:
-            json.dump(pipeline, f, indent=2)
-            f.write("\n")
-
-        print(f"App pipeline created (id={created['id']}). Saved id to {APP_PIPELINE_PATH}")
+        print(f"App pipeline created (id={created['id']})")
 
 
 # ---------------------------------------------------------------------------
