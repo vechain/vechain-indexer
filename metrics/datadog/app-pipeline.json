@@ -1,6 +1,6 @@
 {
   "filter": {
-    "query": "service:cloudwatch host:veworld-*"
+    "query": "source:cloudwatch host:veworld-*"
   },
   "id": "7sMIt-hoT-C2VxXZ50G49w",
   "is_enabled": true,
