@@ -18,35 +18,6 @@ class IndexerHealthMetricsTest {
     }
 
     @Test
-    fun `setEstimatedTimeToSync creates gauge and sets value`() {
-        metrics.setEstimatedTimeToSync("test-indexer", 120.5)
-
-        val gauge =
-            registry
-                .find("indexer_estimated_time_to_sync_seconds")
-                .tag("indexer_name", "test-indexer")
-                .gauge()
-
-        assertThat(gauge).isNotNull
-        assertThat(gauge!!.value()).isEqualTo(120.5)
-    }
-
-    @Test
-    fun `setEstimatedTimeToSync updates value on subsequent calls`() {
-        metrics.setEstimatedTimeToSync("test-indexer", 120.5)
-        metrics.setEstimatedTimeToSync("test-indexer", 60.0)
-
-        val gauge =
-            registry
-                .find("indexer_estimated_time_to_sync_seconds")
-                .tag("indexer_name", "test-indexer")
-                .gauge()
-
-        assertThat(gauge).isNotNull
-        assertThat(gauge!!.value()).isEqualTo(60.0)
-    }
-
-    @Test
     fun `incrementBlocksProcessed creates counter and increments`() {
         metrics.incrementBlocksProcessed("test-indexer", 10.0)
 

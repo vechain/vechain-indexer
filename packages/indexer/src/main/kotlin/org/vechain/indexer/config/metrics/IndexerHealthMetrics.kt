@@ -23,7 +23,6 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
     private val syncGapGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
     private val blocksProcessedCounters = ConcurrentHashMap<String, Counter>()
     private val blocksPerSecondGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
-    private val estimatedTimeToSyncGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
 
     fun setComponentHealth(name: String, type: String, value: Double) {
         val key = "$name:$type"
@@ -175,23 +174,6 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
                 ref
             }
             .set(gap.toDouble())
-    }
-
-    fun setEstimatedTimeToSync(indexerName: String, seconds: Double) {
-        val ref =
-            estimatedTimeToSyncGauges[indexerName]
-                ?: estimatedTimeToSyncGauges.computeIfAbsent(indexerName) { name ->
-                    val newRef = AtomicReference(Double.NaN)
-                    registry.gauge(
-                        "indexer_estimated_time_to_sync_seconds",
-                        listOf(Tag.of("indexer_name", name)),
-                        newRef,
-                    ) {
-                        it.get()
-                    }
-                    newRef
-                }
-        ref.set(seconds)
     }
 
     fun incrementBlocksProcessed(indexerName: String, count: Double) {
