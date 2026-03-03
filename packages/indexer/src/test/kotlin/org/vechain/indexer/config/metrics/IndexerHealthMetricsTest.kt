@@ -148,7 +148,7 @@ class IndexerHealthMetricsTest {
     // --- indexer_sync_status_code_gauge tests ---
 
     @Test
-    fun `setIndexerSyncStatus creates status code gauge with only indexer_name tag`() {
+    fun `setIndexerSyncStatus creates status code gauge with indexer_name and status_readable tags`() {
         metrics.setIndexerSyncStatus("test-indexer", Status.SYNCING)
 
         val gauge =
@@ -162,13 +162,13 @@ class IndexerHealthMetricsTest {
             .describedAs("status tag should not be present")
             .isNull()
         assertThat(gauge.id.getTag("status_readable"))
-            .describedAs("status_readable tag should not be present")
-            .isNull()
+            .describedAs("status_readable tag should reflect current status")
+            .isEqualTo("Syncing")
         assertThat(gauge.value()).isEqualTo(2.0)
     }
 
     @Test
-    fun `setIndexerSyncStatus switching status updates the code value in place`() {
+    fun `setIndexerSyncStatus switching status re-registers gauge with new status_readable tag`() {
         metrics.setIndexerSyncStatus("test-indexer", Status.SYNCING)
         metrics.setIndexerSyncStatus("test-indexer", Status.FULLY_SYNCED)
 
@@ -179,7 +179,10 @@ class IndexerHealthMetricsTest {
                 .gauges()
 
         assertThat(gauges).describedAs("should have exactly one gauge per indexer").hasSize(1)
-        assertThat(gauges.first().value()).isEqualTo(6.0)
+
+        val gauge = gauges.first()
+        assertThat(gauge.value()).isEqualTo(6.0)
+        assertThat(gauge.id.getTag("status_readable")).isEqualTo("Fully Synced")
     }
 
     @Test
@@ -370,6 +373,8 @@ class IndexerHealthMetricsTest {
             registry.find("indexer_sync_status_code_gauge").tag("indexer_name", "indexer-b").gauge()
 
         assertThat(aGauge!!.value()).isEqualTo(2.0)
+        assertThat(aGauge.id.getTag("status_readable")).isEqualTo("Syncing")
         assertThat(bGauge!!.value()).isEqualTo(6.0)
+        assertThat(bGauge.id.getTag("status_readable")).isEqualTo("Fully Synced")
     }
 }

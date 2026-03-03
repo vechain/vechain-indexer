@@ -1,6 +1,7 @@
 package org.vechain.indexer.config.metrics
 
 import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.Gauge
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
 import java.util.Locale
@@ -15,6 +16,7 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
     private val componentHealthGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
     private val syncStatusGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
     private val syncStatusCodeGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
+    private val syncStatusCodeMeters = ConcurrentHashMap<String, Gauge>()
     private val currentBlockByStatusGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
     private val lastBlockStatusByIndexer = ConcurrentHashMap<String, Status>()
     private val lastSyncStatusByIndexer = ConcurrentHashMap<String, Status>()
@@ -43,23 +45,23 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
     }
 
     fun setIndexerSyncStatus(indexerName: String, syncStatus: Status) {
-        syncStatusCodeGauges
-            .computeIfAbsent(indexerName) { name ->
-                val ref = AtomicReference(Double.NaN)
-                registry.gauge(
-                    "indexer_sync_status_code_gauge",
-                    listOf(Tag.of("indexer_name", name)),
-                    ref,
-                ) {
-                    it.get()
-                }
-                ref
-            }
-            .set(syncStatus.toStatusCode())
+        val ref = syncStatusCodeGauges.computeIfAbsent(indexerName) { AtomicReference(Double.NaN) }
+        val previousStatus = lastSyncStatusByIndexer[indexerName]
 
-        lastSyncStatusByIndexer.compute(indexerName) { _, previousStatus ->
-            if (previousStatus != null && previousStatus != syncStatus) {
-                getOrCreateSyncStatusGauge(indexerName, previousStatus).set(Double.NaN)
+        if (previousStatus != syncStatus) {
+            syncStatusCodeMeters.remove(indexerName)?.let { registry.remove(it) }
+            val gauge =
+                Gauge.builder("indexer_sync_status_code_gauge", ref) { it.get() }
+                    .tag("indexer_name", indexerName)
+                    .tag("status_readable", syncStatus.name.toReadableEnumLabel())
+                    .register(registry)
+            syncStatusCodeMeters[indexerName] = gauge
+        }
+        ref.set(syncStatus.toStatusCode())
+
+        lastSyncStatusByIndexer.compute(indexerName) { _, prev ->
+            if (prev != null && prev != syncStatus) {
+                getOrCreateSyncStatusGauge(indexerName, prev).set(Double.NaN)
             }
             getOrCreateSyncStatusGauge(indexerName, syncStatus).set(1.0)
             syncStatus
