@@ -171,7 +171,7 @@
                       ],
                       "name": "query1",
                       "search": {
-                        "query": "host:$host AND \"REORG\""
+                        "query": "host:veworld-$host AND \"REORG\""
                       },
                       "storage": "hot"
                     }
@@ -179,6 +179,7 @@
                   "response_format": "scalar"
                 }
               ],
+              "time": {},
               "timeseries_background": {
                 "type": "bars",
                 "yaxis": {}
@@ -236,7 +237,7 @@
                       ],
                       "name": "query1",
                       "search": {
-                        "query": "host:$host AND \"Failed to fetch block\""
+                        "query": "host:veworld-$host AND \"Failed to fetch block\""
                       },
                       "storage": "hot"
                     }
@@ -244,6 +245,7 @@
                   "response_format": "scalar"
                 }
               ],
+              "time": {},
               "timeseries_background": {
                 "type": "bars",
                 "yaxis": {}
@@ -296,7 +298,7 @@
                       ],
                       "name": "query1",
                       "search": {
-                        "query": "host:$host AND (\"Using fallback parser for proof\")"
+                        "query": "host:veworld-$host AND (\"Using fallback parser for proof\")"
                       },
                       "storage": "hot"
                     }
@@ -304,6 +306,7 @@
                   "response_format": "scalar"
                 }
               ],
+              "time": {},
               "timeseries_background": {
                 "type": "bars",
                 "yaxis": {}
@@ -356,7 +359,7 @@
                       ],
                       "name": "query1",
                       "search": {
-                        "query": "host:$host AND (\"Impact exceeds threshold\")"
+                        "query": "host:veworld-$host AND (\"Impact exceeds threshold\")"
                       },
                       "storage": "hot"
                     }
@@ -364,6 +367,7 @@
                   "response_format": "scalar"
                 }
               ],
+              "time": {},
               "timeseries_background": {
                 "type": "bars",
                 "yaxis": {}
@@ -416,7 +420,7 @@
                       ],
                       "name": "query1",
                       "search": {
-                        "query": "host:$host AND \"Commencing graceful shutdown\""
+                        "query": "host:veworld-$host AND \"Commencing graceful shutdown\""
                       },
                       "storage": "hot"
                     }
@@ -424,6 +428,7 @@
                   "response_format": "scalar"
                 }
               ],
+              "time": {},
               "timeseries_background": {
                 "type": "bars",
                 "yaxis": {}
@@ -476,7 +481,7 @@
                       ],
                       "name": "query1",
                       "search": {
-                        "query": "host:$host AND \"Application is UNHEALTHY\""
+                        "query": "host:veworld-$host AND \"Application is UNHEALTHY\""
                       },
                       "storage": "hot"
                     }
@@ -484,6 +489,7 @@
                   "response_format": "scalar"
                 }
               ],
+              "time": {},
               "timeseries_background": {
                 "type": "bars",
                 "yaxis": {}
@@ -536,7 +542,7 @@
                       ],
                       "name": "query1",
                       "search": {
-                        "query": "host:$host AND \"Error while processing block\""
+                        "query": "host:veworld-$host AND \"ERROR\""
                       },
                       "storage": "hot"
                     }
@@ -544,11 +550,12 @@
                   "response_format": "scalar"
                 }
               ],
+              "time": {},
               "timeseries_background": {
                 "type": "bars",
                 "yaxis": {}
               },
-              "title": "Errors when processing blocks",
+              "title": "Errors reported in Indexer",
               "title_align": "left",
               "title_size": "16",
               "type": "query_value"
@@ -596,7 +603,7 @@
                       ],
                       "name": "query1",
                       "search": {
-                        "query": "host:$host AND (\"Restarting indexer\" OR \"Successfully Restarted @ Block\" or \"\")"
+                        "query": "host:veworld-$host AND (\"Restarting indexer\" OR \"Successfully Restarted @ Block\")"
                       },
                       "storage": "hot"
                     }
@@ -604,6 +611,7 @@
                   "response_format": "scalar"
                 }
               ],
+              "time": {},
               "timeseries_background": {
                 "type": "bars",
                 "yaxis": {}
@@ -625,7 +633,7 @@
       },
       "id": 3820863994244755,
       "layout": {
-        "height": 1,
+        "height": 6,
         "width": 12,
         "x": 0,
         "y": 0
@@ -799,7 +807,6 @@
                 }
               ],
               "show_legend": true,
-              "time": {},
               "title": "Sync Status per Indexer",
               "title_align": "left",
               "title_size": "16",
@@ -889,7 +896,7 @@
                           "value": 10000
                         }
                       ],
-                      "formula": "gap * cutoff_min(status, 0.5)"
+                      "formula": "gap"
                     },
                     {
                       "alias": "Est. Time to Sync",
@@ -910,7 +917,7 @@
                           "value": 0
                         }
                       ],
-                      "formula": "eta * cutoff_min(status, 0.5)",
+                      "formula": "eta",
                       "number_format": {
                         "unit": {
                           "type": "canonical_unit",
@@ -937,7 +944,7 @@
                           "value": 10
                         }
                       ],
-                      "formula": "avg_time * cutoff_min(status, 0.5)"
+                      "formula": "avg_time"
                     },
                     {
                       "alias": "Block Cycle Time (ms)",
@@ -958,11 +965,11 @@
                           "value": 10
                         }
                       ],
-                      "formula": "cycle_time * cutoff_min(status, 0.5)"
+                      "formula": "cycle_time"
                     },
                     {
                       "alias": "Events",
-                      "formula": "events * cutoff_min(status, 0.5)"
+                      "formula": "events"
                     }
                   ],
                   "queries": [
@@ -1236,7 +1243,7 @@
         "height": 21,
         "width": 12,
         "x": 0,
-        "y": 1
+        "y": 6
       }
     },
     {
@@ -1802,7 +1809,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 22
+        "y": 27
       }
     },
     {
@@ -3373,7 +3380,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 23
+        "y": 28
       }
     },
     {
@@ -4599,7 +4606,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 24
+        "y": 29
       }
     },
     {
