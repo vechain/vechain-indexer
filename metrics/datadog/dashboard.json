@@ -896,9 +896,9 @@
                           "value": 2
                         },
                         {
-                          "comparator": ">=",
+                          "comparator": "<",
                           "palette": "white_on_yellow",
-                          "value": 0
+                          "value": 2
                         }
                       ],
                       "formula": "status"
