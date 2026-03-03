@@ -1,4 +1,5 @@
 {
+  "app_pipeline_name": "Veworld Application Logs",
   "category_processor_name": "Categorize endpoint group",
   "dashboard_title": "Vechain Indexer Dashboard",
   "pipeline_name": "AWS ELB Access Veworld"
