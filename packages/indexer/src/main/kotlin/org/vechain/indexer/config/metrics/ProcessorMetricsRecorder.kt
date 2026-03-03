@@ -1,11 +1,11 @@
-package org.vechain.indexer
+package org.vechain.indexer.config.metrics
 
 import kotlin.time.Duration
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
-import org.vechain.indexer.config.metrics.ProcessorMetrics
+import org.vechain.indexer.IndexingResult
 
-class ProcessingMetricsTracker(
+class ProcessorMetricsRecorder(
     private val indexerName: String,
     private val processorMetrics: ProcessorMetrics,
 ) {
@@ -23,11 +23,13 @@ class ProcessingMetricsTracker(
 
     fun record(entry: IndexingResult, processingDuration: Duration) {
         val currentBlock = entry.latestBlockNumber()
+        if (lastProcessedBlock >= 0 && currentBlock <= lastProcessedBlock) return
+
         val blocksInEntry =
             when (entry) {
                 is IndexingResult.BlockResult -> 1
                 is IndexingResult.LogResult -> {
-                    if (lastProcessedBlock >= 0 && currentBlock > lastProcessedBlock) {
+                    if (lastProcessedBlock >= 0) {
                         (currentBlock - lastProcessedBlock).toInt()
                     } else {
                         1
@@ -41,18 +43,16 @@ class ProcessingMetricsTracker(
             processorMetrics.observeProcessingDuration(indexerName, perBlockDuration)
         }
 
-        val isSyncing = entry.status == Status.SYNCING || entry.status == Status.FAST_SYNCING
-        if (isSyncing) {
-            lastIterationEnd?.let { previousEnd ->
-                val cycleTime = previousEnd.elapsedNow()
-                val perBlockCycleTime = cycleTime / blocksInEntry
-                repeat(blocksInEntry) {
-                    processorMetrics.observeBlockCycleTime(indexerName, perBlockCycleTime)
-                }
+        // Cycle time is recorded for all statuses (not just SYNCING) to ensure it tracks
+        // the same population of events as processing duration. Gating on status previously
+        // caused cycle time to appear lower than processing time in aggregate metrics.
+        lastIterationEnd?.let { previousEnd ->
+            val cycleTime = previousEnd.elapsedNow()
+            val perBlockCycleTime = cycleTime / blocksInEntry
+            repeat(blocksInEntry) {
+                processorMetrics.observeBlockCycleTime(indexerName, perBlockCycleTime)
             }
-            lastIterationEnd = TimeSource.Monotonic.markNow()
-        } else {
-            lastIterationEnd = null
         }
+        lastIterationEnd = TimeSource.Monotonic.markNow()
     }
 }
