@@ -878,32 +878,6 @@
                 {
                   "formulas": [
                     {
-                      "alias": "Status",
-                      "conditional_formats": [
-                        {
-                          "comparator": "=",
-                          "palette": "white_on_green",
-                          "value": 6
-                        },
-                        {
-                          "comparator": "=",
-                          "palette": "white_on_red",
-                          "value": 5
-                        },
-                        {
-                          "comparator": ">=",
-                          "palette": "white_on_yellow",
-                          "value": 2
-                        },
-                        {
-                          "comparator": "<",
-                          "palette": "white_on_yellow",
-                          "value": 2
-                        }
-                      ],
-                      "formula": "status"
-                    },
-                    {
                       "alias": "Sync Gap",
                       "conditional_formats": [
                         {
@@ -999,12 +973,6 @@
                     }
                   ],
                   "queries": [
-                    {
-                      "aggregator": "last",
-                      "data_source": "metrics",
-                      "name": "status",
-                      "query": "max:indexer_sync_status_code_gauge{indexer-id:$host.value} by {indexer_name}"
-                    },
                     {
                       "aggregator": "last",
                       "data_source": "metrics",
@@ -1108,7 +1076,83 @@
             "id": 2000000000000015,
             "layout": {
               "height": 3,
-              "width": 12,
+              "width": 8,
+              "x": 4,
+              "y": 10
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "alias": "Status Code",
+                      "conditional_formats": [
+                        {
+                          "comparator": "=",
+                          "palette": "white_on_green",
+                          "value": 6
+                        },
+                        {
+                          "comparator": "=",
+                          "palette": "white_on_red",
+                          "value": 5
+                        },
+                        {
+                          "comparator": "=",
+                          "palette": "black_on_light_green",
+                          "value": 3
+                        },
+                        {
+                          "comparator": "=",
+                          "palette": "white_on_yellow",
+                          "value": 2
+                        },
+                        {
+                          "comparator": "=",
+                          "palette": "black_on_light_yellow",
+                          "value": 1
+                        },
+                        {
+                          "comparator": ">=",
+                          "palette": "black_on_light_red",
+                          "value": 0
+                        }
+                      ],
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "last",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "max:indexer_sync_status_code_gauge{indexer-id:$host.value} by {indexer_name,status_readable}"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "sort": {
+                    "count": 50,
+                    "order_by": [
+                      {
+                        "index": 0,
+                        "order": "desc",
+                        "type": "formula"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "title": "Status by Indexer",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_table"
+            },
+            "id": 2000000000000101,
+            "layout": {
+              "height": 3,
+              "width": 4,
               "x": 0,
               "y": 10
             }

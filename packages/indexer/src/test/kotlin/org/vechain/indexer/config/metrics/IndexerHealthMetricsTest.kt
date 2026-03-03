@@ -148,38 +148,56 @@ class IndexerHealthMetricsTest {
     // --- indexer_sync_status_code_gauge tests ---
 
     @Test
-    fun `setIndexerSyncStatus creates status code gauge with only indexer_name tag`() {
+    fun `setIndexerSyncStatus creates status code gauge with status_readable tag`() {
         metrics.setIndexerSyncStatus("test-indexer", Status.SYNCING)
 
         val gauge =
             registry
                 .find("indexer_sync_status_code_gauge")
                 .tag("indexer_name", "test-indexer")
+                .tag("status_readable", "Syncing")
                 .gauge()
 
-        assertThat(gauge).describedAs("gauge should exist").isNotNull
-        assertThat(gauge!!.id.getTag("status"))
-            .describedAs("status tag should not be present")
-            .isNull()
-        assertThat(gauge.id.getTag("status_readable"))
-            .describedAs("status_readable tag should not be present")
-            .isNull()
-        assertThat(gauge.value()).isEqualTo(2.0)
+        assertThat(gauge).describedAs("gauge for active status should exist").isNotNull
+        assertThat(gauge!!.value()).isEqualTo(2.0)
+
+        Status.entries
+            .filter { it != Status.SYNCING }
+            .forEach { status ->
+                val inactive =
+                    registry
+                        .find("indexer_sync_status_code_gauge")
+                        .tag("indexer_name", "test-indexer")
+                        .tag("status_readable", status.name)
+                        .gauge()
+
+                assertThat(inactive)
+                    .describedAs("gauge for inactive status ${status.name} should not exist")
+                    .isNull()
+            }
     }
 
     @Test
-    fun `setIndexerSyncStatus switching status updates the code value in place`() {
+    fun `setIndexerSyncStatus switching status sets previous code gauge to NaN`() {
         metrics.setIndexerSyncStatus("test-indexer", Status.SYNCING)
         metrics.setIndexerSyncStatus("test-indexer", Status.FULLY_SYNCED)
 
-        val gauges =
+        val syncingGauge =
             registry
                 .find("indexer_sync_status_code_gauge")
                 .tag("indexer_name", "test-indexer")
-                .gauges()
+                .tag("status_readable", "Syncing")
+                .gauge()
 
-        assertThat(gauges).describedAs("should have exactly one gauge per indexer").hasSize(1)
-        assertThat(gauges.first().value()).isEqualTo(6.0)
+        val fullySyncedGauge =
+            registry
+                .find("indexer_sync_status_code_gauge")
+                .tag("indexer_name", "test-indexer")
+                .tag("status_readable", "Fully Synced")
+                .gauge()
+
+        assertThat(syncingGauge!!.value()).isNaN()
+        assertThat(fullySyncedGauge!!.value()).isEqualTo(6.0)
     }
 
     @Test
@@ -359,15 +377,23 @@ class IndexerHealthMetricsTest {
     // --- separate gauges per indexer tests ---
 
     @Test
-    fun `setIndexerSyncStatus creates separate gauges per indexer`() {
+    fun `setIndexerSyncStatus creates separate code gauges per indexer`() {
         metrics.setIndexerSyncStatus("indexer-a", Status.SYNCING)
         metrics.setIndexerSyncStatus("indexer-b", Status.FULLY_SYNCED)
 
         val aGauge =
-            registry.find("indexer_sync_status_code_gauge").tag("indexer_name", "indexer-a").gauge()
+            registry
+                .find("indexer_sync_status_code_gauge")
+                .tag("indexer_name", "indexer-a")
+                .tag("status_readable", "Syncing")
+                .gauge()
 
         val bGauge =
-            registry.find("indexer_sync_status_code_gauge").tag("indexer_name", "indexer-b").gauge()
+            registry
+                .find("indexer_sync_status_code_gauge")
+                .tag("indexer_name", "indexer-b")
+                .tag("status_readable", "Fully Synced")
+                .gauge()
 
         assertThat(aGauge!!.value()).isEqualTo(2.0)
         assertThat(bGauge!!.value()).isEqualTo(6.0)

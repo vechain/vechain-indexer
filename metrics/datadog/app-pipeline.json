@@ -2,6 +2,7 @@
   "filter": {
     "query": "source:cloudwatch service:(*api OR *indexer)"
   },
+  "id": "7sMIt-hoT-C2VxXZ50G49w",
   "is_enabled": true,
   "name": "Veworld Application Logs",
   "processors": [
