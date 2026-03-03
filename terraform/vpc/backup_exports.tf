@@ -47,6 +47,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "atlas_backups" {
     id     = "expire-after-2-days"
     status = "Enabled"
 
+    filter {}
+
     expiration {
       days = 2
     }
