@@ -31,7 +31,7 @@ RUN echo "$APP_VERSION" | grep -Eq '^v\.[0-9]+\.[0-9]+\.[0-9]+(-dev)?$' || (echo
 
 RUN --mount=type=cache,target=/root/.gradle/caches \
     --mount=type=cache,target=/root/.gradle/wrapper \
-    --mount=type=secret,id=gradle_props,target=/root/.gradle/gradle.properties \
+    --mount=type=secret,id=gradle_props,target=/root/.gradle/gradle.properties,required=false \
     ./gradlew packages:$PACKAGE_NAME:build -x test
 
 FROM amazoncorretto:21-alpine3.20 AS prod

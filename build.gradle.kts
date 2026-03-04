@@ -63,16 +63,20 @@ allprojects {
         maven {
             url = uri("https://central.sonatype.com/repository/maven-snapshots/")
         }
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/vechain/indexer-core")
-            credentials {
-                username =
-                    project.findProperty("gpr.user") as String?
-                        ?: System.getenv("GITHUB_ACTOR")
-                password =
-                    project.findProperty("gpr.key") as String?
-                        ?: System.getenv("GITHUB_TOKEN")
+        val gprUser =
+            project.findProperty("gpr.user") as String?
+                ?: System.getenv("GITHUB_ACTOR")
+        val gprKey =
+            project.findProperty("gpr.key") as String?
+                ?: System.getenv("GITHUB_TOKEN")
+        if (gprUser != null && gprKey != null) {
+            maven {
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/vechain/indexer-core")
+                credentials {
+                    username = gprUser
+                    password = gprKey
+                }
             }
         }
     }
