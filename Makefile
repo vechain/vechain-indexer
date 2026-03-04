@@ -107,6 +107,9 @@ down: #@ Stop all the infrastructure and the application.
 	make app-down db-down
 
 # Application
+GRADLE_PROPERTIES_FILE := $(if $(wildcard $(HOME)/.gradle/gradle.properties),$(HOME)/.gradle/gradle.properties,)
+export GRADLE_PROPERTIES_FILE
+
 app-up: format #@ Start the application.
 	docker compose up -d --build --wait
 app-down: #@ Stop the application.
