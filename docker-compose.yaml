@@ -54,7 +54,7 @@ services:
 
 secrets:
   gradle_props:
-    file: ${GRADLE_PROPERTIES_FILE:-/dev/null}
+    file: ${GRADLE_PROPERTIES_FILE:-./gradle/docker.gradle.properties}
 
 networks:
   vechain:

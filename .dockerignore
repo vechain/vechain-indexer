@@ -3,6 +3,7 @@
 
 # Gradle wrapper (needed by Dockerfile)
 !gradle/
+gradle/docker.gradle.properties
 !gradlew
 
 # Build config (needed by Dockerfile)

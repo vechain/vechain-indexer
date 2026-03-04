@@ -68,3 +68,5 @@ database/backups/
 .venv-schemathesis/
 
 .gradle-user-home
+
+gradle/docker.gradle.properties

@@ -110,7 +110,10 @@ down: #@ Stop all the infrastructure and the application.
 GRADLE_PROPERTIES_FILE ?= $(if $(wildcard $(HOME)/.gradle/gradle.properties),$(HOME)/.gradle/gradle.properties,)
 export GRADLE_PROPERTIES_FILE
 
-app-up: format #@ Start the application.
+ensure-gradle-props:
+	@[ -f gradle/docker.gradle.properties ] || cp gradle/docker.gradle.properties.example gradle/docker.gradle.properties
+
+app-up: format ensure-gradle-props #@ Start the application.
 	docker compose up -d --build --wait
 app-down: #@ Stop the application.
 	docker compose down
