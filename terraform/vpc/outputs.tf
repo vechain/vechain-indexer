@@ -27,3 +27,8 @@ output "chatbot_sns_topic_name" {
   description = "The name of the chatbot/slack SNS topic"
   value       = aws_sns_topic.chatbot_sns_topic.name
 }
+
+output "atlas_export_bucket_id" {
+  description = "The S3 bucket ID for use in backup schedule export blocks"
+  value       = local.env.environment == "prod" ? aws_s3_bucket.atlas_export_backups[0].id : ""
+}

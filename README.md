@@ -195,6 +195,14 @@ Use the schema-driven harness when you need to validate the public API in a depl
 - Local run: `scripts/run_api_schema_tests.sh [dead|live|<base-url>] [--base-url <base-url>]` (defaults to the dead environment). Install `schemathesis` locally first, for example `pip install "schemathesis>=3.19,<4"`.
 - GitHub Action: trigger **API Tests** from the Actions tab and choose the target environment, or provide a full base URL override. The workflow uses the same script and publishes Schemathesis logs and JUnit XML as artifacts.
 
+## Disaster Recovery
+
+MongoDB Atlas snapshots are automatically exported daily to S3 (`veworld-indexer-atlas-backups`). In the event of data loss or cluster corruption where Atlas native snapshot restores are unavailable, the indexer can be restored from these S3 exports.
+
+The restore process involves downloading the gzipped JSON exports to an EC2 instance, streaming them into the target Atlas cluster via parallel `mongoimport` processes, and rebuilding indexes from the exported metadata files.
+
+For the full step-by-step runbook, see: **[Disaster Recovery Runbook](https://vechain.atlassian.net/wiki/x/AYCfe)**
+
 ## Deployment & Testing
 
 The VeWorld Indexer can be deployed via two strategies: Regular or Blue/Green. To trigger a deployment, run the [Prod Deployment Workflow](https://github.com/vechain/veworld-indexer/actions/workflows/deploy-prod.yml). You will be prompted to select the deployment strategy and the version number. Please enter a version in the format `major.minor.patch` - this will be used to create a new release & tag. If in doubt about which environment is currently live, run the [Identify Live/Dead Environments](https://github.com/vechain/veworld-indexer/actions/workflows/identify-live-color.yml) workflow with the default arguments.
