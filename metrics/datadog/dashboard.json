@@ -179,7 +179,6 @@
                   "response_format": "scalar"
                 }
               ],
-              "time": {},
               "timeseries_background": {
                 "type": "bars",
                 "yaxis": {}
@@ -245,7 +244,6 @@
                   "response_format": "scalar"
                 }
               ],
-              "time": {},
               "timeseries_background": {
                 "type": "bars",
                 "yaxis": {}
@@ -306,7 +304,6 @@
                   "response_format": "scalar"
                 }
               ],
-              "time": {},
               "timeseries_background": {
                 "type": "bars",
                 "yaxis": {}
@@ -367,7 +364,6 @@
                   "response_format": "scalar"
                 }
               ],
-              "time": {},
               "timeseries_background": {
                 "type": "bars",
                 "yaxis": {}
@@ -428,7 +424,6 @@
                   "response_format": "scalar"
                 }
               ],
-              "time": {},
               "timeseries_background": {
                 "type": "bars",
                 "yaxis": {}
@@ -489,7 +484,6 @@
                   "response_format": "scalar"
                 }
               ],
-              "time": {},
               "timeseries_background": {
                 "type": "bars",
                 "yaxis": {}
@@ -550,7 +544,6 @@
                   "response_format": "scalar"
                 }
               ],
-              "time": {},
               "timeseries_background": {
                 "type": "bars",
                 "yaxis": {}
@@ -611,7 +604,6 @@
                   "response_format": "scalar"
                 }
               ],
-              "time": {},
               "timeseries_background": {
                 "type": "bars",
                 "yaxis": {}
@@ -633,7 +625,7 @@
       },
       "id": 3820863994244755,
       "layout": {
-        "height": 6,
+        "height": 1,
         "width": 12,
         "x": 0,
         "y": 0
@@ -899,33 +891,6 @@
                       "formula": "gap"
                     },
                     {
-                      "alias": "Est. Time to Sync",
-                      "conditional_formats": [
-                        {
-                          "comparator": "<=",
-                          "palette": "white_on_green",
-                          "value": 0
-                        },
-                        {
-                          "comparator": ">=",
-                          "palette": "white_on_red",
-                          "value": 21600
-                        },
-                        {
-                          "comparator": ">",
-                          "palette": "white_on_yellow",
-                          "value": 0
-                        }
-                      ],
-                      "formula": "eta",
-                      "number_format": {
-                        "unit": {
-                          "type": "canonical_unit",
-                          "unit_name": "second"
-                        }
-                      }
-                    },
-                    {
                       "alias": "Block Processing (ms)",
                       "conditional_formats": [
                         {
@@ -970,26 +935,42 @@
                     {
                       "alias": "Events",
                       "formula": "events"
+                    },
+                    {
+                      "alias": "Est. Time to Sync",
+                      "cell_display_mode": "number",
+                      "conditional_formats": [
+                        {
+                          "comparator": "<",
+                          "palette": "white_on_green",
+                          "value": 10000
+                        },
+                        {
+                          "comparator": ">=",
+                          "palette": "white_on_red",
+                          "value": 1000000
+                        },
+                        {
+                          "comparator": ">=",
+                          "palette": "white_on_yellow",
+                          "value": 10000
+                        }
+                      ],
+                      "formula": "cycle_time * gap",
+                      "number_format": {
+                        "unit": {
+                          "type": "canonical_unit",
+                          "unit_name": "millisecond"
+                        }
+                      }
                     }
                   ],
                   "queries": [
                     {
                       "aggregator": "last",
                       "data_source": "metrics",
-                      "name": "status",
-                      "query": "max:indexer_sync_status_gauge{indexer-id:$host.value} by {indexer_name,status_readable}"
-                    },
-                    {
-                      "aggregator": "last",
-                      "data_source": "metrics",
                       "name": "gap",
                       "query": "max:indexer_sync_gap_gauge{indexer-id:$host.value} by {indexer_name}"
-                    },
-                    {
-                      "aggregator": "last",
-                      "data_source": "metrics",
-                      "name": "eta",
-                      "query": "max:indexer_estimated_time_to_sync_seconds{indexer-id:$host.value} by {indexer_name}"
                     },
                     {
                       "aggregator": "avg",
@@ -1023,6 +1004,7 @@
                   }
                 }
               ],
+              "time": {},
               "title": "Indexer Overview",
               "title_align": "left",
               "title_size": "16",
@@ -1034,6 +1016,82 @@
               "width": 8,
               "x": 4,
               "y": 6
+            }
+          },
+          {
+            "definition": {
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "alias": "Status Code",
+                      "conditional_formats": [
+                        {
+                          "comparator": "=",
+                          "palette": "white_on_green",
+                          "value": 6
+                        },
+                        {
+                          "comparator": "=",
+                          "palette": "white_on_red",
+                          "value": 5
+                        },
+                        {
+                          "comparator": "=",
+                          "palette": "black_on_light_green",
+                          "value": 3
+                        },
+                        {
+                          "comparator": "=",
+                          "palette": "white_on_yellow",
+                          "value": 2
+                        },
+                        {
+                          "comparator": "=",
+                          "palette": "black_on_light_yellow",
+                          "value": 1
+                        },
+                        {
+                          "comparator": ">=",
+                          "palette": "black_on_light_red",
+                          "value": 0
+                        }
+                      ],
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "last",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "max:indexer_sync_status_code_gauge{indexer-id:$host.value} by {indexer_name,status_readable}"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "sort": {
+                    "count": 50,
+                    "order_by": [
+                      {
+                        "index": 0,
+                        "order": "desc",
+                        "type": "formula"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "title": "Status by Indexer",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_table"
+            },
+            "id": 2000000000000101,
+            "layout": {
+              "height": 3,
+              "width": 4,
+              "x": 0,
+              "y": 10
             }
           },
           {
@@ -1082,8 +1140,8 @@
             "id": 2000000000000015,
             "layout": {
               "height": 3,
-              "width": 12,
-              "x": 0,
+              "width": 8,
+              "x": 4,
               "y": 10
             }
           },
@@ -1243,7 +1301,7 @@
         "height": 21,
         "width": 12,
         "x": 0,
-        "y": 6
+        "y": 1
       }
     },
     {
@@ -1809,7 +1867,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 27
+        "y": 22
       }
     },
     {
@@ -3377,10 +3435,10 @@
       },
       "id": 2400000000000003,
       "layout": {
-        "height": 1,
+        "height": 61,
         "width": 12,
         "x": 0,
-        "y": 28
+        "y": 23
       }
     },
     {
@@ -4606,7 +4664,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 29
+        "y": 84
       }
     },
     {
@@ -4822,7 +4880,7 @@
       },
       "id": 7120742133508725,
       "layout": {
-        "height": 11,
+        "height": 1,
         "is_column_break": true,
         "width": 12,
         "x": 0,
@@ -5110,7 +5168,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 11
+        "y": 1
       }
     },
     {
@@ -5268,7 +5326,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 12
+        "y": 2
       }
     },
     {
@@ -5947,7 +6005,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 13
+        "y": 3
       }
     }
   ]

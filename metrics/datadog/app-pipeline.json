@@ -1,0 +1,51 @@
+{
+  "filter": {
+    "query": "source:cloudwatch host:veworld-*"
+  },
+  "id": "7sMIt-hoT-C2VxXZ50G49w",
+  "is_enabled": true,
+  "name": "Veworld Application Logs",
+  "processors": [
+    {
+      "grok": {
+        "match_rules": "app_log %{date(\"yyyy-MM-dd HH:mm:ss,SSS\"):timestamp}\\s+\\[%{word:level}\\s*\\]\\s+%{notSpace:logger.name}\\s+\\|\\s+%{data:message}",
+        "support_rules": ""
+      },
+      "is_enabled": true,
+      "name": "Parse application log format",
+      "samples": [
+        "2026-03-03 10:30:45,123 [INFO ] o.v.indexer.SomeClass                    | Application started successfully",
+        "2026-03-03 10:30:46,456 [WARN ] o.v.indexer.SomeClass                    | Slow query detected",
+        "2026-03-03 10:30:47,789 [ERROR] o.v.indexer.SomeClass                    | Failed to process block"
+      ],
+      "source": "message",
+      "type": "grok-parser"
+    },
+    {
+      "is_enabled": true,
+      "name": "Define `timestamp` as the official date of the log",
+      "sources": [
+        "timestamp"
+      ],
+      "type": "date-remapper"
+    },
+    {
+      "is_enabled": true,
+      "name": "Define `level` as the official status of the log",
+      "sources": [
+        "level"
+      ],
+      "type": "status-remapper"
+    },
+    {
+      "is_enabled": true,
+      "name": "Define `message` as the official message of the log",
+      "sources": [
+        "message"
+      ],
+      "type": "message-remapper"
+    }
+  ],
+  "tags": [],
+  "type": "pipeline"
+}

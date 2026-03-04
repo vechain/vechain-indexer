@@ -16,7 +16,7 @@
               class="ch.qos.logback.core.ConsoleAppender">
         <layout class="ch.qos.logback.classic.PatternLayout">
             <Pattern>
-                %date | %-5level | %-40.40logger{40} | %msg %n
+                %date [%-5level] %-40.40logger{40} | %msg %n
             </Pattern>
         </layout>
     </appender>

@@ -1,13 +1,14 @@
 name: Sync Datadog Config
 
 on:
+  workflow_dispatch:
   workflow_run:
     workflows: ["Prod Deployment Workflow"]
     types: [completed]
 
 jobs:
   push:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,6 +26,13 @@ jobs:
           DD_APP_KEY: ${{ secrets.DD_APP_KEY }}
           DD_SITE: ${{ secrets.DD_SITE }}
         run: python metrics/datadog/scripts/manage_pipeline.py push-pipeline
+
+      - name: Push app pipeline to Datadog
+        env:
+          DD_API_KEY: ${{ secrets.DD_API_KEY }}
+          DD_APP_KEY: ${{ secrets.DD_APP_KEY }}
+          DD_SITE: ${{ secrets.DD_SITE }}
+        run: python metrics/datadog/scripts/manage_pipeline.py push-app-pipeline
 
       - name: Push dashboard to Datadog
         env:

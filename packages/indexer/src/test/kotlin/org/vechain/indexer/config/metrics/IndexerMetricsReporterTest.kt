@@ -8,7 +8,6 @@ import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.vechain.indexer.BlockIndexer
-import org.vechain.indexer.Indexer
 import org.vechain.indexer.Status
 import org.vechain.indexer.config.HealthStatus
 import org.vechain.indexer.config.IndexerHealthService
@@ -42,91 +41,6 @@ class IndexerMetricsReporterTest {
         val block = mockk<BlockUnexpanded>()
         every { block.number } returns blockNumber
         coEvery { thorClient.getBlockUnexpanded(any()) } returns block
-    }
-
-    @Test
-    fun `FULLY_SYNCED indexer sets estimated time to sync to zero`() {
-        val indexer = createBlockIndexer("test-indexer", 1000L)
-        every { indexer.getStatus() } returns Status.FULLY_SYNCED
-        stubBestBlock(1000L)
-
-        val reporter =
-            IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
-        reporter.reportMetrics()
-
-        verify { metrics.setEstimatedTimeToSync("test-indexer", 0.0) }
-    }
-
-    @Test
-    fun `first tick sets estimated time to sync to NaN when blocksPerSecond is unknown`() {
-        val indexer = createBlockIndexer("test-indexer", 100L)
-        stubBestBlock(1000L)
-
-        val reporter =
-            IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
-        reporter.reportMetrics()
-
-        verify { metrics.setEstimatedTimeToSync("test-indexer", match { it.isNaN() }) }
-        verify(exactly = 0) { metrics.setEstimatedTimeToSync(any(), match { !it.isNaN() }) }
-    }
-
-    @Test
-    fun `second tick with block progress computes estimated time to sync`() {
-        val indexer = createBlockIndexer("test-indexer", 100L)
-        stubBestBlock(1000L)
-
-        val reporter =
-            IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
-        reporter.reportMetrics()
-
-        every { indexer.getCurrentBlockNumber() } returns 200L
-        reporter.reportMetrics()
-
-        verify { metrics.setEstimatedTimeToSync("test-indexer", match { it > 0.0 }) }
-    }
-
-    @Test
-    fun `no block progress keeps estimated time to sync as NaN`() {
-        val indexer = createBlockIndexer("test-indexer", 100L)
-        stubBestBlock(1000L)
-
-        val reporter =
-            IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
-        reporter.reportMetrics()
-
-        // Block number stays the same on second tick
-        reporter.reportMetrics()
-
-        verify(exactly = 0) { metrics.setEstimatedTimeToSync(any(), match { !it.isNaN() }) }
-    }
-
-    @Test
-    fun `INITIALISED BlockIndexer gets ETA of zero`() {
-        val initialised = createBlockIndexer("initialised-indexer", 0L)
-        every { initialised.getStatus() } returns Status.INITIALISED
-        stubBestBlock(1000L)
-
-        val reporter =
-            IndexerMetricsReporter(listOf(initialised), metrics, thorClient, indexerHealthService)
-        reporter.reportMetrics()
-
-        verify { metrics.setEstimatedTimeToSync("initialised-indexer", 0.0) }
-    }
-
-    @Test
-    fun `INITIALISED non-BlockIndexer gets ETA of zero`() {
-        val initialised = mockk<Indexer>()
-        every { initialised.name } returns "initialised-plain"
-        every { initialised.getStatus() } returns Status.INITIALISED
-        every { indexerHealthService.getIndexerHealth(initialised) } returns
-            Pair(HealthStatus.UP, "ok")
-        stubBestBlock(1000L)
-
-        val reporter =
-            IndexerMetricsReporter(listOf(initialised), metrics, thorClient, indexerHealthService)
-        reporter.reportMetrics()
-
-        verify { metrics.setEstimatedTimeToSync("initialised-plain", 0.0) }
     }
 
     @Test

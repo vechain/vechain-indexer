@@ -23,7 +23,6 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
     private val syncGapGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
     private val blocksProcessedCounters = ConcurrentHashMap<String, Counter>()
     private val blocksPerSecondGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
-    private val estimatedTimeToSyncGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
 
     fun setComponentHealth(name: String, type: String, value: Double) {
         val key = "$name:$type"
@@ -43,11 +42,15 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
     }
 
     fun setIndexerSyncStatus(indexerName: String, syncStatus: Status) {
-        setIndexerSyncStatusCode(indexerName, syncStatus)
+        val previousStatus = lastSyncStatusByIndexer[indexerName]
+        if (previousStatus != null && previousStatus != syncStatus) {
+            getOrCreateSyncStatusCodeGauge(indexerName, previousStatus).set(Double.NaN)
+        }
+        getOrCreateSyncStatusCodeGauge(indexerName, syncStatus).set(syncStatus.toStatusCode())
 
-        lastSyncStatusByIndexer.compute(indexerName) { _, previousStatus ->
-            if (previousStatus != null && previousStatus != syncStatus) {
-                getOrCreateSyncStatusGauge(indexerName, previousStatus).set(Double.NaN)
+        lastSyncStatusByIndexer.compute(indexerName) { _, prev ->
+            if (prev != null && prev != syncStatus) {
+                getOrCreateSyncStatusGauge(indexerName, prev).set(Double.NaN)
             }
             getOrCreateSyncStatusGauge(indexerName, syncStatus).set(1.0)
             syncStatus
@@ -87,15 +90,6 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
         }
     }
 
-    private fun setIndexerSyncStatusCode(indexerName: String, syncStatus: Status) {
-        // Reuses lastSyncStatusByIndexer tracked by setIndexerSyncStatus (called first)
-        val previousStatus = lastSyncStatusByIndexer[indexerName]
-        if (previousStatus != null && previousStatus != syncStatus) {
-            getOrCreateSyncStatusCodeGauge(indexerName, previousStatus).set(Double.NaN)
-        }
-        getOrCreateSyncStatusCodeGauge(indexerName, syncStatus).set(syncStatus.toStatusCode())
-    }
-
     private fun getOrCreateSyncStatusGauge(
         indexerName: String,
         status: Status,
@@ -131,7 +125,6 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
                 "indexer_sync_status_code_gauge",
                 listOf(
                     Tag.of("indexer_name", indexerName),
-                    Tag.of("status", status.name),
                     Tag.of("status_readable", statusReadable),
                 ),
                 ref,
@@ -181,23 +174,6 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
                 ref
             }
             .set(gap.toDouble())
-    }
-
-    fun setEstimatedTimeToSync(indexerName: String, seconds: Double) {
-        val ref =
-            estimatedTimeToSyncGauges[indexerName]
-                ?: estimatedTimeToSyncGauges.computeIfAbsent(indexerName) { name ->
-                    val newRef = AtomicReference(Double.NaN)
-                    registry.gauge(
-                        "indexer_estimated_time_to_sync_seconds",
-                        listOf(Tag.of("indexer_name", name)),
-                        newRef,
-                    ) {
-                        it.get()
-                    }
-                    newRef
-                }
-        ref.set(seconds)
     }
 
     fun incrementBlocksProcessed(indexerName: String, count: Double) {

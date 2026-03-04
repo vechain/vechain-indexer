@@ -3,8 +3,10 @@
 
 Subcommands:
     get                  Fetch pipeline from Datadog API, save to pipeline.json
+    get-app-pipeline     Fetch app pipeline from Datadog API, save to app-pipeline.json
     get-dashboard        Fetch dashboard from Datadog API, save to dashboard.json
     push-pipeline        Push pipeline.json back to Datadog
+    push-app-pipeline    Push app-pipeline.json to Datadog (creates or updates idempotently)
     push-dashboard       Push dashboard.json back to Datadog
     update-categories    Parse api-docs.json, regenerate category processor in pipeline.json
     validate-categories  Compare pipeline.json categories against api-docs.json
@@ -28,6 +30,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 DATADOG_DIR = SCRIPT_DIR.parent
 CONFIG_PATH = DATADOG_DIR / "config.json"
 PIPELINE_PATH = DATADOG_DIR / "pipeline.json"
+APP_PIPELINE_PATH = DATADOG_DIR / "app-pipeline.json"
 DASHBOARD_PATH = DATADOG_DIR / "dashboard.json"
 OPENAPI_PATH = DATADOG_DIR / "api-docs.json"
 
@@ -181,6 +184,110 @@ def cmd_push_pipeline(args):
         sys.exit(1)
 
     print("Pipeline updated successfully.")
+
+
+# ---------------------------------------------------------------------------
+# Subcommand: get-app-pipeline
+# ---------------------------------------------------------------------------
+
+
+def cmd_get_app_pipeline(args):
+    """Fetch the app pipeline from Datadog and save to app-pipeline.json."""
+    config = load_config()
+    headers = get_dd_headers()
+    site = get_dd_site()
+    pipeline_name = config["app_pipeline_name"]
+
+    base_url = f"https://api.{site}/api/v1/logs/config/pipelines"
+    print(f"Fetching pipelines from {base_url} ...")
+
+    resp = requests.get(base_url, headers=headers)
+    resp.raise_for_status()
+    pipelines = resp.json()
+
+    matches = [p for p in pipelines if p["name"] == pipeline_name]
+    if not matches:
+        print(f"Error: No pipeline found with name: {pipeline_name}", file=sys.stderr)
+        sys.exit(1)
+
+    pipeline = matches[0]
+    pipeline_id = pipeline["id"]
+    print(f"Found pipeline: {pipeline['name']} (id={pipeline_id})")
+
+    with open(APP_PIPELINE_PATH, "w") as f:
+        json.dump(pipeline, f, indent=2)
+        f.write("\n")
+
+    print(f"Saved to {APP_PIPELINE_PATH}")
+
+
+# ---------------------------------------------------------------------------
+# Subcommand: push-app-pipeline
+# ---------------------------------------------------------------------------
+
+
+def _find_pipeline_by_name(headers, site, name):
+    """Look up a pipeline by name. Returns the id if found, None otherwise."""
+    url = f"https://api.{site}/api/v1/logs/config/pipelines"
+    resp = requests.get(url, headers=headers)
+    resp.raise_for_status()
+    matches = [p for p in resp.json() if p["name"] == name]
+    return matches[0]["id"] if matches else None
+
+
+def cmd_push_app_pipeline(args):
+    """Push app-pipeline.json to Datadog (creates or updates idempotently)."""
+    if not APP_PIPELINE_PATH.exists():
+        print(
+            f"Error: {APP_PIPELINE_PATH} not found. Run 'get-app-pipeline' first.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    config = load_config()
+    headers = get_dd_headers()
+    site = get_dd_site()
+
+    with open(APP_PIPELINE_PATH) as f:
+        pipeline = json.load(f)
+
+    pipeline_id = pipeline.get("id")
+
+    # If no id in the file, check if the pipeline already exists by name
+    if not pipeline_id:
+        pipeline_name = config["app_pipeline_name"]
+        print(f"No id in app-pipeline.json, looking up '{pipeline_name}' ...")
+        pipeline_id = _find_pipeline_by_name(headers, site, pipeline_name)
+        if pipeline_id:
+            print(f"Found existing pipeline (id={pipeline_id})")
+
+    body = {k: v for k, v in pipeline.items() if k not in READONLY_FIELDS}
+
+    if pipeline_id:
+        # Update existing pipeline
+        url = f"https://api.{site}/api/v1/logs/config/pipelines/{pipeline_id}"
+        print(f"Updating app pipeline at {url} ...")
+
+        resp = requests.put(url, headers=headers, json=body)
+        if resp.status_code != 200:
+            print(f"Error: Datadog returned {resp.status_code}", file=sys.stderr)
+            print(resp.text, file=sys.stderr)
+            sys.exit(1)
+
+        print("App pipeline updated successfully.")
+    else:
+        # Create new pipeline
+        url = f"https://api.{site}/api/v1/logs/config/pipelines"
+        print(f"Creating app pipeline at {url} ...")
+
+        resp = requests.post(url, headers=headers, json=body)
+        if resp.status_code not in (200, 201):
+            print(f"Error: Datadog returned {resp.status_code}", file=sys.stderr)
+            print(resp.text, file=sys.stderr)
+            sys.exit(1)
+
+        created = resp.json()
+        print(f"App pipeline created (id={created['id']})")
 
 
 # ---------------------------------------------------------------------------
@@ -461,6 +568,14 @@ def main():
         "push-pipeline", help="Push pipeline.json back to Datadog"
     )
     subparsers.add_parser(
+        "get-app-pipeline",
+        help="Fetch app pipeline from Datadog, save to app-pipeline.json",
+    )
+    subparsers.add_parser(
+        "push-app-pipeline",
+        help="Push app-pipeline.json to Datadog (creates if new)",
+    )
+    subparsers.add_parser(
         "push-dashboard", help="Push dashboard.json back to Datadog"
     )
     subparsers.add_parser(
@@ -476,8 +591,10 @@ def main():
 
     commands = {
         "get": cmd_get,
+        "get-app-pipeline": cmd_get_app_pipeline,
         "get-dashboard": cmd_get_dashboard,
         "push-pipeline": cmd_push_pipeline,
+        "push-app-pipeline": cmd_push_app_pipeline,
         "push-dashboard": cmd_push_dashboard,
         "update-categories": cmd_update_categories,
         "validate-categories": cmd_validate_categories,
