@@ -184,6 +184,10 @@ db-restore: #@ Restore MongoDB database from a backup file. Usage: make db-resto
 		exit 1; \
 	fi
 	@case "$(FILE)" in /*) ;; *) echo "Error: FILE must be an absolute path. Got: $(FILE)"; exit 1;; esac
+	@if [ ! -f "$(FILE)" ] || [ ! -r "$(FILE)" ]; then \
+		echo "Error: FILE must exist and be a readable file. Got: $(FILE)"; \
+		exit 1; \
+	fi
 	echo "Use the command 'docker log --tail 100 -f mongo-restore' to see the progress"
 	docker rm -f mongo-restore 2>/dev/null || true
 	docker run --name mongo-restore -d --network=host -v $(FILE):/backup/backup.gz -u $(shell id -u):$(shell id -g) mongo:8 mongorestore --uri="$(MONGO_URL)" --drop --gzip --archive="/backup/backup.gz" --numInsertionWorkersPerCollection 16
