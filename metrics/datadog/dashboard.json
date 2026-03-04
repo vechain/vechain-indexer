@@ -15,6 +15,11 @@
       ],
       "default": "prod-blue-main*",
       "name": "host"
+    },
+    {
+      "default": "*",
+      "name": "indexer_name",
+      "prefix": "indexer_name"
     }
   ],
   "title": "Vechain Indexer Dashboard",
@@ -655,7 +660,7 @@
                       "aggregator": "last",
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "max:thor_best_block_number_gauge{indexer-id:$host.value}"
+                      "query": "max:thor_best_block_number_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value}"
                     }
                   ],
                   "response_format": "scalar"
@@ -690,7 +695,7 @@
                       "aggregator": "avg",
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "sum:processor_events_counter{indexer-id:$host.value}.as_rate()"
+                      "query": "sum:processor_events_counter{indexer-id:$host.value,indexer_name:$indexer_name.value}.as_rate()"
                     }
                   ],
                   "response_format": "scalar"
@@ -725,7 +730,7 @@
                       "aggregator": "avg",
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:processor_duration.avg{indexer-id:$host.value}"
+                      "query": "avg:processor_duration.avg{indexer-id:$host.value,indexer_name:$indexer_name.value}"
                     }
                   ],
                   "response_format": "scalar"
@@ -763,7 +768,7 @@
                     {
                       "data_source": "metrics",
                       "name": "a",
-                      "query": "max:indexer_current_block_by_status_gauge{indexer-id:$host.value} by {indexer_name}"
+                      "query": "max:indexer_current_block_by_status_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -832,7 +837,7 @@
                       "aggregator": "last",
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "sum:indexer_sync_status_gauge{indexer-id:$host.value} by {status_readable}"
+                      "query": "sum:indexer_sync_status_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value} by {status_readable}"
                     }
                   ],
                   "response_format": "scalar",
@@ -970,25 +975,25 @@
                       "aggregator": "last",
                       "data_source": "metrics",
                       "name": "gap",
-                      "query": "max:indexer_sync_gap_gauge{indexer-id:$host.value} by {indexer_name}"
+                      "query": "max:indexer_sync_gap_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name}"
                     },
                     {
                       "aggregator": "avg",
                       "data_source": "metrics",
                       "name": "avg_time",
-                      "query": "avg:processor_duration.avg{indexer-id:$host.value} by {indexer_name}"
+                      "query": "avg:processor_duration.avg{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name}"
                     },
                     {
                       "aggregator": "avg",
                       "data_source": "metrics",
                       "name": "cycle_time",
-                      "query": "avg:processor_cycle_time.avg{indexer-id:$host.value} by {indexer_name}"
+                      "query": "avg:processor_cycle_time.avg{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name}"
                     },
                     {
                       "aggregator": "sum",
                       "data_source": "metrics",
                       "name": "events",
-                      "query": "sum:processor_events_counter{indexer-id:$host.value} by {indexer_name}"
+                      "query": "sum:processor_events_counter{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name}"
                     }
                   ],
                   "response_format": "scalar",
@@ -1065,7 +1070,7 @@
                       "aggregator": "last",
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "max:indexer_sync_status_code_gauge{indexer-id:$host.value} by {indexer_name,status_readable}"
+                      "query": "max:indexer_sync_status_code_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name,status_readable}"
                     }
                   ],
                   "response_format": "scalar",
@@ -1116,7 +1121,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:indexer_blocks_per_second_gauge{indexer-id:$host.value} by {indexer_name}"
+                      "query": "avg:indexer_blocks_per_second_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -1167,7 +1172,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:processor_duration.avg{indexer-id:$host.value} by {indexer_name}"
+                      "query": "avg:processor_duration.avg{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -1218,7 +1223,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:processor_duration.percentile{indexer-id:$host.value , phi:0.95} by {indexer_name}"
+                      "query": "avg:processor_duration.percentile{indexer-id:$host.value,indexer_name:$indexer_name.value, phi:0.95} by {indexer_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -1269,7 +1274,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "sum:processor_events_counter{indexer-id:$host.value} by {indexer_name}.as_rate()"
+                      "query": "sum:processor_events_counter{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name}.as_rate()"
                     }
                   ],
                   "response_format": "timeseries",
@@ -4881,10 +4886,9 @@
       "id": 7120742133508725,
       "layout": {
         "height": 1,
-        "is_column_break": true,
         "width": 12,
         "x": 0,
-        "y": 0
+        "y": 85
       }
     },
     {
@@ -5168,7 +5172,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 1
+        "y": 86
       }
     },
     {
@@ -5326,7 +5330,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 2
+        "y": 87
       }
     },
     {
@@ -6005,7 +6009,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 3
+        "y": 88
       }
     }
   ]
