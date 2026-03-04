@@ -74,11 +74,13 @@ class VersionedDocumentAccumulator<T : VersionedDocument>(
         val updatedList = updated.values.toList()
         val archivedList = archived.values.toList()
 
-        logger.debug(
-            "Accumulator results: {} updated records, {} archived records",
-            updatedList.size,
-            archivedList.size,
-        )
+        if (logger.isTraceEnabled) {
+            logger.trace(
+                "Accumulator results: {} updated records, {} archived records",
+                updatedList.size,
+                archivedList.size,
+            )
+        }
 
         return updatedList to archivedList
     }
