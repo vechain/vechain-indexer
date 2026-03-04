@@ -174,10 +174,10 @@ db-keyfile-remove: #@ Remove the keyfile for the database.
 	$(DB_REMOVE_KEY)
 db-backup: #@ Backup MongoDB database using Docker (Compressed). Usage: make db-backup [BACKUP_DIR=/absolute/path/to/dir]
 	@case "$(BACKUP_DIR)" in /*) ;; *) echo "Error: BACKUP_DIR must be an absolute path. Got: $(BACKUP_DIR)"; exit 1;; esac
-	mkdir -p $(BACKUP_DIR)
+	mkdir -p "$(BACKUP_DIR)"
 	echo "Use the command 'docker log --tail 100 -f mongo-backup' to see the progress"
 	docker rm -f mongo-backup 2>/dev/null || true
-	docker run --name mongo-backup -d --network=host -v $(BACKUP_DIR):/backup -u $(shell id -u):$(shell id -g) mongo:8 mongodump --uri="$(MONGO_URL)" --gzip --archive="/backup/veworld-db-$$(date +%Y%m%d%H%M%S).gz"
+	docker run --name mongo-backup -d --network=host -v "$(BACKUP_DIR):/backup" -u $(shell id -u):$(shell id -g) mongo:8 mongodump --uri="$(MONGO_URL)" --gzip --archive="/backup/veworld-db-$$(date +%Y%m%d%H%M%S).gz"
 db-restore: #@ Restore MongoDB database from a backup file. Usage: make db-restore FILE=/absolute/path/to/backup.gz
 	@if [ -z "$(FILE)" ]; then \
 		echo "Error: FILE is required. Usage: make db-restore FILE=/absolute/path/to/backup.gz"; \
