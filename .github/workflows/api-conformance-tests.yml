@@ -113,16 +113,16 @@ jobs:
 
       - name: Run schema-driven tests
         run: |
-          mkdir -p .schemathesis
+          mkdir -p schemathesis-output
           scripts/run_api_schema_tests.sh dead \
             --base-url "${{ steps.resolve.outputs.base_url }}" \
-            --store-network-log=./.schemathesis/network.log \
-            --junit-xml=./.schemathesis/results.xml
+            --store-network-log=./schemathesis-output/network.log \
+            --junit-xml=./schemathesis-output/results.xml
 
       - name: Upload schema test artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: schemathesis-logs-${{ matrix.network }}
-          path: ./.schemathesis
+          path: ./schemathesis-output
           if-no-files-found: ignore
