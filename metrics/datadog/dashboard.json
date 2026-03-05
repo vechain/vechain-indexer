@@ -823,51 +823,46 @@
           },
           {
             "definition": {
+              "legend": {
+                "type": "automatic"
+              },
               "requests": [
                 {
-                  "queries": [
+                  "formulas": [
                     {
-                      "compute": {
-                        "aggregation": "count"
-                      },
-                      "data_source": "logs",
-                      "group_by": [
-                        {
-                          "facet": "@indexer_name",
-                          "limit": 50,
-                          "sort": {
-                            "aggregation": "count",
-                            "order": "desc"
-                          }
-                        },
-                        {
-                          "facet": "@status_readable",
-                          "limit": 10,
-                          "sort": {
-                            "aggregation": "count",
-                            "order": "desc"
-                          }
-                        }
-                      ],
-                      "indexes": [
-                        "*"
-                      ],
-                      "name": "query1",
-                      "search": {
-                        "query": "\"INDEXER_STATUS\" host:veworld-$host @indexer_name:$indexer_name.value"
-                      },
-                      "storage": "hot"
+                      "formula": "query1"
                     }
                   ],
-                  "response_format": "scalar"
+                  "queries": [
+                    {
+                      "aggregator": "last",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:indexer_sync_status_gauge{indexer-id:$host.value} by {status_readable}"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "sort": {
+                    "count": 500,
+                    "order_by": [
+                      {
+                        "index": 0,
+                        "order": "desc",
+                        "type": "formula"
+                      }
+                    ]
+                  },
+                  "style": {
+                    "palette": "datadog16"
+                  }
                 }
               ],
-              "title": "Status by Indexer",
+              "title": "Sync Status",
               "title_align": "left",
               "title_size": "16",
-              "type": "query_table"
+              "type": "sunburst"
             },
-            "id": 2000000000000101,
+            "id": 2000000000000012,
             "layout": {
               "height": 4,
               "width": 4,
@@ -881,6 +876,27 @@
               "requests": [
                 {
                   "formulas": [
+                    {
+                      "alias": "Status",
+                      "conditional_formats": [
+                        {
+                          "comparator": ">=",
+                          "palette": "white_on_green",
+                          "value": 6
+                        },
+                        {
+                          "comparator": ">=",
+                          "palette": "white_on_yellow",
+                          "value": 2
+                        },
+                        {
+                          "comparator": "<",
+                          "palette": "white_on_red",
+                          "value": 2
+                        }
+                      ],
+                      "formula": "status"
+                    },
                     {
                       "alias": "Sync Gap",
                       "conditional_formats": [
@@ -981,6 +997,12 @@
                     {
                       "aggregator": "last",
                       "data_source": "metrics",
+                      "name": "status",
+                      "query": "max:indexer_sync_status_code_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name}"
+                    },
+                    {
+                      "aggregator": "last",
+                      "data_source": "metrics",
                       "name": "gap",
                       "query": "max:indexer_sync_gap_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name}"
                     },
@@ -1031,56 +1053,6 @@
           },
           {
             "definition": {
-              "legend": {
-                "type": "automatic"
-              },
-              "requests": [
-                {
-                  "formulas": [
-                    {
-                      "formula": "query1"
-                    }
-                  ],
-                  "queries": [
-                    {
-                      "aggregator": "last",
-                      "data_source": "metrics",
-                      "name": "query1",
-                      "query": "sum:indexer_sync_status_gauge{indexer-id:$host.value} by {status_readable}"
-                    }
-                  ],
-                  "response_format": "scalar",
-                  "sort": {
-                    "count": 500,
-                    "order_by": [
-                      {
-                        "index": 0,
-                        "order": "desc",
-                        "type": "formula"
-                      }
-                    ]
-                  },
-                  "style": {
-                    "palette": "datadog16"
-                  }
-                }
-              ],
-              "time": {},
-              "title": "Sync Status",
-              "title_align": "left",
-              "title_size": "16",
-              "type": "sunburst"
-            },
-            "id": 2000000000000012,
-            "layout": {
-              "height": 3,
-              "width": 4,
-              "x": 0,
-              "y": 10
-            }
-          },
-          {
-            "definition": {
               "legend_columns": [
                 "avg",
                 "min",
@@ -1125,8 +1097,8 @@
             "id": 2000000000000015,
             "layout": {
               "height": 3,
-              "width": 8,
-              "x": 4,
+              "width": 12,
+              "x": 0,
               "y": 10
             }
           },
