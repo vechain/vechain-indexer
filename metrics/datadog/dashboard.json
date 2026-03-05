@@ -806,7 +806,7 @@
                 }
               ],
               "show_legend": true,
-              "title": "Sync Status per Indexer",
+              "title": "Sync Progress",
               "title_align": "left",
               "title_size": "16",
               "type": "timeseries",
@@ -1028,21 +1028,10 @@
             "definition": {
               "requests": [
                 {
-                  "columns": [
-                    {
-                      "field": "@indexer_name",
-                      "width": "auto"
-                    },
-                    {
-                      "field": "@status_readable",
-                      "width": "auto"
-                    }
-                  ],
                   "queries": [
                     {
                       "compute": {
-                        "aggregation": "last",
-                        "metric": "@status_readable"
+                        "aggregation": "count"
                       },
                       "data_source": "logs",
                       "group_by": [
@@ -1050,8 +1039,15 @@
                           "facet": "@indexer_name",
                           "limit": 50,
                           "sort": {
-                            "aggregation": "last",
-                            "metric": "@status_readable",
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        },
+                        {
+                          "facet": "@status_readable",
+                          "limit": 10,
+                          "sort": {
+                            "aggregation": "count",
                             "order": "desc"
                           }
                         }
@@ -1062,7 +1058,8 @@
                       "name": "query1",
                       "search": {
                         "query": "\"INDEXER_STATUS\" host:veworld-$host @indexer_name:$indexer_name.value"
-                      }
+                      },
+                      "storage": "hot"
                     }
                   ],
                   "response_format": "scalar"
