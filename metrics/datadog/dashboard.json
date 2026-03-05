@@ -1061,7 +1061,7 @@
                       ],
                       "name": "query1",
                       "search": {
-                        "query": "\"INDEXER_STATUS\" host:veworld-$host.value"
+                        "query": "\"INDEXER_STATUS\" host:veworld-$host @indexer_name:$indexer_name.value"
                       }
                     }
                   ],
