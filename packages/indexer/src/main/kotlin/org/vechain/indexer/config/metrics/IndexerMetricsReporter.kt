@@ -96,7 +96,7 @@ class IndexerMetricsReporter(
 
         logger.info(
             "INDEXER_STATUS indexer_name={} status={} status_code={}",
-            indexer.name,
+            indexer.name.lowercase(),
             syncStatus.name.toReadableEnumLabel(),
             syncStatus.toStatusCode().toInt(),
         )
