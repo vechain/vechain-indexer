@@ -44,20 +44,6 @@
         "message"
       ],
       "type": "message-remapper"
-    },
-    {
-      "grok": {
-        "match_rules": "indexer_status INDEXER_STATUS indexer_name=%{notSpace:indexer_name} status=%{data:status_readable} status_code=%{integer:status_code}",
-        "support_rules": ""
-      },
-      "is_enabled": true,
-      "name": "Extract indexer status attributes",
-      "samples": [
-        "INDEXER_STATUS indexer_name=my-indexer status=Fully Synced status_code=6",
-        "INDEXER_STATUS indexer_name=token-indexer status=Syncing status_code=2"
-      ],
-      "source": "message",
-      "type": "grok-parser"
     }
   ],
   "tags": [],

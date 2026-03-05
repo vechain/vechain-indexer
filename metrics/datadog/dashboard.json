@@ -752,6 +752,55 @@
           },
           {
             "definition": {
+              "legend": {
+                "type": "automatic"
+              },
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "last",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:indexer_sync_status_gauge{indexer-id:$host.value} by {status_readable}"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "sort": {
+                    "count": 500,
+                    "order_by": [
+                      {
+                        "index": 0,
+                        "order": "desc",
+                        "type": "formula"
+                      }
+                    ]
+                  },
+                  "style": {
+                    "palette": "datadog16"
+                  }
+                }
+              ],
+              "title": "Sync Status",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "sunburst"
+            },
+            "id": 2000000000000012,
+            "layout": {
+              "height": 5,
+              "width": 4,
+              "x": 0,
+              "y": 1
+            }
+          },
+          {
+            "definition": {
               "legend_columns": [
                 "value"
               ],
@@ -816,63 +865,9 @@
             "id": 8455566819524122,
             "layout": {
               "height": 5,
-              "width": 12,
-              "x": 0,
+              "width": 8,
+              "x": 4,
               "y": 1
-            }
-          },
-          {
-            "definition": {
-              "requests": [
-                {
-                  "queries": [
-                    {
-                      "compute": {
-                        "aggregation": "count"
-                      },
-                      "data_source": "logs",
-                      "group_by": [
-                        {
-                          "facet": "@indexer_name",
-                          "limit": 50,
-                          "sort": {
-                            "aggregation": "count",
-                            "order": "desc"
-                          }
-                        },
-                        {
-                          "facet": "@status_readable",
-                          "limit": 10,
-                          "sort": {
-                            "aggregation": "count",
-                            "order": "desc"
-                          }
-                        }
-                      ],
-                      "indexes": [
-                        "*"
-                      ],
-                      "name": "query1",
-                      "search": {
-                        "query": "\"INDEXER_STATUS\" host:veworld-$host @indexer_name:$indexer_name.value"
-                      },
-                      "storage": "hot"
-                    }
-                  ],
-                  "response_format": "scalar"
-                }
-              ],
-              "title": "Status by Indexer",
-              "title_align": "left",
-              "title_size": "16",
-              "type": "query_table"
-            },
-            "id": 2000000000000101,
-            "layout": {
-              "height": 4,
-              "width": 4,
-              "x": 0,
-              "y": 6
             }
           },
           {
@@ -881,6 +876,48 @@
               "requests": [
                 {
                   "formulas": [
+                    {
+                      "alias": "Status",
+                      "conditional_formats": [
+                        {
+                          "comparator": "=",
+                          "custom_bg_color": "#2fbe34",
+                          "palette": "custom_bg",
+                          "value": 6
+                        },
+                        {
+                          "comparator": "=",
+                          "custom_bg_color": "#d33043",
+                          "palette": "custom_bg",
+                          "value": 5
+                        },
+                        {
+                          "comparator": "=",
+                          "custom_bg_color": "#5b41f0",
+                          "palette": "custom_bg",
+                          "value": 3
+                        },
+                        {
+                          "comparator": "=",
+                          "custom_bg_color": "#f5a623",
+                          "palette": "custom_bg",
+                          "value": 2
+                        },
+                        {
+                          "comparator": "=",
+                          "custom_bg_color": "#ffdd57",
+                          "palette": "custom_bg",
+                          "value": 1
+                        },
+                        {
+                          "comparator": "=",
+                          "custom_bg_color": "#d33043",
+                          "palette": "custom_bg",
+                          "value": 0
+                        }
+                      ],
+                      "formula": "status"
+                    },
                     {
                       "alias": "Sync Gap",
                       "conditional_formats": [
@@ -903,7 +940,7 @@
                       "formula": "gap"
                     },
                     {
-                      "alias": "Block Processing (ms)",
+                      "alias": "Block Processing",
                       "conditional_formats": [
                         {
                           "comparator": ">",
@@ -924,7 +961,7 @@
                       "formula": "avg_time"
                     },
                     {
-                      "alias": "Block Cycle Time (ms)",
+                      "alias": "Block Cycle Time",
                       "conditional_formats": [
                         {
                           "comparator": ">",
@@ -981,6 +1018,12 @@
                     {
                       "aggregator": "last",
                       "data_source": "metrics",
+                      "name": "status",
+                      "query": "max:indexer_sync_status_code_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name}"
+                    },
+                    {
+                      "aggregator": "last",
+                      "data_source": "metrics",
                       "name": "gap",
                       "query": "max:indexer_sync_gap_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name}"
                     },
@@ -1024,57 +1067,27 @@
             "id": 2000000000000100,
             "layout": {
               "height": 4,
-              "width": 8,
-              "x": 4,
+              "width": 12,
+              "x": 0,
               "y": 6
             }
           },
           {
             "definition": {
-              "legend": {
-                "type": "automatic"
-              },
-              "requests": [
-                {
-                  "formulas": [
-                    {
-                      "formula": "query1"
-                    }
-                  ],
-                  "queries": [
-                    {
-                      "aggregator": "last",
-                      "data_source": "metrics",
-                      "name": "query1",
-                      "query": "sum:indexer_sync_status_gauge{indexer-id:$host.value} by {status_readable}"
-                    }
-                  ],
-                  "response_format": "scalar",
-                  "sort": {
-                    "count": 500,
-                    "order_by": [
-                      {
-                        "index": 0,
-                        "order": "desc",
-                        "type": "formula"
-                      }
-                    ]
-                  },
-                  "style": {
-                    "palette": "datadog16"
-                  }
-                }
-              ],
-              "time": {},
-              "title": "Sync Status",
-              "title_align": "left",
-              "title_size": "16",
-              "type": "sunburst"
+              "background_color": "transparent",
+              "content": "**Status Legend:** 🟢 6 = Fully Synced · 🟠 2 = Syncing · 🟣 3 = Fast Syncing · 🟡 1 = Initialised · 🔴 0 = Not Initialised · 🔴 5 = Shut Down",
+              "font_size": "14",
+              "has_padding": true,
+              "show_tick": false,
+              "text_align": "left",
+              "tick_edge": "left",
+              "tick_pos": "50%",
+              "type": "note"
             },
-            "id": 2000000000000012,
+            "id": 2000000000000101,
             "layout": {
-              "height": 3,
-              "width": 4,
+              "height": 1,
+              "width": 12,
               "x": 0,
               "y": 10
             }
@@ -1125,9 +1138,9 @@
             "id": 2000000000000015,
             "layout": {
               "height": 3,
-              "width": 8,
-              "x": 4,
-              "y": 10
+              "width": 12,
+              "x": 0,
+              "y": 11
             }
           },
           {
@@ -1178,7 +1191,7 @@
               "height": 4,
               "width": 6,
               "x": 0,
-              "y": 13
+              "y": 14
             }
           },
           {
@@ -1229,7 +1242,7 @@
               "height": 4,
               "width": 6,
               "x": 6,
-              "y": 13
+              "y": 14
             }
           },
           {
@@ -1276,14 +1289,14 @@
               "height": 3,
               "width": 12,
               "x": 0,
-              "y": 17
+              "y": 18
             }
           }
         ]
       },
       "id": 550306260802215,
       "layout": {
-        "height": 21,
+        "height": 22,
         "width": 12,
         "x": 0,
         "y": 1
@@ -1853,7 +1866,7 @@
         "is_column_break": true,
         "width": 12,
         "x": 0,
-        "y": 22
+        "y": 23
       }
     },
     {
@@ -3424,7 +3437,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 23
+        "y": 24
       }
     },
     {
@@ -4650,7 +4663,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 24
+        "y": 25
       }
     },
     {
@@ -4869,7 +4882,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 25
+        "y": 26
       }
     },
     {
@@ -5153,7 +5166,7 @@
         "height": 7,
         "width": 12,
         "x": 0,
-        "y": 26
+        "y": 27
       }
     },
     {
@@ -5311,7 +5324,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 33
+        "y": 34
       }
     },
     {
@@ -5990,7 +6003,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 34
+        "y": 35
       }
     }
   ]
