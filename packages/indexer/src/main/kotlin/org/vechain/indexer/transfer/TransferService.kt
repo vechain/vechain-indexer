@@ -2,15 +2,19 @@ package org.vechain.indexer.transfer
 
 import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.insert
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.utils.EventUtils
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Service
 @Profile("transfers", "transfers-only")
-open class TransferService(private val repository: TransferEventRepository) {
+open class TransferService(
+    private val repository: TransferEventRepository,
+    private val mongoTemplate: MongoTemplate,
+) {
     open fun processEvents(events: List<IndexedEvent>): List<IndexedTransferEvent> {
         val transferEvents = mutableListOf<IndexedTransferEvent>()
         events.forEach { event ->
@@ -25,9 +29,10 @@ open class TransferService(private val repository: TransferEventRepository) {
         return transferEvents
     }
 
-    @Transactional(rollbackFor = [Exception::class])
+    // No @Transactional needed: mongoTemplate.insert() sends a single bulk insert command,
+    // and duplicates are safely skipped via the unique _id index.
     open fun save(records: List<IndexedTransferEvent>) {
-        repository.saveAll(records)
+        mongoTemplate.insert<IndexedTransferEvent>(records)
     }
 
     private fun processBatchTransferEvents(event: IndexedEvent): List<IndexedTransferEvent> {

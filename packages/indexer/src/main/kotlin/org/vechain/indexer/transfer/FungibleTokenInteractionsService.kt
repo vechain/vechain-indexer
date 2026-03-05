@@ -8,7 +8,6 @@ import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.data.mongodb.core.query.Update
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
@@ -57,7 +56,7 @@ open class FungibleTokenInteractionsService(private val mongoTemplate: MongoTemp
             .distinctBy { it.contractAddress to it.walletAddress }
     }
 
-    @Transactional(rollbackFor = [Exception::class])
+    // No @Transactional needed: bulkOps().execute() sends a single bulk command.
     open fun save(records: List<FungibleTokenInteraction>) {
         if (records.isEmpty()) return
 
