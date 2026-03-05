@@ -10,7 +10,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("transfers")
+@Profile("transfers", "transfers-only")
 open class TransferConfig {
     @Bean
     open fun transferIndexer(

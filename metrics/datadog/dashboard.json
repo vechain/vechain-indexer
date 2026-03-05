@@ -881,37 +881,37 @@
                       "conditional_formats": [
                         {
                           "comparator": "=",
-                          "custom_bg_color": "#2fbe34",
+                          "custom_bg_color": "#40c464",
                           "palette": "custom_bg",
                           "value": 6
                         },
                         {
                           "comparator": "=",
-                          "custom_bg_color": "#d33043",
+                          "custom_bg_color": "#eb354b",
                           "palette": "custom_bg",
                           "value": 5
                         },
                         {
                           "comparator": "=",
-                          "custom_bg_color": "#5b41f0",
+                          "custom_bg_color": "#ac2bff",
                           "palette": "custom_bg",
                           "value": 3
                         },
                         {
                           "comparator": "=",
-                          "custom_bg_color": "#f5a623",
+                          "custom_bg_color": "#f99d01",
                           "palette": "custom_bg",
                           "value": 2
                         },
                         {
                           "comparator": "=",
-                          "custom_bg_color": "#ffdd57",
+                          "custom_bg_color": "#ffdc18",
                           "palette": "custom_bg",
                           "value": 1
                         },
                         {
                           "comparator": "=",
-                          "custom_bg_color": "#d33043",
+                          "custom_bg_color": "#eb354b",
                           "palette": "custom_bg",
                           "value": 0
                         }
@@ -1059,6 +1059,7 @@
                   }
                 }
               ],
+              "time": {},
               "title": "Indexer Overview",
               "title_align": "left",
               "title_size": "16",
@@ -1066,7 +1067,7 @@
             },
             "id": 2000000000000100,
             "layout": {
-              "height": 4,
+              "height": 5,
               "width": 12,
               "x": 0,
               "y": 6
@@ -1089,7 +1090,7 @@
               "height": 1,
               "width": 12,
               "x": 0,
-              "y": 10
+              "y": 11
             }
           },
           {
@@ -1140,7 +1141,7 @@
               "height": 3,
               "width": 12,
               "x": 0,
-              "y": 11
+              "y": 12
             }
           },
           {
@@ -1191,7 +1192,7 @@
               "height": 4,
               "width": 6,
               "x": 0,
-              "y": 14
+              "y": 15
             }
           },
           {
@@ -1242,7 +1243,7 @@
               "height": 4,
               "width": 6,
               "x": 6,
-              "y": 14
+              "y": 15
             }
           },
           {
@@ -1289,14 +1290,14 @@
               "height": 3,
               "width": 12,
               "x": 0,
-              "y": 18
+              "y": 19
             }
           }
         ]
       },
       "id": 550306260802215,
       "layout": {
-        "height": 22,
+        "height": 23,
         "width": 12,
         "x": 0,
         "y": 1
@@ -1866,7 +1867,7 @@
         "is_column_break": true,
         "width": 12,
         "x": 0,
-        "y": 23
+        "y": 24
       }
     },
     {
@@ -3437,7 +3438,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 24
+        "y": 25
       }
     },
     {
@@ -4663,7 +4664,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 25
+        "y": 26
       }
     },
     {
@@ -4882,7 +4883,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 26
+        "y": 27
       }
     },
     {
@@ -5166,7 +5167,7 @@
         "height": 7,
         "width": 12,
         "x": 0,
-        "y": 27
+        "y": 28
       }
     },
     {
@@ -5324,7 +5325,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 34
+        "y": 35
       }
     },
     {
@@ -6003,7 +6004,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 35
+        "y": 36
       }
     }
   ]

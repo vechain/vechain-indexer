@@ -13,7 +13,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("transfers")
+@Profile("transfers", "transfers-only")
 @Configuration
 open class TransferCollectionConfig(
     mongoTemplate: MongoTemplate,

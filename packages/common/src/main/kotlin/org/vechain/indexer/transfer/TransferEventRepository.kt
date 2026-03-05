@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.repository.Query
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.BaseIndexedRepository
 
-@Profile("transfers")
+@Profile("transfers", "transfers-only")
 @Repository
 interface TransferEventRepository : BaseIndexedRepository<IndexedTransferEvent, String> {
     @Query("{'\$and': [ {'tokenAddress': ?1}, {'\$or': [{'to': ?0}, {'from': ?0}]} ] }")
