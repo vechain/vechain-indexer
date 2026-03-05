@@ -667,7 +667,6 @@
                   "response_format": "scalar"
                 }
               ],
-              "time": {},
               "title": "Best Block Number",
               "title_align": "left",
               "title_size": "16",
@@ -824,45 +823,51 @@
           },
           {
             "definition": {
-              "legend": {
-                "type": "automatic"
-              },
               "requests": [
                 {
-                  "formulas": [
-                    {
-                      "formula": "query1"
-                    }
-                  ],
                   "queries": [
                     {
-                      "aggregator": "last",
-                      "data_source": "metrics",
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [
+                        {
+                          "facet": "@indexer_name",
+                          "limit": 50,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        },
+                        {
+                          "facet": "@status_readable",
+                          "limit": 10,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
                       "name": "query1",
-                      "query": "sum:indexer_sync_status_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value} by {status_readable}"
+                      "search": {
+                        "query": "\"INDEXER_STATUS\" host:veworld-$host @indexer_name:$indexer_name.value"
+                      },
+                      "storage": "hot"
                     }
                   ],
-                  "response_format": "scalar",
-                  "sort": {
-                    "order_by": [
-                      {
-                        "index": 0,
-                        "order": "desc",
-                        "type": "formula"
-                      }
-                    ]
-                  },
-                  "style": {
-                    "palette": "datadog16"
-                  }
+                  "response_format": "scalar"
                 }
               ],
-              "title": "Sync Status",
+              "title": "Status by Indexer",
               "title_align": "left",
               "title_size": "16",
-              "type": "sunburst"
+              "type": "query_table"
             },
-            "id": 2000000000000012,
+            "id": 2000000000000101,
             "layout": {
               "height": 4,
               "width": 4,
@@ -1026,51 +1031,47 @@
           },
           {
             "definition": {
+              "legend": {
+                "type": "automatic"
+              },
               "requests": [
                 {
-                  "queries": [
+                  "formulas": [
                     {
-                      "compute": {
-                        "aggregation": "count"
-                      },
-                      "data_source": "logs",
-                      "group_by": [
-                        {
-                          "facet": "@indexer_name",
-                          "limit": 50,
-                          "sort": {
-                            "aggregation": "count",
-                            "order": "desc"
-                          }
-                        },
-                        {
-                          "facet": "@status_readable",
-                          "limit": 10,
-                          "sort": {
-                            "aggregation": "count",
-                            "order": "desc"
-                          }
-                        }
-                      ],
-                      "indexes": [
-                        "*"
-                      ],
-                      "name": "query1",
-                      "search": {
-                        "query": "\"INDEXER_STATUS\" host:veworld-$host @indexer_name:$indexer_name.value"
-                      },
-                      "storage": "hot"
+                      "formula": "query1"
                     }
                   ],
-                  "response_format": "scalar"
+                  "queries": [
+                    {
+                      "aggregator": "last",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:indexer_sync_status_gauge{indexer-id:$host.value} by {status_readable}"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "sort": {
+                    "count": 500,
+                    "order_by": [
+                      {
+                        "index": 0,
+                        "order": "desc",
+                        "type": "formula"
+                      }
+                    ]
+                  },
+                  "style": {
+                    "palette": "datadog16"
+                  }
                 }
               ],
-              "title": "Status by Indexer",
+              "time": {},
+              "title": "Sync Status",
               "title_align": "left",
               "title_size": "16",
-              "type": "query_table"
+              "type": "sunburst"
             },
-            "id": 2000000000000101,
+            "id": 2000000000000012,
             "layout": {
               "height": 3,
               "width": 4,
