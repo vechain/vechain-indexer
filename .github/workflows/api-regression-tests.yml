@@ -48,18 +48,18 @@ jobs:
           CANDIDATE_URL: ${{ inputs.candidate_url || 'https://mainnet.dead.prod.veworld.vechain.org' }}
           BASELINE_URL: ${{ inputs.baseline_url || 'https://indexer.mainnet.vechain.org' }}
         run: |
-          mkdir -p .regression
+          mkdir -p regression-output
           scripts/run_regression_tests.sh \
-            --output .regression/report.json
+            --output regression-output/report.json
 
       - name: Generate summary
         if: always()
         shell: bash
         run: |
-          if [[ -f .regression/report.json ]]; then
-            total=$(python3 -c "import json; r=json.load(open('.regression/report.json')); print(r['summary']['total'])")
-            passed=$(python3 -c "import json; r=json.load(open('.regression/report.json')); print(r['summary']['passed'])")
-            failed=$(python3 -c "import json; r=json.load(open('.regression/report.json')); print(r['summary']['failed'])")
+          if [[ -f regression-output/report.json ]]; then
+            total=$(python3 -c "import json; r=json.load(open('regression-output/report.json')); print(r['summary']['total'])")
+            passed=$(python3 -c "import json; r=json.load(open('regression-output/report.json')); print(r['summary']['passed'])")
+            failed=$(python3 -c "import json; r=json.load(open('regression-output/report.json')); print(r['summary']['failed'])")
             {
               echo "### Regression Comparison (candidate vs baseline)"
               echo "- Candidate: ${{ inputs.candidate_url || 'https://mainnet.dead.prod.veworld.vechain.org' }}"
@@ -75,5 +75,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: regression-report
-          path: ./.regression
+          path: ./regression-output
           if-no-files-found: ignore
