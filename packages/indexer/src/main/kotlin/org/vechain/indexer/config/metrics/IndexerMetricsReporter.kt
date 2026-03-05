@@ -91,13 +91,21 @@ class IndexerMetricsReporter(
                 HealthStatus.UNKNOWN -> -1.0
             },
         )
-        metrics.setIndexerSyncStatus(indexer.name, indexer.getStatus())
+        val syncStatus = indexer.getStatus()
+        metrics.setIndexerSyncStatus(indexer.name, syncStatus)
+
+        logger.info(
+            "INDEXER_STATUS indexer_name={} status={} status_code={}",
+            indexer.name,
+            syncStatus.name.toReadableEnumLabel(),
+            syncStatus.toStatusCode().toInt(),
+        )
     }
 
     private fun reportBlockIndexerMetrics(indexer: BlockIndexer, bestBlockNumber: Long?) {
         val currentBlockNumber = indexer.getCurrentBlockNumber()
         val status = indexer.getStatus()
-        metrics.setIndexerCurrentBlockByStatus(indexer.name, currentBlockNumber, status)
+        metrics.setIndexerCurrentBlock(indexer.name, currentBlockNumber)
 
         if (bestBlockNumber != null) {
             metrics.setIndexerSyncGap(indexer.name, maxOf(0L, bestBlockNumber - currentBlockNumber))

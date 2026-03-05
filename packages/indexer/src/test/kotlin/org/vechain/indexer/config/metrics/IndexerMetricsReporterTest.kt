@@ -227,4 +227,16 @@ class IndexerMetricsReporterTest {
         verify { metrics.setBlocksPerSecond("indexer-a", match { it > 0.0 }) }
         verify { metrics.setBlocksPerSecond("indexer-b", match { it > 0.0 }) }
     }
+
+    @Test
+    fun `reportMetrics calls setIndexerCurrentBlock per block indexer`() {
+        val indexer = createBlockIndexer("test-indexer", 500L)
+        stubBestBlock(1000L)
+
+        val reporter =
+            IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
+        reporter.reportMetrics()
+
+        verify { metrics.setIndexerCurrentBlock("test-indexer", 500L) }
+    }
 }

@@ -770,7 +770,7 @@
                     {
                       "data_source": "metrics",
                       "name": "a",
-                      "query": "max:indexer_current_block_by_status_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name}"
+                      "query": "max:indexer_current_block_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -1028,63 +1028,44 @@
             "definition": {
               "requests": [
                 {
-                  "formulas": [
+                  "columns": [
                     {
-                      "alias": "Status Code",
-                      "conditional_formats": [
-                        {
-                          "comparator": "=",
-                          "palette": "white_on_green",
-                          "value": 6
-                        },
-                        {
-                          "comparator": "=",
-                          "palette": "white_on_red",
-                          "value": 5
-                        },
-                        {
-                          "comparator": "=",
-                          "palette": "black_on_light_green",
-                          "value": 3
-                        },
-                        {
-                          "comparator": "=",
-                          "palette": "white_on_yellow",
-                          "value": 2
-                        },
-                        {
-                          "comparator": "=",
-                          "palette": "black_on_light_yellow",
-                          "value": 1
-                        },
-                        {
-                          "comparator": ">=",
-                          "palette": "black_on_light_red",
-                          "value": 0
-                        }
-                      ],
-                      "formula": "query1"
+                      "field": "@indexer_name",
+                      "width": "auto"
+                    },
+                    {
+                      "field": "@status_readable",
+                      "width": "auto"
                     }
                   ],
                   "queries": [
                     {
-                      "aggregator": "last",
-                      "data_source": "metrics",
+                      "compute": {
+                        "aggregation": "last",
+                        "metric": "@status_readable"
+                      },
+                      "data_source": "logs",
+                      "group_by": [
+                        {
+                          "facet": "@indexer_name",
+                          "limit": 50,
+                          "sort": {
+                            "aggregation": "last",
+                            "metric": "@status_readable",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
                       "name": "query1",
-                      "query": "max:indexer_sync_status_code_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name,status_readable}"
+                      "search": {
+                        "query": "\"INDEXER_STATUS\" host:veworld-$host.value"
+                      }
                     }
                   ],
-                  "response_format": "scalar",
-                  "sort": {
-                    "count": 50,
-                    "order_by": [
-                      {
-                        "index": 0,
-                        "order": "desc",
-                        "type": "formula"
-                      }
-                    ]
-                  }
+                  "response_format": "scalar"
                 }
               ],
               "title": "Status by Indexer",
