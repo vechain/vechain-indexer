@@ -1,0 +1,128 @@
+name: API Conformance Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        default: dead
+        required: false
+        type: choice
+        options:
+          - dead
+          - live
+      network:
+        description: "Target network"
+        default: mainnet
+        required: false
+        type: choice
+        options:
+          - mainnet
+          - testnet
+          - both
+      custom_url:
+        description: "Override base URL (takes precedence over environment+network)"
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      environment:
+        description: "Target environment (dead/live)"
+        required: false
+        type: string
+        default: dead
+      network:
+        description: "Target network (mainnet/testnet/both)"
+        required: false
+        type: string
+        default: mainnet
+      custom_url:
+        description: "Override base URL (takes precedence over environment+network)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  schemathesis:
+    name: Schema conformance - ${{ matrix.network }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        network: ${{ inputs.network == 'both' && fromJSON('["mainnet","testnet"]') || fromJSON(format('["{0}"]', inputs.network || 'mainnet')) }}
+    env:
+      MAX_RESPONSE_MILLISECONDS: "5000"
+      HYPOTHESIS_MAX_EXAMPLES: "250"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve base URL
+        id: resolve
+        shell: bash
+        run: |
+          custom_url="${{ inputs.custom_url }}"
+          environment="${{ inputs.environment || 'dead' }}"
+          network="${{ matrix.network }}"
+
+          if [[ -n "$custom_url" ]]; then
+            base_url="${custom_url%/}"
+            summary_env="custom"
+          else
+            case "${environment}-${network}" in
+              dead-mainnet)
+                base_url="https://mainnet.dead.prod.veworld.vechain.org"
+                ;;
+              dead-testnet)
+                base_url="https://testnet.dead.prod.veworld.vechain.org"
+                ;;
+              live-mainnet)
+                base_url="https://indexer.mainnet.vechain.org"
+                ;;
+              live-testnet)
+                base_url="https://indexer.testnet.vechain.org"
+                ;;
+              *)
+                echo "Unsupported combination: environment=$environment network=$network" >&2
+                exit 1
+                ;;
+            esac
+            summary_env="${environment}-${network}"
+          fi
+
+          echo "base_url=$base_url" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Schema Conformance Tests"
+            echo "- Target: $summary_env"
+            echo "- Base URL: $base_url"
+            echo "- Schema: $base_url/api-docs"
+            echo "- Max response (ms): $MAX_RESPONSE_MILLISECONDS"
+            echo "- Hypothesis examples: $HYPOTHESIS_MAX_EXAMPLES"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Schemathesis
+        run: pip install 'schemathesis>=3.19,<4'
+
+      - name: Run schema-driven tests
+        run: |
+          mkdir -p .schemathesis
+          scripts/run_api_schema_tests.sh dead \
+            --base-url "${{ steps.resolve.outputs.base_url }}" \
+            --store-network-log=./.schemathesis/network.log \
+            --junit-xml=./.schemathesis/results.xml
+
+      - name: Upload schema test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: schemathesis-logs-${{ matrix.network }}
+          path: ./.schemathesis
+          if-no-files-found: ignore
