@@ -9,7 +9,7 @@ import org.vechain.indexer.utils.EventUtils
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Service
-@Profile("transfers")
+@Profile("transfers", "transfers-only")
 open class TransferService(private val repository: TransferEventRepository) {
     open fun processEvents(events: List<IndexedEvent>): List<IndexedTransferEvent> {
         val transferEvents = mutableListOf<IndexedTransferEvent>()

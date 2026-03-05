@@ -10,7 +10,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("transfers")
+@Profile("transfers", "fungible-token-interactions")
 open class FungibleTokenInteractionsConfig {
     @Bean
     open fun fungibleTokenInteractionsIndexer(

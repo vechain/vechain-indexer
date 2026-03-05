@@ -14,7 +14,7 @@ import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
 
 @Service
-@Profile("transfers")
+@Profile("transfers", "fungible-token-interactions")
 open class FungibleTokenInteractionsService(private val mongoTemplate: MongoTemplate) {
     open fun processEvents(events: List<IndexedEvent>): List<FungibleTokenInteraction> {
         return events
