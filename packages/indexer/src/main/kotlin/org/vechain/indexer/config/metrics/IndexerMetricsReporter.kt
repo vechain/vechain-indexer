@@ -93,13 +93,6 @@ class IndexerMetricsReporter(
         )
         val syncStatus = indexer.getStatus()
         metrics.setIndexerSyncStatus(indexer.name, syncStatus)
-
-        logger.info(
-            "INDEXER_STATUS indexer_name={} status={} status_code={}",
-            indexer.name.lowercase(),
-            syncStatus.name.toReadableEnumLabel(),
-            syncStatus.toStatusCode().toInt(),
-        )
     }
 
     private fun reportBlockIndexerMetrics(indexer: BlockIndexer, bestBlockNumber: Long?) {
