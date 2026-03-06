@@ -77,7 +77,7 @@ open class AccountOverviewService(
         val accumulator =
             VersionedDocumentAccumulator<AccountOverview>(
                 findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) },
-                initialVersion = 0,
+                initialVersion = 1,
             )
         accumulator.startBlock()
         val resolved = mutableMapOf<String, AccountOverview>()
@@ -550,7 +550,7 @@ open class AccountOverviewService(
             blockId = block.id,
             blockNumber = block.number,
             blockTimestamp = block.timestamp,
-            version = 0,
+            version = 1,
             firstSeen = block.timestamp,
             lastSeen = block.timestamp,
             transactionsSent = 0L,

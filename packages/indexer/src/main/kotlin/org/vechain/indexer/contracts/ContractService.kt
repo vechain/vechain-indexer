@@ -53,7 +53,7 @@ open class ContractService(
         val accumulator =
             VersionedDocumentAccumulator<Contract>(
                 findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) },
-                initialVersion = 0,
+                initialVersion = 1,
             )
         groupByBlock(events).forEach { (blockDetails, blockEvents) ->
             accumulator.startBlock()

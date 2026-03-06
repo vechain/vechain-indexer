@@ -50,12 +50,49 @@ class BaseStatefulProcessorTest {
     @Test
     fun `rollback - saves checkpoint and rolls back inline versions`() {
         every { checkpointService.saveCheckpoint(TEST_COLLECTION, 9) } just Runs
-        every { InlineVersionService.rollback(TEST_COLLECTION, 10, mongoTemplate) } just Runs
+        every { InlineVersionService.rollback(TEST_COLLECTION, 10, mongoTemplate, 1) } just Runs
 
         processor.rollback(10)
 
         verify(exactly = 1) { checkpointService.saveCheckpoint(TEST_COLLECTION, 9) }
-        verify(exactly = 1) { InlineVersionService.rollback(TEST_COLLECTION, 10, mongoTemplate) }
+        verify(exactly = 1) { InlineVersionService.rollback(TEST_COLLECTION, 10, mongoTemplate, 1) }
+    }
+
+    @Test
+    fun `rollback - uses standard initial version for all collections`() {
+        val processor =
+            TestableBaseStatefulProcessor(
+                repository,
+                mongoTemplate,
+                checkpointService,
+                mockk(relaxed = true),
+                IndexerNames.ACCOUNT_OVERVIEW.COLLECTION,
+            )
+
+        every { checkpointService.saveCheckpoint(IndexerNames.ACCOUNT_OVERVIEW.COLLECTION, 9) } just
+            Runs
+        every {
+            InlineVersionService.rollback(
+                IndexerNames.ACCOUNT_OVERVIEW.COLLECTION,
+                10,
+                mongoTemplate,
+                1,
+            )
+        } just Runs
+
+        processor.rollback(10)
+
+        verify(exactly = 1) {
+            checkpointService.saveCheckpoint(IndexerNames.ACCOUNT_OVERVIEW.COLLECTION, 9)
+        }
+        verify(exactly = 1) {
+            InlineVersionService.rollback(
+                IndexerNames.ACCOUNT_OVERVIEW.COLLECTION,
+                10,
+                mongoTemplate,
+                1,
+            )
+        }
     }
 
     data class TestDocument(
@@ -74,13 +111,14 @@ class BaseStatefulProcessorTest {
         mongoTemplate: MongoTemplate,
         checkpointService: CheckpointService,
         processorMetrics: ProcessorMetrics,
+        collectionName: String = TEST_COLLECTION,
     ) :
         BaseStatefulProcessor(
             repository,
             mongoTemplate,
             TEST_INDEXER_NAME,
             checkpointService,
-            TEST_COLLECTION,
+            collectionName,
             processorMetrics,
         ) {
 

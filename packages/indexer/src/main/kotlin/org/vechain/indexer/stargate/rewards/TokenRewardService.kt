@@ -324,7 +324,7 @@ open class TokenRewardService(
                     monthReward = null,
                     yearReward = null,
                     cycleReward = null,
-                    version = 0,
+                    version = 1,
                 )
             }
 
@@ -533,7 +533,7 @@ open class TokenRewardService(
             weekOfYear = mainTracker.weekOfYear,
             month = mainTracker.month,
             year = mainTracker.year,
-            version = 0,
+            version = 1,
         )
 
     /**
