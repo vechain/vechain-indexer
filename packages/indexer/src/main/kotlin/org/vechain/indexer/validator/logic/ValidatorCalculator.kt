@@ -16,7 +16,7 @@ import org.vechain.indexer.validator.models.DecodedValidatorRow
 object ValidatorCalculator {
     private val BLOCKS_PER_YEAR = BigDecimal("3155760") // 360 * 24 * 365.25
     val MAX_UINT32 = BigInteger.valueOf(4294967295L)
-    val MAX_VALIDATOR_STAKE = BigDecimal("600000000")
+    private val MAX_VALIDATOR_STAKE = BigDecimal("600000000")
 
     // ------------------------------
     // Core calculations
