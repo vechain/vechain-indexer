@@ -16,6 +16,7 @@ import org.vechain.indexer.validator.models.DecodedValidatorRow
 object ValidatorCalculator {
     private val BLOCKS_PER_YEAR = BigDecimal("3155760") // 360 * 24 * 365.25
     val MAX_UINT32 = BigInteger.valueOf(4294967295L)
+    val MAX_VALIDATOR_STAKE = BigDecimal("600000000")
 
     // ------------------------------
     // Core calculations
@@ -331,6 +332,7 @@ object ValidatorCalculator {
         vthoPriceUsd: BigDecimal,
         vetPriceUsd: BigDecimal,
         status: Status,
+        nextCycleStake: BigDecimal,
     ): Map<TokenLevel, Decimal128> {
         if (status == Status.EXITING) {
             return emptyMap()
@@ -339,6 +341,10 @@ object ValidatorCalculator {
             .filter { it != TokenLevel.All }
             .mapNotNull { level ->
                 val requiredUSD = level.staked * vetPriceUsd
+
+                if (nextCycleStake + level.staked > MAX_VALIDATOR_STAKE) {
+                    return@mapNotNull null
+                }
 
                 val totalVET = nextPeriodVET + level.staked
                 val vthoIssued = determineVTHOIssuedPerBlock(totalVET)
