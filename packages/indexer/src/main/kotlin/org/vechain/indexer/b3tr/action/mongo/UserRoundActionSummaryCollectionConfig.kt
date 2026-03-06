@@ -42,8 +42,6 @@ open class UserRoundActionSummaryCollectionConfig(
         ensureIndexes(
             listOf(
                 "entity_-1" to Index().on(UserRoundActionSummary::entity.name, Sort.Direction.DESC),
-                "blockNumber_-1" to
-                    Index().on(UserRoundActionSummary::blockNumber.name, Sort.Direction.DESC),
                 "entityType_1_roundId_1" to
                     Index()
                         .on(UserRoundActionSummary::entityType.name, Sort.Direction.ASC)
@@ -72,6 +70,7 @@ open class UserRoundActionSummaryCollectionConfig(
                         .on(UserRoundActionSummary::roundId.name, Sort.Direction.ASC)
                         .on(UserRoundActionSummary::totalRewardAmount.name, Sort.Direction.ASC)
                         .on(UserRoundActionSummary::entity.name, Sort.Direction.ASC),
+                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
             )
         )
     }

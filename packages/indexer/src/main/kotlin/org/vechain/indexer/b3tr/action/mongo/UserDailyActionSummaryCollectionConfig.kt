@@ -43,8 +43,6 @@ open class UserDailyActionSummaryCollectionConfig(
             listOf(
                 "entity_-1" to Index().on(UserDailyActionSummary::entity.name, Sort.Direction.DESC),
                 "date_-1" to Index().on(UserDailyActionSummary::date.name, Sort.Direction.DESC),
-                "blockNumber_-1" to
-                    Index().on(UserDailyActionSummary::blockNumber.name, Sort.Direction.DESC),
                 "entityType_1_actionsRewarded_-1_entity_1" to
                     Index()
                         .on(UserDailyActionSummary::entityType.name, Sort.Direction.ASC)
@@ -89,6 +87,7 @@ open class UserDailyActionSummaryCollectionConfig(
                         .on(UserDailyActionSummary::date.name, Sort.Direction.ASC)
                         .on(UserDailyActionSummary::totalRewardAmount.name, Sort.Direction.ASC)
                         .on(UserDailyActionSummary::entity.name, Sort.Direction.ASC),
+                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
             )
         )
     }

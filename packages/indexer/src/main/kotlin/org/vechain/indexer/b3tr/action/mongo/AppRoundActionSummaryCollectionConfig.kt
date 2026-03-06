@@ -41,12 +41,6 @@ open class AppRoundActionSummaryCollectionConfig(
 
         ensureIndexes(
             listOf(
-                "blockNumber_-1" to
-                    Index().on(AppRoundActionSummary::blockNumber.name, Sort.Direction.DESC),
-                "appId_-1_user_-1" to
-                    Index()
-                        .on(AppRoundActionSummary::appId.name, Sort.Direction.DESC)
-                        .on(AppRoundActionSummary::user.name, Sort.Direction.DESC),
                 "appId_1_roundId_1_totalRewardAmount_-1_user_1" to
                     Index()
                         .on(AppRoundActionSummary::appId.name, Sort.Direction.ASC)
@@ -75,6 +69,7 @@ open class AppRoundActionSummaryCollectionConfig(
                     Index()
                         .on(AppRoundActionSummary::roundId.name, Sort.Direction.ASC)
                         .on(AppRoundActionSummary::user.name, Sort.Direction.ASC),
+                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
             )
         )
     }

@@ -6,9 +6,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
-import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
@@ -37,22 +35,6 @@ open class HistoricProposalsVoteCollectionConfig(
         this.ensureCollection()
 
         logger.info("Initializing indexes for ${modelObj.simpleName}")
-        ensureIndexes(
-            listOf(
-                "proposalId_-1" to
-                    Index().on(HistoricProposalsVote::proposalId.name, Sort.Direction.DESC),
-                "blockNumber_1" to
-                    Index().on(HistoricProposalsVote::blockNumber.name, Sort.Direction.ASC),
-                "proposalId_contract" to
-                    Index()
-                        .on(HistoricProposalsVote::proposalId.name, Sort.Direction.ASC)
-                        .on(HistoricProposalsVote::contract.name, Sort.Direction.ASC),
-                "proposalId_contract_blockNumber" to
-                    Index()
-                        .on(HistoricProposalsVote::proposalId.name, Sort.Direction.ASC)
-                        .on(HistoricProposalsVote::contract.name, Sort.Direction.ASC)
-                        .on(HistoricProposalsVote::blockNumber.name, Sort.Direction.DESC),
-            )
-        )
+        ensureIndexes(emptyList())
     }
 }

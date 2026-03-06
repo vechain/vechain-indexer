@@ -42,61 +42,6 @@ open class TransferCollectionConfig(
             listOf(
                 "transfer_blockNumber_-1" to
                     Index().on(IndexedTransferEvent::blockNumber.name, Sort.Direction.DESC),
-                "transfer_to_1_blockNumber_-1_txId_-1__id_-1" to
-                    Index()
-                        .on(IndexedTransferEvent::to.name, Sort.Direction.ASC)
-                        .on(IndexedTransferEvent::blockNumber.name, Sort.Direction.DESC)
-                        .on(IndexedTransferEvent::txId.name, Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.DESC),
-                "transfer_to_1_eventType_1_blockNumber_-1_txId_-1__id_-1" to
-                    Index()
-                        .on(IndexedTransferEvent::to.name, Sort.Direction.ASC)
-                        .on(IndexedTransferEvent::eventType.name, Sort.Direction.ASC)
-                        .on(IndexedTransferEvent::blockNumber.name, Sort.Direction.DESC)
-                        .on(IndexedTransferEvent::txId.name, Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.DESC),
-                "transfer_from_1_blockNumber_-1_txId_-1__id_-1" to
-                    Index()
-                        .on(IndexedTransferEvent::from.name, Sort.Direction.ASC)
-                        .on(IndexedTransferEvent::blockNumber.name, Sort.Direction.DESC)
-                        .on(IndexedTransferEvent::txId.name, Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.DESC),
-                "transfer_from_1_eventType_1_blockNumber_-1_txId_-1__id_-1" to
-                    Index()
-                        .on(IndexedTransferEvent::from.name, Sort.Direction.ASC)
-                        .on(IndexedTransferEvent::eventType.name, Sort.Direction.ASC)
-                        .on(IndexedTransferEvent::blockNumber.name, Sort.Direction.DESC)
-                        .on(IndexedTransferEvent::txId.name, Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.DESC),
-                "transfer_tokenAddress_1_blockNumber_-1_txId_-1__id_-1" to
-                    Index()
-                        .on(IndexedTransferEvent::tokenAddress.name, Sort.Direction.ASC)
-                        .on(IndexedTransferEvent::blockNumber.name, Sort.Direction.DESC)
-                        .on(IndexedTransferEvent::txId.name, Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.DESC),
-                "transfer_tokenAddress_1_eventType_1_to_1_1_blockNumber_-1_txId_-1__id_-1" to
-                    Index()
-                        .on(IndexedTransferEvent::tokenAddress.name, Sort.Direction.ASC)
-                        .on(IndexedTransferEvent::eventType.name, Sort.Direction.ASC)
-                        .on(IndexedTransferEvent::to.name, Sort.Direction.ASC)
-                        .on(IndexedTransferEvent::blockNumber.name, Sort.Direction.DESC)
-                        .on(IndexedTransferEvent::txId.name, Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.DESC),
-                "transfer_tokenAddress_1_eventType_1_from_1_1_blockNumber_-1_txId_-1__id_-1" to
-                    Index()
-                        .on(IndexedTransferEvent::tokenAddress.name, Sort.Direction.ASC)
-                        .on(IndexedTransferEvent::eventType.name, Sort.Direction.ASC)
-                        .on(IndexedTransferEvent::from.name, Sort.Direction.ASC)
-                        .on(IndexedTransferEvent::blockNumber.name, Sort.Direction.DESC)
-                        .on(IndexedTransferEvent::txId.name, Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.DESC),
-                "transfer_to_1_tokenAddress_1_blockNumber_-1_txId_-1__id_-1" to
-                    Index()
-                        .on(IndexedTransferEvent::to.name, Sort.Direction.ASC)
-                        .on(IndexedTransferEvent::tokenAddress.name, Sort.Direction.ASC)
-                        .on(IndexedTransferEvent::blockNumber.name, Sort.Direction.DESC)
-                        .on(IndexedTransferEvent::txId.name, Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.DESC),
                 "transfer_to_1_blockTimestamp_-1_txId_-1__id_-1" to
                     Index()
                         .on(IndexedTransferEvent::to.name, Sort.Direction.ASC)
