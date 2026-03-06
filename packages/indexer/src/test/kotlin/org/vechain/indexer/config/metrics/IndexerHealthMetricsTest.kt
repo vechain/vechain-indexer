@@ -179,55 +179,44 @@ class IndexerHealthMetricsTest {
     // --- indexer_sync_status_gauge tests ---
 
     @Test
-    fun `setIndexerSyncStatus creates sync status gauge only for active status`() {
+    fun `setIndexerSyncStatus creates sync status gauges for all statuses`() {
         metrics.setIndexerSyncStatus("test-indexer", Status.SYNCING)
 
-        val activeGauge =
-            registry
-                .find("indexer_sync_status_gauge")
-                .tag("indexer_name", "test-indexer")
-                .tag("status", Status.SYNCING.name)
-                .gauge()
+        Status.entries.forEach { status ->
+            val gauge =
+                registry
+                    .find("indexer_sync_status_gauge")
+                    .tag("indexer_name", "test-indexer")
+                    .tag("status", status.name)
+                    .gauge()
 
-        assertThat(activeGauge)
-            .describedAs("sync status gauge for active status should exist")
-            .isNotNull
-        assertThat(activeGauge!!.id.getTag("status_readable")).isNotNull
-
-        Status.entries
-            .filter { it != Status.SYNCING }
-            .forEach { status ->
-                val gauge =
-                    registry
-                        .find("indexer_sync_status_gauge")
-                        .tag("indexer_name", "test-indexer")
-                        .tag("status", status.name)
-                        .gauge()
-
-                assertThat(gauge)
-                    .describedAs(
-                        "sync status gauge for inactive status ${status.name} should not exist"
-                    )
-                    .isNull()
-            }
+            assertThat(gauge)
+                .describedAs("sync status gauge for ${status.name} should exist")
+                .isNotNull
+        }
     }
 
     @Test
-    fun `setIndexerSyncStatus active status is 1`() {
+    fun `setIndexerSyncStatus active status is 1 and inactive statuses are 0`() {
         metrics.setIndexerSyncStatus("test-indexer", Status.FAST_SYNCING)
 
-        val activeGauge =
-            registry
-                .find("indexer_sync_status_gauge")
-                .tag("indexer_name", "test-indexer")
-                .tag("status", Status.FAST_SYNCING.name)
-                .gauge()
+        Status.entries.forEach { status ->
+            val gauge =
+                registry
+                    .find("indexer_sync_status_gauge")
+                    .tag("indexer_name", "test-indexer")
+                    .tag("status", status.name)
+                    .gauge()
 
-        assertThat(activeGauge!!.value()).isEqualTo(1.0)
+            val expectedValue = if (status == Status.FAST_SYNCING) 1.0 else 0.0
+            assertThat(gauge!!.value())
+                .describedAs("sync status gauge for ${status.name}")
+                .isEqualTo(expectedValue)
+        }
     }
 
     @Test
-    fun `setIndexerSyncStatus switching status sets previous sync status gauge to NaN`() {
+    fun `setIndexerSyncStatus switching status flips previous gauge to 0 and new gauge to 1`() {
         metrics.setIndexerSyncStatus("test-indexer", Status.SYNCING)
         metrics.setIndexerSyncStatus("test-indexer", Status.FULLY_SYNCED)
 
@@ -245,7 +234,7 @@ class IndexerHealthMetricsTest {
                 .tag("status", Status.FULLY_SYNCED.name)
                 .gauge()
 
-        assertThat(syncingGauge!!.value()).isNaN()
+        assertThat(syncingGauge!!.value()).isEqualTo(0.0)
         assertThat(fullySyncedGauge!!.value()).isEqualTo(1.0)
     }
 

@@ -15,7 +15,6 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
     private val syncStatusGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
     private val syncStatusCodeGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
     private val currentBlockGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
-    private val lastSyncStatusByIndexer = ConcurrentHashMap<String, Status>()
     private val bestBlockGauge = AtomicReference(0.0)
     private var bestBlockGaugeInitialized = false
     private val syncGapGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
@@ -43,13 +42,10 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
         // Code gauge: keyed by indexer_name only (no status_readable tag)
         getOrCreateSyncStatusCodeGauge(indexerName).set(syncStatus.toStatusCode())
 
-        // Sync status gauge: keeps status tags + NaN logic for sunburst widget
-        lastSyncStatusByIndexer.compute(indexerName) { _, prev ->
-            if (prev != null && prev != syncStatus) {
-                getOrCreateSyncStatusGauge(indexerName, prev).set(Double.NaN)
-            }
-            getOrCreateSyncStatusGauge(indexerName, syncStatus).set(1.0)
-            syncStatus
+        // Emit a stable one-hot gauge set so dashboards can sum current status safely.
+        Status.entries.forEach { status ->
+            val value = if (status == syncStatus) 1.0 else 0.0
+            getOrCreateSyncStatusGauge(indexerName, status).set(value)
         }
     }
 
@@ -76,9 +72,9 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
         status: Status,
     ): AtomicReference<Double> {
         val key = "$indexerName:${status.name}"
-        val statusReadable = status.name.toReadableEnumLabel()
         return syncStatusGauges.computeIfAbsent(key) {
-            val ref = AtomicReference(Double.NaN)
+            val statusReadable = status.name.toReadableEnumLabel()
+            val ref = AtomicReference(0.0)
             registry.gauge(
                 "indexer_sync_status_gauge",
                 listOf(

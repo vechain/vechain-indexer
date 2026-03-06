@@ -343,7 +343,7 @@
       "pluginVersion": "12.3.0",
       "targets": [
         {
-          "expr": "sort_desc(sum by(status_readable) (indexer_sync_status_gauge{indexer_name=~\"$indexer\"} == 1))",
+          "expr": "sort_desc(sum by(status_readable) (indexer_sync_status_gauge{indexer_name=~\"$indexer\"}))",
           "instant": true,
           "legendFormat": "{{status_readable}}",
           "refId": "A"
