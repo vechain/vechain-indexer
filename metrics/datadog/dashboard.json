@@ -767,7 +767,7 @@
                       "aggregator": "last",
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "sum:indexer_sync_status_gauge{indexer-id:$host.value} by {status_readable}"
+                      "query": "sum:indexer_sync_status_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value} by {status_readable}"
                     }
                   ],
                   "response_format": "scalar",
