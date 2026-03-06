@@ -44,16 +44,8 @@ open class HistoryCollectionConfig(
                     Index()
                         .on(IndexedHistoryEvent::appId.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
-                "blockNumber_1" to
-                    Index().on(IndexedHistoryEvent::blockNumber.name, Sort.Direction.ASC),
                 "isBlacklisted_1" to
                     Index().on(IndexedHistoryEvent::isBlacklisted.name, Sort.Direction.ASC),
-                "to_1_contractAddress_1_blockTimestamp_-1_isBlacklisted_1" to
-                    Index()
-                        .on(IndexedHistoryEvent::to.name, Sort.Direction.ASC)
-                        .on(IndexedHistoryEvent::contractAddress.name, Sort.Direction.ASC)
-                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
-                        .on(IndexedHistoryEvent::isBlacklisted.name, Sort.Direction.ASC),
                 "from_1_contractAddress_1_blockTimestamp_-1_isBlacklisted_1" to
                     Index()
                         .on(IndexedHistoryEvent::from.name, Sort.Direction.ASC)

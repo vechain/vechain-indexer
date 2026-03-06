@@ -9,7 +9,6 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
-import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.b3tr.balance.B3trBalance
 import org.vechain.indexer.config.mongo.CollectionConfig
@@ -42,8 +41,6 @@ open class B3trBalanceCollectionConfig(
 
         ensureIndexes(
             listOf(
-                "blockNumber_-1" to
-                    Index().on(IndexedDocument::blockNumber.name, Sort.Direction.DESC),
                 "totalBalance_-1_id_1" to
                     Index()
                         .on(B3trBalance::totalBalance.name, Sort.Direction.DESC)
@@ -56,6 +53,7 @@ open class B3trBalanceCollectionConfig(
                     Index()
                         .on(B3trBalance::b3trBalance.name, Sort.Direction.DESC)
                         .on("_id", Sort.Direction.ASC),
+                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
             )
         )
     }

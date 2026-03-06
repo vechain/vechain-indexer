@@ -40,9 +40,7 @@ open class HistoricProposalsCollectionConfig(
         ensureIndexes(
             listOf(
                 "proposalId_-1" to
-                    Index().on(HistoricProposals::proposalId.name, Sort.Direction.DESC),
-                "blockNumber_1" to
-                    Index().on(HistoricProposals::blockNumber.name, Sort.Direction.ASC),
+                    Index().on(HistoricProposals::proposalId.name, Sort.Direction.DESC)
             )
         )
     }

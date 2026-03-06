@@ -42,8 +42,6 @@ open class AppAllTimeActionSummaryCollectionConfig(
         ensureIndexes(
             listOf(
                 "user_-1" to Index().on(AppAllTimeActionSummary::user.name, Sort.Direction.DESC),
-                "blockNumber_-1" to
-                    Index().on(AppAllTimeActionSummary::blockNumber.name, Sort.Direction.DESC),
                 "appId_1_totalRewardAmount_-1_user_1" to
                     Index()
                         .on(AppAllTimeActionSummary::appId.name, Sort.Direction.ASC)
@@ -64,6 +62,7 @@ open class AppAllTimeActionSummaryCollectionConfig(
                         .on(AppAllTimeActionSummary::appId.name, Sort.Direction.ASC)
                         .on(AppAllTimeActionSummary::actionsRewarded.name, Sort.Direction.ASC)
                         .on(AppAllTimeActionSummary::user.name, Sort.Direction.ASC),
+                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
             )
         )
     }
