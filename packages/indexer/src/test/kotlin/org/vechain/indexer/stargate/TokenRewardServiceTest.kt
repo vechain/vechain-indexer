@@ -93,7 +93,7 @@ class TokenRewardServiceTest {
             weekOfYear = 1,
             month = 1,
             year = 2025,
-            version = 0,
+            version = 1,
         )
 
     @Test

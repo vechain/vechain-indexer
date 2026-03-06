@@ -79,7 +79,7 @@ open class AccountOverviewCollectionConfig(
                     blockId = genesis.genesisBlock.id,
                     blockNumber = 0L,
                     blockTimestamp = genesis.genesisBlock.timestamp,
-                    version = 0,
+                    version = 1,
                     firstSeen = genesis.genesisBlock.timestamp,
                     lastSeen = genesis.genesisBlock.timestamp,
                     transactionsSent = 0L,

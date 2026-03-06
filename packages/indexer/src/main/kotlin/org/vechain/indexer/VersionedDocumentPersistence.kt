@@ -21,11 +21,14 @@ inline fun <reified T : VersionedDocument> saveVersionedDocuments(
     maxVersions: Int,
 ) {
     if (updated.isEmpty()) return
+    val collectionName = mongoTemplate.getCollectionName(T::class.java)
     InlineVersionService.bulkUpsertWithVersions(
         updated,
         existing,
         mongoTemplate,
         blockWindow,
         maxVersions,
+        initialVersion = VersionedDocumentInitialVersions.forCollection(collectionName),
+        collectionName = collectionName,
     )
 }

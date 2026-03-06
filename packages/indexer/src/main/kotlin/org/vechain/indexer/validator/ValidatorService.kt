@@ -218,7 +218,7 @@ open class ValidatorService(
                             NumberUtils.toVET(
                                 ev.params.getAsBigInteger("removed") ?: BigInteger.ZERO
                             ),
-                        version = 0,
+                        version = 1,
                         startBlock = periodInfo?.get(validatorId)?.first,
                         cyclePeriodLength = periodInfo?.get(validatorId)?.second,
                     )

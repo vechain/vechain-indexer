@@ -31,10 +31,11 @@ object InlineVersionService {
         mongoTemplate: MongoTemplate,
         blockWindow: Long,
         maxVersions: Int,
+        initialVersion: Int,
+        collectionName: String,
     ) {
         if (updated.isEmpty()) return
 
-        val collectionName = mongoTemplate.getCollectionName(T::class.java)
         val collection = mongoTemplate.getCollection(collectionName)
         val existingById = existing.associateBy { it.getDocumentId() }
 
@@ -108,6 +109,19 @@ object InlineVersionService {
 
                 writes.add(UpdateOneModel(filter, pipeline, UpdateOptions().upsert(true)))
             } else {
+                if (doc.version > initialVersion) {
+                    logger.error(
+                        "Versioned document invariant violated for {}: _id={}, version={}, initialVersion={}, blockNumber={}",
+                        collectionName,
+                        docId,
+                        doc.version,
+                        initialVersion,
+                        doc.blockNumber,
+                    )
+                    throw VersionedDocumentInvariantException(
+                        "Refusing to write $collectionName/$docId at version ${doc.version} without a matching existing document (initialVersion=$initialVersion)"
+                    )
+                }
                 // New document — just set fields, no _previousVersions manipulation
                 val stage = Document("\$set", Document(newBson))
                 writes.add(UpdateOneModel(filter, listOf(stage), UpdateOptions().upsert(true)))
@@ -171,11 +185,15 @@ object InlineVersionService {
 
                 if (previousVersions.isEmpty()) {
                     logger.error(
-                        "Could not find previous version for rollback ({}): _id={}",
+                        "Could not find previous version for rollback ({}): _id={}, version={}, blockNumber={}",
                         collectionName,
                         docId,
+                        version,
+                        doc.getLong("blockNumber"),
                     )
-                    throw RollbackException("Could not find previous document for rollback")
+                    throw RollbackException(
+                        "Could not find previous document for rollback: collection=$collectionName, _id=$docId, version=$version, blockNumber=${doc.getLong("blockNumber")}"
+                    )
                 }
 
                 // Take the first entry as the restored version

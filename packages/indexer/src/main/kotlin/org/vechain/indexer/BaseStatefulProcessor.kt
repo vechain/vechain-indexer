@@ -17,6 +17,11 @@ abstract class BaseStatefulProcessor(
     override fun rollback(blockNumber: Long) {
         resetProcessingState()
         checkpointService.saveCheckpoint(collectionName, blockNumber - 1)
-        InlineVersionService.rollback(collectionName, blockNumber, mongoTemplate)
+        InlineVersionService.rollback(
+            collectionName,
+            blockNumber,
+            mongoTemplate,
+            VersionedDocumentInitialVersions.forCollection(collectionName),
+        )
     }
 }

@@ -72,7 +72,7 @@ open class DelegationService(
         val accumulator =
             VersionedDocumentAccumulator<Delegation>(
                 findById = { id -> preloaded[id] ?: findById(id) },
-                initialVersion = 0,
+                initialVersion = 1,
             )
         accumulator.startBlock()
 
