@@ -77,16 +77,13 @@ class ValidatorCalculatorTest {
 
     @Test
     fun `nftYieldsNextCycle is empty when validator is at max capacity 600M`() {
-        val result = callNftYields(nextCycleStake = ValidatorCalculator.MAX_VALIDATOR_STAKE)
+        val result = callNftYields(nextCycleStake = BigDecimal("600000000"))
         assertThat(result).isEmpty()
     }
 
     @Test
     fun `nftYieldsNextCycle near capacity includes small NFTs but excludes large ones`() {
-        val result =
-            callNftYields(
-                nextCycleStake = ValidatorCalculator.MAX_VALIDATOR_STAKE - BigDecimal("1000000")
-            )
+        val result = callNftYields(nextCycleStake = BigDecimal("599000000"))
 
         // Small NFTs (staked <= 1M) should be included
         assertThat(result).containsKey(TokenLevel.Dawn) // 10K
