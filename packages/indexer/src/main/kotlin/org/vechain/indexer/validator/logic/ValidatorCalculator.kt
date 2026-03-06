@@ -342,18 +342,17 @@ object ValidatorCalculator {
         return TokenLevel.entries
             .filter { it != TokenLevel.All }
             .mapNotNull { level ->
-                val requiredUSD = level.staked * vetPriceUsd
-
                 if (nextCycleStake + level.staked > MAX_VALIDATOR_STAKE) {
+                    return@mapNotNull null
+                }
+
+                val requiredUSD = level.staked * vetPriceUsd
+                if (requiredUSD.compareTo(BigDecimal.ZERO) == 0) {
                     return@mapNotNull null
                 }
 
                 val totalVET = nextPeriodVET + level.staked
                 val vthoIssued = determineVTHOIssuedPerBlock(totalVET)
-
-                if (requiredUSD.compareTo(BigDecimal.ZERO) == 0) {
-                    return@mapNotNull null
-                }
 
                 val nftWeight = level.effectiveWeight
                 val adjustedValidator =
