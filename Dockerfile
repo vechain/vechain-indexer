@@ -26,7 +26,7 @@ RUN test -n "PACKAGE_NAME"
 ENV PACKAGE_NAME=$PACKAGE_NAME
 ENV APP_VERSION=$APP_VERSION
 
-# Ensure the version is in the form v.X.Y.Z
+# Ensure the version is in the form v.X.Y.Z or v.X.Y.Z-<suffix>
 RUN echo "$APP_VERSION" | grep -Eq '^v\.[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$' || (echo "APP_VERSION $APP_VERSION is not of the form v.X.Y.Z or v.X.Y.Z-suffix" && exit 1)
 
 RUN --mount=type=cache,target=/root/.gradle/caches \
