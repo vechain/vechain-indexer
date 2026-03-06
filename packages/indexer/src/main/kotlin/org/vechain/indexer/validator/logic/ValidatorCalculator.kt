@@ -322,6 +322,8 @@ object ValidatorCalculator {
      * @param vthoPriceUsd VTHO price in USD
      * @param vetPriceUsd VET price in USD
      * @param status current validator status
+     * @param nextCycleStake total VET staked for the next cycle (validator + delegator). NFT levels
+     *   whose staked VET would push this above [MAX_VALIDATOR_STAKE] (600M) are excluded.
      * @return map of TokenLevel → yield (Decimal128)
      */
     fun calculateNftLevelYields(
