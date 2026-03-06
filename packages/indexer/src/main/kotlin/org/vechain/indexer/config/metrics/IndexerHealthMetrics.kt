@@ -72,8 +72,8 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
         status: Status,
     ): AtomicReference<Double> {
         val key = "$indexerName:${status.name}"
-        val statusReadable = status.name.toReadableEnumLabel()
         return syncStatusGauges.computeIfAbsent(key) {
+            val statusReadable = status.name.toReadableEnumLabel()
             val ref = AtomicReference(0.0)
             registry.gauge(
                 "indexer_sync_status_gauge",
