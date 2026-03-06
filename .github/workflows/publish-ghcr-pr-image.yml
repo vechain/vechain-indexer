@@ -1,0 +1,164 @@
+name: Publish PR Image
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.head_ref || github.ref_name }}-ghcr-pr-publish
+  cancel-in-progress: true
+
+permissions:
+  packages: write
+  contents: read
+  pull-requests: write
+
+env:
+  registry: ghcr.io
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        packageName: ["api", "indexer"]
+        platform: ["linux/amd64", "linux/arm64"]
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: docker-build-arm64
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set PR version
+        run: |
+          SHORT_SHA=$(echo "${{ github.event.pull_request.head.sha }}" | cut -c1-7)
+          echo "PR_VERSION=v.0.0.0-pr.${{ github.event.pull_request.number }}.${SHORT_SHA}" >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.registry }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          file: Dockerfile
+          platforms: ${{ matrix.platform }}
+          build-args: |
+            PACKAGE_NAME=${{ matrix.packageName }}
+            APP_VERSION=${{ env.PR_VERSION }}
+          context: ./
+          provenance: false
+          sbom: false
+          cache-from: type=gha,scope=${{ matrix.packageName }}-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.packageName }}-${{ matrix.platform }}
+          secrets: |
+            "gradle_props=gpr.user=${{ github.actor }}
+            gpr.key=${{ secrets.GITHUB_TOKEN }}"
+          outputs: type=image,name=${{ env.registry }}/${{ github.repository }}/${{ matrix.packageName }},push-by-digest=true,name-canonical=true,push=true
+
+      - name: Export digest
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digest-${{ matrix.packageName }}-${{ matrix.platform == 'linux/amd64' && 'amd64' || 'arm64' }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      matrix:
+        packageName: ["api", "indexer"]
+
+    steps:
+      - name: Set PR version
+        run: |
+          SHORT_SHA=$(echo "${{ github.event.pull_request.head.sha }}" | cut -c1-7)
+          echo "PR_TAG=pr.${{ github.event.pull_request.number }}.${SHORT_SHA}" >> $GITHUB_ENV
+
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digest-${{ matrix.packageName }}-*
+          merge-multiple: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.registry }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create manifest list and push
+        working-directory: /tmp/digests
+        env:
+          IMAGE: ${{ env.registry }}/${{ github.repository }}/${{ matrix.packageName }}
+        run: |
+          docker buildx imagetools create \
+            -t ${{ env.IMAGE }}:${{ env.PR_TAG }} \
+            $(printf '${{ env.IMAGE }}@sha256:%s ' *)
+
+  comment:
+    runs-on: ubuntu-latest
+    needs: merge
+
+    steps:
+      - name: Set PR version
+        run: |
+          SHORT_SHA=$(echo "${{ github.event.pull_request.head.sha }}" | cut -c1-7)
+          echo "PR_TAG=pr.${{ github.event.pull_request.number }}.${SHORT_SHA}" >> $GITHUB_ENV
+
+      - name: Comment on PR with usage instructions
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: pr-docker-image
+          message: |
+            ### PR Docker Images Published
+
+            **API:**
+            ```
+            docker pull ghcr.io/${{ github.repository }}/api:${{ env.PR_TAG }}
+            ```
+
+            **Indexer:**
+            ```
+            docker pull ghcr.io/${{ github.repository }}/indexer:${{ env.PR_TAG }}
+            ```
+
+            <details>
+            <summary>Usage with docker compose</summary>
+
+            Override the image in your `docker-compose.yaml`:
+
+            ```yaml
+            services:
+              api:
+                image: ghcr.io/${{ github.repository }}/api:${{ env.PR_TAG }}
+              indexer:
+                image: ghcr.io/${{ github.repository }}/indexer:${{ env.PR_TAG }}
+            ```
+            </details>
