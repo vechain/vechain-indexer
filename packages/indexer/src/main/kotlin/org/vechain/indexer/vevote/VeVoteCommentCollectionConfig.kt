@@ -41,6 +41,10 @@ open class VeVoteCommentCollectionConfig(
         ensureIndexes(
             listOf(
                 Pair(
+                    "blockNumber_-1",
+                    Index().on(VeVoteProposalComment::blockNumber.name, Sort.Direction.DESC),
+                ),
+                Pair(
                     "voter_-1",
                     Index().on(VeVoteProposalComment::voter.name, Sort.Direction.DESC),
                 ),

@@ -37,7 +37,11 @@ open class AmnEndorserCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
 
         ensureIndexes(
-            listOf("endorser_1" to Index().on(AmnEndorser::endorser.name, Sort.Direction.ASC))
+            listOf(
+                // For getLatestRecord() and deleteAllByBlockNumberGreaterThanEqual()
+                "blockNumber_-1" to Index().on(AmnEndorser::blockNumber.name, Sort.Direction.DESC),
+                "endorser_1" to Index().on(AmnEndorser::endorser.name, Sort.Direction.ASC),
+            )
         )
     }
 }

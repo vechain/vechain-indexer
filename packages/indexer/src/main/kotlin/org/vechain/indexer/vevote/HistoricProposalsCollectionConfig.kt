@@ -39,8 +39,11 @@ open class HistoricProposalsCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
+                // For getLatestRecord() and deleteAllByBlockNumberGreaterThanEqual()
+                "blockNumber_-1" to
+                    Index().on(HistoricProposals::blockNumber.name, Sort.Direction.DESC),
                 "proposalId_-1" to
-                    Index().on(HistoricProposals::proposalId.name, Sort.Direction.DESC)
+                    Index().on(HistoricProposals::proposalId.name, Sort.Direction.DESC),
             )
         )
     }

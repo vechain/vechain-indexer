@@ -38,6 +38,12 @@ open class BlockUsageCollectionConfig(
 
         logger.info("Initializing indexes for ${modelObj.simpleName}")
 
+        // Startup rollback and getLatestRecord() both operate on blockNumber.
+        ensureRequiredIndex(
+            "blockNumber_-1",
+            Index().on(BlockUsage::blockNumber.name, Sort.Direction.DESC),
+        )
+
         ensureIndexes(
             listOf(
                 // Index for findAllInTimestampRange - range queries on blockTimestamp
