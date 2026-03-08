@@ -19,6 +19,7 @@ RUN --mount=type=cache,target=/root/.gradle/caches \
 COPY build.gradle.kts ./
 COPY settings.gradle.kts ./
 COPY system.properties ./
+COPY third_party ./third_party
 COPY packages ./packages
 
 # Placing this after the COPY commands so we can cache builds

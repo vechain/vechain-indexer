@@ -25,6 +25,7 @@ services:
     networks:
       - vechain
       - vechain-database
+#      - vechain-thor
 
   vechain-indexer-api:
 #    image: ghcr.io/vechain/vechain-indexer/api:5.15.4
@@ -63,3 +64,6 @@ networks:
   vechain-database:
     external: true
     name: vechain-database
+#  vechain-thor:
+#    external: true
+#    name: vechain-thor
