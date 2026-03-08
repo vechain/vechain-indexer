@@ -85,13 +85,4 @@ abstract class CollectionConfig(
 
         logger.info("Finished ensuring indexes for ${entityClass.simpleName}.")
     }
-
-    protected fun ensureRequiredIndex(
-        indexName: String,
-        index: Index,
-        entityClass: Class<*> = modelObj,
-        partialFilter: Document? = INDEXED_DOCUMENT_PARTIAL_FILTER,
-    ) {
-        ensureIndex(indexName, index, entityClass, partialFilter)
-    }
 }
