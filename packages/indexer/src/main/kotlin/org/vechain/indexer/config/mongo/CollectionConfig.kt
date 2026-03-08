@@ -1,7 +1,6 @@
 package org.vechain.indexer.config.mongo
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import org.bson.Document
 import org.slf4j.LoggerFactory
 import org.springframework.data.mongodb.core.MongoTemplate
@@ -10,7 +9,7 @@ import org.springframework.data.mongodb.core.index.PartialIndexFilter
 
 abstract class CollectionConfig(
     private val mongoTemplate: MongoTemplate,
-    private val coroutineScope: CoroutineScope,
+    @Suppress("UNUSED_PARAMETER") _coroutineScope: CoroutineScope,
     val modelObj: Class<*>,
 ) {
     companion object {
@@ -71,10 +70,19 @@ abstract class CollectionConfig(
         entityClass: Class<*> = modelObj,
         partialFilter: Document? = INDEXED_DOCUMENT_PARTIAL_FILTER,
     ) {
-        coroutineScope.launch {
-            for ((indexName, index) in indexes) {
-                ensureIndex(indexName, index, entityClass, partialFilter)
-            }
+        if (indexes.isEmpty()) {
+            logger.info("No indexes configured for ${entityClass.simpleName}.")
+            return
         }
+
+        logger.info(
+            "Ensuring ${indexes.size} indexes for ${entityClass.simpleName} before startup continues"
+        )
+
+        for ((indexName, index) in indexes) {
+            ensureIndex(indexName, index, entityClass, partialFilter)
+        }
+
+        logger.info("Finished ensuring indexes for ${entityClass.simpleName}.")
     }
 }

@@ -40,6 +40,9 @@ open class FungibleTokenInteractionsCollectionConfig(
 
         ensureIndexes(
             listOf(
+                // For getLatestRecord() and deleteAllByBlockNumberGreaterThanEqual()
+                "blockNumber_-1" to
+                    Index().on(FungibleTokenInteraction::blockNumber.name, Sort.Direction.DESC),
                 "walletAddress_1" to
                     Index().on(FungibleTokenInteraction::walletAddress.name, Sort.Direction.ASC),
                 "contractAddress_1_walletAddress_1" to

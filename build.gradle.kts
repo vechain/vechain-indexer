@@ -53,6 +53,12 @@ allprojects {
 
     repositories {
         mavenLocal()
+        // Keep this vendored fallback ahead of JitPack so Docker builds do not depend on JitPack
+        // availability for thor-devkit.java.
+        maven {
+            url = uri("${rootDir}/third_party/maven")
+            content { includeGroup("com.github.vechain") }
+        }
         mavenCentral()
         maven { url = uri("https://repo.spring.io/milestone") }
         maven { url = uri("https://repo.spring.io/snapshot") }

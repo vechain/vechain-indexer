@@ -10,6 +10,7 @@ gradle/docker.gradle.properties
 !build.gradle.kts
 !settings.gradle.kts
 !system.properties
+!third_party/
 
 # Source packages (needed by both Dockerfiles)
 !packages/

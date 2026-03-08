@@ -40,8 +40,11 @@ open class HistoryCollectionConfig(
 
         ensureIndexes(
             listOf(
+                // For getLatestRecord() and deleteAllByBlockNumberGreaterThanEqual()
+                "blockNumber_-1" to
+                    Index().on(IndexedHistoryEvent::blockNumber.name, Sort.Direction.DESC),
                 "isBlacklisted_1" to
-                    Index().on(IndexedHistoryEvent::isBlacklisted.name, Sort.Direction.ASC)
+                    Index().on(IndexedHistoryEvent::isBlacklisted.name, Sort.Direction.ASC),
             )
         )
     }
