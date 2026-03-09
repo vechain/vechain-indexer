@@ -98,7 +98,7 @@ open class TotalAccountsService(
                     blockId = block.id,
                     blockNumber = block.number,
                     blockTimestamp = block.timestamp,
-                    version = 0,
+                    version = 1,
                 )
             }
 
@@ -110,7 +110,7 @@ open class TotalAccountsService(
                     blockId = block.id,
                     blockNumber = block.number,
                     blockTimestamp = block.timestamp,
-                    version = 0,
+                    version = 1,
                     total = 0L,
                     timeFrame = TimeFrame.ALL,
                 )
@@ -301,6 +301,6 @@ open class TotalAccountsService(
             weekOfYear = mainTracker.weekOfYear,
             month = mainTracker.month,
             year = mainTracker.year,
-            version = 0,
+            version = 1,
         )
 }

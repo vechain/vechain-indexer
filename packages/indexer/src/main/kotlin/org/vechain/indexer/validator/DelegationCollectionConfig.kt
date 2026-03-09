@@ -44,15 +44,10 @@ open class DelegationCollectionConfig(
                     Index()
                         .on(Delegation::validator.name, Sort.Direction.ASC)
                         .on(Delegation::status.name, Sort.Direction.ASC),
-                "validator_1_blockNumber_-1" to
-                    Index()
-                        .on(Delegation::validator.name, Sort.Direction.ASC)
-                        .on(Delegation::blockNumber.name, Sort.Direction.DESC),
                 "status_1_validatorNextCycle_1" to
                     Index()
                         .on(Delegation::status.name, Sort.Direction.ASC)
                         .on(Delegation::validatorNextCycle.name, Sort.Direction.ASC),
-                "blockNumber_-1" to Index().on(Delegation::blockNumber.name, Sort.Direction.DESC),
                 "tokenId_1" to Index().on(Delegation::tokenId.name, Sort.Direction.ASC),
                 "status_1_tokenLevel_1_stakedAmount_1" to
                     Index()

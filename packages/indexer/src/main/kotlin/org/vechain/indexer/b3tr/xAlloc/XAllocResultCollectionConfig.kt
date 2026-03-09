@@ -43,8 +43,7 @@ open class XAllocResultCollectionConfig(
             listOf(
                 "roundId_-1" to Index().on(XAllocResult::roundId.name, Sort.Direction.DESC),
                 "appId_-1" to Index().on(XAllocResult::appId.name, Sort.Direction.DESC),
-                "totalAmount_-1" to Index().on(XAllocResult::totalAmount.name, Sort.Direction.DESC),
-                "blockNumber_-1" to Index().on(XAllocResult::blockNumber.name, Sort.Direction.DESC),
+                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
             )
         )
     }

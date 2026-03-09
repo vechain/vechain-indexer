@@ -168,7 +168,7 @@ internal class ContractServiceTest {
                     details,
                     contractAddress = "0xCONTRACT",
                     events = listOf(masterEvent(newMaster = "0xDEPLOYER")),
-                    version = 0,
+                    version = 1,
                 )
 
             assertNull(result)
@@ -204,14 +204,14 @@ internal class ContractServiceTest {
                                 masterEvent(newMaster = "0xDEPLOYER"),
                                 masterEvent(newMaster = "0xMASTER_FINAL"),
                             ),
-                        version = 0,
+                        version = 1,
                     )!!
 
                 assertEquals("0xCONTRACT", result.address)
                 assertEquals(details.blockId, result.blockId)
                 assertEquals(details.blockNumber, result.blockNumber)
                 assertEquals(details.blockTimestamp, result.blockTimestamp)
-                assertEquals(0, result.version)
+                assertEquals(1, result.version)
                 assertEquals(details.blockTimestamp, result.createdOn)
                 assertEquals("tx-id", result.deploymentTxId)
                 assertEquals(0L, result.deploymentClauseIndex)
@@ -241,11 +241,11 @@ internal class ContractServiceTest {
                     contractAddress = "0xCONTRACT",
                     events = listOf(masterEvent(newMaster = "0xDEPLOYER")),
                     existing = null,
-                    version = 0,
+                    version = 1,
                 )
 
             assertNotNull(result)
-            assertEquals(0, result!!.version)
+            assertEquals(1, result!!.version)
             assertEquals(details.blockTimestamp, result.createdOn)
         } finally {
             unmockkObject(ContractUtils)

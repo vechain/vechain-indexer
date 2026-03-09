@@ -40,8 +40,8 @@ open class BlockUsageCollectionConfig(
 
         ensureIndexes(
             listOf(
-                "blockNumber_1_unique" to
-                    Index().on(BlockUsage::blockNumber.name, Sort.Direction.ASC).unique(),
+                // For getLatestRecord() and deleteAllByBlockNumberGreaterThanEqual()
+                "blockNumber_-1" to Index().on(BlockUsage::blockNumber.name, Sort.Direction.DESC),
                 // Index for findAllInTimestampRange - range queries on blockTimestamp
                 "blockTimestamp_1" to
                     Index().on(BlockUsage::blockTimestamp.name, Sort.Direction.ASC),

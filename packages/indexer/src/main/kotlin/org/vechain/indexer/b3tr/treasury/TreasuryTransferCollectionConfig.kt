@@ -40,7 +40,8 @@ open class TreasuryTransferCollectionConfig(
 
         ensureIndexes(
             listOf(
-                "treasury_transfer_blockNumber_-1" to
+                // For getLatestRecord() and deleteAllByBlockNumberGreaterThanEqual()
+                "blockNumber_-1" to
                     Index().on(TreasuryTransfer::blockNumber.name, Sort.Direction.DESC),
                 "treasury_transfer_category_1_blockTimestamp_-1__id_-1" to
                     Index()

@@ -65,8 +65,7 @@ open class UserAllTimeActionSummaryCollectionConfig(
                         .on(UserAllTimeActionSummary::entity.name, Sort.Direction.ASC),
                 "entityType_1" to
                     Index().on(UserAllTimeActionSummary::entityType.name, Sort.Direction.ASC),
-                "blockNumber_1" to
-                    Index().on(UserAllTimeActionSummary::blockNumber.name, Sort.Direction.ASC),
+                "blockNumber_1" to Index().on("blockNumber", Sort.Direction.ASC),
             )
         )
     }

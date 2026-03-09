@@ -50,12 +50,10 @@ open class VetBalanceCollectionConfig(
         ensureIndexes(
             listOf(
                 // Supports API query by address + timestamp range with default sort by newest.
-                "blockNumber_-1" to
-                    Index().on(IndexedDocument::blockNumber.name, Sort.Direction.DESC),
                 "address_1_blockTimestamp_-1" to
                     Index()
                         .on(VetBalance::address.name, Sort.Direction.ASC)
-                        .on(IndexedDocument::blockTimestamp.name, Sort.Direction.DESC),
+                        .on(IndexedDocument::blockTimestamp.name, Sort.Direction.DESC)
             )
         )
     }

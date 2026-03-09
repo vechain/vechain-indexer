@@ -192,7 +192,7 @@ enabled_nets:
         b3tr-gm-nft-level-overview: '6'
         block-usage: '4'
         historic-proposals:          '6'
-        validator: '6'
+        validator: '7'
         validator-rewards: '7'
         stargate-token: '5'
         token-rewards: '5'

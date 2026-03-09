@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.repository.Query
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.BaseIndexedRepository
 
-@Profile("transfers")
+@Profile("transfers", "fungible-token-interactions")
 @Repository
 interface FungibleTokenInteractionsRepository :
     BaseIndexedRepository<FungibleTokenInteraction, String> {

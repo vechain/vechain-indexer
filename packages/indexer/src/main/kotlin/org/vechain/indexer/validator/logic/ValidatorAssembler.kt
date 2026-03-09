@@ -284,6 +284,7 @@ object ValidatorAssembler {
                     vthoPrice,
                     vetPrice,
                     status,
+                    stakes.nextCycleStake,
                 ),
             percentageOffline = NumberUtils.toSafeDecimal128(offline.percentageOffline),
             version = (existingDoc?.version ?: 0) + 1,

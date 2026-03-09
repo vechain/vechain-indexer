@@ -107,7 +107,13 @@ down: #@ Stop all the infrastructure and the application.
 	make app-down db-down
 
 # Application
-app-up: format #@ Start the application.
+GRADLE_PROPERTIES_FILE ?= $(if $(wildcard $(HOME)/.gradle/gradle.properties),$(HOME)/.gradle/gradle.properties,)
+export GRADLE_PROPERTIES_FILE
+
+ensure-gradle-props:
+	@[ -f gradle/docker.gradle.properties ] || cp gradle/docker.gradle.properties.example gradle/docker.gradle.properties
+
+app-up: format ensure-gradle-props #@ Start the application.
 	docker compose up -d --build --wait
 app-down: #@ Stop the application.
 	docker compose down
@@ -156,7 +162,7 @@ DB_MAKE_KEY=mkdir -p database/keys && [ -f database/keys/keyfile ] || openssl ra
 DB_REMOVE_KEY=rm -f -R database/keys
 DB_SETUP_COMMAND=docker compose -f database/docker-compose-mongo-setup.yaml
 MONGO_URL=mongodb://indexer:password@localhost:27017/vechain?authSource=admin
-BACKUP_DIR=database/backups
+BACKUP_DIR ?= $(PWD)/database/backups
 
 db-all: #@ Remove, clean and start the database (Docker).
 	make db-clean db-up db-setup
@@ -172,18 +178,22 @@ db-keyfile-create: #@ Generate the keyfile for the database.
 	$(DB_MAKE_KEY)
 db-keyfile-remove: #@ Remove the keyfile for the database.
 	$(DB_REMOVE_KEY)
-db-backup: #@ Backup MongoDB database using Docker (Compressed)
-	# Ensure backup directory exists and is writable
-	mkdir -p $(PWD)/$(BACKUP_DIR)
+db-backup: #@ Backup MongoDB database using Docker (Compressed). Usage: make db-backup [BACKUP_DIR=/absolute/path/to/dir]
+	@case "$(BACKUP_DIR)" in /*) ;; *) echo "Error: BACKUP_DIR must be an absolute path. Got: $(BACKUP_DIR)"; exit 1;; esac
+	mkdir -p "$(BACKUP_DIR)"
 	echo "Use the command 'docker log --tail 100 -f mongo-backup' to see the progress"
 	docker rm -f mongo-backup 2>/dev/null || true
-	docker run --name mongo-backup -d --network=host -v $(PWD)/$(BACKUP_DIR):/backup -u $(shell id -u):$(shell id -g) mongo:8 mongodump --uri="$(MONGO_URL)" --gzip --archive="/backup/veworld-db-$$(date +%Y%m%d%H%M%S).gz"
-db-restore: #@ Restore MongoDB database from the latest backup or a specified directory using Docker.
-	$(eval FILE := $(shell ls -t $(BACKUP_DIR)/veworld-db-*.gz 2>/dev/null | head -1))
+	docker run --name mongo-backup -d --network=host -v "$(BACKUP_DIR):/backup" -u $(shell id -u):$(shell id -g) mongo:8 mongodump --uri="$(MONGO_URL)" --gzip --archive="/backup/veworld-db-$$(date +%Y%m%d%H%M%S).gz"
+db-restore: #@ Restore MongoDB database from a backup file. Usage: make db-restore FILE=/absolute/path/to/backup.gz
 	@if [ -z "$(FILE)" ]; then \
-		echo "No backup found in $(BACKUP_DIR). Please specify FILE=<backup-file>"; \
+		echo "Error: FILE is required. Usage: make db-restore FILE=/absolute/path/to/backup.gz"; \
 		exit 1; \
-	fi; \
-	echo "Use the command 'docker log --tail 100 -f mongo-restore' to see the progress";
+	fi
+	@case "$(FILE)" in /*) ;; *) echo "Error: FILE must be an absolute path. Got: $(FILE)"; exit 1;; esac
+	@if [ ! -f "$(FILE)" ] || [ ! -r "$(FILE)" ]; then \
+		echo "Error: FILE must exist and be a readable file. Got: $(FILE)"; \
+		exit 1; \
+	fi
+	echo "Use the command 'docker log --tail 100 -f mongo-restore' to see the progress"
 	docker rm -f mongo-restore 2>/dev/null || true
-	docker run --name mongo-restore -d --network=host -v $(PWD)/$(BACKUP_DIR):/backup -u $(shell id -u):$(shell id -g) mongo:8 mongorestore --uri="$(MONGO_URL)" --drop --gzip --archive="/backup/$(notdir $(FILE))" --numInsertionWorkersPerCollection 16 # Workflow test comment
+	docker run --name mongo-restore -d --network=host -v "$(FILE):/backup/backup.gz" -u $(shell id -u):$(shell id -g) mongo:8 mongorestore --uri="$(MONGO_URL)" --drop --gzip --archive="/backup/backup.gz" --numInsertionWorkersPerCollection 16

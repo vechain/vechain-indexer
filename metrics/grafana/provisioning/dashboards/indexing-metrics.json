@@ -689,7 +689,7 @@
           "refId": "B"
         },
         {
-          "expr": "indexer_estimated_time_to_sync_seconds{indexer_name=~\"$indexer\"}",
+          "expr": "indexer_sync_gap_gauge{indexer_name=~\"$indexer\"} * on(indexer_name) group_left() (sum by(indexer_name) (increase(processor_cycle_time_seconds_sum{indexer_name=~\"$indexer\"}[$__range])) / sum by(indexer_name) (increase(indexer_blocks_processed_total{indexer_name=~\"$indexer\"}[$__range])) and sum by(indexer_name) (increase(indexer_blocks_processed_total{indexer_name=~\"$indexer\"}[$__range])) > 0)",
           "format": "table",
           "instant": true,
           "legendFormat": "__auto",

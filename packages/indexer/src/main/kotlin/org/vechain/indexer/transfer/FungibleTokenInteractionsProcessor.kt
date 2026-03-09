@@ -8,7 +8,7 @@ import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 
-@Profile("transfers")
+@Profile("transfers", "fungible-token-interactions")
 @Component
 open class FungibleTokenInteractionsProcessor(
     private val service: FungibleTokenInteractionsService,

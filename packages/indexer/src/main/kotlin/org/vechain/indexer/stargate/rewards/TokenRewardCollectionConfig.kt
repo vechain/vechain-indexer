@@ -46,9 +46,6 @@ open class TokenRewardCollectionConfig(
                 // For getLatestRecord() and deleteAllByBlockNumberGreaterThanEqual()
                 "blockNumber_-1" to
                     Index().on(IndexedDocument::blockNumber.name, Sort.Direction.DESC),
-                // For global queries (all validators, sorted by timestamp)
-                "blockTimestamp_-1" to
-                    Index().on(IndexedDocument::blockTimestamp.name, Sort.Direction.DESC),
                 "validator_1_rewardPeriod_1_cycle_-1" to
                     Index()
                         .on(TokenReward::validator.name, Sort.Direction.ASC)

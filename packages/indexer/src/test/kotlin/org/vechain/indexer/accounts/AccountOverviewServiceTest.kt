@@ -237,7 +237,7 @@ internal class AccountOverviewServiceTest {
     private fun newAccumulator() =
         VersionedDocumentAccumulator<AccountOverview>(
                 repository::findByIdOrNull,
-                initialVersion = 0,
+                initialVersion = 1,
             )
             .also { it.startBlock() }
 
@@ -252,7 +252,7 @@ internal class AccountOverviewServiceTest {
         assertEquals(b.id, created.blockId)
         assertEquals(b.number, created.blockNumber)
         assertEquals(b.timestamp, created.blockTimestamp)
-        assertEquals(0, created.version)
+        assertEquals(1, created.version)
         assertEquals(b.timestamp, created.firstSeen)
         assertEquals(b.timestamp, created.lastSeen)
         assertEquals(0L, created.transactionsSent)
@@ -302,7 +302,7 @@ internal class AccountOverviewServiceTest {
         assertSame(existingA, archivedList.find { it.address == originA })
 
         val updatedB = updatedList.find { it.address == originB }!!
-        assertEquals(0, updatedB.version)
+        assertEquals(1, updatedB.version)
         assertEquals(1L, updatedB.transactionsSent)
         assertEquals(3L, updatedB.clausesSent)
         assertNull(archivedList.find { it.address == originB })
@@ -528,7 +528,7 @@ internal class AccountOverviewServiceTest {
         val result = service.callResolveForMutation(recordId, b, accumulator, resolved)
 
         assertEquals(recordId, result.address)
-        assertEquals(0, result.version)
+        assertEquals(1, result.version)
         assertEquals(b.id, result.blockId)
         assertEquals(b.number, result.blockNumber)
         assertEquals(b.timestamp, result.blockTimestamp)

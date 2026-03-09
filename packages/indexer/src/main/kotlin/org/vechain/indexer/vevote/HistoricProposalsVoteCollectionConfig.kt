@@ -39,19 +39,9 @@ open class HistoricProposalsVoteCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "proposalId_-1" to
-                    Index().on(HistoricProposalsVote::proposalId.name, Sort.Direction.DESC),
-                "blockNumber_1" to
-                    Index().on(HistoricProposalsVote::blockNumber.name, Sort.Direction.ASC),
-                "proposalId_contract" to
-                    Index()
-                        .on(HistoricProposalsVote::proposalId.name, Sort.Direction.ASC)
-                        .on(HistoricProposalsVote::contract.name, Sort.Direction.ASC),
-                "proposalId_contract_blockNumber" to
-                    Index()
-                        .on(HistoricProposalsVote::proposalId.name, Sort.Direction.ASC)
-                        .on(HistoricProposalsVote::contract.name, Sort.Direction.ASC)
-                        .on(HistoricProposalsVote::blockNumber.name, Sort.Direction.DESC),
+                // For getLatestRecord() and deleteAllByBlockNumberGreaterThanEqual()
+                "blockNumber_-1" to
+                    Index().on(HistoricProposalsVote::blockNumber.name, Sort.Direction.DESC)
             )
         )
     }

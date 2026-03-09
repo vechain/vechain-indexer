@@ -8,7 +8,6 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.insert
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
@@ -179,7 +178,8 @@ open class AmnService(
         return toSave
     }
 
-    @Transactional(rollbackFor = [Exception::class])
+    // No @Transactional needed: mongoTemplate.insert() sends a single bulk insert command,
+    // and duplicates are safely skipped via the unique _id index.
     open fun save(toSave: List<AmnEndorser>) {
         if (toSave.isNotEmpty()) {
             mongoTemplate.insert<AmnEndorser>(toSave)

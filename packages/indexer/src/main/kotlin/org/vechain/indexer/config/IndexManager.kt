@@ -27,7 +27,7 @@ open class IndexManager(
 
     @EventListener(ApplicationReadyEvent::class)
     open fun start() {
-        logger.info("Starting indexers")
+        logger.info("Application ready and collection initialization complete. Starting indexers")
 
         IndexerRunner.launch(
                 scope = appCoroutineScope,

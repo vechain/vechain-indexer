@@ -11,7 +11,6 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
-import org.vechain.indexer.history.IndexedHistoryEvent
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("nfts")
@@ -41,10 +40,6 @@ open class NftCollectionConfig(
 
         ensureIndexes(
             listOf(
-                "nft_blockNumber_-1" to
-                    Index().on(IndexedNft::blockNumber.name, Sort.Direction.DESC),
-                "isBlacklisted_1" to
-                    Index().on(IndexedHistoryEvent::isBlacklisted.name, Sort.Direction.ASC),
                 "nft_contractAddress_1_tokenId_1" to
                     Index()
                         .on(IndexedNft::contractAddress.name, Sort.Direction.ASC)

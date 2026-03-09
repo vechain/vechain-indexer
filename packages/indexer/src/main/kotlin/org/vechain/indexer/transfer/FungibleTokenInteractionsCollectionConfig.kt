@@ -13,7 +13,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("transfers")
+@Profile("transfers", "fungible-token-interactions")
 @Configuration
 open class FungibleTokenInteractionsCollectionConfig(
     mongoTemplate: MongoTemplate,
@@ -40,6 +40,7 @@ open class FungibleTokenInteractionsCollectionConfig(
 
         ensureIndexes(
             listOf(
+                // For getLatestRecord() and deleteAllByBlockNumberGreaterThanEqual()
                 "blockNumber_-1" to
                     Index().on(FungibleTokenInteraction::blockNumber.name, Sort.Direction.DESC),
                 "walletAddress_1" to

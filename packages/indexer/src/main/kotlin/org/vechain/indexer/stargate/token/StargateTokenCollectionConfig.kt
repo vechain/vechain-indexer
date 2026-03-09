@@ -40,11 +40,6 @@ open class StargateTokenCollectionConfig(
 
         ensureIndexes(
             listOf(
-                "blockNumber_-1_txId_-1__id_-1" to
-                    Index()
-                        .on(StargateToken::blockNumber.name, Sort.Direction.DESC)
-                        .on("txId", Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.DESC),
                 "manager_1" to Index().on(StargateToken::manager.name, Sort.Direction.ASC),
                 "owner_1_manager_1" to
                     Index()

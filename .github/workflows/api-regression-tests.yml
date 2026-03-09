@@ -1,0 +1,149 @@
+name: API Regression Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_url:
+        description: "Candidate API URL (the version being validated)"
+        default: "https://mainnet.dead.prod.veworld.vechain.org"
+        required: false
+        type: string
+      baseline_url:
+        description: "Baseline API URL (the known-good reference)"
+        default: "https://indexer.mainnet.vechain.org"
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      candidate_url:
+        description: "Candidate API URL (the version being validated)"
+        required: false
+        type: string
+        default: "https://mainnet.dead.prod.veworld.vechain.org"
+      baseline_url:
+        description: "Baseline API URL (the known-good reference)"
+        required: false
+        type: string
+        default: "https://indexer.mainnet.vechain.org"
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    name: Regression comparison
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run regression comparison (candidate vs baseline)
+        env:
+          CANDIDATE_URL: ${{ inputs.candidate_url || 'https://mainnet.dead.prod.veworld.vechain.org' }}
+          BASELINE_URL: ${{ inputs.baseline_url || 'https://indexer.mainnet.vechain.org' }}
+        run: |
+          mkdir -p regression-output
+          scripts/run_regression_tests.sh \
+            --output regression-output/report.json
+
+      - name: Generate summary
+        if: always()
+        env:
+          CANDIDATE: ${{ inputs.candidate_url || 'https://mainnet.dead.prod.veworld.vechain.org' }}
+          BASELINE: ${{ inputs.baseline_url || 'https://indexer.mainnet.vechain.org' }}
+        run: |
+          python3 - <<'PYEOF'
+          import html, json, os, pathlib
+
+          report_path = pathlib.Path("regression-output/report.json")
+          summary_path = os.environ["GITHUB_STEP_SUMMARY"]
+
+          if not report_path.exists():
+              with open(summary_path, "a") as f:
+                  f.write("### Regression Comparison\n")
+                  f.write("> **No report generated** — the regression script may have failed before writing output.\n")
+              exit(0)
+
+          report = json.loads(report_path.read_text())
+          s = report["summary"]
+          results = report["results"]
+
+          candidate = os.environ["CANDIDATE"]
+          baseline = os.environ["BASELINE"]
+
+          lines = [
+              "### Regression Comparison (candidate vs baseline)",
+              "",
+              "| | |",
+              "|---|---|",
+              f"| **Candidate** | `{candidate}` |",
+              f"| **Baseline** | `{baseline}` |",
+              f"| **Total** | {s['total']} |",
+              f"| **Passed** | {s['passed']} |",
+              f"| **Failed** | {s['failed']} |",
+              "",
+          ]
+
+          failures = [r for r in results if r["status"] == "fail"]
+
+          if failures:
+              lines.append("### Failed endpoints")
+              lines.append("")
+              esc = html.escape
+              for r in failures:
+                  method = esc(r["method"].upper())
+                  path = esc(r["path"])
+                  label = esc(r.get("label", ""))
+                  codes = r.get("status_codes", {})
+                  errors = r.get("errors", {})
+                  diffs = r.get("diffs", {})
+
+                  code_parts = [f"{esc(str(name))}: {code}" for name, code in codes.items()]
+                  code_str = ", ".join(code_parts)
+
+                  lines.append("<details>")
+                  lines.append(f"<summary><code>{method} {path}</code> — {label} (status: {code_str})</summary>")
+                  lines.append("")
+
+                  if errors:
+                      lines.append("**Errors:**")
+                      for ep, msg in errors.items():
+                          lines.append(f"- `{esc(str(ep))}`: {esc(str(msg))}")
+                      lines.append("")
+
+                  if diffs:
+                      for pair, diff_list in diffs.items():
+                          if not diff_list:
+                              continue
+                          lines.append(f"**Diffs** (`{esc(pair)}`): {len(diff_list)} difference(s)")
+                          lines.append("")
+                          lines.append("```")
+                          for json_path, description in diff_list[:20]:
+                              lines.append(f"  {json_path}: {description}")
+                          if len(diff_list) > 20:
+                              lines.append(f"  ... and {len(diff_list) - 20} more")
+                          lines.append("```")
+                          lines.append("")
+
+                  lines.append("</details>")
+                  lines.append("")
+          else:
+              lines.append("All endpoints matched.")
+
+          with open(summary_path, "a") as f:
+              f.write("\n".join(lines) + "\n")
+          PYEOF
+
+      - name: Upload regression report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-report
+          path: ./regression-output
+          if-no-files-found: ignore

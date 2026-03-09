@@ -1,60 +1,26 @@
-target/
-!.mvn/wrapper/maven-wrapper.jar
+# Ignore everything by default
+*
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
+# Gradle wrapper (needed by Dockerfile)
+!gradle/
+gradle/docker.gradle.properties
+!gradlew
 
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
+# Build config (needed by Dockerfile)
+!build.gradle.kts
+!settings.gradle.kts
+!system.properties
+!third_party/
 
-### Visual Studio Code
-.vscode
+# Source packages (needed by both Dockerfiles)
+!packages/
 
-### NetBeans ###
-nbproject/private/
-nbbuild/
-dist/
-nbdist/
-.nb-gradle/
+# Exclude test-only package
+packages/e2e/
 
-mvnw
-mvnw.cmd
-.DS_Store
+# Exclude test source dirs
+packages/**/src/test/
 
-### Build stuff
-build/
-!packages/*/build/
+# Exclude build outputs (except pre-built JARs for Dockerfile.prebuilt)
 packages/*/build/**
 !packages/*/build/libs/**
-build.sh
-build.bat
-
-database/
-
-packages/e2e
-
-packages/**/src/test/**
-
-load-testing/node_modules/
-node_modules/
-
-# Ignore env files everywhere
-**/.env
-**/.env.*
-packages/**/.env
-packages/**/.env.*
-
-.schemathesis/
-.hypothesis/
-.venv-schemathesis/
-
-.gradle-user-home

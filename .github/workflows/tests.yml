@@ -177,9 +177,9 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         if: needs.detect-code-changes.outputs.run-tests == 'true'
 
-      - name: Create gradle.properties for Docker secrets
+      - name: Create gradle properties for Docker secrets
         if: needs.detect-code-changes.outputs.run-tests == 'true'
-        run: mkdir -p ~/.gradle && touch ~/.gradle/gradle.properties
+        run: cp gradle/docker.gradle.properties.example gradle/docker.gradle.properties
 
       - name: E2E Test
         if: needs.detect-code-changes.outputs.run-tests == 'true'

@@ -15,6 +15,12 @@
       ],
       "default": "prod-blue-main*",
       "name": "host"
+    },
+    {
+      "available_values": [],
+      "default": "*",
+      "name": "indexer_name",
+      "prefix": "indexer_name"
     }
   ],
   "title": "Vechain Indexer Dashboard",
@@ -179,7 +185,6 @@
                   "response_format": "scalar"
                 }
               ],
-              "time": {},
               "timeseries_background": {
                 "type": "bars",
                 "yaxis": {}
@@ -245,7 +250,6 @@
                   "response_format": "scalar"
                 }
               ],
-              "time": {},
               "timeseries_background": {
                 "type": "bars",
                 "yaxis": {}
@@ -306,7 +310,6 @@
                   "response_format": "scalar"
                 }
               ],
-              "time": {},
               "timeseries_background": {
                 "type": "bars",
                 "yaxis": {}
@@ -367,7 +370,6 @@
                   "response_format": "scalar"
                 }
               ],
-              "time": {},
               "timeseries_background": {
                 "type": "bars",
                 "yaxis": {}
@@ -428,7 +430,6 @@
                   "response_format": "scalar"
                 }
               ],
-              "time": {},
               "timeseries_background": {
                 "type": "bars",
                 "yaxis": {}
@@ -489,7 +490,6 @@
                   "response_format": "scalar"
                 }
               ],
-              "time": {},
               "timeseries_background": {
                 "type": "bars",
                 "yaxis": {}
@@ -550,7 +550,6 @@
                   "response_format": "scalar"
                 }
               ],
-              "time": {},
               "timeseries_background": {
                 "type": "bars",
                 "yaxis": {}
@@ -611,7 +610,6 @@
                   "response_format": "scalar"
                 }
               ],
-              "time": {},
               "timeseries_background": {
                 "type": "bars",
                 "yaxis": {}
@@ -633,7 +631,7 @@
       },
       "id": 3820863994244755,
       "layout": {
-        "height": 6,
+        "height": 1,
         "width": 12,
         "x": 0,
         "y": 0
@@ -698,7 +696,7 @@
                       "aggregator": "avg",
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "sum:processor_events_counter{indexer-id:$host.value}.as_rate()"
+                      "query": "sum:processor_events_counter{indexer-id:$host.value,indexer_name:$indexer_name.value}.as_rate()"
                     }
                   ],
                   "response_format": "scalar"
@@ -733,7 +731,7 @@
                       "aggregator": "avg",
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:processor_duration.avg{indexer-id:$host.value}"
+                      "query": "avg:processor_duration.avg{indexer-id:$host.value,indexer_name:$indexer_name.value}"
                     }
                   ],
                   "response_format": "scalar"
@@ -750,6 +748,55 @@
               "width": 4,
               "x": 8,
               "y": 0
+            }
+          },
+          {
+            "definition": {
+              "legend": {
+                "type": "automatic"
+              },
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "aggregator": "last",
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:indexer_sync_status_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value} by {status_readable}"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "sort": {
+                    "count": 500,
+                    "order_by": [
+                      {
+                        "index": 0,
+                        "order": "desc",
+                        "type": "formula"
+                      }
+                    ]
+                  },
+                  "style": {
+                    "palette": "datadog16"
+                  }
+                }
+              ],
+              "title": "Sync Status",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "sunburst"
+            },
+            "id": 2000000000000012,
+            "layout": {
+              "height": 5,
+              "width": 4,
+              "x": 0,
+              "y": 1
             }
           },
           {
@@ -771,7 +818,7 @@
                     {
                       "data_source": "metrics",
                       "name": "a",
-                      "query": "max:indexer_current_block_by_status_gauge{indexer-id:$host.value} by {indexer_name}"
+                      "query": "max:indexer_current_block_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -807,7 +854,7 @@
                 }
               ],
               "show_legend": true,
-              "title": "Sync Status per Indexer",
+              "title": "Sync Progress",
               "title_align": "left",
               "title_size": "16",
               "type": "timeseries",
@@ -818,57 +865,9 @@
             "id": 8455566819524122,
             "layout": {
               "height": 5,
-              "width": 12,
-              "x": 0,
+              "width": 8,
+              "x": 4,
               "y": 1
-            }
-          },
-          {
-            "definition": {
-              "legend": {
-                "type": "automatic"
-              },
-              "requests": [
-                {
-                  "formulas": [
-                    {
-                      "formula": "query1"
-                    }
-                  ],
-                  "queries": [
-                    {
-                      "aggregator": "last",
-                      "data_source": "metrics",
-                      "name": "query1",
-                      "query": "sum:indexer_sync_status_gauge{indexer-id:$host.value} by {status_readable}"
-                    }
-                  ],
-                  "response_format": "scalar",
-                  "sort": {
-                    "order_by": [
-                      {
-                        "index": 0,
-                        "order": "desc",
-                        "type": "formula"
-                      }
-                    ]
-                  },
-                  "style": {
-                    "palette": "datadog16"
-                  }
-                }
-              ],
-              "title": "Sync Status",
-              "title_align": "left",
-              "title_size": "16",
-              "type": "sunburst"
-            },
-            "id": 2000000000000012,
-            "layout": {
-              "height": 4,
-              "width": 4,
-              "x": 0,
-              "y": 6
             }
           },
           {
@@ -877,6 +876,48 @@
               "requests": [
                 {
                   "formulas": [
+                    {
+                      "alias": "Status",
+                      "conditional_formats": [
+                        {
+                          "comparator": "=",
+                          "custom_bg_color": "#40c464",
+                          "palette": "custom_bg",
+                          "value": 6
+                        },
+                        {
+                          "comparator": "=",
+                          "custom_bg_color": "#eb354b",
+                          "palette": "custom_bg",
+                          "value": 5
+                        },
+                        {
+                          "comparator": "=",
+                          "custom_bg_color": "#ac2bff",
+                          "palette": "custom_bg",
+                          "value": 3
+                        },
+                        {
+                          "comparator": "=",
+                          "custom_bg_color": "#f99d01",
+                          "palette": "custom_bg",
+                          "value": 2
+                        },
+                        {
+                          "comparator": "=",
+                          "custom_bg_color": "#ffdc18",
+                          "palette": "custom_bg",
+                          "value": 1
+                        },
+                        {
+                          "comparator": "=",
+                          "custom_bg_color": "#eb354b",
+                          "palette": "custom_bg",
+                          "value": 0
+                        }
+                      ],
+                      "formula": "status"
+                    },
                     {
                       "alias": "Sync Gap",
                       "conditional_formats": [
@@ -899,34 +940,7 @@
                       "formula": "gap"
                     },
                     {
-                      "alias": "Est. Time to Sync",
-                      "conditional_formats": [
-                        {
-                          "comparator": "<=",
-                          "palette": "white_on_green",
-                          "value": 0
-                        },
-                        {
-                          "comparator": ">=",
-                          "palette": "white_on_red",
-                          "value": 21600
-                        },
-                        {
-                          "comparator": ">",
-                          "palette": "white_on_yellow",
-                          "value": 0
-                        }
-                      ],
-                      "formula": "eta",
-                      "number_format": {
-                        "unit": {
-                          "type": "canonical_unit",
-                          "unit_name": "second"
-                        }
-                      }
-                    },
-                    {
-                      "alias": "Block Processing (ms)",
+                      "alias": "Block Processing",
                       "conditional_formats": [
                         {
                           "comparator": ">",
@@ -947,7 +961,7 @@
                       "formula": "avg_time"
                     },
                     {
-                      "alias": "Block Cycle Time (ms)",
+                      "alias": "Block Cycle Time",
                       "conditional_formats": [
                         {
                           "comparator": ">",
@@ -970,6 +984,34 @@
                     {
                       "alias": "Events",
                       "formula": "events"
+                    },
+                    {
+                      "alias": "Est. Time to Sync",
+                      "cell_display_mode": "number",
+                      "conditional_formats": [
+                        {
+                          "comparator": "<",
+                          "palette": "white_on_green",
+                          "value": 10000
+                        },
+                        {
+                          "comparator": ">=",
+                          "palette": "white_on_red",
+                          "value": 1000000
+                        },
+                        {
+                          "comparator": ">=",
+                          "palette": "white_on_yellow",
+                          "value": 10000
+                        }
+                      ],
+                      "formula": "cycle_time * gap",
+                      "number_format": {
+                        "unit": {
+                          "type": "canonical_unit",
+                          "unit_name": "millisecond"
+                        }
+                      }
                     }
                   ],
                   "queries": [
@@ -977,37 +1019,31 @@
                       "aggregator": "last",
                       "data_source": "metrics",
                       "name": "status",
-                      "query": "max:indexer_sync_status_gauge{indexer-id:$host.value} by {indexer_name,status_readable}"
+                      "query": "max:indexer_sync_status_code_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name}"
                     },
                     {
                       "aggregator": "last",
                       "data_source": "metrics",
                       "name": "gap",
-                      "query": "max:indexer_sync_gap_gauge{indexer-id:$host.value} by {indexer_name}"
-                    },
-                    {
-                      "aggregator": "last",
-                      "data_source": "metrics",
-                      "name": "eta",
-                      "query": "max:indexer_estimated_time_to_sync_seconds{indexer-id:$host.value} by {indexer_name}"
+                      "query": "max:indexer_sync_gap_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name}"
                     },
                     {
                       "aggregator": "avg",
                       "data_source": "metrics",
                       "name": "avg_time",
-                      "query": "avg:processor_duration.avg{indexer-id:$host.value} by {indexer_name}"
+                      "query": "avg:processor_duration.avg{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name}"
                     },
                     {
                       "aggregator": "avg",
                       "data_source": "metrics",
                       "name": "cycle_time",
-                      "query": "avg:processor_cycle_time.avg{indexer-id:$host.value} by {indexer_name}"
+                      "query": "avg:processor_cycle_time.avg{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name}"
                     },
                     {
                       "aggregator": "sum",
                       "data_source": "metrics",
                       "name": "events",
-                      "query": "sum:processor_events_counter{indexer-id:$host.value} by {indexer_name}"
+                      "query": "sum:processor_events_counter{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name}"
                     }
                   ],
                   "response_format": "scalar",
@@ -1023,6 +1059,7 @@
                   }
                 }
               ],
+              "time": {},
               "title": "Indexer Overview",
               "title_align": "left",
               "title_size": "16",
@@ -1030,10 +1067,30 @@
             },
             "id": 2000000000000100,
             "layout": {
-              "height": 4,
-              "width": 8,
-              "x": 4,
+              "height": 5,
+              "width": 12,
+              "x": 0,
               "y": 6
+            }
+          },
+          {
+            "definition": {
+              "background_color": "transparent",
+              "content": "**Status Legend:** 🟢 6 = Fully Synced · 🟠 2 = Syncing · 🟣 3 = Fast Syncing · 🟡 1 = Initialised · 🔴 0 = Not Initialised · 🔴 5 = Shut Down",
+              "font_size": "14",
+              "has_padding": true,
+              "show_tick": false,
+              "text_align": "left",
+              "tick_edge": "left",
+              "tick_pos": "50%",
+              "type": "note"
+            },
+            "id": 2000000000000101,
+            "layout": {
+              "height": 1,
+              "width": 12,
+              "x": 0,
+              "y": 11
             }
           },
           {
@@ -1058,7 +1115,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:indexer_blocks_per_second_gauge{indexer-id:$host.value} by {indexer_name}"
+                      "query": "avg:indexer_blocks_per_second_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -1084,7 +1141,7 @@
               "height": 3,
               "width": 12,
               "x": 0,
-              "y": 10
+              "y": 12
             }
           },
           {
@@ -1109,7 +1166,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:processor_duration.avg{indexer-id:$host.value} by {indexer_name}"
+                      "query": "avg:processor_duration.avg{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -1135,7 +1192,7 @@
               "height": 4,
               "width": 6,
               "x": 0,
-              "y": 13
+              "y": 15
             }
           },
           {
@@ -1160,7 +1217,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:processor_duration.percentile{indexer-id:$host.value , phi:0.95} by {indexer_name}"
+                      "query": "avg:processor_duration.percentile{indexer-id:$host.value,indexer_name:$indexer_name.value, phi:0.95} by {indexer_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -1186,7 +1243,7 @@
               "height": 4,
               "width": 6,
               "x": 6,
-              "y": 13
+              "y": 15
             }
           },
           {
@@ -1211,7 +1268,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "sum:processor_events_counter{indexer-id:$host.value} by {indexer_name}.as_rate()"
+                      "query": "sum:processor_events_counter{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name}.as_rate()"
                     }
                   ],
                   "response_format": "timeseries",
@@ -1233,17 +1290,17 @@
               "height": 3,
               "width": 12,
               "x": 0,
-              "y": 17
+              "y": 19
             }
           }
         ]
       },
       "id": 550306260802215,
       "layout": {
-        "height": 21,
+        "height": 23,
         "width": 12,
         "x": 0,
-        "y": 6
+        "y": 1
       }
     },
     {
@@ -1807,9 +1864,10 @@
       "id": 8172624935724998,
       "layout": {
         "height": 1,
+        "is_column_break": true,
         "width": 12,
         "x": 0,
-        "y": 27
+        "y": 24
       }
     },
     {
@@ -3380,7 +3438,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 28
+        "y": 25
       }
     },
     {
@@ -4606,7 +4664,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 29
+        "y": 26
       }
     },
     {
@@ -4822,11 +4880,10 @@
       },
       "id": 7120742133508725,
       "layout": {
-        "height": 11,
-        "is_column_break": true,
+        "height": 1,
         "width": 12,
         "x": 0,
-        "y": 0
+        "y": 27
       }
     },
     {
@@ -5107,10 +5164,10 @@
       },
       "id": 1968310664816332,
       "layout": {
-        "height": 1,
+        "height": 7,
         "width": 12,
         "x": 0,
-        "y": 11
+        "y": 28
       }
     },
     {
@@ -5268,7 +5325,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 12
+        "y": 35
       }
     },
     {
@@ -5947,7 +6004,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 13
+        "y": 36
       }
     }
   ]
