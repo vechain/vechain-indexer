@@ -18,10 +18,8 @@ import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockRevision
-import org.vechain.indexer.utils.TimeSeriesUtils.DAILY_THRESHOLD
-import org.vechain.indexer.utils.TimeSeriesUtils.HOURLY_THRESHOLD
-import org.vechain.indexer.utils.TimeSeriesUtils.MONTHLY_THRESHOLD
-import org.vechain.indexer.utils.TimeSeriesUtils.WEEKLY_THRESHOLD
+import org.vechain.indexer.timeseries.TimeSeriesResolution
+import org.vechain.indexer.utils.TimeSeriesUtils
 import org.vechain.indexer.validator.BlockStatus
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator
@@ -157,49 +155,58 @@ open class ValidatorService(
             throw BadRequestException(ERROR_END_TIME_CANNOT_BE_LESS_THAN_START_TIME)
         }
 
-        val timeRange = endTimestamp - startTimestamp
+        val latestBeforeOrAt = { timestamp: Long ->
+            validatorBlockRepository
+                .findFirstByValidatorAndStatusAndBlockTimestampLessThanEqualOrderByBlockTimestampDesc(
+                    validator,
+                    BlockStatus.VALIDATED,
+                    timestamp,
+                )
+        }
 
-        return when {
-            timeRange <= HOURLY_THRESHOLD -> {
-                // Return all blocks for small ranges
+        return when (TimeSeriesUtils.selectResolution(endTimestamp - startTimestamp)) {
+            TimeSeriesResolution.RAW ->
                 validatorBlockRepository.findAllInTimestampRange(
                     startTimestamp,
                     endTimestamp,
                     validator,
                 )
-            }
-            timeRange <= DAILY_THRESHOLD -> {
-                // Return hourly aggregates
-                validatorBlockRepository.findHourlyInTimestampRange(
+            TimeSeriesResolution.HOURLY ->
+                TimeSeriesUtils.getBookendedRecords(
                     startTimestamp,
                     endTimestamp,
-                    validator,
+                    { start, end ->
+                        validatorBlockRepository.findHourlyInTimestampRange(start, end, validator)
+                    },
+                    latestBeforeOrAt,
                 )
-            }
-            timeRange <= WEEKLY_THRESHOLD -> {
-                // Return daily aggregates
-                validatorBlockRepository.findDailyInTimestampRange(
+            TimeSeriesResolution.DAILY ->
+                TimeSeriesUtils.getBookendedRecords(
                     startTimestamp,
                     endTimestamp,
-                    validator,
+                    { start, end ->
+                        validatorBlockRepository.findDailyInTimestampRange(start, end, validator)
+                    },
+                    latestBeforeOrAt,
                 )
-            }
-            timeRange <= MONTHLY_THRESHOLD -> {
-                // Return weekly aggregates
-                validatorBlockRepository.findWeeklyInTimestampRange(
+            TimeSeriesResolution.WEEKLY ->
+                TimeSeriesUtils.getBookendedRecords(
                     startTimestamp,
                     endTimestamp,
-                    validator,
+                    { start, end ->
+                        validatorBlockRepository.findWeeklyInTimestampRange(start, end, validator)
+                    },
+                    latestBeforeOrAt,
                 )
-            }
-            else -> {
-                // Return monthly aggregates
-                validatorBlockRepository.findMonthlyInTimestampRange(
+            TimeSeriesResolution.MONTHLY ->
+                TimeSeriesUtils.getBookendedRecords(
                     startTimestamp,
                     endTimestamp,
-                    validator,
+                    { start, end ->
+                        validatorBlockRepository.findMonthlyInTimestampRange(start, end, validator)
+                    },
+                    latestBeforeOrAt,
                 )
-            }
         }
     }
 

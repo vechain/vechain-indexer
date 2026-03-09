@@ -33,8 +33,11 @@ open class BlockUsageController(private val blockUsageService: BlockUsageService
             - Range ≤ 4,000 seconds: Returns all blocks (~360 data points)
             - Range ≤ 700,000 seconds: Returns hourly values (~168 data points)
             - Range ≤ 6,000,000 seconds: Returns daily values (~60 data points)
-            - Range ≤ 35,000,000 seconds: Returns daily values (~400 data points)
-            - Range > 35,000,000 seconds: Returns weekly values
+            - Range ≤ 35,000,000 seconds: Returns weekly values (~52 data points)
+            - Range > 35,000,000 seconds: Returns monthly values
+
+            For sampled ranges, the response also includes the nearest records at or before the requested
+            boundaries so cumulative charts remain continuous even when the sampled points are sparse.
 
             Values are represented as a monotonic cumulative counter which means the values increase over time. This is
             a semantic used by Grafana for example. It requires some processing on the client side to convert to a value
