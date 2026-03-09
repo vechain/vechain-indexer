@@ -73,4 +73,3 @@ jobs:
 
       - name: Terraform Apply
         run: terraform apply "apply.plan"
-
