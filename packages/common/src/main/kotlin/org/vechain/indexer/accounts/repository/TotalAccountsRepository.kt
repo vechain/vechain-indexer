@@ -9,6 +9,9 @@ import org.vechain.indexer.accounts.TimeFrame
 import org.vechain.indexer.accounts.TotalAccounts
 
 @Profile("accounts", "total-accounts")
+@Deprecated(
+    "V1 total-accounts repository is deprecated. Use AccountTotalsSeriesRepository instead."
+)
 interface TotalAccountsRepository : BaseIndexedRepository<TotalAccounts, String> {
     @Query("{ 'timeFrame': { '\$in': ?0 } }")
     fun findByTimeFrameIn(timeFrames: List<TimeFrame>, pageable: Pageable): Slice<TotalAccounts>

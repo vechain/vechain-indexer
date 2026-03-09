@@ -12,6 +12,7 @@ import org.vechain.indexer.thor.model.Views
 @Document(collection = IndexerNames.TOTAL_ACCOUNTS.COLLECTION)
 @JsonView(Views.Public::class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Deprecated("V1 total-accounts model is deprecated. Use AccountTotalsSeries instead.")
 data class TotalAccounts(
     @JsonIgnore @Id val id: String,
     @JsonIgnore override val blockId: String,

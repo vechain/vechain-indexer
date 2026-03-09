@@ -163,6 +163,7 @@ enabled_nets:
         vet-delegated-by-block:     '23415238'
         nft-holders-by-block:       '22083535'
         nft-owner-balance:          '22083535'
+        account-totals-series:      '0'
       start-round:
         b3tr-sustainable-actions:   '4'
       sync-log-interval: '100'
@@ -176,6 +177,7 @@ enabled_nets:
         authority-nodes: '125'
         b3tr: '75'
         historic-proposals: '125'
+        account-totals-series: '125'
       channel-batch-size: '15'
       checkpoint-save-interval-seconds: '60'
       pruner:
@@ -227,6 +229,7 @@ enabled_nets:
         token-rewards: '4'
         delegation: '7'
         total-accounts: '3'
+        account-totals-series: '1'
         account-overview: '5'
       business-event:
         substitutions:
@@ -382,6 +385,7 @@ enabled_nets:
         vet-delegated-by-block:     '23222700'
         nft-holders-by-block:       '23188723'
         nft-owner-balance:          '23188723'
+        account-totals-series:      '0'
       start-round:
         b3tr-sustainable-actions:   '4'
       sync-log-interval: '100'
@@ -395,6 +399,7 @@ enabled_nets:
         authority-nodes: '125'
         b3tr: '75'
         historic-proposals: '125'
+        account-totals-series: '125'
       channel-batch-size: '15'
       checkpoint-save-interval-seconds: '60'
       pruner:
@@ -446,6 +451,7 @@ enabled_nets:
         token-rewards: '3'
         delegation: '6'
         total-accounts: '3'
+        account-totals-series: '1'
         account-overview: '5'
       business-event:
         substitutions:

@@ -10,21 +10,22 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("accounts", "total-accounts")
-@Deprecated("V1 total-accounts config is deprecated. Use AccountTotalsSeriesConfig instead.")
-open class TotalAccountsConfig {
+@Profile("accounts", "account-totals-series")
+open class AccountTotalsSeriesConfig {
     @Bean
-    open fun totalAccountsIndexer(
+    open fun accountTotalsSeriesIndexer(
         thorClient: ThorClient,
-        processor: TotalAccountsProcessor,
+        processor: AccountTotalsSeriesProcessor,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
+        @Value("\${indexer.start-block.account-totals-series:0}") startBlock: Long,
+        @Value("\${indexer.sync-block-batch-size.account-totals-series:100}")
+        syncBlockBatchSize: Long,
     ): BlockIndexer =
         IndexerFactory()
-            .name(IndexerNames.TOTAL_ACCOUNTS.NAME)
+            .name(IndexerNames.ACCOUNT_TOTALS_SERIES.NAME)
             .thorClient(thorClient)
             .processor(processor)
-            .startBlock(0L)
+            .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
             .includeFullBlock()

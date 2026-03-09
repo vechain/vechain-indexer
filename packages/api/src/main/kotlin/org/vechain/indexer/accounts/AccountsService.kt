@@ -9,9 +9,12 @@ import org.springframework.data.domain.SliceImpl
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.vechain.indexer.accounts.repository.AccountOverviewRepository
+import org.vechain.indexer.accounts.repository.AccountTotalsSeriesRepository
 import org.vechain.indexer.accounts.repository.TotalAccountsRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountRepository
 import org.vechain.indexer.thor.Address
+import org.vechain.indexer.timeseries.TimeSeriesResolution
+import org.vechain.indexer.utils.TimeSeriesUtils
 
 /**
  * @notice Service handling reward aggregation and normalization for accounts.
@@ -23,6 +26,7 @@ import org.vechain.indexer.thor.Address
 open class AccountsService(
     private val totalAccountsRepository: TotalAccountsRepository,
     private val accountOverviewRepository: AccountOverviewRepository,
+    private val accountTotalsSeriesRepository: AccountTotalsSeriesRepository,
 ) {
     @Autowired(required = false)
     private var vthoClaimedByAccountRepository: VthoClaimedByAccountRepository? = null
@@ -111,6 +115,70 @@ open class AccountsService(
             monthTotal = null,
             yearTotal = null,
         )
+    }
+
+    fun getTotalSeries(startTimestamp: Long, endTimestamp: Long): List<AccountTotalsSeries> {
+        require(startTimestamp >= 0) { "startTimestamp must be non-negative" }
+        require(endTimestamp >= startTimestamp) {
+            "endTimestamp must be greater than or equal to startTimestamp"
+        }
+
+        return when (TimeSeriesUtils.selectResolution(endTimestamp - startTimestamp)) {
+            TimeSeriesResolution.RAW ->
+                accountTotalsSeriesRepository.findAllInTimestampRange(startTimestamp, endTimestamp)
+            TimeSeriesResolution.HOURLY ->
+                TimeSeriesUtils.getBookendedRecords(
+                    startTimestamp,
+                    endTimestamp,
+                    accountTotalsSeriesRepository::findHourlyInTimestampRange,
+                    { timestamp ->
+                        accountTotalsSeriesRepository
+                            .findFirstByRecordTypeAndBlockTimestampLessThanEqualOrderByBlockTimestampDesc(
+                                AccountTotalsSeriesRecordType.SERIES,
+                                timestamp,
+                            )
+                    },
+                )
+            TimeSeriesResolution.DAILY ->
+                TimeSeriesUtils.getBookendedRecords(
+                    startTimestamp,
+                    endTimestamp,
+                    accountTotalsSeriesRepository::findDailyInTimestampRange,
+                    { timestamp ->
+                        accountTotalsSeriesRepository
+                            .findFirstByRecordTypeAndBlockTimestampLessThanEqualOrderByBlockTimestampDesc(
+                                AccountTotalsSeriesRecordType.SERIES,
+                                timestamp,
+                            )
+                    },
+                )
+            TimeSeriesResolution.WEEKLY ->
+                TimeSeriesUtils.getBookendedRecords(
+                    startTimestamp,
+                    endTimestamp,
+                    accountTotalsSeriesRepository::findWeeklyInTimestampRange,
+                    { timestamp ->
+                        accountTotalsSeriesRepository
+                            .findFirstByRecordTypeAndBlockTimestampLessThanEqualOrderByBlockTimestampDesc(
+                                AccountTotalsSeriesRecordType.SERIES,
+                                timestamp,
+                            )
+                    },
+                )
+            TimeSeriesResolution.MONTHLY ->
+                TimeSeriesUtils.getBookendedRecords(
+                    startTimestamp,
+                    endTimestamp,
+                    accountTotalsSeriesRepository::findMonthlyInTimestampRange,
+                    { timestamp ->
+                        accountTotalsSeriesRepository
+                            .findFirstByRecordTypeAndBlockTimestampLessThanEqualOrderByBlockTimestampDesc(
+                                AccountTotalsSeriesRecordType.SERIES,
+                                timestamp,
+                            )
+                    },
+                )
+        }
     }
 
     fun getOverview(address: Address): AccountOverview? =
