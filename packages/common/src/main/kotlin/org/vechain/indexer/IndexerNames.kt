@@ -32,11 +32,6 @@ object IndexerNames {
         const val COLLECTION = "average_fees_per_user_daily"
     }
 
-    object AVERAGE_FEES_PER_USER_ORIGIN_MARKER {
-        const val NAME = "AverageFeesPerUserOriginMarkerIndexer"
-        const val COLLECTION = "average_fees_per_user_daily_origin_markers"
-    }
-
     object GM_NFT {
         const val NAME = "GmNftIndexer"
         const val COLLECTION = "b3tr_gm_nfts"

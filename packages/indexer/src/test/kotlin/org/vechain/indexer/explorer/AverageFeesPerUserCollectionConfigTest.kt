@@ -20,7 +20,7 @@ class AverageFeesPerUserCollectionConfigTest {
     @MockK lateinit var indexerVersionService: IndexerVersionService
 
     @Test
-    fun `initCollection creates a dayStartTimestamp index for day range reads`() {
+    fun `initCollection creates recordType scoped indexes for summary lookups`() {
         val capturedIndexes = mutableListOf<IndexDefinition>()
         every {
             indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
@@ -38,8 +38,18 @@ class AverageFeesPerUserCollectionConfigTest {
 
         assertTrue(
             capturedIndexes.any {
-                it.indexKeys["dayStartTimestamp"] == 1 &&
-                    it.indexOptions["name"] == "dayStartTimestamp_1"
+                it.indexKeys["recordType"] == 1 &&
+                    it.indexKeys["dayStartTimestamp"] == 1 &&
+                    it.indexKeys["blockNumber"] == -1 &&
+                    it.indexOptions["name"] == "recordType_1_dayStartTimestamp_1_blockNumber_-1"
+            }
+        )
+        assertTrue(
+            capturedIndexes.any {
+                it.indexKeys["recordType"] == 1 &&
+                    it.indexKeys["date"] == 1 &&
+                    it.indexKeys["blockNumber"] == -1 &&
+                    it.indexOptions["name"] == "recordType_1_date_1_blockNumber_-1"
             }
         )
     }

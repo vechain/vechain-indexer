@@ -41,9 +41,20 @@ open class AverageFeesPerUserCollectionConfig(
             listOf(
                 "blockNumber_-1" to
                     Index().on(AverageFeesPerUser::blockNumber.name, Sort.Direction.DESC),
-                "dayStartTimestamp_1" to
-                    Index().on(AverageFeesPerUser::dayStartTimestamp.name, Sort.Direction.ASC),
-                "date_1" to Index().on(AverageFeesPerUser::date.name, Sort.Direction.ASC),
+                "recordType_1_blockNumber_-1" to
+                    Index()
+                        .on(AverageFeesPerUser::recordType.name, Sort.Direction.ASC)
+                        .on(AverageFeesPerUser::blockNumber.name, Sort.Direction.DESC),
+                "recordType_1_dayStartTimestamp_1_blockNumber_-1" to
+                    Index()
+                        .on(AverageFeesPerUser::recordType.name, Sort.Direction.ASC)
+                        .on(AverageFeesPerUser::dayStartTimestamp.name, Sort.Direction.ASC)
+                        .on(AverageFeesPerUser::blockNumber.name, Sort.Direction.DESC),
+                "recordType_1_date_1_blockNumber_-1" to
+                    Index()
+                        .on(AverageFeesPerUser::recordType.name, Sort.Direction.ASC)
+                        .on(AverageFeesPerUser::date.name, Sort.Direction.ASC)
+                        .on(AverageFeesPerUser::blockNumber.name, Sort.Direction.DESC),
             )
         )
     }

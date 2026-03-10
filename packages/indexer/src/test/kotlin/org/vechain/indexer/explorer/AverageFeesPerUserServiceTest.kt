@@ -1,19 +1,13 @@
 package org.vechain.indexer.explorer
 
-import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.mockk
 import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.repository.findByIdOrNull
-import org.vechain.indexer.config.InlineVersioningProperties
-import org.vechain.indexer.explorer.repository.AverageFeesPerUserOriginMarkerRepository
 import org.vechain.indexer.explorer.repository.AverageFeesPerUserRepository
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.Clause
@@ -22,26 +16,11 @@ import org.vechain.indexer.thor.model.Transaction
 @ExtendWith(MockKExtension::class)
 class AverageFeesPerUserServiceTest {
     @MockK lateinit var repository: AverageFeesPerUserRepository
-    @MockK lateinit var originMarkerRepository: AverageFeesPerUserOriginMarkerRepository
-    @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
-    @MockK lateinit var mongoTemplate: MongoTemplate
 
-    private lateinit var service: AverageFeesPerUserService
-
-    @BeforeEach
-    fun setUp() {
-        MockKAnnotations.init(this)
-        service =
-            AverageFeesPerUserService(
-                repository = repository,
-                originMarkerRepository = originMarkerRepository,
-                inlineVersioningProperties = inlineVersioningProperties,
-                mongoTemplate = mongoTemplate,
-            )
-    }
+    private val service by lazy { AverageFeesPerUserService(repository) }
 
     @Test
-    fun `processBlock creates a daily summary using distinct origins`() {
+    fun `processBlock creates marker and summary records using distinct origins`() {
         val block =
             block(
                 number = 100L,
@@ -55,19 +34,29 @@ class AverageFeesPerUserServiceTest {
             )
         val date = "2024-01-01"
 
-        every { repository.findByIdOrNull(date) } returns null
-        every { originMarkerRepository.findAllById(any<Iterable<String>>()) } returns emptyList()
+        every {
+            repository.findFirstByRecordTypeAndDateAndBlockNumberLessThanOrderByBlockNumberDesc(
+                AverageFeesPerUserRecordType.SUMMARY,
+                date,
+                100L,
+            )
+        } returns null
+        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
 
-        val (updated, existing, markers) = service.processBlock(block)
+        val records = service.processBlock(block)
+        val markers = records.filter { it.recordType == AverageFeesPerUserRecordType.ORIGIN_MARKER }
+        val summary = records.single { it.recordType == AverageFeesPerUserRecordType.SUMMARY }
 
-        assertEquals(emptyList<AverageFeesPerUser>(), existing)
         assertEquals(2, markers.size)
-        assertEquals(1, updated.size)
-        assertEquals(date, updated.single().date)
-        assertDecimalEquals("6", updated.single().totalFeesPaid)
-        assertEquals(2L, updated.single().dailyActiveUsers)
-        assertDecimalEquals("3", updated.single().averageFeesPerUser)
-        assertEquals(1, updated.single().version)
+        assertEquals(
+            setOf("origin-2024-01-01-0xaa", "origin-2024-01-01-0xbb"),
+            markers.map { it.id }.toSet(),
+        )
+        assertEquals(date, summary.date)
+        assertEquals("summary-100", summary.id)
+        assertDecimalEquals("6", summary.totalFeesPaid!!)
+        assertEquals(2L, summary.dailyActiveUsers)
+        assertDecimalEquals("3", summary.averageFeesPerUser!!)
     }
 
     @Test
@@ -85,31 +74,38 @@ class AverageFeesPerUserServiceTest {
         val date = "2024-01-01"
         val existingSummary =
             AverageFeesPerUser(
-                id = date,
+                id = "summary-100",
                 blockId = "0xold",
                 blockNumber = 100L,
                 blockTimestamp = 1_704_067_200L,
+                recordType = AverageFeesPerUserRecordType.SUMMARY,
                 date = date,
                 dayStartTimestamp = service.getDayStartTimestamp(block.timestamp),
                 totalFeesPaid = decimal("4"),
                 dailyActiveUsers = 2L,
                 averageFeesPerUser = decimal("2"),
-                version = 3,
             )
 
-        every { repository.findByIdOrNull(date) } returns existingSummary
-        every { originMarkerRepository.findAllById(any<Iterable<String>>()) } returns
+        every {
+            repository.findFirstByRecordTypeAndDateAndBlockNumberLessThanOrderByBlockNumberDesc(
+                AverageFeesPerUserRecordType.SUMMARY,
+                date,
+                101L,
+            )
+        } returns existingSummary
+        every { repository.findAllById(any<Iterable<String>>()) } returns
             listOf(marker(date = date, origin = "0xaa", blockNumber = 100L))
 
-        val (updated, existing, markers) = service.processBlock(block)
+        val records = service.processBlock(block)
+        val markers = records.filter { it.recordType == AverageFeesPerUserRecordType.ORIGIN_MARKER }
+        val summary = records.single { it.recordType == AverageFeesPerUserRecordType.SUMMARY }
 
-        assertEquals(listOf(existingSummary), existing)
         assertEquals(1, markers.size)
-        assertEquals("2024-01-01-0xcc", markers.single().id)
-        assertDecimalEquals("7", updated.single().totalFeesPaid)
-        assertEquals(3L, updated.single().dailyActiveUsers)
-        assertDecimalEquals("2.333333333333", updated.single().averageFeesPerUser)
-        assertEquals(4, updated.single().version)
+        assertEquals("origin-2024-01-01-0xcc", markers.single().id)
+        assertEquals("summary-101", summary.id)
+        assertDecimalEquals("7", summary.totalFeesPaid!!)
+        assertEquals(3L, summary.dailyActiveUsers)
+        assertDecimalEquals("2.333333333333", summary.averageFeesPerUser!!)
     }
 
     @Test
@@ -122,15 +118,49 @@ class AverageFeesPerUserServiceTest {
             )
         val date = "2024-01-02"
 
-        every { repository.findByIdOrNull(date) } returns null
-        every { originMarkerRepository.findAllById(any<Iterable<String>>()) } returns emptyList()
+        every {
+            repository.findFirstByRecordTypeAndDateAndBlockNumberLessThanOrderByBlockNumberDesc(
+                AverageFeesPerUserRecordType.SUMMARY,
+                date,
+                200L,
+            )
+        } returns null
+        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
 
-        val (updated, _, markers) = service.processBlock(block)
+        val records = service.processBlock(block)
+        val markers = records.filter { it.recordType == AverageFeesPerUserRecordType.ORIGIN_MARKER }
+        val summary = records.single { it.recordType == AverageFeesPerUserRecordType.SUMMARY }
 
         assertEquals(1, markers.size)
-        assertEquals("2024-01-02-0xaa", markers.single().id)
-        assertEquals(1L, updated.single().dailyActiveUsers)
-        assertDecimalEquals("1", updated.single().averageFeesPerUser)
+        assertEquals("origin-2024-01-02-0xaa", markers.single().id)
+        assertEquals(1L, summary.dailyActiveUsers)
+        assertDecimalEquals("1", summary.averageFeesPerUser!!)
+    }
+
+    @Test
+    fun `save caches the latest summary for subsequent same-day blocks`() {
+        val records =
+            listOf(
+                marker(date = "2024-01-01", origin = "0xaa", blockNumber = 100L),
+                AverageFeesPerUser(
+                    id = "summary-100",
+                    blockId = "0x64",
+                    blockNumber = 100L,
+                    blockTimestamp = 1_704_067_200L,
+                    recordType = AverageFeesPerUserRecordType.SUMMARY,
+                    date = "2024-01-01",
+                    dayStartTimestamp = 1_704_067_200L,
+                    totalFeesPaid = decimal("1"),
+                    dailyActiveUsers = 1L,
+                    averageFeesPerUser = decimal("1"),
+                ),
+            )
+
+        every { repository.saveAll(any<Iterable<AverageFeesPerUser>>()) } answers { firstArg() }
+
+        service.save(records)
+
+        assertEquals("summary-100", service.getPreviousSummary("2024-01-01", 101L)?.id)
     }
 
     private fun decimal(value: String): BigDecimal = BigDecimal(value)
@@ -140,11 +170,12 @@ class AverageFeesPerUserServiceTest {
     }
 
     private fun marker(date: String, origin: String, blockNumber: Long) =
-        AverageFeesPerUserOriginMarker(
-            id = "$date-$origin",
+        AverageFeesPerUser(
+            id = "origin-$date-$origin",
             blockId = "0x$blockNumber",
             blockNumber = blockNumber,
             blockTimestamp = 1_704_067_200L,
+            recordType = AverageFeesPerUserRecordType.ORIGIN_MARKER,
             date = date,
             origin = origin,
         )
