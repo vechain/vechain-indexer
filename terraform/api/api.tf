@@ -100,7 +100,7 @@ module "ecs-cluster" {
 module "ecs-lb-service-api" {
   depends_on             = [module.ecs-cluster, resource.aws_security_group.ecs_service_sg, resource.aws_security_group.alb-sg]
   for_each               = local.env.enabled_nets
-  source                 = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=hotfix/1.4.25"
+  source                 = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=v.3.1.28"
   ssl_policy             = "ELBSecurityPolicy-TLS-1-2-2017-01"
   region                 = local.env.region
   vpc_id                 = data.terraform_remote_state.vpc.outputs.vpc_id
@@ -121,14 +121,11 @@ module "ecs-lb-service-api" {
   cidr                   = local.env.cidr
   container_port         = 8080
   certificate_arn        = local.env.certificate_arn
-  ecs_sg                 = [aws_security_group.alb-sg.id]
-  # Listener Rules Configuration
-  rule_0_path_pattern             = try(local.env.alb.listener_rules[0].path_patterns, ["/api/v*"])
-  is_rule_4_required              = try(local.env.alb.is_rule_4_required, false)
-  default_action                  = try(local.env.alb.https_listener.default_action, "fixed-response")
+  ecs_sg                    = [aws_security_group.alb-sg.id]
+  rule_0_path_pattern       = ["/api/v*", "/api-docs", "/api-docs/*", "/swagger-ui/*"]
   alb_sg                    = [aws_security_group.alb-sg.id]
   namespace_id              = aws_service_discovery_private_dns_namespace.ns.id
-  https_tg_healthcheck_path = try(local.env.alb.healthcheck.path, "/actuator/health")
+  https_tg_healthcheck_path = "/actuator/health"
   environment_variables = [
     {
       name  = "APPLICATION_NAME"
