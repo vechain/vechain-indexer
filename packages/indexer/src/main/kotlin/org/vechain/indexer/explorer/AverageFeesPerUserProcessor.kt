@@ -1,10 +1,8 @@
 package org.vechain.indexer.explorer
 
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.BaseStatefulProcessor
+import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.checkpoint.CheckpointService
@@ -15,14 +13,12 @@ import org.vechain.indexer.explorer.repository.AverageFeesPerUserRepository
 @Component
 open class AverageFeesPerUserProcessor(
     repository: AverageFeesPerUserRepository,
-    mongoTemplate: MongoTemplate,
     private val service: AverageFeesPerUserService,
     checkpointService: CheckpointService,
     processorMetrics: ProcessorMetrics,
 ) :
-    BaseStatefulProcessor(
+    BaseProcessor(
         repository = repository,
-        mongoTemplate = mongoTemplate,
         indexerName = IndexerNames.AVERAGE_FEES_PER_USER.NAME,
         checkpointService = checkpointService,
         collectionName = IndexerNames.AVERAGE_FEES_PER_USER.COLLECTION,
@@ -36,16 +32,14 @@ open class AverageFeesPerUserProcessor(
             )
         }
 
-        val (updated, existing, newMarkers) = service.processBlock(entry.block)
-        if (updated.isNotEmpty()) {
-            service.save(updated, existing, newMarkers)
+        val records = service.processBlock(entry.block)
+        if (records.isNotEmpty()) {
+            service.save(records)
         }
     }
 
-    @Transactional(rollbackFor = [Exception::class])
     override fun rollback(blockNumber: Long) {
         service.clearProcessingState()
-        service.deleteMarkersFromBlock(blockNumber)
         super.rollback(blockNumber)
     }
 }

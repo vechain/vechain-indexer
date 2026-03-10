@@ -30,15 +30,15 @@ class AverageFeesPerUserServiceTest {
 
     private fun averageFeesPerUser(date: String, dayStartTimestamp: Long) =
         AverageFeesPerUser(
-            id = date,
+            id = "summary-$dayStartTimestamp",
             blockId = "0x1",
             blockNumber = 1L,
             blockTimestamp = dayStartTimestamp,
+            recordType = AverageFeesPerUserRecordType.SUMMARY,
             date = date,
             dayStartTimestamp = dayStartTimestamp,
             totalFeesPaid = BigDecimal.ONE,
             dailyActiveUsers = 1L,
             averageFeesPerUser = BigDecimal.ONE,
-            version = 1,
         )
 }

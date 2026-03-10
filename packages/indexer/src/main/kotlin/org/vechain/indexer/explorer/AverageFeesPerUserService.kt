@@ -5,14 +5,9 @@ import java.math.RoundingMode
 import java.time.Instant
 import java.time.ZoneOffset
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.config.InlineVersioningProperties
-import org.vechain.indexer.explorer.repository.AverageFeesPerUserOriginMarkerRepository
 import org.vechain.indexer.explorer.repository.AverageFeesPerUserRepository
-import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.BlockUtils
 import org.vechain.indexer.utils.CacheUtils
@@ -21,23 +16,12 @@ import org.vechain.indexer.utils.scaleDown
 
 @Profile("explorer", "average-fees-per-user")
 @Service
-open class AverageFeesPerUserService(
-    private val repository: AverageFeesPerUserRepository,
-    private val originMarkerRepository: AverageFeesPerUserOriginMarkerRepository,
-    private val inlineVersioningProperties: InlineVersioningProperties,
-    private val mongoTemplate: MongoTemplate,
-) {
+open class AverageFeesPerUserService(private val repository: AverageFeesPerUserRepository) {
     @Volatile private var lastProcessedDailyMetric: AverageFeesPerUser? = null
 
-    open fun processBlock(
-        block: Block
-    ): Triple<
-        List<AverageFeesPerUser>,
-        List<AverageFeesPerUser>,
-        List<AverageFeesPerUserOriginMarker>,
-    > {
+    open fun processBlock(block: Block): List<AverageFeesPerUser> {
         if (block.transactions.isEmpty()) {
-            return Triple(emptyList(), emptyList(), emptyList())
+            return emptyList()
         }
 
         val date = BlockUtils.getDateAtUTC(block.timestamp)
@@ -46,15 +30,16 @@ open class AverageFeesPerUserService(
 
         val distinctOrigins = block.transactions.map { it.origin.lowercase() }.toSet()
         val markerIds = distinctOrigins.map { markerId(date, it) }
-        val existingMarkerIds = originMarkerRepository.findAllById(markerIds).map { it.id }.toSet()
+        val existingMarkerIds = repository.findAllById(markerIds).map { it.id }.toSet()
         val newMarkers =
             markerIds.filterNot(existingMarkerIds::contains).map { id ->
-                val origin = id.removePrefix("$date-")
-                AverageFeesPerUserOriginMarker(
+                val origin = id.removePrefix("$ORIGIN_MARKER_PREFIX$date-")
+                AverageFeesPerUser(
                     id = id,
                     blockId = block.id,
                     blockNumber = block.number,
                     blockTimestamp = block.timestamp,
+                    recordType = AverageFeesPerUserRecordType.ORIGIN_MARKER,
                     date = date,
                     origin = origin,
                 )
@@ -74,31 +59,21 @@ open class AverageFeesPerUserService(
                 existingSummary = existingSummary,
             )
 
-        return Triple(listOf(updatedSummary), listOfNotNull(existingSummary), newMarkers)
+        return buildList {
+            addAll(newMarkers)
+            add(updatedSummary)
+        }
     }
 
     @Transactional(rollbackFor = [Exception::class])
-    open fun save(
-        updated: List<AverageFeesPerUser>,
-        existing: List<AverageFeesPerUser>,
-        newMarkers: List<AverageFeesPerUserOriginMarker>,
-    ) {
-        if (updated.isEmpty()) return
+    open fun save(records: List<AverageFeesPerUser>) {
+        if (records.isEmpty()) return
 
-        if (newMarkers.isNotEmpty()) {
-            originMarkerRepository.saveAll(newMarkers)
-        }
+        repository.saveAll(records)
 
-        saveVersionedDocuments(
-            updated,
-            existing,
-            mongoTemplate,
-            inlineVersioningProperties.blockWindow,
-            inlineVersioningProperties.maxVersions,
-        )
-
+        val latestSummary = records.last { it.recordType == AverageFeesPerUserRecordType.SUMMARY }
         CacheUtils.updateAfterCommit(
-            updated.last(),
+            latestSummary,
             setter = { lastProcessedDailyMetric = it },
             clear = ::clearProcessingState,
         )
@@ -108,17 +83,17 @@ open class AverageFeesPerUserService(
         lastProcessedDailyMetric = null
     }
 
-    open fun deleteMarkersFromBlock(blockNumber: Long) {
-        originMarkerRepository.deleteAllByBlockNumberGreaterThanEqual(blockNumber)
-    }
-
     internal fun getPreviousSummary(date: String, blockNumber: Long): AverageFeesPerUser? {
         val cached = lastProcessedDailyMetric
-        if (cached != null && cached.id == date && cached.blockNumber < blockNumber) {
+        if (cached != null && cached.date == date && cached.blockNumber < blockNumber) {
             return cached
         }
 
-        return repository.findByIdOrNull(date)
+        return repository.findFirstByRecordTypeAndDateAndBlockNumberLessThanOrderByBlockNumberDesc(
+            AverageFeesPerUserRecordType.SUMMARY,
+            date,
+            blockNumber,
+        )
     }
 
     internal fun createOrUpdateSummary(
@@ -133,16 +108,16 @@ open class AverageFeesPerUserService(
         val dailyActiveUsers = (existingSummary?.dailyActiveUsers ?: 0L) + newUsersInBlock
 
         return AverageFeesPerUser(
-            id = date,
+            id = summaryId(block.number),
             blockId = block.id,
             blockNumber = block.number,
             blockTimestamp = block.timestamp,
+            recordType = AverageFeesPerUserRecordType.SUMMARY,
             date = date,
             dayStartTimestamp = dayStartTimestamp,
             totalFeesPaid = totalFeesPaid,
             dailyActiveUsers = dailyActiveUsers,
             averageFeesPerUser = calculateAverage(totalFeesPaid, dailyActiveUsers),
-            version = (existingSummary?.version ?: 0) + 1,
         )
     }
 
@@ -160,9 +135,14 @@ open class AverageFeesPerUserService(
             .atStartOfDay(ZoneOffset.UTC)
             .toEpochSecond()
 
-    internal fun markerId(date: String, origin: String): String = "$date-$origin"
+    internal fun summaryId(blockNumber: Long): String = "$SUMMARY_PREFIX$blockNumber"
+
+    internal fun markerId(date: String, origin: String): String =
+        "$ORIGIN_MARKER_PREFIX$date-$origin"
 
     companion object {
         internal const val SCALE = 12
+        private const val SUMMARY_PREFIX = "summary-"
+        private const val ORIGIN_MARKER_PREFIX = "origin-"
     }
 }
