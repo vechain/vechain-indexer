@@ -150,6 +150,7 @@ indexer:
     nft-holders-by-block: ${INDEXER_START_BLOCK_NFT_HOLDERS_BY_BLOCK:0}
     nft-owner-balance: ${INDEXER_START_BLOCK_NFT_OWNER_BALANCE:0}
     account-totals-series: ${INDEXER_START_BLOCK_ACCOUNT_TOTALS_SERIES:0}
+    average-fees-per-user: ${INDEXER_START_BLOCK_AVERAGE_FEES_PER_USER:0}
   validator-stats-threshold-blocks: ${INDEXER_VALIDATOR_STATS_THRESHOLD_BLOCKS:25}
   stop-block:
     historic-proposals: ${INDEXER_STOP_BLOCK_HISTORIC_PROPOSALS:22948372}
@@ -168,7 +169,6 @@ indexer:
     b3tr-treasury: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_B3TR_TREASURY:100}
     b3tr-balance: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_B3TR_BALANCE:100}
     historic-proposals: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_HISTORIC_PROPOSALS:100}
-    account-totals-series: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_ACCOUNT_TOTALS_SERIES:100}
   checkpoint:
     save-interval-seconds: ${INDEXER_CHECKPOINT_SAVE_INTERVAL_SECONDS:60}
   channel-batch-size: ${INDEXER_CHANNEL_BATCH_SIZE:10}
@@ -210,6 +210,7 @@ indexer:
     b3tr-gm-nft: ${VERSION_B3TR_GM_NFT:1}
     b3tr-gm-nft-level-overview: ${VERSION_B3TR_GM_NFT_LEVEL_OVERVIEW:1}
     block-usage: ${VERSION_BLOCK_USAGE:1}
+    average-fees-per-user: ${VERSION_AVERAGE_FEES_PER_USER:1}
     validator: ${VERSION_VALIDATOR:1}
     validator-rewards: ${VERSION_VALIDATOR_BLOCKS:1}
     delegation: ${VERSION_DELEGATION:1}

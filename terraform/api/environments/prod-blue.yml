@@ -163,6 +163,7 @@ enabled_nets:
         nft-holders-by-block:       '22083535'
         nft-owner-balance:          '22083535'
         account-totals-series:      '0'
+        average-fees-per-user:      '0'
       start-round:
         b3tr-sustainable-actions:   '4'
       sync-log-interval: '100'
@@ -176,7 +177,6 @@ enabled_nets:
         authority-nodes: '125'
         b3tr: '75'
         historic-proposals: '125'
-        account-totals-series: '125'
       channel-batch-size: '15'
       checkpoint-save-interval-seconds: '60'
       pruner:
@@ -221,6 +221,7 @@ enabled_nets:
         b3tr-gm-nft: '3'
         b3tr-gm-nft-level-overview: '1'
         block-usage: '1'
+        average-fees-per-user: '1'
         historic-proposals: '2'
         validator: '4'
         validator-rewards: '3'
@@ -385,6 +386,7 @@ enabled_nets:
         nft-holders-by-block:       '23188723'
         nft-owner-balance:          '23188723'
         account-totals-series:      '0'
+        average-fees-per-user:      '0'
       start-round:
         b3tr-sustainable-actions:   '4'
       sync-log-interval: '100'
@@ -398,7 +400,6 @@ enabled_nets:
         authority-nodes: '125'
         b3tr: '75'
         historic-proposals: '125'
-        account-totals-series: '125'
       channel-batch-size: '15'
       checkpoint-save-interval-seconds: '60'
       pruner:
@@ -443,6 +444,7 @@ enabled_nets:
         b3tr-gm-nft: '3'
         b3tr-gm-nft-level-overview: '1'
         block-usage: '1'
+        average-fees-per-user: '1'
         historic-proposals: '1'
         validator: '4'
         validator-rewards: '3'

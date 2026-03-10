@@ -492,6 +492,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.account-totals-series
     },
     {
+      name  = "INDEXER_START_BLOCK_AVERAGE_FEES_PER_USER"
+      value = each.value.indexer.start-block.average-fees-per-user
+    },
+    {
       name  = "START_ROUND_B3TR_SUSTAINABLE_ACTIONS"
       value = each.value.indexer.start-round.b3tr-sustainable-actions
     },
@@ -618,6 +622,10 @@ module "ecs-backend-service" {
     {
       name  = "VERSION_BLOCK_USAGE"
       value = each.value.indexer.version.block-usage
+    },
+    {
+      name  = "VERSION_AVERAGE_FEES_PER_USER"
+      value = each.value.indexer.version.average-fees-per-user
     },
     {
       name  = "VERSION_VALIDATOR"
@@ -778,10 +786,6 @@ module "ecs-backend-service" {
     {
       name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_VET_BALANCE"
       value = each.value.indexer.sync-block-batch-size.vet-balance
-    },
-    {
-      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_ACCOUNT_TOTALS_SERIES"
-      value = each.value.indexer.sync-block-batch-size.account-totals-series
     },
     {
       name  = "INDEXER_CHANNEL_BATCH_SIZE"

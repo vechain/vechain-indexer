@@ -20,7 +20,6 @@ open class VthoGeneratedByBlockConfig {
         processor: VthoGeneratedByBlockProcessor,
         @Value("\${indexer.start-block.vtho-generated-by-block}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}") stakerSC: String,
         bEProperties: BusinessEventProperties,
     ): BlockIndexer {
@@ -32,7 +31,6 @@ open class VthoGeneratedByBlockConfig {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .callDataClauses(clauses)
             .includeFullBlock()
             .build()

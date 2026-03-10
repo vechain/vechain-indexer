@@ -18,7 +18,6 @@ open class TotalAccountsConfig {
         thorClient: ThorClient,
         processor: TotalAccountsProcessor,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
     ): BlockIndexer =
         IndexerFactory()
             .name(IndexerNames.TOTAL_ACCOUNTS.NAME)
@@ -26,7 +25,6 @@ open class TotalAccountsConfig {
             .processor(processor)
             .startBlock(0L)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .includeFullBlock()
             .build()
 }
