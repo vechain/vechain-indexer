@@ -275,6 +275,35 @@
         ],
         "type": "object"
       },
+      "AverageFeesPerUser": {
+        "properties": {
+          "averageFeesPerUser": {
+            "type": "number"
+          },
+          "dailyActiveUsers": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "date": {
+            "type": "string"
+          },
+          "dayStartTimestamp": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalFeesPaid": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "averageFeesPerUser",
+          "dailyActiveUsers",
+          "date",
+          "dayStartTimestamp",
+          "totalFeesPaid"
+        ],
+        "type": "object"
+      },
       "B3trRankResponse": {
         "properties": {
           "address": {
@@ -6052,6 +6081,107 @@
         "summary": "Retrieve a contract by address",
         "tags": [
           "Contracts"
+        ]
+      }
+    },
+    "/api/v1/explorer/average-fees-per-user": {
+      "get": {
+        "description": "\n            Returns daily AFPU (Average Fees Per User) points for the requested timestamp range.\n\n            AFPU is computed per UTC day as:\n                total fees paid that day / distinct transaction origins that day\n\n            Values are daily period metrics, not cumulative counters. The source fee amount uses the\n            transaction `paid` value in the native gas token VTHO.\n        ",
+        "operationId": "getAverageFeesPerUser",
+        "parameters": [
+          {
+            "description": "Return records after this time (Unix time in seconds).",
+            "example": 1704143600,
+            "in": "query",
+            "name": "startTimestamp",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Return records before this time (Unix time in seconds).",
+            "example": 1704153600,
+            "in": "query",
+            "name": "endTimestamp",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AverageFeesPerUser"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get daily average fees per user for a timestamp range",
+        "tags": [
+          "Explorer"
         ]
       }
     },

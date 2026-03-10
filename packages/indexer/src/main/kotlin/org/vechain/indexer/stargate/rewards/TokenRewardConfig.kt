@@ -24,7 +24,6 @@ open class TokenRewardConfig {
         @Qualifier("delegationIndexer") delegationIndexer: Indexer,
         @Value("\${indexer.start-block.delegation}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
         bEProperties: BusinessEventProperties,
         @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
         getAllValidatorsAddress: String,
@@ -35,7 +34,6 @@ open class TokenRewardConfig {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .callDataClauses(ValidatorDecoder.buildClauses(getAllValidatorsAddress))
             .includeFullBlock()
             .dependsOn(delegationIndexer)

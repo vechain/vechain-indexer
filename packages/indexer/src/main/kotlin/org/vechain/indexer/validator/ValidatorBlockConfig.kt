@@ -20,7 +20,6 @@ open class ValidatorBlockConfig {
         processor: ValidatorBlockProcessor,
         @Value("\${indexer.start-block.validator}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
         bEProperties: BusinessEventProperties,
         @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
         getAllValidatorsAddress: String,
@@ -31,7 +30,6 @@ open class ValidatorBlockConfig {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .callDataClauses(ValidatorDecoder.buildClauses(getAllValidatorsAddress))
             .includeFullBlock()
             .build()

@@ -130,6 +130,7 @@ enabled_nets:
         nft-holders-by-block:       '0'
         nft-owner-balance:          '0'
         account-totals-series:      '0'
+        average-fees-per-user:      '0'
         validator:                  '1000'
       start-round:
         b3tr-sustainable-actions:   '0'
@@ -144,7 +145,6 @@ enabled_nets:
         authority-nodes:            '100'
         historic-proposals:         '100'
         b3tr:                       '100'
-        account-totals-series:      '100'
       channel-batch-size: '15'
       checkpoint-save-interval-seconds: '60'
       pruner:
@@ -193,6 +193,7 @@ enabled_nets:
         b3tr-gm-nft: '6'
         b3tr-gm-nft-level-overview: '6'
         block-usage: '4'
+        average-fees-per-user: '1'
         historic-proposals:          '6'
         validator: '7'
         validator-rewards: '7'

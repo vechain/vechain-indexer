@@ -18,7 +18,6 @@ open class AccountOverviewConfig {
         thorClient: ThorClient,
         processor: AccountOverviewProcessor,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
     ): BlockIndexer =
         IndexerFactory()
             .name(IndexerNames.ACCOUNT_OVERVIEW.NAME)
@@ -26,7 +25,6 @@ open class AccountOverviewConfig {
             .processor(processor)
             .startBlock(0L)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .includeFullBlock()
             .includeVetTransfers()
             .abis("abis/other")

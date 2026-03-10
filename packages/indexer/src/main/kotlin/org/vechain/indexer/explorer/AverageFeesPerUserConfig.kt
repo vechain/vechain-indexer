@@ -1,4 +1,4 @@
-package org.vechain.indexer.accounts
+package org.vechain.indexer.explorer
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -10,17 +10,17 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("accounts", "account-totals-series")
-open class AccountTotalsSeriesConfig {
+@Profile("explorer", "average-fees-per-user")
+open class AverageFeesPerUserConfig {
     @Bean
-    open fun accountTotalsSeriesIndexer(
+    open fun averageFeesPerUserIndexer(
         thorClient: ThorClient,
-        processor: AccountTotalsSeriesProcessor,
+        processor: AverageFeesPerUserProcessor,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.start-block.account-totals-series:0}") startBlock: Long,
+        @Value("\${indexer.start-block.average-fees-per-user:0}") startBlock: Long,
     ): BlockIndexer =
         IndexerFactory()
-            .name(IndexerNames.ACCOUNT_TOTALS_SERIES.NAME)
+            .name(IndexerNames.AVERAGE_FEES_PER_USER.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)
