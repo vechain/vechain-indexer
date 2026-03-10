@@ -43,6 +43,10 @@ open class AccountTotalsSeriesCollectionConfig(
             listOf(
                 "blockNumber_-1" to
                     Index().on(AccountTotalsSeries::blockNumber.name, Sort.Direction.DESC),
+                "recordType_1_blockNumber_-1" to
+                    Index()
+                        .on(AccountTotalsSeries::recordType.name, Sort.Direction.ASC)
+                        .on(AccountTotalsSeries::blockNumber.name, Sort.Direction.DESC),
                 "recordType_1_blockTimestamp_1" to
                     Index()
                         .on(AccountTotalsSeries::recordType.name, Sort.Direction.ASC)
