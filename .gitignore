@@ -66,6 +66,8 @@ database/backups/
 .schemathesis/
 .hypothesis/
 .venv-schemathesis/
+__pycache__/
+*.py[cod]
 
 .gradle-user-home
 

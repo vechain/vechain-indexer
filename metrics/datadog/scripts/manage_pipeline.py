@@ -339,9 +339,13 @@ def cmd_push_dashboard(args):
 
 # Attribute name used in ELB logs for the request URL
 ELB_URL_ATTR = "@http.url_details.path"
+API_CATEGORY_TARGET = "http.url_details.api_category"
+ENDPOINT_GROUP_TARGET = "endpoint_group"
+API_CATEGORY_PROCESSOR_NAME_FALLBACK = "Categorising the api calls"
 
 # Endpoint groups to exclude (test-only)
 EXCLUDED_GROUPS = {"e2e"}
+EXTRA_ENDPOINT_PATHS = ("/api-docs",)
 
 
 def load_openapi_spec():
@@ -358,60 +362,178 @@ def load_openapi_spec():
         return json.load(f)
 
 
-def extract_endpoint_groups(spec):
-    """Extract endpoint groups from OpenAPI spec paths.
+def get_endpoint_group_processor_name(config):
+    """Return the endpoint group processor name from config."""
+    return config.get(
+        "endpoint_group_processor_name", config["category_processor_name"]
+    )
 
-    Groups paths by the segment after /api/v{N}/ and returns a dict mapping
-    group names to sets of base path prefixes.
-    e.g. {"accounts": {"/api/v1/accounts"}, "b3tr": {"/api/v1/b3tr", "/api/v2/b3tr"}}
-    """
-    groups = {}
 
+def get_api_category_processor_name(config):
+    """Return the API category processor name from config."""
+    return config.get(
+        "api_category_processor_name", API_CATEGORY_PROCESSOR_NAME_FALLBACK
+    )
+
+
+def iter_api_paths(spec):
+    """Yield OpenAPI paths that should participate in Datadog endpoint categories."""
     for path in spec.get("paths", {}):
         m = re.match(r"/api/v\d+/([^/]+)", path)
-        if not m:
+        if m and m.group(1) in EXCLUDED_GROUPS:
+            continue
+        yield path
+
+
+def endpoint_sort_key(path):
+    """Sort exact routes before parameterized ones, keeping deeper paths first."""
+    segments = path.strip("/").split("/")
+    return (path.count("{"), -len(segments), path)
+
+
+def to_datadog_path_query(path):
+    """Convert an OpenAPI path to a Datadog log query."""
+    normalized_path = re.sub(r"\{[^/]+\}", "*", path)
+    if "{" in path:
+        return f"{ELB_URL_ATTR}:{normalized_path}"
+    return f'{ELB_URL_ATTR}:"{normalized_path}"'
+
+
+def extract_endpoint_paths(spec):
+    """Return all endpoint paths that should be mapped in the API category processor."""
+    paths = set(iter_api_paths(spec))
+    paths.update(EXTRA_ENDPOINT_PATHS)
+    return sorted(paths, key=endpoint_sort_key)
+
+
+def build_api_category_categories(paths):
+    """Build the detailed API endpoint categories."""
+    categories = [
+        {"filter": {"query": to_datadog_path_query(path)}, "name": path}
+        for path in paths
+    ]
+    categories.append({"filter": {"query": f"{ELB_URL_ATTR}:/*"}, "name": "Unknown"})
+    return categories
+
+
+def extract_endpoint_groups(spec):
+    """Extract version-qualified API groups from OpenAPI spec paths."""
+    groups = {}
+
+    for path in iter_api_paths(spec):
+        match = re.match(r"/api/(v\d+)/([^/]+)", path)
+        if not match:
             continue
 
-        group = m.group(1)
-        if group in EXCLUDED_GROUPS:
-            continue
-
-        # Store the base path up to and including the group segment
-        base = re.match(r"(/api/v\d+/[^/]+)", path).group(1)
-        groups.setdefault(group, set()).add(base)
+        version = match.group(1)
+        group = match.group(2)
+        base = f"/api/{version}/{group}"
+        groups[f"{version}-{group}"] = base
 
     return groups
 
 
-def build_categories(groups):
-    """Build Datadog category processor categories from grouped paths.
-
-    Each category uses the ELB log URL attribute to match requests.
-    """
-    categories = []
-
-    for group_name in sorted(groups.keys()):
-        base_paths = sorted(groups[group_name])
-        # Build filter query: match any of the base paths with wildcard
-        conditions = [f"{ELB_URL_ATTR}:{path}*" for path in base_paths]
-        if len(conditions) == 1:
-            query = conditions[0]
-        else:
-            query = " OR ".join(conditions)
-
-        categories.append({"filter": {"query": query}, "name": group_name})
-
-    # Add catch-all "unknown" category last
+def build_endpoint_group_categories(groups):
+    """Build Datadog endpoint group categories from version-qualified base paths."""
+    categories = [
+        {
+            "filter": {"query": f"{ELB_URL_ATTR}:{base_path}*"},
+            "name": group_name,
+        }
+        for group_name, base_path in sorted(groups.items())
+    ]
     categories.append({"filter": {"query": "*"}, "name": "unknown"})
-
     return categories
 
 
-def detect_categories():
-    """Load OpenAPI spec and return the categories that should exist."""
+def build_expected_category_processors(config):
+    """Load OpenAPI spec and build both expected category processors."""
     spec = load_openapi_spec()
-    groups = extract_endpoint_groups(spec)
-    return build_categories(groups)
+    return [
+        {
+            "name": get_api_category_processor_name(config),
+            "target": API_CATEGORY_TARGET,
+            "categories": build_api_category_categories(extract_endpoint_paths(spec)),
+        },
+        {
+            "name": get_endpoint_group_processor_name(config),
+            "target": ENDPOINT_GROUP_TARGET,
+            "categories": build_endpoint_group_categories(extract_endpoint_groups(spec)),
+        },
+    ]
+
+
+def upsert_category_processor(processors, name, target, categories):
+    """Replace an existing category processor or append it if missing."""
+    for proc in processors:
+        if proc.get("type") == "category-processor" and proc.get("name") == name:
+            proc["categories"] = categories
+            return True
+
+    processors.append(
+        {
+            "type": "category-processor",
+            "name": name,
+            "is_enabled": True,
+            "categories": categories,
+            "target": target,
+        }
+    )
+    return False
+
+
+def find_category_processor(pipeline, name):
+    """Return the named category processor from the pipeline definition."""
+    for proc in pipeline.get("processors", []):
+        if proc.get("type") == "category-processor" and proc.get("name") == name:
+            return proc
+    return None
+
+
+def normalize_categories(categories):
+    """Return comparable tuples for category definitions."""
+    return [(c["name"], c["filter"]["query"]) for c in categories]
+
+
+def print_categories(name, categories):
+    """Print a category processor summary."""
+    print(f"\n{name} categories ({len(categories)}):")
+    for cat in categories:
+        print(f"  {cat['name']:35s} -> {cat['filter']['query']}")
+
+
+def report_category_diff(name, current_categories, expected_categories):
+    """Print category differences. Returns True when categories differ."""
+    current_norm = normalize_categories(current_categories)
+    expected_norm = normalize_categories(expected_categories)
+    if current_norm == expected_norm:
+        return False
+
+    print(f"\nProcessor '{name}' is out of sync:")
+
+    current_names = {c[0] for c in current_norm}
+    expected_names = {c[0] for c in expected_norm}
+
+    missing = expected_names - current_names
+    extra = current_names - expected_names
+
+    if missing:
+        print(f"  Missing categories: {', '.join(sorted(missing))}")
+    if extra:
+        print(f"  Extra categories: {', '.join(sorted(extra))}")
+
+    current_map = dict(current_norm)
+    expected_map = dict(expected_norm)
+    for category_name in sorted(current_names & expected_names):
+        if current_map[category_name] != expected_map[category_name]:
+            print(f"  Category '{category_name}' query differs:")
+            print(f"    pipeline.json: {current_map[category_name]}")
+            print(f"    api-docs.json: {expected_map[category_name]}")
+
+    if current_norm != expected_norm and set(current_norm) == set(expected_norm):
+        print("  Category ordering differs")
+
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -420,52 +542,37 @@ def detect_categories():
 
 
 def cmd_update_categories(args):
-    """Parse api-docs.json, regenerate category processor in pipeline.json."""
+    """Parse api-docs.json, regenerate category processors in pipeline.json."""
     if not PIPELINE_PATH.exists():
         print(f"Error: {PIPELINE_PATH} not found. Run 'get' first.", file=sys.stderr)
         sys.exit(1)
 
     config = load_config()
-    processor_name = config["category_processor_name"]
 
     with open(PIPELINE_PATH) as f:
         pipeline = json.load(f)
 
-    categories = detect_categories()
-
-    # Find the category processor by name
     processors = pipeline.get("processors", [])
-    found = False
-    for proc in processors:
-        if (
-            proc.get("type") == "category-processor"
-            and proc.get("name") == processor_name
-        ):
-            proc["categories"] = categories
-            found = True
-            print(f"Updated existing category processor '{processor_name}'")
-            break
+    processor_defs = build_expected_category_processors(config)
 
-    if not found:
-        # Create a new category processor
-        new_proc = {
-            "type": "category-processor",
-            "name": processor_name,
-            "is_enabled": True,
-            "categories": categories,
-            "target": "endpoint_group",
-        }
-        processors.append(new_proc)
-        pipeline["processors"] = processors
-        print(f"Created new category processor '{processor_name}'")
+    for processor_def in processor_defs:
+        found = upsert_category_processor(
+            processors,
+            processor_def["name"],
+            processor_def["target"],
+            processor_def["categories"],
+        )
+        action = "Updated existing" if found else "Created new"
+        print(f"{action} category processor '{processor_def['name']}'")
+
+    pipeline["processors"] = processors
 
     with open(PIPELINE_PATH, "w") as f:
         json.dump(pipeline, f, indent=2)
         f.write("\n")
 
-    print(f"\nCategories ({len(categories)}):")
-    for cat in categories:
-        print(f"  {cat['name']:25s} -> {cat['filter']['query']}")
+    for processor_def in processor_defs:
+        print_categories(processor_def["name"], processor_def["categories"])
 
     print(f"\nSaved to {PIPELINE_PATH}")
 
@@ -482,66 +589,36 @@ def cmd_validate_categories(args):
         sys.exit(1)
 
     config = load_config()
-    processor_name = config["category_processor_name"]
 
     with open(PIPELINE_PATH) as f:
         pipeline = json.load(f)
 
-    # Find current categories in pipeline.json
-    current_categories = None
-    for proc in pipeline.get("processors", []):
-        if (
-            proc.get("type") == "category-processor"
-            and proc.get("name") == processor_name
-        ):
-            current_categories = proc.get("categories", [])
-            break
+    out_of_sync = False
+    for processor_def in build_expected_category_processors(config):
+        processor = find_category_processor(pipeline, processor_def["name"])
+        if processor is None:
+            print(
+                (
+                    f"Error: No category processor '{processor_def['name']}' found in "
+                    "pipeline.json"
+                ),
+                file=sys.stderr,
+            )
+            out_of_sync = True
+            continue
 
-    if current_categories is None:
-        print(
-            f"Error: No category processor '{processor_name}' found in pipeline.json",
-            file=sys.stderr,
+        out_of_sync = (
+            report_category_diff(
+                processor_def["name"],
+                processor.get("categories", []),
+                processor_def["categories"],
+            )
+            or out_of_sync
         )
-        sys.exit(1)
 
-    # Detect expected categories from OpenAPI spec
-    expected_categories = detect_categories()
-
-    # Normalize for comparison
-    def normalize(cats):
-        return [(c["name"], c["filter"]["query"]) for c in cats]
-
-    current_norm = normalize(current_categories)
-    expected_norm = normalize(expected_categories)
-
-    if current_norm == expected_norm:
+    if not out_of_sync:
         print("Categories are in sync.")
         sys.exit(0)
-
-    # Show diff
-    current_names = {c[0] for c in current_norm}
-    expected_names = {c[0] for c in expected_norm}
-
-    missing = expected_names - current_names
-    extra = current_names - expected_names
-
-    if missing:
-        print(f"Missing categories: {', '.join(sorted(missing))}")
-    if extra:
-        print(f"Extra categories: {', '.join(sorted(extra))}")
-
-    # Check query differences for shared categories
-    current_map = dict(current_norm)
-    expected_map = dict(expected_norm)
-    for name in sorted(current_names & expected_names):
-        if current_map[name] != expected_map[name]:
-            print(f"Category '{name}' query differs:")
-            print(f"  pipeline.json: {current_map[name]}")
-            print(f"  api-docs.json: {expected_map[name]}")
-
-    # Check ordering
-    if current_norm != expected_norm and set(current_norm) == set(expected_norm):
-        print("Category ordering differs (unknown must be last)")
 
     print("\nCategories are out of sync. Run 'update-categories' to fix.")
     sys.exit(1)

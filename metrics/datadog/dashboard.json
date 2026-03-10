@@ -4727,6 +4727,14 @@
                             "aggregation": "count",
                             "order": "desc"
                           }
+                        },
+                        {
+                          "facet": "@http.status_category",
+                          "limit": 10,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
                         }
                       ],
                       "indexes": [
@@ -4748,6 +4756,15 @@
                         {
                           "facet": "@http.url_details.api_category",
                           "limit": 100,
+                          "sort": {
+                            "aggregation": "avg",
+                            "metric": "@duration",
+                            "order": "desc"
+                          }
+                        },
+                        {
+                          "facet": "@http.status_category",
+                          "limit": 10,
                           "sort": {
                             "aggregation": "avg",
                             "metric": "@duration",
