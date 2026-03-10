@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.timeseries.TimeSeriesRecord
+import org.vechain.indexer.timeseries.TimeSeriesResolution
 import strikt.api.expect
 import strikt.assertions.*
 
@@ -133,6 +134,57 @@ internal class TimeSeriesUtilsTest {
                         TimeSeriesRecord(20, 3),
                     )
                 )
+        }
+    }
+
+    @Test
+    fun `getBookendedRecords adds nearest records outside sampled range`() {
+        val sampled = listOf(DummyDoc("0x02", 15, 2, 1))
+
+        val result =
+            TimeSeriesUtils.getBookendedRecords(
+                after = 10L,
+                before = 20L,
+                findByBlockTimestampBetween = { _, _ -> sampled },
+                findLatestBeforeOrAtBlockTimestamp = { ts ->
+                    when (ts) {
+                        10L -> DummyDoc("0x01", 9, 1, 0)
+                        20L -> DummyDoc("0x03", 18, 3, 2)
+                        else -> null
+                    }
+                },
+            )
+
+        expect { that(result.map { it.blockTimestamp }).isEqualTo(listOf(9L, 15L, 18L)) }
+    }
+
+    @Test
+    fun `getBookendedRecords deduplicates identical boundary records`() {
+        val sampled = listOf(DummyDoc("0x01", 10, 1, 1), DummyDoc("0x02", 20, 2, 2))
+
+        val result =
+            TimeSeriesUtils.getBookendedRecords(
+                after = 10L,
+                before = 20L,
+                findByBlockTimestampBetween = { _, _ -> sampled },
+                findLatestBeforeOrAtBlockTimestamp = { ts ->
+                    sampled.firstOrNull { it.blockTimestamp == ts }
+                },
+            )
+
+        expect { that(result.map { it.blockTimestamp }).isEqualTo(listOf(10L, 20L)) }
+    }
+
+    @Test
+    fun `selectResolution applies shared threshold policy`() {
+        expect {
+            that(TimeSeriesUtils.selectResolution(4_000L)).isEqualTo(TimeSeriesResolution.RAW)
+            that(TimeSeriesUtils.selectResolution(700_000L)).isEqualTo(TimeSeriesResolution.HOURLY)
+            that(TimeSeriesUtils.selectResolution(6_000_000L)).isEqualTo(TimeSeriesResolution.DAILY)
+            that(TimeSeriesUtils.selectResolution(35_000_000L))
+                .isEqualTo(TimeSeriesResolution.WEEKLY)
+            that(TimeSeriesUtils.selectResolution(35_000_001L))
+                .isEqualTo(TimeSeriesResolution.MONTHLY)
         }
     }
 }

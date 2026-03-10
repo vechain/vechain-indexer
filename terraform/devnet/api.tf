@@ -488,6 +488,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.nft-owner-balance
     },
     {
+      name  = "INDEXER_START_BLOCK_ACCOUNT_TOTALS_SERIES"
+      value = each.value.indexer.start-block.account-totals-series
+    },
+    {
       name  = "START_ROUND_B3TR_SUSTAINABLE_ACTIONS"
       value = each.value.indexer.start-round.b3tr-sustainable-actions
     },
@@ -640,6 +644,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.total-accounts
     },
     {
+      name  = "VERSION_ACCOUNT_TOTALS_SERIES"
+      value = each.value.indexer.version.account-totals-series
+    },
+    {
       name = "VERSION_ACCOUNT_OVERVIEW"
       value = each.value.indexer.version.account-overview
     },
@@ -770,6 +778,10 @@ module "ecs-backend-service" {
     {
       name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_VET_BALANCE"
       value = each.value.indexer.sync-block-batch-size.vet-balance
+    },
+    {
+      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_ACCOUNT_TOTALS_SERIES"
+      value = each.value.indexer.sync-block-batch-size.account-totals-series
     },
     {
       name  = "INDEXER_CHANNEL_BATCH_SIZE"

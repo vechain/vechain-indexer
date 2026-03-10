@@ -17,6 +17,9 @@ import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("accounts", "total-accounts")
 @Configuration
+@Deprecated(
+    "V1 total-accounts collection config is deprecated. Use AccountTotalsSeriesCollectionConfig instead."
+)
 open class TotalAccountsCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,

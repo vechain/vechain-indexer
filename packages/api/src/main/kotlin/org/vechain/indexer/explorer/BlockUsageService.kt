@@ -3,10 +3,8 @@ package org.vechain.indexer.explorer
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.explorer.repository.BlockUsageRepository
-import org.vechain.indexer.utils.TimeSeriesUtils.DAILY_THRESHOLD
-import org.vechain.indexer.utils.TimeSeriesUtils.HOURLY_THRESHOLD
-import org.vechain.indexer.utils.TimeSeriesUtils.MONTHLY_THRESHOLD
-import org.vechain.indexer.utils.TimeSeriesUtils.WEEKLY_THRESHOLD
+import org.vechain.indexer.timeseries.TimeSeriesResolution
+import org.vechain.indexer.utils.TimeSeriesUtils
 
 @Profile("explorer", "block-usage")
 @Service
@@ -19,9 +17,9 @@ open class BlockUsageService(private val blockUsageRepository: BlockUsageReposit
      * Granularity rules:
      * - Range <= 1 hour: All blocks (~360 data points)
      * - Range <= 1 week: Hourly aggregates (~168 data points)
-     * - Range <= 1 month: Daily aggregates (~60 data points)
-     * - Range <= 1 year: Daily aggregates (~400 data points)
-     * - Range > 1 year: Weekly aggregates
+     * - Range <= 2 months: Daily aggregates (~60 data points)
+     * - Range <= 1 year: Weekly aggregates (~52 data points)
+     * - Range > 1 year: Monthly aggregates
      *
      * @param startTimestamp The starting timestamp in seconds (inclusive)
      * @param endTimestamp The ending timestamp in seconds (inclusive)
@@ -33,29 +31,41 @@ open class BlockUsageService(private val blockUsageRepository: BlockUsageReposit
             "endTimestamp must be greater than or equal to startTimestamp"
         }
 
-        val timeRange = endTimestamp - startTimestamp
-
-        return when {
-            timeRange <= HOURLY_THRESHOLD -> {
-                // Return all blocks for small ranges
+        return when (TimeSeriesUtils.selectResolution(endTimestamp - startTimestamp)) {
+            TimeSeriesResolution.RAW ->
                 blockUsageRepository.findAllInTimestampRange(startTimestamp, endTimestamp)
-            }
-            timeRange <= DAILY_THRESHOLD -> {
-                // Return hourly aggregates
-                blockUsageRepository.findHourlyInTimestampRange(startTimestamp, endTimestamp)
-            }
-            timeRange <= WEEKLY_THRESHOLD -> {
-                // Return daily aggregates
-                blockUsageRepository.findDailyInTimestampRange(startTimestamp, endTimestamp)
-            }
-            timeRange <= MONTHLY_THRESHOLD -> {
-                // Return daily aggregates
-                blockUsageRepository.findDailyInTimestampRange(startTimestamp, endTimestamp)
-            }
-            else -> {
-                // Return weekly aggregates
-                blockUsageRepository.findWeeklyInTimestampRange(startTimestamp, endTimestamp)
-            }
+            TimeSeriesResolution.HOURLY ->
+                TimeSeriesUtils.getBookendedRecords(
+                    startTimestamp,
+                    endTimestamp,
+                    blockUsageRepository::findHourlyInTimestampRange,
+                    blockUsageRepository::
+                        findFirstByBlockTimestampLessThanEqualOrderByBlockTimestampDesc,
+                )
+            TimeSeriesResolution.DAILY ->
+                TimeSeriesUtils.getBookendedRecords(
+                    startTimestamp,
+                    endTimestamp,
+                    blockUsageRepository::findDailyInTimestampRange,
+                    blockUsageRepository::
+                        findFirstByBlockTimestampLessThanEqualOrderByBlockTimestampDesc,
+                )
+            TimeSeriesResolution.WEEKLY ->
+                TimeSeriesUtils.getBookendedRecords(
+                    startTimestamp,
+                    endTimestamp,
+                    blockUsageRepository::findWeeklyInTimestampRange,
+                    blockUsageRepository::
+                        findFirstByBlockTimestampLessThanEqualOrderByBlockTimestampDesc,
+                )
+            TimeSeriesResolution.MONTHLY ->
+                TimeSeriesUtils.getBookendedRecords(
+                    startTimestamp,
+                    endTimestamp,
+                    blockUsageRepository::findMonthlyInTimestampRange,
+                    blockUsageRepository::
+                        findFirstByBlockTimestampLessThanEqualOrderByBlockTimestampDesc,
+                )
         }
     }
 }

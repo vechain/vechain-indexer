@@ -2,6 +2,7 @@ package org.vechain.indexer.utils
 
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.timeseries.TimeSeriesRecord
+import org.vechain.indexer.timeseries.TimeSeriesResolution
 
 object TimeSeriesUtils {
     // Time-based thresholds for determining data granularity
@@ -16,6 +17,18 @@ object TimeSeriesUtils {
     const val DAILY_THRESHOLD = 700_000L
     const val WEEKLY_THRESHOLD = 6_000_000L
     const val MONTHLY_THRESHOLD = 35_000_000L
+
+    fun selectResolution(timeRange: Long): TimeSeriesResolution {
+        require(timeRange >= 0) { "timeRange must be non-negative" }
+
+        return when {
+            timeRange <= HOURLY_THRESHOLD -> TimeSeriesResolution.RAW
+            timeRange <= DAILY_THRESHOLD -> TimeSeriesResolution.HOURLY
+            timeRange <= WEEKLY_THRESHOLD -> TimeSeriesResolution.DAILY
+            timeRange <= MONTHLY_THRESHOLD -> TimeSeriesResolution.WEEKLY
+            else -> TimeSeriesResolution.MONTHLY
+        }
+    }
 
     /**
      * Retrieve historic time series data for a given range of timestamps. This method fetches data
@@ -69,6 +82,39 @@ object TimeSeriesUtils {
         endBookend?.let { records.add(it) }
 
         return sparsify(records)
+    }
+
+    /**
+     * Retrieve sampled indexed records for a given range and add the nearest records at or before
+     * the requested boundaries. This keeps cumulative series chartable even when the sampled data
+     * inside the range is sparse.
+     */
+    fun <T : IndexedDocument> getBookendedRecords(
+        after: Long,
+        before: Long,
+        findByBlockTimestampBetween: (Long, Long) -> List<T>,
+        findLatestBeforeOrAtBlockTimestamp: (Long) -> T?,
+    ): List<T> {
+        require(after <= before) { "after must be less than or equal to before" }
+
+        val data = findByBlockTimestampBetween(after, before)
+        val records = mutableListOf<T>()
+
+        findLatestBeforeOrAtBlockTimestamp(after)?.let { startBookend ->
+            if (data.firstOrNull() != startBookend) {
+                records.add(startBookend)
+            }
+        }
+
+        records.addAll(data)
+
+        findLatestBeforeOrAtBlockTimestamp(before)?.let { endBookend ->
+            if (records.lastOrNull() != endBookend) {
+                records.add(endBookend)
+            }
+        }
+
+        return records.distinct().sortedBy { it.blockTimestamp }
     }
 
     /**

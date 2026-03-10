@@ -17,6 +17,7 @@ import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
 
 @Profile("accounts", "total-accounts")
 @Service
+@Deprecated("V1 total-accounts indexer is deprecated. Use AccountTotalsSeriesService instead.")
 open class TotalAccountsService(
     private val repository: TotalAccountsRepository,
     private val inlineVersioningProperties: InlineVersioningProperties,

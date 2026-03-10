@@ -129,6 +129,7 @@ enabled_nets:
         vet-delegated-by-block:     '0'
         nft-holders-by-block:       '0'
         nft-owner-balance:          '0'
+        account-totals-series:      '0'
         validator:                  '1000'
       start-round:
         b3tr-sustainable-actions:   '0'
@@ -143,6 +144,7 @@ enabled_nets:
         authority-nodes:            '100'
         historic-proposals:         '100'
         b3tr:                       '100'
+        account-totals-series:      '100'
       channel-batch-size: '15'
       checkpoint-save-interval-seconds: '60'
       pruner:
@@ -197,6 +199,7 @@ enabled_nets:
         stargate-token: '5'
         token-rewards: '5'
         delegation: '6'
+        account-totals-series: '1'
         accounts: '3'
       business-event:
         substitutions:

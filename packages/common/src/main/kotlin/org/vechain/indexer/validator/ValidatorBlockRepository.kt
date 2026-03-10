@@ -12,7 +12,7 @@ interface ValidatorBlockRepository : BaseIndexedRepository<ValidatorBlock, Strin
     @Aggregation(
         pipeline =
             [
-                "{ '\$match': { isDaily: true, status: 'VALIDATED' } }",
+                "{ '\$match': { isHourly: true, status: 'VALIDATED' } }",
                 "{ '\$sort': { validator: 1, blockNumber: -1 } }",
                 "{ '\$group': { _id: { validator: '\$validator'}, blockTimestamp: { '\$first': '\$blockTimestamp' } } }",
             ]
@@ -34,7 +34,7 @@ interface ValidatorBlockRepository : BaseIndexedRepository<ValidatorBlock, Strin
     @Aggregation(
         pipeline =
             [
-                "{ '\$match': { isDaily: true, status: 'VALIDATED' } }",
+                "{ '\$match': { isWeekly: true, status: 'VALIDATED' } }",
                 "{ '\$sort': { validator: 1,blockNumber: -1 } }",
                 "{ '\$group': { _id: { validator: '\$validator'}, blockTimestamp: { '\$first': '\$blockTimestamp' } } }",
             ]
@@ -45,7 +45,7 @@ interface ValidatorBlockRepository : BaseIndexedRepository<ValidatorBlock, Strin
     @Aggregation(
         pipeline =
             [
-                "{ '\$match': { isDaily: true, status: 'VALIDATED' } }",
+                "{ '\$match': { isMonthly: true, status: 'VALIDATED' } }",
                 "{ '\$sort': { validator: 1, blockNumber: -1 } }",
                 "{ '\$group': { _id: { validator: '\$validator' }, blockTimestamp: { '\$first': '\$blockTimestamp' } } }",
             ]
@@ -65,7 +65,7 @@ interface ValidatorBlockRepository : BaseIndexedRepository<ValidatorBlock, Strin
 
     @Query(
         value =
-            "{ \$or: [{ 'isHourly': true, 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': { \$gte: ?0, \$lte: ?1 } }, { 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': ?0 }, { 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': ?1 }] }",
+            "{ 'isHourly': true, 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': { \$gte: ?0, \$lte: ?1 } }",
         sort = "{ 'blockTimestamp': 1 }",
     )
     fun findHourlyInTimestampRange(
@@ -76,7 +76,7 @@ interface ValidatorBlockRepository : BaseIndexedRepository<ValidatorBlock, Strin
 
     @Query(
         value =
-            "{ \$or: [{ 'isDaily': true, 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': { \$gte: ?0, \$lte: ?1 } }, { 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': ?0 }, { 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': ?1 }] }",
+            "{ 'isDaily': true, 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': { \$gte: ?0, \$lte: ?1 } }",
         sort = "{ 'blockTimestamp': 1 }",
     )
     fun findDailyInTimestampRange(
@@ -87,7 +87,7 @@ interface ValidatorBlockRepository : BaseIndexedRepository<ValidatorBlock, Strin
 
     @Query(
         value =
-            "{ \$or: [{ 'isWeekly': true, 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': { \$gte: ?0, \$lte: ?1 } }, { 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': ?0 }, { 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': ?1 }] }",
+            "{ 'isWeekly': true, 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': { \$gte: ?0, \$lte: ?1 } }",
         sort = "{ 'blockTimestamp': 1 }",
     )
     fun findWeeklyInTimestampRange(
@@ -98,7 +98,7 @@ interface ValidatorBlockRepository : BaseIndexedRepository<ValidatorBlock, Strin
 
     @Query(
         value =
-            "{ \$or: [{ 'isMonthly': true, 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': { \$gte: ?0, \$lte: ?1 } }, { 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': ?0 }, { 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': ?1 }] }",
+            "{ 'isMonthly': true, 'status': 'VALIDATED', 'validator': ?2, 'blockTimestamp': { \$gte: ?0, \$lte: ?1 } }",
         sort = "{ 'blockTimestamp': 1 }",
     )
     fun findMonthlyInTimestampRange(
@@ -106,6 +106,12 @@ interface ValidatorBlockRepository : BaseIndexedRepository<ValidatorBlock, Strin
         endTimestamp: Long,
         validator: String,
     ): List<ValidatorBlock>
+
+    fun findFirstByValidatorAndStatusAndBlockTimestampLessThanEqualOrderByBlockTimestampDesc(
+        validator: String,
+        status: BlockStatus,
+        blockTimestamp: Long,
+    ): ValidatorBlock?
 
     @Query("{ 'status': 'MISSED', 'blocksOffline': null }")
     fun findLatestMissed(): List<ValidatorBlock>

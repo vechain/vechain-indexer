@@ -13,6 +13,7 @@ import org.vechain.indexer.config.metrics.ProcessorMetrics
 
 @Profile("accounts", "total-accounts")
 @Component
+@Deprecated("V1 total-accounts processor is deprecated. Use AccountTotalsSeriesProcessor instead.")
 open class TotalAccountsProcessor(
     private val service: TotalAccountsService,
     repository: TotalAccountsRepository,
