@@ -4711,6 +4711,49 @@
                           "unit_name": "nanosecond"
                         }
                       }
+                    },
+                    {
+                      "alias": "2xx",
+                      "formula": "status_2xx_query"
+                    },
+                    {
+                      "alias": "3xx",
+                      "cell_display_mode": "number",
+                      "conditional_formats": [
+                        {
+                          "comparator": ">",
+                          "custom_bg_color": "#ffdc18",
+                          "palette": "custom_bg",
+                          "value": 0
+                        }
+                      ],
+                      "formula": "status_3xx_query"
+                    },
+                    {
+                      "alias": "4xx",
+                      "cell_display_mode": "number",
+                      "conditional_formats": [
+                        {
+                          "comparator": ">",
+                          "custom_bg_color": "#f99d01",
+                          "palette": "custom_bg",
+                          "value": 0
+                        }
+                      ],
+                      "formula": "status_4xx_query"
+                    },
+                    {
+                      "alias": "5xx",
+                      "cell_display_mode": "number",
+                      "conditional_formats": [
+                        {
+                          "comparator": ">",
+                          "custom_bg_color": "#eb354b",
+                          "palette": "custom_bg",
+                          "value": 0
+                        }
+                      ],
+                      "formula": "status_5xx_query"
                     }
                   ],
                   "queries": [
@@ -4723,14 +4766,6 @@
                         {
                           "facet": "@http.url_details.api_category",
                           "limit": 100,
-                          "sort": {
-                            "aggregation": "count",
-                            "order": "desc"
-                          }
-                        },
-                        {
-                          "facet": "@http.status_category",
-                          "limit": 10,
                           "sort": {
                             "aggregation": "count",
                             "order": "desc"
@@ -4761,15 +4796,6 @@
                             "metric": "@duration",
                             "order": "desc"
                           }
-                        },
-                        {
-                          "facet": "@http.status_category",
-                          "limit": 10,
-                          "sort": {
-                            "aggregation": "avg",
-                            "metric": "@duration",
-                            "order": "desc"
-                          }
                         }
                       ],
                       "indexes": [
@@ -4778,6 +4804,102 @@
                       "name": "avg_query",
                       "search": {
                         "query": "source:elb name:$host"
+                      },
+                      "storage": "hot"
+                    },
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [
+                        {
+                          "facet": "@http.url_details.api_category",
+                          "limit": 100,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "status_2xx_query",
+                      "search": {
+                        "query": "source:elb name:$host @http.status_category:OK"
+                      },
+                      "storage": "hot"
+                    },
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [
+                        {
+                          "facet": "@http.url_details.api_category",
+                          "limit": 100,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "status_3xx_query",
+                      "search": {
+                        "query": "source:elb name:$host @http.status_category:notice"
+                      },
+                      "storage": "hot"
+                    },
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [
+                        {
+                          "facet": "@http.url_details.api_category",
+                          "limit": 100,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "status_4xx_query",
+                      "search": {
+                        "query": "source:elb name:$host @http.status_category:warning"
+                      },
+                      "storage": "hot"
+                    },
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [
+                        {
+                          "facet": "@http.url_details.api_category",
+                          "limit": 100,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "status_5xx_query",
+                      "search": {
+                        "query": "source:elb name:$host @http.status_category:error"
                       },
                       "storage": "hot"
                     }
