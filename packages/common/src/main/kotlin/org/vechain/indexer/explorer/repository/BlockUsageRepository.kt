@@ -22,8 +22,8 @@ interface BlockUsageRepository : BaseIndexedRepository<BlockUsage, String> {
     fun findAllInTimestampRange(startTimestamp: Long, endTimestamp: Long): List<BlockUsage>
 
     /**
-     * Find hourly block usage records within a timestamp range (inclusive). Returns blocks where
-     * isHourly is true, plus the first and last records in the range as boundaries.
+     * Find hourly block usage records within a timestamp range (inclusive). Boundary records are
+     * fetched separately by the API service.
      *
      * @param startTimestamp The starting timestamp in seconds (inclusive)
      * @param endTimestamp The ending timestamp in seconds (inclusive)
@@ -31,8 +31,7 @@ interface BlockUsageRepository : BaseIndexedRepository<BlockUsage, String> {
      *   ascending
      */
     @Query(
-        value =
-            "{ \$or: [{ 'isHourly': true, 'blockTimestamp': { \$gte: ?0, \$lte: ?1 } }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }",
+        value = "{ 'isHourly': true, 'blockTimestamp': { \$gte: ?0, \$lte: ?1 } }",
         sort = "{ 'blockTimestamp': 1 }",
     )
     fun findHourlyInTimestampRange(startTimestamp: Long, endTimestamp: Long): List<BlockUsage>
@@ -46,8 +45,7 @@ interface BlockUsageRepository : BaseIndexedRepository<BlockUsage, String> {
      * @return List of daily BlockUsage records in the range, ordered by timestamp ascending
      */
     @Query(
-        value =
-            "{ \$or: [{ 'isDaily': true, 'blockTimestamp': { \$gte: ?0, \$lte: ?1 } }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }",
+        value = "{ 'isDaily': true, 'blockTimestamp': { \$gte: ?0, \$lte: ?1 } }",
         sort = "{ 'blockTimestamp': 1 }",
     )
     fun findDailyInTimestampRange(startTimestamp: Long, endTimestamp: Long): List<BlockUsage>
@@ -61,8 +59,7 @@ interface BlockUsageRepository : BaseIndexedRepository<BlockUsage, String> {
      * @return List of weekly BlockUsage records in the range, ordered by timestamp ascending
      */
     @Query(
-        value =
-            "{ \$or: [{ 'isWeekly': true, 'blockTimestamp': { \$gte: ?0, \$lte: ?1 } }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }",
+        value = "{ 'isWeekly': true, 'blockTimestamp': { \$gte: ?0, \$lte: ?1 } }",
         sort = "{ 'blockTimestamp': 1 }",
     )
     fun findWeeklyInTimestampRange(startTimestamp: Long, endTimestamp: Long): List<BlockUsage>
@@ -76,9 +73,12 @@ interface BlockUsageRepository : BaseIndexedRepository<BlockUsage, String> {
      * @return List of monthly BlockUsage records in the range, ordered by timestamp ascending
      */
     @Query(
-        value =
-            "{ \$or: [{ 'isMonthly': true, 'blockTimestamp': { \$gte: ?0, \$lte: ?1 } }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }",
+        value = "{ 'isMonthly': true, 'blockTimestamp': { \$gte: ?0, \$lte: ?1 } }",
         sort = "{ 'blockTimestamp': 1 }",
     )
     fun findMonthlyInTimestampRange(startTimestamp: Long, endTimestamp: Long): List<BlockUsage>
+
+    fun findFirstByBlockTimestampLessThanEqualOrderByBlockTimestampDesc(
+        blockTimestamp: Long
+    ): BlockUsage?
 }

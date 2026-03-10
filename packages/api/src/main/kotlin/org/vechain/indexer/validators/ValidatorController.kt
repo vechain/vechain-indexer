@@ -302,6 +302,7 @@ open class ValidatorController(
         description =
             "Returns a time series of VTHO rewards between the given timestamps. " +
                 "Granularity (hourly/daily/weekly/monthly) is automatically chosen based on the time range. " +
+                "For sampled ranges, the response includes the nearest records at or before the requested boundaries. " +
                 "You can filter by validator address.",
     )
     @AddressParameter(

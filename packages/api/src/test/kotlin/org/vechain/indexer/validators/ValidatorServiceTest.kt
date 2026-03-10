@@ -36,6 +36,70 @@ class ValidatorServiceTest {
             thorClient = thorClient,
         )
 
+    @Test
+    fun `getValidatorHistoricBlocks includes boundary records for sampled ranges`() {
+        val validator = "0xvalidator"
+        val startBoundary =
+            validatorBlock(blockNumber = 90, status = BlockStatus.VALIDATED, validator = validator)
+        val sampled =
+            listOf(
+                validatorBlock(
+                    blockNumber = 360,
+                    status = BlockStatus.VALIDATED,
+                    validator = validator,
+                )
+            )
+        val endBoundary =
+            validatorBlock(blockNumber = 600, status = BlockStatus.VALIDATED, validator = validator)
+
+        every {
+            validatorBlockRepository.findHourlyInTimestampRange(1_000L, 6_000L, validator)
+        } returns sampled
+        every {
+            validatorBlockRepository
+                .findFirstByValidatorAndStatusAndBlockTimestampLessThanEqualOrderByBlockTimestampDesc(
+                    validator,
+                    BlockStatus.VALIDATED,
+                    1_000L,
+                )
+        } returns startBoundary
+        every {
+            validatorBlockRepository
+                .findFirstByValidatorAndStatusAndBlockTimestampLessThanEqualOrderByBlockTimestampDesc(
+                    validator,
+                    BlockStatus.VALIDATED,
+                    6_000L,
+                )
+        } returns endBoundary
+
+        val result = service.getValidatorHistoricBlocks(1_000L, 6_000L, validator)
+
+        expectThat(result.map { it.blockTimestamp }).isEqualTo(listOf(900L, 3_600L, 6_000L))
+    }
+
+    @Test
+    fun `getValidatorHistoricBlocks uses monthly samples for very large ranges`() {
+        val validator = "0xvalidator"
+
+        every {
+            validatorBlockRepository.findMonthlyInTimestampRange(0L, 40_000_000L, validator)
+        } returns emptyList()
+        every {
+            validatorBlockRepository
+                .findFirstByValidatorAndStatusAndBlockTimestampLessThanEqualOrderByBlockTimestampDesc(
+                    validator,
+                    BlockStatus.VALIDATED,
+                    any(),
+                )
+        } returns null
+
+        service.getValidatorHistoricBlocks(0L, 40_000_000L, validator)
+
+        io.mockk.verify(exactly = 1) {
+            validatorBlockRepository.findMonthlyInTimestampRange(0L, 40_000_000L, validator)
+        }
+    }
+
     // -- getValidatorBlockRewards tests --
 
     @Test

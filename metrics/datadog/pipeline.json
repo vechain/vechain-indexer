@@ -525,7 +525,7 @@
       "categories": [
         {
           "filter": {
-            "query": "@http.url_details.path:/api/v1/accounts*"
+            "query": "@http.url_details.path:/api/v1/accounts* OR @http.url_details.path:/api/v2/accounts*"
           },
           "name": "accounts"
         },

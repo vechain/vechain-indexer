@@ -72,6 +72,31 @@
         ],
         "type": "object"
       },
+      "AccountTotalsSeries": {
+        "properties": {
+          "blockId": {
+            "type": "string"
+          },
+          "blockNumber": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "blockTimestamp": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalAccounts": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "blockId",
+          "blockNumber",
+          "blockTimestamp"
+        ],
+        "type": "object"
+      },
       "Action": {
         "properties": {
           "amount": {
@@ -3231,7 +3256,8 @@
     },
     "/api/v1/accounts/totals": {
       "get": {
-        "description": "\n            Retrieves historical totals of unique VeChain accounts tracked per time frame (DAY, WEEK, MONTH, YEAR).\n            The \"ALL\" account aggregates totals across all time frames.\n            \n            If no `timeFrame` is provided, the response defaults to showing the full cumulative totals (ALL).\n        ",
+        "deprecated": true,
+        "description": "\n            Retrieves historical totals of unique VeChain accounts tracked per time frame (DAY, WEEK, MONTH, YEAR).\n            The \"ALL\" account aggregates totals across all time frames.\n            \n            If no `timeFrame` is provided, the response defaults to showing the full cumulative totals (ALL).\n\n            Deprecated: use `GET /api/v2/accounts/totals` for cumulative time-series responses.\n        ",
         "operationId": "getTotalAccounts",
         "parameters": [
           {
@@ -3353,7 +3379,7 @@
             "description": "Service not available"
           }
         },
-        "summary": "Retrieve total unique accounts overview",
+        "summary": "Retrieve total unique accounts overview (deprecated)",
         "tags": [
           "Accounts"
         ]
@@ -6031,7 +6057,7 @@
     },
     "/api/v1/explorer/block-usage": {
       "get": {
-        "description": "\n            Returns cumulative block usage statistics (gas usage, transaction counts, etc.) for a given timestamp range.\n\n            The API automatically determines the appropriate data granularity based on the size of the time range:\n            - Range ≤ 4,000 seconds: Returns all blocks (~360 data points)\n            - Range ≤ 700,000 seconds: Returns hourly values (~168 data points)\n            - Range ≤ 6,000,000 seconds: Returns daily values (~60 data points)\n            - Range ≤ 35,000,000 seconds: Returns daily values (~400 data points)\n            - Range > 35,000,000 seconds: Returns weekly values\n\n            Values are represented as a monotonic cumulative counter which means the values increase over time. This is\n            a semantic used by Grafana for example. It requires some processing on the client side to convert to a value\n            for a given block.\n            \n            For example to get the gasUsed at block n you would need to do:\n            \n                gasUsedAtBlockN = gasUsedAtBlockN - gasUsedAtBlock(n-1)\n                \n            In the case where we return hourly/daily/weekly/monthly values only you can calculate an average over the\n            block range. If the first record in the returned data is at block n and the next record is at block n + k:\n\n                averageGasUsedPerBlock = (gasUsedAtBlock(n+k) - gasUsedAtBlockN) / k\n        ",
+        "description": "\n            Returns cumulative block usage statistics (gas usage, transaction counts, etc.) for a given timestamp range.\n\n            The API automatically determines the appropriate data granularity based on the size of the time range:\n            - Range ≤ 4,000 seconds: Returns all blocks (~360 data points)\n            - Range ≤ 700,000 seconds: Returns hourly values (~168 data points)\n            - Range ≤ 6,000,000 seconds: Returns daily values (~60 data points)\n            - Range ≤ 35,000,000 seconds: Returns weekly values (~52 data points)\n            - Range > 35,000,000 seconds: Returns monthly values\n\n            For sampled ranges, the response also includes the nearest records at or before the requested\n            boundaries so cumulative charts remain continuous even when the sampled points are sparse.\n\n            Values are represented as a monotonic cumulative counter which means the values increase over time. This is\n            a semantic used by Grafana for example. It requires some processing on the client side to convert to a value\n            for a given block.\n            \n            For example to get the gasUsed at block n you would need to do:\n            \n                gasUsedAtBlockN = gasUsedAtBlockN - gasUsedAtBlock(n-1)\n                \n            In the case where we return hourly/daily/weekly/monthly values only you can calculate an average over the\n            block range. If the first record in the returned data is at block n and the next record is at block n + k:\n\n                averageGasUsedPerBlock = (gasUsedAtBlock(n+k) - gasUsedAtBlockN) / k\n        ",
         "operationId": "getBlockUsage",
         "parameters": [
           {
@@ -10685,7 +10711,7 @@
     },
     "/api/v1/validators/blocks/historic/{validator}": {
       "get": {
-        "description": "Returns a time series of VTHO rewards between the given timestamps. Granularity (hourly/daily/weekly/monthly) is automatically chosen based on the time range. You can filter by validator address.",
+        "description": "Returns a time series of VTHO rewards between the given timestamps. Granularity (hourly/daily/weekly/monthly) is automatically chosen based on the time range. For sampled ranges, the response includes the nearest records at or before the requested boundaries. You can filter by validator address.",
         "operationId": "getHistoricValidatorRewardsRange",
         "parameters": [
           {
@@ -11625,6 +11651,107 @@
         "summary": "Get comments for a proposal.",
         "tags": [
           "VeVote"
+        ]
+      }
+    },
+    "/api/v2/accounts/totals": {
+      "get": {
+        "description": "\n            Returns cumulative unique-account totals for the requested timestamp range.\n\n            The API automatically determines the appropriate granularity from the range:\n            RAW, HOURLY, DAILY, WEEKLY, or MONTHLY.\n\n            For sampled ranges, the response includes the nearest records at or before the\n            requested boundaries so cumulative charts remain continuous even when sampled\n            points are sparse.\n\n            Values are monotonic cumulative totals. To derive accounts added between two\n            consecutive points, subtract the earlier `totalAccounts` from the later one.\n        ",
+        "operationId": "getTotalAccountsV2",
+        "parameters": [
+          {
+            "description": "Return records after this time (Unix time in seconds).",
+            "example": 1704143600,
+            "in": "query",
+            "name": "startTimestamp",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Return records before this time (Unix time in seconds).",
+            "example": 1704153600,
+            "in": "query",
+            "name": "endTimestamp",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AccountTotalsSeries"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get cumulative total account counts for a timestamp range",
+        "tags": [
+          "Accounts"
         ]
       }
     },
