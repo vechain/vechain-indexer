@@ -6,7 +6,6 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.mockk
 import java.math.BigDecimal
-import java.math.RoundingMode
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -65,9 +64,9 @@ class AverageFeesPerUserServiceTest {
         assertEquals(2, markers.size)
         assertEquals(1, updated.size)
         assertEquals(date, updated.single().date)
-        assertEquals(decimal("6"), updated.single().totalFeesPaid)
+        assertDecimalEquals("6", updated.single().totalFeesPaid)
         assertEquals(2L, updated.single().dailyActiveUsers)
-        assertEquals(decimal("3"), updated.single().averageFeesPerUser)
+        assertDecimalEquals("3", updated.single().averageFeesPerUser)
         assertEquals(1, updated.single().version)
     }
 
@@ -107,9 +106,9 @@ class AverageFeesPerUserServiceTest {
         assertEquals(listOf(existingSummary), existing)
         assertEquals(1, markers.size)
         assertEquals("2024-01-01-0xcc", markers.single().id)
-        assertEquals(decimal("7"), updated.single().totalFeesPaid)
+        assertDecimalEquals("7", updated.single().totalFeesPaid)
         assertEquals(3L, updated.single().dailyActiveUsers)
-        assertEquals(BigDecimal("2.333333333333"), updated.single().averageFeesPerUser)
+        assertDecimalEquals("2.333333333333", updated.single().averageFeesPerUser)
         assertEquals(4, updated.single().version)
     }
 
@@ -131,11 +130,14 @@ class AverageFeesPerUserServiceTest {
         assertEquals(1, markers.size)
         assertEquals("2024-01-02-0xaa", markers.single().id)
         assertEquals(1L, updated.single().dailyActiveUsers)
-        assertEquals(decimal("1"), updated.single().averageFeesPerUser)
+        assertDecimalEquals("1", updated.single().averageFeesPerUser)
     }
 
-    private fun decimal(value: String): BigDecimal =
-        BigDecimal(value).setScale(AverageFeesPerUserService.SCALE, RoundingMode.HALF_UP)
+    private fun decimal(value: String): BigDecimal = BigDecimal(value)
+
+    private fun assertDecimalEquals(expected: String, actual: BigDecimal) {
+        assertEquals(0, BigDecimal(expected).compareTo(actual))
+    }
 
     private fun marker(date: String, origin: String, blockNumber: Long) =
         AverageFeesPerUserOriginMarker(

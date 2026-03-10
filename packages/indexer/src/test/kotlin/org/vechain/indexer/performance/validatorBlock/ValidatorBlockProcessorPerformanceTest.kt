@@ -108,7 +108,6 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
                 processor = processor,
                 startBlock = startBlock,
                 syncLoggerInterval = 100L,
-                syncBlockBatchSize = 1L,
                 bEProperties = businessEventProperties,
                 getAllValidatorsAddress = getAllValidatorsAddress,
             )
