@@ -1,6 +1,8 @@
 {
+  "api_category_processor_name": "Categorising the api calls",
   "app_pipeline_name": "Veworld Application Logs",
   "category_processor_name": "Categorize endpoint group",
   "dashboard_title": "Vechain Indexer Dashboard",
+  "endpoint_group_processor_name": "Categorize endpoint group",
   "pipeline_name": "AWS ELB Access Veworld"
 }

@@ -48,8 +48,8 @@ pip install -r metrics/datadog/scripts/requirements.txt
 | `get-dashboard` | Fetch dashboard from Datadog API, save to `dashboard.json` |
 | `push-pipeline` | Push `pipeline.json` back to Datadog |
 | `push-dashboard` | Push `dashboard.json` back to Datadog |
-| `update-categories` | Parse `api-docs.json`, regenerate category processor in `pipeline.json` |
-| `validate-categories` | Compare `pipeline.json` categories against `api-docs.json` (no API call needed) |
+| `update-categories` | Parse `api-docs.json`, regenerate both category processors in `pipeline.json` |
+| `validate-categories` | Compare both pipeline category processors against `api-docs.json` (no API call needed) |
 
 ### Generating the OpenAPI Spec
 
@@ -86,7 +86,7 @@ make dd-generate-openapi
 # 2. Fetch the current pipeline and dashboard from Datadog
 make dd-sync
 
-# 3. Update the category processor based on the OpenAPI spec
+# 3. Update the category processors based on the OpenAPI spec
 make dd-update-categories
 
 # 4. Push the updated pipeline and dashboard back to Datadog
@@ -95,7 +95,7 @@ make dd-push
 
 ### CI Workflows
 
-- **`validate-dd-categories.yml`** — Runs on PRs that modify API code or `pipeline.json`. Generates the OpenAPI spec from source (with embedded MongoDB), then validates that the category processor in `pipeline.json` matches the detected endpoints. No Datadog API credentials needed.
+- **`validate-dd-categories.yml`** — Runs on PRs that modify API code or `pipeline.json`. Generates the OpenAPI spec from source (with embedded MongoDB), then validates that both category processors in `pipeline.json` match the detected endpoints. No Datadog API credentials needed.
 
 - **`sync-datadog-config.yml`** — Runs on release (published) and `workflow_dispatch`. On **release**, it first pushes the repo's `dashboard.json` to Datadog, then fetches back the latest pipeline and dashboard configs and commits any changes. On **workflow_dispatch**, it only fetches (no push). Requires `DD_API_KEY`, `DD_APP_KEY`, and `DD_SITE` secrets.
 
@@ -107,6 +107,8 @@ make dd-push
 {
   "pipeline_name": "AWS ELB Access Veworld",
   "dashboard_title": "Vechain Indexer Dashboard",
-  "category_processor_name": "Categorize endpoint group"
+  "category_processor_name": "Categorize endpoint group",
+  "endpoint_group_processor_name": "Categorize endpoint group",
+  "api_category_processor_name": "Categorising the api calls"
 }
 ```
