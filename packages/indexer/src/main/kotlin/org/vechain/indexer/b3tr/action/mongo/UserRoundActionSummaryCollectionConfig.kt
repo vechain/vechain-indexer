@@ -42,6 +42,10 @@ open class UserRoundActionSummaryCollectionConfig(
         ensureIndexes(
             listOf(
                 "entity_-1" to Index().on(UserRoundActionSummary::entity.name, Sort.Direction.DESC),
+                "entity_1_roundId_1" to
+                    Index()
+                        .on(UserRoundActionSummary::entity.name, Sort.Direction.ASC)
+                        .on(UserRoundActionSummary::roundId.name, Sort.Direction.ASC),
                 "entityType_1_roundId_1" to
                     Index()
                         .on(UserRoundActionSummary::entityType.name, Sort.Direction.ASC)

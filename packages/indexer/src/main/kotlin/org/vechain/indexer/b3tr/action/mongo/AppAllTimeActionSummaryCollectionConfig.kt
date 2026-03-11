@@ -42,6 +42,10 @@ open class AppAllTimeActionSummaryCollectionConfig(
         ensureIndexes(
             listOf(
                 "user_-1" to Index().on(AppAllTimeActionSummary::user.name, Sort.Direction.DESC),
+                "appId_1_user_1" to
+                    Index()
+                        .on(AppAllTimeActionSummary::appId.name, Sort.Direction.ASC)
+                        .on(AppAllTimeActionSummary::user.name, Sort.Direction.ASC),
                 "appId_1_totalRewardAmount_-1_user_1" to
                     Index()
                         .on(AppAllTimeActionSummary::appId.name, Sort.Direction.ASC)
