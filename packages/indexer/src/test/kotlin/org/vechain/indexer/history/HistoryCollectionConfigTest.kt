@@ -5,7 +5,9 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -80,5 +82,27 @@ class HistoryCollectionConfigTest {
             }
         )
         assertFalse(capturedIndexes.any { it.indexOptions["name"] == "isBlacklisted_1" })
+    }
+
+    @Test
+    fun `initCollection fails when index creation fails`() {
+        every {
+            indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
+        } returns false
+        every { mongoTemplate.collectionExists(IndexedHistoryEvent::class.java) } returns true
+        every { mongoTemplate.indexOps(IndexedHistoryEvent::class.java) } returns indexOperations
+        every { indexOperations.ensureIndex(any()) } throws RuntimeException("boom")
+
+        val error =
+            assertThrows(IllegalStateException::class.java) {
+                HistoryCollectionConfig(
+                        mongoTemplate = mongoTemplate,
+                        indexerVersionService = indexerVersionService,
+                        appCoroutineScope = CoroutineScope(Dispatchers.Unconfined),
+                    )
+                    .initCollection()
+            }
+
+        assertEquals("Failed to create index blockNumber_-1 for IndexedHistoryEvent", error.message)
     }
 }

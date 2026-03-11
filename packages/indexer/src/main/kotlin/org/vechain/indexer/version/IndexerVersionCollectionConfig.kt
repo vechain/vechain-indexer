@@ -25,6 +25,10 @@ open class IndexerVersionCollectionConfig(private val mongoTemplate: MongoTempla
             logger.info("✅ Creation Success: collectionName_1_unique for IndexerVersion")
         } catch (e: Exception) {
             logger.error("⛔ Creation Failed: collectionName_1_unique for IndexerVersion", e)
+            throw IllegalStateException(
+                "Failed to create index collectionName_1_unique for IndexerVersion",
+                e,
+            )
         }
     }
 }
