@@ -1,6 +1,5 @@
 package org.vechain.indexer.accounts.mongo
 
-import jakarta.annotation.PostConstruct
 import java.math.BigInteger
 import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
@@ -29,23 +28,17 @@ open class VetBalanceCollectionConfig(
     private val genesisVetBalanceLoader: GenesisVetBalanceLoader,
 ) : CollectionConfig(mongoTemplate, appCoroutineScope, VetBalance::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-
     @Value("\${indexer.version.vet-balance:1}") private val version: Int = 1
 
-    @PostConstruct
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
-
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.VET_BALANCE.NAME,
             VetBalance::class.java,
             version,
         )
-
         ensureCollection()
-
         preloadGenesisIfCollectionEmpty()
-
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
@@ -67,18 +60,15 @@ open class VetBalanceCollectionConfig(
             )
             return
         }
-
         val genesis = genesisVetBalanceLoader.loadGenesisAllocations()
         if (genesis == null) {
             logger.warn("Skipping genesis preload for ${modelObj.simpleName}: resource not found.")
             return
         }
-
         val computedTotalSupply =
             genesis.allocations.fold(BigInteger.ZERO) { acc, allocation ->
                 acc + BigInteger(allocation.balance)
             }
-
         val records =
             genesis.allocations.map { allocation ->
                 VetBalance(
@@ -89,7 +79,6 @@ open class VetBalanceCollectionConfig(
                     balance = BigInteger(allocation.balance),
                 )
             }
-
         mongoTemplate.insert<VetBalance>(records)
         logger.info(
             "Preloaded {} genesis VET balances for network={} (launchTime={}, totalSupply={}).",

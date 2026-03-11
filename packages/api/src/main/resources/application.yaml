@@ -30,7 +30,7 @@ spring:
   application:
     name: vechain-api
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,vevote-historic-proposals,b3tr,explorer,accounts,validator}
+    active: ${SPRING_PROFILES_ACTIVE:nfts,transactions,transfers,history,stargate,vevote-results,vevote-historic-proposals,b3tr,explorer,accounts,validator}
   output:
     ansi:
       enabled: always

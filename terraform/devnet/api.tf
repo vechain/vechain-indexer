@@ -504,10 +504,6 @@ module "ecs-backend-service" {
       value = each.value.indexer.blacklist.contract-address
     },
     {
-      name  = "AUTHORITY_CONTRACT"
-      value = each.value.veworld.contract.authority-node.address
-    },
-    {
       name  = "STEERING_COMMITTEE_ADDRESS"
       value = each.value.veworld.contract.historic-proposals.steering-committee
     },
@@ -546,10 +542,6 @@ module "ecs-backend-service" {
     {
       name  = "VERSION_VEVOTE_RESULTS"
       value = each.value.indexer.version.vevote-results
-    },
-    {
-      name  = "VERSION_AUTHORITY_NODE_ENDORSER"
-      value = each.value.indexer.version.authority-node-endorser
     },
     {
       name  = "VERSION_STARGATE_VTHO_CLAIMED_BY_BLOCK"
@@ -770,10 +762,6 @@ module "ecs-backend-service" {
     {
       name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_STARGATE"
       value = each.value.indexer.sync-block-batch-size.stargate
-    },
-    {
-      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_AUTHORITY_NODES"
-      value = each.value.indexer.sync-block-batch-size.authority-nodes
     },
     {
       name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_B3TR"

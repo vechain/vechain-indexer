@@ -1,6 +1,5 @@
 package org.vechain.indexer.vevote
 
-import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -23,20 +22,15 @@ open class VeVoteResultCollectionConfig(
 ) : CollectionConfig(mongoTemplate, appCoroutineScope, VeVoteProposalResult::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @PostConstruct
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
-
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.VEVOTE_RESULT.NAME,
             VeVoteProposalResult::class.java,
             version,
         )
-
         this.ensureCollection()
-
         logger.info("Initializing indexes for ${modelObj.simpleName}")
-
         ensureIndexes(
             listOf(
                 "blockNumber_-1" to

@@ -142,7 +142,6 @@ enabled_nets:
         transfers:                  '100'
         vevote:                     '100'
         stargate:                   '100'
-        authority-nodes:            '100'
         historic-proposals:         '100'
         b3tr:                       '100'
       channel-batch-size: '15'
@@ -169,7 +168,6 @@ enabled_nets:
         nft-blacklist:              '6'
         vevote-comments:            '6'
         vevote-results:             '6'
-        authority-node-endorser:    '6'
         stargate-vtho-claimed-by-block: '9'
         stargate-vtho-generated-by-block: '7'
         stargate-vtho-claimed-by-account: '9'
@@ -238,8 +236,6 @@ enabled_nets:
       contract:
         vevote:
           address:                  '0x3f5E298CaEa8843e88D5E1c4F34C7c79387B9ec6'
-        authority-node:
-          address:                  '0x0000000000000000000000417574686f72697479'
         historic-proposals:
           steering-committee:       '0x7E54f0790153647Ec0651c35cEd28171Adb5D44A'
           all-stakeholders:         '0xA6416A72F816d3a69f33D0814700545C8E3fe4BE'

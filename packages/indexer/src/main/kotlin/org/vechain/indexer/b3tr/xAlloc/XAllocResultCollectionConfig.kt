@@ -1,6 +1,5 @@
 package org.vechain.indexer.b3tr.xAlloc
 
-import jakarta.annotation.PostConstruct
 import kotlin.jvm.java
 import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
@@ -22,23 +21,17 @@ open class XAllocResultCollectionConfig(
     private val indexerVersionService: IndexerVersionService,
 ) : CollectionConfig(mongoTemplate, appCoroutineScope, XAllocResult::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-
     @Value("\${indexer.version.b3tr-x-alloc-result}") private val version: Int = 1
 
-    @PostConstruct
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
-
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.X_ALLOC_RESULT.NAME,
             XAllocResult::class.java,
             version,
         )
-
         this.ensureCollection()
-
         logger.info("Initializing indexes for ${modelObj.simpleName}")
-
         ensureIndexes(
             listOf(
                 "roundId_-1" to Index().on(XAllocResult::roundId.name, Sort.Direction.DESC),

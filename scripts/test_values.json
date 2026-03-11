@@ -46,6 +46,20 @@
       "48098052949649968323435845011935575242371156821795293696975298342916966237360",
       "91631085131885579156215758281555469293232889777561024785028670947138113066205",
       "103030481407806826549085189442225357811665384371858916510563710566781560914296"
+    ],
+    "validatorId": [
+      "0xdb71c5c9a5cd407313139978aa8990347d141918",
+      "0x22a3bccab6e3c1b3b53f800cc4fa43c63af0e86e",
+      "0x45bae00fe7c5ac2432bf17f01b22bb6f3a435741",
+      "0xeb921887026118e79a348c5fd2cdec33a2116423",
+      "0x8844f4ecfad8cc329c0881f73ec35476947b75db"
+    ],
+    "validator": [
+      "0xdb71c5c9a5cd407313139978aa8990347d141918",
+      "0x22a3bccab6e3c1b3b53f800cc4fa43c63af0e86e",
+      "0x45bae00fe7c5ac2432bf17f01b22bb6f3a435741",
+      "0xeb921887026118e79a348c5fd2cdec33a2116423",
+      "0x8844f4ecfad8cc329c0881f73ec35476947b75db"
     ]
   },
   "path_overrides": {
@@ -55,15 +69,6 @@
         "0x76Ca782B59C74d088C7D2Cce2f211BC00836c602",
         "0x8392B7CCc763dB03b47afcD8E8f5e24F9cf0554D",
         "0xDf94739bd169C84fe6478D8420Bb807F1f47b135"
-      ]
-    },
-    "/api/v1/authority-endorsers/endorsers/{user}": {
-      "user": [
-        "0x81f2ae781d33a3d2cc136dd8928320ead4b1941b",
-        "0x14b18a1cd33e43eb72aaf1b8c65e2f9f067c4176",
-        "0x8d5195504dd1cdd8be425b03ae70eefa011d25af",
-        "0xa3a424fe32b9f29194d1b80f4417d52c76d6532b",
-        "0x4b9b5137ae693aa19196f9dfdfb6021b9909e099"
       ]
     },
     "/api/v1/stargate/total-vtho-claimed/{account}": {
@@ -131,6 +136,21 @@
     },
     "/api/v1/transfers/from": {
       "eventType": ["VET"]
+    },
+    "/api/v1/validators/{validatorId}": {
+      "validatorId": [
+        "0xdb71c5c9a5cd407313139978aa8990347d141918",
+        "0x22a3bccab6e3c1b3b53f800cc4fa43c63af0e86e",
+        "0x45bae00fe7c5ac2432bf17f01b22bb6f3a435741",
+        "0xeb921887026118e79a348c5fd2cdec33a2116423",
+        "0x8844f4ecfad8cc329c0881f73ec35476947b75db"
+      ]
+    },
+    "/api/v1/validators/blocks/historic/{validator}": {
+      "validator": [
+        "0xdb71c5c9a5cd407313139978aa8990347d141918",
+        "0x22a3bccab6e3c1b3b53f800cc4fa43c63af0e86e"
+      ]
     }
   }
 }

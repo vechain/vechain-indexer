@@ -439,12 +439,6 @@
         },
         {
           "filter": {
-            "query": "@http.url_details.path:/api/v1/authority-endorsers/endorsers/*"
-          },
-          "name": "/api/v1/authority-endorsers/endorsers/{user}"
-        },
-        {
-          "filter": {
             "query": "@http.url_details.path:/api/v1/b3tr/richlist/*"
           },
           "name": "/api/v1/b3tr/richlist/{address}"
@@ -570,12 +564,6 @@
             "query": "@http.url_details.path:/api/v1/accounts*"
           },
           "name": "v1-accounts"
-        },
-        {
-          "filter": {
-            "query": "@http.url_details.path:/api/v1/authority-endorsers*"
-          },
-          "name": "v1-authority-endorsers"
         },
         {
           "filter": {

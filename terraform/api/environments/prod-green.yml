@@ -57,7 +57,7 @@ enabled_nets:
       cpu: 1024
       memory: 2048
       max_capacity: 8
-      spring_profile:               nfts,transactions,transfers,history,vevote-results,vevote-historic-proposals,stargate,authority-nodes,b3tr,explorer,validator,accounts,contracts
+      spring_profile:               nfts,transactions,transfers,history,vevote-results,vevote-historic-proposals,stargate,b3tr,explorer,validator,accounts,contracts
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       logging:
         app-log-level: 'INFO'
@@ -117,7 +117,7 @@ enabled_nets:
       cpu: 8192
       memory: 16384
       enabled: true
-      spring_profile: indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr,explorer,validator,token-reward,accounts,vevote-historic-proposals,contracts
+      spring_profile: indexer,nfts,transactions,transfers,history,vevote-results,stargate,b3tr,explorer,validator,token-reward,accounts,vevote-historic-proposals,contracts
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       logging:
         app-log-level: 'INFO'
@@ -163,7 +163,6 @@ enabled_nets:
         transfers: '25'
         vevote: '125'
         stargate: '125'
-        authority-nodes: '125'
         b3tr: '75'
         historic-proposals: '125'
       channel-batch-size: '15'
@@ -190,7 +189,6 @@ enabled_nets:
         nft-blacklist: '1'
         vevote-comments: '1'
         vevote-results: '3'
-        authority-node-endorser: '1'
         stargate-vtho-claimed-by-block: '5'
         stargate-vtho-generated-by-block: '9'
         stargate-vtho-claimed-by-account: '4'
@@ -257,8 +255,6 @@ enabled_nets:
       contract:
         vevote:
           address:                  '0x7d812e8e544bb0c7898ea656b70173e7ef426b4c'
-        authority-node:
-          address:                  '0x0000000000000000000000417574686f72697479'
         historic-proposals:
           steering-committee:       '0x7E54f0790153647Ec0651c35cEd28171Adb5D44A'
           all-stakeholders:         '0xA6416A72F816d3a69f33D0814700545C8E3fe4BE'
@@ -280,7 +276,7 @@ enabled_nets:
       cpu: 512
       memory: 1024
       max_capacity: 2
-      spring_profile: nfts,transactions,transfers,history,vevote-results,vevote-historic-proposals,stargate,authority-nodes,b3tr,explorer,validator,accounts
+      spring_profile: nfts,transactions,transfers,history,vevote-results,vevote-historic-proposals,stargate,b3tr,explorer,validator,accounts
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       logging:
         app-log-level: 'INFO'
@@ -340,7 +336,7 @@ enabled_nets:
       cpu: 4096
       memory: 8192
       enabled: true
-      spring_profile: indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr,explorer,token-reward,validator,accounts,contracts
+      spring_profile: indexer,nfts,transactions,transfers,history,vevote-results,stargate,b3tr,explorer,token-reward,validator,accounts,contracts
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       logging:
         app-log-level: 'INFO'
@@ -386,7 +382,6 @@ enabled_nets:
         transfers: '25'
         vevote: '125'
         stargate: '125'
-        authority-nodes: '125'
         b3tr: '75'
         historic-proposals: '125'
       channel-batch-size: '15'
@@ -413,7 +408,6 @@ enabled_nets:
         nft-blacklist: '1'
         vevote-comments: '1'
         vevote-results: '3'
-        authority-node-endorser: '1'
         stargate-vtho-claimed-by-block: '7'
         stargate-vtho-generated-by-block: '9'
         stargate-vtho-claimed-by-account: '6'
@@ -478,8 +472,6 @@ enabled_nets:
         confidence:                 '0.9'
     veworld:
       contract:
-        authority-node:
-          address:                  '0x0000000000000000000000417574686f72697479'
         historic-proposals:
           steering-committee:       '0x7E54f0790153647Ec0651c35cEd28171Adb5D44A'
           all-stakeholders:         '0xA6416A72F816d3a69f33D0814700545C8E3fe4BE'

@@ -62,6 +62,10 @@ abstract class CollectionConfig(
             logger.info("Creation Success: $indexName for ${entityClass.simpleName}.")
         } catch (e: Exception) {
             logger.error("Creation Failed:  $indexName for ${entityClass.simpleName}", e)
+            throw IllegalStateException(
+                "Failed to create index $indexName for ${entityClass.simpleName}",
+                e,
+            )
         }
     }
 
