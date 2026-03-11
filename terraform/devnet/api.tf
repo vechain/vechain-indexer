@@ -126,7 +126,7 @@ module "ecs-lb-service-api" {
   rule_0_path_pattern       = ["/api/v*", "/api-docs", "/swagger-ui/*"]
   alb_sg                    = [aws_security_group.alb-sg.id]
   namespace_id              = aws_service_discovery_private_dns_namespace.ns.id
-  https_tg_healthcheck_path = "/actuator/health/readiness"
+  https_tg_healthcheck_path = "/actuator/health"
   environment_variables = [
     {
       name  = "APPLICATION_NAME"
