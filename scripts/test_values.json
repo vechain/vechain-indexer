@@ -57,15 +57,6 @@
         "0xDf94739bd169C84fe6478D8420Bb807F1f47b135"
       ]
     },
-    "/api/v1/authority-endorsers/endorsers/{user}": {
-      "user": [
-        "0x81f2ae781d33a3d2cc136dd8928320ead4b1941b",
-        "0x14b18a1cd33e43eb72aaf1b8c65e2f9f067c4176",
-        "0x8d5195504dd1cdd8be425b03ae70eefa011d25af",
-        "0xa3a424fe32b9f29194d1b80f4417d52c76d6532b",
-        "0x4b9b5137ae693aa19196f9dfdfb6021b9909e099"
-      ]
-    },
     "/api/v1/stargate/total-vtho-claimed/{account}": {
       "account": ["0x925741a20b9ca2e3beab1204ea92d693132ba6ac"]
     },

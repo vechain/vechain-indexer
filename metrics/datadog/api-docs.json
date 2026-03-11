@@ -171,20 +171,6 @@
         ],
         "type": "object"
       },
-      "AmnEndorser": {
-        "properties": {
-          "endorser": {
-            "type": "string"
-          },
-          "nodeMaster": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "nodeMaster"
-        ],
-        "type": "object"
-      },
       "AppLeaderboardItem": {
         "properties": {
           "actionsRewarded": {
@@ -3437,101 +3423,6 @@
         "summary": "Retrieve total unique accounts overview (deprecated)",
         "tags": [
           "Accounts"
-        ]
-      }
-    },
-    "/api/v1/authority-endorsers/endorsers/{user}": {
-      "get": {
-        "deprecated": true,
-        "operationId": "checkUserIsEndorser",
-        "parameters": [
-          {
-            "description": "User address to check if they are an endorser.",
-            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
-            "in": "path",
-            "name": "user",
-            "required": true,
-            "schema": {
-              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/AmnEndorser"
-                }
-              }
-            },
-            "description": "Success"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              },
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              }
-            },
-            "description": "Validation errors occurred, eg: invalid input"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/problem+json": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Access to the requested resource is forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              },
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              }
-            },
-            "description": "Requested resource was not found"
-          },
-          "500": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              },
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              }
-            },
-            "description": "Service not available"
-          }
-        },
-        "summary": "Check if a user is an endorser of any Authority Master Node.",
-        "tags": [
-          "Authority Nodes"
         ]
       }
     },

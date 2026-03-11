@@ -21,7 +21,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
     "transfers",
     "history",
     "stargate",
-    "authority-nodes",
     "vevote",
     "vevote-results",
     "vevote-historic-proposals",

@@ -87,6 +87,7 @@ class Operation:
     method: str
     operation_id: Optional[str] = None
     summary: str = ""
+    deprecated: bool = False
     tags: List[str] = field(default_factory=list)
     parameters: List[Parameter] = field(default_factory=list)
     request_body: Optional[RequestBody] = None
@@ -128,6 +129,18 @@ class ComparisonResult:
     @property
     def all_match(self) -> bool:
         return not self.errors and all(len(d) == 0 for d in self.diffs.values())
+
+    @property
+    def has_mismatch(self) -> bool:
+        return bool(self.errors) or any(len(d) > 0 for d in self.diffs.values())
+
+    @property
+    def ignored_due_to_deprecation(self) -> bool:
+        return self.test_case.operation.deprecated and self.has_mismatch
+
+    @property
+    def effective_pass(self) -> bool:
+        return self.all_match or self.ignored_due_to_deprecation
 
 
 # ---------------------------------------------------------------------------
@@ -286,6 +299,7 @@ def parse_operations(spec: Dict) -> List[Operation]:
                     method=method.upper(),
                     operation_id=op_dict.get("operationId"),
                     summary=op_dict.get("summary", ""),
+                    deprecated=op_dict.get("deprecated", False),
                     tags=op_dict.get("tags", []),
                     parameters=merged,
                     request_body=parse_request_body(
@@ -672,18 +686,25 @@ def execute_test_case(
 def print_summary(results: List[ComparisonResult]) -> None:
     total = len(results)
     passed = sum(1 for r in results if r.all_match)
-    failed = total - passed
+    deprecated = sum(1 for r in results if r.ignored_due_to_deprecation)
+    failed = sum(1 for r in results if r.has_mismatch and not r.ignored_due_to_deprecation)
 
     print(f"\n{'=' * 70}")
     print("COMPARISON SUMMARY")
     print(f"{'=' * 70}")
     print(f"  Total test cases : {total}")
     print(f"  Matching         : {passed}")
+    print(f"  Deprecated       : {deprecated}")
     print(f"  Differing        : {failed}")
     print(f"{'=' * 70}\n")
 
     for result in results:
-        icon = "PASS" if result.all_match else "FAIL"
+        if result.all_match:
+            icon = "PASS"
+        elif result.ignored_due_to_deprecation:
+            icon = "DEPRECATED"
+        else:
+            icon = "FAIL"
         print(f"[{icon}] {result.test_case.label}")
         print(f"   Request: {result.test_case.operation.method} {result.test_case.full_path}")
 
@@ -707,17 +728,25 @@ def save_report(results: List[ComparisonResult], output_file: str) -> None:
         "summary": {
             "total": len(results),
             "passed": sum(1 for r in results if r.all_match),
-            "failed": sum(1 for r in results if not r.all_match),
+            "deprecated": sum(1 for r in results if r.ignored_due_to_deprecation),
+            "failed": sum(1 for r in results if r.has_mismatch and not r.ignored_due_to_deprecation),
         },
         "results": [],
     }
     for r in results:
+        if r.all_match:
+            status = "pass"
+        elif r.ignored_due_to_deprecation:
+            status = "deprecated"
+        else:
+            status = "fail"
         report["results"].append(
             {
                 "label": r.test_case.label,
                 "method": r.test_case.operation.method,
                 "path": r.test_case.full_path,
-                "status": "pass" if r.all_match else "fail",
+                "status": status,
+                "deprecated": r.test_case.operation.deprecated,
                 "errors": r.errors,
                 "status_codes": r.status_codes,
                 "diffs": {k: list(v) for k, v in r.diffs.items()},
@@ -922,7 +951,7 @@ def main() -> None:
     if args.output:
         save_report(results, args.output)
 
-    sys.exit(0 if all(r.all_match for r in results) else 1)
+    sys.exit(0 if all(r.effective_pass for r in results) else 1)
 
 
 if __name__ == "__main__":

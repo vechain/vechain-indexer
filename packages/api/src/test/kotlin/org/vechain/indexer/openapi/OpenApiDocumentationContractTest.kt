@@ -24,7 +24,6 @@ import strikt.assertions.isEqualTo
     "transfers",
     "history",
     "stargate",
-    "authority-nodes",
     "vevote",
     "vevote-results",
     "vevote-historic-proposals",
