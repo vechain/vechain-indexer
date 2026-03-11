@@ -41,6 +41,11 @@ open class AppRoundActionSummaryCollectionConfig(
 
         ensureIndexes(
             listOf(
+                "appId_1_roundId_1_user_1" to
+                    Index()
+                        .on(AppRoundActionSummary::appId.name, Sort.Direction.ASC)
+                        .on(AppRoundActionSummary::roundId.name, Sort.Direction.ASC)
+                        .on(AppRoundActionSummary::user.name, Sort.Direction.ASC),
                 "appId_1_roundId_1_totalRewardAmount_-1_user_1" to
                     Index()
                         .on(AppRoundActionSummary::appId.name, Sort.Direction.ASC)

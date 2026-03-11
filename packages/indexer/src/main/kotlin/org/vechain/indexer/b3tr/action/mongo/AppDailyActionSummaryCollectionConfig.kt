@@ -45,6 +45,11 @@ open class AppDailyActionSummaryCollectionConfig(
                     Index()
                         .on(AppDailyActionSummary::user.name, Sort.Direction.DESC)
                         .on(AppDailyActionSummary::date.name, Sort.Direction.DESC),
+                "appId_1_date_1_user_1" to
+                    Index()
+                        .on(AppDailyActionSummary::appId.name, Sort.Direction.ASC)
+                        .on(AppDailyActionSummary::date.name, Sort.Direction.ASC)
+                        .on(AppDailyActionSummary::user.name, Sort.Direction.ASC),
                 "appId_1_date_1_totalRewardAmount_-1_user_1" to
                     Index()
                         .on(AppDailyActionSummary::appId.name, Sort.Direction.ASC)

@@ -43,6 +43,10 @@ open class UserDailyActionSummaryCollectionConfig(
             listOf(
                 "entity_-1" to Index().on(UserDailyActionSummary::entity.name, Sort.Direction.DESC),
                 "date_-1" to Index().on(UserDailyActionSummary::date.name, Sort.Direction.DESC),
+                "entity_1_date_1" to
+                    Index()
+                        .on(UserDailyActionSummary::entity.name, Sort.Direction.ASC)
+                        .on(UserDailyActionSummary::date.name, Sort.Direction.ASC),
                 "entityType_1_actionsRewarded_-1_entity_1" to
                     Index()
                         .on(UserDailyActionSummary::entityType.name, Sort.Direction.ASC)
