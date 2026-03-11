@@ -1,6 +1,5 @@
 package org.vechain.indexer.b3tr.action.mongo
 
-import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -22,23 +21,17 @@ open class UserAllTimeActionSummaryCollectionConfig(
     private val indexerVersionService: IndexerVersionService,
     @param:Value("\${indexer.version.b3tr-user-all-time-action-summary}") private val version: Int,
 ) : CollectionConfig(mongoTemplate, appCoroutineScope, UserAllTimeActionSummary::class.java) {
-
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @PostConstruct
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
-
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.USER_ALL_TIME_ACTION_SUMMARY.NAME,
             UserAllTimeActionSummary::class.java,
             version,
         )
-
         this.ensureCollection()
-
         logger.info("Initializing indexes for ${modelObj.simpleName}")
-
         ensureIndexes(
             listOf(
                 "entity_-1" to

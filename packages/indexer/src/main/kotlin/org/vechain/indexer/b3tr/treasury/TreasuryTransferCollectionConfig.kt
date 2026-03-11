@@ -1,6 +1,5 @@
 package org.vechain.indexer.b3tr.treasury
 
-import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -21,23 +20,17 @@ open class TreasuryTransferCollectionConfig(
     private val indexerVersionService: IndexerVersionService,
 ) : CollectionConfig(mongoTemplate, appCoroutineScope, TreasuryTransfer::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-
     @Value("\${indexer.version.b3tr-treasury}") private val version: Int = 1
 
-    @PostConstruct
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
-
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.TREASURY_TRANSFER.NAME,
             TreasuryTransfer::class.java,
             version,
         )
-
         ensureCollection()
-
         logger.info("Initializing indexes for ${modelObj.simpleName}")
-
         ensureIndexes(
             listOf(
                 // For getLatestRecord() and deleteAllByBlockNumberGreaterThanEqual()

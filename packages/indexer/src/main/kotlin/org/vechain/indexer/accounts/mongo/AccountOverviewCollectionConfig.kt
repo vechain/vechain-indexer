@@ -1,6 +1,5 @@
 package org.vechain.indexer.accounts.mongo
 
-import jakarta.annotation.PostConstruct
 import java.math.BigInteger
 import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
@@ -28,25 +27,18 @@ open class AccountOverviewCollectionConfig(
     private val genesisVetBalanceLoader: GenesisVetBalanceLoader,
 ) : CollectionConfig(mongoTemplate, appCoroutineScope, AccountOverview::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-
     @Value("\${indexer.version.account-overview}") private val version: Int = 1
 
-    @PostConstruct
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
-
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.ACCOUNT_OVERVIEW.NAME,
             AccountOverview::class.java,
             version,
         )
-
         ensureCollection()
-
         preloadGenesisIfCollectionEmpty()
-
         logger.info("Initializing indexes for ${modelObj.simpleName}")
-
         // Ensure indexes
         ensureIndexes(
             listOf(
@@ -65,13 +57,11 @@ open class AccountOverviewCollectionConfig(
             )
             return
         }
-
         val genesis = genesisVetBalanceLoader.loadGenesisAllocations()
         if (genesis == null) {
             logger.warn("Skipping genesis preload for ${modelObj.simpleName}: resource not found.")
             return
         }
-
         val records =
             genesis.allocations.map { allocation ->
                 AccountOverview(
@@ -94,7 +84,6 @@ open class AccountOverviewCollectionConfig(
                     vthoPassiveGeneration = BigInteger.ZERO,
                 )
             }
-
         mongoTemplate.insert<AccountOverview>(records)
         logger.info(
             "Preloaded {} genesis account overviews for network={} (launchTime={}).",

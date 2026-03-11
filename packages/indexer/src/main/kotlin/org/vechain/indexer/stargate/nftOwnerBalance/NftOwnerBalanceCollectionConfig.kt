@@ -1,6 +1,5 @@
 package org.vechain.indexer.stargate.nftOwnerBalance
 
-import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -23,21 +22,16 @@ open class NftOwnerBalanceCollectionConfig(
     private val indexerVersionService: IndexerVersionService,
 ) : CollectionConfig(mongoTemplate, appCoroutineScope, NftOwnerBalance::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-
     @Value("\${indexer.version.stargate-nft-owner-balance}") private val version: Int = 1
 
-    @PostConstruct
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
-
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.NFT_OWNER_BALANCE.NAME,
             NftOwnerBalance::class.java,
             version,
         )
-
         ensureCollection()
-
         ensureIndexes(
             listOf(
                 "blockNumber_1" to

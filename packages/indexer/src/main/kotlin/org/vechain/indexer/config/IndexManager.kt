@@ -2,6 +2,7 @@ package org.vechain.indexer.config
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.ExitCodeGenerator
@@ -13,11 +14,16 @@ import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerRunner
+import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.version.IndexerVersionCollectionConfig
 
 @Component
 open class IndexManager(
     private val indexers: List<Indexer>,
+    private val collectionConfigs: List<CollectionConfig>,
+    private val indexerVersionCollectionConfig: IndexerVersionCollectionConfig,
+    private val indexBootstrapState: IndexBootstrapState,
     private val appCoroutineScope: CoroutineScope,
     private val thorClient: ThorClient,
     private val applicationContext: ApplicationContext,
@@ -27,8 +33,30 @@ open class IndexManager(
 
     @EventListener(ApplicationReadyEvent::class)
     open fun start() {
-        logger.info("Application ready and collection initialization complete. Starting indexers")
+        logger.info("Application ready. Starting collection and index bootstrap in background")
 
+        appCoroutineScope.launch {
+            val initializerCount = collectionConfigs.size + 1
+            indexBootstrapState.markRunning(initializerCount)
+
+            try {
+                indexerVersionCollectionConfig.ensureIndexes()
+                collectionConfigs
+                    .sortedBy { it.modelObj.simpleName }
+                    .forEach { it.initCollection() }
+                indexBootstrapState.markReady(initializerCount)
+
+                logger.info("Collection bootstrap complete. Starting indexers")
+                startIndexers()
+            } catch (throwable: Throwable) {
+                indexBootstrapState.markFailed(throwable)
+                logger.error("Collection bootstrap failed", throwable)
+                SpringApplication.exit(applicationContext, ExitCodeGenerator { 1 })
+            }
+        }
+    }
+
+    private fun startIndexers() {
         IndexerRunner.launch(
                 scope = appCoroutineScope,
                 thorClient = thorClient,
@@ -39,7 +67,6 @@ open class IndexManager(
                 invokeOnCompletion { throwable ->
                     if (throwable != null) {
                         logger.error("IndexerRunner terminated with error: ", throwable)
-                        // Exit the application if the coordinator fails
                         SpringApplication.exit(applicationContext, ExitCodeGenerator { 1 })
                     } else {
                         logger.info("IndexerRunner terminated normally")

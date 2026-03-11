@@ -1,6 +1,5 @@
 package org.vechain.indexer.explorer
 
-import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -21,21 +20,16 @@ open class AverageFeesPerUserCollectionConfig(
     appCoroutineScope: CoroutineScope,
 ) : CollectionConfig(mongoTemplate, appCoroutineScope, AverageFeesPerUser::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-
     @Value("\${indexer.version.average-fees-per-user:1}") private val version: Int = 1
 
-    @PostConstruct
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
-
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.AVERAGE_FEES_PER_USER.NAME,
             AverageFeesPerUser::class.java,
             version,
         )
-
         ensureCollection()
-
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(

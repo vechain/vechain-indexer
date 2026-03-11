@@ -45,6 +45,8 @@ management:
       group:
         liveness:
           include: ping
+        readiness:
+          include: mongo,indexBootstrap,indexerHealth
   metrics:
     tags:
       indexer-id: ${METRICS_ID:local-indexer}

@@ -1,6 +1,5 @@
 package org.vechain.indexer.b3tr.balance.mongo
 
-import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -22,23 +21,17 @@ open class B3trBalanceCollectionConfig(
     private val indexerVersionService: IndexerVersionService,
 ) : CollectionConfig(mongoTemplate, appCoroutineScope, B3trBalance::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-
     @Value("\${indexer.version.b3tr-balance}") private val version: Int = 1
 
-    @PostConstruct
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
-
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.B3TR_BALANCE.NAME,
             B3trBalance::class.java,
             version,
         )
-
         ensureCollection()
-
         logger.info("Initializing indexes for ${modelObj.simpleName}")
-
         ensureIndexes(
             listOf(
                 "totalBalance_-1_id_1" to

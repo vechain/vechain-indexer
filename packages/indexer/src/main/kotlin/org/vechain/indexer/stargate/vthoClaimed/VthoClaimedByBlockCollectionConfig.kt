@@ -1,6 +1,5 @@
 package org.vechain.indexer.stargate.vthoClaimed
 
-import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -23,21 +22,16 @@ open class VthoClaimedByBlockCollectionConfig(
     private val indexerVersionService: IndexerVersionService,
 ) : CollectionConfig(mongoTemplate, appCoroutineScope, VthoClaimedByBlock::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-
     @Value("\${indexer.version.stargate-vtho-claimed-by-block}") private val version: Int = 1
 
-    @PostConstruct
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
-
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.VTHO_CLAIMED_BY_BLOCK.NAME,
             VthoClaimedByBlock::class.java,
             version,
         )
-
         ensureCollection()
-
         // Ensure indexes
         ensureIndexes(
             listOf(

@@ -1,6 +1,5 @@
 package org.vechain.indexer.b3tr.proposal
 
-import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -21,23 +20,17 @@ open class ProposalResultCollectionConfig(
     private val indexerVersionService: IndexerVersionService,
     @param:Value("\${indexer.version.b3tr-proposal-results}") private val version: Int,
 ) : CollectionConfig(mongoTemplate, appCoroutineScope, ProposalResult::class.java) {
-
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @PostConstruct
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
-
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.PROPOSAL_RESULT.NAME,
             ProposalResult::class.java,
             version,
         )
-
         this.ensureCollection()
-
         logger.info("Initializing indexes for ${modelObj.simpleName}")
-
         ensureIndexes(
             listOf(
                 "state_1_createdAtBlockNumber_-1" to
