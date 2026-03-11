@@ -13264,10 +13264,6 @@
       "name": "B3TR - Action Leaderboards"
     },
     {
-      "description": "Indexer API for querying Authority Master Node endorsement information.",
-      "name": "Authority Nodes"
-    },
-    {
       "description": "Query voting data on VeBetterDAO.",
       "name": "B3TR - Governance Proposals"
     },
