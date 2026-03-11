@@ -15,6 +15,30 @@ import org.springframework.stereotype.Component
 
 const val SLACK_MESSAGE_INTERVAL_MINUTES: Long = 30
 
+internal enum class HealthLogLevel {
+    INFO,
+    WARN,
+    ERROR,
+}
+
+internal data class HealthStatusLogPolicy(
+    val level: HealthLogLevel,
+    val label: String,
+    val shouldSendSlack: Boolean,
+)
+
+internal fun healthStatusLogPolicy(status: Status): HealthStatusLogPolicy =
+    when (status) {
+        Status.UP -> HealthStatusLogPolicy(HealthLogLevel.INFO, "healthy", shouldSendSlack = false)
+        Status.OUT_OF_SERVICE ->
+            HealthStatusLogPolicy(HealthLogLevel.WARN, "NOT_READY", shouldSendSlack = false)
+        Status.DOWN ->
+            HealthStatusLogPolicy(HealthLogLevel.ERROR, "UNHEALTHY", shouldSendSlack = true)
+        Status.UNKNOWN ->
+            HealthStatusLogPolicy(HealthLogLevel.WARN, "UNKNOWN", shouldSendSlack = false)
+        else -> HealthStatusLogPolicy(HealthLogLevel.WARN, status.code, shouldSendSlack = false)
+    }
+
 @Component
 open class ApplicationHealth(
     private val healthEndpoint: HealthEndpoint,
@@ -30,21 +54,30 @@ open class ApplicationHealth(
     @Scheduled(fixedDelay = 60 * 1000)
     fun logApplicationHealth() {
         val health = healthEndpoint.health() as SystemHealth
+        val applicationPolicy = healthStatusLogPolicy(health.status)
 
         if (health.status != Status.UP) {
-            logger.error(
-                "Application is UNHEALTHY: {}",
+            logAtLevel(
+                applicationPolicy.level,
+                "Application is ${applicationPolicy.label}: {}",
                 health.components.filter { it.value.status != Status.UP },
             )
-            sendSlackMessage(health)
+            if (applicationPolicy.shouldSendSlack) {
+                sendSlackMessage(health)
+            }
         }
 
         health.components.forEach { (name, component) ->
-            if (component.status != Status.UP) {
-                logger.error("Component $name is UNHEALTHY: {}", component)
-            } else {
-                logger.info("Component $name is healthy")
-            }
+            val componentPolicy = healthStatusLogPolicy(component.status)
+            logAtLevel(
+                componentPolicy.level,
+                if (component.status == Status.UP) {
+                    "Component $name is healthy"
+                } else {
+                    "Component $name is ${componentPolicy.label}: {}"
+                },
+                component,
+            )
             metrics.setComponentHealth(
                 name,
                 "component",
@@ -54,6 +87,29 @@ open class ApplicationHealth(
                     else -> -1.0
                 },
             )
+        }
+    }
+
+    private fun logAtLevel(level: HealthLogLevel, message: String, detail: Any? = null) {
+        when (level) {
+            HealthLogLevel.INFO ->
+                if (detail == null) {
+                    logger.info(message)
+                } else {
+                    logger.info(message, detail)
+                }
+            HealthLogLevel.WARN ->
+                if (detail == null) {
+                    logger.warn(message)
+                } else {
+                    logger.warn(message, detail)
+                }
+            HealthLogLevel.ERROR ->
+                if (detail == null) {
+                    logger.error(message)
+                } else {
+                    logger.error(message, detail)
+                }
         }
     }
 
