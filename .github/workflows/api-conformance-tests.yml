@@ -112,12 +112,70 @@ jobs:
         run: pip install 'schemathesis>=3.19,<4'
 
       - name: Run schema-driven tests
+        id: schemathesis
+        shell: bash
         run: |
           mkdir -p schemathesis-output
+          set +e
           scripts/run_api_schema_tests.sh dead \
             --base-url "${{ steps.resolve.outputs.base_url }}" \
             --store-network-log=./schemathesis-output/network.log \
-            --junit-xml=./schemathesis-output/results.xml
+            --junit-xml=./schemathesis-output/results.xml \
+            2>&1 | tee ./schemathesis-output/run.log
+          exit_code="${PIPESTATUS[0]}"
+          set -e
+          echo "exit_code=${exit_code}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate conformance report
+        if: always()
+        run: |
+          python3 scripts/generate_api_conformance_report.py \
+            --results-xml ./schemathesis-output/results.xml \
+            --log ./schemathesis-output/run.log \
+            --output-json ./schemathesis-output/report.json \
+            --output-markdown ./schemathesis-output/report.md \
+            --schemathesis-exit-code "${{ steps.schemathesis.outputs.exit_code || '0' }}" \
+            --base-url "${{ steps.resolve.outputs.base_url }}"
+
+      - name: Publish conformance summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f ./schemathesis-output/report.md ]]; then
+            cat ./schemathesis-output/report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "### API Conformance Report"
+              echo ""
+              echo "> No report generated."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Enforce hard failures only
+        if: always()
+        run: |
+          python3 - <<'PYEOF'
+          import json
+          import pathlib
+          import sys
+
+          report_path = pathlib.Path("./schemathesis-output/report.json")
+          if not report_path.exists():
+              print("Conformance report was not generated.", file=sys.stderr)
+              sys.exit(1)
+
+          report = json.loads(report_path.read_text())
+          summary = report["summary"]
+
+          if summary.get("hard_issues", 0) > 0:
+              print(f"Failing due to {summary['hard_issues']} hard conformance issue(s).", file=sys.stderr)
+              sys.exit(1)
+
+          print(
+              f"Passing with {summary.get('soft_issues', 0)} soft issue(s) and "
+              f"{summary.get('warnings_total', 0)} warning(s)."
+          )
+          PYEOF
 
       - name: Upload schema test artifacts
         if: always()

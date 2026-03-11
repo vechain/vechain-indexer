@@ -35,8 +35,6 @@ open class NftController(private val nftService: NftService) {
     @GetMapping
     @JsonView(Views.Public::class)
     @Operation(summary = "Get all NFTs owned by an address")
-    @AddressParameter(required = true, description = "Address of the NFT owner")
-    @AddressParameter(name = "contractAddress")
     @TokenIdParameter
     @AddressListParameter(
         name = "excludeCollections",
@@ -45,8 +43,14 @@ open class NftController(private val nftService: NftService) {
     @CommonApiResponses
     @PaginationParameters
     open fun getOwnedNFTs(
-        @ValidAddress @RequestParam address: Address,
-        @ValidAddress @RequestParam(required = false) contractAddress: Address?,
+        @AddressParameter(required = true, description = "Address of the NFT owner")
+        @ValidAddress
+        @RequestParam
+        address: Address,
+        @AddressParameter(name = "contractAddress")
+        @ValidAddress
+        @RequestParam(required = false)
+        contractAddress: Address?,
         @ValidTokenId @RequestParam(required = false) tokenId: String?,
         @ValidAddressList @RequestParam(required = false) excludeCollections: List<Address>?,
         @RequestParam(required = false) page: Int?,
@@ -68,7 +72,6 @@ open class NftController(private val nftService: NftService) {
 
     @GetMapping("/contracts")
     @Operation(summary = "Get all contracts addresses by NFT owner")
-    @AddressParameter(name = "owner", required = true)
     @AddressListParameter(
         name = "excludeCollections",
         description = "The addresses of the collections to exclude. Max 20 collections.",
@@ -76,7 +79,10 @@ open class NftController(private val nftService: NftService) {
     @CommonApiResponses
     @PaginationParameters
     open fun getContractsByNFTOwner(
-        @ValidAddress @RequestParam owner: Address,
+        @AddressParameter(name = "owner", required = true)
+        @ValidAddress
+        @RequestParam
+        owner: Address,
         @ValidAddressList @RequestParam(required = false) excludeCollections: List<Address>?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,

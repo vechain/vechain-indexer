@@ -41,23 +41,28 @@ open class TransferEventController(private val transferEventService: TransferEve
 
     @GetMapping
     @Operation(summary = "Get transfer events by address or token address")
-    @AddressParameter(
-        name = "address",
-        description =
-            "To or from address of the transfer event. Either address or tokenAddress must be provided",
-    )
-    @AddressParameter(
-        name = "tokenAddress",
-        description = "The token contract address. Either address or tokenAddress must be provided",
-    )
     @TransferEventTypeParameter
     @AfterParameter
     @BeforeParameter
     @CommonApiResponses
     @PaginationParameters
     open fun getTransferEvents(
-        @ValidAddress @RequestParam(required = false) address: Address?,
-        @ValidAddress @RequestParam(required = false) tokenAddress: Address?,
+        @AddressParameter(
+            name = "address",
+            description =
+                "To or from address of the transfer event. Either address or tokenAddress must be provided",
+        )
+        @ValidAddress
+        @RequestParam(required = false)
+        address: Address?,
+        @AddressParameter(
+            name = "tokenAddress",
+            description =
+                "The token contract address. Either address or tokenAddress must be provided",
+        )
+        @ValidAddress
+        @RequestParam(required = false)
+        tokenAddress: Address?,
         @ValidTransferEventType @RequestParam(required = false) eventType: List<String>?,
         @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
         @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
@@ -95,16 +100,20 @@ open class TransferEventController(private val transferEventService: TransferEve
 
     @GetMapping("/from")
     @Operation(summary = "Get transfer events by from address")
-    @AddressParameter(description = "From address of the transfer event", required = true)
-    @AddressParameter(name = "tokenAddress", description = "The token contract address")
     @TransferEventTypeParameter
     @AfterParameter
     @BeforeParameter
     @CommonApiResponses
     @PaginationParameters
     open fun getTransferEventsByFrom(
-        @ValidAddress @RequestParam address: Address,
-        @ValidAddress @RequestParam(required = false) tokenAddress: Address?,
+        @AddressParameter(description = "From address of the transfer event", required = true)
+        @ValidAddress
+        @RequestParam
+        address: Address,
+        @AddressParameter(name = "tokenAddress", description = "The token contract address")
+        @ValidAddress
+        @RequestParam(required = false)
+        tokenAddress: Address?,
         @ValidTransferEventType @RequestParam(required = false) eventType: List<String>?,
         @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
         @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
@@ -136,16 +145,20 @@ open class TransferEventController(private val transferEventService: TransferEve
 
     @GetMapping("/to")
     @Operation(summary = "Get transfer events by to address")
-    @AddressParameter(description = "To address of the transfer event", required = true)
-    @AddressParameter(name = "tokenAddress", description = "The token contract address")
     @TransferEventTypeParameter
     @AfterParameter
     @BeforeParameter
     @CommonApiResponses
     @PaginationParameters
     open fun getTransferEventsByTo(
-        @ValidAddress @RequestParam address: Address,
-        @ValidAddress @RequestParam(required = false) tokenAddress: Address?,
+        @AddressParameter(description = "To address of the transfer event", required = true)
+        @ValidAddress
+        @RequestParam
+        address: Address,
+        @AddressParameter(name = "tokenAddress", description = "The token contract address")
+        @ValidAddress
+        @RequestParam(required = false)
+        tokenAddress: Address?,
         @ValidTransferEventType @RequestParam(required = false) eventType: List<String>?,
         @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
         @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
@@ -203,10 +216,6 @@ open class TransferEventController(private val transferEventService: TransferEve
 
     @GetMapping("/fungible-tokens-contracts")
     @Operation(summary = "Get all fungible tokens transfers contracts for a given account")
-    @AddressParameter(
-        description = "The address of origin or destination of the fungible tokens transfer events",
-        required = true,
-    )
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "officialTokensOnly",
@@ -218,7 +227,14 @@ open class TransferEventController(private val transferEventService: TransferEve
     @CommonApiResponses
     @PaginationParameters
     open fun getFungibleTokensContractsByAddress(
-        @ValidAddress @RequestParam address: Address,
+        @AddressParameter(
+            description =
+                "The address of origin or destination of the fungible tokens transfer events",
+            required = true,
+        )
+        @ValidAddress
+        @RequestParam
+        address: Address,
         @RequestParam(required = false) officialTokensOnly: Boolean = false,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,

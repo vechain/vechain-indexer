@@ -296,11 +296,7 @@
           }
         },
         "required": [
-          "averageFeesPerUser",
-          "dailyActiveUsers",
-          "date",
-          "dayStartTimestamp",
-          "totalFeesPaid"
+          "date"
         ],
         "type": "object"
       },
@@ -3177,6 +3173,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -3184,6 +3185,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -3262,6 +3268,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -3269,6 +3280,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -3393,6 +3409,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -3400,6 +3421,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -3478,6 +3504,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -3485,6 +3516,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -3626,6 +3662,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -3633,6 +3674,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -3731,6 +3777,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -3738,6 +3789,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -3828,6 +3884,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -3835,6 +3896,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -3974,6 +4040,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -3981,6 +4052,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -4131,6 +4207,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -4138,6 +4219,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -4274,6 +4360,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -4281,6 +4372,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -4433,6 +4529,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -4440,6 +4541,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -4552,6 +4658,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -4559,6 +4670,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -4698,6 +4814,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -4705,6 +4826,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -4803,6 +4929,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -4810,6 +4941,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -4902,6 +5038,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -4909,6 +5050,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -5040,6 +5186,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -5047,6 +5198,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -5128,6 +5284,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -5135,6 +5296,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -5252,6 +5418,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -5259,6 +5430,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -5351,6 +5527,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -5358,6 +5539,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -5506,6 +5692,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -5513,6 +5704,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -5655,6 +5851,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -5662,6 +5863,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -5755,6 +5961,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -5762,6 +5973,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -5855,6 +6071,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -5862,6 +6083,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -5979,6 +6205,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -5986,6 +6217,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -6063,6 +6299,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -6070,6 +6311,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -6164,6 +6410,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -6171,6 +6422,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -6265,6 +6521,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -6272,6 +6533,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -6292,10 +6558,13 @@
         "operationId": "getUsersHistory",
         "parameters": [
           {
+            "description": "A valid address",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             "in": "path",
             "name": "account",
             "required": true,
             "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
               "type": "string"
             }
           },
@@ -6368,10 +6637,13 @@
             }
           },
           {
+            "description": "A valid address",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             "in": "query",
             "name": "contractAddress",
             "required": false,
             "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
               "type": "string"
             }
           },
@@ -6487,6 +6759,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -6494,6 +6771,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -6513,18 +6795,24 @@
         "operationId": "getOwnedNFTs",
         "parameters": [
           {
+            "description": "Address of the NFT owner",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             "in": "query",
             "name": "address",
             "required": true,
             "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
               "type": "string"
             }
           },
           {
+            "description": "A valid address",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             "in": "query",
             "name": "contractAddress",
             "required": false,
             "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
               "type": "string"
             }
           },
@@ -6643,6 +6931,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse_Public"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse_Public"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -6650,6 +6943,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse_Public"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse_Public"
                 }
@@ -6784,6 +7082,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -6791,6 +7094,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -6870,6 +7178,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -6877,6 +7190,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -6986,6 +7304,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -6993,6 +7316,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -7142,6 +7470,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -7149,6 +7482,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -7294,6 +7632,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -7301,6 +7644,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -7434,6 +7782,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -7441,6 +7794,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -7520,6 +7878,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -7527,6 +7890,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -7606,6 +7974,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -7613,6 +7986,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -7722,6 +8100,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -7729,6 +8112,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -7821,6 +8209,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -7828,6 +8221,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -7916,6 +8314,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -7923,6 +8326,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -8013,6 +8421,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -8020,6 +8433,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -8120,6 +8538,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -8127,6 +8550,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -8206,6 +8634,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -8213,6 +8646,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -8301,6 +8739,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -8308,6 +8751,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -8457,6 +8905,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -8464,6 +8917,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -8613,6 +9071,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -8620,6 +9083,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -8777,6 +9245,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -8784,6 +9257,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -8941,6 +9419,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -8948,6 +9431,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -9085,6 +9573,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -9092,6 +9585,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -9219,6 +9717,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -9226,6 +9729,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -9353,6 +9861,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -9360,6 +9873,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -9447,6 +9965,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -9454,6 +9977,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -9473,18 +10001,24 @@
         "operationId": "getTransferEvents",
         "parameters": [
           {
+            "description": "To or from address of the transfer event. Either address or tokenAddress must be provided",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             "in": "query",
             "name": "address",
             "required": false,
             "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
               "type": "string"
             }
           },
           {
+            "description": "The token contract address. Either address or tokenAddress must be provided",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             "in": "query",
             "name": "tokenAddress",
             "required": false,
             "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
               "type": "string"
             }
           },
@@ -9618,6 +10152,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -9625,6 +10164,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -9761,6 +10305,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -9768,6 +10317,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -9787,18 +10341,24 @@
         "operationId": "getTransferEventsByFrom",
         "parameters": [
           {
+            "description": "From address of the transfer event",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             "in": "query",
             "name": "address",
             "required": true,
             "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
               "type": "string"
             }
           },
           {
+            "description": "The token contract address",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             "in": "query",
             "name": "tokenAddress",
             "required": false,
             "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
               "type": "string"
             }
           },
@@ -9932,6 +10492,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -9939,6 +10504,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -10066,6 +10636,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -10073,6 +10648,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -10092,18 +10672,24 @@
         "operationId": "getTransferEventsByTo",
         "parameters": [
           {
+            "description": "To address of the transfer event",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             "in": "query",
             "name": "address",
             "required": true,
             "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
               "type": "string"
             }
           },
           {
+            "description": "The token contract address",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             "in": "query",
             "name": "tokenAddress",
             "required": false,
             "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
               "type": "string"
             }
           },
@@ -10237,6 +10823,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -10244,6 +10835,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -10414,6 +11010,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -10421,6 +11022,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -10565,6 +11171,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -10572,6 +11183,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -10666,6 +11282,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -10673,6 +11294,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -10818,6 +11444,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -10825,6 +11456,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -10930,6 +11566,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -10937,6 +11578,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -11030,6 +11676,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -11037,6 +11688,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -11181,6 +11837,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -11188,6 +11849,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -11269,6 +11935,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -11276,6 +11947,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -11354,6 +12030,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -11361,6 +12042,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -11476,6 +12162,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -11483,6 +12174,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -11614,6 +12310,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -11621,6 +12322,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -11763,6 +12469,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -11770,6 +12481,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -11864,6 +12580,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -11871,6 +12592,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -12002,6 +12728,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -12009,6 +12740,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -12086,6 +12822,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -12093,6 +12834,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -12274,6 +13020,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -12281,6 +13032,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
@@ -12300,10 +13056,13 @@
         "operationId": "getUsersHistoryV2",
         "parameters": [
           {
+            "description": "A valid address",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             "in": "path",
             "name": "account",
             "required": true,
             "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
               "type": "string"
             }
           },
@@ -12376,10 +13135,13 @@
             }
           },
           {
+            "description": "A valid address",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             "in": "query",
             "name": "contractAddress",
             "required": false,
             "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
               "type": "string"
             }
           },
@@ -12495,6 +13257,11 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
               }
             },
             "description": "Requested resource was not found"
@@ -12502,6 +13269,11 @@
           "500": {
             "content": {
               "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExceptionResponse"
                 }
