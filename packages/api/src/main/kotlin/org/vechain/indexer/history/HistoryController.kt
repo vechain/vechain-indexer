@@ -45,19 +45,23 @@ open class HistoryController(private val historyService: HistoryService) {
     @Deprecated("This api is deprecated post hayabusa release")
     @GetMapping("$API_VERSION/history/{account}")
     @Operation(summary = "Get account history")
-    @AddressParameter(name = "account", required = true, `in` = ParameterIn.PATH)
     @SearchByParameter
     @EventNameParameter
-    @AddressParameter(name = "contractAddress")
     @AfterParameter
     @BeforeParameter
     @CommonApiResponses
     @PaginationParameters
     open fun getUsersHistory(
-        @ValidAddress @PathVariable account: Address,
+        @AddressParameter(name = "account", required = true, `in` = ParameterIn.PATH)
+        @ValidAddress
+        @PathVariable
+        account: Address,
         @LegacyValidEventName @RequestParam(required = false) eventName: List<String>?,
         @ValidSearchBy @RequestParam(required = false) searchBy: List<String>?,
-        @ValidAddress @RequestParam(required = false) contractAddress: Address?,
+        @AddressParameter(name = "contractAddress")
+        @ValidAddress
+        @RequestParam(required = false)
+        contractAddress: Address?,
         @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
         @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
         @RequestParam(required = false) page: Int?,
@@ -95,19 +99,23 @@ open class HistoryController(private val historyService: HistoryService) {
 
     @GetMapping("/v2/history/{account}")
     @Operation(summary = "Get account history")
-    @AddressParameter(name = "account", required = true, `in` = ParameterIn.PATH)
     @SearchByParameter
     @EventNameParameter
-    @AddressParameter(name = "contractAddress")
     @AfterParameter
     @BeforeParameter
     @CommonApiResponses
     @PaginationParameters
     open fun getUsersHistoryV2(
-        @ValidAddress @PathVariable account: Address,
+        @AddressParameter(name = "account", required = true, `in` = ParameterIn.PATH)
+        @ValidAddress
+        @PathVariable
+        account: Address,
         @ValidEventName @RequestParam(required = false) eventName: List<String>?,
         @ValidSearchBy @RequestParam(required = false) searchBy: List<String>?,
-        @ValidAddress @RequestParam(required = false) contractAddress: Address?,
+        @AddressParameter(name = "contractAddress")
+        @ValidAddress
+        @RequestParam(required = false)
+        contractAddress: Address?,
         @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
         @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
         @RequestParam(required = false) page: Int?,
@@ -141,7 +149,6 @@ open class HistoryController(private val historyService: HistoryService) {
     @Operation(summary = "Get token history")
     @TokenIdParameter(required = true, `in` = ParameterIn.PATH)
     @TokenEventNameParameter
-    @AddressParameter(name = "contractAddress")
     @AfterParameter
     @BeforeParameter
     @CommonApiResponses
@@ -149,7 +156,10 @@ open class HistoryController(private val historyService: HistoryService) {
     open fun getTokenHistory(
         @ValidTokenId @PathVariable(required = true) tokenId: String,
         @ValidTokenEventName @RequestParam(required = false) eventName: List<String>?,
-        @ValidAddress @RequestParam(required = false) contractAddress: Address?,
+        @AddressParameter(name = "contractAddress")
+        @ValidAddress
+        @RequestParam(required = false)
+        contractAddress: Address?,
         @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
         @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
         @RequestParam(required = false) page: Int?,

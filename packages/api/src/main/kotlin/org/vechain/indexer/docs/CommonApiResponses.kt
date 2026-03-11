@@ -46,7 +46,11 @@ import org.vechain.indexer.exception.ExceptionResponse
                         Content(
                             mediaType = "application/json",
                             schema = Schema(implementation = ExceptionResponse::class),
-                        )
+                        ),
+                        Content(
+                            mediaType = "application/problem+json",
+                            schema = Schema(implementation = ExceptionResponse::class),
+                        ),
                     ],
             ),
             ApiResponse(
@@ -57,7 +61,11 @@ import org.vechain.indexer.exception.ExceptionResponse
                         Content(
                             mediaType = "application/json",
                             schema = Schema(implementation = ExceptionResponse::class),
-                        )
+                        ),
+                        Content(
+                            mediaType = "application/problem+json",
+                            schema = Schema(implementation = ExceptionResponse::class),
+                        ),
                     ],
             ),
         ]
