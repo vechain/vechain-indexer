@@ -43,8 +43,49 @@ open class HistoryCollectionConfig(
                 // For getLatestRecord() and deleteAllByBlockNumberGreaterThanEqual()
                 "blockNumber_-1" to
                     Index().on(IndexedHistoryEvent::blockNumber.name, Sort.Direction.DESC),
-                "isBlacklisted_1" to
-                    Index().on(IndexedHistoryEvent::isBlacklisted.name, Sort.Direction.ASC),
+                // Core account history queries fan out across these fields with blockTimestamp
+                // sort.
+                "origin_1_blockTimestamp_-1" to
+                    Index()
+                        .on(IndexedHistoryEvent::origin.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
+                "from_1_blockTimestamp_-1" to
+                    Index()
+                        .on(IndexedHistoryEvent::from.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
+                "to_1_blockTimestamp_-1" to
+                    Index()
+                        .on(IndexedHistoryEvent::to.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
+                "gasPayer_1_blockTimestamp_-1" to
+                    Index()
+                        .on(IndexedHistoryEvent::gasPayer.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
+                "owner_1_blockTimestamp_-1" to
+                    Index()
+                        .on(IndexedHistoryEvent::owner.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
+                "tokenId_1_blockTimestamp_-1" to
+                    Index()
+                        .on(IndexedHistoryEvent::tokenId.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
+                // Action endpoints query narrower shapes and benefit from dedicated compounds.
+                "to_1_eventName_1_blockTimestamp_-1" to
+                    Index()
+                        .on(IndexedHistoryEvent::to.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
+                "to_1_appId_1_eventName_1_blockTimestamp_-1" to
+                    Index()
+                        .on(IndexedHistoryEvent::to.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::appId.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
+                "appId_1_eventName_1_blockTimestamp_-1" to
+                    Index()
+                        .on(IndexedHistoryEvent::appId.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
             )
         )
     }
