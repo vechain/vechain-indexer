@@ -126,7 +126,6 @@ enabled_nets:
       timing:
         warn-threshold-ms: '1000'
         very-slow-threshold-ms: '10000'
-      slack_webhook_url: https://hooks.slack.com/services/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
       start-block:
         nfts:                       '1304112'
         nft-blacklist:              '21774168'
@@ -345,7 +344,6 @@ enabled_nets:
       timing:
         warn-threshold-ms: '1000'
         very-slow-threshold-ms: '10000'
-      slack_webhook_url: https://hooks.slack.com/services/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
       start-block:
         nfts:                       '1042259'
         nft-blacklist:              '21823565'

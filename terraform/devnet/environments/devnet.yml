@@ -106,7 +106,6 @@ enabled_nets:
       timing:
         warn-threshold-ms: '1000'
         very-slow-threshold-ms: '10000'
-      slack_webhook_url: https://hooks.slack.com/services/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
       start-block:
         nfts:                       '0'
         nft-blacklist:              '0'

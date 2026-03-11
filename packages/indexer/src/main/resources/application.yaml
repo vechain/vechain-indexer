@@ -16,10 +16,6 @@ timing:
   warn-threshold-ms: ${TIMING_WARN_THRESHOLD_MS:1000}
   very-slow-threshold-ms: ${TIMING_VERY_SLOW_THRESHOLD_MS:10000}
 
-slack:
-  webhook:
-    url: ${SLACK_WEBHOOK_URL:#{null}}
-
 logging:
   level:
     ROOT: INFO
