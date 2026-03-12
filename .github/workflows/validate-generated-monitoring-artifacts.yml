@@ -1,0 +1,44 @@
+name: Validate Generated Monitoring Artifacts
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  generate-and-format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: pip install -r metrics/datadog/scripts/requirements.txt
+
+      - name: Refresh generated Datadog files
+        run: make dd-refresh-generated
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check for generated changes
+        run: |
+          if git diff --quiet; then
+            exit 0
+          else
+            echo "::error::Generated Datadog files are out of date."
+            echo "Run the following command locally and commit the results:"
+            echo "  make dd-refresh-generated"
+            git diff -- metrics/datadog/*.json metrics/grafana/provisioning/dashboards/*.json
+            exit 1
+          fi

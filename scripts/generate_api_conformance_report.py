@@ -11,7 +11,7 @@ from collections import Counter
 from pathlib import Path
 
 
-SOFT_CHECKS = {"max_response_time", "request_timeout"}
+SOFT_CHECKS = {"max_response_time"}
 
 
 def parse_args() -> argparse.Namespace:
@@ -57,18 +57,85 @@ def infer_check(text: str) -> str:
 
 
 def summarize_issue_text(text: str) -> str:
-    for line in text.splitlines():
+    summary_text = strip_reproduction_section(text)
+
+    for line in summary_text.splitlines():
         stripped = line.strip()
         if not stripped:
             continue
         if stripped.startswith("1. Test Case ID:"):
             continue
+        stripped = re.sub(r"^\d+\.\s*Test Case ID:\s*[A-Za-z0-9_-]+\s*-\s*", "", stripped)
         if stripped.startswith("- "):
-            return stripped[2:]
+            return stripped[2:].strip()
         if stripped.startswith("[") and "]" in stripped:
             continue
-        return stripped
-    return "Unclassified issue"
+        return stripped.strip()
+
+    collapsed = collapse_whitespace(summary_text)
+    collapsed = re.sub(r"^\d+\.\s*Test Case ID:\s*[A-Za-z0-9_-]+\s*-\s*", "", collapsed)
+    return collapsed or "Unclassified issue"
+
+
+def collapse_whitespace(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def extract_reproduction_command(text: str) -> str | None:
+    lines = text.splitlines()
+    for idx, line in enumerate(lines):
+        if line.strip().lower() != "reproduce with:":
+            continue
+
+        command_lines: list[str] = []
+        for candidate in lines[idx + 1 :]:
+            stripped = candidate.strip()
+            if not stripped:
+                if command_lines:
+                    break
+                continue
+            if command_lines and not candidate.startswith((" ", "\t")):
+                break
+            if stripped.lower().startswith("need more help?"):
+                break
+            command_lines.append(stripped)
+
+        if command_lines:
+            return " ".join(command_lines)
+
+    inline_match = re.search(r"Reproduce with:\s*(curl\b.+)$", text, flags=re.IGNORECASE)
+    if inline_match:
+        return collapse_whitespace(inline_match.group(1))
+
+    return None
+
+
+def strip_reproduction_section(text: str) -> str:
+    lines = text.splitlines()
+    kept_lines: list[str] = []
+    skipping_reproduction = False
+
+    for line in lines:
+        stripped = line.strip()
+
+        if stripped.lower() == "reproduce with:":
+            skipping_reproduction = True
+            continue
+
+        if skipping_reproduction:
+            if not stripped:
+                continue
+            if line.startswith((" ", "\t")) or stripped.lower().startswith("curl "):
+                continue
+            if stripped.lower().startswith("need more help?"):
+                break
+            skipping_reproduction = False
+
+        kept_lines.append(line)
+
+    cleaned = "\n".join(kept_lines)
+    cleaned = re.sub(r"\s+Reproduce with:\s*curl\b.+$", "", cleaned, flags=re.IGNORECASE)
+    return cleaned.strip()
 
 
 def extract_test_case_id(text: str) -> str | None:
@@ -117,7 +184,9 @@ def parse_junit_xml(results_xml: Path) -> tuple[list[dict], dict]:
                     "check": check,
                     "title": summarize_issue_text(raw_text),
                     "test_case_id": extract_test_case_id(raw_text),
-                    "details": raw_text,
+                    "details": strip_reproduction_section(raw_text),
+                    "reproduce_with": extract_reproduction_command(raw_text),
+                    "raw_details": raw_text,
                 }
             )
 
@@ -250,6 +319,12 @@ def render_markdown(report: dict) -> str:
             if issue.get("test_case_id"):
                 lines.append(f"- Test case ID: `{issue['test_case_id']}`")
             lines.append(f"- Kind: `{issue['kind']}`")
+            if issue.get("reproduce_with"):
+                lines.append("- Reproduce with:")
+                lines.append("")
+                lines.append("```sh")
+                lines.append(issue["reproduce_with"])
+                lines.append("```")
             lines.append("")
             lines.append("```text")
             lines.append(textwrap.shorten(issue["details"], width=4000, placeholder=" ..."))
