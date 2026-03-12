@@ -42,8 +42,10 @@ open class AccountOverviewCollectionConfig(
         // Ensure indexes
         ensureIndexes(
             listOf(
+                "blockNumber_-1" to
+                    Index().on(AccountOverview::blockNumber.name, Sort.Direction.DESC),
                 "lastVthoSettlement_1" to
-                    Index().on(AccountOverview::lastVthoSettlement.name, Sort.Direction.ASC)
+                    Index().on(AccountOverview::lastVthoSettlement.name, Sort.Direction.ASC),
             )
         )
     }
