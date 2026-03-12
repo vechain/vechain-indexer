@@ -17,6 +17,7 @@ import org.springframework.data.mongodb.core.convert.MongoConverter
 import org.springframework.data.mongodb.core.mapping.Document as MongoDocument
 import org.springframework.data.mongodb.core.query.BasicQuery
 import org.springframework.data.mongodb.core.query.Criteria
+import org.springframework.data.mongodb.core.query.CriteriaDefinition
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
@@ -439,6 +440,22 @@ internal class FilteringMongoTemplateTest {
                     .all()
 
             expectThat(result.map { it.id }).containsExactlyInAnyOrder("doc1", "doc2")
+        }
+
+        @Test
+        fun `queryFieldNames reads criteria keys without materializing query object`() {
+            val query =
+                Query(
+                    object : CriteriaDefinition {
+                        override fun getKey(): String = "blockNumber"
+
+                        override fun getCriteriaObject(): Document {
+                            error("queryFieldNames should not call getCriteriaObject")
+                        }
+                    }
+                )
+
+            expectThat(template.queryFieldNames(query)).containsExactlyInAnyOrder("blockNumber")
         }
 
         @Test

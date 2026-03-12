@@ -5,43 +5,48 @@ import java.math.RoundingMode
 import java.time.Instant
 import java.time.ZoneOffset
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.explorer.repository.AverageFeesPerUserRepository
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.BlockUtils
-import org.vechain.indexer.utils.CacheUtils
 import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
 import org.vechain.indexer.utils.scaleDown
 
 @Profile("explorer", "average-fees-per-user")
 @Service
-open class AverageFeesPerUserService(private val repository: AverageFeesPerUserRepository) {
-    @Volatile private var lastProcessedDailyMetric: AverageFeesPerUser? = null
-
-    open fun processBlock(block: Block): List<AverageFeesPerUser> {
+open class AverageFeesPerUserService(
+    private val repository: AverageFeesPerUserRepository,
+    private val mongoTemplate: MongoTemplate,
+    private val inlineVersioningProperties: InlineVersioningProperties,
+) {
+    open fun processBlock(block: Block): AverageFeesPerUserBlockUpdate? {
         if (block.transactions.isEmpty()) {
-            return emptyList()
+            return null
         }
 
         val date = BlockUtils.getDateAtUTC(block.timestamp)
         val dayStartTimestamp = getDayStartTimestamp(block.timestamp)
-        val existingSummary = getPreviousSummary(date, block.number)
+        val existingSummary = repository.findByIdOrNull(summaryId(date))
 
         val distinctOrigins = block.transactions.map { it.origin.lowercase() }.toSet()
         val markerIds = distinctOrigins.map { markerId(date, it) }
         val existingMarkerIds = repository.findAllById(markerIds).map { it.id }.toSet()
         val newMarkers =
             markerIds.filterNot(existingMarkerIds::contains).map { id ->
-                val origin = id.removePrefix("$ORIGIN_MARKER_PREFIX$date-")
                 AverageFeesPerUser(
                     id = id,
                     blockId = block.id,
                     blockNumber = block.number,
                     blockTimestamp = block.timestamp,
+                    version = 1,
                     recordType = AverageFeesPerUserRecordType.ORIGIN_MARKER,
                     date = date,
-                    origin = origin,
+                    origin = id.removePrefix("$ORIGIN_MARKER_PREFIX$date-"),
                 )
             }
 
@@ -49,6 +54,7 @@ open class AverageFeesPerUserService(private val repository: AverageFeesPerUserR
             block.transactions.fold(BigDecimal.ZERO) { total, tx ->
                 total + scaleDown(tx.paid.hexToBigInteger(), 18)
             }
+
         val updatedSummary =
             createOrUpdateSummary(
                 block = block,
@@ -59,40 +65,25 @@ open class AverageFeesPerUserService(private val repository: AverageFeesPerUserR
                 existingSummary = existingSummary,
             )
 
-        return buildList {
-            addAll(newMarkers)
-            add(updatedSummary)
-        }
-    }
-
-    @Transactional(rollbackFor = [Exception::class])
-    open fun save(records: List<AverageFeesPerUser>) {
-        if (records.isEmpty()) return
-
-        repository.saveAll(records)
-
-        val latestSummary = records.last { it.recordType == AverageFeesPerUserRecordType.SUMMARY }
-        CacheUtils.updateAfterCommit(
-            latestSummary,
-            setter = { lastProcessedDailyMetric = it },
-            clear = ::clearProcessingState,
+        return AverageFeesPerUserBlockUpdate(
+            newMarkers = newMarkers,
+            updatedSummary = updatedSummary,
+            existingSummary = existingSummary,
         )
     }
 
-    open fun clearProcessingState() {
-        lastProcessedDailyMetric = null
-    }
-
-    internal fun getPreviousSummary(date: String, blockNumber: Long): AverageFeesPerUser? {
-        val cached = lastProcessedDailyMetric
-        if (cached != null && cached.date == date && cached.blockNumber < blockNumber) {
-            return cached
+    @Transactional(rollbackFor = [Exception::class])
+    open fun save(update: AverageFeesPerUserBlockUpdate) {
+        if (update.newMarkers.isNotEmpty()) {
+            repository.saveAll(update.newMarkers)
         }
 
-        return repository.findFirstByRecordTypeAndDateAndBlockNumberLessThanOrderByBlockNumberDesc(
-            AverageFeesPerUserRecordType.SUMMARY,
-            date,
-            blockNumber,
+        saveVersionedDocuments(
+            updated = listOf(update.updatedSummary),
+            existing = listOfNotNull(update.existingSummary),
+            mongoTemplate = mongoTemplate,
+            blockWindow = inlineVersioningProperties.blockWindow,
+            maxVersions = inlineVersioningProperties.maxVersions,
         )
     }
 
@@ -108,10 +99,11 @@ open class AverageFeesPerUserService(private val repository: AverageFeesPerUserR
         val dailyActiveUsers = (existingSummary?.dailyActiveUsers ?: 0L) + newUsersInBlock
 
         return AverageFeesPerUser(
-            id = summaryId(block.number),
+            id = summaryId(date),
             blockId = block.id,
             blockNumber = block.number,
             blockTimestamp = block.timestamp,
+            version = (existingSummary?.version ?: 0) + 1,
             recordType = AverageFeesPerUserRecordType.SUMMARY,
             date = date,
             dayStartTimestamp = dayStartTimestamp,
@@ -135,7 +127,7 @@ open class AverageFeesPerUserService(private val repository: AverageFeesPerUserR
             .atStartOfDay(ZoneOffset.UTC)
             .toEpochSecond()
 
-    internal fun summaryId(blockNumber: Long): String = "$SUMMARY_PREFIX$blockNumber"
+    internal fun summaryId(date: String): String = "$SUMMARY_PREFIX$date"
 
     internal fun markerId(date: String, origin: String): String =
         "$ORIGIN_MARKER_PREFIX$date-$origin"
@@ -146,3 +138,9 @@ open class AverageFeesPerUserService(private val repository: AverageFeesPerUserR
         private const val ORIGIN_MARKER_PREFIX = "origin-"
     }
 }
+
+data class AverageFeesPerUserBlockUpdate(
+    val newMarkers: List<AverageFeesPerUser>,
+    val updatedSummary: AverageFeesPerUser,
+    val existingSummary: AverageFeesPerUser?,
+)

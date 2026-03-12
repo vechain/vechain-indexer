@@ -4683,10 +4683,12 @@
                   "formulas": [
                     {
                       "alias": "Requests",
+                      "cell_display_mode": "bar",
                       "formula": "count_query"
                     },
                     {
                       "alias": "Avg Response Time",
+                      "cell_display_mode": "bar",
                       "conditional_formats": [
                         {
                           "comparator": ">",
@@ -4767,7 +4769,8 @@
                           "facet": "@http.url_details.api_category",
                           "limit": 100,
                           "sort": {
-                            "aggregation": "count",
+                            "aggregation": "avg",
+                            "metric": "@duration",
                             "order": "desc"
                           }
                         }
@@ -4817,7 +4820,8 @@
                           "facet": "@http.url_details.api_category",
                           "limit": 100,
                           "sort": {
-                            "aggregation": "count",
+                            "aggregation": "avg",
+                            "metric": "@duration",
                             "order": "desc"
                           }
                         }
@@ -4841,7 +4845,8 @@
                           "facet": "@http.url_details.api_category",
                           "limit": 100,
                           "sort": {
-                            "aggregation": "count",
+                            "aggregation": "avg",
+                            "metric": "@duration",
                             "order": "desc"
                           }
                         }
@@ -4865,7 +4870,8 @@
                           "facet": "@http.url_details.api_category",
                           "limit": 100,
                           "sort": {
-                            "aggregation": "count",
+                            "aggregation": "avg",
+                            "metric": "@duration",
                             "order": "desc"
                           }
                         }
@@ -4889,7 +4895,8 @@
                           "facet": "@http.url_details.api_category",
                           "limit": 100,
                           "sort": {
-                            "aggregation": "count",
+                            "aggregation": "avg",
+                            "metric": "@duration",
                             "order": "desc"
                           }
                         }
@@ -4909,7 +4916,7 @@
                     "count": 100,
                     "order_by": [
                       {
-                        "index": 0,
+                        "index": 1,
                         "order": "desc",
                         "type": "formula"
                       }
@@ -5019,7 +5026,7 @@
       },
       "id": 7120742133508725,
       "layout": {
-        "height": 1,
+        "height": 11,
         "width": 12,
         "x": 0,
         "y": 27
@@ -5306,7 +5313,7 @@
         "height": 7,
         "width": 12,
         "x": 0,
-        "y": 28
+        "y": 38
       }
     },
     {
@@ -5464,7 +5471,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 35
+        "y": 45
       }
     },
     {
@@ -6143,7 +6150,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 36
+        "y": 46
       }
     }
   ]

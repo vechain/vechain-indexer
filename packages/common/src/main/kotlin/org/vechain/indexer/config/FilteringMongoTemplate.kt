@@ -3,6 +3,7 @@ package org.vechain.indexer.config
 import java.util.concurrent.ConcurrentHashMap
 import org.bson.Document
 import org.springframework.data.domain.ScrollPosition
+import org.springframework.data.mongodb.InvalidMongoDbApiUsageException
 import org.springframework.data.mongodb.MongoDatabaseFactory
 import org.springframework.data.mongodb.core.ExecutableFindOperation
 import org.springframework.data.mongodb.core.MongoTemplate
@@ -39,6 +40,10 @@ open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: Mo
 
     companion object {
         internal const val PREVIOUS_VERSIONS_FIELD = "_previousVersions"
+        private val queryCriteriaField =
+            Query::class.java.getDeclaredField("criteria").apply { isAccessible = true }
+        private val criteriaChainField =
+            Criteria::class.java.getDeclaredField("criteriaChain").apply { isAccessible = true }
     }
 
     /** Cache: entity class → whether it implements [IndexedDocument]. */
@@ -109,11 +114,11 @@ open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: Mo
     // cause Spring Data to build queries using Criteria.where("proposalId"). We detect these
     // by inspecting the entity's mapping metadata (cached to avoid repeated reflection).
     internal fun queryHasIdCriteria(query: Query, entityClass: Class<*>? = null): Boolean {
-        val queryObject = query.queryObject
-        if (queryObject.containsKey("_id") || queryObject.containsKey("id")) return true
+        val queryFields = queryFieldNames(query)
+        if ("_id" in queryFields || "id" in queryFields) return true
         if (entityClass != null) {
             val idPropertyName = cachedIdPropertyName(entityClass)
-            if (idPropertyName != null && queryObject.containsKey(idPropertyName)) return true
+            if (idPropertyName != null && idPropertyName in queryFields) return true
         }
         return false
     }
@@ -163,19 +168,49 @@ open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: Mo
 
     internal fun addExclusionFilters(query: Query, entityClass: Class<*>? = null): Query {
         if (queryHasIdCriteria(query, entityClass)) return query
-        val queryObject = query.queryObject
+        val queryFields = queryFieldNames(query)
         for (criteria in buildExclusionCriteria(entityClass)) {
             // Skip criteria whose field is already present in the query to avoid
             // Spring Data's duplicate key exception from addCriteria().
             val field = criteria.key
-            if (field != null && queryObject.containsKey(field)) continue
+            if (field != null && field in queryFields) continue
             query.addCriteria(criteria)
         }
         return query
     }
 
-    internal fun exclusionMatchStage():
-        org.springframework.data.mongodb.core.aggregation.AggregationOperation {
+    internal fun queryFieldNames(query: Query): Set<String> {
+        val fields = linkedSetOf<String>()
+        queryCriteriaDefinitions(query).forEach { criteriaDefinition ->
+            collectCriteriaKeys(criteriaDefinition, fields)
+        }
+        if (fields.isNotEmpty()) return fields
+
+        return try {
+            query.queryObject.keys
+        } catch (_: InvalidMongoDbApiUsageException) {
+            emptySet()
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun queryCriteriaDefinitions(query: Query): Collection<CriteriaDefinition> =
+        (queryCriteriaField.get(query) as Map<String, CriteriaDefinition>).values
+
+    @Suppress("UNCHECKED_CAST")
+    private fun collectCriteriaKeys(
+        criteriaDefinition: CriteriaDefinition,
+        fields: MutableSet<String>,
+    ) {
+        criteriaDefinition.key?.let(fields::add)
+        if (criteriaDefinition !is Criteria) return
+
+        (criteriaChainField.get(criteriaDefinition) as List<Criteria>)
+            .mapNotNull(Criteria::getKey)
+            .forEach(fields::add)
+    }
+
+    internal fun exclusionMatchStage(): AggregationOperation {
         val criteria = buildExclusionCriteria()
         return Aggregation.match(Criteria().andOperator(*criteria.toTypedArray()))
     }
