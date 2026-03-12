@@ -17,7 +17,7 @@ internal data class HealthStatusLogPolicy(val level: HealthLogLevel, val label: 
 
 internal fun healthStatusLogPolicy(status: Status): HealthStatusLogPolicy =
     when (status) {
-        Status.UP -> HealthStatusLogPolicy(HealthLogLevel.INFO, "healthy")
+        Status.UP -> HealthStatusLogPolicy(HealthLogLevel.INFO, "HEALTHY")
         Status.OUT_OF_SERVICE -> HealthStatusLogPolicy(HealthLogLevel.WARN, "NOT_READY")
         Status.DOWN -> HealthStatusLogPolicy(HealthLogLevel.ERROR, "UNHEALTHY")
         Status.UNKNOWN -> HealthStatusLogPolicy(HealthLogLevel.WARN, "UNKNOWN")
