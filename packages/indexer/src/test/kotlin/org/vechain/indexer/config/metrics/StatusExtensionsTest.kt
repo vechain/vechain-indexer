@@ -5,46 +5,58 @@ import org.junit.jupiter.api.Test
 import org.vechain.indexer.Status
 
 class StatusExtensionsTest {
+    private val statusExtensionsClass =
+        Class.forName("org.vechain.indexer.config.metrics.StatusExtensionsKt")
+    private val toReadableEnumLabelMethod =
+        statusExtensionsClass.getMethod("toReadableEnumLabel", String::class.java)
+    private val toStatusCodeMethod =
+        statusExtensionsClass.getMethod("toStatusCode", Status::class.java)
 
     // --- toReadableEnumLabel tests ---
 
     @Test
     fun `toReadableEnumLabel converts single word to title case`() {
-        assertThat("SYNCING".toReadableEnumLabel()).isEqualTo("Syncing")
+        assertThat(toReadableEnumLabel("SYNCING")).isEqualTo("Syncing")
     }
 
     @Test
     fun `toReadableEnumLabel converts multi-word enum to title case with spaces`() {
-        assertThat("FAST_SYNCING".toReadableEnumLabel()).isEqualTo("Fast Syncing")
-        assertThat("FULLY_SYNCED".toReadableEnumLabel()).isEqualTo("Fully Synced")
-        assertThat("NOT_INITIALISED".toReadableEnumLabel()).isEqualTo("Not Initialised")
-        assertThat("SHUT_DOWN".toReadableEnumLabel()).isEqualTo("Shut Down")
+        assertThat(toReadableEnumLabel("FAST_SYNCING")).isEqualTo("Fast Syncing")
+        assertThat(toReadableEnumLabel("FULLY_SYNCED")).isEqualTo("Fully Synced")
+        assertThat(toReadableEnumLabel("NOT_INITIALISED")).isEqualTo("Not Initialised")
+        assertThat(toReadableEnumLabel("SHUT_DOWN")).isEqualTo("Shut Down")
     }
 
     @Test
     fun `toReadableEnumLabel handles already lowercase input`() {
-        assertThat("syncing".toReadableEnumLabel()).isEqualTo("Syncing")
+        assertThat(toReadableEnumLabel("syncing")).isEqualTo("Syncing")
     }
 
     @Test
     fun `toReadableEnumLabel handles empty string`() {
-        assertThat("".toReadableEnumLabel()).isEqualTo("")
+        assertThat(toReadableEnumLabel("")).isEqualTo("")
     }
 
     // --- toStatusCode tests ---
 
     @Test
     fun `toStatusCode returns expected values for all statuses`() {
-        assertThat(Status.NOT_INITIALISED.toStatusCode()).isEqualTo(0.0)
-        assertThat(Status.INITIALISED.toStatusCode()).isEqualTo(1.0)
-        assertThat(Status.SYNCING.toStatusCode()).isEqualTo(2.0)
-        assertThat(Status.FAST_SYNCING.toStatusCode()).isEqualTo(3.0)
-        assertThat(Status.SHUT_DOWN.toStatusCode()).isEqualTo(5.0)
-        assertThat(Status.FULLY_SYNCED.toStatusCode()).isEqualTo(6.0)
+        assertThat(toStatusCode(Status.NOT_INITIALISED)).isEqualTo(0.0)
+        assertThat(toStatusCode(Status.INITIALISED)).isEqualTo(1.0)
+        assertThat(toStatusCode(Status.SYNCING)).isEqualTo(2.0)
+        assertThat(toStatusCode(Status.FAST_SYNCING)).isEqualTo(3.0)
+        assertThat(toStatusCode(Status.SHUT_DOWN)).isEqualTo(5.0)
+        assertThat(toStatusCode(Status.FULLY_SYNCED)).isEqualTo(6.0)
     }
 
     @Test
     fun `toStatusCode covers all Status entries`() {
-        Status.entries.forEach { status -> assertThat(status.toStatusCode()).isNotNaN() }
+        Status.entries.forEach { status -> assertThat(toStatusCode(status)).isNotNaN() }
     }
+
+    private fun toReadableEnumLabel(value: String): String =
+        toReadableEnumLabelMethod.invoke(null, value) as String
+
+    private fun toStatusCode(status: Status): Double =
+        toStatusCodeMethod.invoke(null, status) as Double
 }

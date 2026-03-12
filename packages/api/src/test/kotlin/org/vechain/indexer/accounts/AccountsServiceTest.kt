@@ -6,6 +6,7 @@ import io.mockk.verify
 import java.math.BigInteger
 import java.util.Optional
 import org.junit.jupiter.api.Test
+import org.springframework.test.util.ReflectionTestUtils
 import org.vechain.indexer.accounts.AccountTotalsSeriesRecordType.SERIES
 import org.vechain.indexer.accounts.repository.AccountOverviewRepository
 import org.vechain.indexer.accounts.repository.AccountTotalsSeriesRepository
@@ -27,11 +28,17 @@ class AccountsServiceTest {
 
     private val service =
         AccountsService(
-            totalAccountsRepository,
-            accountOverviewRepository,
-            accountTotalsSeriesRepository,
-            vthoClaimedByAccountRepository,
-        )
+                totalAccountsRepository,
+                accountOverviewRepository,
+                accountTotalsSeriesRepository,
+            )
+            .also {
+                ReflectionTestUtils.setField(
+                    it,
+                    "vthoClaimedByAccountRepository",
+                    vthoClaimedByAccountRepository,
+                )
+            }
 
     @Test
     fun `getTotalSeries returns raw records for short ranges`() {

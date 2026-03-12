@@ -28,13 +28,7 @@ internal class VersionedDocumentPersistenceTest {
 
     @Test
     fun `does nothing when updated list is empty`() {
-        saveVersionedDocuments(
-            emptyList<TestDocument>(),
-            emptyList(),
-            mongoTemplate,
-            BLOCK_WINDOW,
-            MAX_VERSIONS,
-        )
+        persist(emptyList<TestDocument>(), emptyList(), "test_documents")
 
         verify { mongoTemplate wasNot Called }
     }
@@ -52,12 +46,11 @@ internal class VersionedDocumentPersistenceTest {
                 )
             )
 
-        every { mongoTemplate.getCollectionName(TestDocument::class.java) } returns "test_documents"
         every { mongoTemplate.getCollection("test_documents") } returns collection
         every { mongoTemplate.converter } returns converter
         every { converter.write(any(), any<Document>()) } just Runs
 
-        saveVersionedDocuments(updated, emptyList(), mongoTemplate, BLOCK_WINDOW, MAX_VERSIONS)
+        persist(updated, emptyList(), "test_documents")
 
         verify(exactly = 1) {
             collection.bulkWrite(
@@ -90,12 +83,11 @@ internal class VersionedDocumentPersistenceTest {
                 )
             )
 
-        every { mongoTemplate.getCollectionName(TestDocument::class.java) } returns "test_documents"
         every { mongoTemplate.getCollection("test_documents") } returns collection
         every { mongoTemplate.converter } returns converter
         every { converter.write(any(), any<Document>()) } just Runs
 
-        saveVersionedDocuments(updated, existing, mongoTemplate, BLOCK_WINDOW, MAX_VERSIONS)
+        persist(updated, existing, "test_documents")
 
         verify(exactly = 1) {
             collection.bulkWrite(
@@ -128,7 +120,6 @@ internal class VersionedDocumentPersistenceTest {
                 )
             )
 
-        every { mongoTemplate.getCollectionName(TestDocument::class.java) } returns "test_documents"
         every { mongoTemplate.getCollection("test_documents") } returns collection
         every { mongoTemplate.converter } returns converter
         every { converter.write(any(), any<Document>()) } just Runs
@@ -139,9 +130,7 @@ internal class VersionedDocumentPersistenceTest {
             )
         } throws RuntimeException("write error")
 
-        assertThrows<RuntimeException> {
-            saveVersionedDocuments(updated, existing, mongoTemplate, BLOCK_WINDOW, MAX_VERSIONS)
-        }
+        assertThrows<RuntimeException> { persist(updated, existing, "test_documents") }
 
         verify(exactly = 1) {
             collection.bulkWrite(
@@ -164,20 +153,13 @@ internal class VersionedDocumentPersistenceTest {
                 )
             )
 
-        every { mongoTemplate.getCollectionName(TestDocument::class.java) } returns "test_documents"
         every { mongoTemplate.getCollection("test_documents") } returns collection
         every { mongoTemplate.converter } returns converter
         every { converter.write(any(), any<Document>()) } just Runs
 
         val exception =
             assertThrows<VersionedDocumentInvariantException> {
-                saveVersionedDocuments(
-                    updated,
-                    emptyList(),
-                    mongoTemplate,
-                    BLOCK_WINDOW,
-                    MAX_VERSIONS,
-                )
+                persist(updated, emptyList(), "test_documents")
             }
 
         assertTrue(exception.message!!.contains("test_documents/doc-1"))
@@ -202,14 +184,12 @@ internal class VersionedDocumentPersistenceTest {
                 )
             )
 
-        every { mongoTemplate.getCollectionName(ZeroBasedTestDocument::class.java) } returns
-            IndexerNames.ACCOUNT_OVERVIEW.COLLECTION
         every { mongoTemplate.getCollection(IndexerNames.ACCOUNT_OVERVIEW.COLLECTION) } returns
             collection
         every { mongoTemplate.converter } returns converter
         every { converter.write(any(), any<Document>()) } just Runs
 
-        saveVersionedDocuments(updated, emptyList(), mongoTemplate, BLOCK_WINDOW, MAX_VERSIONS)
+        persist(updated, emptyList(), IndexerNames.ACCOUNT_OVERVIEW.COLLECTION)
 
         verify(exactly = 1) {
             collection.bulkWrite(
@@ -237,5 +217,21 @@ internal class VersionedDocumentPersistenceTest {
         override val blockTimestamp: Long,
     ) : VersionedDocument {
         override fun getDocumentId(): String = id
+    }
+
+    private inline fun <reified T : VersionedDocument> persist(
+        updated: List<T>,
+        existing: List<T>,
+        collectionName: String,
+    ) {
+        InlineVersionService.bulkUpsertWithVersions(
+            updated = updated,
+            existing = existing,
+            mongoTemplate = mongoTemplate,
+            blockWindow = BLOCK_WINDOW,
+            maxVersions = MAX_VERSIONS,
+            initialVersion = VersionedDocumentInitialVersions.forCollection(collectionName),
+            collectionName = collectionName,
+        )
     }
 }
