@@ -44,11 +44,10 @@ open class AverageFeesPerUserCollectionConfig(
                         .on(AverageFeesPerUser::recordType.name, Sort.Direction.ASC)
                         .on(AverageFeesPerUser::dayStartTimestamp.name, Sort.Direction.ASC)
                         .on(AverageFeesPerUser::blockNumber.name, Sort.Direction.DESC),
-                "recordType_1_date_1_blockNumber_-1" to
+                "recordType_1_date_1" to
                     Index()
                         .on(AverageFeesPerUser::recordType.name, Sort.Direction.ASC)
-                        .on(AverageFeesPerUser::date.name, Sort.Direction.ASC)
-                        .on(AverageFeesPerUser::blockNumber.name, Sort.Direction.DESC),
+                        .on(AverageFeesPerUser::date.name, Sort.Direction.ASC),
             )
         )
     }
