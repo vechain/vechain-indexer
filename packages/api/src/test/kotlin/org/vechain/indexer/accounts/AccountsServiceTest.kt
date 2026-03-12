@@ -32,6 +32,7 @@ class AccountsServiceTest {
             accountTotalsSeriesRepository,
             vthoClaimedByAccountRepository,
         )
+
     @Test
     fun `getTotalSeries returns raw records for short ranges`() {
         val records =
