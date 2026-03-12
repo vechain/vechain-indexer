@@ -396,10 +396,6 @@ module "ecs-backend-service" {
       value = "CloudWatch"
     },
     {
-      name  = "SLACK_WEBHOOK_URL"
-      value = each.value.indexer.slack_webhook_url
-    },
-    {
       name  = "INDEXER_START_BLOCK_NFTS"
       value = each.value.indexer.start-block.nfts
     },
