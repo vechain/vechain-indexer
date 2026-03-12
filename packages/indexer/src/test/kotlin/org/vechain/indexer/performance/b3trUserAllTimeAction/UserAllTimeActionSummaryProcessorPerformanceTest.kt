@@ -13,6 +13,7 @@ import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.b3tr.action.ActionImpactConfig
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummaryProcessor
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummaryService
+import org.vechain.indexer.b3tr.action.repository.AppAllTimeActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryRepository
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.InlineVersioningProperties
@@ -25,6 +26,7 @@ import org.vechain.indexer.performance.DetailedProfiler
 class UserAllTimeActionSummaryProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var repository: UserAllTimeActionSummaryRepository
+    @Autowired lateinit var appAllTimeRepo: AppAllTimeActionSummaryRepository
     @Autowired lateinit var service: UserAllTimeActionSummaryService
     @Autowired lateinit var inlineVersioningProperties: InlineVersioningProperties
     @Autowired lateinit var mongoTemplate: MongoTemplate
@@ -80,6 +82,7 @@ class UserAllTimeActionSummaryProcessorPerformanceTest : BasePerformanceTest() {
             if (profiler != null) {
                 ProfiledUserAllTimeActionSummaryService(
                     repository = repository,
+                    appAllTimeRepo = appAllTimeRepo,
                     mongoTemplate = mongoTemplate,
                     inlineVersioningProperties = inlineVersioningProperties,
                     impactConfig = impactConfig,

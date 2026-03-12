@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.vechain.indexer.b3tr.AppId
 import org.vechain.indexer.b3tr.action.repository.AppAllTimeActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.AppDailyActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.AppRoundActionSummaryRepository
@@ -239,6 +240,112 @@ internal class ActionServiceTest {
         assertEquals(15, result.rankByReward)
         assertEquals(7, result.rankByActionsRewarded)
         assertEquals(listOf("app1", "app2"), result.uniqueXAppInteractions)
+        assertEquals(roundId, result.roundId)
+    }
+
+    // App Overview Tests
+
+    @Test
+    fun `getAppAllTimeOverview returns precomputed totalUniqueUserInteractions`() {
+        val appId = AppId("app-1")
+        val overview = mockk<UserAllTimeActionSummary>(relaxed = true)
+
+        every { userAllTimeRepo.findByEntity(appId.value) } returns overview
+        every { overview.totalRewardAmount } returns BigDecimal(200)
+        every { overview.actionsRewarded } returns 10
+        every { overview.totalImpact } returns null
+        every { overview.totalUniqueUserInteractions } returns 42
+        every {
+            userAllTimeRepo.countByTotalRewardAmountGreaterThanAndEntityType(
+                BigDecimal(200),
+                EntityType.APP,
+            )
+        } returns 2
+        every {
+            userAllTimeRepo.countByActionsRewardedGreaterThanAndEntityType(10, EntityType.APP)
+        } returns 1
+
+        val result = service.getAppAllTimeOverview(appId)
+
+        assertEquals(appId.value, result.appId)
+        assertEquals(42, result.totalUniqueUserInteractions)
+        assertEquals(200.0, result.totalRewardAmount)
+        assertEquals(10, result.actionsRewarded)
+    }
+
+    @Test
+    fun `getAppAllTimeOverview returns 0 when no data exists`() {
+        val appId = AppId("app-1")
+
+        every { userAllTimeRepo.findByEntity(appId.value) } returns null
+
+        val result = service.getAppAllTimeOverview(appId)
+
+        assertEquals(0, result.totalUniqueUserInteractions)
+        assertEquals(0.0, result.totalRewardAmount)
+    }
+
+    // Global Overview Tests
+
+    @Test
+    fun `getGlobalAllTimeOverview returns precomputed totalUniqueUserInteractions`() {
+        val overview = mockk<UserAllTimeActionSummary>(relaxed = true)
+
+        every { userAllTimeRepo.findByEntity(EntityType.GLOBAL.name) } returns overview
+        every { overview.totalRewardAmount } returns BigDecimal(500)
+        every { overview.actionsRewarded } returns 100
+        every { overview.totalImpact } returns null
+        every { overview.totalUniqueUserInteractions } returns 99
+
+        val result = service.getGlobalAllTimeOverview()
+
+        assertEquals(99, result.totalUniqueUserInteractions)
+        assertEquals(500.0, result.totalRewardAmount)
+        assertEquals(100, result.actionsRewarded)
+    }
+
+    @Test
+    fun `getGlobalAllTimeOverview returns 0 when no data exists`() {
+        every { userAllTimeRepo.findByEntity(EntityType.GLOBAL.name) } returns null
+
+        val result = service.getGlobalAllTimeOverview()
+
+        assertEquals(0, result.totalUniqueUserInteractions)
+        assertEquals(0.0, result.totalRewardAmount)
+    }
+
+    @Test
+    fun `getGlobalDailyOverview returns precomputed totalUniqueUserInteractions`() {
+        val date = "2023-10-10"
+        val overview = mockk<UserDailyActionSummary>(relaxed = true)
+
+        every { userDailyRepo.findByEntityAndDate(EntityType.GLOBAL.name, date) } returns overview
+        every { overview.totalRewardAmount } returns BigDecimal(100)
+        every { overview.actionsRewarded } returns 20
+        every { overview.totalImpact } returns null
+        every { overview.totalUniqueUserInteractions } returns 15
+
+        val result = service.getGlobalDailyOverview(date)
+
+        assertEquals(15, result.totalUniqueUserInteractions)
+        assertEquals(date, result.date)
+    }
+
+    @Test
+    fun `getGlobalRoundOverview returns precomputed totalUniqueUserInteractions`() {
+        val roundId = 5
+        val overview = mockk<UserRoundActionSummary>(relaxed = true)
+
+        every { userRoundRepo.findByEntityAndRoundId(EntityType.GLOBAL.name, roundId) } returns
+            overview
+        every { overview.totalRewardAmount } returns BigDecimal(300)
+        every { overview.actionsRewarded } returns 50
+        every { overview.totalImpact } returns null
+        every { overview.totalUniqueUserInteractions } returns 30
+
+        val result = service.getGlobalRoundOverview(roundId)
+
+        assertEquals(30, result.totalUniqueUserInteractions)
         assertEquals(roundId, result.roundId)
     }
 }

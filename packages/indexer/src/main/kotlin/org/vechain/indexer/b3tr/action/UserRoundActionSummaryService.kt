@@ -16,6 +16,7 @@ import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getEntity
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.groupByAppId
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.groupByReceiver
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.validateAndFilterImpacts
+import org.vechain.indexer.b3tr.action.repository.AppRoundActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
 import org.vechain.indexer.b3tr.round.RoundUtils.discoverRoundId
 import org.vechain.indexer.b3tr.shared.EntityType
@@ -30,6 +31,7 @@ import org.vechain.indexer.utils.IdUtils.generateId
 @Profile("b3tr", "b3tr-actions", "b3tr-user-round-action-summary")
 open class UserRoundActionSummaryService(
     private val repository: UserRoundActionSummaryRepository,
+    private val appRoundRepo: AppRoundActionSummaryRepository,
     private val mongoTemplate: MongoTemplate,
     private val inlineVersioningProperties: InlineVersioningProperties,
     private val impactConfig: ActionImpactConfig,
@@ -99,10 +101,15 @@ open class UserRoundActionSummaryService(
                 return@forEach
             }
 
+            var blockNewUsers = 0L
+
             // Process Users
             groupByReceiver(rewardDistributedEvents).forEach { (userId, eventsPerReceiver) ->
                 val recordId = generateId(userId, "$updatedRoundId")
                 val (existing, nextVersion) = accumulator.resolve(recordId)
+                if (existing == null) {
+                    blockNewUsers++
+                }
                 val updated =
                     createOrUpdateExisting(
                         userId,
@@ -133,24 +140,48 @@ open class UserRoundActionSummaryService(
                 accumulator.put(recordId, existing, updated)
             }
 
-            // Process Global
+            // Process Global with incremental unique user count
             val recordId = generateId(EntityType.GLOBAL.name, "$updatedRoundId")
             val (existing, nextVersion) = accumulator.resolve(recordId)
             val updated =
                 createOrUpdateExisting(
-                    EntityType.GLOBAL.name,
-                    EntityType.GLOBAL,
-                    rewardDistributedEvents,
-                    blockDetails,
-                    updatedRoundId,
-                    existing,
-                    version = nextVersion,
-                )
+                        EntityType.GLOBAL.name,
+                        EntityType.GLOBAL,
+                        rewardDistributedEvents,
+                        blockDetails,
+                        updatedRoundId,
+                        existing,
+                        version = nextVersion,
+                    )
+                    .copy(
+                        totalUniqueUserInteractions =
+                            (existing?.totalUniqueUserInteractions ?: 0) + blockNewUsers
+                    )
             accumulator.put(recordId, existing, updated)
         }
 
-        val (updated, archived) = accumulator.results()
-        return Triple(updated, archived, updatedRoundId)
+        val (results, archived) = accumulator.results()
+
+        // Set per-app unique user counts from the app-level collection
+        val appEntities = results.filter { it.entityType == EntityType.APP }
+        val appCounts =
+            appEntities.associate {
+                (it.entity to it.roundId) to
+                    appRoundRepo.countByAppIdAndRoundId(it.entity, it.roundId)
+            }
+
+        val adjustedResults =
+            results.map { doc ->
+                if (doc.entityType == EntityType.APP) {
+                    doc.copy(
+                        totalUniqueUserInteractions = appCounts[doc.entity to doc.roundId] ?: 0
+                    )
+                } else {
+                    doc
+                }
+            }
+
+        return Triple(adjustedResults, archived, updatedRoundId)
     }
 
     @Transactional(rollbackFor = [Exception::class])

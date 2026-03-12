@@ -6,6 +6,7 @@ import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.b3tr.action.ActionImpactConfig
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummary
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummaryService
+import org.vechain.indexer.b3tr.action.repository.AppAllTimeActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryRepository
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
@@ -25,6 +26,7 @@ import org.vechain.indexer.utils.EventUtils
  */
 class ProfiledUserAllTimeActionSummaryService(
     private val repository: UserAllTimeActionSummaryRepository,
+    appAllTimeRepo: AppAllTimeActionSummaryRepository,
     mongoTemplate: MongoTemplate,
     inlineVersioningProperties: InlineVersioningProperties,
     impactConfig: ActionImpactConfig,
@@ -32,6 +34,7 @@ class ProfiledUserAllTimeActionSummaryService(
 ) :
     UserAllTimeActionSummaryService(
         repository,
+        appAllTimeRepo,
         mongoTemplate,
         inlineVersioningProperties,
         impactConfig,

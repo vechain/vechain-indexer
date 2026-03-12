@@ -15,6 +15,7 @@ import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getEntity
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.groupByAppId
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.groupByReceiver
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.validateAndFilterImpacts
+import org.vechain.indexer.b3tr.action.repository.AppDailyActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.UserDailyActionSummaryRepository
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.config.InlineVersioningProperties
@@ -29,6 +30,7 @@ import org.vechain.indexer.utils.IdUtils.generateId
 @Profile("b3tr", "b3tr-actions", "b3tr-user-daily-action-summary")
 open class UserDailyActionSummaryService(
     private val repository: UserDailyActionSummaryRepository,
+    private val appDailyRepo: AppDailyActionSummaryRepository,
     private val mongoTemplate: MongoTemplate,
     private val inlineVersioningProperties: InlineVersioningProperties,
     private val impactConfig: ActionImpactConfig,
@@ -66,11 +68,15 @@ open class UserDailyActionSummaryService(
             accumulator.startBlock()
             // Get date from block timestamp (preserving UTC)
             val date = BlockUtils.getDateAtUTC(blockDetails.blockTimestamp)
+            var blockNewUsers = 0L
 
             // Process Users
             groupByReceiver(blockEvents).forEach { (userId, eventsPerReceiver) ->
                 val recordId = generateId(userId, date)
                 val (existing, nextVersion) = accumulator.resolve(recordId)
+                if (existing == null) {
+                    blockNewUsers++
+                }
                 val updated =
                     createOrUpdateExisting(
                         userId,
@@ -99,22 +105,44 @@ open class UserDailyActionSummaryService(
                 accumulator.put(recordId, existing, updated)
             }
 
-            // Process Global
+            // Process Global with incremental unique user count
             val recordId = generateId(EntityType.GLOBAL.name, date)
             val (existing, nextVersion) = accumulator.resolve(recordId)
             val updated =
                 createOrUpdateExisting(
-                    EntityType.GLOBAL.name,
-                    EntityType.GLOBAL,
-                    blockEvents,
-                    blockDetails,
-                    existing,
-                    version = nextVersion,
-                )
+                        EntityType.GLOBAL.name,
+                        EntityType.GLOBAL,
+                        blockEvents,
+                        blockDetails,
+                        existing,
+                        version = nextVersion,
+                    )
+                    .copy(
+                        totalUniqueUserInteractions =
+                            (existing?.totalUniqueUserInteractions ?: 0) + blockNewUsers
+                    )
             accumulator.put(recordId, existing, updated)
         }
 
-        return accumulator.results()
+        val (results, archived) = accumulator.results()
+
+        // Set per-app unique user counts from the app-level collection
+        val appEntities = results.filter { it.entityType == EntityType.APP }
+        val appCounts =
+            appEntities.associate {
+                (it.entity to it.date) to appDailyRepo.countByAppIdAndDate(it.entity, it.date)
+            }
+
+        val adjustedResults =
+            results.map { doc ->
+                if (doc.entityType == EntityType.APP) {
+                    doc.copy(totalUniqueUserInteractions = appCounts[doc.entity to doc.date] ?: 0)
+                } else {
+                    doc
+                }
+            }
+
+        return adjustedResults to archived
     }
 
     @Transactional(rollbackFor = [Exception::class])
