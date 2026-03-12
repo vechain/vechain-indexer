@@ -1,15 +1,25 @@
 package org.vechain.indexer.explorer
 
+import com.mongodb.MongoClientSettings
+import com.mongodb.bulk.BulkWriteResult
+import com.mongodb.client.MongoCollection
+import com.mongodb.client.model.UpdateOneModel
+import com.mongodb.client.model.WriteModel
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.mockk
+import io.mockk.slot
+import io.mockk.verify
 import java.math.BigDecimal
 import java.util.Optional
+import org.bson.Document
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.convert.MongoConverter
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.explorer.repository.AverageFeesPerUserRepository
 import org.vechain.indexer.thor.model.Block
@@ -20,6 +30,7 @@ import org.vechain.indexer.thor.model.Transaction
 class AverageFeesPerUserServiceTest {
     @MockK lateinit var repository: AverageFeesPerUserRepository
     @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
+    @MockK lateinit var mongoConverter: MongoConverter
 
     private val service by lazy {
         val inlineVersioningProperties =
@@ -131,6 +142,115 @@ class AverageFeesPerUserServiceTest {
         assertDecimalEquals("1", update.updatedSummary.averageFeesPerUser!!)
     }
 
+    @Test
+    fun `save persists markers and versioned summary using inline versioning settings`() {
+        val collection = mockk<MongoCollection<Document>>()
+        val writesSlot = slot<List<WriteModel<Document>>>()
+        every { repository.saveAll(any<List<AverageFeesPerUser>>()) } returns emptyList()
+        every { mongoTemplate.getCollectionName(AverageFeesPerUser::class.java) } returns
+            "averageFees"
+        every { mongoTemplate.getCollection("averageFees") } returns collection
+        every { mongoTemplate.converter } returns mongoConverter
+        every { mongoConverter.write(any<AverageFeesPerUser>(), any<Document>()) } answers
+            {
+                val source = firstArg<AverageFeesPerUser>()
+                val target = secondArg<Document>()
+                target["_id"] = source.id
+                target["blockNumber"] = source.blockNumber
+                target["version"] = source.version
+                source.dayStartTimestamp?.let { target["dayStartTimestamp"] = it }
+                source.totalFeesPaid?.let { target["totalFeesPaid"] = it.toPlainString() }
+                source.dailyActiveUsers?.let { target["dailyActiveUsers"] = it }
+                source.averageFeesPerUser?.let { target["averageFeesPerUser"] = it.toPlainString() }
+            }
+        every { collection.bulkWrite(capture(writesSlot), any()) } returns
+            mockk<BulkWriteResult>(relaxed = true)
+
+        val update =
+            AverageFeesPerUserBlockUpdate(
+                newMarkers =
+                    listOf(marker(date = "2024-01-01", origin = "0xaa", blockNumber = 100L)),
+                updatedSummary =
+                    summary(
+                        id = "summary-2024-01-01",
+                        version = 2,
+                        totalFeesPaid = "3",
+                        dailyActiveUsers = 1L,
+                        averageFeesPerUser = "3",
+                    ),
+                existingSummary =
+                    summary(
+                        id = "summary-2024-01-01",
+                        version = 1,
+                        totalFeesPaid = "1",
+                        dailyActiveUsers = 1L,
+                        averageFeesPerUser = "1",
+                    ),
+            )
+
+        service.save(update)
+
+        verify(exactly = 1) { repository.saveAll(update.newMarkers) }
+        verify(exactly = 1) { collection.bulkWrite(any<List<WriteModel<Document>>>(), any()) }
+
+        val updateModel = writesSlot.captured.single() as UpdateOneModel<Document>
+        val pipeline =
+            updateModel.updatePipeline!!.map {
+                it.toBsonDocument(
+                    Document::class.java,
+                    MongoClientSettings.getDefaultCodecRegistry(),
+                )
+            }
+        val pipelineText = pipeline.joinToString("\n") { it.toJson() }
+
+        assertTrue(pipelineText.contains("\"_previousVersions\""))
+        assertTrue(pipelineText.contains("9900"))
+        assertTrue(pipelineText.contains("\"\$slice\": ["))
+        assertTrue(pipelineText.contains("100"))
+    }
+
+    @Test
+    fun `save skips marker persistence when no new markers are present`() {
+        val collection = mockk<MongoCollection<Document>>()
+        val writesSlot = slot<List<WriteModel<Document>>>()
+        every { mongoTemplate.getCollectionName(AverageFeesPerUser::class.java) } returns
+            "averageFees"
+        every { mongoTemplate.getCollection("averageFees") } returns collection
+        every { mongoTemplate.converter } returns mongoConverter
+        every { mongoConverter.write(any<AverageFeesPerUser>(), any<Document>()) } answers
+            {
+                val source = firstArg<AverageFeesPerUser>()
+                val target = secondArg<Document>()
+                target["_id"] = source.id
+                target["blockNumber"] = source.blockNumber
+                target["version"] = source.version
+            }
+        every { collection.bulkWrite(capture(writesSlot), any()) } returns
+            mockk<BulkWriteResult>(relaxed = true)
+
+        val update =
+            AverageFeesPerUserBlockUpdate(
+                newMarkers = emptyList(),
+                updatedSummary =
+                    summary(
+                        id = "summary-2024-01-02",
+                        version = 1,
+                        totalFeesPaid = "2",
+                        dailyActiveUsers = 1L,
+                        averageFeesPerUser = "2",
+                    ),
+                existingSummary = null,
+            )
+
+        service.save(update)
+
+        verify(exactly = 0) { repository.saveAll(any<List<AverageFeesPerUser>>()) }
+        verify(exactly = 1) { collection.bulkWrite(any<List<WriteModel<Document>>>(), any()) }
+
+        val updateModel = writesSlot.captured.single() as UpdateOneModel<Document>
+        assertEquals(1, updateModel.updatePipeline!!.size)
+    }
+
     private fun decimal(value: String): BigDecimal = BigDecimal(value)
 
     private fun assertDecimalEquals(expected: String, actual: BigDecimal) {
@@ -147,6 +267,27 @@ class AverageFeesPerUserServiceTest {
             recordType = AverageFeesPerUserRecordType.ORIGIN_MARKER,
             date = date,
             origin = origin,
+        )
+
+    private fun summary(
+        id: String,
+        version: Int,
+        totalFeesPaid: String,
+        dailyActiveUsers: Long,
+        averageFeesPerUser: String,
+    ) =
+        AverageFeesPerUser(
+            id = id,
+            blockId = "0xsummary",
+            blockNumber = 100L,
+            blockTimestamp = 1_704_067_200L,
+            version = version,
+            recordType = AverageFeesPerUserRecordType.SUMMARY,
+            date = id.removePrefix("summary-"),
+            dayStartTimestamp = 1_704_067_200L,
+            totalFeesPaid = decimal(totalFeesPaid),
+            dailyActiveUsers = dailyActiveUsers,
+            averageFeesPerUser = decimal(averageFeesPerUser),
         )
 
     private fun block(number: Long, timestamp: Long, transactions: List<Transaction>) =
