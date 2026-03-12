@@ -47,14 +47,16 @@ open class ApplicationHealth(
 
         health.components.forEach { (name, component) ->
             val componentPolicy = healthStatusLogPolicy(component.status)
+            val (message, detail) =
+                if (component.status == Status.UP) {
+                    "Component $name is healthy" to null
+                } else {
+                    "Component $name is ${componentPolicy.label}: {}" to component
+                }
             logAtLevel(
                 componentPolicy.level,
-                if (component.status == Status.UP) {
-                    "Component $name is healthy"
-                } else {
-                    "Component $name is ${componentPolicy.label}: {}"
-                },
-                component,
+                message,
+                detail,
             )
             metrics.setComponentHealth(
                 name,
