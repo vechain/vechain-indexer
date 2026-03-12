@@ -53,11 +53,7 @@ open class ApplicationHealth(
                 } else {
                     "Component $name is ${componentPolicy.label}: {}" to component
                 }
-            logAtLevel(
-                componentPolicy.level,
-                message,
-                detail,
-            )
+            logAtLevel(componentPolicy.level, message, detail)
             metrics.setComponentHealth(
                 name,
                 "component",
