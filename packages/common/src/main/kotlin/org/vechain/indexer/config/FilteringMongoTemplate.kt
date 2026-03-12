@@ -213,8 +213,7 @@ open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: Mo
 
         val field = criteriaChainField ?: return
         val criteriaChain =
-            runCatching { criteriaChainField?.get(criteriaDefinition) as? List<Criteria> }
-                .getOrNull() ?: return
+            runCatching { field.get(criteriaDefinition) as? List<Criteria> }.getOrNull() ?: return
 
         criteriaChain.mapNotNull(Criteria::getKey).forEach(fields::add)
     }
