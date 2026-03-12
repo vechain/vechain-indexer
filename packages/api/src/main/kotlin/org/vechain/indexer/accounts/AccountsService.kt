@@ -13,7 +13,9 @@ import org.vechain.indexer.accounts.repository.AccountTotalsSeriesRepository
 import org.vechain.indexer.accounts.repository.TotalAccountsRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountRepository
 import org.vechain.indexer.thor.Address
+import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.timeseries.TimeSeriesResolution
+import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.utils.TimeSeriesUtils
 
 /**
@@ -194,11 +196,12 @@ open class AccountsService(
     fun getOverviewWithVthoEarnings(address: Address): AccountOverviewResponse? {
         val overview = accountOverviewRepository.findByIdOrNull(address.value) ?: return null
 
-        // Sum up all Stargate VTHO claimed for this account (could be multiple token IDs)
+        // Account-level Stargate totals are already stored as a dedicated _id entry.
         val stargateVthoClaimed =
-            vthoClaimedByAccountRepository?.findByAccountAndTokenIdIsNull(address.value)?.sumOf {
-                it.total
-            } ?: BigInteger.ZERO
+            vthoClaimedByAccountRepository
+                ?.findById(IdUtils.generateId(HexUtils.normalise(address.value)))
+                ?.map { it.total }
+                ?.orElse(BigInteger.ZERO) ?: BigInteger.ZERO
 
         return AccountOverviewResponse.from(overview, stargateVthoClaimed)
     }
