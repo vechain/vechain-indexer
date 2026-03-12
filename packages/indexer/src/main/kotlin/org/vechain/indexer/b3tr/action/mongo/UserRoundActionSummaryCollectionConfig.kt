@@ -39,10 +39,6 @@ open class UserRoundActionSummaryCollectionConfig(
                     Index()
                         .on(UserRoundActionSummary::entity.name, Sort.Direction.ASC)
                         .on(UserRoundActionSummary::roundId.name, Sort.Direction.ASC),
-                "entityType_1_roundId_1" to
-                    Index()
-                        .on(UserRoundActionSummary::entityType.name, Sort.Direction.ASC)
-                        .on(UserRoundActionSummary::roundId.name, Sort.Direction.ASC),
                 "entityType_1_roundId_1_actionsRewarded_-1_entity_1" to
                     Index()
                         .on(UserRoundActionSummary::entityType.name, Sort.Direction.ASC)
