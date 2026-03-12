@@ -30,16 +30,8 @@ class AccountsServiceTest {
             totalAccountsRepository,
             accountOverviewRepository,
             accountTotalsSeriesRepository,
+            vthoClaimedByAccountRepository,
         )
-
-    init {
-        AccountsService::class
-            .java
-            .getDeclaredField("vthoClaimedByAccountRepository")
-            .apply { isAccessible = true }
-            .set(service, vthoClaimedByAccountRepository)
-    }
-
     @Test
     fun `getTotalSeries returns raw records for short ranges`() {
         val records =
