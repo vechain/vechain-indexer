@@ -1,4 +1,4 @@
-name: Validate Datadog Definitions
+name: Validate Generated Monitoring Artifacts
 
 on:
   pull_request:
