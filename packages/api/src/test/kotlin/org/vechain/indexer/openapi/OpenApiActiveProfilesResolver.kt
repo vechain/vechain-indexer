@@ -24,7 +24,7 @@ class OpenApiActiveProfilesResolver : ActiveProfilesResolver {
                 listOf(Path.of("packages/api/.env.example"), Path.of(".env.example"))
                     .firstOrNull(Files::exists)
                     ?: error(
-                        "Unable to find packages/api/.env.example for OpenAPI profile resolution"
+                        "Unable to find .env.example for OpenAPI profile resolution (tried: packages/api/.env.example, .env.example)"
                     )
 
             val springProfilesLine =
