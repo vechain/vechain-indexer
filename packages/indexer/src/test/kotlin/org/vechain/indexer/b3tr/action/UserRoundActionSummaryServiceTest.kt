@@ -19,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.convert.MongoConverter
 import org.springframework.data.repository.findByIdOrNull
+import org.vechain.indexer.b3tr.action.repository.AppRoundActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.config.InlineVersioningProperties
@@ -31,6 +32,7 @@ import org.vechain.indexer.utils.IdUtils.generateId
 @ExtendWith(MockKExtension::class)
 internal class UserRoundActionSummaryServiceTest {
     @MockK lateinit var repository: UserRoundActionSummaryRepository
+    @MockK lateinit var appRoundRepo: AppRoundActionSummaryRepository
 
     @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
 
@@ -43,12 +45,14 @@ internal class UserRoundActionSummaryServiceTest {
     // A small testable subclass to expose protected methods where useful
     private class TestableService(
         repository: UserRoundActionSummaryRepository,
+        appRoundRepo: AppRoundActionSummaryRepository,
         mongoTemplate: MongoTemplate,
         inlineVersioningProperties: InlineVersioningProperties,
         impactConfig: ActionImpactConfig = ActionImpactConfig(),
     ) :
         UserRoundActionSummaryService(
             repository,
+            appRoundRepo,
             mongoTemplate,
             inlineVersioningProperties,
             impactConfig,
@@ -79,10 +83,12 @@ internal class UserRoundActionSummaryServiceTest {
         every { inlineVersioningProperties.blockWindow } returns 10000L
         every { inlineVersioningProperties.maxVersions } returns 100
         every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
+        every { appRoundRepo.countByAppIdAndRoundId(any(), any()) } returns 0
         every { mongoTemplate.getCollectionName(any<Class<*>>()) } returns "test_collection"
         every { mongoTemplate.getCollection(any()) } returns mongoCollection
         every { mongoTemplate.converter } returns converter
-        service = TestableService(repository, mongoTemplate, inlineVersioningProperties)
+        service =
+            TestableService(repository, appRoundRepo, mongoTemplate, inlineVersioningProperties)
     }
 
     @Test
@@ -683,6 +689,7 @@ internal class UserRoundActionSummaryServiceTest {
                 actionsRewarded = 1,
                 totalRewardAmount = BigDecimal(10),
                 totalImpact = null,
+                totalUniqueUserInteractions = 1,
             )
 
         val updatedRecordsExpected =
@@ -798,6 +805,7 @@ internal class UserRoundActionSummaryServiceTest {
                 actionsRewarded = 1,
                 totalRewardAmount = BigDecimal(10),
                 totalImpact = null,
+                totalUniqueUserInteractions = 1,
             )
 
         val updatedRecordsExpected =

@@ -18,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.convert.MongoConverter
 import org.springframework.data.repository.findByIdOrNull
+import org.vechain.indexer.b3tr.action.repository.AppAllTimeActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryRepository
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.config.InlineVersioningProperties
@@ -30,6 +31,7 @@ import org.vechain.indexer.utils.IdUtils.generateId
 @ExtendWith(MockKExtension::class)
 internal class UserAllTimeActionSummaryServiceTest {
     @MockK lateinit var repository: UserAllTimeActionSummaryRepository
+    @MockK lateinit var appAllTimeRepo: AppAllTimeActionSummaryRepository
 
     @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
 
@@ -42,12 +44,14 @@ internal class UserAllTimeActionSummaryServiceTest {
     // A small testable subclass to expose protected methods where useful
     private class TestableService(
         repository: UserAllTimeActionSummaryRepository,
+        appAllTimeRepo: AppAllTimeActionSummaryRepository,
         mongoTemplate: MongoTemplate,
         inlineVersioningProperties: InlineVersioningProperties,
         impactConfig: ActionImpactConfig = ActionImpactConfig(),
     ) :
         UserAllTimeActionSummaryService(
             repository,
+            appAllTimeRepo,
             mongoTemplate,
             inlineVersioningProperties,
             impactConfig,
@@ -71,7 +75,9 @@ internal class UserAllTimeActionSummaryServiceTest {
         every { mongoTemplate.getCollection(any()) } returns mongoCollection
         every { mongoTemplate.converter } returns converter
         every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
-        service = TestableService(repository, mongoTemplate, inlineVersioningProperties)
+        every { appAllTimeRepo.countByAppId(any()) } returns 0
+        service =
+            TestableService(repository, appAllTimeRepo, mongoTemplate, inlineVersioningProperties)
     }
 
     @Test
@@ -128,18 +134,24 @@ internal class UserAllTimeActionSummaryServiceTest {
         assertEquals(EntityType.USER, updated[0].entityType)
         assertEquals(1, updated[0].actionsRewarded)
         assertEquals(0, updated[0].totalRewardAmount.compareTo(BigDecimal(10)))
+        assertEquals(0, updated[0].totalUniqueUserInteractions)
         assertEquals("user-2", updated[1].entity)
         assertEquals(EntityType.USER, updated[1].entityType)
         assertEquals(1, updated[1].actionsRewarded)
         assertEquals(0, updated[1].totalRewardAmount.compareTo(BigDecimal("20")))
+        assertEquals(0, updated[1].totalUniqueUserInteractions)
         assertEquals("app-1", updated[2].entity)
         assertEquals(EntityType.APP, updated[2].entityType)
         assertEquals(2, updated[2].actionsRewarded)
         assertEquals(0, updated[2].totalRewardAmount.compareTo(BigDecimal("30")))
+        // APP totalUniqueUserInteractions comes from appAllTimeRepo.countByAppId (mocked to 0)
+        assertEquals(0, updated[2].totalUniqueUserInteractions)
         assertEquals("GLOBAL", updated[3].entity)
         assertEquals(EntityType.GLOBAL, updated[3].entityType)
         assertEquals(2, updated[3].actionsRewarded)
         assertEquals(0, updated[3].totalRewardAmount.compareTo(BigDecimal("30")))
+        // GLOBAL totalUniqueUserInteractions = 2 new users in this batch
+        assertEquals(2, updated[3].totalUniqueUserInteractions)
 
         assertEquals(0, archived.size)
     }
@@ -190,6 +202,7 @@ internal class UserAllTimeActionSummaryServiceTest {
                 actionsRewarded = 10,
                 totalRewardAmount = BigDecimal("100"),
                 totalImpact = null,
+                totalUniqueUserInteractions = 5,
             )
         val existingGlobalRecord =
             UserAllTimeActionSummary(
@@ -203,12 +216,14 @@ internal class UserAllTimeActionSummaryServiceTest {
                 actionsRewarded = 20,
                 totalRewardAmount = BigDecimal("200"),
                 totalImpact = null,
+                totalUniqueUserInteractions = 10,
             )
 
         every { repository.findByIdOrNull(generateId("user-1")) } returns existingUserRecord
         every { repository.findByIdOrNull(generateId("app-1")) } returns existingAppRecord
         every { repository.findByIdOrNull(generateId(EntityType.GLOBAL.name)) } returns
             existingGlobalRecord
+        every { appAllTimeRepo.countByAppId("app-1") } returns 7
 
         val (updated, archived) = service.processEvents(listOf(event))
 
@@ -223,11 +238,15 @@ internal class UserAllTimeActionSummaryServiceTest {
         assertEquals(11, updatedAppRecord.actionsRewarded)
         assertEquals(0, updatedAppRecord.totalRewardAmount.compareTo(BigDecimal("110")))
         assertEquals(3, updatedAppRecord.version)
+        // APP unique users = count from appAllTimeRepo
+        assertEquals(7, updatedAppRecord.totalUniqueUserInteractions)
         val updatedGlobalRecord =
             updated.first { it.entity == "GLOBAL" && it.entityType == EntityType.GLOBAL }
         assertEquals(21, updatedGlobalRecord.actionsRewarded)
         assertEquals(0, updatedGlobalRecord.totalRewardAmount.compareTo(BigDecimal("210")))
         assertEquals(4, updatedGlobalRecord.version)
+        // GLOBAL: user-1 already existed, so 0 new users
+        assertEquals(10, updatedGlobalRecord.totalUniqueUserInteractions)
         assertEquals(3, archived.size)
         assertEquals(
             existingUserRecord,

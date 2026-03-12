@@ -18,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.convert.MongoConverter
 import org.springframework.data.repository.findByIdOrNull
+import org.vechain.indexer.b3tr.action.repository.AppDailyActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.UserDailyActionSummaryRepository
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.config.InlineVersioningProperties
@@ -30,6 +31,7 @@ import org.vechain.indexer.utils.IdUtils.generateId
 @ExtendWith(MockKExtension::class)
 internal class UserDailyActionSummaryServiceTest {
     @MockK lateinit var repository: UserDailyActionSummaryRepository
+    @MockK lateinit var appDailyRepo: AppDailyActionSummaryRepository
 
     @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
 
@@ -42,12 +44,14 @@ internal class UserDailyActionSummaryServiceTest {
     // A small testable subclass to expose protected methods where useful
     private class TestableService(
         repository: UserDailyActionSummaryRepository,
+        appDailyRepo: AppDailyActionSummaryRepository,
         mongoTemplate: MongoTemplate,
         inlineVersioningProperties: InlineVersioningProperties,
         impactConfig: ActionImpactConfig = ActionImpactConfig(),
     ) :
         UserDailyActionSummaryService(
             repository,
+            appDailyRepo,
             mongoTemplate,
             inlineVersioningProperties,
             impactConfig,
@@ -71,7 +75,9 @@ internal class UserDailyActionSummaryServiceTest {
         every { mongoTemplate.getCollection(any()) } returns mongoCollection
         every { mongoTemplate.converter } returns converter
         every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
-        service = TestableService(repository, mongoTemplate, inlineVersioningProperties)
+        every { appDailyRepo.countByAppIdAndDate(any(), any()) } returns 0
+        service =
+            TestableService(repository, appDailyRepo, mongoTemplate, inlineVersioningProperties)
     }
 
     @Test

@@ -473,9 +473,6 @@ open class ActionService(
                 ) + 1
         }
 
-        // Fetch totalUniqueUserInteractions
-        val totalUniqueUserInteractions: Long = appAllTimeRepo.countByAppId(appId.value)
-
         // Return AppOverview with the calculated position fields
         return AppOverview(
             appId = appId.value,
@@ -484,7 +481,7 @@ open class ActionService(
             totalImpact = overview?.totalImpact,
             rankByReward = rankByReward,
             rankByActionsRewarded = rankByActionsRewarded,
-            totalUniqueUserInteractions = totalUniqueUserInteractions,
+            totalUniqueUserInteractions = overview?.totalUniqueUserInteractions ?: 0,
             roundId = null,
             date = null,
         )
@@ -515,10 +512,6 @@ open class ActionService(
                 ) + 1
         }
 
-        // Fetch totalUniqueUserInteractions
-        val totalUniqueUserInteractions: Long =
-            appRoundRepo.countByAppIdAndRoundId(appId.value, roundId)
-
         // Return AppOverview with the calculated position fields
         return AppOverview(
             appId = appId.value,
@@ -528,7 +521,7 @@ open class ActionService(
             totalImpact = overview?.totalImpact,
             rankByReward = rankByReward,
             rankByActionsRewarded = rankByActionsRewarded,
-            totalUniqueUserInteractions = totalUniqueUserInteractions,
+            totalUniqueUserInteractions = overview?.totalUniqueUserInteractions ?: 0,
             date = null,
         )
     }
@@ -558,9 +551,6 @@ open class ActionService(
                 ) + 1
         }
 
-        // Fetch totalUniqueUserInteractions
-        val totalUniqueUserInteractions: Long = appDailyRepo.countByAppIdAndDate(appId.value, date)
-
         // Return AppOverview with the calculated position fields
         return AppOverview(
             appId = appId.value,
@@ -570,7 +560,7 @@ open class ActionService(
             totalImpact = overview?.totalImpact,
             rankByReward = rankByReward,
             rankByActionsRewarded = rankByActionsRewarded,
-            totalUniqueUserInteractions = totalUniqueUserInteractions,
+            totalUniqueUserInteractions = overview?.totalUniqueUserInteractions ?: 0,
             roundId = null,
         )
     }
@@ -579,22 +569,18 @@ open class ActionService(
     fun getGlobalAllTimeOverview(): GlobalOverview {
         val overview = userAllTimeRepo.findByEntity(EntityType.GLOBAL.name)
 
-        val distinctUsers = userAllTimeRepo.countByEntityType(EntityType.USER)
-
         return GlobalOverview(
             roundId = null,
             date = null,
             totalRewardAmount = overview?.totalRewardAmount?.toDouble() ?: 0.0,
             actionsRewarded = overview?.actionsRewarded ?: 0,
             totalImpact = overview?.totalImpact,
-            totalUniqueUserInteractions = distinctUsers,
+            totalUniqueUserInteractions = overview?.totalUniqueUserInteractions ?: 0,
         )
     }
 
     fun getGlobalDailyOverview(date: String): GlobalOverview {
         val overview = userDailyRepo.findByEntityAndDate(EntityType.GLOBAL.name, date)
-
-        val distinctUsers = userDailyRepo.countByEntityTypeAndDate(EntityType.USER, date)
 
         return GlobalOverview(
             roundId = null,
@@ -602,14 +588,12 @@ open class ActionService(
             totalRewardAmount = overview?.totalRewardAmount?.toDouble() ?: 0.0,
             actionsRewarded = overview?.actionsRewarded ?: 0,
             totalImpact = overview?.totalImpact,
-            totalUniqueUserInteractions = distinctUsers,
+            totalUniqueUserInteractions = overview?.totalUniqueUserInteractions ?: 0,
         )
     }
 
     fun getGlobalRoundOverview(roundId: Int): GlobalOverview {
         val overview = userRoundRepo.findByEntityAndRoundId(EntityType.GLOBAL.name, roundId)
-
-        val distinctUsers = userRoundRepo.countByEntityTypeAndRoundId(EntityType.USER, roundId)
 
         return GlobalOverview(
             roundId = roundId,
@@ -617,7 +601,7 @@ open class ActionService(
             totalRewardAmount = overview?.totalRewardAmount?.toDouble() ?: 0.0,
             actionsRewarded = overview?.actionsRewarded ?: 0,
             totalImpact = overview?.totalImpact,
-            totalUniqueUserInteractions = distinctUsers,
+            totalUniqueUserInteractions = overview?.totalUniqueUserInteractions ?: 0,
         )
     }
 }

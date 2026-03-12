@@ -31,6 +31,7 @@ constructor(
     override val actionsRewarded: Long,
     @Field(targetType = FieldType.DECIMAL128) override val totalRewardAmount: BigDecimal,
     override val totalImpact: Impact?,
+    val totalUniqueUserInteractions: Long = 0,
 ) : UserActionSummaryDocument {
     constructor(
         version: Int,
@@ -43,6 +44,7 @@ constructor(
         actionsRewarded: Long,
         totalRewardAmount: BigDecimal,
         totalImpact: Impact?,
+        totalUniqueUserInteractions: Long = 0,
     ) : this(
         id =
             if (entityType == EntityType.GLOBAL) generateId(EntityType.GLOBAL.name, "$roundId")
@@ -57,6 +59,7 @@ constructor(
         actionsRewarded = actionsRewarded,
         totalRewardAmount = totalRewardAmount,
         totalImpact = totalImpact,
+        totalUniqueUserInteractions = totalUniqueUserInteractions,
     )
 
     @JsonIgnore override fun getDocumentId(): String = id
