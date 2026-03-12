@@ -91,7 +91,7 @@ make dd-push
 
 ### CI Workflows
 
-- **`sync-datadog-definitions.yml`** — Runs on every PR. It executes `make dd-refresh-generated` and fails if any committed generated file is stale. The failure output includes the local command needed to refresh the files.
+- **`validate-generated-monitoring-artifacts.yml`** — Runs on every PR. It executes `make dd-refresh-generated` and fails if any committed generated file is stale. The failure output includes the local command needed to refresh the files.
 
 - **`sync-datadog-config.yml`** — Runs on release (published) and `workflow_dispatch`. On **release**, it first pushes the repo's `dashboard.json` to Datadog, then fetches back the latest pipeline and dashboard configs and commits any changes. On **workflow_dispatch**, it only fetches (no push). Requires `DD_API_KEY`, `DD_APP_KEY`, and `DD_SITE` secrets.
 
