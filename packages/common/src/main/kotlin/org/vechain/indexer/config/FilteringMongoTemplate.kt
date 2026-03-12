@@ -40,10 +40,13 @@ open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: Mo
 
     companion object {
         internal const val PREVIOUS_VERSIONS_FIELD = "_previousVersions"
-        private val queryCriteriaField =
-            Query::class.java.getDeclaredField("criteria").apply { isAccessible = true }
-        private val criteriaChainField =
-            Criteria::class.java.getDeclaredField("criteriaChain").apply { isAccessible = true }
+        private val queryCriteriaField by lazy { findDeclaredField(Query::class.java, "criteria") }
+        private val criteriaChainField by lazy {
+            findDeclaredField(Criteria::class.java, "criteriaChain")
+        }
+
+        private fun findDeclaredField(type: Class<*>, name: String) =
+            runCatching { type.getDeclaredField(name).apply { isAccessible = true } }.getOrNull()
     }
 
     /** Cache: entity class → whether it implements [IndexedDocument]. */
@@ -181,7 +184,7 @@ open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: Mo
 
     internal fun queryFieldNames(query: Query): Set<String> {
         val fields = linkedSetOf<String>()
-        queryCriteriaDefinitions(query).forEach { criteriaDefinition ->
+        queryCriteriaDefinitions(query)?.forEach { criteriaDefinition ->
             collectCriteriaKeys(criteriaDefinition, fields)
         }
         if (fields.isNotEmpty()) return fields
@@ -194,8 +197,11 @@ open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: Mo
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun queryCriteriaDefinitions(query: Query): Collection<CriteriaDefinition> =
-        (queryCriteriaField.get(query) as Map<String, CriteriaDefinition>).values
+    private fun queryCriteriaDefinitions(query: Query): Collection<CriteriaDefinition>? {
+        val field = queryCriteriaField ?: return null
+        return runCatching { (field.get(query) as Map<String, CriteriaDefinition>).values }
+            .getOrNull()
+    }
 
     @Suppress("UNCHECKED_CAST")
     private fun collectCriteriaKeys(
@@ -205,9 +211,11 @@ open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: Mo
         criteriaDefinition.key?.let(fields::add)
         if (criteriaDefinition !is Criteria) return
 
-        (criteriaChainField.get(criteriaDefinition) as List<Criteria>)
-            .mapNotNull(Criteria::getKey)
-            .forEach(fields::add)
+        val field = criteriaChainField ?: return
+        val criteriaChain =
+            runCatching { field.get(criteriaDefinition) as? List<Criteria> }.getOrNull() ?: return
+
+        criteriaChain.mapNotNull(Criteria::getKey).forEach(fields::add)
     }
 
     internal fun exclusionMatchStage(): AggregationOperation {
