@@ -145,6 +145,7 @@ dd-get-dashboard: #@ Fetch Datadog dashboard config.
 	$(DD_SCRIPT) get-dashboard
 dd-generate-openapi: #@ Generate OpenAPI spec from API with embedded MongoDB.
 	./gradlew :packages:api:generateOpenApiSpec
+dd-refresh-generated: dd-generate-openapi dd-update-categories format-json #@ Refresh committed OpenAPI and Datadog generated JSON files.
 dd-push-pipeline: #@ Push pipeline config to Datadog.
 	$(DD_SCRIPT) push-pipeline
 dd-push-dashboard: #@ Push dashboard config to Datadog.

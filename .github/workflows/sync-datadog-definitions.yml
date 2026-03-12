@@ -1,22 +1,16 @@
-name: Sync Datadog Definitions
+name: Validate Datadog Definitions
 
 on:
   pull_request:
-    paths:
-      - "packages/api/src/main/kotlin/**"
-      - "metrics/datadog/**"
-      - "metrics/grafana/provisioning/dashboards/*.json"
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   generate-and-format:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
 
       - uses: actions/setup-java@v4
         with:
@@ -32,43 +26,19 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r metrics/datadog/scripts/requirements.txt
 
-      - name: Generate OpenAPI spec
-        run: ./gradlew :packages:api:generateOpenApiSpec
+      - name: Refresh generated Datadog files
+        run: make dd-refresh-generated
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Update Datadog categories
-        run: python3 metrics/datadog/scripts/manage_pipeline.py update-categories
-
-      - name: Format JSON files
-        run: |
-          for f in metrics/datadog/*.json metrics/grafana/provisioning/dashboards/*.json; do
-            if [ -f "$f" ]; then
-              jq -S '.' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
-            fi
-          done
-
-      - name: Check for changes
-        id: check
+      - name: Check for generated changes
         run: |
           if git diff --quiet; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
           else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "::error::Generated Datadog files are out of date."
+            echo "Run the following command locally and commit the results:"
+            echo "  make dd-refresh-generated"
+            git diff -- metrics/datadog/*.json metrics/grafana/provisioning/dashboards/*.json
+            exit 1
           fi
-
-      - name: Commit changes
-        if: steps.check.outputs.changed == 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add metrics/datadog/*.json metrics/grafana/provisioning/dashboards/*.json
-          git commit -m "chore: generate and format JSON files"
-          git push
-
-      - name: Fail if changes were needed
-        if: steps.check.outputs.changed == 'true'
-        run: |
-          echo "::warning::Generated/formatted files were out of date. Changes have been auto-committed."
-          echo "Re-run this check to get a passing status."
-          exit 1

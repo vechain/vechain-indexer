@@ -14,29 +14,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles(
-    "test",
-    "nfts",
-    "transactions",
-    "transfers",
-    "history",
-    "stargate",
-    "vevote",
-    "vevote-results",
-    "vevote-historic-proposals",
-    "vevote-comments",
-    "b3tr",
-    "b3tr-proposal",
-    "b3tr-actions",
-    "b3tr-x-alloc",
-    "b3tr-gm-nft",
-    "b3tr-balance",
-    "explorer",
-    "block-usage",
-    "accounts",
-    "validator",
-    "contracts",
-)
+@ActiveProfiles(resolver = OpenApiActiveProfilesResolver::class)
 @TestPropertySource(properties = ["de.flapdoodle.mongodb.embedded.version=7.0.14"])
 @Tag("openapi")
 class GenerateOpenApiSpecTest {
