@@ -78,9 +78,9 @@ object CursorPaginationUtils {
      *
      * Implements proper keyset pagination with tie-breaking. Since cursorField is always sorted
      * ASC, for DESC primary sort we use GT (>) to continue through ties, and for ASC primary sort
-     * we use LT (<).
+     * we use GT (>) to continue forward through ties.
      * - For DESC: (sortField < value) OR (sortField == value AND cursorField > cursorValue)
-     * - For ASC: (sortField > value) OR (sortField == value AND cursorField < cursorValue)
+     * - For ASC: (sortField > value) OR (sortField == value AND cursorField > cursorValue)
      *
      * @param query The query to apply cursor filtering to
      * @param cursor The cursor string to parse
@@ -111,14 +111,14 @@ object CursorPaginationUtils {
             val orCriteria = Criteria().orOperator(cond1, cond2)
             query.addCriteria(orCriteria)
         } else {
-            // For ASC: (sortField > value) OR (sortField == value AND cursorField < cursorValue)
-            // Use LT (<) for cursorField because it's sorted ASC
+            // For ASC: (sortField > value) OR (sortField == value AND cursorField > cursorValue)
+            // Use GT (>) for cursorField because it's sorted ASC
             val cond1 = Criteria.where(sortByField).gt(parsedSortValue)
             val cond2 =
                 Criteria.where(sortByField)
                     .`is`(parsedSortValue)
                     .and(cursorField)
-                    .lt(cursorInfo.cursorValue)
+                    .gt(cursorInfo.cursorValue)
             val orCriteria = Criteria().orOperator(cond1, cond2)
             query.addCriteria(orCriteria)
         }

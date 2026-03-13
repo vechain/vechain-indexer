@@ -16,6 +16,7 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Query
 import org.vechain.indexer.b3tr.balance.B3trBalance
 import org.vechain.indexer.b3tr.balance.repository.B3trBalanceRepository
+import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.exception.ResourceNotFoundException
 
 @ExtendWith(MockKExtension::class)
@@ -45,13 +46,10 @@ internal class B3trRichlistServiceTest {
                 b3trBalance = BigInteger("50"),
                 totalBalance = BigInteger("150"),
             )
+        val countQueries = mutableListOf<Query>()
         every { b3trRepository.findById(address) } returns Optional.of(doc)
-        var countInvocations = 0
-        every { mongoTemplate.count(any<Query>(), any(), any<String>()) } answers
-            {
-                countInvocations++
-                if (countInvocations == 1) 100L else 4L
-            }
+        every { mongoTemplate.count(capture(countQueries), any(), any<String>()) } returnsMany
+            listOf(100L, 4L)
 
         val result = service.getAddressRank(address, RichlistScope.ALL)
 
@@ -60,6 +58,10 @@ internal class B3trRichlistServiceTest {
         assertEquals(5, result.rank)
         assertEquals(100, result.totalHolders)
         assertEquals(5.0, result.topPercentage)
+        assertEquals(
+            BigInteger.ZERO,
+            (countQueries.first().queryObject["totalBalance"] as Document)["\$gt"],
+        )
     }
 
     @Test
@@ -298,6 +300,86 @@ internal class B3trRichlistServiceTest {
         assertEquals(BigInteger("100"), startRankEqualBalanceCriteria["totalBalance"])
         assertEquals(
             "0xb000000000000000000000000000000000000000",
+            (startRankEqualBalanceCriteria["_id"] as Document)["\$lt"],
+        )
+    }
+
+    @Test
+    fun `getRichlist rejects non integer cursor sort values`() {
+        val exception =
+            assertThrows(BadRequestException::class.java) {
+                service.getRichlist(
+                    size = 1,
+                    direction = "DESC",
+                    cursor = "100.5|0xafffffffffffffffffffffffffffffffffffffff",
+                    scope = RichlistScope.ALL,
+                )
+            }
+
+        assertEquals(
+            "Invalid cursor sort value for B3TR richlist: expected integer balance",
+            exception.message,
+        )
+    }
+
+    @Test
+    fun `getRichlist ASC uses forward tie breaker for equal balances`() {
+        val querySlot = slot<Query>()
+        val countQueries = mutableListOf<Query>()
+        val bob =
+            B3trBalance(
+                address = "0xb000000000000000000000000000000000000000",
+                blockId = "0xb",
+                blockNumber = 2L,
+                blockTimestamp = 2000L,
+                version = 1,
+                vot3Balance = BigInteger("60"),
+                b3trBalance = BigInteger("40"),
+                totalBalance = BigInteger("100"),
+            )
+        val carol =
+            B3trBalance(
+                address = "0xc000000000000000000000000000000000000000",
+                blockId = "0xb",
+                blockNumber = 2L,
+                blockTimestamp = 2000L,
+                version = 1,
+                vot3Balance = BigInteger("60"),
+                b3trBalance = BigInteger("40"),
+                totalBalance = BigInteger("100"),
+            )
+        every { mongoTemplate.find(capture(querySlot), any<Class<*>>(), any<String>()) } returns
+            listOf(carol, bob)
+        every { mongoTemplate.count(capture(countQueries), any<Class<*>>(), any<String>()) } returns
+            1L
+
+        val result =
+            service.getRichlist(
+                size = 1,
+                direction = "ASC",
+                cursor = "100|0xb000000000000000000000000000000000000000",
+                scope = RichlistScope.ALL,
+            )
+
+        assertEquals(1, result.data.size)
+        assertEquals("0xc000000000000000000000000000000000000000", result.data[0].address)
+        assertEquals("100|0xc000000000000000000000000000000000000000", result.pagination.cursor)
+
+        val andCriteria = querySlot.captured.queryObject["\$and"] as List<*>
+        val cursorCriteria = (andCriteria[1] as Document)["\$or"] as List<*>
+        val equalBalanceCriteria = cursorCriteria[1] as Document
+        assertEquals(BigInteger("100"), equalBalanceCriteria["totalBalance"])
+        assertEquals(
+            "0xb000000000000000000000000000000000000000",
+            (equalBalanceCriteria["_id"] as Document)["\$gt"],
+        )
+
+        val startRankAndCriteria = countQueries.single().queryObject["\$and"] as List<*>
+        val startRankPositionCriteria = (startRankAndCriteria[1] as Document)["\$or"] as List<*>
+        val startRankEqualBalanceCriteria = startRankPositionCriteria[1] as Document
+        assertEquals(BigInteger("100"), startRankEqualBalanceCriteria["totalBalance"])
+        assertEquals(
+            "0xc000000000000000000000000000000000000000",
             (startRankEqualBalanceCriteria["_id"] as Document)["\$lt"],
         )
     }

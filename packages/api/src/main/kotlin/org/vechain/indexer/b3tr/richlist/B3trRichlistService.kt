@@ -12,6 +12,7 @@ import org.vechain.indexer.b3tr.balance.B3trBalance
 import org.vechain.indexer.b3tr.balance.repository.B3trBalanceRepository
 import org.vechain.indexer.b3tr.richlist.response.B3trRankResponse
 import org.vechain.indexer.b3tr.richlist.response.B3trRichlistItem
+import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
@@ -94,7 +95,7 @@ open class B3trRichlistService(
         val balance = balanceForScope(doc, scope)
         val totalHolders =
             mongoTemplate.count(
-                Query(Criteria.where(sortField).gt("0")),
+                Query(Criteria.where(sortField).gt(BigInteger.ZERO)),
                 B3trBalance::class.java,
                 collection,
             )
@@ -142,7 +143,11 @@ open class B3trRichlistService(
         criteria.add(Criteria.where(sortField).gt(BigInteger.ZERO))
 
         CursorPaginationUtils.parseCursor(cursor)?.let { cursorInfo ->
-            val cursorBalance = cursorInfo.sortValue.toBigInteger()
+            val cursorBalance =
+                cursorInfo.sortValue.toBigIntegerOrNull()
+                    ?: throw BadRequestException(
+                        "Invalid cursor sort value for B3TR richlist: expected integer balance"
+                    )
             val cursorAddress = cursorInfo.cursorValue
             val cursorCriteria =
                 if (sortDirection == Sort.Direction.DESC) {
@@ -161,7 +166,7 @@ open class B3trRichlistService(
                             Criteria.where(sortField)
                                 .`is`(cursorBalance)
                                 .and("_id")
-                                .lt(cursorAddress),
+                                .gt(cursorAddress),
                         )
                 }
             criteria.add(cursorCriteria)

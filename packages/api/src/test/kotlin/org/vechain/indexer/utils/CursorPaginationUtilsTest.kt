@@ -1,6 +1,7 @@
 package org.vechain.indexer.utils
 
 import java.math.BigDecimal
+import org.bson.Document
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.query.Criteria
+import org.springframework.data.mongodb.core.query.Query
 
 @DisplayName("CursorPaginationUtils Tests")
 class CursorPaginationUtilsTest {
@@ -179,7 +181,7 @@ class CursorPaginationUtilsTest {
     @Test
     @DisplayName("Should apply ASC filter with sort value comparison and cursor field tiebreaker")
     fun testApplyCursorFilterASC() {
-        val query = org.springframework.data.mongodb.core.query.Query()
+        val query = Query()
 
         CursorPaginationUtils.applyCursorFilter(
             query,
@@ -189,8 +191,13 @@ class CursorPaginationUtilsTest {
             "entity",
         )
 
-        val queryString = query.toString()
-        assertTrue(queryString.contains("actionsRewarded"))
+        val orCriteria = query.queryObject["\$or"] as List<*>
+        val greaterThanSortCriteria = orCriteria[0] as Document
+        val equalSortCriteria = orCriteria[1] as Document
+
+        assertEquals(100L, (greaterThanSortCriteria["actionsRewarded"] as Document)["\$gt"])
+        assertEquals(100L, equalSortCriteria["actionsRewarded"])
+        assertEquals("wallet123", (equalSortCriteria["entity"] as Document)["\$gt"])
     }
 
     @Test
