@@ -57,6 +57,12 @@ object InlineVersionService {
                 oldBson.remove("_id")
                 oldBson.remove(PREVIOUS_VERSIONS_FIELD)
 
+                val fieldsToUnset =
+                    oldBson.keys
+                        .minus(newBson.keys)
+                        .filterNot { it == PREVIOUS_VERSIONS_FIELD }
+                        .sorted()
+
                 // Stage 1: Set all new fields + prepend old version to _previousVersions
                 val setFields = Document(newBson)
                 setFields[PREVIOUS_VERSIONS_FIELD] =
@@ -70,7 +76,11 @@ object InlineVersionService {
                             ),
                         ),
                     )
-                val stage1 = Document("\$set", setFields)
+                val stages = mutableListOf<Document>()
+                if (fieldsToUnset.isNotEmpty()) {
+                    stages += Document("\$unset", fieldsToUnset)
+                }
+                stages += Document("\$set", setFields)
 
                 // Stage 2: Trim _previousVersions by block window with guaranteed minimum of 1,
                 // then apply hard cap
@@ -103,11 +113,9 @@ object InlineVersionService {
                 // Apply hard cap
                 val capped = Document("\$slice", listOf(trimmedWithMinimum, maxVersions))
 
-                val stage2 = Document("\$set", Document(PREVIOUS_VERSIONS_FIELD, capped))
+                stages += Document("\$set", Document(PREVIOUS_VERSIONS_FIELD, capped))
 
-                val pipeline = listOf(stage1, stage2)
-
-                writes.add(UpdateOneModel(filter, pipeline, UpdateOptions().upsert(true)))
+                writes.add(UpdateOneModel(filter, stages, UpdateOptions().upsert(true)))
             } else {
                 if (doc.version > initialVersion) {
                     logger.error(
