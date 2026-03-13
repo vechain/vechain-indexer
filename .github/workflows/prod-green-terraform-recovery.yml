@@ -1,0 +1,148 @@
+name: Prod-Green Terraform Recovery
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply_after_plan:
+        description: Apply the recovery plan after imports if no credential-related changes are detected
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  recover-prod-green:
+    name: Recover prod-green Terraform state
+    runs-on: ubuntu-latest
+    environment: prod-green
+
+    defaults:
+      run:
+        working-directory: terraform/api
+
+    env:
+      ENVIRONMENT: prod-green
+      MONGOATLAS_PROJECT_ID: 64d6337acba67e1132a3a4e1
+      MAINNET_CLUSTER_NAME: prod-green-Mainnet
+      TESTNET_CLUSTER_NAME: prod-green-Testnet
+      API_SECRET_NAME: /prod-green/veworld/mongo_api_password
+      INDEXER_SECRET_NAME: /prod-green/veworld/mongo_indexer_password
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.9.8
+          terraform_wrapper: true
+
+      - name: Terraform Initialize
+        run: terraform init -reconfigure -backend-config="environments/${{ env.ENVIRONMENT }}.config"
+
+      - name: Terraform Workspace
+        run: terraform workspace select ${{ env.ENVIRONMENT }}
+
+      - name: Snapshot current state list
+        run: terraform state list
+
+      - name: Restore secrets if pending deletion
+        shell: bash
+        run: |
+          restore_secret_if_needed() {
+            local secret_name="$1"
+            local deleted_date
+
+            deleted_date="$(aws secretsmanager describe-secret \
+              --secret-id "$secret_name" \
+              --query 'DeletedDate' \
+              --output text 2>/dev/null || true)"
+
+            if [ -n "$deleted_date" ] && [ "$deleted_date" != "None" ]; then
+              echo "Restoring secret scheduled for deletion: $secret_name"
+              aws secretsmanager restore-secret --secret-id "$secret_name"
+            else
+              echo "Secret not scheduled for deletion: $secret_name"
+            fi
+          }
+
+          restore_secret_if_needed "${API_SECRET_NAME}"
+          restore_secret_if_needed "${INDEXER_SECRET_NAME}"
+
+      - name: Resolve secret ARNs
+        shell: bash
+        run: |
+          echo "API_SECRET_ARN=$(aws secretsmanager describe-secret --secret-id "${API_SECRET_NAME}" --query ARN --output text)" >> "$GITHUB_ENV"
+          echo "INDEXER_SECRET_ARN=$(aws secretsmanager describe-secret --secret-id "${INDEXER_SECRET_NAME}" --query ARN --output text)" >> "$GITHUB_ENV"
+
+      - name: Import missing resources into state
+        shell: bash
+        run: |
+          import_if_missing() {
+            local address="$1"
+            local import_id="$2"
+
+            if terraform state list | grep -Fxq "$address"; then
+              echo "State already contains $address"
+            else
+              echo "Importing $address"
+              terraform import "$address" "$import_id"
+            fi
+          }
+
+          import_if_missing "mongodbatlas_advanced_cluster.main_net[0]" "${MONGOATLAS_PROJECT_ID}-${MAINNET_CLUSTER_NAME}"
+          import_if_missing "mongodbatlas_advanced_cluster.test_net[0]" "${MONGOATLAS_PROJECT_ID}-${TESTNET_CLUSTER_NAME}"
+          import_if_missing "aws_secretsmanager_secret.api_db_user_secret" "${API_SECRET_ARN}"
+          import_if_missing "aws_secretsmanager_secret.indexer_db_user_secret" "${INDEXER_SECRET_ARN}"
+
+      - name: Terraform Plan
+        shell: bash
+        run: |
+          terraform plan -no-color -out apply.plan | tee terraform-plan.txt
+
+      - name: Check plan for credential-related changes
+        id: review
+        shell: bash
+        run: |
+          if grep -Eq \
+            'random_password\.(api_db_user_password|indexer_db_user_password)|aws_secretsmanager_secret_version\.(api_db_user_secret_version|indexer_db_user_secret_version)|mongodbatlas_database_user\.(api_db_user|indexer_db_user)' \
+            terraform-plan.txt; then
+            echo "credential_changes=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::Plan includes credential-related changes. Automatic apply is blocked."
+          else
+            echo "credential_changes=false" >> "$GITHUB_OUTPUT"
+            echo "No credential-related changes detected in plan."
+          fi
+
+      - name: Upload plan output
+        uses: actions/upload-artifact@v4
+        with:
+          name: prod-green-terraform-recovery-plan
+          path: terraform/api/terraform-plan.txt
+          if-no-files-found: error
+
+      - name: Terraform Apply
+        if: inputs.apply_after_plan && steps.review.outputs.credential_changes != 'true'
+        run: terraform apply "apply.plan"
+
+      - name: Block unsafe apply
+        if: inputs.apply_after_plan && steps.review.outputs.credential_changes == 'true'
+        run: |
+          echo "Credential-related changes were detected in the plan."
+          echo "Review terraform-plan.txt and apply manually only after confirming the intended password/user behavior."
+          exit 1
