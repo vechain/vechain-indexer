@@ -7,9 +7,10 @@ resource "mongodbatlas_advanced_cluster" "main_net" {
   project_id = local.env.mongoatlas_project_id
   name       = "${local.env.environment}-Mainnet"
 
-  cluster_type           = "REPLICASET"
-  mongo_db_major_version = "8"
-  backup_enabled         = true
+  cluster_type            = "REPLICASET"
+  mongo_db_major_version  = "8"
+  backup_enabled          = true
+  retain_backups_enabled  = true
 
   replication_specs = [{
     region_configs = [{
@@ -42,9 +43,10 @@ resource "mongodbatlas_advanced_cluster" "test_net" {
   project_id = local.env.mongoatlas_project_id
   name       = "${local.env.environment}-Testnet"
 
-  cluster_type           = "REPLICASET"
-  mongo_db_major_version = "8"
-  backup_enabled         = true
+  cluster_type            = "REPLICASET"
+  mongo_db_major_version  = "8"
+  backup_enabled          = true
+  retain_backups_enabled  = true
 
   replication_specs = [{
     region_configs = [{
