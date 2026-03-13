@@ -2,6 +2,7 @@ package org.vechain.indexer.b3tr.richlist
 
 import java.math.BigInteger
 import org.springframework.context.annotation.Profile
+import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
@@ -32,15 +33,15 @@ open class B3trRichlistService(
         scope: RichlistScope = RichlistScope.ALL,
     ): PaginatedResponse<B3trRichlistItem> {
         val sortField = sortFieldForScope(scope)
-        val criteria = Criteria.where(sortField).gt("0")
-        val (pageSize, query) =
-            CursorPaginationUtils.buildCursorQuery(
-                baseCriteria = criteria,
-                size = size,
-                direction = direction,
-                sortByField = sortField,
+        val pageSize = size ?: 20
+        val sortDirection =
+            if (direction?.uppercase() == "ASC") Sort.Direction.ASC else Sort.Direction.DESC
+        val query =
+            buildRichlistQuery(
+                sortField = sortField,
+                pageSize = pageSize,
+                sortDirection = sortDirection,
                 cursor = cursor,
-                cursorField = "_id",
             )
 
         val results = mongoTemplate.find(query, B3trBalance::class.java, collection)
@@ -51,13 +52,7 @@ open class B3trRichlistService(
         }
 
         val first = page.first()
-        val firstBalanceStr = balanceForScope(first, scope).toString()
-        val startRank =
-            mongoTemplate.count(
-                Query(Criteria.where(sortField).gt(firstBalanceStr)),
-                B3trBalance::class.java,
-                collection,
-            ) + 1
+        val startRank = countRankBefore(sortField, balanceForScope(first, scope), first.address) + 1
 
         val items =
             page.mapIndexed { index, doc ->
@@ -69,12 +64,15 @@ open class B3trRichlistService(
             }
 
         val nextCursor =
-            CursorPaginationUtils.calculateNextCursor(
-                results = results,
-                pageSize = pageSize,
-                sortByField = sortField,
-                cursorField = "address",
-            )
+            if (results.size > pageSize) {
+                val nextItem = results[pageSize - 1]
+                CursorPaginationUtils.generateCursor(
+                    balanceForScope(nextItem, scope),
+                    nextItem.address,
+                )
+            } else {
+                null
+            }
 
         return paginatedResponse(
             data = items,
@@ -109,13 +107,7 @@ open class B3trRichlistService(
                 topPercentage = if (totalHolders > 0) 100.0 else 0.0,
             )
         }
-        val balanceStr = balance.toString()
-        val rank =
-            mongoTemplate.count(
-                Query(Criteria.where(sortField).gt(balanceStr)),
-                B3trBalance::class.java,
-                collection,
-            ) + 1
+        val rank = countRankBefore(sortField, balance, address) + 1
         val topPercentage = if (totalHolders > 0) (rank.toDouble() / totalHolders) * 100 else 0.0
         return B3trRankResponse(
             address = address,
@@ -139,4 +131,68 @@ open class B3trRichlistService(
             RichlistScope.VOT3 -> doc.vot3Balance
             RichlistScope.B3TR -> doc.b3trBalance
         }
+
+    private fun buildRichlistQuery(
+        sortField: String,
+        pageSize: Int,
+        sortDirection: Sort.Direction,
+        cursor: String?,
+    ): Query {
+        val criteria = mutableListOf<Criteria>()
+        criteria.add(Criteria.where(sortField).gt(BigInteger.ZERO))
+
+        CursorPaginationUtils.parseCursor(cursor)?.let { cursorInfo ->
+            val cursorBalance = cursorInfo.sortValue.toBigInteger()
+            val cursorAddress = cursorInfo.cursorValue
+            val cursorCriteria =
+                if (sortDirection == Sort.Direction.DESC) {
+                    Criteria()
+                        .orOperator(
+                            Criteria.where(sortField).lt(cursorBalance),
+                            Criteria.where(sortField)
+                                .`is`(cursorBalance)
+                                .and("_id")
+                                .gt(cursorAddress),
+                        )
+                } else {
+                    Criteria()
+                        .orOperator(
+                            Criteria.where(sortField).gt(cursorBalance),
+                            Criteria.where(sortField)
+                                .`is`(cursorBalance)
+                                .and("_id")
+                                .lt(cursorAddress),
+                        )
+                }
+            criteria.add(cursorCriteria)
+        }
+
+        val query =
+            if (criteria.size == 1) {
+                Query(criteria.single())
+            } else {
+                Query(Criteria().andOperator(*criteria.toTypedArray()))
+            }
+
+        query.with(Sort.by(sortDirection, sortField).and(Sort.by(Sort.Direction.ASC, "_id")))
+        query.limit(pageSize + 1)
+        return query
+    }
+
+    private fun countRankBefore(sortField: String, balance: BigInteger, address: String): Long =
+        mongoTemplate.count(
+            Query(
+                Criteria()
+                    .andOperator(
+                        Criteria.where(sortField).gt(BigInteger.ZERO),
+                        Criteria()
+                            .orOperator(
+                                Criteria.where(sortField).gt(balance),
+                                Criteria.where(sortField).`is`(balance).and("_id").lt(address),
+                            ),
+                    )
+            ),
+            B3trBalance::class.java,
+            collection,
+        )
 }
