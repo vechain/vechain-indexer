@@ -41,7 +41,6 @@ open class TotalAccountsCollectionConfig(
             listOf(
                 "blockNumber_-1" to
                     Index().on(TotalAccounts::blockNumber.name, Sort.Direction.DESC),
-                "blockNumber_1" to Index().on(TotalAccounts::blockNumber.name, Sort.Direction.ASC),
                 "timeFrame_1_blockTimestamp_-1" to
                     Index()
                         .on(TotalAccounts::timeFrame.name, Sort.Direction.ASC)
