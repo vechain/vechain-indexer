@@ -139,6 +139,18 @@
         },
         {
           "filter": {
+            "query": "@http.url_details.path:\"/api/v1/validators/blocks/missed\""
+          },
+          "name": "/api/v1/validators/blocks/missed"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:\"/api/v1/validators/delegations/count\""
+          },
+          "name": "/api/v1/validators/delegations/count"
+        },
+        {
+          "filter": {
             "query": "@http.url_details.path:\"/api/v1/vevote/proposal/results\""
           },
           "name": "/api/v1/vevote/proposal/results"
@@ -253,6 +265,24 @@
         },
         {
           "filter": {
+            "query": "@http.url_details.path:\"/api/v1/validators/block-rewards\""
+          },
+          "name": "/api/v1/validators/block-rewards"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:\"/api/v1/validators/blocks\""
+          },
+          "name": "/api/v1/validators/blocks"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:\"/api/v1/validators/delegations\""
+          },
+          "name": "/api/v1/validators/delegations"
+        },
+        {
+          "filter": {
             "query": "@http.url_details.path:\"/api/v1/vevote/historic-proposals\""
           },
           "name": "/api/v1/vevote/historic-proposals"
@@ -280,6 +310,12 @@
             "query": "@http.url_details.path:\"/api/v1/transfers\""
           },
           "name": "/api/v1/transfers"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:\"/api/v1/validators\""
+          },
+          "name": "/api/v1/validators"
         },
         {
           "filter": {
@@ -379,6 +415,12 @@
         },
         {
           "filter": {
+            "query": "@http.url_details.path:/api/v1/validators/blocks/historic/*"
+          },
+          "name": "/api/v1/validators/blocks/historic/{validator}"
+        },
+        {
+          "filter": {
             "query": "@http.url_details.path:/api/v2/b3tr/proposals/*/results"
           },
           "name": "/api/v2/b3tr/proposals/{proposalId}/results"
@@ -394,6 +436,12 @@
             "query": "@http.url_details.path:/api/v1/b3tr/richlist/*"
           },
           "name": "/api/v1/b3tr/richlist/{address}"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:/api/v1/contracts/by-master/*"
+          },
+          "name": "/api/v1/contracts/by-master/{address}"
         },
         {
           "filter": {
@@ -439,9 +487,21 @@
         },
         {
           "filter": {
+            "query": "@http.url_details.path:/api/v1/validators/block-rewards/*"
+          },
+          "name": "/api/v1/validators/block-rewards/{blockNumber}"
+        },
+        {
+          "filter": {
             "query": "@http.url_details.path:/api/v2/history/token/*"
           },
           "name": "/api/v2/history/token/{tokenId}"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:/api/v1/contracts/*"
+          },
+          "name": "/api/v1/contracts/{address}"
         },
         {
           "filter": {
@@ -454,6 +514,12 @@
             "query": "@http.url_details.path:/api/v1/transactions/*"
           },
           "name": "/api/v1/transactions/{txId}"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:/api/v1/validators/*"
+          },
+          "name": "/api/v1/validators/{validatorId}"
         },
         {
           "filter": {
@@ -501,6 +567,12 @@
         },
         {
           "filter": {
+            "query": "@http.url_details.path:/api/v1/contracts*"
+          },
+          "name": "v1-contracts"
+        },
+        {
+          "filter": {
             "query": "@http.url_details.path:/api/v1/explorer*"
           },
           "name": "v1-explorer"
@@ -534,6 +606,12 @@
             "query": "@http.url_details.path:/api/v1/transfers*"
           },
           "name": "v1-transfers"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:/api/v1/validators*"
+          },
+          "name": "v1-validators"
         },
         {
           "filter": {

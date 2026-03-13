@@ -39,15 +39,16 @@ tasks.register<Test>("generateOpenApiSpec") {
     group = "documentation"
     useJUnitPlatform { includeTags("openapi") }
     testLogging.showStandardStreams = true
-    systemProperty(
-        "openapi.output.path",
+    val openApiOutputPathProvider =
         providers
             .gradleProperty("openapiOutputPath")
             .orElse(rootProject.file("metrics/datadog/api-docs.json").absolutePath)
-            .get(),
-    )
-    providers
-        .gradleProperty("openapiProfiles")
-        .orNull
-        ?.let { profiles -> systemProperty("openapi.profiles", profiles) }
+    val openApiProfilesProvider = providers.gradleProperty("openapiProfiles")
+
+    inputs.file(rootProject.file("packages/api/.env.example"))
+    inputs.property("openapiProfiles", openApiProfilesProvider.orNull ?: "")
+    outputs.file(openApiOutputPathProvider)
+
+    systemProperty("openapi.output.path", openApiOutputPathProvider.get())
+    openApiProfilesProvider.orNull?.let { profiles -> systemProperty("openapi.profiles", profiles) }
 }
