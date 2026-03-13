@@ -9,7 +9,9 @@ import org.springframework.data.domain.SliceImpl
 import org.springframework.data.domain.Sort
 import org.vechain.indexer.stargate.StargateService
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
+import org.vechain.indexer.stargate.token.StargateToken
 import org.vechain.indexer.stargate.token.StargateTokenRepository
+import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
@@ -18,6 +20,7 @@ import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlockRepository
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockRepository
+import org.vechain.indexer.validator.Status
 import strikt.api.expectThat
 import strikt.assertions.containsExactly
 
@@ -265,6 +268,69 @@ class StargateServiceTest {
             )
     }
 
+    @Test
+    fun `getStargateTokens excludes burned tokens from owner and manager lookups`() {
+        val pageable = PageRequest.of(0, 20, Sort.by(Sort.Order.desc("blockNumber")))
+        val token = token(tokenId = "15613", owner = "0xowner", manager = "0xmanager")
+
+        every {
+            stargateTokenRepository.findActiveByOwnerOrManager(
+                "0xowner",
+                "0xmanager",
+                pageable = pageable,
+            )
+        } returns SliceImpl(listOf(token), pageable, false)
+
+        val response =
+            service.getStargateTokens(
+                tokenId = null,
+                manager = "0xmanager",
+                owner = "0xowner",
+                pageable = pageable,
+            )
+
+        expectThat(response.data).containsExactly(token)
+    }
+
+    @Test
+    fun `getStargateTokens excludes burned tokens from manager-only lookups`() {
+        val pageable = PageRequest.of(0, 20, Sort.by(Sort.Order.desc("blockNumber")))
+        val token = token(tokenId = "17105", owner = "0xowner", manager = "0xmanager")
+
+        every {
+            stargateTokenRepository.findActiveByManager("0xmanager", pageable = pageable)
+        } returns SliceImpl(listOf(token), pageable, false)
+
+        val response =
+            service.getStargateTokens(
+                tokenId = null,
+                manager = "0xmanager",
+                owner = null,
+                pageable = pageable,
+            )
+
+        expectThat(response.data).containsExactly(token)
+    }
+
+    @Test
+    fun `getStargateTokens excludes burned tokens from unfiltered lookups`() {
+        val pageable = PageRequest.of(0, 20, Sort.by(Sort.Order.desc("blockNumber")))
+        val token = token(tokenId = "34813", owner = "0xowner", manager = "0xmanager")
+
+        every { stargateTokenRepository.findAllActive(pageable = pageable) } returns
+            SliceImpl(listOf(token), pageable, false)
+
+        val response =
+            service.getStargateTokens(
+                tokenId = null,
+                manager = null,
+                owner = null,
+                pageable = pageable,
+            )
+
+        expectThat(response.data).containsExactly(token)
+    }
+
     private fun reward(
         id: String,
         rewardPeriod: RewardPeriod,
@@ -303,5 +369,24 @@ class StargateServiceTest {
             yearReward = yearReward,
             cycleReward = cycleReward,
             version = 0,
+        )
+
+    private fun token(tokenId: String, owner: String, manager: String? = null): StargateToken =
+        StargateToken(
+            tokenId = tokenId,
+            level = TokenLevel.Dawn,
+            owner = owner,
+            manager = manager,
+            delegationStatus = Status.NONE,
+            validatorId = null,
+            totalRewardsClaimed = BigInteger.ZERO,
+            totalBootstrapRewardsClaimed = BigInteger.ZERO,
+            vetStaked = BigInteger.TEN,
+            migrated = false,
+            boosted = false,
+            blockNumber = 1,
+            blockId = "0xblock",
+            blockTimestamp = 1,
+            version = 1,
         )
 }

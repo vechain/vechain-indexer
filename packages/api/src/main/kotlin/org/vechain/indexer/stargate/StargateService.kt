@@ -384,10 +384,10 @@ open class StargateService(
      *
      * Behavior:
      * - If [tokenId] is provided, returns that single token (or empty slice if not found).
-     * - If both [manager] and [owner] are provided, returns tokens matching either.
-     * - If only [manager] is provided, returns tokens by that manager.
-     * - If only [owner] is provided, returns tokens by that owner.
-     * - If no filters are provided, returns all tokens (paginated).
+     * - If both [manager] and [owner] are provided, returns unburned tokens matching either.
+     * - If only [manager] is provided, returns unburned tokens by that manager.
+     * - If only [owner] is provided, returns unburned tokens by that owner.
+     * - If no filters are provided, returns all unburned tokens (paginated).
      *
      * @param tokenId Optional token ID to filter by.
      * @param manager Optional manager address to filter by.
@@ -410,13 +410,19 @@ open class StargateService(
                         .orElseGet { SliceImpl(emptyList(), pageable, false) }
                 }
                 manager != null && owner != null ->
-                    stargateTokenRepository.findByOwnerOrManager(owner, manager, pageable)
+                    stargateTokenRepository.findActiveByOwnerOrManager(
+                        owner,
+                        manager,
+                        pageable = pageable,
+                    )
 
-                manager != null -> stargateTokenRepository.findByManager(manager, pageable)
+                manager != null ->
+                    stargateTokenRepository.findActiveByManager(manager, pageable = pageable)
 
-                owner != null -> stargateTokenRepository.findByOwner(owner, pageable)
+                owner != null ->
+                    stargateTokenRepository.findActiveByOwner(owner, pageable = pageable)
 
-                else -> stargateTokenRepository.findAll(pageable)
+                else -> stargateTokenRepository.findAllActive(pageable = pageable)
             }
 
         return paginatedResponse(slice)
