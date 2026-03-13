@@ -2334,13 +2334,18 @@
           },
           "totalRewardAmount": {
             "type": "number"
+          },
+          "totalUniqueUserInteractions": {
+            "format": "int64",
+            "type": "integer"
           }
         },
         "required": [
           "actionsRewarded",
           "date",
           "entity",
-          "totalRewardAmount"
+          "totalRewardAmount",
+          "totalUniqueUserInteractions"
         ],
         "type": "object"
       },
