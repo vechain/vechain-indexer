@@ -12,7 +12,8 @@ import org.vechain.indexer.b3tr.action.AppAllTimeActionSummary
 @Profile("b3tr", "b3tr-actions", "b3tr-app-all-time-action-summary")
 @Repository
 interface AppAllTimeActionSummaryRepository :
-    BaseIndexedRepository<AppAllTimeActionSummary, String> {
+    BaseIndexedRepository<AppAllTimeActionSummary, String>,
+    CustomAppAllTimeActionSummaryRepository {
     @Query("{ 'appId': ?0 }")
     fun findAllByAppId(appId: String, pageable: Pageable): Slice<AppAllTimeActionSummary>
 

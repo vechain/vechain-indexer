@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.data.domain.SliceImpl
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Repository
@@ -49,5 +50,38 @@ constructor(private val mongoTemplate: MongoTemplate) : CustomAppDailyActionSumm
         val content = if (hasNext) raw.dropLast(1) else raw
 
         return SliceImpl(content, pageable, hasNext)
+    }
+
+    override fun countByAppIdAndDatePairs(
+        pairs: Set<Pair<String, String>>
+    ): Map<Pair<String, String>, Long> {
+        if (pairs.isEmpty()) return emptyMap()
+
+        val orCriteria =
+            pairs.map { (appId, date) ->
+                Criteria()
+                    .andOperator(
+                        Criteria.where("appId").`is`(appId),
+                        Criteria.where("date").`is`(date),
+                    )
+            }
+
+        val aggregation =
+            Aggregation.newAggregation(
+                Aggregation.match(Criteria().orOperator(*orCriteria.toTypedArray())),
+                Aggregation.group("appId", "date").count().`as`("count"),
+                Aggregation.project("count")
+                    .and("_id.appId")
+                    .`as`("appId")
+                    .and("_id.date")
+                    .`as`("date"),
+            )
+
+        data class CountResult(val appId: String, val date: String, val count: Long)
+
+        return mongoTemplate
+            .aggregate(aggregation, AppDailyActionSummary::class.java, CountResult::class.java)
+            .mappedResults
+            .associate { (it.appId to it.date) to it.count }
     }
 }

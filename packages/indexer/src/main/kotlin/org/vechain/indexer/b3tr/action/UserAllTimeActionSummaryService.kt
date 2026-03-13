@@ -57,9 +57,6 @@ open class UserAllTimeActionSummaryService(
                 findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) }
             )
 
-        // Track new unique users for GLOBAL count
-        var newGlobalUsers = 0L
-
         groupByBlock(events).forEach { (blockDetails, blockEvents) ->
             accumulator.startBlock()
             var blockNewUsers = 0L
@@ -114,15 +111,13 @@ open class UserAllTimeActionSummaryService(
                             (existing?.totalUniqueUserInteractions ?: 0) + blockNewUsers
                     )
             accumulator.put(globalId, existing, updated)
-            newGlobalUsers += blockNewUsers
         }
 
         val (results, archived) = accumulator.results()
 
-        // Set per-app unique user counts from the app-level collection
+        // Set per-app unique user counts from the app-level collection (single batch query)
         val appEntities = results.filter { it.entityType == EntityType.APP }
-        val appCounts =
-            appEntities.associate { it.entity to appAllTimeRepo.countByAppId(it.entity) }
+        val appCounts = appAllTimeRepo.countByAppIds(appEntities.map { it.entity }.toSet())
 
         val adjustedResults =
             results.map { doc ->

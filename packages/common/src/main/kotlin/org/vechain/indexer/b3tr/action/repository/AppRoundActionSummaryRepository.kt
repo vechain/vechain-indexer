@@ -12,7 +12,8 @@ import org.vechain.indexer.b3tr.action.AppRoundActionSummary
 
 @Profile("b3tr", "b3tr-actions", "b3tr-app-round-action-summary")
 @Repository
-interface AppRoundActionSummaryRepository : BaseIndexedRepository<AppRoundActionSummary, String> {
+interface AppRoundActionSummaryRepository :
+    BaseIndexedRepository<AppRoundActionSummary, String>, CustomAppRoundActionSummaryRepository {
     @Aggregation(pipeline = ["{ '\$sort': { 'blockNumber': -1 } }", "{ '\$limit': 1 }"])
     fun findFirstByOrderByBlockNumberDesc(): AppRoundActionSummary?
 

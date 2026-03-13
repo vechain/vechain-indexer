@@ -83,7 +83,7 @@ internal class UserRoundActionSummaryServiceTest {
         every { inlineVersioningProperties.blockWindow } returns 10000L
         every { inlineVersioningProperties.maxVersions } returns 100
         every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
-        every { appRoundRepo.countByAppIdAndRoundId(any(), any()) } returns 0
+        every { appRoundRepo.countByAppIdAndRoundIdPairs(any()) } returns emptyMap()
         every { mongoTemplate.getCollectionName(any<Class<*>>()) } returns "test_collection"
         every { mongoTemplate.getCollection(any()) } returns mongoCollection
         every { mongoTemplate.converter } returns converter

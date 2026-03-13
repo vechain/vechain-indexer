@@ -75,7 +75,7 @@ internal class UserDailyActionSummaryServiceTest {
         every { mongoTemplate.getCollection(any()) } returns mongoCollection
         every { mongoTemplate.converter } returns converter
         every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
-        every { appDailyRepo.countByAppIdAndDate(any(), any()) } returns 0
+        every { appDailyRepo.countByAppIdAndDatePairs(any()) } returns emptyMap()
         service =
             TestableService(repository, appDailyRepo, mongoTemplate, inlineVersioningProperties)
     }

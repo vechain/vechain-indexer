@@ -126,12 +126,10 @@ open class UserDailyActionSummaryService(
 
         val (results, archived) = accumulator.results()
 
-        // Set per-app unique user counts from the app-level collection
+        // Set per-app unique user counts from the app-level collection (single batch query)
         val appEntities = results.filter { it.entityType == EntityType.APP }
-        val appCounts =
-            appEntities.associate {
-                (it.entity to it.date) to appDailyRepo.countByAppIdAndDate(it.entity, it.date)
-            }
+        val appPairs = appEntities.map { it.entity to it.date }.toSet()
+        val appCounts = appDailyRepo.countByAppIdAndDatePairs(appPairs)
 
         val adjustedResults =
             results.map { doc ->

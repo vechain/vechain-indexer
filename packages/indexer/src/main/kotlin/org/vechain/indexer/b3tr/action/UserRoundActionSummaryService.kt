@@ -162,13 +162,10 @@ open class UserRoundActionSummaryService(
 
         val (results, archived) = accumulator.results()
 
-        // Set per-app unique user counts from the app-level collection
+        // Set per-app unique user counts from the app-level collection (single batch query)
         val appEntities = results.filter { it.entityType == EntityType.APP }
-        val appCounts =
-            appEntities.associate {
-                (it.entity to it.roundId) to
-                    appRoundRepo.countByAppIdAndRoundId(it.entity, it.roundId)
-            }
+        val appPairs = appEntities.map { it.entity to it.roundId }.toSet()
+        val appCounts = appRoundRepo.countByAppIdAndRoundIdPairs(appPairs)
 
         val adjustedResults =
             results.map { doc ->

@@ -75,7 +75,7 @@ internal class UserAllTimeActionSummaryServiceTest {
         every { mongoTemplate.getCollection(any()) } returns mongoCollection
         every { mongoTemplate.converter } returns converter
         every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
-        every { appAllTimeRepo.countByAppId(any()) } returns 0
+        every { appAllTimeRepo.countByAppIds(any()) } returns emptyMap()
         service =
             TestableService(repository, appAllTimeRepo, mongoTemplate, inlineVersioningProperties)
     }
@@ -223,7 +223,7 @@ internal class UserAllTimeActionSummaryServiceTest {
         every { repository.findByIdOrNull(generateId("app-1")) } returns existingAppRecord
         every { repository.findByIdOrNull(generateId(EntityType.GLOBAL.name)) } returns
             existingGlobalRecord
-        every { appAllTimeRepo.countByAppId("app-1") } returns 7
+        every { appAllTimeRepo.countByAppIds(setOf("app-1")) } returns mapOf("app-1" to 7L)
 
         val (updated, archived) = service.processEvents(listOf(event))
 
