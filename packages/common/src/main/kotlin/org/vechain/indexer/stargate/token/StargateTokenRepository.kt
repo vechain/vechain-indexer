@@ -7,20 +7,38 @@ import org.springframework.data.mongodb.repository.Aggregation
 import org.springframework.data.mongodb.repository.Query
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.BaseIndexedRepository
+import org.vechain.indexer.thor.Address
 
 @Profile("stargate", "stargate-token")
 @Repository
 interface StargateTokenRepository : BaseIndexedRepository<StargateToken, String> {
-    @Query("{ 'owner': ?0 }")
-    fun findByOwner(owner: String, pageable: Pageable): Slice<StargateToken>
+    @Query("{ '\$and': [{ 'owner': ?0 }, { 'owner': { '\$ne': ?1 } }] }")
+    fun findActiveByOwner(
+        owner: String,
+        excludedOwner: String = Address.ZERO_ADDRESS,
+        pageable: Pageable,
+    ): Slice<StargateToken>
 
-    @Query("{ 'manager': ?0 }")
-    fun findByManager(manager: String, pageable: Pageable): Slice<StargateToken>
+    @Query("{ '\$and': [{ 'manager': ?0 }, { 'owner': { '\$ne': ?1 } }] }")
+    fun findActiveByManager(
+        manager: String,
+        excludedOwner: String = Address.ZERO_ADDRESS,
+        pageable: Pageable,
+    ): Slice<StargateToken>
 
-    @Query("{ '\$or': [{ 'owner': ?0 }, { 'manager': ?1 }] }")
-    fun findByOwnerOrManager(
+    @Query(
+        "{ '\$and': [{ '\$or': [{ 'owner': ?0 }, { 'manager': ?1 }] }, { 'owner': { '\$ne': ?2 } }] }"
+    )
+    fun findActiveByOwnerOrManager(
         owner: String,
         manager: String,
+        excludedOwner: String = Address.ZERO_ADDRESS,
+        pageable: Pageable,
+    ): Slice<StargateToken>
+
+    @Query("{ 'owner': { '\$ne': ?0 } }")
+    fun findAllActive(
+        excludedOwner: String = Address.ZERO_ADDRESS,
         pageable: Pageable,
     ): Slice<StargateToken>
 
