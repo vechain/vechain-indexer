@@ -20,20 +20,39 @@ class AverageFeesPerUserServiceTest {
                 averageFeesPerUser(date = "2024-01-01", dayStartTimestamp = 1_704_067_200L),
                 averageFeesPerUser(date = "2024-01-02", dayStartTimestamp = 1_704_153_600L),
             )
-        every { repository.findAllInDayRange(1_704_067_200L, 1_704_153_600L) } returns records
+        every {
+            repository.findAllByRecordTypeAndDayStartTimestampBetween(
+                AverageFeesPerUserRecordType.SUMMARY,
+                1_704_067_200L,
+                1_704_153_600L,
+            )
+        } returns records
 
         val result = service.getAverageFeesPerUser(1_704_070_000L, 1_704_154_000L)
 
-        expectThat(result).isEqualTo(records)
-        verify(exactly = 1) { repository.findAllInDayRange(1_704_067_200L, 1_704_153_600L) }
+        expectThat(result)
+            .isEqualTo(
+                listOf(
+                    averageFeesPerUser(date = "2024-01-01", dayStartTimestamp = 1_704_067_200L),
+                    averageFeesPerUser(date = "2024-01-02", dayStartTimestamp = 1_704_153_600L),
+                )
+            )
+        verify(exactly = 1) {
+            repository.findAllByRecordTypeAndDayStartTimestampBetween(
+                AverageFeesPerUserRecordType.SUMMARY,
+                1_704_067_200L,
+                1_704_153_600L,
+            )
+        }
     }
 
     private fun averageFeesPerUser(date: String, dayStartTimestamp: Long) =
         AverageFeesPerUser(
-            id = "summary-$dayStartTimestamp",
+            id = "summary-$date",
             blockId = "0x1",
             blockNumber = 1L,
             blockTimestamp = dayStartTimestamp,
+            version = 1,
             recordType = AverageFeesPerUserRecordType.SUMMARY,
             date = date,
             dayStartTimestamp = dayStartTimestamp,

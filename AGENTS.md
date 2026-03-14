@@ -17,6 +17,8 @@ All Gradle test tasks run on JUnit Platform and automatically wire Jacoco report
 ## New Indexer + API Playbook (Default: Versioned)
 When adding a new feature indexer and endpoint, prefer copying an existing implementation and editing it in place (e.g. `accounts/AccountOverview*` or `contracts/Contract*`). Keep the flow consistent across `common` → `indexer` → `api` → config wiring.
 
+**CRITICAL: 1 Indexer = 1 Collection.** Each indexer MUST map to exactly one MongoDB collection. Never create multiple collections for a single indexer. The backup, restore, and rollback mechanisms all operate at the collection level and assume a 1:1 relationship between an indexer and its collection. Creating multiple collections for one indexer breaks rollback consistency (partial rollbacks), backup integrity (collections can drift out of sync), and restore correctness. If your data model seems to require multiple collections, split it into separate indexers instead.
+
 ### Common (`packages/common`)
 - Model: `@Document`, `@JsonView(Views.Public::class)`, `@JsonInclude(JsonInclude.Include.NON_NULL)`.
 - Versioned default: implement `VersionedDocument` and add a matching `*Archive : Archive<T>`.

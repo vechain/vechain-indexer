@@ -48,8 +48,7 @@ class AverageFeesPerUserCollectionConfigTest {
             capturedIndexes.any {
                 it.indexKeys["recordType"] == 1 &&
                     it.indexKeys["date"] == 1 &&
-                    it.indexKeys["blockNumber"] == -1 &&
-                    it.indexOptions["name"] == "recordType_1_date_1_blockNumber_-1"
+                    it.indexOptions["name"] == "recordType_1_date_1"
             }
         )
     }

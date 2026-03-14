@@ -20,7 +20,11 @@ open class AverageFeesPerUserService(private val repository: AverageFeesPerUserR
 
         val startDayStartTimestamp = dayStartTimestamp(startTimestamp)
         val endDayStartTimestamp = dayStartTimestamp(endTimestamp)
-        return repository.findAllInDayRange(startDayStartTimestamp, endDayStartTimestamp)
+        return repository.findAllByRecordTypeAndDayStartTimestampBetween(
+            AverageFeesPerUserRecordType.SUMMARY,
+            startDayStartTimestamp,
+            endDayStartTimestamp,
+        )
     }
 
     internal fun dayStartTimestamp(timestamp: Long): Long =
