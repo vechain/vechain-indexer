@@ -15,6 +15,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.config.InlineVersioningProperties
+import org.vechain.indexer.event.model.generic.AbiEventParameters
+import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.ValidatorDelegationService
@@ -83,6 +85,72 @@ internal class StargateTokenServiceTest {
             assertEquals(3, updated.single().version)
             assertEquals(22090000L, updated.single().delegationNextPeriod)
             assertIterableEquals(listOf(existingToken), existing)
+        }
+
+    @Test
+    fun `processBlock excludes unmodified tokens loaded from DB at version greater than 1`() =
+        runBlocking {
+            // Token loaded via exitingValidators path but no mutation applies:
+            // - Validator is NOT in removedValidators (still in current snapshots)
+            // - Token status is ACTIVE with nextPeriod far in the future (no transition)
+            // - eventService.handleStargateEvents is mocked to no-op
+            val unchangedToken =
+                stargateToken(
+                    tokenId = "88888",
+                    version = 5,
+                    blockNumber = 22083400,
+                    delegationNextPeriod = 99999999L,
+                    validatorId = "0xexitingVal",
+                    delegationStatus = Status.ACTIVE,
+                )
+            val block = block(number = 22083558)
+
+            every {
+                repository.findByDelegationNextPeriodAndDelegationStatusIn(any(), any())
+            } returns emptyList()
+            // 0xexitingVal is still present → not in removedValidators
+            coEvery { validatorDelegationService.decodeValidatorSnapshots(emptyList()) } returns
+                mapOf(
+                    "0xexitingVal" to
+                        ValidatorSnapshot(
+                            validatorId = "0xexitingVal",
+                            stakingPeriodLength = 720L,
+                            startBlock = 22000000L,
+                            exitBlock = 0L,
+                        )
+                )
+            every { repository.findAllDistinctValidatorIds() } returns listOf("0xexitingVal")
+
+            // ValidatorExitRequested event triggers exitingValidators lookup
+            val exitEvent =
+                IndexedEvent(
+                    id = "evt1",
+                    blockId = block.id,
+                    blockNumber = block.number,
+                    blockTimestamp = block.timestamp,
+                    txId = "0xtx",
+                    origin = "0xorigin",
+                    paid = null,
+                    gasUsed = null,
+                    gasPayer = null,
+                    raw = null,
+                    params =
+                        AbiEventParameters(returnValues = mapOf("validator" to "0xexitingVal")),
+                    address = "0xcontract",
+                    eventType = "ValidatorExitRequested",
+                    clauseIndex = 0,
+                    signature = null,
+                )
+
+            // Token loaded via findByValidatorIdIn(exitingValidators) but not mutated
+            every { repository.findByValidatorIdIn(setOf("0xexitingVal")) } returns
+                listOf(unchangedToken)
+
+            val (updated, existing) = service.processBlock(block, emptyList(), listOf(exitEvent))
+
+            // Token should be EXCLUDED: not modified and version > 1
+            assertEquals(0, updated.size)
+            assertEquals(0, existing.size)
         }
 
     private fun stargateToken(

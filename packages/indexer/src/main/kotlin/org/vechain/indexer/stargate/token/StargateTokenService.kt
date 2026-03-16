@@ -75,7 +75,13 @@ open class StargateTokenService(
             existingTokens,
         )
 
-        return latestTokenSnapshots.values to existingTokens
+        // Only return tokens that were actually modified or newly minted (version 1).
+        // Unmodified tokens loaded from DB at version > 1 have no entry in existingTokens,
+        // which would violate the InlineVersionService invariant.
+        val modifiedTokenIds = existingTokens.map { it.tokenId }.toSet()
+        val updated =
+            latestTokenSnapshots.values.filter { it.tokenId in modifiedTokenIds || it.version <= 1 }
+        return updated to existingTokens
     }
 
     /** Persist updated token snapshots. */
