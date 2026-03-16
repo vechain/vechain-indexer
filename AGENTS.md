@@ -43,6 +43,14 @@ When adding a new feature indexer and endpoint, prefer copying an existing imple
   - Add env vars in `terraform/api/api.tf` and `terraform/devnet/api.tf`.
   - Add the new keys and Spring profiles in `terraform/api/environments/*.yml` and `terraform/devnet/environments/devnet.yml`.
 
+### Triggering an Indexer Resync
+To force an indexer to drop its collection and re-index from the start block, increment its version number in all of these locations:
+- **Local**: `packages/indexer/.env` (e.g. `VERSION_STARGATE_TOKEN=5`)
+- **Deployed (prod)**: `terraform/api/environments/prod-blue.yml` and `terraform/api/environments/prod-green.yml` under `indexer.version.<key>` for both `main` and `test` net sections.
+- **Deployed (devnet)**: `terraform/devnet/environments/devnet.yml` if applicable.
+
+Each environment file has separate version entries for mainnet and testnet — bump both. The version value must be higher than the currently deployed value; the indexer compares its stored version against the configured one and resyncs when they differ.
+
 ### Validation (local)
 - Compile/build: `make build`
 - Targeted tests: `make test-indexer`, `make test-api`

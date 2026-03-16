@@ -47,6 +47,7 @@ open class StargateTokenService(
         val removedValidators = checkMissingValidators(validatorSnapshots)
 
         val exitingValidators = findDelegationsFromExits(events)
+        val existingTokens = mutableListOf<StargateToken>()
 
         // DB lookups
         val latestTokenSnapshots =
@@ -56,9 +57,8 @@ open class StargateTokenService(
                 removedValidators,
                 exitingValidators,
                 validatorSnapshots,
+                existingTokens,
             )
-
-        val existingTokens = mutableListOf<StargateToken>()
 
         // Mutations
         processDelegationStatusTransitions(block, latestTokenSnapshots, existingTokens)
@@ -75,7 +75,13 @@ open class StargateTokenService(
             existingTokens,
         )
 
-        return latestTokenSnapshots.values to existingTokens
+        // Only return tokens that were actually modified or newly minted (version 1).
+        // Unmodified tokens loaded from DB at version > 1 have no entry in existingTokens,
+        // which would violate the InlineVersionService invariant.
+        val modifiedTokenIds = existingTokens.map { it.tokenId }.toSet()
+        val updated =
+            latestTokenSnapshots.values.filter { it.tokenId in modifiedTokenIds || it.version <= 1 }
+        return updated to existingTokens
     }
 
     /** Persist updated token snapshots. */
@@ -101,6 +107,7 @@ open class StargateTokenService(
         removedValidators: Set<String>,
         exitingValidators: List<String>,
         validatorSnapshots: Map<String, ValidatorSnapshot>,
+        existingTokens: MutableList<StargateToken>,
     ): MutableMap<String, StargateToken> {
         // 1. Gather candidate snapshots from DB
         val snapshotsByTokenId =
@@ -136,7 +143,8 @@ open class StargateTokenService(
             }
 
         // 3. Resolve unknown start blocks
-        val resolvedUnknowns = resolveUnknownDelegations(unknown, block, validatorSnapshots)
+        val resolvedUnknowns =
+            resolveUnknownDelegations(unknown, block, validatorSnapshots, existingTokens)
 
         // 4. Merge everything together
         return (snapshotsByTokenId + snapshotsByValidatorId + transitioning + resolvedUnknowns)
@@ -192,6 +200,7 @@ open class StargateTokenService(
         unknown: List<StargateToken>,
         block: Block,
         validatorsSnapshots: Map<String, ValidatorSnapshot>,
+        existingTokens: MutableList<StargateToken>,
     ): List<StargateToken> {
         if (unknown.isEmpty()) return emptyList()
 
@@ -218,6 +227,7 @@ open class StargateTokenService(
 
             if (startBlock != 0L) {
                 validators[validatorId]?.forEach { existing ->
+                    existingTokens.add(existing)
                     resolved +=
                         existing.copy(
                             delegationNextPeriod = startBlock,
