@@ -173,47 +173,47 @@ indexer:
   blacklist:
     contract-address: ${BLACKLIST_CONTRACT_ADDRESS:0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5}
   version:
-    contracts: ${VERSION_CONTRACTS:1}
+    contracts: ${VERSION_CONTRACTS:2}
     vet-balance: ${VERSION_VET_BALANCE:1}
-    nfts: ${VERSION_NFTS:1}
+    nfts: ${VERSION_NFTS:2}
     transfers: ${VERSION_TRANSFERS:1}
     fungible-token-interactions: ${VERSION_FUNGIBLE_TOKEN_INTERACTIONS:1}
     transactions: ${VERSION_TRANSACTIONS:1}
     history: ${VERSION_HISTORY:1}
     nft-blacklist: ${VERSION_NFT_BLACKLIST:1}
     vevote-comments: ${VERSION_VEVOTE_COMMENTS:1}
-    vevote-results: ${VERSION_VEVOTE_RESULTS:1}
+    vevote-results: ${VERSION_VEVOTE_RESULTS:2}
     stargate-vtho-claimed-by-block: ${VERSION_STARGATE_VTHO_CLAIMED_BY_BLOCK:1}
     stargate-vtho-generated-by-block: ${VERSION_STARGATE_VTHO_GENERATED_BY_BLOCK:1}
-    stargate-vtho-claimed-by-account: ${VERSION_STARGATE_VTHO_CLAIMED_BY_ACCOUNT:1}
+    stargate-vtho-claimed-by-account: ${VERSION_STARGATE_VTHO_CLAIMED_BY_ACCOUNT:2}
     stargate-nft-owner-balance: ${VERSION_STARGATE_NFT_OWNER_BALANCE:1}
     stargate-nft-holders-by-block: ${VERSION_STARGATE_NFT_HOLDERS_BY_BLOCK:1}
     stargate-vet-staked-by-block: ${VERSION_STARGATE_VET_STAKED_BY_BLOCK:1}
     stargate-vet-delegated-by-block: ${VERSION_STARGATE_VET_DELEGATED_BY_BLOCK:1}
     historic-proposals: ${VERSION_HISTORIC_PROPOSALS:1}
     b3tr-proposal-comments: ${VERSION_B3TR_PROPOSAL_COMMENTS:1}
-    b3tr-proposal-results: ${VERSION_B3TR_PROPOSAL_RESULTS:1}
-    b3tr-user-all-time-action-summary: ${VERSION_B3TR_USER_ALL_TIME_ACTION_SUMMARY:1}
-    b3tr-user-round-action-summary: ${VERSION_B3TR_USER_ROUND_ACTION_SUMMARY:1}
-    b3tr-user-daily-action-summary: ${VERSION_B3TR_USER_DAILY_ACTION_SUMMARY:1}
-    b3tr-app-all-time-action-summary: ${VERSION_B3TR_APP_ALL_TIME_ACTION_SUMMARY:1}
-    b3tr-app-round-action-summary: ${VERSION_B3TR_APP_ROUND_ACTION_SUMMARY:1}
-    b3tr-app-daily-action-summary: ${VERSION_B3TR_APP_DAILY_ACTION_SUMMARY:1}
-    b3tr-x-alloc-result: ${VERSION_B3TR_X_ALLOC_RESULT:1}
+    b3tr-proposal-results: ${VERSION_B3TR_PROPOSAL_RESULTS:2}
+    b3tr-user-all-time-action-summary: ${VERSION_B3TR_USER_ALL_TIME_ACTION_SUMMARY:2}
+    b3tr-user-round-action-summary: ${VERSION_B3TR_USER_ROUND_ACTION_SUMMARY:2}
+    b3tr-user-daily-action-summary: ${VERSION_B3TR_USER_DAILY_ACTION_SUMMARY:2}
+    b3tr-app-all-time-action-summary: ${VERSION_B3TR_APP_ALL_TIME_ACTION_SUMMARY:2}
+    b3tr-app-round-action-summary: ${VERSION_B3TR_APP_ROUND_ACTION_SUMMARY:2}
+    b3tr-app-daily-action-summary: ${VERSION_B3TR_APP_DAILY_ACTION_SUMMARY:2}
+    b3tr-x-alloc-result: ${VERSION_B3TR_X_ALLOC_RESULT:2}
     b3tr-treasury: ${VERSION_B3TR_TREASURY:1}
-    b3tr-gm-nft: ${VERSION_B3TR_GM_NFT:1}
+    b3tr-gm-nft: ${VERSION_B3TR_GM_NFT:2}
     b3tr-gm-nft-level-overview: ${VERSION_B3TR_GM_NFT_LEVEL_OVERVIEW:1}
     block-usage: ${VERSION_BLOCK_USAGE:1}
-    average-fees-per-user: ${VERSION_AVERAGE_FEES_PER_USER:1}
-    validator: ${VERSION_VALIDATOR:1}
+    average-fees-per-user: ${VERSION_AVERAGE_FEES_PER_USER:2}
+    validator: ${VERSION_VALIDATOR:2}
     validator-rewards: ${VERSION_VALIDATOR_BLOCKS:1}
-    delegation: ${VERSION_DELEGATION:1}
-    token-rewards: ${VERSION_TOKEN_REWARDS:1}
-    stargate-token: ${VERSION_STARGATE_TOKEN:1}
-    total-accounts: ${VERSION_TOTAL_ACCOUNTS:1}
+    delegation: ${VERSION_DELEGATION:2}
+    token-rewards: ${VERSION_TOKEN_REWARDS:2}
+    stargate-token: ${VERSION_STARGATE_TOKEN:2}
+    total-accounts: ${VERSION_TOTAL_ACCOUNTS:2}
     account-totals-series: ${VERSION_ACCOUNT_TOTALS_SERIES:1}
-    account-overview: ${VERSION_ACCOUNT_OVERVIEW:1}
-    b3tr-balance: ${VERSION_B3TR_BALANCE:1}
+    account-overview: ${VERSION_ACCOUNT_OVERVIEW:2}
+    b3tr-balance: ${VERSION_B3TR_BALANCE:2}
   healthcheck:
     inactive-threshold-syncing: ${HEALTHCHECK_INACTIVE_THRESHOLD_SYNCING:120}
     inactive-threshold-not-syncing: ${HEALTHCHECK_INACTIVE_THRESHOLD_NOT_SYNCING:600}
