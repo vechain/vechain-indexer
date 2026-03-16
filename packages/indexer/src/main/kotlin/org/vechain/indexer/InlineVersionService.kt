@@ -37,7 +37,7 @@ object InlineVersionService {
         if (updated.isEmpty()) return
 
         val collection = mongoTemplate.getCollection(collectionName)
-        val existingById = existing.associateBy { it.getDocumentId() }
+        val existingGroupedById = existing.groupBy { it.getDocumentId() }
 
         val writes = mutableListOf<WriteModel<Document>>()
 
@@ -49,21 +49,27 @@ object InlineVersionService {
             newBson.remove(PREVIOUS_VERSIONS_FIELD)
 
             val filter = Filters.eq("_id", id)
-            val old = existingById[docId]
+            val oldVersions = existingGroupedById[docId].orEmpty()
 
-            if (old != null) {
-                // Build old doc BSON, stripping _previousVersions to prevent nesting
-                val oldBson = Document().also { mongoTemplate.converter.write(old, it) }
-                oldBson.remove("_id")
-                oldBson.remove(PREVIOUS_VERSIONS_FIELD)
+            if (oldVersions.isNotEmpty()) {
+                // Preserve every prior snapshot for the document from this save call.
+                val oldBsons =
+                    oldVersions.asReversed().map { old ->
+                        Document()
+                            .also { mongoTemplate.converter.write(old, it) }
+                            .apply {
+                                remove("_id")
+                                remove(PREVIOUS_VERSIONS_FIELD)
+                            }
+                    }
 
-                // Stage 1: Set all new fields + prepend old version to _previousVersions
+                // Stage 1: Set all new fields + prepend every old version to _previousVersions
                 val setFields = Document(newBson)
                 setFields[PREVIOUS_VERSIONS_FIELD] =
                     Document(
                         "\$concatArrays",
                         listOf(
-                            listOf(oldBson),
+                            oldBsons,
                             Document(
                                 "\$ifNull",
                                 listOf("\$$PREVIOUS_VERSIONS_FIELD", emptyList<Any>()),

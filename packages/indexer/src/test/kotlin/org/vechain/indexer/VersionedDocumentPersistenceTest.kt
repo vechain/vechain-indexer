@@ -1,10 +1,14 @@
 package org.vechain.indexer
 
+import com.mongodb.MongoClientSettings
 import com.mongodb.client.MongoCollection
+import com.mongodb.client.model.UpdateOneModel
+import com.mongodb.client.model.WriteModel
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import org.bson.Document
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -95,6 +99,79 @@ internal class VersionedDocumentPersistenceTest {
                 any<com.mongodb.client.model.BulkWriteOptions>(),
             )
         }
+    }
+
+    @Test
+    fun `preserves every existing version for the same document id in update pipeline order`() {
+        val writes = slot<List<WriteModel<Document>>>()
+        val updated =
+            listOf(
+                TestDocument(
+                    id = "doc-1",
+                    version = 3,
+                    blockNumber = 30,
+                    blockId = "b3",
+                    blockTimestamp = 3000,
+                    state = "current",
+                )
+            )
+        val existing =
+            listOf(
+                TestDocument(
+                    id = "doc-1",
+                    version = 1,
+                    blockNumber = 10,
+                    blockId = "b1",
+                    blockTimestamp = 1000,
+                    state = "old",
+                ),
+                TestDocument(
+                    id = "doc-1",
+                    version = 2,
+                    blockNumber = 20,
+                    blockId = "b2",
+                    blockTimestamp = 2000,
+                    state = "middle",
+                ),
+            )
+
+        every { mongoTemplate.getCollection("test_documents") } returns collection
+        every { mongoTemplate.converter } returns converter
+        every { converter.write(any<TestDocument>(), any<Document>()) } answers
+            {
+                val source = firstArg<TestDocument>()
+                val target = secondArg<Document>()
+                target["_id"] = source.getDocumentId()
+                target["version"] = source.version
+                target["blockNumber"] = source.blockNumber
+                target["blockId"] = source.blockId
+                target["blockTimestamp"] = source.blockTimestamp
+                target["state"] = source.state
+            }
+        every {
+            collection.bulkWrite(capture(writes), any<com.mongodb.client.model.BulkWriteOptions>())
+        } returns mockk(relaxed = true)
+
+        persist(updated, existing, "test_documents")
+
+        val updateModel = writes.captured.single() as UpdateOneModel<Document>
+        val pipeline =
+            updateModel.updatePipeline!!.map {
+                it.toBsonDocument(
+                    Document::class.java,
+                    MongoClientSettings.getDefaultCodecRegistry(),
+                )
+            }
+        val pipelineText = pipeline.joinToString("\n") { it.toJson() }
+
+        assertTrue(pipelineText.contains("\"state\": \"current\""))
+        assertTrue(pipelineText.contains("\"state\": \"middle\""))
+        assertTrue(pipelineText.contains("\"state\": \"old\""))
+        assertTrue(
+            pipelineText.indexOf("\"state\": \"middle\"") <
+                pipelineText.indexOf("\"state\": \"old\"")
+        )
+        assertEquals(1, writes.captured.size)
     }
 
     @Test
@@ -205,6 +282,7 @@ internal class VersionedDocumentPersistenceTest {
         override val blockNumber: Long,
         override val blockId: String,
         override val blockTimestamp: Long,
+        val state: String = id,
     ) : VersionedDocument {
         override fun getDocumentId(): String = id
     }
