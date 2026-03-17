@@ -1,7 +1,5 @@
 package org.vechain.indexer.openapi
 
-import java.nio.file.Files
-import java.nio.file.Path
 import org.springframework.test.context.ActiveProfilesResolver
 
 class OpenApiActiveProfilesResolver : ActiveProfilesResolver {
@@ -12,27 +10,25 @@ class OpenApiActiveProfilesResolver : ActiveProfilesResolver {
 
     companion object {
         private const val openApiProfilesProperty = "openapi.profiles"
-        private const val springProfilesActivePrefix = "SPRING_PROFILES_ACTIVE="
+        private val defaultProfiles =
+            listOf(
+                    "accounts",
+                    "b3tr",
+                    "contracts",
+                    "explorer",
+                    "history",
+                    "nfts",
+                    "stargate",
+                    "transactions",
+                    "transfers",
+                    "validator",
+                    "vevote",
+                )
+                .sorted()
 
         fun resolveProfiles(): List<String> {
             return System.getProperty(openApiProfilesProperty)?.let(::parseProfiles)
-                ?: loadProfilesFromEnvExample()
-        }
-
-        private fun loadProfilesFromEnvExample(): List<String> {
-            val envExamplePath =
-                listOf(Path.of("packages/api/.env.example"), Path.of(".env.example"))
-                    .firstOrNull(Files::exists)
-                    ?: error(
-                        "Unable to find .env.example for OpenAPI profile resolution (tried: packages/api/.env.example, .env.example)"
-                    )
-
-            val springProfilesLine =
-                Files.readAllLines(envExamplePath).firstOrNull { line ->
-                    line.startsWith(springProfilesActivePrefix)
-                } ?: error("SPRING_PROFILES_ACTIVE not found in ${envExamplePath.toAbsolutePath()}")
-
-            return parseProfiles(springProfilesLine.removePrefix(springProfilesActivePrefix))
+                ?: defaultProfiles
         }
 
         private fun parseProfiles(rawProfiles: String): List<String> {

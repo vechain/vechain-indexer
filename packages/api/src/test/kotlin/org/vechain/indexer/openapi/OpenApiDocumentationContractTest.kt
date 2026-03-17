@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import strikt.api.expectThat
 import strikt.assertions.contains
 import strikt.assertions.isEqualTo
+import strikt.assertions.isFalse
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -71,6 +72,20 @@ class OpenApiDocumentationContractTest {
             .contains("application/json", "application/problem+json")
         expectThat(contentTypes(responses.at("/500/content")))
             .contains("application/json", "application/problem+json")
+    }
+
+    @Test
+    fun `profile gated public routes are present in generated spec`() {
+        val spec = fetchSpec()
+
+        expectThat(spec.at("/paths/~1api~1v1~1validators").isMissingNode).isFalse()
+        expectThat(spec.at("/paths/~1api~1v1~1validators~1blocks~1missed").isMissingNode).isFalse()
+        expectThat(spec.at("/paths/~1api~1v1~1validators~1delegations~1count").isMissingNode)
+            .isFalse()
+        expectThat(spec.at("/paths/~1api~1v1~1contracts~1{address}").isMissingNode).isFalse()
+        expectThat(spec.at("/paths/~1api~1v1~1contracts~1by-master~1{address}").isMissingNode)
+            .isFalse()
+        expectThat(spec.at("/paths/~1api~1v1~1vevote~1proposals~1comments").isMissingNode).isFalse()
     }
 
     private fun specParameters(pointer: String): JsonNode = fetchSpec().at(pointer)

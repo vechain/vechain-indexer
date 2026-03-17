@@ -137,6 +137,40 @@
         ],
         "type": "object"
       },
+      "AllValidatorsMissedBlocksResponse": {
+        "properties": {
+          "endBlock": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "startBlock": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "timeframe": {
+            "enum": [
+              "DAY",
+              "WEEK",
+              "MONTH",
+              "YEAR"
+            ],
+            "type": "string"
+          },
+          "validators": {
+            "items": {
+              "$ref": "#/components/schemas/ValidatorMissedBlocksPercentage"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "endBlock",
+          "startBlock",
+          "timeframe",
+          "validators"
+        ],
+        "type": "object"
+      },
       "AppLeaderboardItem": {
         "properties": {
           "actionsRewarded": {
@@ -360,6 +394,44 @@
         ],
         "type": "object"
       },
+      "Contract": {
+        "properties": {
+          "address": {
+            "type": "string"
+          },
+          "createdOn": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "deploymentClauseIndex": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "deploymentTxId": {
+            "type": "string"
+          },
+          "isErc1155": {
+            "type": "boolean"
+          },
+          "isErc20": {
+            "type": "boolean"
+          },
+          "isErc721": {
+            "type": "boolean"
+          },
+          "master": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "address",
+          "createdOn",
+          "deploymentClauseIndex",
+          "deploymentTxId",
+          "master"
+        ],
+        "type": "object"
+      },
       "DecodedEvent": {
         "properties": {
           "address": {
@@ -412,6 +484,91 @@
         "required": [
           "events",
           "transfers"
+        ],
+        "type": "object"
+      },
+      "Delegation": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "stakedAmount": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "NONE",
+              "QUEUED",
+              "ACTIVE",
+              "EXITED",
+              "EXITING"
+            ],
+            "type": "string"
+          },
+          "tokenId": {
+            "type": "string"
+          },
+          "tokenLevel": {
+            "enum": [
+              "All",
+              "Strength",
+              "Thunder",
+              "Mjolnir",
+              "VeThorX",
+              "StrengthX",
+              "ThunderX",
+              "MjolnirX",
+              "Dawn",
+              "Lightning",
+              "Flash"
+            ],
+            "type": "string"
+          },
+          "totalRewardsClaimed": {
+            "type": "integer"
+          },
+          "validator": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "owner",
+          "stakedAmount",
+          "status",
+          "tokenId",
+          "tokenLevel",
+          "totalRewardsClaimed",
+          "validator"
+        ],
+        "type": "object"
+      },
+      "DelegationCountsResponse": {
+        "properties": {
+          "active": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "exiting": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "queued": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "validator": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "active",
+          "exiting",
+          "queued",
+          "validator"
         ],
         "type": "object"
       },
@@ -1350,6 +1507,42 @@
         ],
         "type": "object"
       },
+      "PaginatedResponseContract": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/Contract"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationDetail"
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ],
+        "type": "object"
+      },
+      "PaginatedResponseDelegation": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/Delegation"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationDetail"
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ],
+        "type": "object"
+      },
       "PaginatedResponseHistoricProposals": {
         "properties": {
           "data": {
@@ -1643,6 +1836,60 @@
           "data": {
             "items": {
               "$ref": "#/components/schemas/UserLeaderboardItem"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationDetail"
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ],
+        "type": "object"
+      },
+      "PaginatedResponseValidator": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/Validator"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationDetail"
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ],
+        "type": "object"
+      },
+      "PaginatedResponseValidatorBlock": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ValidatorBlock"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationDetail"
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ],
+        "type": "object"
+      },
+      "PaginatedResponseVeVoteProposalComment": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/VeVoteProposalComment"
             },
             "type": "array"
           },
@@ -2418,6 +2665,263 @@
           "totalRewardAmount",
           "uniqueXAppInteractions",
           "wallet"
+        ],
+        "type": "object"
+      },
+      "Validator": {
+        "properties": {
+          "availableStartBlock": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "avgDelegatorYield": {
+            "type": "number"
+          },
+          "beneficiary": {
+            "type": "string"
+          },
+          "blockProbability": {
+            "type": "number"
+          },
+          "blocksPerEpoch": {
+            "type": "number"
+          },
+          "blocksPerYear": {
+            "type": "number"
+          },
+          "completedPeriods": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "cycleEndBlock": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "cyclePeriodLength": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "delegatorExitingVetStaked": {
+            "type": "number"
+          },
+          "delegatorQueuedVetStaked": {
+            "type": "number"
+          },
+          "delegatorTvl": {
+            "type": "number"
+          },
+          "delegatorVetStaked": {
+            "type": "number"
+          },
+          "endorser": {
+            "type": "string"
+          },
+          "exitBlock": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "exitingVetStaked": {
+            "type": "number"
+          },
+          "id": {
+            "type": "string"
+          },
+          "nextCycleAvgDelegatorYield": {
+            "type": "number"
+          },
+          "nextCycleTvlBasedYield": {
+            "type": "number"
+          },
+          "nextCycleValidatorYield": {
+            "type": "number"
+          },
+          "nftYieldsNextCycle": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object"
+          },
+          "offlineBlocks": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "online": {
+            "type": "boolean"
+          },
+          "percentageOffline": {
+            "type": "number"
+          },
+          "queuePosition": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "queuedVetStaked": {
+            "type": "number"
+          },
+          "startBlock": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "NONE",
+              "QUEUED",
+              "ACTIVE",
+              "EXITED",
+              "EXITING"
+            ],
+            "type": "string"
+          },
+          "totalRewards": {
+            "type": "number"
+          },
+          "totalTvl": {
+            "type": "number"
+          },
+          "totalWeight": {
+            "type": "number"
+          },
+          "tvlBasedYield": {
+            "type": "number"
+          },
+          "validatorExitingVetStaked": {
+            "type": "number"
+          },
+          "validatorQueuedVetStaked": {
+            "type": "number"
+          },
+          "validatorTvl": {
+            "type": "number"
+          },
+          "validatorTvlPercentage": {
+            "type": "number"
+          },
+          "validatorVetStaked": {
+            "type": "number"
+          },
+          "validatorYield": {
+            "type": "number"
+          },
+          "vetStaked": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "ValidatorBlock": {
+        "properties": {
+          "blockId": {
+            "type": "string"
+          },
+          "blockNumber": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "blockReward": {
+            "type": "integer"
+          },
+          "blockTimestamp": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "blocksOffline": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "delegatorRewards": {
+            "type": "integer"
+          },
+          "onlineBlock": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "priorityReward": {
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "VALIDATED",
+              "MISSED"
+            ],
+            "type": "string"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "validator": {
+            "type": "string"
+          },
+          "validatorRewards": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "blockId",
+          "blockNumber",
+          "blockTimestamp",
+          "status",
+          "validator"
+        ],
+        "type": "object"
+      },
+      "ValidatorMissedBlocksPercentage": {
+        "properties": {
+          "missedPercentage": {
+            "format": "double",
+            "type": "number"
+          },
+          "validator": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "missedPercentage",
+          "validator"
+        ],
+        "type": "object"
+      },
+      "VeVoteProposalComment": {
+        "properties": {
+          "blockNumber": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "blockTimestamp": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "proposalId": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "support": {
+            "enum": [
+              "AGAINST",
+              "FOR",
+              "ABSTAIN"
+            ],
+            "type": "string"
+          },
+          "voter": {
+            "type": "string"
+          },
+          "weight": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "blockNumber",
+          "blockTimestamp",
+          "proposalId",
+          "reason",
+          "support",
+          "voter",
+          "weight"
         ],
         "type": "object"
       },
@@ -5486,6 +5990,234 @@
         "summary": "Get XAllocation voting results for a round",
         "tags": [
           "B3TR - X-Allocations"
+        ]
+      }
+    },
+    "/api/v1/contracts/by-master/{address}": {
+      "get": {
+        "operationId": "getContractsByMaster",
+        "parameters": [
+          {
+            "description": "The address to query as master.",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            "in": "path",
+            "name": "address",
+            "required": true,
+            "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "The zero-based results page number",
+            "example": 0,
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The results page size",
+            "example": 20,
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 150,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The sort direction",
+            "in": "query",
+            "name": "direction",
+            "required": false,
+            "schema": {
+              "default": "DESC",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponseContract"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get contracts where address is master",
+        "tags": [
+          "Contracts"
+        ]
+      }
+    },
+    "/api/v1/contracts/{address}": {
+      "get": {
+        "operationId": "getContract",
+        "parameters": [
+          {
+            "description": "The address of the contract to retrieve.",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            "in": "path",
+            "name": "address",
+            "required": true,
+            "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Contract"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Retrieve a contract by address",
+        "tags": [
+          "Contracts"
         ]
       }
     },
@@ -10013,6 +10745,1213 @@
         ]
       }
     },
+    "/api/v1/validators": {
+      "get": {
+        "description": "\n            This endpoint retrieves validator stats.\n\n            You can filter the results by:\n            - `validatorId`: (deprecated - use GET /api/v1/validators/{validatorId} instead)\n            - `status`: validator status\n            - `endorser`: endorser address\n\n            You can also sort the results by one of the supported fields and paginate.\n\n            - `sortBy`: Choose between `validatorTvl`, `totalTvl`, `blockProbability`, `delegatorTvl`, or `nft:<Level>` (e.g. `nft:Strength`)\n            - `page` and `size`: Controls pagination\n            - `direction`: Either `asc` or `desc`\n            ",
+        "operationId": "getValidators",
+        "parameters": [
+          {
+            "description": "Filter by endorser address",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            "in": "query",
+            "name": "endorser",
+            "required": false,
+            "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
+              "type": "string"
+            }
+          },
+          {
+            "deprecated": true,
+            "description": "Deprecated: use GET /api/v1/validators/{validatorId} instead.",
+            "in": "query",
+            "name": "validatorId",
+            "required": false,
+            "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter by one or more validator statuses",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "NONE",
+                "QUEUED",
+                "ACTIVE",
+                "EXITED",
+                "EXITING"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "The zero-based results page number",
+            "example": 0,
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The results page size",
+            "example": 20,
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 150,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The sort direction",
+            "in": "query",
+            "name": "direction",
+            "required": false,
+            "schema": {
+              "default": "DESC",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "The sort by field",
+            "in": "query",
+            "name": "sortBy",
+            "required": false,
+            "schema": {
+              "enum": [
+                "validatorTvl",
+                "totalTvl",
+                "blockProbability",
+                "delegatorTvl",
+                "nft:Strength",
+                "nft:Thunder",
+                "nft:Mjolnir",
+                "nft:VeThorX",
+                "nft:StrengthX",
+                "nft:ThunderX",
+                "nft:MjolnirX",
+                "nft:Dawn",
+                "nft:Lightning",
+                "nft:Flash"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponseValidator"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get validators with optional filters",
+        "tags": [
+          "Validator"
+        ]
+      }
+    },
+    "/api/v1/validators/block-rewards": {
+      "get": {
+        "description": "Returns a paginated list of validator block reward and performance records. You can filter by validator address and/or block status (VALIDATED or MISSED). Results are sorted by block number (default: descending).",
+        "operationId": "getValidatorBlockRewards",
+        "parameters": [
+          {
+            "description": "Optional validator address to filter by",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            "in": "query",
+            "name": "validator",
+            "required": false,
+            "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter results by block number. When direction is 'desc' (default), returns records at or before this block. When direction is 'asc', returns records at or after this block.",
+            "example": 12345678,
+            "in": "query",
+            "name": "blockNumber",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "maximum": 9223372036854775807,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Filter by block status - either VALIDATED or MISSED.",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "VALIDATED",
+                "MISSED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "The zero-based results page number",
+            "example": 0,
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The results page size",
+            "example": 20,
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 150,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The sort direction",
+            "in": "query",
+            "name": "direction",
+            "required": false,
+            "schema": {
+              "default": "DESC",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponseValidatorBlock"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get paginated validator block reward records",
+        "tags": [
+          "Validator"
+        ]
+      }
+    },
+    "/api/v1/validators/block-rewards/{blockNumber}": {
+      "get": {
+        "description": "Returns all validator block reward records for a specific block number. You can optionally filter by validator address to narrow to a single record.",
+        "operationId": "getBlockByBlockNumber",
+        "parameters": [
+          {
+            "description": "The block number to look up.",
+            "example": 12345678,
+            "in": "path",
+            "name": "blockNumber",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "maximum": 9223372036854775807,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Optional validator address to filter by",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            "in": "query",
+            "name": "validator",
+            "required": false,
+            "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ValidatorBlock"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get validator block records for a specific block number",
+        "tags": [
+          "Validator"
+        ]
+      }
+    },
+    "/api/v1/validators/blocks": {
+      "get": {
+        "deprecated": true,
+        "description": "Note: the original description was inaccurate. This endpoint does not return cumulative rewards 'up to the latest block'. It returns a paginated list of individual block reward/miss records, optionally filtered by an exact block number, validator, or status. Deprecated: use /api/v1/validators/block-rewards for paginated listing or /api/v1/validators/block-rewards/{blockNumber} for lookup by block.",
+        "operationId": "getValidatorBlocks",
+        "parameters": [
+          {
+            "description": "Optional block number. If provided, returns the total VTHO rewards as of this block.",
+            "example": 12345678,
+            "in": "query",
+            "name": "blockNumber",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "maximum": 9223372036854775807,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Optional validator address",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            "in": "query",
+            "name": "validator",
+            "required": false,
+            "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter by block status - either VALIDATED or MISSED.",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "VALIDATED",
+                "MISSED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "The zero-based results page number",
+            "example": 0,
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The results page size",
+            "example": 20,
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 150,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The sort direction",
+            "in": "query",
+            "name": "direction",
+            "required": false,
+            "schema": {
+              "default": "DESC",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponseValidatorBlock"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get validator block records (deprecated)",
+        "tags": [
+          "Validator"
+        ]
+      }
+    },
+    "/api/v1/validators/blocks/historic/{validator}": {
+      "get": {
+        "description": "Returns a time series of VTHO rewards between the given timestamps. Granularity (hourly/daily/weekly/monthly) is automatically chosen based on the time range. For sampled ranges, the response includes the nearest records at or before the requested boundaries. You can filter by validator address.",
+        "operationId": "getHistoricValidatorRewardsRange",
+        "parameters": [
+          {
+            "description": "Validator address",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            "in": "path",
+            "name": "validator",
+            "required": true,
+            "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Start timestamp (inclusive)",
+            "example": 1704143600,
+            "in": "query",
+            "name": "startTimestamp",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "End timestamp (inclusive)",
+            "example": 1704153600,
+            "in": "query",
+            "name": "endTimestamp",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ValidatorBlock"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get historic VTHO rewards in a custom time range",
+        "tags": [
+          "Validator"
+        ]
+      }
+    },
+    "/api/v1/validators/blocks/missed": {
+      "get": {
+        "description": "Returns missed block percentages for all validators or a specific validator within a specified timeframe. Timeframe options: DAY (last 24h), WEEK (last 7 days), MONTH (last 30 days), YEAR (last 365 days).",
+        "operationId": "getMissedBlocksPercentage",
+        "parameters": [
+          {
+            "description": "Time period to calculate missed blocks for",
+            "in": "query",
+            "name": "timeframe",
+            "required": true,
+            "schema": {
+              "enum": [
+                "DAY",
+                "WEEK",
+                "MONTH",
+                "YEAR"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "Optional validator address to filter by",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            "in": "query",
+            "name": "validator",
+            "required": false,
+            "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllValidatorsMissedBlocksResponse"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get missed blocks percentage for validators",
+        "tags": [
+          "Validator"
+        ]
+      }
+    },
+    "/api/v1/validators/delegations": {
+      "get": {
+        "description": "\n            This endpoint retrieves delegation records.\n\n            You can filter by:\n            - `validator`: delegations for a specific validator\n            - `tokenId`: delegations for a specific NFT tokenId\n            - `statuses`: array of statuses of interest\n\n            You can also sort and paginate.\n            ",
+        "operationId": "getDelegations",
+        "parameters": [
+          {
+            "description": "Filter by validator address",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            "in": "query",
+            "name": "validator",
+            "required": false,
+            "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "A valid tokenId",
+            "in": "query",
+            "name": "tokenId",
+            "required": false,
+            "schema": {
+              "pattern": "^(0x)?[A-Fa-f0-9]+$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter by one or more statuses",
+            "in": "query",
+            "name": "statuses",
+            "required": false,
+            "schema": {
+              "enum": [
+                "NONE",
+                "QUEUED",
+                "ACTIVE",
+                "EXITED",
+                "EXITING"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "The zero-based results page number",
+            "example": 0,
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The results page size",
+            "example": 20,
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 150,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The sort direction",
+            "in": "query",
+            "name": "direction",
+            "required": false,
+            "schema": {
+              "default": "DESC",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponseDelegation"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get delegations with optional filters",
+        "tags": [
+          "Validator"
+        ]
+      }
+    },
+    "/api/v1/validators/delegations/count": {
+      "get": {
+        "description": "Returns the count of delegations grouped by status (QUEUED, ACTIVE, EXITING) for all validators, or optionally filtered to a specific validator.",
+        "operationId": "getDelegationCounts",
+        "parameters": [
+          {
+            "description": "Optional validator address to filter by",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            "in": "query",
+            "name": "validator",
+            "required": false,
+            "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DelegationCountsResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get delegation counts by status for all validators",
+        "tags": [
+          "Validator"
+        ]
+      }
+    },
+    "/api/v1/validators/{validatorId}": {
+      "get": {
+        "description": "Returns a single validator's stats by their address.",
+        "operationId": "getValidatorById",
+        "parameters": [
+          {
+            "description": "Validator address",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            "in": "path",
+            "name": "validatorId",
+            "required": true,
+            "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Validator"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get a single validator by ID",
+        "tags": [
+          "Validator"
+        ]
+      }
+    },
     "/api/v1/vevote/historic-proposals": {
       "get": {
         "operationId": "getAllProposals",
@@ -10288,6 +12227,165 @@
           }
         },
         "summary": "Returns a list of results on vote weight per support",
+        "tags": [
+          "VeVote"
+        ]
+      }
+    },
+    "/api/v1/vevote/proposals/comments": {
+      "get": {
+        "operationId": "getComments",
+        "parameters": [
+          {
+            "description": "Proposal ID to filter by.",
+            "example": 83654019322420867938874773331484872860308892726218987071908233993897039987210,
+            "in": "query",
+            "name": "proposalId",
+            "required": false,
+            "schema": {
+              "pattern": "^[0-9]{65,100}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Voter address to filter by.",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            "in": "query",
+            "name": "voter",
+            "required": false,
+            "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter by support.",
+            "in": "query",
+            "name": "support",
+            "required": false,
+            "schema": {
+              "enum": [
+                "FOR",
+                "AGAINST",
+                "ABSTAIN"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "The zero-based results page number",
+            "example": 0,
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The results page size",
+            "example": 20,
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 150,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The sort direction",
+            "in": "query",
+            "name": "direction",
+            "required": false,
+            "schema": {
+              "default": "DESC",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponseVeVoteProposalComment"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get comments for a proposal.",
         "tags": [
           "VeVote"
         ]
@@ -11108,6 +13206,14 @@
     {
       "description": "Combined VOT3 and B3TR balance richlist and holder rank.",
       "name": "B3TR - Richlist"
+    },
+    {
+      "description": "Query validator documents",
+      "name": "Validator"
+    },
+    {
+      "description": "Information about smart contracts",
+      "name": "Contracts"
     },
     {
       "description": "Query XAllocation voting data on VeBetterDAO.",
