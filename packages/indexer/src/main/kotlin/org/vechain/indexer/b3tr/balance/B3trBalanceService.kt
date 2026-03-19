@@ -1,6 +1,8 @@
 package org.vechain.indexer.b3tr.balance
 
+import java.math.BigDecimal
 import java.math.BigInteger
+import org.bson.types.Decimal128
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
@@ -78,17 +80,25 @@ open class B3trBalanceService(
 
             val isVot3 = event.address.equals(vot3ContractAddress, ignoreCase = true)
 
-            listOf(from to value.negate(), to to value).forEach { (address, delta) ->
+            val deltaDec = BigDecimal(value)
+            listOf(from to deltaDec.negate(), to to deltaDec).forEach { (address, delta) ->
                 if (address.equals(Address.ZERO_ADDRESS, ignoreCase = true)) return@forEach
                 if (!isVot3 && address.equals(vot3ContractAddress, ignoreCase = true))
                     return@forEach
                 val updated = resolveForMutation(address, blockDetails, accumulator, resolved)
                 if (isVot3) {
-                    updated.vot3Balance += delta
+                    updated.vot3Balance =
+                        Decimal128(updated.vot3Balance.bigDecimalValue().add(delta))
                 } else {
-                    updated.b3trBalance += delta
+                    updated.b3trBalance =
+                        Decimal128(updated.b3trBalance.bigDecimalValue().add(delta))
                 }
-                updated.totalBalance = updated.vot3Balance + updated.b3trBalance
+                updated.totalBalance =
+                    Decimal128(
+                        updated.vot3Balance
+                            .bigDecimalValue()
+                            .add(updated.b3trBalance.bigDecimalValue())
+                    )
             }
         }
 
@@ -135,9 +145,9 @@ open class B3trBalanceService(
                         blockNumber = block.blockNumber,
                         blockTimestamp = block.blockTimestamp,
                         version = nextVersion,
-                        vot3Balance = BigInteger.ZERO,
-                        b3trBalance = BigInteger.ZERO,
-                        totalBalance = BigInteger.ZERO,
+                        vot3Balance = B3trBalance.ZERO,
+                        b3trBalance = B3trBalance.ZERO,
+                        totalBalance = B3trBalance.ZERO,
                     )
                 accumulator.put(recordId, null, newRecord)
                 newRecord

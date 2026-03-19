@@ -3,8 +3,10 @@ package org.vechain.indexer.b3tr.richlist
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import java.math.BigDecimal
 import java.math.BigInteger
 import java.util.Optional
+import org.bson.types.Decimal128
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
@@ -24,6 +26,8 @@ internal class B3trRichlistServiceTest {
 
     private lateinit var service: B3trRichlistService
 
+    private fun dec(value: String): Decimal128 = Decimal128(BigDecimal(value))
+
     @BeforeEach
     fun setUp() {
         service = B3trRichlistService(mongoTemplate, b3trRepository)
@@ -39,9 +43,9 @@ internal class B3trRichlistServiceTest {
                 blockNumber = 10L,
                 blockTimestamp = 1000L,
                 version = 1,
-                vot3Balance = BigInteger("100"),
-                b3trBalance = BigInteger("50"),
-                totalBalance = BigInteger("150"),
+                vot3Balance = dec("100"),
+                b3trBalance = dec("50"),
+                totalBalance = dec("150"),
             )
         every { b3trRepository.findById(address) } returns Optional.of(doc)
         var countInvocations = 0
@@ -70,9 +74,9 @@ internal class B3trRichlistServiceTest {
                 blockNumber = 10L,
                 blockTimestamp = 1000L,
                 version = 1,
-                vot3Balance = BigInteger("200"),
-                b3trBalance = BigInteger("0"),
-                totalBalance = BigInteger("200"),
+                vot3Balance = dec("200"),
+                b3trBalance = dec("0"),
+                totalBalance = dec("200"),
             )
         every { b3trRepository.findById(address) } returns Optional.of(doc)
         var countInvocations = 0
@@ -99,9 +103,9 @@ internal class B3trRichlistServiceTest {
                 blockNumber = 10L,
                 blockTimestamp = 1000L,
                 version = 1,
-                vot3Balance = BigInteger.ZERO,
-                b3trBalance = BigInteger("75"),
-                totalBalance = BigInteger("75"),
+                vot3Balance = B3trBalance.ZERO,
+                b3trBalance = dec("75"),
+                totalBalance = dec("75"),
             )
         every { b3trRepository.findById(address) } returns Optional.of(doc)
         var countInvocations = 0
@@ -138,9 +142,9 @@ internal class B3trRichlistServiceTest {
                 blockNumber = 10L,
                 blockTimestamp = 1000L,
                 version = 1,
-                vot3Balance = BigInteger.ZERO,
-                b3trBalance = BigInteger.ZERO,
-                totalBalance = BigInteger.ZERO,
+                vot3Balance = B3trBalance.ZERO,
+                b3trBalance = B3trBalance.ZERO,
+                totalBalance = B3trBalance.ZERO,
             )
         every { b3trRepository.findById(address) } returns Optional.of(doc)
         every { mongoTemplate.count(any<Query>(), any(), any<String>()) } returns 42
@@ -175,9 +179,9 @@ internal class B3trRichlistServiceTest {
                 blockNumber = 2L,
                 blockTimestamp = 2000L,
                 version = 1,
-                vot3Balance = BigInteger("100"),
-                b3trBalance = BigInteger("50"),
-                totalBalance = BigInteger("150"),
+                vot3Balance = dec("100"),
+                b3trBalance = dec("50"),
+                totalBalance = dec("150"),
             )
         val bob =
             B3trBalance(
@@ -186,9 +190,9 @@ internal class B3trRichlistServiceTest {
                 blockNumber = 2L,
                 blockTimestamp = 2000L,
                 version = 1,
-                vot3Balance = BigInteger("80"),
-                b3trBalance = BigInteger("20"),
-                totalBalance = BigInteger("100"),
+                vot3Balance = dec("80"),
+                b3trBalance = dec("20"),
+                totalBalance = dec("100"),
             )
         every { mongoTemplate.find(any<Query>(), any<Class<*>>(), any<String>()) } returns
             listOf(alice, bob)
@@ -212,9 +216,9 @@ internal class B3trRichlistServiceTest {
                 blockNumber = 2L,
                 blockTimestamp = 2000L,
                 version = 1,
-                vot3Balance = BigInteger("99"),
-                b3trBalance = BigInteger("1"),
-                totalBalance = BigInteger("100"),
+                vot3Balance = dec("99"),
+                b3trBalance = dec("1"),
+                totalBalance = dec("100"),
             )
         every { mongoTemplate.find(any<Query>(), any<Class<*>>(), any<String>()) } returns
             listOf(doc)
@@ -235,9 +239,9 @@ internal class B3trRichlistServiceTest {
                 blockNumber = 2L,
                 blockTimestamp = 2000L,
                 version = 1,
-                vot3Balance = BigInteger("1"),
-                b3trBalance = BigInteger("99"),
-                totalBalance = BigInteger("100"),
+                vot3Balance = dec("1"),
+                b3trBalance = dec("99"),
+                totalBalance = dec("100"),
             )
         every { mongoTemplate.find(any<Query>(), any<Class<*>>(), any<String>()) } returns
             listOf(doc)
