@@ -3,10 +3,11 @@ package org.vechain.indexer.b3tr.balance
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonView
-import java.math.BigDecimal
-import org.bson.types.Decimal128
+import java.math.BigInteger
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import org.springframework.data.mongodb.core.mapping.Field
+import org.springframework.data.mongodb.core.mapping.FieldType
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.thor.model.Views
@@ -20,13 +21,9 @@ data class B3trBalance(
     @JsonIgnore override val blockNumber: Long,
     @JsonIgnore override val blockTimestamp: Long,
     @JsonIgnore @field:JsonView(Views.Internal::class) override val version: Int,
-    var vot3Balance: Decimal128,
-    var b3trBalance: Decimal128,
-    var totalBalance: Decimal128,
+    @Field(targetType = FieldType.DECIMAL128) var vot3Balance: BigInteger,
+    @Field(targetType = FieldType.DECIMAL128) var b3trBalance: BigInteger,
+    @Field(targetType = FieldType.DECIMAL128) var totalBalance: BigInteger,
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = address
-
-    companion object {
-        val ZERO: Decimal128 = Decimal128(BigDecimal.ZERO)
-    }
 }
