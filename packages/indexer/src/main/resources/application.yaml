@@ -213,7 +213,7 @@ indexer:
     total-accounts: ${VERSION_TOTAL_ACCOUNTS:2}
     account-totals-series: ${VERSION_ACCOUNT_TOTALS_SERIES:1}
     account-overview: ${VERSION_ACCOUNT_OVERVIEW:2}
-    b3tr-balance: ${VERSION_B3TR_BALANCE:2}
+    b3tr-balance: ${VERSION_B3TR_BALANCE:3}
   healthcheck:
     inactive-threshold-syncing: ${HEALTHCHECK_INACTIVE_THRESHOLD_SYNCING:120}
     inactive-threshold-not-syncing: ${HEALTHCHECK_INACTIVE_THRESHOLD_NOT_SYNCING:600}

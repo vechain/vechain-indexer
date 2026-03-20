@@ -32,7 +32,7 @@ open class B3trRichlistService(
         scope: RichlistScope = RichlistScope.ALL,
     ): PaginatedResponse<B3trRichlistItem> {
         val sortField = sortFieldForScope(scope)
-        val criteria = Criteria.where(sortField).gt("0")
+        val criteria = Criteria.where(sortField).gt(0)
         val (pageSize, query) =
             CursorPaginationUtils.buildCursorQuery(
                 baseCriteria = criteria,
@@ -51,10 +51,10 @@ open class B3trRichlistService(
         }
 
         val first = page.first()
-        val firstBalanceStr = balanceForScope(first, scope).toString()
+        val firstBalance = balanceForScope(first, scope)
         val startRank =
             mongoTemplate.count(
-                Query(Criteria.where(sortField).gt(firstBalanceStr)),
+                Query(Criteria.where(sortField).gt(firstBalance)),
                 B3trBalance::class.java,
                 collection,
             ) + 1
@@ -96,7 +96,7 @@ open class B3trRichlistService(
         val balance = balanceForScope(doc, scope)
         val totalHolders =
             mongoTemplate.count(
-                Query(Criteria.where(sortField).gt("0")),
+                Query(Criteria.where(sortField).gt(0)),
                 B3trBalance::class.java,
                 collection,
             )
@@ -109,10 +109,9 @@ open class B3trRichlistService(
                 topPercentage = if (totalHolders > 0) 100.0 else 0.0,
             )
         }
-        val balanceStr = balance.toString()
         val rank =
             mongoTemplate.count(
-                Query(Criteria.where(sortField).gt(balanceStr)),
+                Query(Criteria.where(sortField).gt(balance)),
                 B3trBalance::class.java,
                 collection,
             ) + 1
