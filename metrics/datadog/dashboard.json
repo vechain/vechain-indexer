@@ -396,35 +396,26 @@
                   "conditional_formats": [
                     {
                       "comparator": "=",
-                      "palette": "white_on_green",
+                      "palette": "white_on_red",
                       "value": 0
                     },
                     {
                       "comparator": ">",
-                      "palette": "white_on_red",
+                      "palette": "white_on_green",
                       "value": 0
                     }
                   ],
                   "formulas": [
                     {
-                      "formula": "default_zero(query1)"
+                      "formula": "clamp_max(clamp_min(default_zero(query1), 0), 1)"
                     }
                   ],
                   "queries": [
                     {
-                      "compute": {
-                        "aggregation": "count"
-                      },
-                      "data_source": "logs",
-                      "group_by": [],
-                      "indexes": [
-                        "*"
-                      ],
+                      "aggregator": "last",
+                      "data_source": "metrics",
                       "name": "query1",
-                      "search": {
-                        "query": "host:veworld-$host AND \"Commencing graceful shutdown\""
-                      },
-                      "storage": "hot"
+                      "query": "max:component_health_status_gauge{type:indexer,indexer-id:$host.value}.rollup(max, 120)"
                     }
                   ],
                   "response_format": "scalar"
@@ -434,7 +425,7 @@
                 "type": "bars",
                 "yaxis": {}
               },
-              "title": "Indexer service shutdown",
+              "title": "Indexer Health Signal",
               "title_align": "left",
               "title_size": "16",
               "type": "query_value"
@@ -759,7 +750,7 @@
                 {
                   "formulas": [
                     {
-                      "formula": "query1 * (1 - clamp_max(default_zero(query2), 1)) + query3 * clamp_max(default_zero(query2), 1)"
+                      "formula": "query1"
                     }
                   ],
                   "queries": [
@@ -768,27 +759,6 @@
                       "data_source": "metrics",
                       "name": "query1",
                       "query": "sum:indexer_sync_status_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value} by {status_readable}"
-                    },
-                    {
-                      "compute": {
-                        "aggregation": "count"
-                      },
-                      "data_source": "logs",
-                      "group_by": [],
-                      "indexes": [
-                        "*"
-                      ],
-                      "name": "query2",
-                      "search": {
-                        "query": "host:veworld-$host AND \"Commencing graceful shutdown\""
-                      },
-                      "storage": "hot"
-                    },
-                    {
-                      "aggregator": "last",
-                      "data_source": "metrics",
-                      "name": "query3",
-                      "query": "count:indexer_sync_status_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value,status_readable:shut_down} by {status_readable}"
                     }
                   ],
                   "response_format": "scalar",
@@ -807,7 +777,7 @@
                   }
                 }
               ],
-              "title": "Sync Status",
+              "title": "Last Reported Sync Status",
               "title_align": "left",
               "title_size": "16",
               "type": "sunburst"
@@ -937,7 +907,7 @@
                           "value": 0
                         }
                       ],
-                      "formula": "status + clamp_max(default_zero(shutdown), 1) * (5 - status)"
+                      "formula": "status + (1 - clamp_max(clamp_min(default_zero(host_health), 0), 1)) * (5 - status)"
                     },
                     {
                       "alias": "Sync Gap",
@@ -1043,19 +1013,10 @@
                       "query": "max:indexer_sync_status_code_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name}"
                     },
                     {
-                      "compute": {
-                        "aggregation": "count"
-                      },
-                      "data_source": "logs",
-                      "group_by": [],
-                      "indexes": [
-                        "*"
-                      ],
-                      "name": "shutdown",
-                      "search": {
-                        "query": "host:veworld-$host AND \"Commencing graceful shutdown\""
-                      },
-                      "storage": "hot"
+                      "aggregator": "last",
+                      "data_source": "metrics",
+                      "name": "host_health",
+                      "query": "max:component_health_status_gauge{type:indexer,indexer-id:$host.value}.rollup(max, 120)"
                     },
                     {
                       "aggregator": "last",
