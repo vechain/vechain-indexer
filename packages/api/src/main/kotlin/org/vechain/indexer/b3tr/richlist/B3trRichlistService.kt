@@ -33,7 +33,7 @@ open class B3trRichlistService(
         scope: RichlistScope = RichlistScope.ALL,
     ): PaginatedResponse<B3trRichlistItem> {
         val sortField = sortFieldForScope(scope)
-        val criteria = Criteria.where(sortField).gt(0)
+        val criteria = Criteria.where(sortField).gt(BigDecimal.ZERO)
         val (pageSize, query) =
             CursorPaginationUtils.buildCursorQuery(
                 baseCriteria = criteria,
@@ -97,7 +97,7 @@ open class B3trRichlistService(
         val balance = balanceForScope(doc, scope)
         val totalHolders =
             mongoTemplate.count(
-                Query(Criteria.where(sortField).gt(0)),
+                Query(Criteria.where(sortField).gt(BigDecimal.ZERO)),
                 B3trBalance::class.java,
                 collection,
             )
