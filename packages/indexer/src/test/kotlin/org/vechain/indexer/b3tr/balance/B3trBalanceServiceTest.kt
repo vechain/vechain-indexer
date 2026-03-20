@@ -3,7 +3,7 @@ package org.vechain.indexer.b3tr.balance
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import java.math.BigInteger
+import java.math.BigDecimal
 import java.util.Optional
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
@@ -27,6 +27,8 @@ internal class B3trBalanceServiceTest {
     private val vot3Contract = "0xvot30000000000000000000000000000000001"
 
     private lateinit var service: B3trBalanceService
+
+    private fun decimal(value: String): BigDecimal = BigDecimal(value)
 
     private fun transferEvent(
         blockId: String,
@@ -106,12 +108,12 @@ internal class B3trBalanceServiceTest {
         assertEquals(2, updated.size)
         assertEquals(0, existing.size)
         val byAddress = updated.associateBy { it.address }
-        assertEquals(BigInteger.ZERO.subtract(BigInteger("100")), byAddress[from]!!.vot3Balance)
-        assertEquals(BigInteger.ZERO, byAddress[from]!!.b3trBalance)
-        assertEquals(BigInteger.ZERO.subtract(BigInteger("100")), byAddress[from]!!.totalBalance)
-        assertEquals(BigInteger("100"), byAddress[to]!!.vot3Balance)
-        assertEquals(BigInteger.ZERO, byAddress[to]!!.b3trBalance)
-        assertEquals(BigInteger("100"), byAddress[to]!!.totalBalance)
+        assertEquals(decimal("-100"), byAddress[from]!!.vot3Balance)
+        assertEquals(BigDecimal.ZERO, byAddress[from]!!.b3trBalance)
+        assertEquals(decimal("-100"), byAddress[from]!!.totalBalance)
+        assertEquals(decimal("100"), byAddress[to]!!.vot3Balance)
+        assertEquals(BigDecimal.ZERO, byAddress[to]!!.b3trBalance)
+        assertEquals(decimal("100"), byAddress[to]!!.totalBalance)
     }
 
     @Test
@@ -136,12 +138,12 @@ internal class B3trBalanceServiceTest {
 
         assertEquals(2, updated.size)
         val byAddress = updated.associateBy { it.address }
-        assertEquals(BigInteger.ZERO, byAddress[from]!!.vot3Balance)
-        assertEquals(BigInteger("-50"), byAddress[from]!!.b3trBalance)
-        assertEquals(BigInteger("-50"), byAddress[from]!!.totalBalance)
-        assertEquals(BigInteger.ZERO, byAddress[to]!!.vot3Balance)
-        assertEquals(BigInteger("50"), byAddress[to]!!.b3trBalance)
-        assertEquals(BigInteger("50"), byAddress[to]!!.totalBalance)
+        assertEquals(BigDecimal.ZERO, byAddress[from]!!.vot3Balance)
+        assertEquals(decimal("-50"), byAddress[from]!!.b3trBalance)
+        assertEquals(decimal("-50"), byAddress[from]!!.totalBalance)
+        assertEquals(BigDecimal.ZERO, byAddress[to]!!.vot3Balance)
+        assertEquals(decimal("50"), byAddress[to]!!.b3trBalance)
+        assertEquals(decimal("50"), byAddress[to]!!.totalBalance)
     }
 
     @Test
@@ -175,12 +177,12 @@ internal class B3trBalanceServiceTest {
 
         assertEquals(2, updated.size)
         val byAddress = updated.associateBy { it.address }
-        assertEquals(BigInteger("-30"), byAddress[alice]!!.vot3Balance)
-        assertEquals(BigInteger("10"), byAddress[alice]!!.b3trBalance)
-        assertEquals(BigInteger("-20"), byAddress[alice]!!.totalBalance)
-        assertEquals(BigInteger("30"), byAddress[bob]!!.vot3Balance)
-        assertEquals(BigInteger("-10"), byAddress[bob]!!.b3trBalance)
-        assertEquals(BigInteger("20"), byAddress[bob]!!.totalBalance)
+        assertEquals(decimal("-30"), byAddress[alice]!!.vot3Balance)
+        assertEquals(decimal("10"), byAddress[alice]!!.b3trBalance)
+        assertEquals(decimal("-20"), byAddress[alice]!!.totalBalance)
+        assertEquals(decimal("30"), byAddress[bob]!!.vot3Balance)
+        assertEquals(decimal("-10"), byAddress[bob]!!.b3trBalance)
+        assertEquals(decimal("20"), byAddress[bob]!!.totalBalance)
     }
 
     @Test
@@ -221,9 +223,9 @@ internal class B3trBalanceServiceTest {
                     blockNumber = 9L,
                     blockTimestamp = 900L,
                     version = 1,
-                    vot3Balance = BigInteger("200"),
-                    b3trBalance = BigInteger("50"),
-                    totalBalance = BigInteger("250"),
+                    vot3Balance = decimal("200"),
+                    b3trBalance = decimal("50"),
+                    totalBalance = decimal("250"),
                 )
             )
         every { repository.findById(to) } returns Optional.empty()
@@ -244,12 +246,12 @@ internal class B3trBalanceServiceTest {
 
         assertEquals(2, updated.size)
         val byAddress = updated.associateBy { it.address }
-        assertEquals(BigInteger("175"), byAddress[from]!!.vot3Balance)
-        assertEquals(BigInteger("50"), byAddress[from]!!.b3trBalance)
-        assertEquals(BigInteger("225"), byAddress[from]!!.totalBalance)
-        assertEquals(BigInteger("25"), byAddress[to]!!.vot3Balance)
-        assertEquals(BigInteger.ZERO, byAddress[to]!!.b3trBalance)
-        assertEquals(BigInteger("25"), byAddress[to]!!.totalBalance)
+        assertEquals(decimal("175"), byAddress[from]!!.vot3Balance)
+        assertEquals(decimal("50"), byAddress[from]!!.b3trBalance)
+        assertEquals(decimal("225"), byAddress[from]!!.totalBalance)
+        assertEquals(decimal("25"), byAddress[to]!!.vot3Balance)
+        assertEquals(BigDecimal.ZERO, byAddress[to]!!.b3trBalance)
+        assertEquals(decimal("25"), byAddress[to]!!.totalBalance)
     }
 
     @Test
@@ -274,7 +276,7 @@ internal class B3trBalanceServiceTest {
 
         assertEquals(1, updated.size)
         assertEquals(to, updated.single().address)
-        assertEquals(BigInteger("100"), updated.single().vot3Balance)
+        assertEquals(decimal("100"), updated.single().vot3Balance)
     }
 
     @Test
@@ -298,7 +300,7 @@ internal class B3trBalanceServiceTest {
 
         assertEquals(1, updated.size)
         assertEquals(from, updated.single().address)
-        assertEquals(BigInteger("-100"), updated.single().b3trBalance)
-        assertEquals(BigInteger("-100"), updated.single().totalBalance)
+        assertEquals(decimal("-100"), updated.single().b3trBalance)
+        assertEquals(decimal("-100"), updated.single().totalBalance)
     }
 }

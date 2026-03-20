@@ -727,6 +727,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.b3tr-x-alloc-result
     },
     {
+      name  = "VERSION_B3TR_TREASURY"
+      value = each.value.indexer.version.b3tr-treasury
+    },
+    {
       name  = "VERSION_B3TR_GM_NFT"
       value = each.value.indexer.version.b3tr-gm-nft
     },
@@ -773,6 +777,10 @@ module "ecs-backend-service" {
     {
       name  = "VERSION_ACCOUNT_OVERVIEW"
       value = each.value.indexer.version.account-overview
+    },
+    {
+      name  = "VERSION_B3TR_BALANCE"
+      value = each.value.indexer.version.b3tr-balance
     },
     {
       name  = "VERSION_CONTRACTS"
