@@ -5,6 +5,7 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import org.bson.Document
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -40,8 +41,10 @@ class AverageFeesPerUserCollectionConfigTest {
             capturedIndexes.any {
                 it.indexKeys["recordType"] == 1 &&
                     it.indexKeys["dayStartTimestamp"] == 1 &&
-                    it.indexKeys["blockNumber"] == -1 &&
-                    it.indexOptions["name"] == "recordType_1_dayStartTimestamp_1_blockNumber_-1"
+                    it.indexOptions["name"] == "recordType_1_dayStartTimestamp_1_summary_only" &&
+                    it.indexOptions["partialFilterExpression"] ==
+                        Document("recordType", AverageFeesPerUserRecordType.SUMMARY.name)
+                            .append("dayStartTimestamp", Document("\$exists", true))
             }
         )
         assertTrue(
