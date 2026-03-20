@@ -187,6 +187,7 @@ enabled_nets:
         b3tr-app-daily-action-summary: '7'
         b3tr-sustainability-action: '6'
         b3tr-x-alloc-result: '9'
+        b3tr-treasury: '1'
         b3tr-gm-nft: '7'
         b3tr-gm-nft-level-overview: '6'
         block-usage: '4'
@@ -197,8 +198,10 @@ enabled_nets:
         stargate-token: '6'
         token-rewards: '6'
         delegation: '7'
+        total-accounts: '3'
         account-totals-series: '1'
-        accounts: '3'
+        account-overview: '2'
+        b3tr-balance: '4'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0xbf64cf86894ee0877c4e7d03936e35ee8d8b864f'
