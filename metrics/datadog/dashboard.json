@@ -759,7 +759,7 @@
                 {
                   "formulas": [
                     {
-                      "formula": "query1"
+                      "formula": "query1 * (1 - clamp_max(default_zero(query2), 1)) + query3 * clamp_max(default_zero(query2), 1)"
                     }
                   ],
                   "queries": [
@@ -768,6 +768,27 @@
                       "data_source": "metrics",
                       "name": "query1",
                       "query": "sum:indexer_sync_status_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value} by {status_readable}"
+                    },
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "query2",
+                      "search": {
+                        "query": "host:veworld-$host AND \"Commencing graceful shutdown\""
+                      },
+                      "storage": "hot"
+                    },
+                    {
+                      "aggregator": "last",
+                      "data_source": "metrics",
+                      "name": "query3",
+                      "query": "count:indexer_sync_status_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value,status_readable:shut_down} by {status_readable}"
                     }
                   ],
                   "response_format": "scalar",
@@ -916,7 +937,7 @@
                           "value": 0
                         }
                       ],
-                      "formula": "status"
+                      "formula": "status + clamp_max(default_zero(shutdown), 1) * (5 - status)"
                     },
                     {
                       "alias": "Sync Gap",
@@ -1020,6 +1041,21 @@
                       "data_source": "metrics",
                       "name": "status",
                       "query": "max:indexer_sync_status_code_gauge{indexer-id:$host.value,indexer_name:$indexer_name.value} by {indexer_name}"
+                    },
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "shutdown",
+                      "search": {
+                        "query": "host:veworld-$host AND \"Commencing graceful shutdown\""
+                      },
+                      "storage": "hot"
                     },
                     {
                       "aggregator": "last",
