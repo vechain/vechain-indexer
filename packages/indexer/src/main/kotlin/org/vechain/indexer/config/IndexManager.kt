@@ -85,9 +85,17 @@ open class IndexManager(
         indexers.forEach { indexer ->
             try {
                 indexer.shutDown()
-                publishShutdownMetrics(indexer)
             } catch (e: Exception) {
                 logger.error("Failed to close indexer ${indexer.name}", e)
+            } finally {
+                try {
+                    publishShutdownMetrics(indexer)
+                } catch (e: Exception) {
+                    logger.error(
+                        "Failed to publish shutdown metrics for indexer ${indexer.name}",
+                        e,
+                    )
+                }
             }
         }
         // Cancel the coroutine scope to stop all running indexers
