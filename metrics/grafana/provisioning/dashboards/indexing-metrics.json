@@ -837,7 +837,7 @@
       "pluginVersion": "12.3.0",
       "targets": [
         {
-          "expr": "rate(indexer_blocks_processed_total{indexer_name=~\"$indexer\"}[5m])",
+          "expr": "indexer_blocks_per_second_gauge{indexer_name=~\"$indexer\"}",
           "legendFormat": "{{indexer_name}}",
           "range": true,
           "refId": "A"
