@@ -3,6 +3,7 @@ package org.vechain.indexer.b3tr.richlist
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import java.math.BigDecimal
 import java.math.BigInteger
 import java.util.Optional
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -24,6 +25,8 @@ internal class B3trRichlistServiceTest {
 
     private lateinit var service: B3trRichlistService
 
+    private fun decimal(value: String): BigDecimal = BigDecimal(value)
+
     @BeforeEach
     fun setUp() {
         service = B3trRichlistService(mongoTemplate, b3trRepository)
@@ -39,9 +42,9 @@ internal class B3trRichlistServiceTest {
                 blockNumber = 10L,
                 blockTimestamp = 1000L,
                 version = 1,
-                vot3Balance = BigInteger("100"),
-                b3trBalance = BigInteger("50"),
-                totalBalance = BigInteger("150"),
+                vot3Balance = decimal("100"),
+                b3trBalance = decimal("50"),
+                totalBalance = decimal("150"),
             )
         every { b3trRepository.findById(address) } returns Optional.of(doc)
         var countInvocations = 0
@@ -70,9 +73,9 @@ internal class B3trRichlistServiceTest {
                 blockNumber = 10L,
                 blockTimestamp = 1000L,
                 version = 1,
-                vot3Balance = BigInteger("200"),
-                b3trBalance = BigInteger("0"),
-                totalBalance = BigInteger("200"),
+                vot3Balance = decimal("200"),
+                b3trBalance = decimal("0"),
+                totalBalance = decimal("200"),
             )
         every { b3trRepository.findById(address) } returns Optional.of(doc)
         var countInvocations = 0
@@ -99,9 +102,9 @@ internal class B3trRichlistServiceTest {
                 blockNumber = 10L,
                 blockTimestamp = 1000L,
                 version = 1,
-                vot3Balance = BigInteger.ZERO,
-                b3trBalance = BigInteger("75"),
-                totalBalance = BigInteger("75"),
+                vot3Balance = BigDecimal.ZERO,
+                b3trBalance = decimal("75"),
+                totalBalance = decimal("75"),
             )
         every { b3trRepository.findById(address) } returns Optional.of(doc)
         var countInvocations = 0
@@ -138,9 +141,9 @@ internal class B3trRichlistServiceTest {
                 blockNumber = 10L,
                 blockTimestamp = 1000L,
                 version = 1,
-                vot3Balance = BigInteger.ZERO,
-                b3trBalance = BigInteger.ZERO,
-                totalBalance = BigInteger.ZERO,
+                vot3Balance = BigDecimal.ZERO,
+                b3trBalance = BigDecimal.ZERO,
+                totalBalance = BigDecimal.ZERO,
             )
         every { b3trRepository.findById(address) } returns Optional.of(doc)
         every { mongoTemplate.count(any<Query>(), any(), any<String>()) } returns 42
@@ -175,9 +178,9 @@ internal class B3trRichlistServiceTest {
                 blockNumber = 2L,
                 blockTimestamp = 2000L,
                 version = 1,
-                vot3Balance = BigInteger("100"),
-                b3trBalance = BigInteger("50"),
-                totalBalance = BigInteger("150"),
+                vot3Balance = decimal("100"),
+                b3trBalance = decimal("50"),
+                totalBalance = decimal("150"),
             )
         val bob =
             B3trBalance(
@@ -186,9 +189,9 @@ internal class B3trRichlistServiceTest {
                 blockNumber = 2L,
                 blockTimestamp = 2000L,
                 version = 1,
-                vot3Balance = BigInteger("80"),
-                b3trBalance = BigInteger("20"),
-                totalBalance = BigInteger("100"),
+                vot3Balance = decimal("80"),
+                b3trBalance = decimal("20"),
+                totalBalance = decimal("100"),
             )
         every { mongoTemplate.find(any<Query>(), any<Class<*>>(), any<String>()) } returns
             listOf(alice, bob)
@@ -212,9 +215,9 @@ internal class B3trRichlistServiceTest {
                 blockNumber = 2L,
                 blockTimestamp = 2000L,
                 version = 1,
-                vot3Balance = BigInteger("99"),
-                b3trBalance = BigInteger("1"),
-                totalBalance = BigInteger("100"),
+                vot3Balance = decimal("99"),
+                b3trBalance = decimal("1"),
+                totalBalance = decimal("100"),
             )
         every { mongoTemplate.find(any<Query>(), any<Class<*>>(), any<String>()) } returns
             listOf(doc)
@@ -235,9 +238,9 @@ internal class B3trRichlistServiceTest {
                 blockNumber = 2L,
                 blockTimestamp = 2000L,
                 version = 1,
-                vot3Balance = BigInteger("1"),
-                b3trBalance = BigInteger("99"),
-                totalBalance = BigInteger("100"),
+                vot3Balance = decimal("1"),
+                b3trBalance = decimal("99"),
+                totalBalance = decimal("100"),
             )
         every { mongoTemplate.find(any<Query>(), any<Class<*>>(), any<String>()) } returns
             listOf(doc)

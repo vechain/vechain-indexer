@@ -72,3 +72,5 @@ __pycache__/
 .gradle-user-home
 
 gradle/docker.gradle.properties
+
+temp/

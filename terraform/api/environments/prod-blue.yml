@@ -203,6 +203,7 @@ enabled_nets:
         b3tr-user-round-action-summary: '5'
         b3tr-user-daily-action-summary: '5'
         b3tr-x-alloc-result: '4'
+        b3tr-treasury: '1'
         b3tr-gm-nft: '4'
         b3tr-gm-nft-level-overview: '1'
         block-usage: '1'
@@ -216,6 +217,7 @@ enabled_nets:
         total-accounts: '4'
         account-totals-series: '1'
         account-overview: '6'
+        b3tr-balance: '4'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0x5ef79995fe8a89e0812330e4378eb2660cede699'
@@ -421,6 +423,7 @@ enabled_nets:
         b3tr-user-round-action-summary: '5'
         b3tr-user-daily-action-summary: '5'
         b3tr-x-alloc-result: '4'
+        b3tr-treasury: '1'
         b3tr-gm-nft: '4'
         b3tr-gm-nft-level-overview: '1'
         block-usage: '1'
@@ -434,6 +437,7 @@ enabled_nets:
         total-accounts: '4'
         account-totals-series: '1'
         account-overview: '6'
+        b3tr-balance: '4'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0x95761346d18244bb91664181bf91193376197088'
