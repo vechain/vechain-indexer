@@ -1,5 +1,6 @@
 package org.vechain.indexer.b3tr.richlist
 
+import java.math.BigDecimal
 import java.math.BigInteger
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
@@ -63,7 +64,7 @@ open class B3trRichlistService(
             page.mapIndexed { index, doc ->
                 B3trRichlistItem(
                     address = doc.address,
-                    balance = balanceForScope(doc, scope),
+                    balance = balanceForScope(doc, scope).toBigIntegerExact(),
                     rank = startRank + index,
                 )
             }
@@ -100,7 +101,7 @@ open class B3trRichlistService(
                 B3trBalance::class.java,
                 collection,
             )
-        if (balance <= BigInteger.ZERO) {
+        if (balance <= BigDecimal.ZERO) {
             return B3trRankResponse(
                 address = address,
                 balance = BigInteger.ZERO,
@@ -118,7 +119,7 @@ open class B3trRichlistService(
         val topPercentage = if (totalHolders > 0) (rank.toDouble() / totalHolders) * 100 else 0.0
         return B3trRankResponse(
             address = address,
-            balance = balance,
+            balance = balance.toBigIntegerExact(),
             rank = rank,
             totalHolders = totalHolders,
             topPercentage = topPercentage,
@@ -132,7 +133,7 @@ open class B3trRichlistService(
             RichlistScope.B3TR -> "b3trBalance"
         }
 
-    private fun balanceForScope(doc: B3trBalance, scope: RichlistScope): BigInteger =
+    private fun balanceForScope(doc: B3trBalance, scope: RichlistScope): BigDecimal =
         when (scope) {
             RichlistScope.ALL -> doc.totalBalance
             RichlistScope.VOT3 -> doc.vot3Balance

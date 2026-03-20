@@ -1,5 +1,6 @@
 package org.vechain.indexer.b3tr.balance
 
+import java.math.BigDecimal
 import java.math.BigInteger
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
@@ -72,8 +73,8 @@ open class B3trBalanceService(
             val to =
                 event.params.getAsString("to")
                     ?: error("Invalid Transfer event: missing 'to' param (${event.id})")
-            val value = event.params.getAsBigInteger("value") ?: BigInteger.ZERO
-            if (value == BigInteger.ZERO) return@forEach
+            val value = (event.params.getAsBigInteger("value") ?: BigInteger.ZERO).toBigDecimal()
+            if (value == BigDecimal.ZERO) return@forEach
             if (from == to) return@forEach
 
             val isVot3 = event.address.equals(vot3ContractAddress, ignoreCase = true)
@@ -135,9 +136,9 @@ open class B3trBalanceService(
                         blockNumber = block.blockNumber,
                         blockTimestamp = block.blockTimestamp,
                         version = nextVersion,
-                        vot3Balance = BigInteger.ZERO,
-                        b3trBalance = BigInteger.ZERO,
-                        totalBalance = BigInteger.ZERO,
+                        vot3Balance = BigDecimal.ZERO,
+                        b3trBalance = BigDecimal.ZERO,
+                        totalBalance = BigDecimal.ZERO,
                     )
                 accumulator.put(recordId, null, newRecord)
                 newRecord
