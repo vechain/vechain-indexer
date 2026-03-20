@@ -47,6 +47,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from compare_endpoints import (
+    HttpResponseError,
     compare_json,
     fetch_json,
     normalize_ignored_paths,
@@ -141,6 +142,30 @@ class ComparisonResult:
     @property
     def effective_pass(self) -> bool:
         return self.all_match or self.ignored_due_to_deprecation
+
+
+def normalize_response_for_test_case(tc: TestCase, response: Any) -> Any:
+    if response is None:
+        return None
+
+    if (
+        tc.operation.method == "GET"
+        and tc.operation.path == "/api/v1/b3tr/galaxy-members/level-overview"
+        and isinstance(response, list)
+    ):
+        # The API sorts by totalNFTs only, so equal totals can appear in different order.
+        # Canonicalize ties for regression comparison without changing endpoint behavior.
+        return sorted(
+            response,
+            key=lambda item: (
+                -int(item.get("totalNFTs", 0)),
+                str(item.get("level", "")),
+            )
+            if isinstance(item, dict)
+            else (0, str(item)),
+        )
+
+    return response
 
 
 # ---------------------------------------------------------------------------
@@ -614,7 +639,24 @@ def fetch_json_with_body(
         text = raw.decode("utf-8")
         return json.loads(text) if text.strip() else None
     except urllib.error.HTTPError as e:
-        raise RuntimeError(f"HTTP error {method} {url}: {e.code} {e.reason}") from e
+        payload = e.read()
+        body = None
+        if payload:
+            try:
+                text = payload.decode("utf-8")
+            except UnicodeDecodeError:
+                text = payload.decode("latin-1")
+            if text.strip():
+                try:
+                    body = json.loads(text)
+                except json.JSONDecodeError:
+                    body = None
+        raise HttpResponseError(
+            status_code=e.code,
+            reason=e.reason,
+            body=body,
+            url=url,
+        ) from e
     except urllib.error.URLError as e:
         raise RuntimeError(f"Network error {method} {url}: {e.reason}") from e
 
@@ -646,8 +688,11 @@ def execute_test_case(
                 resp = fetch_json_with_body(
                     full_url, tc.operation.method, merged_headers, tc.body, timeout, ctx
                 )
-            responses[name] = resp
+            responses[name] = normalize_response_for_test_case(tc, resp)
             status_codes[name] = 200
+        except HttpResponseError as e:
+            responses[name] = normalize_response_for_test_case(tc, e.body)
+            status_codes[name] = e.status_code
         except RuntimeError as e:
             msg = str(e)
             m = re.search(r"(\d{3})", msg)
@@ -663,12 +708,20 @@ def execute_test_case(
         for j in range(i + 1, len(ep_names)):
             n1, n2 = ep_names[i], ep_names[j]
             key = f"{n1} vs {n2}"
-            diffs[key] = compare_json(
+            pair_diffs = []
+            if status_codes.get(n1) != status_codes.get(n2):
+                pair_diffs.append(
+                    ("status", f"status code mismatch: {status_codes.get(n1)} != {status_codes.get(n2)}")
+                )
+            pair_diffs.extend(
+                compare_json(
                 responses[n1],
                 responses[n2],
                 ignored_paths=ignored_paths,
                 unordered_lists=unordered_lists,
             )
+            )
+            diffs[key] = pair_diffs
 
     return ComparisonResult(
         test_case=tc,

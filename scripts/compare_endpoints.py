@@ -38,6 +38,40 @@ from typing import Any, List, Tuple, Dict, Set, Union
 
 Path = str
 
+class HttpResponseError(RuntimeError):
+    def __init__(
+        self,
+        status_code: int,
+        reason: str,
+        body: Any = None,
+        url: str = "",
+    ) -> None:
+        self.status_code = status_code
+        self.reason = reason
+        self.body = body
+        self.url = url
+        super().__init__(f"HTTP error fetching {url}: {status_code} {reason}")
+
+    def __str__(self) -> str:
+        return f"HTTP error fetching {self.url}: {self.status_code} {self.reason}"
+
+
+def decode_json_response(data: bytes, url: str) -> Any:
+    # Try decode as UTF-8, fallback to latin-1
+    try:
+        text = data.decode("utf-8")
+    except UnicodeDecodeError:
+        text = data.decode("latin-1")
+
+    if not text.strip():
+        return None
+
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Response from {url} is not valid JSON: {e}")
+
+
 def fetch_json(url: str, headers: Dict[str, str], timeout: int, context: ssl.SSLContext | None) -> Any:
     req = urllib.request.Request(url, headers=headers or {})
     try:
@@ -48,18 +82,18 @@ def fetch_json(url: str, headers: Dict[str, str], timeout: int, context: ssl.SSL
         else:
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 data = resp.read()
-
-        # Try decode as UTF-8, fallback to latin-1
-        try:
-            text = data.decode("utf-8")
-        except UnicodeDecodeError:
-            text = data.decode("latin-1")
-        try:
-            return json.loads(text)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Response from {url} is not valid JSON: {e}")
+        return decode_json_response(data, url)
     except urllib.error.HTTPError as e:
-        raise RuntimeError(f"HTTP error fetching {url}: {e.code} {e.reason}") from e
+        try:
+            body = decode_json_response(e.read(), url)
+        except ValueError:
+            body = None
+        raise HttpResponseError(
+            status_code=e.code,
+            reason=e.reason,
+            body=body,
+            url=url,
+        ) from e
     except urllib.error.URLError as e:
         raise RuntimeError(f"Network error fetching {url}: {e.reason}") from e
 
@@ -237,11 +271,28 @@ if __name__ == "__main__":
     ctx2 = ssl_context_for(args.insecure2, args.cafile2)
 
     try:
-        a = fetch_json(args.url1, headers1, args.timeout, ctx1)
-        b = fetch_json(args.url2, headers2, args.timeout, ctx2)
+        status1 = 200
+        status2 = 200
+        try:
+            a = fetch_json(args.url1, headers1, args.timeout, ctx1)
+        except HttpResponseError as e:
+            a = e.body
+            status1 = e.status_code
+        try:
+            b = fetch_json(args.url2, headers2, args.timeout, ctx2)
+        except HttpResponseError as e:
+            b = e.body
+            status2 = e.status_code
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(2)
+
+    if status1 != status2:
+        print(
+            f"Mismatch: HTTP status codes differ ({status1} != {status2}).",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     diffs = compare_json(a, b, ignored_paths=ignored, unordered_lists=args.unordered_lists)
 
