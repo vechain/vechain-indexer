@@ -12,8 +12,10 @@ import org.springframework.context.ApplicationContext
 import org.springframework.context.event.ContextClosedEvent
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
+import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerRunner
+import org.vechain.indexer.config.metrics.IndexerHealthMetrics
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.version.IndexerVersionCollectionConfig
@@ -26,6 +28,7 @@ open class IndexManager(
     private val indexBootstrapState: IndexBootstrapState,
     private val appCoroutineScope: CoroutineScope,
     private val thorClient: ThorClient,
+    private val metrics: IndexerHealthMetrics,
     private val applicationContext: ApplicationContext,
     @param:Value("\${indexer.channel-batch-size}") private val channelBatchSize: Int,
 ) {
@@ -84,11 +87,30 @@ open class IndexManager(
                 indexer.shutDown()
             } catch (e: Exception) {
                 logger.error("Failed to close indexer ${indexer.name}", e)
+            } finally {
+                try {
+                    publishShutdownMetrics(indexer)
+                } catch (e: Exception) {
+                    logger.error(
+                        "Failed to publish shutdown metrics for indexer ${indexer.name}",
+                        e,
+                    )
+                }
             }
         }
         // Cancel the coroutine scope to stop all running indexers
         appCoroutineScope.cancel()
 
         logger.info("Indexers shut down complete")
+    }
+
+    private fun publishShutdownMetrics(indexer: Indexer) {
+        metrics.setComponentHealth(indexer.name, "indexer", 0.0)
+        metrics.setIndexerSyncStatus(indexer.name, indexer.getStatus())
+
+        if (indexer is BlockIndexer) {
+            metrics.setIndexerCurrentBlock(indexer.name, indexer.getCurrentBlockNumber())
+            metrics.setBlocksPerSecond(indexer.name, 0.0)
+        }
     }
 }

@@ -343,13 +343,28 @@
       "pluginVersion": "12.3.0",
       "targets": [
         {
-          "expr": "sort_desc(sum by(status_readable) (indexer_sync_status_gauge{indexer_name=~\"$indexer\"}))",
+          "expr": "sum by(status_readable) (last_over_time(indexer_sync_status_gauge{indexer_name=~\"$indexer\"}[15m]) and on(instance,job) (up{job=~\"indexer|indexer-local\"} == 1))",
           "instant": true,
           "legendFormat": "{{status_readable}}",
           "refId": "A"
+        },
+        {
+          "expr": "label_replace(sum((((last_over_time(indexer_sync_status_code_gauge{indexer_name=~\"$indexer\"}[15m]) * 0) + 1) and on(instance,job) (up{job=~\"indexer|indexer-local\"} == 0))), \"status_readable\", \"Shut Down\", \"\", \"\")",
+          "instant": true,
+          "legendFormat": "{{status_readable}}",
+          "refId": "B"
         }
       ],
       "title": "Sync Status",
+      "transformations": [
+        {
+          "id": "labelsToFields",
+          "options": {
+            "mode": "columns",
+            "valueLabel": "status_readable"
+          }
+        }
+      ],
       "type": "piechart"
     },
     {
@@ -675,14 +690,14 @@
       "pluginVersion": "12.3.0",
       "targets": [
         {
-          "expr": "max by(indexer_name) (indexer_sync_status_code_gauge{indexer_name=~\"$indexer\"})",
+          "expr": "max by(indexer_name) ((last_over_time(indexer_sync_status_code_gauge{indexer_name=~\"$indexer\"}[15m]) and on(instance,job) (up{job=~\"indexer|indexer-local\"} == 1)) or (((last_over_time(indexer_sync_status_code_gauge{indexer_name=~\"$indexer\"}[15m]) * 0) + 5) and on(instance,job) (up{job=~\"indexer|indexer-local\"} == 0)))",
           "format": "table",
           "instant": true,
           "legendFormat": "__auto",
           "refId": "A"
         },
         {
-          "expr": "indexer_sync_gap_gauge{indexer_name=~\"$indexer\"}",
+          "expr": "last_over_time(indexer_sync_gap_gauge{indexer_name=~\"$indexer\"}[15m])",
           "format": "table",
           "instant": true,
           "legendFormat": "__auto",
@@ -837,7 +852,7 @@
       "pluginVersion": "12.3.0",
       "targets": [
         {
-          "expr": "rate(indexer_blocks_processed_total{indexer_name=~\"$indexer\"}[5m])",
+          "expr": "indexer_blocks_per_second_gauge{indexer_name=~\"$indexer\"}",
           "legendFormat": "{{indexer_name}}",
           "range": true,
           "refId": "A"
