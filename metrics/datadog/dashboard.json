@@ -5,6 +5,76 @@
   "notify_list": [],
   "pause_auto_refresh": false,
   "reflow_type": "fixed",
+  "template_variable_presets": [
+    {
+      "name": "Prod Blue Mainnet",
+      "template_variables": [
+        {
+          "name": "host",
+          "values": [
+            "prod-blue-main*"
+          ]
+        },
+        {
+          "name": "api_alb",
+          "values": [
+            "*prod-blue-main-api-veworld-alb*"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Prod Green Mainnet",
+      "template_variables": [
+        {
+          "name": "host",
+          "values": [
+            "prod-green-main*"
+          ]
+        },
+        {
+          "name": "api_alb",
+          "values": [
+            "*prod-green-main-api-veworld-alb*"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Prod Blue Testnet",
+      "template_variables": [
+        {
+          "name": "host",
+          "values": [
+            "prod-blue-test*"
+          ]
+        },
+        {
+          "name": "api_alb",
+          "values": [
+            "*prod-blue-test-api-veworld-alb*"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Prod Green Testnet",
+      "template_variables": [
+        {
+          "name": "host",
+          "values": [
+            "prod-green-test*"
+          ]
+        },
+        {
+          "name": "api_alb",
+          "values": [
+            "*prod-green-test-api-veworld-alb*"
+          ]
+        }
+      ]
+    }
+  ],
   "template_variables": [
     {
       "available_values": [
