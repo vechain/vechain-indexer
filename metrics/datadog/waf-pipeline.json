@@ -6,31 +6,16 @@
   "name": "Veworld WAF Request Logs",
   "processors": [
     {
-      "grok": {
-        "match_rules": "alb_source %{regex(\".*app\\/([^\\/]+)\\/.*\"):alb_name}",
-        "support_rules": ""
-      },
-      "is_enabled": true,
-      "name": "Extract ALB name from source ID",
-      "samples": [
-        "905964754131-app/prod-blue-main-api-veworld-alb/b35d2c2c2a1c1602"
-      ],
-      "source": "httpSourceId",
-      "type": "grok-parser"
-    },
-    {
-      "grok": {
-        "match_rules": "waf_project %{regex(\".*\\\\\"name\\\\\"\\s*:\\s*\\\\\"(?:[Xx]-[Pp]roject-[Ii]d)\\\\\"\\s*,\\s*\\\\\"value\\\\\"\\s*:\\s*\\\\\"([^\\\\\"]*)\\\\\".*\"):project_id}",
-        "support_rules": ""
-      },
       "is_enabled": true,
       "name": "Extract project ID header",
-      "samples": [
-        "[{\"name\":\"Host\",\"value\":\"indexer.mainnet.vechain.org\"},{\"name\":\"X-Project-Id\",\"value\":\"veworld-web\"}]",
-        "[{\"name\":\"host\",\"value\":\"indexer.mainnet.vechain.org\"},{\"name\":\"x-project-id\",\"value\":\"veworld-web\"}]"
-      ],
-      "source": "httpRequest.headers",
-      "type": "grok-parser"
+      "operation": {
+        "filter": "name:x-project-id",
+        "source": "httpRequest.headers",
+        "target": "project_id",
+        "type": "select",
+        "value_to_extract": "value"
+      },
+      "type": "array-processor"
     },
     {
       "categories": [
@@ -45,19 +30,6 @@
       "name": "Backfill missing project ID",
       "target": "project_id",
       "type": "category-processor"
-    },
-    {
-      "grok": {
-        "match_rules": "waf_uri %{data:endpoint_raw}",
-        "support_rules": ""
-      },
-      "is_enabled": true,
-      "name": "Extract request URI",
-      "samples": [
-        "/api/v1/accounts/0x123"
-      ],
-      "source": "httpRequest.uri",
-      "type": "grok-parser"
     }
   ],
   "tags": [],

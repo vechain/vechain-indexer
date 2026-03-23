@@ -5062,7 +5062,7 @@
                       ],
                       "name": "count_query",
                       "search": {
-                        "query": "source:cloudwatch host:aws-waf-logs-* @httpSourceName:ALB @action:ALLOW @alb_name:$api_alb"
+                        "query": "source:cloudwatch host:aws-waf-logs-* @httpSourceName:ALB @action:ALLOW @httpSourceId:*$api_alb*"
                       },
                       "storage": "hot"
                     }
@@ -5125,7 +5125,7 @@
                           }
                         },
                         {
-                          "facet": "@endpoint_raw",
+                          "facet": "@httpRequest.uri",
                           "limit": 20,
                           "sort": {
                             "aggregation": "count",
@@ -5138,7 +5138,7 @@
                       ],
                       "name": "count_query",
                       "search": {
-                        "query": "source:cloudwatch host:aws-waf-logs-* @httpSourceName:ALB @action:ALLOW @alb_name:$api_alb"
+                        "query": "source:cloudwatch host:aws-waf-logs-* @httpSourceName:ALB @action:ALLOW @httpSourceId:*$api_alb*"
                       },
                       "storage": "hot"
                     }
