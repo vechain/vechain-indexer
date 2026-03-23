@@ -291,6 +291,7 @@ def cmd_push_named_pipeline(path, config_key, label, get_command):
             print(f"Found existing pipeline (id={pipeline_id})")
 
     body = {k: v for k, v in pipeline.items() if k not in READONLY_FIELDS}
+    display_label = f"{label[:1].upper()}{label[1:]}"
 
     if pipeline_id:
         url = f"https://api.{site}/api/v1/logs/config/pipelines/{pipeline_id}"
@@ -302,7 +303,7 @@ def cmd_push_named_pipeline(path, config_key, label, get_command):
             print(resp.text, file=sys.stderr)
             sys.exit(1)
 
-        print(f"{label.capitalize()} updated successfully.")
+        print(f"{display_label} updated successfully.")
         return
 
     url = f"https://api.{site}/api/v1/logs/config/pipelines"
@@ -315,7 +316,7 @@ def cmd_push_named_pipeline(path, config_key, label, get_command):
         sys.exit(1)
 
     created = resp.json()
-    print(f"{label.capitalize()} created (id={created['id']})")
+    print(f"{display_label} created (id={created['id']})")
 
 
 # ---------------------------------------------------------------------------
