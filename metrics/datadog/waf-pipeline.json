@@ -7,67 +7,56 @@
   "processors": [
     {
       "grok": {
-        "match_rules": "waf_action %{regex(\".*\\\\\\\"action\\\\\\\":\\\\\\\"([^\\\\\\\"]*)\\\\\\\".*\"):action}",
+        "match_rules": "alb_source %{regex(\".*app\\/([^\\/]+)\\/.*\"):alb_name}",
         "support_rules": ""
       },
       "is_enabled": true,
-      "name": "Extract WAF action",
+      "name": "Extract ALB name from source ID",
       "samples": [
-        "{\"action\":\"ALLOW\",\"httpSourceName\":\"ALB\",\"httpRequest\":{\"headers\":[{\"name\":\"x-project-id\",\"value\":\"veworld-web\"}],\"uri\":\"/api/v1/accounts/0x123\",\"httpMethod\":\"GET\"}}"
+        "905964754131-app/prod-blue-main-api-veworld-alb/b35d2c2c2a1c1602"
       ],
-      "source": "message",
+      "source": "httpSourceId",
       "type": "grok-parser"
     },
     {
       "grok": {
-        "match_rules": "waf_source %{regex(\".*\\\\\\\"httpSourceName\\\\\\\":\\\\\\\"([^\\\\\\\"]*)\\\\\\\".*\"):http_source_name}",
-        "support_rules": ""
-      },
-      "is_enabled": true,
-      "name": "Extract WAF source name",
-      "samples": [
-        "{\"action\":\"ALLOW\",\"httpSourceName\":\"ALB\",\"httpRequest\":{\"headers\":[{\"name\":\"x-project-id\",\"value\":\"veworld-web\"}],\"uri\":\"/api/v1/accounts/0x123\",\"httpMethod\":\"GET\"}}"
-      ],
-      "source": "message",
-      "type": "grok-parser"
-    },
-    {
-      "grok": {
-        "match_rules": "waf_project %{regex(\".*\\\\\\\"name\\\\\\\":\\\\\\\"x-project-id\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"([^\\\\\\\"]*)\\\\\\\".*\"):project_id}",
+        "match_rules": "waf_project %{regex(\".*\\\\\"name\\\\\"\\s*:\\s*\\\\\"(?:[Xx]-[Pp]roject-[Ii]d)\\\\\"\\s*,\\s*\\\\\"value\\\\\"\\s*:\\s*\\\\\"([^\\\\\"]*)\\\\\".*\"):project_id}",
         "support_rules": ""
       },
       "is_enabled": true,
       "name": "Extract project ID header",
       "samples": [
-        "{\"action\":\"ALLOW\",\"httpSourceName\":\"ALB\",\"httpRequest\":{\"headers\":[{\"name\":\"host\",\"value\":\"indexer.mainnet.vechain.org\"},{\"name\":\"x-project-id\",\"value\":\"veworld-web\"}],\"uri\":\"/api/v1/accounts/0x123\",\"httpMethod\":\"GET\"}}"
+        "[{\"name\":\"Host\",\"value\":\"indexer.mainnet.vechain.org\"},{\"name\":\"X-Project-Id\",\"value\":\"veworld-web\"}]",
+        "[{\"name\":\"host\",\"value\":\"indexer.mainnet.vechain.org\"},{\"name\":\"x-project-id\",\"value\":\"veworld-web\"}]"
       ],
-      "source": "message",
+      "source": "httpRequest.headers",
       "type": "grok-parser"
     },
     {
+      "categories": [
+        {
+          "filter": {
+            "query": "-@project_id:*"
+          },
+          "name": "unknown"
+        }
+      ],
+      "is_enabled": true,
+      "name": "Backfill missing project ID",
+      "target": "project_id",
+      "type": "category-processor"
+    },
+    {
       "grok": {
-        "match_rules": "waf_uri %{regex(\".*\\\\\\\"uri\\\\\\\":\\\\\\\"([^\\\\\\\"]*)\\\\\\\".*\"):endpoint_raw}",
+        "match_rules": "waf_uri %{data:endpoint_raw}",
         "support_rules": ""
       },
       "is_enabled": true,
       "name": "Extract request URI",
       "samples": [
-        "{\"action\":\"ALLOW\",\"httpSourceName\":\"ALB\",\"httpRequest\":{\"headers\":[{\"name\":\"x-project-id\",\"value\":\"veworld-web\"}],\"uri\":\"/api/v1/accounts/0x123\",\"httpMethod\":\"GET\"}}"
+        "/api/v1/accounts/0x123"
       ],
-      "source": "message",
-      "type": "grok-parser"
-    },
-    {
-      "grok": {
-        "match_rules": "waf_method %{regex(\".*\\\\\\\"httpMethod\\\\\\\":\\\\\\\"([^\\\\\\\"]*)\\\\\\\".*\"):http.method}",
-        "support_rules": ""
-      },
-      "is_enabled": true,
-      "name": "Extract request method",
-      "samples": [
-        "{\"action\":\"ALLOW\",\"httpSourceName\":\"ALB\",\"httpRequest\":{\"headers\":[{\"name\":\"x-project-id\",\"value\":\"veworld-web\"}],\"uri\":\"/api/v1/accounts/0x123\",\"httpMethod\":\"GET\"}}"
-      ],
-      "source": "message",
+      "source": "httpRequest.uri",
       "type": "grok-parser"
     }
   ],
