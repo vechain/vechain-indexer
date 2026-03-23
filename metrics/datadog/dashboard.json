@@ -5052,7 +5052,7 @@
                       ],
                       "name": "count_query",
                       "search": {
-                        "query": "source:cloudwatch host:aws-waf-logs-* @http_source_name:ALB @action:ALLOW"
+                        "query": "source:cloudwatch host:aws-waf-logs-* @httpSourceName:ALB @action:ALLOW @alb_name:$host-api-veworld-alb"
                       },
                       "storage": "hot"
                     }
@@ -5128,7 +5128,7 @@
                       ],
                       "name": "count_query",
                       "search": {
-                        "query": "source:cloudwatch host:aws-waf-logs-* @http_source_name:ALB @action:ALLOW"
+                        "query": "source:cloudwatch host:aws-waf-logs-* @httpSourceName:ALB @action:ALLOW @alb_name:$host-api-veworld-alb"
                       },
                       "storage": "hot"
                     }
