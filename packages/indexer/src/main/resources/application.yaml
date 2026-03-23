@@ -46,6 +46,7 @@ management:
   metrics:
     tags:
       indexer-id: ${METRICS_ID:local-indexer}
+      deployment_scope: ${DEPLOYMENT_SCOPE:${METRICS_ID:local-indexer}}
   datadog:
     metrics:
       export:
