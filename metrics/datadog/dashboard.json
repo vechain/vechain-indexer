@@ -5052,7 +5052,7 @@
                       ],
                       "name": "count_query",
                       "search": {
-                        "query": "source:cloudwatch host:veworld-$host @event:api_request"
+                        "query": "source:cloudwatch host:aws-waf-logs-* @http_source_name:ALB @action:ALLOW"
                       },
                       "storage": "hot"
                     }
@@ -5108,13 +5108,14 @@
                         {
                           "facet": "@project_id",
                           "limit": 20,
+                          "should_exclude_missing": false,
                           "sort": {
                             "aggregation": "count",
                             "order": "desc"
                           }
                         },
                         {
-                          "facet": "@endpoint",
+                          "facet": "@endpoint_raw",
                           "limit": 20,
                           "sort": {
                             "aggregation": "count",
@@ -5127,7 +5128,7 @@
                       ],
                       "name": "count_query",
                       "search": {
-                        "query": "source:cloudwatch host:veworld-$host @event:api_request"
+                        "query": "source:cloudwatch host:aws-waf-logs-* @http_source_name:ALB @action:ALLOW"
                       },
                       "storage": "hot"
                     }
@@ -5145,7 +5146,7 @@
                   }
                 }
               ],
-              "title": "Project Requests by Endpoint",
+              "title": "Project Requests by Raw Path",
               "title_align": "left",
               "title_size": "16",
               "type": "query_table"

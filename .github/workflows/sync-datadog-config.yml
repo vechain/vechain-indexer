@@ -34,6 +34,13 @@ jobs:
           DD_SITE: ${{ secrets.DD_SITE }}
         run: python metrics/datadog/scripts/manage_pipeline.py push-app-pipeline
 
+      - name: Push WAF pipeline to Datadog
+        env:
+          DD_API_KEY: ${{ secrets.DD_API_KEY }}
+          DD_APP_KEY: ${{ secrets.DD_APP_KEY }}
+          DD_SITE: ${{ secrets.DD_SITE }}
+        run: python metrics/datadog/scripts/manage_pipeline.py push-waf-pipeline
+
       - name: Push dashboard to Datadog
         env:
           DD_API_KEY: ${{ secrets.DD_API_KEY }}

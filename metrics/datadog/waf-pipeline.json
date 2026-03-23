@@ -1,0 +1,76 @@
+{
+  "filter": {
+    "query": "source:cloudwatch host:aws-waf-logs-*"
+  },
+  "is_enabled": true,
+  "name": "Veworld WAF Request Logs",
+  "processors": [
+    {
+      "grok": {
+        "match_rules": "waf_action %{regex(\".*\\\\\\\"action\\\\\\\":\\\\\\\"([^\\\\\\\"]*)\\\\\\\".*\"):action}",
+        "support_rules": ""
+      },
+      "is_enabled": true,
+      "name": "Extract WAF action",
+      "samples": [
+        "{\"action\":\"ALLOW\",\"httpSourceName\":\"ALB\",\"httpRequest\":{\"headers\":[{\"name\":\"x-project-id\",\"value\":\"veworld-web\"}],\"uri\":\"/api/v1/accounts/0x123\",\"httpMethod\":\"GET\"}}"
+      ],
+      "source": "message",
+      "type": "grok-parser"
+    },
+    {
+      "grok": {
+        "match_rules": "waf_source %{regex(\".*\\\\\\\"httpSourceName\\\\\\\":\\\\\\\"([^\\\\\\\"]*)\\\\\\\".*\"):http_source_name}",
+        "support_rules": ""
+      },
+      "is_enabled": true,
+      "name": "Extract WAF source name",
+      "samples": [
+        "{\"action\":\"ALLOW\",\"httpSourceName\":\"ALB\",\"httpRequest\":{\"headers\":[{\"name\":\"x-project-id\",\"value\":\"veworld-web\"}],\"uri\":\"/api/v1/accounts/0x123\",\"httpMethod\":\"GET\"}}"
+      ],
+      "source": "message",
+      "type": "grok-parser"
+    },
+    {
+      "grok": {
+        "match_rules": "waf_project %{regex(\".*\\\\\\\"name\\\\\\\":\\\\\\\"x-project-id\\\\\\\",\\\\\\\"value\\\\\\\":\\\\\\\"([^\\\\\\\"]*)\\\\\\\".*\"):project_id}",
+        "support_rules": ""
+      },
+      "is_enabled": true,
+      "name": "Extract project ID header",
+      "samples": [
+        "{\"action\":\"ALLOW\",\"httpSourceName\":\"ALB\",\"httpRequest\":{\"headers\":[{\"name\":\"host\",\"value\":\"indexer.mainnet.vechain.org\"},{\"name\":\"x-project-id\",\"value\":\"veworld-web\"}],\"uri\":\"/api/v1/accounts/0x123\",\"httpMethod\":\"GET\"}}"
+      ],
+      "source": "message",
+      "type": "grok-parser"
+    },
+    {
+      "grok": {
+        "match_rules": "waf_uri %{regex(\".*\\\\\\\"uri\\\\\\\":\\\\\\\"([^\\\\\\\"]*)\\\\\\\".*\"):endpoint_raw}",
+        "support_rules": ""
+      },
+      "is_enabled": true,
+      "name": "Extract request URI",
+      "samples": [
+        "{\"action\":\"ALLOW\",\"httpSourceName\":\"ALB\",\"httpRequest\":{\"headers\":[{\"name\":\"x-project-id\",\"value\":\"veworld-web\"}],\"uri\":\"/api/v1/accounts/0x123\",\"httpMethod\":\"GET\"}}"
+      ],
+      "source": "message",
+      "type": "grok-parser"
+    },
+    {
+      "grok": {
+        "match_rules": "waf_method %{regex(\".*\\\\\\\"httpMethod\\\\\\\":\\\\\\\"([^\\\\\\\"]*)\\\\\\\".*\"):http.method}",
+        "support_rules": ""
+      },
+      "is_enabled": true,
+      "name": "Extract request method",
+      "samples": [
+        "{\"action\":\"ALLOW\",\"httpSourceName\":\"ALB\",\"httpRequest\":{\"headers\":[{\"name\":\"x-project-id\",\"value\":\"veworld-web\"}],\"uri\":\"/api/v1/accounts/0x123\",\"httpMethod\":\"GET\"}}"
+      ],
+      "source": "message",
+      "type": "grok-parser"
+    }
+  ],
+  "tags": [],
+  "type": "pipeline"
+}

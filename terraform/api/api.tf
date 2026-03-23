@@ -1056,6 +1056,8 @@ module "waf" {
 
   # Enable regional WAF for ALB protection
   waf_regional_enable = true
+  logs_enable         = true
+  logs_retension      = 30
 
   # Associate WAF with all API ALBs
   associate_waf = true
