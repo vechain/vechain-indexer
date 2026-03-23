@@ -6,6 +6,38 @@
   "name": "Veworld WAF Request Logs",
   "processors": [
     {
+      "categories": [
+        {
+          "filter": {
+            "query": "@httpSourceId:*prod-blue-main-api-veworld-alb*"
+          },
+          "name": "prod-blue-main"
+        },
+        {
+          "filter": {
+            "query": "@httpSourceId:*prod-green-main-api-veworld-alb*"
+          },
+          "name": "prod-green-main"
+        },
+        {
+          "filter": {
+            "query": "@httpSourceId:*prod-blue-test-api-veworld-alb*"
+          },
+          "name": "prod-blue-test"
+        },
+        {
+          "filter": {
+            "query": "@httpSourceId:*prod-green-test-api-veworld-alb*"
+          },
+          "name": "prod-green-test"
+        }
+      ],
+      "is_enabled": true,
+      "name": "Map ALB to deployment scope",
+      "target": "deployment_scope",
+      "type": "category-processor"
+    },
+    {
       "is_enabled": true,
       "name": "Extract project ID header",
       "operation": {

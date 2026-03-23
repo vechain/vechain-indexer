@@ -935,6 +935,10 @@ module "ecs-backend-service" {
       value = "${local.env.environment}-${each.key}"
     },
     {
+      name  = "DEPLOYMENT_SCOPE"
+      value = "${local.env.environment}-${each.key}"
+    },
+    {
       name  = "DD_HOST_TAG"
       value = "${local.env.environment}-${each.key}"
     },
