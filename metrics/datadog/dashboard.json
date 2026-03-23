@@ -18,12 +18,12 @@
     },
     {
       "available_values": [
-        "prod-blue-main-api-veworld-alb",
-        "prod-green-main-api-veworld-alb",
-        "prod-blue-test-api-veworld-alb",
-        "prod-green-test-api-veworld-alb"
+        "*prod-blue-main-api-veworld-alb*",
+        "*prod-green-main-api-veworld-alb*",
+        "*prod-blue-test-api-veworld-alb*",
+        "*prod-green-test-api-veworld-alb*"
       ],
-      "default": "prod-blue-main-api-veworld-alb",
+      "default": "*prod-blue-main-api-veworld-alb*",
       "name": "api_alb"
     },
     {
@@ -5062,7 +5062,7 @@
                       ],
                       "name": "count_query",
                       "search": {
-                        "query": "source:cloudwatch host:aws-waf-logs-* @httpSourceName:ALB @action:ALLOW @httpSourceId:*$api_alb*"
+                        "query": "source:cloudwatch host:aws-waf-logs-* @httpSourceName:ALB @action:ALLOW @httpSourceId:$api_alb"
                       },
                       "storage": "hot"
                     }
@@ -5138,7 +5138,7 @@
                       ],
                       "name": "count_query",
                       "search": {
-                        "query": "source:cloudwatch host:aws-waf-logs-* @httpSourceName:ALB @action:ALLOW @httpSourceId:*$api_alb*"
+                        "query": "source:cloudwatch host:aws-waf-logs-* @httpSourceName:ALB @action:ALLOW @httpSourceId:$api_alb"
                       },
                       "storage": "hot"
                     }
