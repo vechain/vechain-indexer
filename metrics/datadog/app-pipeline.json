@@ -44,6 +44,19 @@
         "message"
       ],
       "type": "message-remapper"
+    },
+    {
+      "grok": {
+        "match_rules": "api_request event=%{word:event}\\s+project_id=\"%{regex(\"[^\\\"]*\"):project_id}\"\\s+endpoint=\"%{regex(\"[^\\\"]*\"):endpoint}\"\\s+method=%{word:http.method}",
+        "support_rules": ""
+      },
+      "is_enabled": true,
+      "name": "Parse API request tracking logs",
+      "samples": [
+        "2026-03-23 10:30:45,123 [INFO ] o.v.i.c.ApiProjectIdRequestLoggingFilter | event=api_request project_id=\"veworld-web\" endpoint=\"/api/v1/accounts/{address}\" method=GET"
+      ],
+      "source": "message",
+      "type": "grok-parser"
     }
   ],
   "tags": [],

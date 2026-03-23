@@ -4928,7 +4928,7 @@
             },
             "id": 305460665345712,
             "layout": {
-              "height": 6,
+              "height": 5,
               "width": 12,
               "x": 0,
               "y": 0
@@ -5013,10 +5013,82 @@
             },
             "id": 6137833448167272,
             "layout": {
-              "height": 4,
-              "width": 12,
+              "height": 5,
+              "width": 6,
               "x": 0,
-              "y": 6
+              "y": 5
+            }
+          },
+          {
+            "definition": {
+              "has_search_bar": "auto",
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "alias": "Requests",
+                      "cell_display_mode": "bar",
+                      "formula": "count_query"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [
+                        {
+                          "facet": "@project_id",
+                          "limit": 20,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        },
+                        {
+                          "facet": "@endpoint",
+                          "limit": 20,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "count_query",
+                      "search": {
+                        "query": "source:cloudwatch host:veworld-$host @event:api_request"
+                      },
+                      "storage": "hot"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "sort": {
+                    "count": 20,
+                    "order_by": [
+                      {
+                        "index": 0,
+                        "order": "desc",
+                        "type": "formula"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "title": "Project Request Breakdown",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "query_table"
+            },
+            "id": 7761802511492301,
+            "layout": {
+              "height": 5,
+              "width": 6,
+              "x": 6,
+              "y": 5
             }
           }
         ]

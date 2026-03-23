@@ -15,6 +15,7 @@ import strikt.api.expectThat
 import strikt.assertions.contains
 import strikt.assertions.isEqualTo
 import strikt.assertions.isFalse
+import strikt.assertions.isTrue
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -86,6 +87,18 @@ class OpenApiDocumentationContractTest {
         expectThat(spec.at("/paths/~1api~1v1~1contracts~1by-master~1{address}").isMissingNode)
             .isFalse()
         expectThat(spec.at("/paths/~1api~1v1~1vevote~1proposals~1comments").isMissingNode).isFalse()
+    }
+
+    @Test
+    fun `project id header is documented on public endpoints`() {
+        val parameters = specParameters("/paths/~1api~1v1~1validators/get/parameters")
+
+        val projectIdHeader =
+            parameters.firstOrNull {
+                it.path("\$ref").asText() == "#/components/parameters/XProjectIdHeader"
+            }
+
+        expectThat(projectIdHeader != null).isTrue()
     }
 
     private fun specParameters(pointer: String): JsonNode = fetchSpec().at(pointer)
