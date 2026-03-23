@@ -4,5 +4,6 @@
   "category_processor_name": "Categorize endpoint group",
   "dashboard_title": "Vechain Indexer Dashboard",
   "endpoint_group_processor_name": "Categorize endpoint group",
-  "pipeline_name": "AWS ELB Access Veworld"
+  "pipeline_name": "AWS ELB Access Veworld",
+  "waf_pipeline_name": "Veworld WAF Request Logs"
 }

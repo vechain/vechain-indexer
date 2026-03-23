@@ -8,7 +8,7 @@ FORWARDER_FUNCTION_NAME="DatadogIntegration-ForwarderStack-1X0QSW-Forwarder-XCjA
 FILTER_NAME="DatadogForwarder"
 
 # ----------- Add Log Group Prefixes -------------
-LOG_GROUP_PREFIXES=("prod-green-" "prod-blue-" "veworld-")
+LOG_GROUP_PREFIXES=("prod-green-" "prod-blue-" "veworld-" "aws-waf-logs-")
 
 echo "Getting account ID..."
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
