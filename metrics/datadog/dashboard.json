@@ -5021,6 +5021,73 @@
           },
           {
             "definition": {
+              "legend": {
+                "type": "automatic"
+              },
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "count_query"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "data_source": "logs",
+                      "group_by": [
+                        {
+                          "facet": "@project_id",
+                          "limit": 10,
+                          "sort": {
+                            "aggregation": "count",
+                            "order": "desc"
+                          }
+                        }
+                      ],
+                      "indexes": [
+                        "*"
+                      ],
+                      "name": "count_query",
+                      "search": {
+                        "query": "source:cloudwatch host:veworld-$host @event:api_request"
+                      },
+                      "storage": "hot"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "sort": {
+                    "count": 10,
+                    "order_by": [
+                      {
+                        "index": 0,
+                        "order": "desc",
+                        "type": "formula"
+                      }
+                    ]
+                  },
+                  "style": {
+                    "palette": "datadog16"
+                  }
+                }
+              ],
+              "title": "Requests by Project ID",
+              "title_align": "left",
+              "title_size": "16",
+              "type": "sunburst"
+            },
+            "id": 9123456789012345,
+            "layout": {
+              "height": 5,
+              "width": 6,
+              "x": 6,
+              "y": 5
+            }
+          },
+          {
+            "definition": {
               "has_search_bar": "auto",
               "requests": [
                 {
@@ -5078,7 +5145,7 @@
                   }
                 }
               ],
-              "title": "Project Request Breakdown",
+              "title": "Project Requests by Endpoint",
               "title_align": "left",
               "title_size": "16",
               "type": "query_table"
@@ -5086,9 +5153,9 @@
             "id": 7761802511492301,
             "layout": {
               "height": 5,
-              "width": 6,
-              "x": 6,
-              "y": 5
+              "width": 12,
+              "x": 0,
+              "y": 10
             }
           }
         ]

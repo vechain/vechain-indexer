@@ -48,7 +48,7 @@ class ApiProjectIdRequestLoggingFilter : OncePerRequestFilter() {
 
     private fun normalizeProjectId(projectId: String?): String {
         val trimmed = projectId?.trim().orEmpty()
-        return if (trimmed.isBlank()) UNKNOWN_PROJECT_ID else trimmed
+        return trimmed.ifBlank { UNKNOWN_PROJECT_ID }
     }
 
     private fun resolveEndpoint(request: HttpServletRequest): String {
