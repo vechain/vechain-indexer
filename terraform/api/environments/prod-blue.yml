@@ -215,7 +215,7 @@ enabled_nets:
         token-rewards: '5'
         delegation: '8'
         total-accounts: '4'
-        account-totals-series: '1'
+        account-totals-series: '2'
         account-overview: '6'
         b3tr-balance: '4'
       business-event:
@@ -435,7 +435,7 @@ enabled_nets:
         token-rewards: '4'
         delegation: '7'
         total-accounts: '4'
-        account-totals-series: '1'
+        account-totals-series: '2'
         account-overview: '6'
         b3tr-balance: '4'
       business-event:
