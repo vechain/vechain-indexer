@@ -1,0 +1,180 @@
+name: Restore Dead Prod From Atlas Snapshots
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_restore:
+        description: "Confirm that the current dead prod color should be restored from the current live prod Atlas snapshots"
+        required: true
+        type: boolean
+        default: false
+
+concurrency:
+  group: dead-prod-recovery-operations
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  identify-live-color:
+    name: Identify live and dead colors
+    uses: ./.github/workflows/identify-live-color.yml
+    with:
+      dns_record_mainnet_name: mainnet.live.prod.veworld.vechain.org.
+      dns_record_testnet_name: testnet.live.prod.veworld.vechain.org.
+      hosted_zone_id: Z08093993BM56HB3DD4U4
+    permissions:
+      contents: read
+      id-token: write
+    secrets: inherit
+
+  resolve-context:
+    name: Resolve Restore Context
+    runs-on: ubuntu-latest
+    needs: [identify-live-color]
+    environment: prod
+    outputs:
+      source_color: ${{ steps.context.outputs.source_color }}
+      target_color: ${{ steps.context.outputs.target_color }}
+      source_main_cluster: ${{ steps.context.outputs.source_main_cluster }}
+      source_test_cluster: ${{ steps.context.outputs.source_test_cluster }}
+      target_main_cluster: ${{ steps.context.outputs.target_main_cluster }}
+      target_test_cluster: ${{ steps.context.outputs.target_test_cluster }}
+      ecs_cluster: ${{ steps.context.outputs.ecs_cluster }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve dead-prod restore context
+        id: context
+        env:
+          REQUIRE_CONFIRMATION: "true"
+          CONFIRM_RESTORE: ${{ inputs.confirm_restore }}
+          MAINNET_LIVE_COLOR: ${{ needs.identify-live-color.outputs.mainnet_live_color }}
+          MAINNET_DEAD_COLOR: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}
+          TESTNET_LIVE_COLOR: ${{ needs.identify-live-color.outputs.testnet_live_color }}
+          TESTNET_DEAD_COLOR: ${{ needs.identify-live-color.outputs.testnet_dead_color }}
+        run: bash .github/workflows/scripts/resolve_dead_prod_context.sh
+
+  ensure-atlas-prereqs:
+    name: Ensure Dead Prod Atlas Prereqs
+    runs-on: ubuntu-latest
+    needs: [resolve-context]
+    environment: prod
+    defaults:
+      run:
+        working-directory: terraform/api
+    env:
+      TARGET_WORKSPACE: ${{ needs.resolve-context.outputs.target_color }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.9.8
+          terraform_wrapper: true
+
+      - name: Terraform Initialize
+        run: terraform init -backend-config="environments/${TARGET_WORKSPACE}.config"
+
+      - name: Terraform Workspace
+        run: terraform workspace select "${TARGET_WORKSPACE}"
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan Atlas prereqs
+        run: |
+          terraform plan \
+            --target='random_password.api_db_user_password' \
+            --target='random_password.indexer_db_user_password' \
+            --target='aws_secretsmanager_secret.api_db_user_secret' \
+            --target='aws_secretsmanager_secret.indexer_db_user_secret' \
+            --target='aws_secretsmanager_secret_version.api_db_user_secret_version' \
+            --target='aws_secretsmanager_secret_version.indexer_db_user_secret_version' \
+            --target='mongodbatlas_advanced_cluster.main_net[0]' \
+            --target='mongodbatlas_advanced_cluster.test_net[0]' \
+            --target='mongodbatlas_database_user.api_db_user[0]' \
+            --target='mongodbatlas_database_user.indexer_db_user[0]' \
+            --target='mongodbatlas_cloud_backup_schedule.main_net[0]' \
+            --target='mongodbatlas_cloud_backup_schedule.test_net[0]' \
+            -out apply.plan
+
+      - name: Terraform Apply Atlas prereqs
+        run: terraform apply apply.plan
+
+  assert-services-stopped:
+    name: Assert Dead Prod Services Are Stopped
+    runs-on: ubuntu-latest
+    needs: [resolve-context, ensure-atlas-prereqs]
+    environment: prod
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+
+      - name: Verify dead-prod services are stopped
+        env:
+          ACTION: assert-stopped
+          DEAD_COLOR: ${{ needs.resolve-context.outputs.target_color }}
+          ECS_CLUSTER: ${{ needs.resolve-context.outputs.ecs_cluster }}
+        run: bash .github/workflows/scripts/set_dead_prod_service_state.sh
+
+  restore-snapshots:
+    name: Restore Dead Prod Atlas Snapshots
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    needs: [resolve-context, assert-services-stopped]
+    environment: prod
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Atlas setup
+        uses: mongodb/atlas-github-action@v0.2.0
+        env:
+          MONGODB_ATLAS_PUBLIC_API_KEY: ${{ secrets.MONGO_PUBLIC_KEY }}
+          MONGODB_ATLAS_PRIVATE_API_KEY: ${{ secrets.MONGO_PRIVATE_KEY }}
+          MONGODB_ATLAS_ORG_ID: ${{ secrets.MONGO_ORG_ID }}
+          MONGODB_ATLAS_PROJECT_ID: ${{ secrets.MONGO_PROJECT_ID }}
+
+      - name: Restore dead-prod Atlas clusters
+        env:
+          SOURCE_COLOR: ${{ needs.resolve-context.outputs.source_color }}
+          TARGET_COLOR: ${{ needs.resolve-context.outputs.target_color }}
+          SOURCE_MAIN_CLUSTER: ${{ needs.resolve-context.outputs.source_main_cluster }}
+          SOURCE_TEST_CLUSTER: ${{ needs.resolve-context.outputs.source_test_cluster }}
+          TARGET_MAIN_CLUSTER: ${{ needs.resolve-context.outputs.target_main_cluster }}
+          TARGET_TEST_CLUSTER: ${{ needs.resolve-context.outputs.target_test_cluster }}
+          SOURCE_PROJECT_ID: ${{ secrets.MONGO_PROJECT_ID }}
+          TARGET_PROJECT_ID: ${{ secrets.MONGO_PROJECT_ID }}
+          RESTORE_SUMMARY_PATH: restore-output/restore-summary.json
+        run: bash .github/workflows/scripts/restore_dead_prod_atlas_snapshots.sh
+
+      - name: Upload restore summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dead-prod-atlas-restore-summary
+          path: restore-output/restore-summary.json
+          if-no-files-found: error

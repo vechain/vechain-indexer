@@ -1,0 +1,78 @@
+name: Stop or Start Dead Prod Environment Services
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Action to run against the current dead prod color"
+        required: true
+        type: choice
+        options:
+          - stop
+          - start
+
+concurrency:
+  group: dead-prod-recovery-operations
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  identify-live-color:
+    name: Identify live and dead colors
+    uses: ./.github/workflows/identify-live-color.yml
+    with:
+      dns_record_mainnet_name: mainnet.live.prod.veworld.vechain.org.
+      dns_record_testnet_name: testnet.live.prod.veworld.vechain.org.
+      hosted_zone_id: Z08093993BM56HB3DD4U4
+    permissions:
+      contents: read
+      id-token: write
+    secrets: inherit
+
+  resolve-context:
+    name: Resolve Dead Prod Context
+    runs-on: ubuntu-latest
+    needs: [identify-live-color]
+    environment: prod
+    outputs:
+      dead_color: ${{ steps.context.outputs.target_color }}
+      ecs_cluster: ${{ steps.context.outputs.ecs_cluster }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve dead-prod color
+        id: context
+        env:
+          REQUIRE_CONFIRMATION: "false"
+          MAINNET_LIVE_COLOR: ${{ needs.identify-live-color.outputs.mainnet_live_color }}
+          MAINNET_DEAD_COLOR: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}
+          TESTNET_LIVE_COLOR: ${{ needs.identify-live-color.outputs.testnet_live_color }}
+          TESTNET_DEAD_COLOR: ${{ needs.identify-live-color.outputs.testnet_dead_color }}
+        run: bash .github/workflows/scripts/resolve_dead_prod_context.sh
+
+  manage-services:
+    name: Set Dead Prod Environment Service State
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [resolve-context]
+    environment: prod
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+
+      - name: Run service action
+        env:
+          ACTION: ${{ inputs.action }}
+          DEAD_COLOR: ${{ needs.resolve-context.outputs.dead_color }}
+          ECS_CLUSTER: ${{ needs.resolve-context.outputs.ecs_cluster }}
+        run: bash .github/workflows/scripts/set_dead_prod_service_state.sh

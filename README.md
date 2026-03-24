@@ -203,6 +203,20 @@ The restore process involves downloading the gzipped JSON exports to an EC2 inst
 
 For the full step-by-step runbook, see: **[Disaster Recovery Runbook](https://vechain.atlassian.net/wiki/x/AYCfe)**
 
+### Dead Prod Atlas Restore Workflow
+
+For Atlas-native recovery of the current dead prod color, use the **Restore Dead Prod From Atlas Snapshots** workflow. It restores both dead-prod Atlas clusters from the latest completed snapshots belonging to the current live prod color.
+
+This workflow does not stop or start ECS services. The dead environment must already be quiesced before restore. Use the **Stop or Start Dead Prod Environment Services** workflow first, then run the restore, then start services again once the restore summary looks correct.
+
+Recommended sequence:
+
+1. Run **Stop or Start Dead Prod Environment Services** with `stop`.
+2. Run **Restore Dead Prod From Atlas Snapshots**.
+3. Review the restore summary artifact and Atlas restore job IDs.
+4. Run **Stop or Start Dead Prod Environment Services** with `start`.
+5. Run the schema or regression tests against the dead environment before switching traffic.
+
 ## Deployment & Testing
 
 The VeWorld Indexer can be deployed via two strategies: Regular or Blue/Green. To trigger a deployment, run the [Prod Deployment Workflow](https://github.com/vechain/veworld-indexer/actions/workflows/deploy-prod.yml). You will be prompted to select the deployment strategy and the version number. Please enter a version in the format `major.minor.patch` - this will be used to create a new release & tag. If in doubt about which environment is currently live, run the [Identify Live/Dead Environments](https://github.com/vechain/veworld-indexer/actions/workflows/identify-live-color.yml) workflow with the default arguments.
@@ -222,4 +236,3 @@ Since blue/green deployments are fairly infrequent, the dead color can be used a
 When testing is complete, or when a DNS switch has migrated traffic from one environment to the other, the dead environment can be safely torn down until needed again. To do this, run the [Cluster Destroy](https://github.com/vechain/veworld-indexer/actions/workflows/destroy-environment.yml) workflow, and select the appropriate environment when prompted.
 
 Further details on the CICD process can be found [here](https://vechainfoundation-my.sharepoint.com/:w:/g/personal/dougal_rea_vechain_org/EcuW_jUEDh5PhS8jzH5PJ0EBw9pY8EqSd5IWKCJIG8rGVQ?e=i0Pa0N)
-
