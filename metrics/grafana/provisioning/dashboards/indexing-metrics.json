@@ -86,7 +86,7 @@
       "pluginVersion": "12.3.0",
       "targets": [
         {
-          "expr": "thor_best_block_number_gauge",
+          "expr": "max without(deployment_scope) (thor_best_block_number_gauge)",
           "instant": true,
           "legendFormat": "__auto",
           "refId": "A"
@@ -697,14 +697,14 @@
           "refId": "A"
         },
         {
-          "expr": "last_over_time(indexer_sync_gap_gauge{indexer_name=~\"$indexer\"}[15m])",
+          "expr": "max by(indexer_name) (last_over_time(indexer_sync_gap_gauge{indexer_name=~\"$indexer\"}[15m]))",
           "format": "table",
           "instant": true,
           "legendFormat": "__auto",
           "refId": "B"
         },
         {
-          "expr": "indexer_sync_gap_gauge{indexer_name=~\"$indexer\"} * on(indexer_name) group_left() (sum by(indexer_name) (increase(processor_cycle_time_seconds_sum{indexer_name=~\"$indexer\"}[$__range])) / sum by(indexer_name) (increase(indexer_blocks_processed_total{indexer_name=~\"$indexer\"}[$__range])) and sum by(indexer_name) (increase(indexer_blocks_processed_total{indexer_name=~\"$indexer\"}[$__range])) > 0)",
+          "expr": "max by(indexer_name) (indexer_sync_gap_gauge{indexer_name=~\"$indexer\"}) * on(indexer_name) group_left() (sum by(indexer_name) (increase(processor_cycle_time_seconds_sum{indexer_name=~\"$indexer\"}[$__range])) / sum by(indexer_name) (increase(indexer_blocks_processed_total{indexer_name=~\"$indexer\"}[$__range])) and sum by(indexer_name) (increase(indexer_blocks_processed_total{indexer_name=~\"$indexer\"}[$__range])) > 0)",
           "format": "table",
           "instant": true,
           "legendFormat": "__auto",
@@ -747,6 +747,9 @@
             "excludeByName": {
               "Time": true,
               "__name__": true,
+              "deployment_scope": true,
+              "deployment_scope 1": true,
+              "deployment_scope 2": true,
               "indexer-id": true,
               "indexer_id": true,
               "instance": true,
@@ -852,7 +855,7 @@
       "pluginVersion": "12.3.0",
       "targets": [
         {
-          "expr": "indexer_blocks_per_second_gauge{indexer_name=~\"$indexer\"}",
+          "expr": "max by(indexer_name) (indexer_blocks_per_second_gauge{indexer_name=~\"$indexer\"})",
           "legendFormat": "{{indexer_name}}",
           "range": true,
           "refId": "A"
