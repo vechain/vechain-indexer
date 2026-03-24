@@ -54,18 +54,13 @@ jobs:
     name: Workflow Lint
     runs-on: ubuntu-latest
     needs: detect-code-changes
+    if: needs.detect-code-changes.outputs.run-workflow-lint == 'true'
     steps:
-      - name: No workflow changes detected
-        if: needs.detect-code-changes.outputs.run-workflow-lint != 'true'
-        run: echo "No workflow changes detected; skipping workflow lint."
-
       - uses: actions/checkout@v4
-        if: needs.detect-code-changes.outputs.run-workflow-lint == 'true'
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Run actionlint
-        if: needs.detect-code-changes.outputs.run-workflow-lint == 'true'
         uses: rhysd/actionlint@v1.7.8
 
   check-formatting:
