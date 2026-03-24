@@ -100,6 +100,16 @@ open class AccountsController(private val accountsService: AccountsService) {
         return accountsService.getTotalSeries(startTimestamp, endTimestamp)
     }
 
+    @GetMapping("/v2/accounts/total")
+    @Operation(
+        summary = "Get total accounts on VeChain",
+        description = "Returns the total accounts observed on VeChain.",
+    )
+    @CommonApiResponses
+    open fun getTotalAccountsLatest(): Long =
+        accountsService.getTotalAccountsLatest()
+            ?: throw ResourceNotFoundException("Total accounts not found")
+
     @GetMapping("$API_VERSION/accounts/overview/{address}")
     @Operation(
         summary = "Retrieve account overview with VTHO earnings",

@@ -327,6 +327,12 @@
         },
         {
           "filter": {
+            "query": "@http.url_details.path:\"/api/v2/accounts/total\""
+          },
+          "name": "/api/v2/accounts/total"
+        },
+        {
+          "filter": {
             "query": "@http.url_details.path:\"/api/v2/accounts/totals\""
           },
           "name": "/api/v2/accounts/totals"
