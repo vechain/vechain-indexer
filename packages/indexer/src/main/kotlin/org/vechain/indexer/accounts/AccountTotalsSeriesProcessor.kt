@@ -32,7 +32,7 @@ open class AccountTotalsSeriesProcessor(
             )
         }
 
-        val records = service.processBlock(entry.block)
+        val records = service.processBlock(entry.block, entry.events)
         service.save(records)
     }
 

@@ -1,31 +1,31 @@
 package org.vechain.indexer.accounts
 
-import java.math.BigInteger
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.accounts.repository.AccountTotalsSeriesRepository
+import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.explorer.TimestampUtils.calculateTimeBoundary
 import org.vechain.indexer.explorer.TimestampUtils.isDaily
 import org.vechain.indexer.explorer.TimestampUtils.isHourly
 import org.vechain.indexer.explorer.TimestampUtils.isMonthly
 import org.vechain.indexer.explorer.TimestampUtils.isWeekly
+import org.vechain.indexer.thor.Address
+import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.CacheUtils
-import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
+import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Profile("accounts", "account-totals-series")
 @Service
 open class AccountTotalsSeriesService(private val repository: AccountTotalsSeriesRepository) {
-    private val oneVet: BigInteger = BigInteger.TEN.pow(18)
-
     @Volatile private var lastProcessedSeries: AccountTotalsSeries? = null
 
-    open fun processBlock(block: Block): List<AccountTotalsSeries> {
+    open fun processBlock(block: Block, events: List<IndexedEvent>): List<AccountTotalsSeries> {
         val previousSeries = getPreviousSeries(block.number)
         validatePreviousSeries(previousSeries, block.number)
 
-        val newAccounts = getNewAccountMarkers(block)
+        val newAccounts = getNewAccountMarkers(block, events)
         val newAccountsCount = newAccounts.size.toLong()
 
         return buildList {
@@ -87,8 +87,11 @@ open class AccountTotalsSeriesService(private val repository: AccountTotalsSerie
         }
     }
 
-    internal fun getNewAccountMarkers(block: Block): List<AccountTotalsSeries> {
-        val candidateAccountIds = extractAccountIds(block)
+    internal fun getNewAccountMarkers(
+        block: Block,
+        events: List<IndexedEvent>,
+    ): List<AccountTotalsSeries> {
+        val candidateAccountIds = extractAccountIds(block, events)
         if (candidateAccountIds.isEmpty()) return emptyList()
 
         val markerIds = candidateAccountIds.map(::accountId)
@@ -111,18 +114,23 @@ open class AccountTotalsSeriesService(private val repository: AccountTotalsSerie
         }
     }
 
-    internal fun extractAccountIds(block: Block): Set<String> {
-        val txSigners = block.transactions.map { it.origin.lowercase() }.toSet()
-        val gasPayers = block.transactions.map { it.gasPayer.lowercase() }.toSet()
-        val vetHolders =
-            block.transactions
-                .flatMap { it.clauses }
-                .filter { it.value.hexToBigInteger() > oneVet }
-                .mapNotNull { it.to?.lowercase() }
-                .toSet()
+    internal fun extractAccountIds(block: Block, events: List<IndexedEvent>): Set<String> =
+        buildSet {
+            block.transactions.forEach { tx ->
+                normalizeAddress(tx.origin)?.let(::add)
+                normalizeAddress(tx.gasPayer)?.let(::add)
+                tx.clauses.forEach { clause -> normalizeAddress(clause.to)?.let(::add) }
+            }
 
-        return txSigners + gasPayers + vetHolders
-    }
+            if (block.number > 0L) {
+                normalizeAddress(block.beneficiary)?.let(::add)
+            }
+
+            events.filter(::isObservedTransferEvent).forEach { event ->
+                normalizeAddress(event.params.getAsString("from"))?.let(::add)
+                normalizeAddress(event.params.getAsString("to"))?.let(::add)
+            }
+        }
 
     internal fun createGenesisSeries(block: Block, newAccountsCount: Long): AccountTotalsSeries =
         AccountTotalsSeries(
@@ -181,8 +189,21 @@ open class AccountTotalsSeriesService(private val repository: AccountTotalsSerie
 
     internal fun accountId(address: String): String = "$ACCOUNT_PREFIX$address"
 
+    private fun isObservedTransferEvent(event: IndexedEvent): Boolean =
+        event.eventType in OBSERVED_TRANSFER_EVENT_TYPES
+
+    private fun normalizeAddress(address: String?): String? {
+        val normalized = address?.trim()?.takeUnless(String::isBlank)?.let(HexUtils::normalise)
+        if (normalized == null || !Address(normalized).isValid()) {
+            return null
+        }
+        return normalized.takeUnless { it == Address.ZERO_ADDRESS }
+    }
+
     private companion object {
         const val SERIES_PREFIX = "series-"
         const val ACCOUNT_PREFIX = "account-"
+        val OBSERVED_TRANSFER_EVENT_TYPES =
+            setOf("VET_TRANSFER", "Transfer", "TransferSingle", "TransferBatch")
     }
 }

@@ -26,5 +26,8 @@ open class AccountTotalsSeriesConfig {
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
             .includeFullBlock()
+            .includeVetTransfers()
+            .abis("abis/tokens")
+            .abiEventNames(listOf("Transfer", "TransferSingle", "TransferBatch"))
             .build()
 }

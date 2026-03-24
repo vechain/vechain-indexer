@@ -7,6 +7,7 @@ import io.mockk.junit5.MockKExtension
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -14,8 +15,12 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.accounts.repository.AccountTotalsSeriesRepository
+import org.vechain.indexer.event.model.generic.AbiEventParameters
+import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.BlockFixtures
-import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
+import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
+import org.vechain.indexer.thor.Address
+import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @ExtendWith(MockKExtension::class)
 class AccountTotalsSeriesServiceTest {
@@ -77,9 +82,9 @@ class AccountTotalsSeriesServiceTest {
     fun `processBlock creates genesis cumulative record and account markers`() {
         every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
         val block = BlockFixtures.BLOCK_RANDOM_TX.copy(number = 0L, id = "0xgenesis")
-        val expectedIds = extractExpectedAccountIds(block)
+        val expectedIds = extractExpectedAccountIds(block, emptyList())
 
-        val records = service.processBlock(block)
+        val records = service.processBlock(block, emptyList())
         val series = records.last()
         val markers = records.dropLast(1)
 
@@ -98,7 +103,7 @@ class AccountTotalsSeriesServiceTest {
             BlockFixtures.BLOCK_RANDOM_TX.copy(number = 1L, id = "0x1", timestamp = 1_526_404_810L)
         val previousSeries =
             createSeries(blockNumber = 0L, blockTimestamp = 1_526_403_590L, totalAccounts = 10L)
-        val expectedIds = extractExpectedAccountIds(block)
+        val expectedIds = extractExpectedAccountIds(block, emptyList())
         val existingId = expectedIds.first()
 
         every {
@@ -110,7 +115,7 @@ class AccountTotalsSeriesServiceTest {
         every { repository.findAllById(any<Iterable<String>>()) } returns
             listOf(createAccountMarker(existingId, previousSeries.blockTimestamp))
 
-        val records = service.processBlock(block)
+        val records = service.processBlock(block, emptyList())
         val series = records.last()
         val markers = records.dropLast(1)
 
@@ -128,6 +133,7 @@ class AccountTotalsSeriesServiceTest {
                 number = 51L,
                 id = "0x51",
                 timestamp = previousSeries.blockTimestamp + 10L,
+                beneficiary = Address.ZERO_ADDRESS,
                 transactions = emptyList(),
             )
 
@@ -138,24 +144,184 @@ class AccountTotalsSeriesServiceTest {
             )
         } returns previousSeries
 
-        val records = service.processBlock(block)
+        val records = service.processBlock(block, emptyList())
 
         assertTrue(records.isEmpty())
     }
 
-    private fun extractExpectedAccountIds(
-        block: org.vechain.indexer.thor.model.Block
-    ): Set<String> {
-        val txSigners = block.transactions.map { it.origin.lowercase() }.toSet()
-        val gasPayers = block.transactions.map { it.gasPayer.lowercase() }.toSet()
-        val vetHolders =
-            block.transactions
-                .flatMap { it.clauses }
-                .filter { it.value.hexToBigInteger() > ONE_VET }
-                .mapNotNull { it.to?.lowercase() }
-                .toSet()
-        return txSigners + gasPayers + vetHolders
+    @Test
+    fun `extractAccountIds includes beneficiary clause recipients and all transfer participants`() {
+        val beneficiary = "0x00000000000000000000000000000000000000bb"
+        val ftFrom = "0x0000000000000000000000000000000000000101"
+        val ftTo = "0x0000000000000000000000000000000000000102"
+        val nftFrom = "0x0000000000000000000000000000000000000201"
+        val nftTo = "0x0000000000000000000000000000000000000202"
+        val sfTo = "0x0000000000000000000000000000000000000302"
+        val batchFrom = "0x0000000000000000000000000000000000000401"
+
+        val block = BlockFixtures.BLOCK_VET_TRANSFER.copy(number = 10L, beneficiary = beneficiary)
+        val events =
+            listOf(
+                buildTransferEvent("VET_TRANSFER", ftFrom, ftTo, "amount" to "10"),
+                buildTransferEvent("Transfer", nftFrom, nftTo, "tokenId" to "1"),
+                buildTransferEvent("TransferSingle", Address.ZERO_ADDRESS, sfTo, "value" to "5"),
+                buildTransferEvent(
+                    "TransferBatch",
+                    batchFrom,
+                    Address.ZERO_ADDRESS,
+                    "values" to listOf("1", "2"),
+                ),
+            )
+
+        val accountIds = service.extractAccountIds(block, events)
+
+        assertTrue(accountIds.contains(beneficiary))
+        assertTrue(accountIds.contains("0x435933c8064b4ae76be665428e0307ef2ccfbd68"))
+        assertTrue(accountIds.contains(ftFrom))
+        assertTrue(accountIds.contains(ftTo))
+        assertTrue(accountIds.contains(nftFrom))
+        assertTrue(accountIds.contains(nftTo))
+        assertTrue(accountIds.contains(sfTo))
+        assertTrue(accountIds.contains(batchFrom))
+        assertFalse(accountIds.contains(Address.ZERO_ADDRESS))
     }
+
+    @Test
+    fun `extractAccountIds excludes genesis beneficiary`() {
+        val beneficiary = "0x00000000000000000000000000000000000000cc"
+        val block =
+            BlockFixtures.BLOCK_NO_CLAUSES.copy(
+                number = 0L,
+                beneficiary = beneficiary,
+                transactions = emptyList(),
+            )
+
+        val accountIds = service.extractAccountIds(block, emptyList())
+
+        assertTrue(accountIds.isEmpty())
+    }
+
+    @Test
+    fun `extractAccountIds deduplicates addresses across sources`() {
+        val shared = "0x00000000000000000000000000000000000000dd"
+        val block =
+            BlockFixtures.BLOCK_NO_CLAUSES.copy(
+                number = 1L,
+                beneficiary = shared,
+                transactions = emptyList(),
+            )
+        val events =
+            listOf(
+                buildTransferEvent("Transfer", shared, shared, "value" to "1"),
+                buildTransferEvent("TransferSingle", Address.ZERO_ADDRESS, shared, "value" to "1"),
+                buildTransferEvent(
+                    "TransferBatch",
+                    shared,
+                    Address.ZERO_ADDRESS,
+                    "values" to listOf("1"),
+                ),
+            )
+
+        val accountIds = service.extractAccountIds(block, events)
+
+        assertEquals(setOf(shared), accountIds)
+    }
+
+    @Test
+    fun `extractAccountIds ignores missing null blank and invalid event addresses`() {
+        val validFrom = "0x0000000000000000000000000000000000000a01"
+        val validTo = "0x0000000000000000000000000000000000000a02"
+        val block =
+            BlockFixtures.BLOCK_NO_CLAUSES.copy(
+                number = 1L,
+                beneficiary = Address.ZERO_ADDRESS,
+                transactions = emptyList(),
+            )
+        val events =
+            listOf(
+                buildTransferEvent("Transfer", validFrom, validTo, "value" to "1"),
+                buildTransferEventWithParams("Transfer", mapOf("to" to validTo, "value" to "1")),
+                buildTransferEventWithNullableParams(
+                    "TransferSingle",
+                    mapOf("from" to null, "to" to validTo, "value" to "1"),
+                ),
+                buildTransferEventWithNullableParams(
+                    "TransferBatch",
+                    mapOf("from" to "   ", "to" to validTo, "values" to listOf("1")),
+                ),
+                buildTransferEventWithNullableParams(
+                    "Transfer",
+                    mapOf("from" to "not-an-address", "to" to "0x1234", "value" to "1"),
+                ),
+            )
+
+        val accountIds = service.extractAccountIds(block, events)
+
+        assertEquals(setOf(validFrom, validTo), accountIds)
+    }
+
+    private fun extractExpectedAccountIds(
+        block: org.vechain.indexer.thor.model.Block,
+        events: List<IndexedEvent>,
+    ): Set<String> = buildSet {
+        block.transactions.forEach { tx ->
+            add(tx.origin.lowercase())
+            add(tx.gasPayer.lowercase())
+            tx.clauses.mapNotNull { it.to?.lowercase() }.forEach(::add)
+        }
+
+        if (block.number > 0L && block.beneficiary.lowercase() != Address.ZERO_ADDRESS) {
+            add(block.beneficiary.lowercase())
+        }
+
+        events
+            .filter {
+                it.eventType in setOf("VET_TRANSFER", "Transfer", "TransferSingle", "TransferBatch")
+            }
+            .flatMap { event ->
+                listOfNotNull(
+                    event.params.getAsString("from")?.lowercase(),
+                    event.params.getAsString("to")?.lowercase(),
+                )
+            }
+            .filterNot { it == Address.ZERO_ADDRESS }
+            .forEach(::add)
+    }
+
+    private fun buildTransferEvent(
+        eventType: String,
+        from: String,
+        to: String,
+        vararg extraParams: Pair<String, Any>,
+    ): IndexedEvent =
+        buildIndexedEvent(
+            eventType = eventType,
+            params =
+                AbiEventParameters(
+                    buildMap {
+                        put("from", from)
+                        put("to", to)
+                        extraParams.forEach { (key, value) -> put(key, value) }
+                    },
+                    eventType,
+                ),
+        )
+
+    private fun buildTransferEventWithParams(
+        eventType: String,
+        params: Map<String, Any>,
+    ): IndexedEvent =
+        buildIndexedEvent(eventType = eventType, params = AbiEventParameters(params, eventType))
+
+    @Suppress("UNCHECKED_CAST")
+    private fun buildTransferEventWithNullableParams(
+        eventType: String,
+        params: Map<String, Any?>,
+    ): IndexedEvent =
+        buildIndexedEvent(
+            eventType = eventType,
+            params = AbiEventParameters(params as Map<String, Any>, eventType),
+        )
 
     private fun createSeries(
         blockNumber: Long = 1L,
@@ -190,8 +356,4 @@ class AccountTotalsSeriesServiceTest {
             isWeekly = null,
             isMonthly = null,
         )
-
-    private companion object {
-        val ONE_VET = java.math.BigInteger.TEN.pow(18)
-    }
 }

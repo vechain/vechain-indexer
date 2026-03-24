@@ -183,6 +183,11 @@ open class AccountsService(
         }
     }
 
+    fun getTotalAccountsLatest(): Long? =
+        accountTotalsSeriesRepository
+            .findFirstByRecordTypeOrderByBlockTimestampDesc(AccountTotalsSeriesRecordType.SERIES)
+            ?.totalAccounts
+
     fun getOverview(address: Address): AccountOverview? =
         accountOverviewRepository.findByIdOrNull(address.value)
 

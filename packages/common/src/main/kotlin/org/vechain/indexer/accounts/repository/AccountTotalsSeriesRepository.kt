@@ -59,6 +59,10 @@ interface AccountTotalsSeriesRepository : BaseIndexedRepository<AccountTotalsSer
         blockTimestamp: Long,
     ): AccountTotalsSeries?
 
+    fun findFirstByRecordTypeOrderByBlockTimestampDesc(
+        recordType: AccountTotalsSeriesRecordType
+    ): AccountTotalsSeries?
+
     fun findFirstByRecordTypeAndBlockNumberLessThanOrderByBlockNumberDesc(
         recordType: AccountTotalsSeriesRecordType,
         blockNumber: Long,

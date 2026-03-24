@@ -47,7 +47,7 @@ open class SwaggerConfig {
                                 "Optional caller/project identifier used for observability and " +
                                     "usage tracking."
                             )
-                            .schema(StringSchema().example("veworld-web")),
+                            .schema(StringSchema()),
                     )
             )
             .info(

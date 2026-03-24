@@ -104,6 +104,21 @@ class AccountsServiceTest {
     }
 
     @Test
+    fun `getTotalAccountsLatest returns latest total accounts value`() {
+        val latest = accountTotalsSeries(blockTimestamp = 7_200L, totalAccounts = 42L)
+        every {
+            accountTotalsSeriesRepository.findFirstByRecordTypeOrderByBlockTimestampDesc(SERIES)
+        } returns latest
+
+        val result = service.getTotalAccountsLatest()
+
+        expectThat(result).isEqualTo(42L)
+        verify(exactly = 1) {
+            accountTotalsSeriesRepository.findFirstByRecordTypeOrderByBlockTimestampDesc(SERIES)
+        }
+    }
+
+    @Test
     fun `getOverviewWithVthoEarnings loads Stargate totals by generated id`() {
         val address = Address("0x3F90bf8B314c42005103B3c94505634fA680dcEe")
         val overview =
