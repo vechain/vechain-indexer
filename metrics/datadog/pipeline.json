@@ -37,25 +37,25 @@
       "categories": [
         {
           "filter": {
-            "query": "@elb.name:prod-blue-main-api-veworld-alb"
+            "query": "name:prod-blue-main-api-veworld-alb"
           },
           "name": "prod-blue-main"
         },
         {
           "filter": {
-            "query": "@elb.name:prod-green-main-api-veworld-alb"
+            "query": "name:prod-green-main-api-veworld-alb"
           },
           "name": "prod-green-main"
         },
         {
           "filter": {
-            "query": "@elb.name:prod-blue-test-api-veworld-alb"
+            "query": "name:prod-blue-test-api-veworld-alb"
           },
           "name": "prod-blue-test"
         },
         {
           "filter": {
-            "query": "@elb.name:prod-green-test-api-veworld-alb"
+            "query": "name:prod-green-test-api-veworld-alb"
           },
           "name": "prod-green-test"
         }

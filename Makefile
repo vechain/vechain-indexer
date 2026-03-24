@@ -141,6 +141,10 @@ DD_SCRIPT=python3 metrics/datadog/scripts/manage_pipeline.py
 
 dd-get-pipeline: #@ Fetch Datadog pipeline config.
 	$(DD_SCRIPT) get
+dd-get-app-pipeline: #@ Fetch Datadog app pipeline config.
+	$(DD_SCRIPT) get-app-pipeline
+dd-get-waf-pipeline: #@ Fetch Datadog WAF pipeline config.
+	$(DD_SCRIPT) get-waf-pipeline
 dd-get-dashboard: #@ Fetch Datadog dashboard config.
 	$(DD_SCRIPT) get-dashboard
 dd-generate-openapi: #@ Generate OpenAPI spec from API with embedded MongoDB.
@@ -148,14 +152,18 @@ dd-generate-openapi: #@ Generate OpenAPI spec from API with embedded MongoDB.
 dd-refresh-generated: dd-generate-openapi dd-update-categories format-json #@ Refresh committed OpenAPI and Datadog generated JSON files.
 dd-push-pipeline: #@ Push pipeline config to Datadog.
 	$(DD_SCRIPT) push-pipeline
+dd-push-app-pipeline: #@ Push Datadog app pipeline config.
+	$(DD_SCRIPT) push-app-pipeline
+dd-push-waf-pipeline: #@ Push Datadog WAF pipeline config.
+	$(DD_SCRIPT) push-waf-pipeline
 dd-push-dashboard: #@ Push dashboard config to Datadog.
 	$(DD_SCRIPT) push-dashboard
 dd-update-categories: #@ Update pipeline categories from api-docs.json.
 	$(DD_SCRIPT) update-categories
 dd-validate-categories: #@ Validate pipeline categories match api-docs.json.
 	$(DD_SCRIPT) validate-categories
-dd-sync: dd-get-pipeline dd-get-dashboard #@ Fetch pipeline and dashboard from Datadog.
-dd-push: dd-push-pipeline dd-push-dashboard #@ Push pipeline and dashboard to Datadog.
+dd-sync: dd-get-pipeline dd-get-app-pipeline dd-get-waf-pipeline dd-get-dashboard #@ Fetch Datadog pipelines and dashboard.
+dd-push: dd-push-pipeline dd-push-app-pipeline dd-push-waf-pipeline dd-push-dashboard #@ Push Datadog pipelines and dashboard.
 
 # Database
 DB_COMMAND=docker compose -f database/docker-compose-mongo.yaml

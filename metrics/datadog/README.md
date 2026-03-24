@@ -66,26 +66,30 @@ This runs the tagged JUnit test (`GenerateOpenApiSpecTest`), regenerates categor
 | Target | Description |
 |---|---|
 | `make dd-get-pipeline` | Fetch pipeline config from Datadog |
+| `make dd-get-app-pipeline` | Fetch app pipeline config from Datadog |
+| `make dd-get-waf-pipeline` | Fetch WAF pipeline config from Datadog |
 | `make dd-get-dashboard` | Fetch dashboard config from Datadog |
 | `make dd-generate-openapi` | Generate OpenAPI spec from API with embedded MongoDB |
 | `make dd-refresh-generated` | Refresh `api-docs.json`, regenerate Datadog categories, and format JSON files |
 | `make dd-push-pipeline` | Push pipeline config to Datadog |
+| `make dd-push-app-pipeline` | Push app pipeline config to Datadog |
+| `make dd-push-waf-pipeline` | Push WAF pipeline config to Datadog |
 | `make dd-push-dashboard` | Push dashboard config to Datadog |
 | `make dd-update-categories` | Update pipeline categories from `api-docs.json` |
 | `make dd-validate-categories` | Validate pipeline categories match `api-docs.json` |
-| `make dd-sync` | Fetch both pipeline and dashboard from Datadog |
-| `make dd-push` | Push both pipeline and dashboard to Datadog |
+| `make dd-sync` | Fetch the main, app, and WAF pipelines plus the dashboard from Datadog |
+| `make dd-push` | Push the main, app, and WAF pipelines plus the dashboard to Datadog |
 
 ### Typical Workflow
 
 ```bash
-# 1. Fetch the current pipeline and dashboard from Datadog
+# 1. Fetch the current pipelines and dashboard from Datadog
 make dd-sync
 
 # 2. Refresh the committed generated files from source
 make dd-refresh-generated
 
-# 3. Push the updated pipeline and dashboard back to Datadog
+# 3. Push the updated pipelines and dashboard back to Datadog
 make dd-push
 ```
 
@@ -93,7 +97,7 @@ make dd-push
 
 - **`validate-generated-monitoring-artifacts.yml`** — Runs on every PR. It executes `make dd-refresh-generated` and fails if any committed generated file is stale. The failure output includes the local command needed to refresh the files.
 
-- **`sync-datadog-config.yml`** — Runs on release (published) and `workflow_dispatch`. On **release**, it first pushes the repo's `dashboard.json` to Datadog, then fetches back the latest pipeline and dashboard configs and commits any changes. On **workflow_dispatch**, it only fetches (no push). Requires `DD_API_KEY`, `DD_APP_KEY`, and `DD_SITE` secrets.
+- **`sync-datadog-config.yml`** — Runs on release (published) and `workflow_dispatch`. It pushes the repo's main, app, and WAF pipeline configs plus `dashboard.json` to Datadog, then fetches back the latest Datadog configs and commits any changes. Requires `DD_API_KEY`, `DD_APP_KEY`, and `DD_SITE` secrets.
 
 ### Configuration
 
