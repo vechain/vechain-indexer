@@ -66,7 +66,7 @@ jobs:
 
       - name: Run actionlint
         if: needs.detect-code-changes.outputs.run-workflow-lint == 'true'
-        uses: rhysd/actionlint@v1
+        uses: rhysd/actionlint@v1.7.8
 
   check-formatting:
     name: Check Formatting
