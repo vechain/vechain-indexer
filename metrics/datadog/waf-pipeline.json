@@ -39,9 +39,21 @@
     },
     {
       "is_enabled": true,
-      "name": "Extract project ID header",
+      "name": "Extract project ID header (canonical case)",
       "operation": {
-        "filter": "name:x-project-id",
+        "filter": "name:\"X-Project-Id\"",
+        "source": "httpRequest.headers",
+        "target": "project_id",
+        "type": "select",
+        "value_to_extract": "value"
+      },
+      "type": "array-processor"
+    },
+    {
+      "is_enabled": true,
+      "name": "Extract project ID header (lowercase)",
+      "operation": {
+        "filter": "name:\"x-project-id\"",
         "source": "httpRequest.headers",
         "target": "project_id",
         "type": "select",
