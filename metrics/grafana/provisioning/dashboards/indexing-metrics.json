@@ -86,7 +86,7 @@
       "pluginVersion": "12.3.0",
       "targets": [
         {
-          "expr": "thor_best_block_number_gauge",
+          "expr": "max without(deployment_scope) (thor_best_block_number_gauge)",
           "instant": true,
           "legendFormat": "__auto",
           "refId": "A"
@@ -852,7 +852,7 @@
       "pluginVersion": "12.3.0",
       "targets": [
         {
-          "expr": "indexer_blocks_per_second_gauge{indexer_name=~\"$indexer\"}",
+          "expr": "max by(indexer_name) (indexer_blocks_per_second_gauge{indexer_name=~\"$indexer\"})",
           "legendFormat": "{{indexer_name}}",
           "range": true,
           "refId": "A"
