@@ -59,6 +59,8 @@ open class ValidatorService(
         callResponses: List<InspectionResult>,
         isFullySynced: Boolean,
     ): Pair<List<Validator>, List<Validator>> {
+        val touchedValidatorIds =
+            matchedEvents.mapNotNull { it.params.getAsString("validator") }.distinct()
 
         // Load docs once
         val existingDocs = loadExistingDocs(matchedEvents, isFullySynced)
@@ -81,7 +83,8 @@ open class ValidatorService(
 
         // For old blocks → only beneficiary changes matter or if responses have no ABI data
         if (!isFullySynced || callResponses.none { it.hasAbiData() }) {
-            return working.values.toList() to emptyList()
+            return touchedValidatorIds.mapNotNull(working::get) to
+                touchedValidatorIds.mapNotNull(existingDocs::get)
         }
 
         // Decode and calculate full validator updates

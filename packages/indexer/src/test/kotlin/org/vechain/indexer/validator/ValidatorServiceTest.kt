@@ -126,26 +126,25 @@ class ValidatorServiceTest {
     @Test
     fun `apply beneficiary changes for old blocks`() {
         val ev = makeEvent(7, "0xVAL1", "0xBEN")
-
-        every { repository.findAllById(any<List<String>>()) } returns
-            listOf(
-                Validator(
-                    id = "0xVAL1",
-                    blockId = "oldBlock",
-                    blockNumber = 5,
-                    blockTimestamp = 123,
-                    beneficiary = "0xOLD",
-                    status = Status.ACTIVE,
-                    version = 1,
-                )
+        val existingValidator =
+            Validator(
+                id = "0xVAL1",
+                blockId = "oldBlock",
+                blockNumber = 5,
+                blockTimestamp = 123,
+                beneficiary = "0xOLD",
+                status = Status.ACTIVE,
+                version = 2,
             )
+
+        every { repository.findAllById(any<List<String>>()) } returns listOf(existingValidator)
 
         val result = service.processBlock(block(7), listOf(ev), emptyList(), isFullySynced = false)
 
         val updated = result.first.single()
         assertThat(updated.id).isEqualTo("0xVAL1")
         assertThat(updated.beneficiary).isEqualTo("0xBEN")
-        assertThat(result.second).isEmpty()
+        assertThat(result.second).containsExactly(existingValidator)
     }
 
     @Test
@@ -191,6 +190,29 @@ class ValidatorServiceTest {
         val updated = result.first.single()
         assertThat(updated.id).isEqualTo("0xVAL1")
         verify { getLatestValidatorInfo(any(), any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `fully synced block without abi data archives touched existing validator`() {
+        val ev = makeEvent(190, "0xVAL1", "0xBEN")
+        val existingValidator =
+            Validator(
+                id = "0xVAL1",
+                blockId = "oldBlock",
+                blockNumber = 189,
+                blockTimestamp = 123,
+                beneficiary = "0xOLD",
+                status = Status.ACTIVE,
+                version = 54421,
+            )
+
+        every { repository.findByStatusNot(any()) } returns listOf(existingValidator)
+
+        val result = service.processBlock(block(190), listOf(ev), emptyList(), isFullySynced = true)
+
+        assertThat(result.first).containsExactly(result.first.single())
+        assertThat(result.first.single().beneficiary).isEqualTo("0xBEN")
+        assertThat(result.second).containsExactly(existingValidator)
     }
 
     // --- saveAndDelete tests ---
