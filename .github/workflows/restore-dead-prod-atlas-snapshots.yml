@@ -146,17 +146,18 @@ jobs:
     timeout-minutes: 180
     needs: [resolve-context, assert-services-stopped]
     environment: prod
+    env:
+      MONGODB_ATLAS_PUBLIC_API_KEY: ${{ secrets.MONGO_PUBLIC_KEY }}
+      MONGODB_ATLAS_PRIVATE_API_KEY: ${{ secrets.MONGO_PRIVATE_KEY }}
+      MONGODB_ATLAS_ORG_ID: ${{ secrets.MONGO_ORG_ID }}
+      MONGODB_ATLAS_PROJECT_ID: ${{ secrets.MONGO_PROJECT_ID }}
+      MONGODB_ATLAS_SILENCE_STORAGE_WARNING: "true"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Atlas setup
         uses: mongodb/atlas-github-action@v0.2.0
-        env:
-          MONGODB_ATLAS_PUBLIC_API_KEY: ${{ secrets.MONGO_PUBLIC_KEY }}
-          MONGODB_ATLAS_PRIVATE_API_KEY: ${{ secrets.MONGO_PRIVATE_KEY }}
-          MONGODB_ATLAS_ORG_ID: ${{ secrets.MONGO_ORG_ID }}
-          MONGODB_ATLAS_PROJECT_ID: ${{ secrets.MONGO_PROJECT_ID }}
 
       - name: Restore dead-prod Atlas clusters
         env:
