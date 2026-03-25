@@ -13,6 +13,11 @@ services=(
   "${dead_color}-veworld-test-indexer-service"
 )
 
+autoscaled_services=(
+  "${dead_color}-veworld-main-api-service"
+  "${dead_color}-veworld-test-api-service"
+)
+
 cluster_exists() {
   local cluster_arn
 
@@ -56,6 +61,105 @@ count_not_running_services() {
   printf '%s\n' "${describe_json}" | jq '[.services[] | select((.desired // 0) < 1 or (.running // 0) < 1)] | length'
 }
 
+scalable_target_resource_id() {
+  local service="${1:?service is required}"
+
+  printf 'service/%s/%s\n' "${ecs_cluster}" "${service}"
+}
+
+describe_scalable_target() {
+  local service="${1:?service is required}"
+
+  aws application-autoscaling describe-scalable-targets \
+    --service-namespace ecs \
+    --scalable-dimension ecs:service:DesiredCount \
+    --resource-ids "$(scalable_target_resource_id "${service}")" \
+    --query 'ScalableTargets[0]' \
+    --output json
+}
+
+ensure_autoscaling_state() {
+  local service="${1:?service is required}"
+  local min_capacity="${2:?min_capacity is required}"
+  local should_suspend="${3:?should_suspend is required}"
+  local scalable_target_json
+  local max_capacity
+  local suspended_state
+
+  scalable_target_json="$(describe_scalable_target "${service}")"
+  if [[ "${scalable_target_json}" == "null" ]]; then
+    echo "No scalable target configured for ${service}; skipping autoscaling state update."
+    return 0
+  fi
+
+  max_capacity="$(printf '%s\n' "${scalable_target_json}" | jq -r '.MaxCapacity')"
+  if [[ -z "${max_capacity}" || "${max_capacity}" == "null" ]]; then
+    echo "Failed to resolve max capacity for ${service} scalable target."
+    exit 1
+  fi
+
+  if [[ "${should_suspend}" == "true" ]]; then
+    suspended_state='DynamicScalingInSuspended=true,DynamicScalingOutSuspended=true,ScheduledScalingSuspended=true'
+  else
+    suspended_state='DynamicScalingInSuspended=false,DynamicScalingOutSuspended=false,ScheduledScalingSuspended=false'
+  fi
+
+  echo "Updating autoscaling target for ${service}: min=${min_capacity}, max=${max_capacity}, suspended=${should_suspend}"
+  aws application-autoscaling register-scalable-target \
+    --service-namespace ecs \
+    --scalable-dimension ecs:service:DesiredCount \
+    --resource-id "$(scalable_target_resource_id "${service}")" \
+    --min-capacity "${min_capacity}" \
+    --max-capacity "${max_capacity}" \
+    --suspended-state "${suspended_state}" \
+    >/dev/null
+}
+
+configure_autoscaling_for_stop() {
+  local service
+
+  for service in "${autoscaled_services[@]}"; do
+    ensure_autoscaling_state "${service}" 0 true
+  done
+}
+
+configure_autoscaling_for_start() {
+  local service
+
+  for service in "${autoscaled_services[@]}"; do
+    ensure_autoscaling_state "${service}" 1 false
+  done
+}
+
+count_autoscaling_targets_not_quiesced() {
+  local not_quiesced=0
+  local service
+  local scalable_target_json
+  local is_quiesced
+
+  for service in "${autoscaled_services[@]}"; do
+    scalable_target_json="$(describe_scalable_target "${service}")"
+    if [[ "${scalable_target_json}" == "null" ]]; then
+      continue
+    fi
+
+    is_quiesced="$(
+      printf '%s\n' "${scalable_target_json}" | jq -r '
+        (.MinCapacity == 0) and
+        (.SuspendedState.DynamicScalingInSuspended == true) and
+        (.SuspendedState.DynamicScalingOutSuspended == true) and
+        (.SuspendedState.ScheduledScalingSuspended == true)
+      '
+    )"
+
+    if [[ "${is_quiesced}" != "true" ]]; then
+      not_quiesced=$((not_quiesced + 1))
+    fi
+  done
+
+  printf '%s\n' "${not_quiesced}"
+}
+
 assert_no_missing_services() {
   local describe_json missing_count
 
@@ -70,6 +174,7 @@ assert_no_missing_services() {
 
 assert_stopped() {
   local describe_json active_count
+  local autoscaling_not_quiesced_count
 
   if ! cluster_exists; then
     echo "ECS cluster ${ecs_cluster} is missing; treating dead-prod services as already stopped."
@@ -90,6 +195,7 @@ assert_stopped() {
   fi
 
   active_count="$(count_active_services "${describe_json}")"
+  autoscaling_not_quiesced_count="$(count_autoscaling_targets_not_quiesced)"
 
   {
     echo "### Dead Prod Service State"
@@ -101,6 +207,11 @@ assert_stopped() {
   if [[ "${active_count}" != "0" ]]; then
     echo "Dead-prod services are still active; restore must not proceed."
     printf '%s\n' "${describe_json}"
+    exit 1
+  fi
+
+  if [[ "${autoscaling_not_quiesced_count}" != "0" ]]; then
+    echo "Dead-prod API service autoscaling is still enabled; restore must not proceed."
     exit 1
   fi
 
@@ -117,6 +228,12 @@ update_services() {
   fi
 
   assert_no_missing_services
+
+  if [[ "${desired_count}" == "0" ]]; then
+    configure_autoscaling_for_stop
+  else
+    configure_autoscaling_for_start
+  fi
 
   for service in "${services[@]}"; do
     echo "Setting ${service} desired count to ${desired_count}"

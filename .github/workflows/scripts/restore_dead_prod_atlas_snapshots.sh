@@ -47,7 +47,7 @@ start_restore() {
     --targetProjectId "${target_project}" \
     --output json)"
 
-  printf '%s\n' "${start_output}"
+  printf '%s\n' "${start_output}" >&2
 
   restore_id="$(printf '%s\n' "${start_output}" | jq -r '
     .id
@@ -97,12 +97,10 @@ if [[ -z "${test_snapshot_id}" || -z "${main_snapshot_id}" ]]; then
 fi
 
 echo "Starting restore for ${source_test_cluster} -> ${target_test_cluster}"
-test_restore_output="$(start_restore "${source_test_cluster}" "${test_snapshot_id}" "${target_test_cluster}" "${source_project_id}" "${target_project_id}")"
-test_restore_id="$(printf '%s\n' "${test_restore_output}" | tail -n 1)"
+test_restore_id="$(start_restore "${source_test_cluster}" "${test_snapshot_id}" "${target_test_cluster}" "${source_project_id}" "${target_project_id}")"
 
 echo "Starting restore for ${source_main_cluster} -> ${target_main_cluster}"
-main_restore_output="$(start_restore "${source_main_cluster}" "${main_snapshot_id}" "${target_main_cluster}" "${source_project_id}" "${target_project_id}")"
-main_restore_id="$(printf '%s\n' "${main_restore_output}" | tail -n 1)"
+main_restore_id="$(start_restore "${source_main_cluster}" "${main_snapshot_id}" "${target_main_cluster}" "${source_project_id}" "${target_project_id}")"
 
 echo "Watching restore ${test_restore_id} (${source_test_cluster})"
 watch_restore "${test_restore_id}" "${source_test_cluster}" "${source_project_id}"
