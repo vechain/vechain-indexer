@@ -175,6 +175,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: dead-prod-atlas-restore-summary
-          path: restore-output/restore-summary.json
+          name: dead-prod-atlas-restore-output
+          path: restore-output
           if-no-files-found: error
