@@ -175,6 +175,7 @@ assert_no_missing_services() {
 assert_stopped() {
   local describe_json active_count
   local autoscaling_not_quiesced_count
+  local missing_count
 
   if ! cluster_exists; then
     echo "ECS cluster ${ecs_cluster} is missing; treating dead-prod services as already stopped."
@@ -188,8 +189,22 @@ assert_stopped() {
   fi
 
   describe_json="$(describe_services)"
-  if [[ "$(count_missing_services "${describe_json}")" != "0" ]]; then
-    echo "One or more expected ECS services are missing from ${ecs_cluster}."
+  missing_count="$(count_missing_services "${describe_json}")"
+  if [[ "${missing_count}" == "${#services[@]}" ]]; then
+    echo "All expected ECS services are missing from ${ecs_cluster}; treating dead-prod services as already stopped."
+    {
+      echo "### Dead Prod Service State"
+      echo "- ECS cluster: \`${ecs_cluster}\`"
+      echo "- Dead color: \`${dead_color}\`"
+      echo "- Action: \`assert-stopped\`"
+      echo "- Status: all expected ECS services missing, treated as stopped"
+      echo "- Note: this is expected if the dead environment was previously destroyed"
+    } >> "${GITHUB_STEP_SUMMARY}"
+    exit 0
+  fi
+
+  if [[ "${missing_count}" != "0" ]]; then
+    echo "Some expected ECS services are missing from ${ecs_cluster}; refusing to treat the dead environment as stopped."
     printf '%s\n' "${describe_json}"
     exit 1
   fi
