@@ -1,0 +1,13 @@
+self-hosted-runner:
+  labels:
+    - docker-build-arm64
+
+paths:
+  .github/workflows/deploy-prod.yml:
+    ignore:
+      - 'shellcheck reported issue in this script: SC2086:.+'
+      - 'shellcheck reported issue in this script: SC2193:.+'
+  .github/workflows/switch-live-dns.yml:
+    ignore:
+      - 'shellcheck reported issue in this script: SC2004:.+'
+      - 'shellcheck reported issue in this script: SC2086:.+'
