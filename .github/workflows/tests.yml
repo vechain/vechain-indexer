@@ -26,6 +26,7 @@ jobs:
     outputs:
       run-tests: ${{ steps.filter.outputs.code_changed }}
       run-workflow-lint: ${{ steps.filter.outputs.workflow_changed }}
+      workflow-files: ${{ steps.filter.outputs.workflow_changed_files }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,6 +35,7 @@ jobs:
       - id: filter
         uses: dorny/paths-filter@v3
         with:
+          list-files: json
           filters: |
             code_changed:
               - '**/*.kt'
@@ -61,7 +63,16 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Run actionlint
-        uses: rhysd/actionlint@v1.7.8
+        env:
+          WORKFLOW_FILES_JSON: ${{ needs.detect-code-changes.outputs.workflow-files }}
+        run: |
+          mapfile -t workflow_files < <(jq -r '.[]' <<< "$WORKFLOW_FILES_JSON")
+          docker run --rm \
+            -v "$PWD":/repo \
+            -w /repo \
+            rhysd/actionlint:1.7.8 \
+            -config-file actionlint.yaml \
+            "${workflow_files[@]}"
 
   check-formatting:
     name: Check Formatting
