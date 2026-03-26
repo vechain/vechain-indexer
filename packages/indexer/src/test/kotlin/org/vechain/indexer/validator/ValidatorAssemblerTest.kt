@@ -4,6 +4,8 @@ import java.math.BigDecimal
 import java.math.BigInteger
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.vechain.indexer.stargate.token.TokenLevel
+import org.vechain.indexer.stargate.token.TokenLevelDecimalValues
 import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeRows
 import org.vechain.indexer.validator.logic.ValidatorAssembler
 import org.vechain.indexer.validator.models.DecodedValidatorRow
@@ -75,8 +77,8 @@ class ValidatorAssemblerTest {
         assertThat(validator.id).isEqualTo("0xVAL1")
         assertThat(validator.endorser).isEqualTo("0xEND1")
         assertThat(validator.status).isEqualTo(Status.ACTIVE)
-        assertThat(validator.vetStaked!!.bigDecimalValue().setScale(6))
-            .isEqualTo(BigDecimal("1.500000"))
+        assertThat(validator.vetStaked!!.setScale(6)).isEqualTo(BigDecimal("1.500000"))
+        assertThat(validator.nftYieldsNextCycle?.get(TokenLevel.Dawn)).isNotNull()
     }
 
     @Test
@@ -113,9 +115,9 @@ class ValidatorAssemblerTest {
 
         val validator = validators.first()
         assertThat(validator.beneficiary).isEqualTo("0xNEW")
-        assertThat(validator.validatorExitingVetStaked!!.bigDecimalValue().setScale(6))
+        assertThat(validator.validatorExitingVetStaked!!.setScale(6))
             .isEqualTo(BigDecimal("1.000000"))
-        assertThat(validator.delegatorExitingVetStaked!!.bigDecimalValue().setScale(6))
+        assertThat(validator.delegatorExitingVetStaked!!.setScale(6))
             .isEqualTo(BigDecimal.ZERO.setScale(6))
     }
 
@@ -146,6 +148,7 @@ class ValidatorAssemblerTest {
         val disappeared = validators.firstOrNull { it.id == "0xOLD" }
         assertThat(disappeared).isNotNull()
         assertThat(disappeared!!.status).isEqualTo(Status.EXITED)
+        assertThat(disappeared.nftYieldsNextCycle).isEqualTo(TokenLevelDecimalValues.empty())
         assertThat(disappeared.queuePosition).isNull()
         assertThat(disappeared.availableStartBlock).isNull()
     }

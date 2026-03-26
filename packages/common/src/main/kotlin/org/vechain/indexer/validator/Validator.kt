@@ -9,7 +9,7 @@ import org.springframework.data.mongodb.core.mapping.Field
 import org.springframework.data.mongodb.core.mapping.FieldType
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.stargate.token.TokenLevel
+import org.vechain.indexer.stargate.token.TokenLevelDecimalValues
 
 @Document(collection = IndexerNames.VALIDATOR.COLLECTION)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -49,8 +49,7 @@ data class Validator(
     @Field(targetType = FieldType.DECIMAL128) val nextCycleTvlBasedYield: BigDecimal? = null,
     @Field(targetType = FieldType.DECIMAL128) val nextCycleValidatorYield: BigDecimal? = null,
     @Field(targetType = FieldType.DECIMAL128) val nextCycleAvgDelegatorYield: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128)
-    val nftYieldsNextCycle: Map<TokenLevel, BigDecimal>? = null,
+    val nftYieldsNextCycle: TokenLevelDecimalValues? = null,
     @Field(targetType = FieldType.DECIMAL128) val totalWeight: BigDecimal? = null,
     val online: Boolean? = null,
     val completedPeriods: Long? = null,

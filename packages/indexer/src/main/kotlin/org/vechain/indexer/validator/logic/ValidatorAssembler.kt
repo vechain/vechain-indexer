@@ -2,6 +2,7 @@ package org.vechain.indexer.validator.logic
 
 import java.math.BigDecimal
 import java.math.BigInteger
+import org.vechain.indexer.stargate.token.TokenLevelDecimalValues
 import org.vechain.indexer.utils.NumberUtils
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator
@@ -87,7 +88,7 @@ object ValidatorAssembler {
                         validatorYield = BigDecimal.ZERO,
                         tvlBasedYield = BigDecimal.ZERO,
                         avgDelegatorYield = BigDecimal.ZERO,
-                        nftYieldsNextCycle = emptyMap(),
+                        nftYieldsNextCycle = TokenLevelDecimalValues.empty(),
                         nextCycleValidatorYield = BigDecimal.ZERO,
                         nextCycleTvlBasedYield = BigDecimal.ZERO,
                         nextCycleAvgDelegatorYield = BigDecimal.ZERO,
@@ -206,15 +207,17 @@ object ValidatorAssembler {
             nextCycleTvlBasedYield = NumberUtils.toScaledDecimal(nextCycleTvlBasedYield),
             nextCycleAvgDelegatorYield = NumberUtils.toScaledDecimal(nextCycleAvgDelegatorYield),
             nftYieldsNextCycle =
-                calculateNftLevelYields(
-                    NumberUtils.toVET(row.totalNextPeriodWeight),
-                    NumberUtils.toVET(totalNextPeriodVET),
-                    NumberUtils.toVET(row.nextPeriodDelegationStake),
-                    NumberUtils.toVET(nextPeriodTotalWeight),
-                    vthoPrice,
-                    vetPrice,
-                    status,
-                    stakes.nextCycleStake,
+                TokenLevelDecimalValues.fromMap(
+                    calculateNftLevelYields(
+                        NumberUtils.toVET(row.totalNextPeriodWeight),
+                        NumberUtils.toVET(totalNextPeriodVET),
+                        NumberUtils.toVET(row.nextPeriodDelegationStake),
+                        NumberUtils.toVET(nextPeriodTotalWeight),
+                        vthoPrice,
+                        vetPrice,
+                        status,
+                        stakes.nextCycleStake,
+                    )
                 ),
             percentageOffline = NumberUtils.toScaledDecimal(offline.percentageOffline),
             version = (existingDoc?.version ?: 0) + 1,
