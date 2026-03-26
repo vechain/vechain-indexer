@@ -35,23 +35,27 @@ class ValidatorBlockServiceTest {
     private fun buildDecoded(): Map<String, Any?> =
         mapOf(
             "masters" to listOf("0xVAL1", "0xVAL2"),
-            "endorsors" to listOf("0xEND1"),
+            "endorsors" to listOf("0xEND1", "0xEND2"),
             "statuses" to listOf(BigInteger.TWO, BigInteger.TWO),
-            "onlines" to listOf(true),
-            "offlineBlocks" to listOf(BigInteger.ZERO),
-            "stakingPeriodLengths" to listOf(10),
-            "startBlocks" to listOf(BigInteger.TEN),
-            "exitBlocks" to listOf(BigInteger.valueOf(4294967295)),
-            "completedPeriods" to listOf(BigInteger.valueOf(5)),
-            "validatorLockedStakes" to listOf(BigInteger("1000000000000000000")), // 1 VET
-            "validatorLockedWeights" to listOf(BigInteger.valueOf(100)),
+            "onlines" to listOf(true, true),
+            "offlineBlocks" to listOf(BigInteger.ZERO, BigInteger.ZERO),
+            "stakingPeriodLengths" to listOf(10, 10),
+            "startBlocks" to listOf(BigInteger.TEN, BigInteger.TEN),
+            "exitBlocks" to listOf(BigInteger.valueOf(4294967295), BigInteger.valueOf(4294967295)),
+            "completedPeriods" to listOf(BigInteger.valueOf(5), BigInteger.valueOf(5)),
+            "validatorLockedStakes" to
+                listOf(
+                    BigInteger("1000000000000000000"),
+                    BigInteger("1000000000000000000"),
+                ), // 1 VET
+            "validatorLockedWeights" to listOf(BigInteger.valueOf(100), BigInteger.valueOf(100)),
             "delegatorsStake" to
                 listOf(BigInteger("500000000000000000"), BigInteger.ZERO), // 0.5 VET
-            "totalQueuedStakes" to listOf(BigInteger.ZERO),
-            "totalExitingStakes" to listOf(BigInteger.ZERO),
-            "validatorQueuedStakes" to listOf(BigInteger.ZERO),
-            "totalNextPeriodWeights" to listOf(BigInteger.valueOf(100)),
-            "nextPeriodDelegationStakes" to listOf(BigInteger.ZERO),
+            "totalQueuedStakes" to listOf(BigInteger.ZERO, BigInteger.ZERO),
+            "totalExitingStakes" to listOf(BigInteger.ZERO, BigInteger.ZERO),
+            "validatorQueuedStakes" to listOf(BigInteger.ZERO, BigInteger.ZERO),
+            "totalNextPeriodWeights" to listOf(BigInteger.valueOf(100), BigInteger.valueOf(100)),
+            "nextPeriodDelegationStakes" to listOf(BigInteger.ZERO, BigInteger.ZERO),
         )
 
     private fun createBlock(
@@ -190,9 +194,23 @@ class ValidatorBlockServiceTest {
                 decodedValidators =
                     mapOf(
                         "masters" to listOf("0xA", "0xB"),
+                        "endorsors" to listOf("0xEA", "0xEB"),
                         "onlines" to listOf(false, true),
                         "offlineBlocks" to listOf(BigInteger.valueOf(50), BigInteger.ZERO),
                         "statuses" to listOf(BigInteger.TWO, BigInteger.ONE),
+                        "stakingPeriodLengths" to listOf(10, 10),
+                        "startBlocks" to listOf(BigInteger.ZERO, BigInteger.ZERO),
+                        "exitBlocks" to
+                            listOf(BigInteger.valueOf(4294967295), BigInteger.valueOf(4294967295)),
+                        "completedPeriods" to listOf(BigInteger.ZERO, BigInteger.ZERO),
+                        "validatorLockedStakes" to listOf(BigInteger.ZERO, BigInteger.ZERO),
+                        "validatorLockedWeights" to listOf(BigInteger.ZERO, BigInteger.ZERO),
+                        "delegatorsStake" to listOf(BigInteger.ZERO, BigInteger.ZERO),
+                        "validatorQueuedStakes" to listOf(BigInteger.ZERO, BigInteger.ZERO),
+                        "totalQueuedStakes" to listOf(BigInteger.ZERO, BigInteger.ZERO),
+                        "totalExitingStakes" to listOf(BigInteger.ZERO, BigInteger.ZERO),
+                        "totalNextPeriodWeights" to listOf(BigInteger.ZERO, BigInteger.ZERO),
+                        "nextPeriodDelegationStakes" to listOf(BigInteger.ZERO, BigInteger.ZERO),
                     ),
                 vthoTotalSupply = BigInteger.ZERO,
                 vthoBurned = BigInteger.ZERO,
