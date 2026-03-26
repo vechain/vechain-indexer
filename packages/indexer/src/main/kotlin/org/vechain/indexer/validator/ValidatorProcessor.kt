@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.Status
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 
@@ -35,19 +34,10 @@ open class ValidatorProcessor(
             )
         }
 
-        // Initialize queue positions from contract if any queued validators still have null
-        // positions
-        service.initializeQueuePositionsIfNeeded(entry.block.id)
-
         val (updated, existing) =
-            service.processBlock(
-                entry.block,
-                entry.events(),
-                entry.callResults,
-                entry.status == Status.FULLY_SYNCED,
-            )
+            service.processBlock(entry.block, entry.events(), entry.callResults)
 
-        if (updated.isNotEmpty() || existing.isNotEmpty()) {
+        if (updated.isNotEmpty()) {
             service.save(updated, existing)
         }
     }

@@ -3,63 +3,48 @@ package org.vechain.indexer.validator
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.model.BulkWriteOptions
 import com.mongodb.client.model.WriteModel
-import io.mockk.*
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.slot
+import io.mockk.unmockkAll
+import io.mockk.verify
 import java.math.BigDecimal
 import java.math.BigInteger
-import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.bson.Document
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.config.InlineVersioningProperties
-import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.thor.client.ExecuteAccountResponse
-import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
+import org.vechain.indexer.validator.domain.ValidatorDecoder
 import org.vechain.indexer.validator.logic.ValidatorAssembler
-import org.vechain.indexer.validator.logic.ValidatorAssembler.getLatestValidatorInfo
+import org.vechain.indexer.validator.models.DecodedValidatorInfo
 
 class ValidatorServiceTest {
     private val repository = mockk<ValidatorRepository>()
     private val mongoTemplate = mockk<MongoTemplate>(relaxed = true)
     private val inlineVersioningProperties = mockk<InlineVersioningProperties>()
-    private val thorClient = mockk<ThorClient>()
 
     private lateinit var service: ValidatorService
 
     @BeforeEach
     fun setup() {
-        clearAllMocks()
         every { inlineVersioningProperties.blockWindow } returns 10000L
         every { inlineVersioningProperties.maxVersions } returns 100
-        service =
-            spyk(
-                ValidatorService(
-                    repository,
-                    mongoTemplate,
-                    inlineVersioningProperties,
-                    thorClient,
-                    25L,
-                    "0xcontract",
-                )
-            )
+        service = ValidatorService(repository, mongoTemplate, inlineVersioningProperties)
     }
 
-    private fun inspectionResult(data: String): InspectionResult =
-        InspectionResult(
-            vmError = null,
-            data = data,
-            reverted = false,
-            events = emptyList(),
-            transfers = emptyList(),
-            gasUsed = 0,
-        )
-
-    private fun validBlockId(hexChar: Char): String = "0x" + hexChar.toString().repeat(64)
+    @AfterEach
+    fun tearDown() {
+        unmockkAll()
+    }
 
     private fun block(num: Long) =
         Block(
@@ -84,14 +69,23 @@ class ValidatorServiceTest {
             com = false,
         )
 
-    private fun makeEvent(
+    private fun inspectionResult(data: String = "0xDATA"): InspectionResult =
+        InspectionResult(
+            vmError = null,
+            data = data,
+            reverted = false,
+            events = emptyList(),
+            transfers = emptyList(),
+            gasUsed = 0,
+        )
+
+    private fun makeBeneficiaryEvent(
         blockNumber: Long,
         validator: String,
         beneficiary: String,
-        type: String = "BeneficiaryChanged",
     ): IndexedEvent =
         IndexedEvent(
-            id = "evt1",
+            id = "evt-beneficiary",
             blockId = "0xBLOCK",
             blockNumber = blockNumber,
             blockTimestamp = 111,
@@ -106,297 +100,10 @@ class ValidatorServiceTest {
                     returnValues = mapOf("validator" to validator, "beneficiary" to beneficiary)
                 ),
             address = "0xcontract",
-            eventType = type,
+            eventType = "BeneficiarySet",
             clauseIndex = 0,
             signature = null,
         )
-
-    // --- processBlock tests ---
-
-    @Test
-    fun `skip old irrelevant blocks when no events`() {
-        val oldBlock = block(50)
-
-        val result = service.processBlock(oldBlock, emptyList(), emptyList(), isFullySynced = false)
-
-        assertThat(result.first).isEmpty()
-        assertThat(result.second).isEmpty()
-    }
-
-    @Test
-    fun `apply beneficiary changes for old blocks`() {
-        val ev = makeEvent(7, "0xVAL1", "0xBEN")
-
-        every { repository.findAllById(any<List<String>>()) } returns
-            listOf(
-                Validator(
-                    id = "0xVAL1",
-                    blockId = "oldBlock",
-                    blockNumber = 5,
-                    blockTimestamp = 123,
-                    beneficiary = "0xOLD",
-                    status = Status.ACTIVE,
-                    version = 1,
-                )
-            )
-
-        val result = service.processBlock(block(7), listOf(ev), emptyList(), isFullySynced = false)
-
-        val updated = result.first.single()
-        assertThat(updated.id).isEqualTo("0xVAL1")
-        assertThat(updated.beneficiary).isEqualTo("0xBEN")
-        assertThat(result.second).isEmpty()
-    }
-
-    @Test
-    fun `recent blocks load ABIs and update chain state`() {
-        every { repository.findByStatusNot(any()) } returns emptyList()
-
-        // Fake ABI + responses
-        val abi = AbiElement(name = "getValidators", type = "function")
-        mockkObject(ValidatorAssembler)
-        every { getLatestValidatorInfo(any(), any(), any(), any(), any(), any()) } returns
-            listOf(
-                Validator(
-                    id = "0xVAL1",
-                    blockId = "0xBLOCK",
-                    blockNumber = 190,
-                    blockTimestamp = 111,
-                    beneficiary = "0xBEN",
-                    version = 1,
-                )
-            )
-        coEvery { thorClient.getAccountState(any(), any()) } returns
-            ExecuteAccountResponse(balance = "0x0", energy = "0x0", hasCode = false)
-
-        // FIX: InspectionResult must get a List<TxEvent>, not a BigInteger
-        val inspectionResult =
-            InspectionResult(
-                data = "0xDATA",
-                events = emptyList(),
-                transfers = emptyList(),
-                gasUsed = 0,
-                reverted = false,
-                vmError = "",
-            )
-
-        val result =
-            service.processBlock(
-                block(190),
-                emptyList(),
-                listOf(inspectionResult),
-                isFullySynced = true,
-            )
-
-        val updated = result.first.single()
-        assertThat(updated.id).isEqualTo("0xVAL1")
-        verify { getLatestValidatorInfo(any(), any(), any(), any(), any(), any()) }
-    }
-
-    // --- saveAndDelete tests ---
-
-    @Test
-    fun `saveAndDelete persists updates and archives`() {
-        val v1 =
-            Validator(
-                id = "0xVAL1",
-                blockId = "b",
-                blockNumber = 1,
-                blockTimestamp = 1,
-                version = 1,
-            )
-
-        val collection = mockk<MongoCollection<Document>>(relaxed = true)
-        every { mongoTemplate.getCollectionName(Validator::class.java) } returns "validators"
-        every { mongoTemplate.getCollection("validators") } returns collection
-
-        service.save(listOf(v1), listOf(v1))
-
-        verify(exactly = 1) {
-            collection.bulkWrite(any<List<WriteModel<Document>>>(), any<BulkWriteOptions>())
-        }
-    }
-
-    // --- Queue Initialization Tests ---
-
-    @Test
-    fun `initializeQueuePositionsIfNeeded initializes only once`() {
-        runBlocking {
-            val zeroAddressData =
-                "0x0000000000000000000000000000000000000000000000000000000000000000"
-            coEvery { thorClient.inspectClauses(any(), any()) } returns
-                listOf(inspectionResult(zeroAddressData))
-
-            service.initializeQueuePositionsIfNeeded(validBlockId('1'))
-            service.initializeQueuePositionsIfNeeded(validBlockId('2'))
-            service.initializeQueuePositionsIfNeeded(validBlockId('3'))
-        }
-
-        coVerify(exactly = 1) { thorClient.inspectClauses(any(), any()) }
-    }
-
-    @Test
-    fun `initializeQueuePositionsIfNeeded does nothing when queue is empty`() {
-        runBlocking {
-            val zeroAddressData =
-                "0x0000000000000000000000000000000000000000000000000000000000000000"
-            coEvery { thorClient.inspectClauses(any(), any()) } returns
-                listOf(inspectionResult(zeroAddressData))
-
-            service.initializeQueuePositionsIfNeeded(validBlockId('b'))
-        }
-
-        coVerify(exactly = 1) { thorClient.inspectClauses(any(), any()) }
-        verify(exactly = 0) { repository.findAllById(any<List<String>>()) }
-        verify(exactly = 0) { repository.saveAll(any<List<Validator>>()) }
-    }
-
-    @Test
-    fun `initializeQueuePositionsIfNeeded fetches queue order and updates positions`() {
-        // Encode addresses as ABI-encoded return values (32-byte padded)
-        val val1 = "0x000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1"
-        val val2 = "0x000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa2"
-        val zeroAddress = "0x0000000000000000000000000000000000000000000000000000000000000000"
-
-        runBlocking {
-            // Mock the iteration: firstQueued -> val1 -> val2 -> zero (end)
-            coEvery { thorClient.inspectClauses(any(), any()) } returnsMany
-                listOf(
-                    listOf(inspectionResult(val1)), // firstQueued returns val1
-                    listOf(inspectionResult(val2)), // next(val1) returns val2
-                    listOf(inspectionResult(zeroAddress)), // next(val2) returns zero (end)
-                )
-
-            val existingValidators =
-                listOf(
-                    Validator(
-                        id = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
-                        blockId = "old",
-                        blockNumber = 100,
-                        blockTimestamp = 123,
-                        status = Status.QUEUED,
-                        version = 1,
-                    ),
-                    Validator(
-                        id = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa2",
-                        blockId = "old",
-                        blockNumber = 100,
-                        blockTimestamp = 123,
-                        status = Status.QUEUED,
-                        version = 1,
-                    ),
-                )
-            every { repository.findAllById(any<List<String>>()) } returns existingValidators
-
-            val savedSlot = slot<List<Validator>>()
-            every { repository.saveAll(capture(savedSlot)) } answers { savedSlot.captured }
-
-            service.initializeQueuePositionsIfNeeded(validBlockId('b'))
-
-            verify { repository.saveAll(any<List<Validator>>()) }
-            val saved = savedSlot.captured
-            assertThat(saved).hasSize(2)
-            assertThat(
-                    saved
-                        .find { it.id == "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1" }
-                        ?.queuePosition
-                )
-                .isEqualTo(1)
-            assertThat(
-                    saved
-                        .find { it.id == "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa2" }
-                        ?.queuePosition
-                )
-                .isEqualTo(2)
-        }
-    }
-
-    @Test
-    fun `initializeQueuePositionsIfNeeded skips validators not found in repository`() {
-        val val1 = "0x000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1"
-        val val2 = "0x000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa2"
-        val zeroAddress = "0x0000000000000000000000000000000000000000000000000000000000000000"
-
-        runBlocking {
-            coEvery { thorClient.inspectClauses(any(), any()) } returnsMany
-                listOf(
-                    listOf(inspectionResult(val1)),
-                    listOf(inspectionResult(val2)),
-                    listOf(inspectionResult(zeroAddress)),
-                )
-
-            // Only val1 exists in DB, val2 is unknown
-            val existingValidators =
-                listOf(
-                    Validator(
-                        id = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
-                        blockId = "old",
-                        blockNumber = 100,
-                        blockTimestamp = 123,
-                        status = Status.QUEUED,
-                        version = 1,
-                    )
-                )
-            every { repository.findAllById(any<List<String>>()) } returns existingValidators
-
-            val savedSlot = slot<List<Validator>>()
-            every { repository.saveAll(capture(savedSlot)) } answers { savedSlot.captured }
-
-            service.initializeQueuePositionsIfNeeded(validBlockId('b'))
-
-            val saved = savedSlot.captured
-            // Only val1 should be saved (val2 skipped as not in repository)
-            assertThat(saved).hasSize(1)
-            assertThat(saved[0].id).isEqualTo("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1")
-            assertThat(saved[0].queuePosition).isEqualTo(1)
-        }
-    }
-
-    @Test
-    fun `initializeQueuePositionsIfNeeded preserves version when updating`() {
-        val val1 = "0x000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1"
-        val zeroAddress = "0x0000000000000000000000000000000000000000000000000000000000000000"
-
-        runBlocking {
-            coEvery { thorClient.inspectClauses(any(), any()) } returnsMany
-                listOf(listOf(inspectionResult(val1)), listOf(inspectionResult(zeroAddress)))
-
-            val existingValidator =
-                Validator(
-                    id = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
-                    blockId = "old",
-                    blockNumber = 100,
-                    blockTimestamp = 123,
-                    status = Status.QUEUED,
-                    version = 5,
-                )
-            every { repository.findAllById(any<List<String>>()) } returns listOf(existingValidator)
-
-            val savedSlot = slot<List<Validator>>()
-            every { repository.saveAll(capture(savedSlot)) } answers { savedSlot.captured }
-
-            service.initializeQueuePositionsIfNeeded(validBlockId('b'))
-
-            val saved = savedSlot.captured
-            assertThat(saved[0].version)
-                .isEqualTo(5) // version unchanged during queue initialization
-        }
-    }
-
-    @Test
-    fun `initializeQueuePositionsIfNeeded handles empty response from thor`() {
-        runBlocking {
-            coEvery { thorClient.inspectClauses(any(), any()) } returns emptyList()
-
-            service.initializeQueuePositionsIfNeeded(validBlockId('b'))
-        }
-
-        coVerify(exactly = 1) { thorClient.inspectClauses(any(), any()) }
-        verify(exactly = 0) { repository.findAllById(any<List<String>>()) }
-        verify(exactly = 0) { repository.saveAll(any<List<Validator>>()) }
-    }
-
-    // --- ValidationWithdrawn tests ---
 
     private fun makeStakeEvent(
         blockNumber: Long,
@@ -422,8 +129,169 @@ class ValidatorServiceTest {
             signature = null,
         )
 
+    private fun decodedValidatorMap(): Map<String, Any?> =
+        mapOf(
+            "masters" to listOf("0xVAL1"),
+            "endorsors" to listOf("0xEND1"),
+            "statuses" to listOf(BigInteger.TWO),
+            "onlines" to listOf(true),
+            "offlineBlocks" to listOf(BigInteger.ZERO),
+            "stakingPeriodLengths" to listOf(10),
+            "startBlocks" to listOf(BigInteger.TEN),
+            "exitBlocks" to listOf(BigInteger.valueOf(4294967295)),
+            "completedPeriods" to listOf(BigInteger.valueOf(5)),
+            "validatorLockedStakes" to listOf(BigInteger("1000000000000000000")),
+            "validatorLockedWeights" to listOf(BigInteger.valueOf(100)),
+            "delegatorsStake" to listOf(BigInteger.ZERO),
+            "validatorQueuedStakes" to listOf(BigInteger.ZERO),
+            "totalQueuedStakes" to listOf(BigInteger.ZERO),
+            "totalExitingStakes" to listOf(BigInteger.ZERO),
+            "totalNextPeriodWeights" to listOf(BigInteger.valueOf(100)),
+            "nextPeriodDelegationStakes" to listOf(BigInteger.ZERO),
+        )
+
+    private fun decodedInfo(decodedValidators: Map<String, Any?> = decodedValidatorMap()) =
+        DecodedValidatorInfo(
+            decodedValidators = decodedValidators,
+            totalWeight = BigInteger.ONE,
+            vthoTotalSupply = BigInteger.ZERO,
+            vetPriceUsd = BigInteger.ONE,
+            vthoPriceUsd = BigInteger.ONE,
+            vthoBurned = BigInteger.ZERO,
+        )
+
     @Test
-    fun `ValidationWithdrawn reduces exitingValidatorVetStaked`() {
+    fun `processBlock returns no updates before helper exists when there are no events`() {
+        every { repository.findByStatusNot(Status.EXITED) } returns emptyList()
+
+        val result = service.processBlock(block(50), emptyList(), emptyList())
+
+        assertThat(result.first).isEmpty()
+        assertThat(result.second).isEmpty()
+    }
+
+    @Test
+    fun `processBlock uses event-only fallback before helper exists`() {
+        val validatorId = "0xVAL1"
+        val existingValidator =
+            Validator(
+                id = validatorId,
+                blockId = "oldBlock",
+                blockNumber = 49,
+                blockTimestamp = 123,
+                beneficiary = "0xOLD",
+                exitingValidatorVetStaked = BigDecimal("5000000"),
+                version = 2,
+            )
+
+        every { repository.findByStatusNot(Status.EXITED) } returns listOf(existingValidator)
+
+        val result =
+            service.processBlock(
+                block(50),
+                listOf(makeBeneficiaryEvent(50, validatorId, "0xNEW")),
+                emptyList(),
+            )
+
+        val updated = result.first.single()
+        assertThat(result.second).containsExactly(existingValidator)
+        assertThat(updated.beneficiary).isEqualTo("0xNEW")
+        assertThat(updated.version).isEqualTo(3)
+    }
+
+    @Test
+    fun `processBlock fails when validator call data is missing after validator state exists`() {
+        every { repository.findByStatusNot(Status.EXITED) } returns
+            listOf(
+                Validator(
+                    id = "0xVAL1",
+                    blockId = "oldBlock",
+                    blockNumber = 49,
+                    blockTimestamp = 123,
+                    status = Status.ACTIVE,
+                    version = 1,
+                )
+            )
+
+        val exception =
+            assertThrows<IllegalStateException> {
+                service.processBlock(block(50), emptyList(), emptyList())
+            }
+
+        assertThat(exception.message).contains("Missing or invalid validator call data")
+    }
+
+    @Test
+    fun `processBlock passes event overlays into assembler and returns persisted docs for archiving`() {
+        val validatorId = "0xVAL1"
+        val existingValidator =
+            Validator(
+                id = validatorId,
+                blockId = "oldBlock",
+                blockNumber = 100,
+                blockTimestamp = 123,
+                beneficiary = "0xOLD",
+                status = Status.ACTIVE,
+                exitingValidatorVetStaked = BigDecimal.ZERO,
+                version = 41,
+            )
+        val updatedValidator =
+            existingValidator.copy(
+                blockId = "0xBLOCK",
+                blockNumber = 200,
+                blockTimestamp = 111,
+                beneficiary = "0xBEN",
+                exitingValidatorVetStaked = BigDecimal("25000000"),
+                version = 42,
+            )
+
+        every { repository.findByStatusNot(Status.EXITED) } returns listOf(existingValidator)
+
+        mockkObject(ValidatorDecoder, ValidatorAssembler)
+        every { ValidatorDecoder.decodeResponseInfo(any(), any()) } returns decodedInfo()
+
+        val persistedDocsSlot = slot<Map<String, Validator>>()
+        val carriedDocsSlot = slot<Map<String, Validator>>()
+        every {
+            ValidatorAssembler.unpackValidators(
+                any(),
+                capture(persistedDocsSlot),
+                capture(carriedDocsSlot),
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+            )
+        } returns listOf(updatedValidator)
+
+        val decreasedWei = BigInteger("25000000000000000000000000")
+        val result =
+            service.processBlock(
+                block(200),
+                listOf(
+                    makeBeneficiaryEvent(200, validatorId, "0xBEN"),
+                    makeStakeEvent(
+                        200,
+                        validatorId,
+                        "StakeDecreased",
+                        mapOf("removed" to decreasedWei),
+                    ),
+                ),
+                listOf(inspectionResult()),
+            )
+
+        assertThat(result.first).containsExactly(updatedValidator)
+        assertThat(result.second).containsExactly(existingValidator)
+        assertThat(persistedDocsSlot.captured[validatorId]).isEqualTo(existingValidator)
+        assertThat(carriedDocsSlot.captured[validatorId]!!.beneficiary).isEqualTo("0xBEN")
+        assertThat(carriedDocsSlot.captured[validatorId]!!.exitingValidatorVetStaked)
+            .isEqualByComparingTo(BigDecimal("25000000"))
+    }
+
+    @Test
+    fun `StakeIncreased reduces same-block exiting validator stake before assembly`() {
         val validatorId = "0xVAL1"
         val existingValidator =
             Validator(
@@ -433,65 +301,42 @@ class ValidatorServiceTest {
                 blockTimestamp = 123,
                 status = Status.ACTIVE,
                 exitingValidatorVetStaked = BigDecimal("25000000"),
-                startBlock = 1000L,
-                cyclePeriodLength = 60480L,
-                version = 1,
+                version = 5,
             )
 
-        every { repository.findAllById(any<List<String>>()) } returns listOf(existingValidator)
+        every { repository.findByStatusNot(Status.EXITED) } returns listOf(existingValidator)
 
-        val withdrawnWei = BigInteger("25000000000000000000000000")
-        val withdrawEvent =
-            makeStakeEvent(200, validatorId, "ValidationWithdrawn", mapOf("stake" to withdrawnWei))
+        mockkObject(ValidatorDecoder, ValidatorAssembler)
+        every { ValidatorDecoder.decodeResponseInfo(any(), any()) } returns decodedInfo()
 
-        val result =
-            service.processBlock(
-                block(200),
-                listOf(withdrawEvent),
-                emptyList(),
-                isFullySynced = false,
+        val carriedDocsSlot = slot<Map<String, Validator>>()
+        every {
+            ValidatorAssembler.unpackValidators(
+                any(),
+                any(),
+                capture(carriedDocsSlot),
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
             )
+        } returns emptyList()
 
-        val updated = result.first.single()
-        assertThat(updated.exitingValidatorVetStaked).isEqualByComparingTo(BigDecimal.ZERO)
+        val addedWei = BigInteger("10000000000000000000000000")
+        service.processBlock(
+            block(200),
+            listOf(makeStakeEvent(200, validatorId, "StakeIncreased", mapOf("added" to addedWei))),
+            listOf(inspectionResult()),
+        )
+
+        assertThat(carriedDocsSlot.captured[validatorId]!!.exitingValidatorVetStaked)
+            .isEqualByComparingTo(BigDecimal("15000000"))
     }
 
     @Test
-    fun `ValidationWithdrawn partial reduction keeps remaining exitingValidatorVetStaked`() {
-        val validatorId = "0xVAL1"
-        val existingValidator =
-            Validator(
-                id = validatorId,
-                blockId = "oldBlock",
-                blockNumber = 100,
-                blockTimestamp = 123,
-                status = Status.ACTIVE,
-                exitingValidatorVetStaked = BigDecimal("25000000"),
-                startBlock = 1000L,
-                cyclePeriodLength = 60480L,
-                version = 1,
-            )
-
-        every { repository.findAllById(any<List<String>>()) } returns listOf(existingValidator)
-
-        val withdrawnWei = BigInteger("10000000000000000000000000")
-        val withdrawEvent =
-            makeStakeEvent(200, validatorId, "ValidationWithdrawn", mapOf("stake" to withdrawnWei))
-
-        val result =
-            service.processBlock(
-                block(200),
-                listOf(withdrawEvent),
-                emptyList(),
-                isFullySynced = false,
-            )
-
-        val updated = result.first.single()
-        assertThat(updated.exitingValidatorVetStaked).isEqualByComparingTo(BigDecimal("15000000"))
-    }
-
-    @Test
-    fun `ValidationWithdrawn does not go below zero`() {
+    fun `ValidationWithdrawn floors exiting validator stake at zero before assembly`() {
         val validatorId = "0xVAL1"
         val existingValidator =
             Validator(
@@ -501,76 +346,105 @@ class ValidatorServiceTest {
                 blockTimestamp = 123,
                 status = Status.ACTIVE,
                 exitingValidatorVetStaked = BigDecimal("5000000"),
-                startBlock = 1000L,
-                cyclePeriodLength = 60480L,
-                version = 1,
+                version = 5,
             )
 
-        every { repository.findAllById(any<List<String>>()) } returns listOf(existingValidator)
+        every { repository.findByStatusNot(Status.EXITED) } returns listOf(existingValidator)
+
+        mockkObject(ValidatorDecoder, ValidatorAssembler)
+        every { ValidatorDecoder.decodeResponseInfo(any(), any()) } returns decodedInfo()
+
+        val carriedDocsSlot = slot<Map<String, Validator>>()
+        every {
+            ValidatorAssembler.unpackValidators(
+                any(),
+                any(),
+                capture(carriedDocsSlot),
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+            )
+        } returns emptyList()
 
         val withdrawnWei = BigInteger("25000000000000000000000000")
-        val withdrawEvent =
-            makeStakeEvent(200, validatorId, "ValidationWithdrawn", mapOf("stake" to withdrawnWei))
+        service.processBlock(
+            block(200),
+            listOf(
+                makeStakeEvent(
+                    200,
+                    validatorId,
+                    "ValidationWithdrawn",
+                    mapOf("stake" to withdrawnWei),
+                )
+            ),
+            listOf(inspectionResult()),
+        )
 
-        val result =
-            service.processBlock(
-                block(200),
-                listOf(withdrawEvent),
-                emptyList(),
-                isFullySynced = false,
-            )
-
-        val updated = result.first.single()
-        assertThat(updated.exitingValidatorVetStaked).isEqualByComparingTo(BigDecimal.ZERO)
+        assertThat(carriedDocsSlot.captured[validatorId]!!.exitingValidatorVetStaked)
+            .isEqualByComparingTo(BigDecimal.ZERO)
     }
 
     @Test
-    fun `StakeDecreased then ValidationWithdrawn correctly tracks exitingValidatorVetStaked`() {
-        val validatorId = "0xVAL1"
-        val existingValidator =
+    fun `new validator stake decrease is counted once before assembly`() {
+        val validatorId = "0xNEW"
+
+        every { repository.findByStatusNot(Status.EXITED) } returns emptyList()
+
+        mockkObject(ValidatorDecoder, ValidatorAssembler)
+        every { ValidatorDecoder.decodeResponseInfo(any(), any()) } returns decodedInfo()
+
+        val carriedDocsSlot = slot<Map<String, Validator>>()
+        every {
+            ValidatorAssembler.unpackValidators(
+                any(),
+                any(),
+                capture(carriedDocsSlot),
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+            )
+        } returns emptyList()
+
+        val decreasedWei = BigInteger("25000000000000000000000000")
+        service.processBlock(
+            block(200),
+            listOf(
+                makeStakeEvent(200, validatorId, "StakeDecreased", mapOf("removed" to decreasedWei))
+            ),
+            listOf(inspectionResult()),
+        )
+
+        assertThat(carriedDocsSlot.captured[validatorId]!!.version).isEqualTo(0)
+        assertThat(carriedDocsSlot.captured[validatorId]!!.beneficiary).isNull()
+        assertThat(carriedDocsSlot.captured[validatorId]!!.exitingValidatorVetStaked)
+            .isEqualByComparingTo(BigDecimal("25000000"))
+    }
+
+    @Test
+    fun `save persists updates with inline versioning`() {
+        val validator =
             Validator(
-                id = validatorId,
-                blockId = "oldBlock",
-                blockNumber = 100,
-                blockTimestamp = 123,
-                status = Status.ACTIVE,
-                exitingValidatorVetStaked = BigDecimal.ZERO,
-                startBlock = 1000L,
-                cyclePeriodLength = 60480L,
+                id = "0xVAL1",
+                blockId = "b",
+                blockNumber = 1,
+                blockTimestamp = 1,
                 version = 1,
             )
 
-        every { repository.findAllById(any<List<String>>()) } returns listOf(existingValidator)
+        val collection = mockk<MongoCollection<Document>>(relaxed = true)
+        every { mongoTemplate.getCollectionName(Validator::class.java) } returns "validators"
+        every { mongoTemplate.getCollection("validators") } returns collection
 
-        val decreasedWei = BigInteger("25000000000000000000000000")
-        val decreaseEvent =
-            makeStakeEvent(150, validatorId, "StakeDecreased", mapOf("removed" to decreasedWei))
+        service.save(listOf(validator), listOf(validator))
 
-        val result1 =
-            service.processBlock(
-                block(150),
-                listOf(decreaseEvent),
-                emptyList(),
-                isFullySynced = false,
-            )
-        val afterDecrease = result1.first.single()
-        assertThat(afterDecrease.exitingValidatorVetStaked)
-            .isEqualByComparingTo(BigDecimal("25000000"))
-
-        every { repository.findAllById(any<List<String>>()) } returns listOf(afterDecrease)
-
-        val withdrawnWei = BigInteger("25000000000000000000000000")
-        val withdrawEvent =
-            makeStakeEvent(200, validatorId, "ValidationWithdrawn", mapOf("stake" to withdrawnWei))
-
-        val result2 =
-            service.processBlock(
-                block(200),
-                listOf(withdrawEvent),
-                emptyList(),
-                isFullySynced = false,
-            )
-        val afterWithdraw = result2.first.single()
-        assertThat(afterWithdraw.exitingValidatorVetStaked).isEqualByComparingTo(BigDecimal.ZERO)
+        verify(exactly = 1) {
+            collection.bulkWrite(any<List<WriteModel<Document>>>(), any<BulkWriteOptions>())
+        }
     }
 }

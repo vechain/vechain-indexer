@@ -2,13 +2,10 @@ package org.vechain.indexer.validator.logic
 
 import java.math.BigDecimal
 import java.math.BigInteger
-import org.bson.types.Decimal128
-import org.vechain.indexer.event.model.abi.AbiElement
-import org.vechain.indexer.thor.model.InspectionResult
+import org.vechain.indexer.stargate.token.TokenLevelDecimalValues
 import org.vechain.indexer.utils.NumberUtils
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator
-import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeResponseInfo
 import org.vechain.indexer.validator.logic.ValidatorCalculator.MAX_UINT32
 import org.vechain.indexer.validator.logic.ValidatorCalculator.blocksPerYear
 import org.vechain.indexer.validator.logic.ValidatorCalculator.calculateNextCycleBlock
@@ -20,39 +17,16 @@ import org.vechain.indexer.validator.logic.ValidatorCalculator.computeStakes
 import org.vechain.indexer.validator.logic.ValidatorCalculator.computeTVL
 import org.vechain.indexer.validator.logic.ValidatorCalculator.determineVTHOIssuedPerBlock
 import org.vechain.indexer.validator.logic.ValidatorCalculator.resolveStatus
-import org.vechain.indexer.validator.models.DecodedValidatorInfo
 import org.vechain.indexer.validator.models.DecodedValidatorRow
 
 /** Holds queue position info for a QUEUED validator */
 data class QueueInfo(val position: Long, val availableStartBlock: Long)
 
 object ValidatorAssembler {
-    fun getLatestValidatorInfo(
-        responses: List<InspectionResult>,
-        validatorsAbi: Map<String, AbiElement>,
-        existingDocs: Map<String, Validator>,
-        blockId: String,
-        blockNumber: Long,
-        blockTimestamp: Long,
-    ): List<Validator> {
-        val decodedInfo: DecodedValidatorInfo =
-            decodeResponseInfo(responses, validatorsAbi) ?: return emptyList()
-
-        return unpackValidators(
-            decodedInfo.decodedValidators,
-            existingDocs,
-            decodedInfo.totalWeight,
-            decodedInfo.vetPriceUsd,
-            decodedInfo.vthoPriceUsd,
-            blockId,
-            blockNumber,
-            blockTimestamp,
-        )
-    }
-
     fun unpackValidators(
-        decoded: Map<String, Any?>,
-        existingDocs: Map<String, Validator>,
+        rows: List<DecodedValidatorRow>,
+        persistedDocs: Map<String, Validator>,
+        carriedDocs: Map<String, Validator> = persistedDocs,
         totalWeight: BigInteger,
         vetPriceUsd: BigInteger,
         vthoPriceUsd: BigInteger,
@@ -60,64 +34,23 @@ object ValidatorAssembler {
         blockNumber: Long,
         blockTimestamp: Long,
     ): List<Validator> {
-        val ids = decoded.listOf<String>("masters")
-        val endorsers = decoded.listOf<String>("endorsors")
-        val statuses = decoded.listOf<BigInteger>("statuses")
-        val stakes = decoded.listOf<BigInteger>("validatorLockedStakes")
-        val totalQueuedStakes = decoded.listOf<BigInteger>("totalQueuedStakes")
-        val totalExitingStakes = decoded.listOf<BigInteger>("totalExitingStakes")
-        val onlines = decoded.listOf<Boolean>("onlines")
-        val offlineBlocks = decoded.listOf<BigInteger>("offlineBlocks")
-        val stakingPeriodLengths = decoded.listOf<Int>("stakingPeriodLengths")
-        val startBlocks = decoded.listOf<BigInteger>("startBlocks")
-        val exitBlocks = decoded.listOf<BigInteger>("exitBlocks")
-        val completedPeriods = decoded.listOf<BigInteger>("completedPeriods")
-        val lockedVET = decoded.listOf<BigInteger>("validatorLockedStakes")
-        val lockedWeight = decoded.listOf<BigInteger>("validatorLockedWeights")
-        val delegatorsStake = decoded.listOf<BigInteger>("delegatorsStake")
-        val queuedStake = decoded.listOf<BigInteger>("totalQueuedStakes")
-        val validatorQueuedStakes = decoded.listOf<BigInteger>("validatorQueuedStakes")
-        val exitingStake = decoded.listOf<BigInteger>("totalExitingStakes")
-        val totalNextPeriodWeights = decoded.listOf<BigInteger>("totalNextPeriodWeights")
-        val nextPeriodDelegationStakes = decoded.listOf<BigInteger>("nextPeriodDelegationStakes")
-
-        val rows =
-            ids.indices.map { i ->
-                DecodedValidatorRow(
-                    id = ids[i],
-                    endorser = endorsers[i],
-                    status = statuses[i],
-                    online = onlines[i],
-                    offlineBlock = offlineBlocks[i],
-                    stakingPeriodLength = stakingPeriodLengths[i],
-                    startBlock = startBlocks[i],
-                    exitBlock = exitBlocks[i],
-                    completedPeriods = completedPeriods[i],
-                    validatorLockedVET = lockedVET[i],
-                    validatorLockedWeight = lockedWeight[i],
-                    delegatorsStake = delegatorsStake[i],
-                    validatorQueuedStake = validatorQueuedStakes[i],
-                    totalQueuedStake = queuedStake[i],
-                    totalExitingStake = exitingStake[i],
-                    totalNextPeriodWeight = totalNextPeriodWeights[i],
-                    nextPeriodDelegationStake = nextPeriodDelegationStakes[i],
-                )
-            }
-
-        // Calculate queue positions and available start blocks for QUEUED validators
-        val queueInfo = calculateQueueInfo(rows, existingDocs)
+        val queueInfo = calculateQueueInfo(rows)
+        val ids = rows.map { it.id }
 
         val nextPeriodTotalWeight =
-            totalNextPeriodWeights.reduceOrNull(BigInteger::add) ?: BigInteger.ZERO
+            rows.map { it.totalNextPeriodWeight }.reduceOrNull(BigInteger::add) ?: BigInteger.ZERO
 
         val totalVETStaked =
-            stakes.indices.fold(BigInteger.ZERO) { acc, i -> acc + stakes[i] + delegatorsStake[i] }
+            rows.fold(BigInteger.ZERO) { acc, row ->
+                acc + row.validatorLockedVET + row.delegatorsStake
+            }
         val totalVETStakedDecimal = NumberUtils.toVET(totalVETStaked)
         val vthoIssued = determineVTHOIssuedPerBlock(totalVETStakedDecimal)
 
         val totalNextPeriodVET =
-            stakes.indices.fold(BigInteger.ZERO) { acc, i ->
-                acc + stakes[i] + delegatorsStake[i] + totalQueuedStakes[i] - totalExitingStakes[i]
+            rows.fold(BigInteger.ZERO) { acc, row ->
+                acc + row.validatorLockedVET + row.delegatorsStake + row.totalQueuedStake -
+                    row.totalExitingStake
             }
         val vthoIssuedNextCycle = determineVTHOIssuedPerBlock(NumberUtils.toVET(totalNextPeriodVET))
 
@@ -126,7 +59,7 @@ object ValidatorAssembler {
                 val candidate =
                     buildValidator(
                         row,
-                        existingDocs[row.id],
+                        carriedDocs[row.id],
                         totalWeight,
                         vthoIssued,
                         vetPriceUsd,
@@ -140,36 +73,36 @@ object ValidatorAssembler {
                         queueInfo[row.id],
                     )
 
-                val existing = existingDocs[row.id]
+                val existing = persistedDocs[row.id]
                 candidate.takeUnless { existing != null && candidate.isEquivalentTo(existing) }
             }
 
         val disappeared =
-            existingDocs.keys.minus(ids.toSet()).mapNotNull { id ->
-                val oldVal = existingDocs[id]
+            persistedDocs.keys.minus(ids.toSet()).mapNotNull { id ->
+                val oldVal = persistedDocs[id]
                 if (oldVal != null && oldVal.status != Status.EXITED) {
                     oldVal.copy(
                         status = Status.EXITED,
                         blockNumber = blockNumber,
                         blockTimestamp = blockTimestamp,
-                        validatorYield = Decimal128(0),
-                        tvlBasedYield = Decimal128(0),
-                        avgDelegatorYield = Decimal128(0),
-                        nftYieldsNextCycle = emptyMap(),
-                        nextCycleValidatorYield = Decimal128(0),
-                        nextCycleTvlBasedYield = Decimal128(0),
-                        nextCycleAvgDelegatorYield = Decimal128(0),
-                        totalTvl = Decimal128(0),
-                        delegatorTvl = Decimal128(0),
-                        validatorTvl = Decimal128(0),
-                        validatorQueuedVetStaked = Decimal128(0),
-                        delegatorQueuedVetStaked = Decimal128(0),
-                        validatorExitingVetStaked = Decimal128(0),
-                        delegatorExitingVetStaked = Decimal128(0),
-                        queuedVetStaked = Decimal128(0),
-                        exitingVetStaked = Decimal128(0),
-                        blockProbability = Decimal128(0),
-                        blocksPerYear = Decimal128(0),
+                        validatorYield = BigDecimal.ZERO,
+                        tvlBasedYield = BigDecimal.ZERO,
+                        avgDelegatorYield = BigDecimal.ZERO,
+                        nftYieldsNextCycle = TokenLevelDecimalValues.empty(),
+                        nextCycleValidatorYield = BigDecimal.ZERO,
+                        nextCycleTvlBasedYield = BigDecimal.ZERO,
+                        nextCycleAvgDelegatorYield = BigDecimal.ZERO,
+                        totalTvl = BigDecimal.ZERO,
+                        delegatorTvl = BigDecimal.ZERO,
+                        validatorTvl = BigDecimal.ZERO,
+                        validatorQueuedVetStaked = BigDecimal.ZERO,
+                        delegatorQueuedVetStaked = BigDecimal.ZERO,
+                        validatorExitingVetStaked = BigDecimal.ZERO,
+                        delegatorExitingVetStaked = BigDecimal.ZERO,
+                        queuedVetStaked = BigDecimal.ZERO,
+                        exitingVetStaked = BigDecimal.ZERO,
+                        blockProbability = BigDecimal.ZERO,
+                        blocksPerYear = BigDecimal.ZERO,
                         version = oldVal.version + 1,
                         queuePosition = null,
                         availableStartBlock = null,
@@ -247,46 +180,46 @@ object ValidatorAssembler {
             cyclePeriodLength = row.stakingPeriodLength.toLong(),
             startBlock = row.startBlock.toLong(),
             completedPeriods = row.completedPeriods.toLong(),
-            vetStaked = NumberUtils.toSafeDecimal128(stakes.totalVET),
-            validatorVetStaked = NumberUtils.toSafeDecimal128(stakes.validatorVET),
-            delegatorVetStaked = NumberUtils.toSafeDecimal128(stakes.delegatorVET),
-            queuedVetStaked = NumberUtils.toSafeDecimal128(stakes.queuedStake),
-            validatorQueuedVetStaked =
-                NumberUtils.toSafeDecimal128(stakes.queuedValidatorVetStaked),
+            vetStaked = NumberUtils.toScaledDecimal(stakes.totalVET),
+            validatorVetStaked = NumberUtils.toScaledDecimal(stakes.validatorVET),
+            delegatorVetStaked = NumberUtils.toScaledDecimal(stakes.delegatorVET),
+            queuedVetStaked = NumberUtils.toScaledDecimal(stakes.queuedStake),
+            validatorQueuedVetStaked = NumberUtils.toScaledDecimal(stakes.queuedValidatorVetStaked),
             delegatorQueuedVetStaked =
-                NumberUtils.toSafeDecimal128(stakes.queuedDelegationVetStaked),
+                NumberUtils.toScaledDecimal(stakes.queuedDelegationVetStaked),
             validatorExitingVetStaked =
-                NumberUtils.toSafeDecimal128(stakes.exitingValidatorVetStaked),
+                NumberUtils.toScaledDecimal(stakes.exitingValidatorVetStaked),
             delegatorExitingVetStaked =
-                NumberUtils.toSafeDecimal128(stakes.exitingDelegationVetStaked),
-            exitingVetStaked = NumberUtils.toSafeDecimal128(stakes.exitingStake),
-            totalWeight =
-                NumberUtils.toSafeDecimal128(NumberUtils.toVET(row.validatorLockedWeight)),
-            blockProbability = NumberUtils.toSafeDecimal128(probabilities.blockProbability),
+                NumberUtils.toScaledDecimal(stakes.exitingDelegationVetStaked),
+            exitingVetStaked = NumberUtils.toScaledDecimal(stakes.exitingStake),
+            totalWeight = NumberUtils.toScaledDecimal(NumberUtils.toVET(row.validatorLockedWeight)),
+            blockProbability = NumberUtils.toScaledDecimal(probabilities.blockProbability),
             blocksPerEpoch =
-                NumberUtils.toSafeDecimal128(probabilities.blockProbability * BigDecimal(180)),
-            blocksPerYear = NumberUtils.toSafeDecimal128(probabilities.blocksPerYear),
-            validatorTvl = NumberUtils.toSafeDecimal128(tvl.validatorTvl),
-            delegatorTvl = NumberUtils.toSafeDecimal128(tvl.delegatorTvl),
-            totalTvl = NumberUtils.toSafeDecimal128(tvl.totalTvl),
-            validatorYield = NumberUtils.toSafeDecimal128(validatorYield),
-            tvlBasedYield = NumberUtils.toSafeDecimal128(tvlBasedYield),
-            avgDelegatorYield = NumberUtils.toSafeDecimal128(avgDelegatorYield),
-            nextCycleValidatorYield = NumberUtils.toSafeDecimal128(nextCycleValidatorYield),
-            nextCycleTvlBasedYield = NumberUtils.toSafeDecimal128(nextCycleTvlBasedYield),
-            nextCycleAvgDelegatorYield = NumberUtils.toSafeDecimal128(nextCycleAvgDelegatorYield),
+                NumberUtils.toScaledDecimal(probabilities.blockProbability * BigDecimal(180)),
+            blocksPerYear = NumberUtils.toScaledDecimal(probabilities.blocksPerYear),
+            validatorTvl = NumberUtils.toScaledDecimal(tvl.validatorTvl),
+            delegatorTvl = NumberUtils.toScaledDecimal(tvl.delegatorTvl),
+            totalTvl = NumberUtils.toScaledDecimal(tvl.totalTvl),
+            validatorYield = NumberUtils.toScaledDecimal(validatorYield),
+            tvlBasedYield = NumberUtils.toScaledDecimal(tvlBasedYield),
+            avgDelegatorYield = NumberUtils.toScaledDecimal(avgDelegatorYield),
+            nextCycleValidatorYield = NumberUtils.toScaledDecimal(nextCycleValidatorYield),
+            nextCycleTvlBasedYield = NumberUtils.toScaledDecimal(nextCycleTvlBasedYield),
+            nextCycleAvgDelegatorYield = NumberUtils.toScaledDecimal(nextCycleAvgDelegatorYield),
             nftYieldsNextCycle =
-                calculateNftLevelYields(
-                    NumberUtils.toVET(row.totalNextPeriodWeight),
-                    NumberUtils.toVET(totalNextPeriodVET),
-                    NumberUtils.toVET(row.nextPeriodDelegationStake),
-                    NumberUtils.toVET(nextPeriodTotalWeight),
-                    vthoPrice,
-                    vetPrice,
-                    status,
-                    stakes.nextCycleStake,
+                TokenLevelDecimalValues.fromMap(
+                    calculateNftLevelYields(
+                        NumberUtils.toVET(row.totalNextPeriodWeight),
+                        NumberUtils.toVET(totalNextPeriodVET),
+                        NumberUtils.toVET(row.nextPeriodDelegationStake),
+                        NumberUtils.toVET(nextPeriodTotalWeight),
+                        vthoPrice,
+                        vetPrice,
+                        status,
+                        stakes.nextCycleStake,
+                    )
                 ),
-            percentageOffline = NumberUtils.toSafeDecimal128(offline.percentageOffline),
+            percentageOffline = NumberUtils.toScaledDecimal(offline.percentageOffline),
             version = (existingDoc?.version ?: 0) + 1,
             cycleEndBlock = cycleEndBlock,
             exitBlock = row.exitBlock.takeIf { it > BigInteger.ZERO && it != MAX_UINT32 }?.toLong(),
@@ -306,20 +239,15 @@ object ValidatorAssembler {
      * Calculate queue positions and available start blocks for QUEUED validators.
      *
      * Logic:
-     * - Queue positions follow FIFO order (first in, first out)
-     * - Validators keep their relative order from previous block
-     * - New validators are added to the end of the queue
-     * - When a validator leaves the queue, remaining validators move up
+     * - Queue positions are assigned from the order of QUEUED rows in the decoded snapshot
+     * - No prior persisted queue ordering is consulted when deriving positions
      * - Available start block is determined by:
      *     - If they have a startBlock > 0, use that
      *     - Otherwise, match to exiting validators by position (1st queued -> 1st exiting's
      *       exitBlock)
      *     - If no matching exiting validator, 0 (unknown)
      */
-    fun calculateQueueInfo(
-        rows: List<DecodedValidatorRow>,
-        existingDocs: Map<String, Validator>,
-    ): Map<String, QueueInfo> {
+    fun calculateQueueInfo(rows: List<DecodedValidatorRow>): Map<String, QueueInfo> {
         // Status 1 = QUEUED, Status 4 = EXITING
         val queuedRows = rows.filter { it.status.toInt() == 1 }
         if (queuedRows.isEmpty()) return emptyMap()
@@ -336,19 +264,8 @@ object ValidatorAssembler {
                 .map { it.exitBlock }
                 .sorted()
 
-        // Separate into existing queued (have previous position) and newly queued
-        val (existingQueued, newlyQueued) =
-            queuedRows.partition { row -> existingDocs[row.id]?.queuePosition != null }
-
-        // Sort existing queued by their previous position (FIFO order)
-        val sortedExisting =
-            existingQueued.sortedBy { row -> existingDocs[row.id]?.queuePosition ?: Long.MAX_VALUE }
-
-        // New validators go to the end of the queue
-        val orderedQueue = sortedExisting + newlyQueued
-
         // Calculate available start block and assign positions
-        return orderedQueue
+        return queuedRows
             .mapIndexed { index, row ->
                 val availableStart =
                     when {

@@ -1,6 +1,8 @@
 package org.vechain.indexer.validator
 
+import java.math.BigInteger
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.domain.ValidatorDecoder
@@ -96,6 +98,36 @@ class ValidatorDecoderTest {
     fun `hasAbiData returns false for 0x only`() {
         val result = makeInspectionResult("0x")
         assertThat(with(ValidatorDecoder) { result.hasAbiData() }).isFalse()
+    }
+
+    @Test
+    fun `decodeRows fails with clear error when decoded arrays have inconsistent lengths`() {
+        val decoded =
+            mapOf(
+                "masters" to listOf("0xVAL1", "0xVAL2"),
+                "endorsors" to listOf("0xEND1"),
+                "statuses" to listOf(BigInteger.TWO, BigInteger.TWO),
+                "onlines" to listOf(true, true),
+                "offlineBlocks" to listOf(BigInteger.ZERO, BigInteger.ZERO),
+                "stakingPeriodLengths" to listOf(10, 10),
+                "startBlocks" to listOf(BigInteger.TEN, BigInteger.TEN),
+                "exitBlocks" to listOf(BigInteger.ZERO, BigInteger.ZERO),
+                "completedPeriods" to listOf(BigInteger.ZERO, BigInteger.ZERO),
+                "validatorLockedStakes" to listOf(BigInteger.ONE, BigInteger.ONE),
+                "validatorLockedWeights" to listOf(BigInteger.ONE, BigInteger.ONE),
+                "delegatorsStake" to listOf(BigInteger.ZERO, BigInteger.ZERO),
+                "validatorQueuedStakes" to listOf(BigInteger.ZERO, BigInteger.ZERO),
+                "totalQueuedStakes" to listOf(BigInteger.ZERO, BigInteger.ZERO),
+                "totalExitingStakes" to listOf(BigInteger.ZERO, BigInteger.ZERO),
+                "totalNextPeriodWeights" to listOf(BigInteger.ONE, BigInteger.ONE),
+                "nextPeriodDelegationStakes" to listOf(BigInteger.ZERO, BigInteger.ZERO),
+            )
+
+        assertThatThrownBy { ValidatorDecoder.decodeRows(decoded) }
+            .isInstanceOf(IllegalStateException::class.java)
+            .hasMessageContaining("Decoded validator arrays have inconsistent lengths")
+            .hasMessageContaining("masters=2")
+            .hasMessageContaining("endorsors=1")
     }
 
     @Test
