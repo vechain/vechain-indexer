@@ -235,14 +235,21 @@ open class ValidatorService(
 
         val results = mongoTemplate.find<Validator>(query)
         val hasNext = results.size > pageable.pageSize
-        val page = if (hasNext) results.dropLast(1) else results
+        val page = (if (hasNext) results.dropLast(1) else results).map(::sanitizeQueueFields)
         return SliceImpl(page, pageable, hasNext)
     }
 
     open fun getValidatorById(validatorId: String): Validator? {
         val query = Query(Criteria.where("_id").`is`(validatorId.lowercase()))
-        return mongoTemplate.findOne<Validator>(query)
+        return mongoTemplate.findOne<Validator>(query)?.let(::sanitizeQueueFields)
     }
+
+    private fun sanitizeQueueFields(validator: Validator): Validator =
+        if (validator.status == Status.QUEUED) {
+            validator
+        } else {
+            validator.copy(queuePosition = null, availableStartBlock = null)
+        }
 
     open fun getMissedBlocksPercentage(
         timeframe: MissedBlocksTimeframe,

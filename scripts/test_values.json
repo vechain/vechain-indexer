@@ -48,18 +48,10 @@
       "103030481407806826549085189442225357811665384371858916510563710566781560914296"
     ],
     "validatorId": [
-      "0xdb71c5c9a5cd407313139978aa8990347d141918",
-      "0x22a3bccab6e3c1b3b53f800cc4fa43c63af0e86e",
-      "0x45bae00fe7c5ac2432bf17f01b22bb6f3a435741",
-      "0xeb921887026118e79a348c5fd2cdec33a2116423",
-      "0x8844f4ecfad8cc329c0881f73ec35476947b75db"
+      "0xdb71c5c9a5cd407313139978aa8990347d141918"
     ],
     "validator": [
-      "0xdb71c5c9a5cd407313139978aa8990347d141918",
-      "0x22a3bccab6e3c1b3b53f800cc4fa43c63af0e86e",
-      "0x45bae00fe7c5ac2432bf17f01b22bb6f3a435741",
-      "0xeb921887026118e79a348c5fd2cdec33a2116423",
-      "0x8844f4ecfad8cc329c0881f73ec35476947b75db"
+      "0xdb71c5c9a5cd407313139978aa8990347d141918"
     ]
   },
   "path_overrides": {
@@ -137,20 +129,11 @@
     "/api/v1/transfers/from": {
       "eventType": ["VET"]
     },
-    "/api/v1/validators/{validatorId}": {
-      "validatorId": [
-        "0xdb71c5c9a5cd407313139978aa8990347d141918",
-        "0x22a3bccab6e3c1b3b53f800cc4fa43c63af0e86e",
-        "0x45bae00fe7c5ac2432bf17f01b22bb6f3a435741",
-        "0xeb921887026118e79a348c5fd2cdec33a2116423",
-        "0x8844f4ecfad8cc329c0881f73ec35476947b75db"
-      ]
+    "/api/v1/validators": {
+      "status": ["ACTIVE", "QUEUED", "EXITING", "EXITED"],
+      "endorser": null
     },
-    "/api/v1/validators/blocks/historic/{validator}": {
-      "validator": [
-        "0xdb71c5c9a5cd407313139978aa8990347d141918",
-        "0x22a3bccab6e3c1b3b53f800cc4fa43c63af0e86e"
-      ]
-    }
+    "/api/v1/validators/{validatorId}": {},
+    "/api/v1/validators/blocks/historic/{validator}": {}
   }
 }

@@ -18,7 +18,6 @@ open class ValidatorConfig {
     open fun validatorIndexer(
         thorClient: ThorClient,
         processor: ValidatorProcessor,
-        service: ValidatorService,
         @Value("\${indexer.start-block.validator}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLogInterval: Long,
         @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
@@ -35,7 +34,9 @@ open class ValidatorConfig {
             .includeFullBlock()
             .abis("abis/stargate")
             .abiContracts(listOf(builtinStakerAddress))
-            .abiEventNames(listOf("BeneficiarySet", "StakeDecreased", "ValidationWithdrawn"))
+            .abiEventNames(
+                listOf("BeneficiarySet", "StakeDecreased", "StakeIncreased", "ValidationWithdrawn")
+            )
             .callDataClauses(buildClauses(getAllValidatorsAddress))
             .excludeVetTransfers()
             .build()

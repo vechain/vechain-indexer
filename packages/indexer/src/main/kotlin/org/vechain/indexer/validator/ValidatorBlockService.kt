@@ -21,9 +21,9 @@ import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
 import org.vechain.indexer.validator.domain.ValidatorDecoder.buildVTHOTotalsClauses
 import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeResponseInfo
+import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeRows
 import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeVTHOIssued
 import org.vechain.indexer.validator.domain.ValidatorDecoder.hasDelegations
-import org.vechain.indexer.validator.logic.ValidatorAssembler.listOf
 import org.vechain.indexer.validator.models.DecodedValidatorInfo
 
 @Profile("validator", "validator-reward")
@@ -168,19 +168,14 @@ open class ValidatorBlockService(
             return emptyList()
         }
 
-        val decodedValidators = decodedInfo.decodedValidators
+        val rows = decodeRows(decodedInfo.decodedValidators)
 
-        val ids = decodedValidators.listOf<String>("masters")
-        val statuses = decodedValidators.listOf<BigInteger>("statuses")
-        val online = decodedValidators.listOf<Boolean>("onlines")
-        val offlineBlocks = decodedValidators.listOf<BigInteger>("offlineBlocks")
+        return rows.mapNotNull { row ->
+            val validatorId = row.id
+            val status = row.status.toInt()
+            val wentOfflineAt = row.offlineBlock.toLong()
 
-        return ids.indices.mapNotNull { i ->
-            val validatorId = ids[i]
-            val status = statuses[i].toInt()
-            val wentOfflineAt = offlineBlocks[i].toLong()
-
-            val isMissed = !online[i] && status == 2 && wentOfflineAt == block.number
+            val isMissed = !row.online && status == 2 && wentOfflineAt == block.number
 
             if (isMissed) {
                 offlineValidators[validatorId] = block.number
@@ -194,7 +189,7 @@ open class ValidatorBlockService(
                 )
             }
 
-            if (online[i] && offlineValidators.containsKey(validatorId)) {
+            if (row.online && offlineValidators.containsKey(validatorId)) {
                 val offlineStartBlock = offlineValidators.remove(validatorId)
                 if (offlineStartBlock != null) {
                     val offlineDocId = "$offlineStartBlock-$validatorId"

@@ -3,7 +3,9 @@ package org.vechain.indexer.validators
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import java.math.BigDecimal
 import java.math.BigInteger
+import org.bson.types.Decimal128
 import org.junit.jupiter.api.Test
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -12,6 +14,7 @@ import org.springframework.data.mongodb.core.query.Query
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.validator.BlockStatus
+import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator
 import org.vechain.indexer.validator.ValidatorBlock
 import org.vechain.indexer.validator.ValidatorBlockRepository
@@ -388,6 +391,38 @@ class ValidatorServiceTest {
         expectThat(result.hasNext()).isFalse()
     }
 
+    @Test
+    fun `getValidators strips stale queue fields from non queued validators`() {
+        val pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "validatorTvl"))
+        val activeValidator =
+            validator(
+                id = "0x0000000000000000000000000000000000000001",
+                status = Status.ACTIVE,
+                queuePosition = 1L,
+                availableStartBlock = 0L,
+            )
+        val queuedValidator =
+            validator(
+                id = "0x0000000000000000000000000000000000000002",
+                status = Status.QUEUED,
+                queuePosition = 2L,
+                availableStartBlock = 123L,
+            )
+
+        every { mongoTemplate.find(any<Query>(), Validator::class.java) } returns
+            listOf(activeValidator, queuedValidator)
+
+        val result = service.getValidators(null, null, null, pageable)
+
+        expectThat(result.content).hasSize(2)
+        expectThat(result.content[0].status).isEqualTo(Status.ACTIVE)
+        expectThat(result.content[0].queuePosition).isNull()
+        expectThat(result.content[0].availableStartBlock).isNull()
+        expectThat(result.content[1].status).isEqualTo(Status.QUEUED)
+        expectThat(result.content[1].queuePosition).isEqualTo(2L)
+        expectThat(result.content[1].availableStartBlock).isEqualTo(123L)
+    }
+
     // -- getValidatorById tests --
 
     @Test
@@ -415,8 +450,43 @@ class ValidatorServiceTest {
         expectThat(result).isNull()
     }
 
-    private fun validator(id: String): Validator =
-        Validator(id = id, blockId = "0xblock1", blockNumber = 1, blockTimestamp = 10)
+    @Test
+    fun `getValidatorById strips stale queue fields from non queued validators`() {
+        val validator =
+            validator(
+                id = "0x1234567890abcdef1234567890abcdef12345678",
+                status = Status.ACTIVE,
+                queuePosition = 1L,
+                availableStartBlock = 0L,
+            )
+
+        every { mongoTemplate.findOne(any<Query>(), Validator::class.java) } returns validator
+
+        val result = service.getValidatorById("0x1234567890abcdef1234567890abcdef12345678")
+
+        expectThat(result).isNotNull().and {
+            get { status }.isEqualTo(Status.ACTIVE)
+            get { queuePosition }.isNull()
+            get { availableStartBlock }.isNull()
+        }
+    }
+
+    private fun validator(
+        id: String,
+        status: Status? = null,
+        queuePosition: Long? = null,
+        availableStartBlock: Long? = null,
+    ): Validator =
+        Validator(
+            id = id,
+            blockId = "0xblock1",
+            blockNumber = 1,
+            blockTimestamp = 10,
+            status = status,
+            queuePosition = queuePosition,
+            availableStartBlock = availableStartBlock,
+            validatorTvl = Decimal128(BigDecimal("1.0")),
+        )
 
     private fun validatorBlock(
         blockNumber: Long,

@@ -148,7 +148,6 @@ indexer:
     nft-owner-balance: ${INDEXER_START_BLOCK_NFT_OWNER_BALANCE:0}
     account-totals-series: ${INDEXER_START_BLOCK_ACCOUNT_TOTALS_SERIES:0}
     average-fees-per-user: ${INDEXER_START_BLOCK_AVERAGE_FEES_PER_USER:0}
-  validator-stats-threshold-blocks: ${INDEXER_VALIDATOR_STATS_THRESHOLD_BLOCKS:25}
   stop-block:
     historic-proposals: ${INDEXER_STOP_BLOCK_HISTORIC_PROPOSALS:22948372}
   start-round:

@@ -13,6 +13,7 @@ import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.validator.logic.ValidatorAssembler.listOf
 import org.vechain.indexer.validator.models.DecodedValidatorInfo
+import org.vechain.indexer.validator.models.DecodedValidatorRow
 
 /**
  * Handles decoding of validator data from Thor smart contract calls. All ABI-related logic is
@@ -63,6 +64,50 @@ object ValidatorDecoder {
             return emptyMap()
         }
         return FunctionReturnDecoder.decode(responses[0].data, validatorsAbi.outputs)
+    }
+
+    /** Convert decoded validator arrays into typed rows for downstream processing. */
+    fun decodeRows(decodedValidators: Map<String, Any?>): List<DecodedValidatorRow> {
+        val ids = decodedValidators.listOf<String>("masters")
+        val endorsers = decodedValidators.listOf<String>("endorsors")
+        val statuses = decodedValidators.listOf<BigInteger>("statuses")
+        val onlines = decodedValidators.listOf<Boolean>("onlines")
+        val offlineBlocks = decodedValidators.listOf<BigInteger>("offlineBlocks")
+        val stakingPeriodLengths = decodedValidators.listOf<Int>("stakingPeriodLengths")
+        val startBlocks = decodedValidators.listOf<BigInteger>("startBlocks")
+        val exitBlocks = decodedValidators.listOf<BigInteger>("exitBlocks")
+        val completedPeriods = decodedValidators.listOf<BigInteger>("completedPeriods")
+        val lockedVET = decodedValidators.listOf<BigInteger>("validatorLockedStakes")
+        val lockedWeight = decodedValidators.listOf<BigInteger>("validatorLockedWeights")
+        val delegatorsStake = decodedValidators.listOf<BigInteger>("delegatorsStake")
+        val validatorQueuedStakes = decodedValidators.listOf<BigInteger>("validatorQueuedStakes")
+        val totalQueuedStakes = decodedValidators.listOf<BigInteger>("totalQueuedStakes")
+        val totalExitingStakes = decodedValidators.listOf<BigInteger>("totalExitingStakes")
+        val totalNextPeriodWeights = decodedValidators.listOf<BigInteger>("totalNextPeriodWeights")
+        val nextPeriodDelegationStakes =
+            decodedValidators.listOf<BigInteger>("nextPeriodDelegationStakes")
+
+        return ids.indices.map { index ->
+            DecodedValidatorRow(
+                id = ids[index],
+                endorser = endorsers[index],
+                status = statuses[index],
+                online = onlines[index],
+                offlineBlock = offlineBlocks[index],
+                stakingPeriodLength = stakingPeriodLengths[index],
+                startBlock = startBlocks[index],
+                exitBlock = exitBlocks[index],
+                completedPeriods = completedPeriods[index],
+                validatorLockedVET = lockedVET[index],
+                validatorLockedWeight = lockedWeight[index],
+                delegatorsStake = delegatorsStake[index],
+                validatorQueuedStake = validatorQueuedStakes[index],
+                totalQueuedStake = totalQueuedStakes[index],
+                totalExitingStake = totalExitingStakes[index],
+                totalNextPeriodWeight = totalNextPeriodWeights[index],
+                nextPeriodDelegationStake = nextPeriodDelegationStakes[index],
+            )
+        }
     }
 
     /** Resolve total VTHO issued = totalSupply + burned. */
@@ -178,30 +223,6 @@ object ValidatorDecoder {
                 ),
             ),
         )
-
-    fun getValidatorPeriodDetails(
-        validatorIds: List<String>,
-        responses: List<InspectionResult>,
-        validatorsAbi: Map<String, AbiElement>,
-    ): Map<String, Pair<Long, Long>>? {
-        val decodedResponse = decodeResponseInfo(responses, validatorsAbi) ?: return null
-
-        val ids = decodedResponse.decodedValidators.listOf<String>("masters")
-        val stakingPeriodLengths =
-            decodedResponse.decodedValidators.listOf<BigInteger>("stakingPeriodLengths")
-        val startBlocks = decodedResponse.decodedValidators.listOf<BigInteger>("startBlocks")
-
-        val periodDetails = mutableMapOf<String, Pair<Long, Long>>()
-        ids.forEachIndexed { index, id ->
-            if (validatorIds.contains(id)) {
-                val startBlock = startBlocks[index].toLong()
-                val stakingPeriodLength = stakingPeriodLengths[index].toLong()
-                periodDetails[id] = Pair(startBlock, stakingPeriodLength)
-            }
-        }
-
-        return periodDetails
-    }
 
     fun DecodedValidatorInfo.hasDelegations(address: String): Int {
         val ids = this.decodedValidators.listOf<String>("masters")

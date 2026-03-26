@@ -535,7 +535,10 @@ def generate_test_cases(
     for param in op.parameters:
         if param.name in path_overrides:
             v = path_overrides[param.name]
-            value = v[0] if isinstance(v, list) else v
+            if v is None:
+                value = _SKIP  # explicit null in JSON means "omit this parameter"
+            else:
+                value = v[0] if isinstance(v, list) else v
         else:
             value = generate_value(param, test_values)
 

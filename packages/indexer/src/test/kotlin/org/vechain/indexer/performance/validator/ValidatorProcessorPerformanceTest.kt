@@ -84,9 +84,6 @@ class ValidatorProcessorPerformanceTest : BasePerformanceTest() {
                     repository = validatorRepository,
                     mongoTemplate = mongoTemplate,
                     inlineVersioningProperties = inlineVersioningProperties,
-                    thorClient = thorClient,
-                    statsStartThreshold = 25L, // Same as validatorStatsThresholdBlocks
-                    stakerSC = builtinStakerAddress,
                     profiler = profiler,
                 )
             } else {
@@ -117,7 +114,6 @@ class ValidatorProcessorPerformanceTest : BasePerformanceTest() {
             .validatorIndexer(
                 thorClient = thorClient,
                 processor = processor,
-                service = serviceToUse,
                 startBlock = startBlock,
                 syncLogInterval = 100L,
                 builtinStakerAddress = builtinStakerAddress,
