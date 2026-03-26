@@ -3,12 +3,9 @@ package org.vechain.indexer.validator.logic
 import java.math.BigDecimal
 import java.math.BigInteger
 import org.bson.types.Decimal128
-import org.vechain.indexer.event.model.abi.AbiElement
-import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.NumberUtils
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator
-import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeResponseInfo
 import org.vechain.indexer.validator.logic.ValidatorCalculator.MAX_UINT32
 import org.vechain.indexer.validator.logic.ValidatorCalculator.blocksPerYear
 import org.vechain.indexer.validator.logic.ValidatorCalculator.calculateNextCycleBlock
@@ -20,39 +17,16 @@ import org.vechain.indexer.validator.logic.ValidatorCalculator.computeStakes
 import org.vechain.indexer.validator.logic.ValidatorCalculator.computeTVL
 import org.vechain.indexer.validator.logic.ValidatorCalculator.determineVTHOIssuedPerBlock
 import org.vechain.indexer.validator.logic.ValidatorCalculator.resolveStatus
-import org.vechain.indexer.validator.models.DecodedValidatorInfo
 import org.vechain.indexer.validator.models.DecodedValidatorRow
 
 /** Holds queue position info for a QUEUED validator */
 data class QueueInfo(val position: Long, val availableStartBlock: Long)
 
 object ValidatorAssembler {
-    fun getLatestValidatorInfo(
-        responses: List<InspectionResult>,
-        validatorsAbi: Map<String, AbiElement>,
-        existingDocs: Map<String, Validator>,
-        blockId: String,
-        blockNumber: Long,
-        blockTimestamp: Long,
-    ): List<Validator> {
-        val decodedInfo: DecodedValidatorInfo =
-            decodeResponseInfo(responses, validatorsAbi) ?: return emptyList()
-
-        return unpackValidators(
-            decodedInfo.decodedValidators,
-            existingDocs,
-            decodedInfo.totalWeight,
-            decodedInfo.vetPriceUsd,
-            decodedInfo.vthoPriceUsd,
-            blockId,
-            blockNumber,
-            blockTimestamp,
-        )
-    }
-
     fun unpackValidators(
-        decoded: Map<String, Any?>,
-        existingDocs: Map<String, Validator>,
+        rows: List<DecodedValidatorRow>,
+        persistedDocs: Map<String, Validator>,
+        carriedDocs: Map<String, Validator> = persistedDocs,
         totalWeight: BigInteger,
         vetPriceUsd: BigInteger,
         vthoPriceUsd: BigInteger,
@@ -60,64 +34,23 @@ object ValidatorAssembler {
         blockNumber: Long,
         blockTimestamp: Long,
     ): List<Validator> {
-        val ids = decoded.listOf<String>("masters")
-        val endorsers = decoded.listOf<String>("endorsors")
-        val statuses = decoded.listOf<BigInteger>("statuses")
-        val stakes = decoded.listOf<BigInteger>("validatorLockedStakes")
-        val totalQueuedStakes = decoded.listOf<BigInteger>("totalQueuedStakes")
-        val totalExitingStakes = decoded.listOf<BigInteger>("totalExitingStakes")
-        val onlines = decoded.listOf<Boolean>("onlines")
-        val offlineBlocks = decoded.listOf<BigInteger>("offlineBlocks")
-        val stakingPeriodLengths = decoded.listOf<Int>("stakingPeriodLengths")
-        val startBlocks = decoded.listOf<BigInteger>("startBlocks")
-        val exitBlocks = decoded.listOf<BigInteger>("exitBlocks")
-        val completedPeriods = decoded.listOf<BigInteger>("completedPeriods")
-        val lockedVET = decoded.listOf<BigInteger>("validatorLockedStakes")
-        val lockedWeight = decoded.listOf<BigInteger>("validatorLockedWeights")
-        val delegatorsStake = decoded.listOf<BigInteger>("delegatorsStake")
-        val queuedStake = decoded.listOf<BigInteger>("totalQueuedStakes")
-        val validatorQueuedStakes = decoded.listOf<BigInteger>("validatorQueuedStakes")
-        val exitingStake = decoded.listOf<BigInteger>("totalExitingStakes")
-        val totalNextPeriodWeights = decoded.listOf<BigInteger>("totalNextPeriodWeights")
-        val nextPeriodDelegationStakes = decoded.listOf<BigInteger>("nextPeriodDelegationStakes")
-
-        val rows =
-            ids.indices.map { i ->
-                DecodedValidatorRow(
-                    id = ids[i],
-                    endorser = endorsers[i],
-                    status = statuses[i],
-                    online = onlines[i],
-                    offlineBlock = offlineBlocks[i],
-                    stakingPeriodLength = stakingPeriodLengths[i],
-                    startBlock = startBlocks[i],
-                    exitBlock = exitBlocks[i],
-                    completedPeriods = completedPeriods[i],
-                    validatorLockedVET = lockedVET[i],
-                    validatorLockedWeight = lockedWeight[i],
-                    delegatorsStake = delegatorsStake[i],
-                    validatorQueuedStake = validatorQueuedStakes[i],
-                    totalQueuedStake = queuedStake[i],
-                    totalExitingStake = exitingStake[i],
-                    totalNextPeriodWeight = totalNextPeriodWeights[i],
-                    nextPeriodDelegationStake = nextPeriodDelegationStakes[i],
-                )
-            }
-
-        // Calculate queue positions and available start blocks for QUEUED validators
-        val queueInfo = calculateQueueInfo(rows, existingDocs)
+        val queueInfo = calculateQueueInfo(rows)
+        val ids = rows.map { it.id }
 
         val nextPeriodTotalWeight =
-            totalNextPeriodWeights.reduceOrNull(BigInteger::add) ?: BigInteger.ZERO
+            rows.map { it.totalNextPeriodWeight }.reduceOrNull(BigInteger::add) ?: BigInteger.ZERO
 
         val totalVETStaked =
-            stakes.indices.fold(BigInteger.ZERO) { acc, i -> acc + stakes[i] + delegatorsStake[i] }
+            rows.fold(BigInteger.ZERO) { acc, row ->
+                acc + row.validatorLockedVET + row.delegatorsStake
+            }
         val totalVETStakedDecimal = NumberUtils.toVET(totalVETStaked)
         val vthoIssued = determineVTHOIssuedPerBlock(totalVETStakedDecimal)
 
         val totalNextPeriodVET =
-            stakes.indices.fold(BigInteger.ZERO) { acc, i ->
-                acc + stakes[i] + delegatorsStake[i] + totalQueuedStakes[i] - totalExitingStakes[i]
+            rows.fold(BigInteger.ZERO) { acc, row ->
+                acc + row.validatorLockedVET + row.delegatorsStake + row.totalQueuedStake -
+                    row.totalExitingStake
             }
         val vthoIssuedNextCycle = determineVTHOIssuedPerBlock(NumberUtils.toVET(totalNextPeriodVET))
 
@@ -126,7 +59,7 @@ object ValidatorAssembler {
                 val candidate =
                     buildValidator(
                         row,
-                        existingDocs[row.id],
+                        carriedDocs[row.id],
                         totalWeight,
                         vthoIssued,
                         vetPriceUsd,
@@ -140,13 +73,13 @@ object ValidatorAssembler {
                         queueInfo[row.id],
                     )
 
-                val existing = existingDocs[row.id]
+                val existing = persistedDocs[row.id]
                 candidate.takeUnless { existing != null && candidate.isEquivalentTo(existing) }
             }
 
         val disappeared =
-            existingDocs.keys.minus(ids.toSet()).mapNotNull { id ->
-                val oldVal = existingDocs[id]
+            persistedDocs.keys.minus(ids.toSet()).mapNotNull { id ->
+                val oldVal = persistedDocs[id]
                 if (oldVal != null && oldVal.status != Status.EXITED) {
                     oldVal.copy(
                         status = Status.EXITED,
@@ -316,10 +249,7 @@ object ValidatorAssembler {
      *       exitBlock)
      *     - If no matching exiting validator, 0 (unknown)
      */
-    fun calculateQueueInfo(
-        rows: List<DecodedValidatorRow>,
-        existingDocs: Map<String, Validator>,
-    ): Map<String, QueueInfo> {
+    fun calculateQueueInfo(rows: List<DecodedValidatorRow>): Map<String, QueueInfo> {
         // Status 1 = QUEUED, Status 4 = EXITING
         val queuedRows = rows.filter { it.status.toInt() == 1 }
         if (queuedRows.isEmpty()) return emptyMap()
@@ -336,19 +266,8 @@ object ValidatorAssembler {
                 .map { it.exitBlock }
                 .sorted()
 
-        // Separate into existing queued (have previous position) and newly queued
-        val (existingQueued, newlyQueued) =
-            queuedRows.partition { row -> existingDocs[row.id]?.queuePosition != null }
-
-        // Sort existing queued by their previous position (FIFO order)
-        val sortedExisting =
-            existingQueued.sortedBy { row -> existingDocs[row.id]?.queuePosition ?: Long.MAX_VALUE }
-
-        // New validators go to the end of the queue
-        val orderedQueue = sortedExisting + newlyQueued
-
         // Calculate available start block and assign positions
-        return orderedQueue
+        return queuedRows
             .mapIndexed { index, row ->
                 val availableStart =
                     when {
