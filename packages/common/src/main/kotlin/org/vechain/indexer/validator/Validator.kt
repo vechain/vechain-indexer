@@ -3,9 +3,10 @@ package org.vechain.indexer.validator
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import java.math.BigDecimal
-import org.bson.types.Decimal128
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import org.springframework.data.mongodb.core.mapping.Field
+import org.springframework.data.mongodb.core.mapping.FieldType
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.stargate.token.TokenLevel
@@ -20,40 +21,43 @@ data class Validator(
     val endorser: String? = null, // address of the endorser
     val beneficiary: String? = null,
     val status: Status? = null, // active, inactive, jailed, etc.
-    val vetStaked: Decimal128? = null, // amount of VET staked
-    val validatorVetStaked: Decimal128? = null,
-    val delegatorVetStaked: Decimal128? = null,
-    val queuedVetStaked: Decimal128? = null,
-    val validatorQueuedVetStaked: Decimal128? = null,
-    val delegatorQueuedVetStaked: Decimal128? = null,
-    val validatorExitingVetStaked: Decimal128? = null,
-    val delegatorExitingVetStaked: Decimal128? = null,
-    val exitingVetStaked: Decimal128? = null,
+    @Field(targetType = FieldType.DECIMAL128)
+    val vetStaked: BigDecimal? = null, // amount of VET staked
+    @Field(targetType = FieldType.DECIMAL128) val validatorVetStaked: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val delegatorVetStaked: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val queuedVetStaked: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val validatorQueuedVetStaked: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val delegatorQueuedVetStaked: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val validatorExitingVetStaked: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val delegatorExitingVetStaked: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val exitingVetStaked: BigDecimal? = null,
     @JsonIgnore
     val exitingValidatorVetStaked: BigDecimal =
         BigDecimal.ZERO, // amount of VET in the process of exiting
     val cycleEndBlock: Long? = null, // end block of the current cycle
-    val totalRewards: Decimal128? = null, // total rewards earned
-    val blockProbability: Decimal128? = null,
-    val blocksPerEpoch: Decimal128? = null,
-    val totalTvl: Decimal128? = null,
-    val validatorTvl: Decimal128? = null,
-    val delegatorTvl: Decimal128? = null,
-    val validatorTvlPercentage: Decimal128? = null,
-    val tvlBasedYield: Decimal128? = null,
-    val validatorYield: Decimal128? = null,
-    val avgDelegatorYield: Decimal128? = null,
-    val nextCycleTvlBasedYield: Decimal128? = null,
-    val nextCycleValidatorYield: Decimal128? = null,
-    val nextCycleAvgDelegatorYield: Decimal128? = null,
-    val nftYieldsNextCycle: Map<TokenLevel, Decimal128>? = null,
-    val totalWeight: Decimal128? = null,
+    @Field(targetType = FieldType.DECIMAL128)
+    val totalRewards: BigDecimal? = null, // total rewards earned
+    @Field(targetType = FieldType.DECIMAL128) val blockProbability: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val blocksPerEpoch: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val totalTvl: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val validatorTvl: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val delegatorTvl: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val validatorTvlPercentage: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val tvlBasedYield: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val validatorYield: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val avgDelegatorYield: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val nextCycleTvlBasedYield: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val nextCycleValidatorYield: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val nextCycleAvgDelegatorYield: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128)
+    val nftYieldsNextCycle: Map<TokenLevel, BigDecimal>? = null,
+    @Field(targetType = FieldType.DECIMAL128) val totalWeight: BigDecimal? = null,
     val online: Boolean? = null,
     val completedPeriods: Long? = null,
     val startBlock: Long? = null,
     val cyclePeriodLength: Long? = null,
-    val blocksPerYear: Decimal128? = null,
-    val percentageOffline: Decimal128? = null,
+    @Field(targetType = FieldType.DECIMAL128) val blocksPerYear: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val percentageOffline: BigDecimal? = null,
     val offlineBlocks: Long? = null,
     val exitBlock: Long? = null, // Block at which validator will exit (for EXITING status)
     val queuePosition: Long? = null, // Position in queue (1-based), null if not QUEUED
