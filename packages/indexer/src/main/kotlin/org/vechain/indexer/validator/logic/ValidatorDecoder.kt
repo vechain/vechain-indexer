@@ -87,6 +87,28 @@ object ValidatorDecoder {
         val nextPeriodDelegationStakes =
             decodedValidators.listOf<BigInteger>("nextPeriodDelegationStakes")
 
+        ensureConsistentRowLengths(
+            mapOf(
+                "masters" to ids.size,
+                "endorsors" to endorsers.size,
+                "statuses" to statuses.size,
+                "onlines" to onlines.size,
+                "offlineBlocks" to offlineBlocks.size,
+                "stakingPeriodLengths" to stakingPeriodLengths.size,
+                "startBlocks" to startBlocks.size,
+                "exitBlocks" to exitBlocks.size,
+                "completedPeriods" to completedPeriods.size,
+                "validatorLockedStakes" to lockedVET.size,
+                "validatorLockedWeights" to lockedWeight.size,
+                "delegatorsStake" to delegatorsStake.size,
+                "validatorQueuedStakes" to validatorQueuedStakes.size,
+                "totalQueuedStakes" to totalQueuedStakes.size,
+                "totalExitingStakes" to totalExitingStakes.size,
+                "totalNextPeriodWeights" to totalNextPeriodWeights.size,
+                "nextPeriodDelegationStakes" to nextPeriodDelegationStakes.size,
+            )
+        )
+
         return ids.indices.map { index ->
             DecodedValidatorRow(
                 id = ids[index],
@@ -257,6 +279,21 @@ object ValidatorDecoder {
             )
         return decoded[key] as? BigInteger
             ?: throw IllegalStateException("Expected BigInteger for $functionName.$key")
+    }
+
+    private fun ensureConsistentRowLengths(lengths: Map<String, Int>) {
+        val expectedSize = lengths.getValue("masters")
+        val mismatches =
+            lengths
+                .filterValues { it != expectedSize }
+                .entries
+                .joinToString(", ") { (name, size) -> "$name=$size" }
+
+        if (mismatches.isNotEmpty()) {
+            throw IllegalStateException(
+                "Decoded validator arrays have inconsistent lengths: masters=$expectedSize, $mismatches"
+            )
+        }
     }
 
     fun InspectionResult.hasAbiData(): Boolean = this.data.isNotBlank() && this.data != "0x"
