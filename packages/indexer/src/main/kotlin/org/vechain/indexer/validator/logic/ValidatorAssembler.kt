@@ -239,10 +239,8 @@ object ValidatorAssembler {
      * Calculate queue positions and available start blocks for QUEUED validators.
      *
      * Logic:
-     * - Queue positions follow FIFO order (first in, first out)
-     * - Validators keep their relative order from previous block
-     * - New validators are added to the end of the queue
-     * - When a validator leaves the queue, remaining validators move up
+     * - Queue positions are assigned from the order of QUEUED rows in the decoded snapshot
+     * - No prior persisted queue ordering is consulted when deriving positions
      * - Available start block is determined by:
      *     - If they have a startBlock > 0, use that
      *     - Otherwise, match to exiting validators by position (1st queued -> 1st exiting's
