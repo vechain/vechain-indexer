@@ -70,16 +70,6 @@ data class Validator(
      * blockNumber, blockTimestamp, and version.
      */
     fun isEquivalentTo(other: Validator): Boolean =
-        this.copy(
-            blockId = other.blockId,
-            blockNumber = other.blockNumber,
-            blockTimestamp = other.blockTimestamp,
-            version = other.version,
-        ) ==
-            other.copy(
-                blockId = this.blockId,
-                blockNumber = this.blockNumber,
-                blockTimestamp = this.blockTimestamp,
-                version = this.version,
-            )
+        this.copy(blockId = "", blockNumber = 0, blockTimestamp = 0, version = 0) ==
+            other.copy(blockId = "", blockNumber = 0, blockTimestamp = 0, version = 0)
 }

@@ -2243,6 +2243,81 @@
         ],
         "type": "object"
       },
+      "TokenLevelDecimalValues": {
+        "properties": {
+          "Dawn": {
+            "type": "number",
+            "writeOnly": true
+          },
+          "Flash": {
+            "type": "number",
+            "writeOnly": true
+          },
+          "Lightning": {
+            "type": "number",
+            "writeOnly": true
+          },
+          "Mjolnir": {
+            "type": "number",
+            "writeOnly": true
+          },
+          "MjolnirX": {
+            "type": "number",
+            "writeOnly": true
+          },
+          "Strength": {
+            "type": "number",
+            "writeOnly": true
+          },
+          "StrengthX": {
+            "type": "number",
+            "writeOnly": true
+          },
+          "Thunder": {
+            "type": "number",
+            "writeOnly": true
+          },
+          "ThunderX": {
+            "type": "number",
+            "writeOnly": true
+          },
+          "VeThorX": {
+            "type": "number",
+            "writeOnly": true
+          },
+          "dawn": {
+            "type": "number"
+          },
+          "flash": {
+            "type": "number"
+          },
+          "lightning": {
+            "type": "number"
+          },
+          "mjolnir": {
+            "type": "number"
+          },
+          "mjolnirX": {
+            "type": "number"
+          },
+          "strength": {
+            "type": "number"
+          },
+          "strengthX": {
+            "type": "number"
+          },
+          "thunder": {
+            "type": "number"
+          },
+          "thunderX": {
+            "type": "number"
+          },
+          "veThorX": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
       "TokenReward": {
         "properties": {
           "cycle": {
@@ -2747,10 +2822,7 @@
             "type": "number"
           },
           "nftYieldsNextCycle": {
-            "additionalProperties": {
-              "type": "number"
-            },
-            "type": "object"
+            "$ref": "#/components/schemas/TokenLevelDecimalValues"
           },
           "offlineBlocks": {
             "format": "int64",

@@ -94,7 +94,7 @@ open class ValidatorService(
                 blockTimestamp = block.timestamp,
             )
 
-        return chainUpdates to existingDocs.values.toList()
+        return chainUpdates to archiveDocsForUpdates(existingDocs, chainUpdates)
     }
 
     /**
@@ -137,8 +137,13 @@ open class ValidatorService(
                 candidate.takeUnless { existing != null && candidate.isEquivalentTo(existing) }
             }
 
-        return updates to existingDocs.values.toList()
+        return updates to archiveDocsForUpdates(existingDocs, updates)
     }
+
+    private fun archiveDocsForUpdates(
+        existingDocs: Map<String, Validator>,
+        updates: List<Validator>,
+    ): List<Validator> = updates.mapNotNull { existingDocs[it.id] }
 
     /**
      * Applies validator updates based on blockchain events.

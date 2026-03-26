@@ -171,7 +171,7 @@ class ValidatorServiceTest {
     }
 
     @Test
-    fun `processBlock uses event-only fallback before helper exists`() {
+    fun `processBlock event-only fallback archives only changed validators`() {
         val validatorId = "0xVAL1"
         val existingValidator =
             Validator(
@@ -183,8 +183,19 @@ class ValidatorServiceTest {
                 exitingValidatorVetStaked = BigDecimal("5000000"),
                 version = 2,
             )
+        val untouchedValidator =
+            Validator(
+                id = "0xVAL2",
+                blockId = "oldBlock-2",
+                blockNumber = 49,
+                blockTimestamp = 123,
+                beneficiary = "0xUNCHANGED",
+                exitingValidatorVetStaked = BigDecimal("7000000"),
+                version = 4,
+            )
 
-        every { repository.findByStatusNot(Status.EXITED) } returns listOf(existingValidator)
+        every { repository.findByStatusNot(Status.EXITED) } returns
+            listOf(existingValidator, untouchedValidator)
 
         val result =
             service.processBlock(
@@ -193,7 +204,8 @@ class ValidatorServiceTest {
                 emptyList(),
             )
 
-        val updated = result.first.single()
+        assertThat(result.first.map { it.id }).containsExactly(validatorId)
+        val updated = result.first.first()
         assertThat(result.second).containsExactly(existingValidator)
         assertThat(updated.beneficiary).isEqualTo("0xNEW")
         assertThat(updated.version).isEqualTo(3)
@@ -222,7 +234,7 @@ class ValidatorServiceTest {
     }
 
     @Test
-    fun `processBlock passes event overlays into assembler and returns persisted docs for archiving`() {
+    fun `processBlock passes full persisted docs into assembler and archives only changed validators`() {
         val validatorId = "0xVAL1"
         val existingValidator =
             Validator(
@@ -235,6 +247,17 @@ class ValidatorServiceTest {
                 exitingValidatorVetStaked = BigDecimal.ZERO,
                 version = 41,
             )
+        val untouchedValidator =
+            Validator(
+                id = "0xVAL2",
+                blockId = "oldBlock-2",
+                blockNumber = 100,
+                blockTimestamp = 123,
+                beneficiary = "0xUNCHANGED",
+                status = Status.ACTIVE,
+                exitingValidatorVetStaked = BigDecimal.ZERO,
+                version = 7,
+            )
         val updatedValidator =
             existingValidator.copy(
                 blockId = "0xBLOCK",
@@ -245,7 +268,8 @@ class ValidatorServiceTest {
                 version = 42,
             )
 
-        every { repository.findByStatusNot(Status.EXITED) } returns listOf(existingValidator)
+        every { repository.findByStatusNot(Status.EXITED) } returns
+            listOf(existingValidator, untouchedValidator)
 
         mockkObject(ValidatorDecoder, ValidatorAssembler)
         every { ValidatorDecoder.decodeResponseInfo(any(), any()) } returns decodedInfo()
@@ -285,6 +309,7 @@ class ValidatorServiceTest {
         assertThat(result.first).containsExactly(updatedValidator)
         assertThat(result.second).containsExactly(existingValidator)
         assertThat(persistedDocsSlot.captured[validatorId]).isEqualTo(existingValidator)
+        assertThat(persistedDocsSlot.captured[untouchedValidator.id]).isEqualTo(untouchedValidator)
         assertThat(carriedDocsSlot.captured[validatorId]!!.beneficiary).isEqualTo("0xBEN")
         assertThat(carriedDocsSlot.captured[validatorId]!!.exitingValidatorVetStaked)
             .isEqualByComparingTo(BigDecimal("25000000"))
