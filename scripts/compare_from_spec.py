@@ -587,7 +587,10 @@ def generate_test_cases(
     multi: Dict[str, Tuple[str, List[Any]]] = {}
     for param in op.parameters:
         name = param.name
-        source = path_overrides.get(name) or test_values.get("parameters", {}).get(name)
+        if name in path_overrides:
+            source = path_overrides[name]
+        else:
+            source = test_values.get("parameters", {}).get(name)
         if isinstance(source, list) and len(source) > 1:
             multi[name] = (param.location, source[1:])
 
