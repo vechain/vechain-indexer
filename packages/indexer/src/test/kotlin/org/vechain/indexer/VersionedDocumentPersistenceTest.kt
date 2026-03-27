@@ -231,7 +231,10 @@ internal class VersionedDocumentPersistenceTest {
         val pipelineText = pipeline.joinToString("\n") { it.toJson() }
 
         assertTrue(pipelineText.contains("\"\$unset\""))
-        assertTrue(pipelineText.contains("\"optionalState\""))
+
+        val unsetStage = pipeline.first { it.containsKey("\$unset") }
+        val unsetFields = unsetStage.getDocument("\$unset")
+        assertTrue(unsetFields.containsKey("optionalState"))
     }
 
     @Test
