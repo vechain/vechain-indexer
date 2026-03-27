@@ -14,12 +14,14 @@ import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.nft.NftBlacklistClient
 import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.EventUtils
 import org.vechain.indexer.utils.ParamUtils.getAsBoolean
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 import org.vechain.indexer.utils.ParamUtils.getAsLong
 import org.vechain.indexer.utils.ParamUtils.getAsString
+import org.vechain.indexer.validator.ValidatorDelegationService
 
 @Profile("history")
 @Service
@@ -27,26 +29,53 @@ open class HistoryService(
     private val historyRepository: HistoryRepository,
     private val mongoTemplate: MongoTemplate,
     private val blacklistClient: NftBlacklistClient,
+    private val delegationLifecycleHistoryService: DelegationLifecycleHistoryService,
+    private val validatorDelegationService: ValidatorDelegationService,
 ) {
-
-    open suspend fun processEvents(
+    open suspend fun processBlock(
         events: List<IndexedEvent>,
         block: Block,
+        callResponses: List<InspectionResult>,
     ): List<IndexedHistoryEvent> {
         val historyEvents = mutableListOf<IndexedHistoryEvent>()
         val processedTxs = mutableSetOf<String>()
+        val validatorSnapshots = validatorDelegationService.decodeValidatorSnapshots(callResponses)
 
-        for (event in events) {
-            val eventName = EventUtils.determineEventType(event.params) ?: continue
+        historyEvents.addAll(
+            delegationLifecycleHistoryService.onBlockStart(block, validatorSnapshots)
+        )
 
-            if (event.params.getEventType() == "TransferBatch") {
+        for ((index, event) in events.withIndex()) {
+            val eventName = EventUtils.determineEventType(event.params)
+
+            if (
+                event.params.getEventType() == "TransferBatch" &&
+                    eventName == HistoryEventName.TRANSFER_SF
+            ) {
                 historyEvents.addAll(processBatchTransferEvents(event))
-            } else {
-                historyEvents.add(createIndexedHistoryEvent(event, eventName))
+                processedTxs.add(event.txId)
+                continue
             }
-            processedTxs.add(event.txId)
+
+            val lifecycleResult =
+                delegationLifecycleHistoryService.onEvent(
+                    event = event,
+                    historyEvent = eventName?.let { createIndexedHistoryEvent(event, it) },
+                    block = block,
+                    validatorSnapshots = validatorSnapshots,
+                    order = 1_000 + index,
+                )
+
+            lifecycleResult.historyEvent?.let {
+                historyEvents.add(it)
+                processedTxs.add(event.txId)
+            }
+            historyEvents.addAll(lifecycleResult.additionalEvents)
         }
 
+        historyEvents.addAll(
+            delegationLifecycleHistoryService.onBlockEnd(block, validatorSnapshots)
+        )
         historyEvents.addAll(getMissingTransactions(block, processedTxs))
 
         return historyEvents
@@ -94,6 +123,10 @@ open class HistoryService(
             }
         val update = Update().set(IndexedHistoryEvent::isBlacklisted.name, false)
         mongoTemplate.updateMulti(query, update, IndexedHistoryEvent::class.java)
+    }
+
+    open fun invalidateDelegationLifecycleState() {
+        delegationLifecycleHistoryService.invalidate()
     }
 
     private suspend fun processBatchTransferEvents(event: IndexedEvent): List<IndexedHistoryEvent> {

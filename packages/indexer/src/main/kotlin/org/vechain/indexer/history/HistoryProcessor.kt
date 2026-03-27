@@ -43,7 +43,7 @@ open class HistoryProcessor(
                     it.eventType == "NFT_Blacklisted" || it.eventType == "NFT_Whitelisted"
                 })
 
-        val records = historyService.processEvents(historyEvents, entry.block)
+        val records = historyService.processBlock(historyEvents, entry.block, entry.callResults)
 
         if (records.isNotEmpty()) {
             historyService.save(records)
@@ -52,5 +52,10 @@ open class HistoryProcessor(
         if (blacklistEvents.isNotEmpty()) {
             historyService.processBlacklistEvents(blacklistEvents)
         }
+    }
+
+    override fun rollback(blockNumber: Long) {
+        historyService.invalidateDelegationLifecycleState()
+        super.rollback(blockNumber)
     }
 }

@@ -8,6 +8,8 @@ import org.vechain.indexer.history.IndexedHistoryEvent
 import org.vechain.indexer.nft.NftBlacklistClient
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.thor.model.InspectionResult
+import org.vechain.indexer.validator.ValidatorDelegationService
 
 /**
  * Extended HistoryService that profiles EVERY internal method call This gives you complete
@@ -17,8 +19,18 @@ class ProfiledHistoryService(
     repository: HistoryRepository,
     mongoTemplate: MongoTemplate,
     blacklistClient: NftBlacklistClient,
+    delegationLifecycleHistoryService:
+        org.vechain.indexer.history.DelegationLifecycleHistoryService,
+    validatorDelegationService: ValidatorDelegationService,
     private val profiler: DetailedProfiler,
-) : HistoryService(repository, mongoTemplate, blacklistClient) {
+) :
+    HistoryService(
+        repository,
+        mongoTemplate,
+        blacklistClient,
+        delegationLifecycleHistoryService,
+        validatorDelegationService,
+    ) {
 
     private suspend fun <T> timeSuspend(operationName: String, block: suspend () -> T): T {
         profiler.start(operationName)
@@ -29,12 +41,13 @@ class ProfiledHistoryService(
         }
     }
 
-    override suspend fun processEvents(
+    override suspend fun processBlock(
         events: List<IndexedEvent>,
         block: Block,
+        callResponses: List<InspectionResult>,
     ): List<IndexedHistoryEvent> {
-        return timeSuspend("      HistoryService.processEvents") {
-            super.processEvents(events, block)
+        return timeSuspend("      HistoryService.processBlock") {
+            super.processBlock(events, block, callResponses)
         }
     }
 

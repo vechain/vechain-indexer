@@ -117,9 +117,7 @@ class DelegationServiceTest {
                 owner = "o",
                 tokenLevel = TokenLevel.All,
                 stakedAmount = "100",
-                notify = false,
                 txId = "tx1",
-                force = false,
                 validatorCycleLength = 0,
             )
 
@@ -183,9 +181,7 @@ class DelegationServiceTest {
                 owner = "o",
                 tokenLevel = TokenLevel.All,
                 stakedAmount = "100",
-                notify = false,
                 txId = "tx1",
-                force = false,
             )
 
         every { repository.findByTokenIdIn(any()) } returns listOf(existing)

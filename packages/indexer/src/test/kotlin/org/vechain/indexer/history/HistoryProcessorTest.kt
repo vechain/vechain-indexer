@@ -73,7 +73,7 @@ internal class HistoryProcessorTest {
         val events = INDEXED_EVENTS_BLACKLIST
         val block = BlockFixtures.BLOCK_NO_CLAUSES
 
-        coEvery { historyService.processEvents(events, block) } returns emptyList()
+        coEvery { historyService.processBlock(events, block, emptyList()) } returns emptyList()
 
         runBlocking {
             processor.process(
@@ -82,7 +82,7 @@ internal class HistoryProcessorTest {
         }
 
         coVerify(exactly = 1) {
-            historyService.processEvents(events, BlockFixtures.BLOCK_NO_CLAUSES)
+            historyService.processBlock(events, BlockFixtures.BLOCK_NO_CLAUSES, emptyList())
         }
     }
 
@@ -91,7 +91,7 @@ internal class HistoryProcessorTest {
         val block = BLOCK_SINGLE_CLAUSE
         val events = emptyList<IndexedEvent>()
 
-        coEvery { historyService.processEvents(events, block) } returns emptyList()
+        coEvery { historyService.processBlock(events, block, emptyList()) } returns emptyList()
 
         runBlocking {
             processor.process(
@@ -99,7 +99,7 @@ internal class HistoryProcessorTest {
             )
         }
 
-        coVerify(exactly = 1) { historyService.processEvents(events, block) }
+        coVerify(exactly = 1) { historyService.processBlock(events, block, emptyList()) }
     }
 
     @Test
@@ -132,7 +132,7 @@ internal class HistoryProcessorTest {
         val block = BlockFixtures.BLOCK_NO_CLAUSES
         val records = listOf<IndexedHistoryEvent>(mockk<IndexedHistoryEvent>())
 
-        coEvery { historyService.processEvents(events, block) } returns records
+        coEvery { historyService.processBlock(events, block, emptyList()) } returns records
         every { historyService.save(records) } returns Unit
 
         runBlocking {
@@ -141,7 +141,7 @@ internal class HistoryProcessorTest {
             )
         }
 
-        coVerify(exactly = 1) { historyService.processEvents(events, block) }
+        coVerify(exactly = 1) { historyService.processBlock(events, block, emptyList()) }
         verify(exactly = 1) { historyService.save(records) }
     }
 }
