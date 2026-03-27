@@ -29,5 +29,11 @@ class ValidatorTest {
 
         assertThat(candidate.isEquivalentTo(persisted)).isTrue()
         assertThat(persisted.isEquivalentTo(candidate)).isTrue()
+
+        // Changing a non-ignored field should break equivalence
+        val differentBeneficiary = persisted.copy(beneficiary = "0xOTHER_BEN")
+        assertThat(differentBeneficiary.isEquivalentTo(persisted)).isFalse()
+        assertThat(persisted.isEquivalentTo(differentBeneficiary)).isFalse()
+        assertThat(differentBeneficiary).isNotEqualTo(persisted)
     }
 }
