@@ -2246,73 +2246,33 @@
       "TokenLevelDecimalValues": {
         "properties": {
           "Dawn": {
-            "type": "number",
-            "writeOnly": true
+            "type": "number"
           },
           "Flash": {
-            "type": "number",
-            "writeOnly": true
+            "type": "number"
           },
           "Lightning": {
-            "type": "number",
-            "writeOnly": true
+            "type": "number"
           },
           "Mjolnir": {
-            "type": "number",
-            "writeOnly": true
+            "type": "number"
           },
           "MjolnirX": {
-            "type": "number",
-            "writeOnly": true
+            "type": "number"
           },
           "Strength": {
-            "type": "number",
-            "writeOnly": true
+            "type": "number"
           },
           "StrengthX": {
-            "type": "number",
-            "writeOnly": true
+            "type": "number"
           },
           "Thunder": {
-            "type": "number",
-            "writeOnly": true
+            "type": "number"
           },
           "ThunderX": {
-            "type": "number",
-            "writeOnly": true
+            "type": "number"
           },
           "VeThorX": {
-            "type": "number",
-            "writeOnly": true
-          },
-          "dawn": {
-            "type": "number"
-          },
-          "flash": {
-            "type": "number"
-          },
-          "lightning": {
-            "type": "number"
-          },
-          "mjolnir": {
-            "type": "number"
-          },
-          "mjolnirX": {
-            "type": "number"
-          },
-          "strength": {
-            "type": "number"
-          },
-          "strengthX": {
-            "type": "number"
-          },
-          "thunder": {
-            "type": "number"
-          },
-          "thunderX": {
-            "type": "number"
-          },
-          "veThorX": {
             "type": "number"
           }
         },
