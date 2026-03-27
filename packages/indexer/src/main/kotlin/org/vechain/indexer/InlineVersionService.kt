@@ -63,6 +63,13 @@ object InlineVersionService {
                             }
                     }
 
+                val fieldsToUnset =
+                    oldBsons
+                        .flatMap { it.keys }
+                        .toSet()
+                        .minus(newBson.keys)
+                        .minus(setOf("_id", PREVIOUS_VERSIONS_FIELD))
+
                 // Stage 1: Set all new fields + prepend every old version to _previousVersions
                 val setFields = Document(newBson)
                 setFields[PREVIOUS_VERSIONS_FIELD] =
@@ -78,7 +85,13 @@ object InlineVersionService {
                     )
                 val stage1 = Document("\$set", setFields)
 
-                // Stage 2: Trim _previousVersions by block window with guaranteed minimum of 1,
+                // Stage 2: Remove fields that were present before but are intentionally absent now.
+                val stage2 =
+                    fieldsToUnset
+                        .takeIf { it.isNotEmpty() }
+                        ?.let { Document("\$unset", it.toList()) }
+
+                // Stage 3: Trim _previousVersions by block window with guaranteed minimum of 1,
                 // then apply hard cap
                 val currentBlock = doc.blockNumber
                 val filterExpr =
@@ -109,9 +122,9 @@ object InlineVersionService {
                 // Apply hard cap
                 val capped = Document("\$slice", listOf(trimmedWithMinimum, maxVersions))
 
-                val stage2 = Document("\$set", Document(PREVIOUS_VERSIONS_FIELD, capped))
+                val stage3 = Document("\$set", Document(PREVIOUS_VERSIONS_FIELD, capped))
 
-                val pipeline = listOf(stage1, stage2)
+                val pipeline = listOfNotNull(stage1, stage2, stage3)
 
                 writes.add(UpdateOneModel(filter, pipeline, UpdateOptions().upsert(true)))
             } else {

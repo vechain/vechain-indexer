@@ -175,6 +175,69 @@ internal class VersionedDocumentPersistenceTest {
     }
 
     @Test
+    fun `unsets fields omitted from updated document`() {
+        val writes = slot<List<WriteModel<Document>>>()
+        val updated =
+            listOf(
+                TestDocument(
+                    id = "doc-1",
+                    version = 2,
+                    blockNumber = 20,
+                    blockId = "b1",
+                    blockTimestamp = 1000,
+                    optionalState = null,
+                )
+            )
+        val existing =
+            listOf(
+                TestDocument(
+                    id = "doc-1",
+                    version = 1,
+                    blockNumber = 15,
+                    blockId = "b0",
+                    blockTimestamp = 900,
+                    optionalState = "manager",
+                )
+            )
+
+        every { mongoTemplate.getCollection("test_documents") } returns collection
+        every { mongoTemplate.converter } returns converter
+        every { converter.write(any<TestDocument>(), any<Document>()) } answers
+            {
+                val source = firstArg<TestDocument>()
+                val target = secondArg<Document>()
+                target["_id"] = source.getDocumentId()
+                target["version"] = source.version
+                target["blockNumber"] = source.blockNumber
+                target["blockId"] = source.blockId
+                target["blockTimestamp"] = source.blockTimestamp
+                target["state"] = source.state
+                source.optionalState?.let { target["optionalState"] = it }
+            }
+        every {
+            collection.bulkWrite(capture(writes), any<com.mongodb.client.model.BulkWriteOptions>())
+        } returns mockk(relaxed = true)
+
+        persist(updated, existing, "test_documents")
+
+        val updateModel = writes.captured.single() as UpdateOneModel<Document>
+        val pipeline =
+            updateModel.updatePipeline!!.map {
+                it.toBsonDocument(
+                    Document::class.java,
+                    MongoClientSettings.getDefaultCodecRegistry(),
+                )
+            }
+        val pipelineText = pipeline.joinToString("\n") { it.toJson() }
+
+        assertTrue(pipelineText.contains("\"\$unset\""))
+
+        val unsetStage = pipeline.first { it.containsKey("\$unset") }
+        val unsetFields = unsetStage.getArray("\$unset")
+        assertTrue(unsetFields.any { it.isString && it.asString().value == "optionalState" })
+    }
+
+    @Test
     fun `propagates exception when bulk write fails`() {
         val updated =
             listOf(
@@ -283,6 +346,7 @@ internal class VersionedDocumentPersistenceTest {
         override val blockId: String,
         override val blockTimestamp: Long,
         val state: String = id,
+        val optionalState: String? = null,
     ) : VersionedDocument {
         override fun getDocumentId(): String = id
     }

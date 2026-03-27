@@ -10,6 +10,7 @@ import java.math.BigInteger
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertIterableEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -153,6 +154,74 @@ internal class StargateTokenServiceTest {
             assertEquals(0, existing.size)
         }
 
+    @Test
+    fun `processBlock clears manager for TokenManagerRemoved events`() = runBlocking {
+        val realEventService =
+            StargateEventService(
+                validatorDelegationService = validatorDelegationService,
+                stargateDelegationContract = "0xdelegation",
+            )
+        val realService =
+            StargateTokenService(
+                repository,
+                realEventService,
+                validatorDelegationService,
+                mongoTemplate,
+                inlineVersioningProperties,
+            )
+        val existingToken =
+            stargateToken(
+                tokenId = "34132",
+                version = 2,
+                blockNumber = 24407826,
+                delegationNextPeriod = null,
+                validatorId = null,
+                delegationStatus = Status.NONE,
+                manager = "0xc5213085d3fc19b6a883a92a5703f7733360f063",
+            )
+        val block = block(number = 24407827)
+        val managerRemovedEvent =
+            IndexedEvent(
+                id = "0x32a27b5c414da4e4c405d79da4ad97f2b745fae332cd535bf8dedb59c706da26-0",
+                blockId = block.id,
+                blockNumber = block.number,
+                blockTimestamp = block.timestamp,
+                txId = "0x32a27b5c414da4e4c405d79da4ad97f2b745fae332cd535bf8dedb59c706da26",
+                origin = "0xc5213085d3fc19b6a883a92a5703f7733360f063",
+                paid = "0x52b2b2ddccb489c",
+                gasUsed = 35668,
+                gasPayer = "0xc5213085d3fc19b6a883a92a5703f7733360f063",
+                raw = null,
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "tokenId" to "34132",
+                                "manager" to "0xc5213085d3fc19b6a883a92a5703f7733360f063",
+                            ),
+                        eventType = "TokenManagerRemoved",
+                    ),
+                address = "0x1856c533ac2d94340aaa8544d35a5c1d4a21dee7",
+                eventType = "TokenManagerRemoved",
+                clauseIndex = 0,
+                signature = "0x2dea8fdc0115667de4800362c74206112df0a3a139fa2c217218b27a5da20259",
+            )
+
+        every { repository.findAllById(setOf("34132")) } returns listOf(existingToken)
+        every { repository.findByDelegationNextPeriodAndDelegationStatusIn(any(), any()) } returns
+            emptyList()
+        coEvery { validatorDelegationService.decodeValidatorSnapshots(emptyList()) } returns
+            emptyMap()
+
+        val (updated, existing) =
+            realService.processBlock(block, emptyList(), listOf(managerRemovedEvent))
+
+        assertEquals(1, updated.size)
+        assertEquals(3, updated.single().version)
+        assertNull(updated.single().manager)
+        assertIterableEquals(listOf(existingToken), existing)
+    }
+
     private fun stargateToken(
         tokenId: String,
         version: Int,
@@ -160,11 +229,13 @@ internal class StargateTokenServiceTest {
         delegationNextPeriod: Long?,
         validatorId: String?,
         delegationStatus: Status,
+        manager: String? = null,
     ) =
         StargateToken(
             tokenId = tokenId,
             level = TokenLevel.Dawn,
             owner = "0xowner",
+            manager = manager,
             delegationStatus = delegationStatus,
             validatorId = validatorId,
             totalRewardsClaimed = BigInteger.ZERO,
