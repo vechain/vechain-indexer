@@ -106,7 +106,8 @@ def choose_validator_sample(
     seed: int,
 ) -> list[str]:
     preferred = [validator_id for validator_id in preferred_ids if validator_id in candidate_ids]
-    remaining = [validator_id for validator_id in candidate_ids if validator_id not in set(preferred)]
+    preferred_set = set(preferred)
+    remaining = [validator_id for validator_id in candidate_ids if validator_id not in preferred_set]
 
     rng = random.Random(seed)
     rng.shuffle(preferred)
