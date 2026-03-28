@@ -2,6 +2,7 @@ package org.vechain.indexer.history
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
@@ -54,6 +55,7 @@ open class HistoryProcessor(
         }
     }
 
+    @Transactional(rollbackFor = [Exception::class])
     override fun rollback(blockNumber: Long) {
         historyService.invalidateDelegationLifecycleState()
         super.rollback(blockNumber)
