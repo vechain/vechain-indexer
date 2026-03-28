@@ -41,37 +41,23 @@ trap 'rm -f "$CONFIG_FILE" "${TEST_VALUES_FILE:-}"' EXIT
 # Seed dynamic test values from the baseline API
 echo "Seeding dynamic test values from baseline..." >&2
 TEST_VALUES_FILE=$(mktemp /tmp/regression-test-values.XXXXXX.json)
-python3 -c "
-import json, urllib.request, sys
+seed_args=(
+  --baseline-url "${BASELINE_URL}"
+  --input "${SCRIPT_DIR}/test_values.json"
+  --output "${TEST_VALUES_FILE}"
+  --timeout 15
+  --validator-sample-size "${VALIDATOR_SAMPLE_SIZE:-20}"
+  --validator-page-size "${VALIDATOR_PAGE_SIZE:-20}"
+  --validator-page-count "${VALIDATOR_PAGE_COUNT:-3}"
+  --validator-seed "${VALIDATOR_SAMPLE_SEED:-1337}"
+)
 
-baseline = '${BASELINE_URL}'.rstrip('/')
+if [[ -n "${REGRESSION_SEED_METADATA_FILE:-}" ]]; then
+  seed_args+=(--metadata-output "${REGRESSION_SEED_METADATA_FILE}")
+fi
 
-# Load static test values
-with open('${SCRIPT_DIR}/test_values.json') as f:
-    tv = json.load(f)
-
-# Fetch active validator IDs from the baseline
-try:
-    url = f'{baseline}/api/v1/validators?status=ACTIVE&page=0&size=5'
-    req = urllib.request.Request(url, headers={'User-Agent': 'regression-seed/1.0'})
-    with urllib.request.urlopen(req, timeout=15) as resp:
-        data = json.loads(resp.read().decode())
-    ids = [v['id'] for v in data.get('data', []) if v.get('id')]
-    if ids:
-        print(f'  Fetched {len(ids)} active validator IDs', file=sys.stderr)
-        tv.setdefault('path_overrides', {})
-        for path in ['/api/v1/validators', '/api/v1/validators/{validatorId}', '/api/v1/validators/blocks/historic/{validator}']:
-            tv['path_overrides'].setdefault(path, {})
-        tv['path_overrides']['/api/v1/validators/{validatorId}']['validatorId'] = ids
-        tv['path_overrides']['/api/v1/validators/blocks/historic/{validator}']['validator'] = ids[:2]
-        tv['parameters']['validator'] = ids
-        tv['parameters']['validatorId'] = ids
-except Exception as e:
-    print(f'  Warning: could not seed validator IDs: {e}', file=sys.stderr)
-
-with open('${TEST_VALUES_FILE}', 'w') as f:
-    json.dump(tv, f, indent=2)
-" || cp "${SCRIPT_DIR}/test_values.json" "$TEST_VALUES_FILE"
+python3 "${SCRIPT_DIR}/regression_seed.py" "${seed_args[@]}" \
+  || cp "${SCRIPT_DIR}/test_values.json" "$TEST_VALUES_FILE"
 
 echo "Running regression comparison" >&2
 echo "  baseline:  ${BASELINE_URL}" >&2

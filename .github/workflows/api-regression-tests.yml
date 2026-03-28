@@ -47,6 +47,7 @@ jobs:
         env:
           CANDIDATE_URL: ${{ inputs.candidate_url || 'https://mainnet.dead.prod.veworld.vechain.org' }}
           BASELINE_URL: ${{ inputs.baseline_url || 'https://indexer.mainnet.vechain.org' }}
+          REGRESSION_SEED_METADATA_FILE: regression-output/seed-metadata.json
         run: |
           mkdir -p regression-output
           scripts/run_regression_tests.sh \
@@ -62,6 +63,7 @@ jobs:
           import html, json, os, pathlib
 
           report_path = pathlib.Path("regression-output/report.json")
+          seed_path = pathlib.Path("regression-output/seed-metadata.json")
           summary_path = os.environ["GITHUB_STEP_SUMMARY"]
 
           if not report_path.exists():
@@ -90,6 +92,30 @@ jobs:
               f"| **Failed** | {s['failed']} |",
               "",
           ]
+
+          if seed_path.exists():
+              seed = json.loads(seed_path.read_text())
+              sampled = seed.get("sampledValidatorIds", [])
+              lines.extend([
+                  "### Validator Sampling",
+                  "",
+                  "| | |",
+                  "|---|---|",
+                  f"| **Seed** | {seed.get('validatorSeed')} |",
+                  f"| **Candidate pool** | {seed.get('candidatePoolSize')} |",
+                  f"| **Preferred pool** | {seed.get('preferredPoolSize')} |",
+                  f"| **Sample size** | {seed.get('actualSampleSize')} / {seed.get('requestedSampleSize')} |",
+                  f"| **Pages per sort** | {seed.get('validatorQueryPageCount')} |",
+                  f"| **Page size** | {seed.get('validatorQueryPageSize')} |",
+                  f"| **Sort fields** | `{', '.join(seed.get('validatorQuerySortFields', []))}` |",
+                  "",
+              ])
+              if sampled:
+                  lines.append("Sampled validator IDs:")
+                  lines.append("")
+                  for validator_id in sampled:
+                      lines.append(f"- `{html.escape(str(validator_id))}`")
+                  lines.append("")
 
           failures = [r for r in results if r["status"] == "fail"]
           deprecated = [r for r in results if r["status"] == "deprecated"]
