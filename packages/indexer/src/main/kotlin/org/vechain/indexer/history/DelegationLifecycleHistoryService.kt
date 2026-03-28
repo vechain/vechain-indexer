@@ -340,7 +340,9 @@ class DelegationLifecycleHistoryService(
         val aggregation =
             Aggregation.newAggregation(
                 match(
-                    Criteria.where(IndexedHistoryEvent.DELEGATION_LIFECYCLE_STATUS_FIELD).ne(null)
+                    Criteria.where(IndexedHistoryEvent.DELEGATION_LIFECYCLE_STATUS_FIELD)
+                        .exists(true)
+                        .ne(null)
                 ),
                 sort(
                     Sort.by(

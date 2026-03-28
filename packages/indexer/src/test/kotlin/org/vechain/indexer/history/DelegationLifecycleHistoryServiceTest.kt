@@ -4,6 +4,7 @@ import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.bson.Document
@@ -212,6 +213,29 @@ class DelegationLifecycleHistoryServiceTest {
                 .isEqualTo(HistoryEventName.STARGATE_DELEGATION_EXITED_VALIDATOR)
             assertThat(synthetic.first().txId).isEqualTo("tx-validator-exit")
         }
+
+    @Test
+    fun `ensureLoaded only aggregates rows with lifecycle status present`() {
+        val aggregationSlot = slot<Aggregation>()
+        every {
+            mongoTemplate.aggregate(
+                capture(aggregationSlot),
+                "history",
+                IndexedHistoryEvent::class.java,
+            )
+        } returns AggregationResults(emptyList(), Document())
+
+        service.onBlockEnd(block(1), emptyMap())
+
+        val matchStage = aggregationSlot.captured.toPipeline(Aggregation.DEFAULT_CONTEXT).first()
+        val lifecycleMatch =
+            matchStage
+                .get("\$match", Document::class.java)
+                .get(IndexedHistoryEvent.DELEGATION_LIFECYCLE_STATUS_FIELD, Document::class.java)
+
+        assertThat(lifecycleMatch).containsEntry("\$exists", true)
+        assertThat(lifecycleMatch).containsKey("\$ne")
+    }
 
     private fun block(number: Long) =
         Block(
