@@ -80,9 +80,6 @@ cache:
     user_all_time_action_countByEntityType:
       max-size: ${CACHE_USER_ALL_TIME_COUNT_BY_ENTITY_TYPE_MAX_SIZE:1000}
       ttl-seconds: ${CACHE_USER_ALL_TIME_COUNT_BY_ENTITY_TYPE_TTL_SECONDS:1200}
-    user_all_time_action_countByTotalRewardAmountGreaterThanAndEntityType:
-      max-size: ${CACHE_USER_ALL_TIME_COUNT_BY_REWARD_MAX_SIZE:1000}
-      ttl-seconds: ${CACHE_USER_ALL_TIME_COUNT_BY_REWARD_TTL_SECONDS:300}
     user_all_time_action_countByActionsRewardedGreaterThanAndEntityType:
       max-size: ${CACHE_USER_ALL_TIME_COUNT_BY_ACTIONS_MAX_SIZE:1000}
       ttl-seconds: ${CACHE_USER_ALL_TIME_COUNT_BY_ACTIONS_TTL_SECONDS:300}
@@ -104,9 +101,6 @@ cache:
     user_daily_action_countByEntityTypeAndDate:
       max-size: ${CACHE_USER_DAILY_COUNT_BY_ENTITY_TYPE_MAX_SIZE:1000}
       ttl-seconds: ${CACHE_USER_DAILY_COUNT_BY_ENTITY_TYPE_TTL_SECONDS:300}
-    user_round_countByTotalRewardAmountGreaterThanAndEntityTypeAndRoundId:
-      max-size: ${CACHE_USER_ROUND_COUNT_BY_REWARD_MAX_SIZE:1000}
-      ttl-seconds: ${CACHE_USER_ROUND_COUNT_BY_REWARD_TTL_SECONDS:300}
     user_round_countByActionsRewardedGreaterThanAndEntityTypeAndRoundId:
       max-size: ${CACHE_USER_ROUND_COUNT_BY_ACTIONS_MAX_SIZE:1000}
       ttl-seconds: ${CACHE_USER_ROUND_COUNT_BY_ACTIONS_TTL_SECONDS:300}

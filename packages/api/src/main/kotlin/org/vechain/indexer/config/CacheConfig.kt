@@ -17,7 +17,6 @@ open class CacheConfig(private val cacheProperties: CacheProperties) {
         private val CACHE_NAMES =
             listOf(
                 "user_all_time_action_countByEntityType",
-                "user_all_time_action_countByTotalRewardAmountGreaterThanAndEntityType",
                 "user_all_time_action_countByActionsRewardedGreaterThanAndEntityType",
                 "app_all_time_action_countByAppId",
                 "app_daily_action_countByAppIdAndDate",
@@ -25,7 +24,6 @@ open class CacheConfig(private val cacheProperties: CacheProperties) {
                 "user_daily_action_countByAppIdAndDate",
                 "user_daily_action_countByActionsRewardedGreaterThanAndEntityTypeAndDate",
                 "user_daily_action_countByEntityTypeAndDate",
-                "user_round_countByTotalRewardAmountGreaterThanAndEntityTypeAndRoundId",
                 "user_round_countByActionsRewardedGreaterThanAndEntityTypeAndRoundId",
                 "user_round_countByEntityTypeAndRoundId",
                 "official_token_addresses",

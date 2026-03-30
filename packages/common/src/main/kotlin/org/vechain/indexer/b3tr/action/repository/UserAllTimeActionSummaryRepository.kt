@@ -17,11 +17,6 @@ interface UserAllTimeActionSummaryRepository :
     BaseIndexedRepository<UserAllTimeActionSummary, String> {
     // Count entries where totalRewardAmount is greater than a specific value, filtering by entity
     // type
-    @Cacheable(
-        value = ["user_all_time_action_countByTotalRewardAmountGreaterThanAndEntityType"],
-        key = "#totalRewardAmount + '-' + #entityType",
-    )
-    @Query(value = "{ 'totalRewardAmount': { '\$gt': ?0 }, 'entityType': ?1 }", count = true)
     fun countByTotalRewardAmountGreaterThanAndEntityType(
         totalRewardAmount: BigDecimal,
         entityType: EntityType,
