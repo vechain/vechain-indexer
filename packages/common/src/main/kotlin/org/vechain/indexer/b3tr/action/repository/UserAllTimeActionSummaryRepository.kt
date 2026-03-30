@@ -19,9 +19,8 @@ interface UserAllTimeActionSummaryRepository :
     // type
     @Cacheable(
         value = ["user_all_time_action_countByTotalRewardAmountGreaterThanAndEntityType"],
-        key = "#totalRewardAmount + '-' + #entityType",
+        key = "#totalRewardAmount.stripTrailingZeros().toPlainString() + '-' + #entityType",
     )
-    @Query(value = "{ 'totalRewardAmount': { '\$gt': ?0 }, 'entityType': ?1 }", count = true)
     fun countByTotalRewardAmountGreaterThanAndEntityType(
         totalRewardAmount: BigDecimal,
         entityType: EntityType,
