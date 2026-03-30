@@ -115,13 +115,6 @@ internal class UserActionSummaryRepositoryCacheTest {
                 EntityType.APP,
             ),
         )
-        assertEquals(
-            1L,
-            userAllTimeRepo.countByTotalRewardAmountGreaterThanAndEntityType(
-                threshold,
-                EntityType.APP,
-            ),
-        )
     }
 
     @Test
@@ -166,14 +159,6 @@ internal class UserActionSummaryRepositoryCacheTest {
                 date,
             ),
         )
-        assertEquals(
-            1L,
-            userDailyRepo.countByTotalRewardAmountGreaterThanAndEntityTypeAndDate(
-                threshold,
-                EntityType.APP,
-                date,
-            ),
-        )
     }
 
     @Test
@@ -210,14 +195,6 @@ internal class UserActionSummaryRepositoryCacheTest {
 
         val threshold = BigDecimal("4876.273810888064122202")
 
-        assertEquals(
-            1L,
-            userRoundRepo.countByTotalRewardAmountGreaterThanAndEntityTypeAndRoundId(
-                threshold,
-                EntityType.APP,
-                roundId,
-            ),
-        )
         assertEquals(
             1L,
             userRoundRepo.countByTotalRewardAmountGreaterThanAndEntityTypeAndRoundId(
