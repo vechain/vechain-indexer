@@ -27,6 +27,116 @@
   "widgets": [
     {
       "definition": {
+        "autoscale": false,
+        "precision": 2,
+        "requests": [
+          {
+            "conditional_formats": [
+              {
+                "comparator": ">",
+                "palette": "white_on_red",
+                "value": 0.5
+              },
+              {
+                "comparator": ">",
+                "palette": "white_on_yellow",
+                "value": 0
+              },
+              {
+                "comparator": "<=",
+                "palette": "white_on_green",
+                "value": 0.5
+              }
+            ],
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "aggregator": "avg",
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "sum:aws.cloudfront.5xx_error_rate{distributionid:e15q64ms368tl}.weighted()"
+              }
+            ],
+            "response_format": "scalar"
+          }
+        ],
+        "timeseries_background": {
+          "type": "area"
+        },
+        "title": "Mainnet 5XX Rate",
+        "title_align": "left",
+        "title_size": "16",
+        "type": "query_value"
+      },
+      "id": 3100000000000001,
+      "layout": {
+        "height": 2,
+        "width": 6,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "definition": {
+        "autoscale": false,
+        "precision": 2,
+        "requests": [
+          {
+            "conditional_formats": [
+              {
+                "comparator": ">",
+                "palette": "white_on_red",
+                "value": 0.5
+              },
+              {
+                "comparator": ">",
+                "palette": "white_on_yellow",
+                "value": 0
+              },
+              {
+                "comparator": "<=",
+                "palette": "white_on_green",
+                "value": 0.5
+              }
+            ],
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "aggregator": "avg",
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:aws.cloudfront.5xx_error_rate{distributionid:e1m1pcq9gh0m5o}"
+              }
+            ],
+            "response_format": "scalar"
+          }
+        ],
+        "timeseries_background": {
+          "type": "area"
+        },
+        "title": "Testnet 5XX Rate",
+        "title_align": "left",
+        "title_size": "16",
+        "type": "query_value"
+      },
+      "id": 3100000000000002,
+      "layout": {
+        "height": 2,
+        "width": 6,
+        "x": 6,
+        "y": 0
+      }
+    },
+    {
+      "definition": {
         "background_color": "vivid_purple",
         "layout_type": "ordered",
         "show_title": true,
@@ -625,7 +735,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 0
+        "y": 2
       }
     },
     {
@@ -1297,7 +1407,7 @@
         "height": 23,
         "width": 12,
         "x": 0,
-        "y": 1
+        "y": 3
       }
     },
     {
@@ -1432,12 +1542,12 @@
                     {
                       "comparator": ">",
                       "palette": "white_on_red",
-                      "value": 5
+                      "value": 0.5
                     },
                     {
                       "comparator": ">",
                       "palette": "white_on_yellow",
-                      "value": 0.5
+                      "value": 0
                     },
                     {
                       "comparator": "<=",
@@ -1487,12 +1597,12 @@
                     {
                       "comparator": ">",
                       "palette": "white_on_red",
-                      "value": 5
+                      "value": 0.5
                     },
                     {
                       "comparator": ">",
                       "palette": "white_on_yellow",
-                      "value": 0.5
+                      "value": 0
                     },
                     {
                       "comparator": "<=",
@@ -1673,12 +1783,12 @@
                     {
                       "comparator": ">",
                       "palette": "white_on_red",
-                      "value": 5
+                      "value": 0.5
                     },
                     {
                       "comparator": ">",
                       "palette": "white_on_yellow",
-                      "value": 0.5
+                      "value": 0
                     },
                     {
                       "comparator": "<=",
@@ -1864,7 +1974,7 @@
         "is_column_break": true,
         "width": 12,
         "x": 0,
-        "y": 24
+        "y": 26
       }
     },
     {
@@ -3435,7 +3545,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 25
+        "y": 27
       }
     },
     {
@@ -4661,7 +4771,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 26
+        "y": 28
       }
     },
     {
@@ -5166,7 +5276,7 @@
         "height": 11,
         "width": 12,
         "x": 0,
-        "y": 27
+        "y": 29
       }
     },
     {
@@ -5450,7 +5560,7 @@
         "height": 7,
         "width": 12,
         "x": 0,
-        "y": 38
+        "y": 40
       }
     },
     {
@@ -5608,7 +5718,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 45
+        "y": 47
       }
     },
     {
@@ -6287,7 +6397,7 @@
         "height": 1,
         "width": 12,
         "x": 0,
-        "y": 46
+        "y": 48
       }
     }
   ]
