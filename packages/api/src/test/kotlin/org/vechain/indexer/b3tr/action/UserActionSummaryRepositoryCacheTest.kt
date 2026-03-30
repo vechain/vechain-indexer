@@ -7,11 +7,11 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest
+import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.cache.CacheManager
 import org.springframework.cache.annotation.EnableCaching
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager
 import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
@@ -19,20 +19,6 @@ import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryReposi
 import org.vechain.indexer.b3tr.action.repository.UserDailyActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
 import org.vechain.indexer.b3tr.shared.EntityType
-
-@SpringBootApplication open class ActionRepositoryCacheTestApplication
-
-@Configuration
-@EnableCaching
-open class ActionRepositoryCacheTestConfig {
-    @Bean
-    open fun cacheManager(): CacheManager =
-        ConcurrentMapCacheManager(
-            "user_all_time_action_countByTotalRewardAmountGreaterThanAndEntityType",
-            "user_daily_action_countByTotalRewardAmountGreaterThanAndEntityTypeAndDate",
-            "user_round_countByTotalRewardAmountGreaterThanAndEntityTypeAndRoundId",
-        )
-}
 
 @DataMongoTest
 @ActiveProfiles(
@@ -44,9 +30,27 @@ open class ActionRepositoryCacheTestConfig {
     "b3tr-user-round-action-summary",
 )
 @ContextConfiguration(
-    classes = [ActionRepositoryCacheTestApplication::class, ActionRepositoryCacheTestConfig::class]
+    classes =
+        [
+            UserActionSummaryRepositoryCacheTest.ActionRepositoryCacheTestApplication::class,
+            UserActionSummaryRepositoryCacheTest.ActionRepositoryCacheTestConfig::class,
+        ]
 )
 internal class UserActionSummaryRepositoryCacheTest {
+
+    @SpringBootApplication open class ActionRepositoryCacheTestApplication
+
+    @TestConfiguration
+    @EnableCaching
+    open class ActionRepositoryCacheTestConfig {
+        @Bean
+        open fun cacheManager(): CacheManager =
+            ConcurrentMapCacheManager(
+                "user_all_time_action_countByTotalRewardAmountGreaterThanAndEntityType",
+                "user_daily_action_countByTotalRewardAmountGreaterThanAndEntityTypeAndDate",
+                "user_round_countByTotalRewardAmountGreaterThanAndEntityTypeAndRoundId",
+            )
+    }
 
     @Autowired private lateinit var template: MongoTemplate
     @Autowired private lateinit var userAllTimeRepo: UserAllTimeActionSummaryRepository
