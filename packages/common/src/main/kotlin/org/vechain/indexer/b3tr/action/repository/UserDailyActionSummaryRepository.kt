@@ -32,6 +32,11 @@ interface UserDailyActionSummaryRepository : BaseIndexedRepository<UserDailyActi
     @Query("{ 'entity': ?0, 'date': ?1 }")
     fun findByEntityAndDate(entity: String, date: String): UserDailyActionSummary?
 
+    @Cacheable(
+        value = ["user_daily_action_countByTotalRewardAmountGreaterThanAndEntityTypeAndDate"],
+        key =
+            "#totalRewardAmount.stripTrailingZeros().toPlainString() + '-' + #entityType + '-' + #date",
+    )
     fun countByTotalRewardAmountGreaterThanAndEntityTypeAndDate(
         totalRewardAmount: BigDecimal,
         entityType: EntityType,

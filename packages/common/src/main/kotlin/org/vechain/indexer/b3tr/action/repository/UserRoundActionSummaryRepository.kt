@@ -30,6 +30,11 @@ interface UserRoundActionSummaryRepository : BaseIndexedRepository<UserRoundActi
 
     // Count entries where totalRewardAmount is greater than a specific value, filtering by entity
     // type and round ID
+    @Cacheable(
+        value = ["user_round_countByTotalRewardAmountGreaterThanAndEntityTypeAndRoundId"],
+        key =
+            "#totalRewardAmount.stripTrailingZeros().toPlainString() + '-' + #entityType + '-' + #roundId",
+    )
     fun countByTotalRewardAmountGreaterThanAndEntityTypeAndRoundId(
         totalRewardAmount: BigDecimal,
         entityType: EntityType,

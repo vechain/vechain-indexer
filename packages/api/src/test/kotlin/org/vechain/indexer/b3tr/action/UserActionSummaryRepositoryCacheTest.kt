@@ -2,6 +2,7 @@ package org.vechain.indexer.b3tr.action
 
 import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -53,6 +54,7 @@ internal class UserActionSummaryRepositoryCacheTest {
     }
 
     @Autowired private lateinit var template: MongoTemplate
+    @Autowired private lateinit var cacheManager: CacheManager
     @Autowired private lateinit var userAllTimeRepo: UserAllTimeActionSummaryRepository
     @Autowired private lateinit var userDailyRepo: UserDailyActionSummaryRepository
     @Autowired private lateinit var userRoundRepo: UserRoundActionSummaryRepository
@@ -115,6 +117,12 @@ internal class UserActionSummaryRepositoryCacheTest {
                 EntityType.APP,
             ),
         )
+        assertNotNull(
+            cacheManager
+                .getCache("user_all_time_action_countByTotalRewardAmountGreaterThanAndEntityType")
+                ?.get("${threshold.stripTrailingZeros().toPlainString()}-${EntityType.APP}")
+                ?.get()
+        )
     }
 
     @Test
@@ -159,6 +167,14 @@ internal class UserActionSummaryRepositoryCacheTest {
                 date,
             ),
         )
+        assertNotNull(
+            cacheManager
+                .getCache(
+                    "user_daily_action_countByTotalRewardAmountGreaterThanAndEntityTypeAndDate"
+                )
+                ?.get("${threshold.stripTrailingZeros().toPlainString()}-${EntityType.APP}-$date")
+                ?.get()
+        )
     }
 
     @Test
@@ -202,6 +218,14 @@ internal class UserActionSummaryRepositoryCacheTest {
                 EntityType.APP,
                 roundId,
             ),
+        )
+        assertNotNull(
+            cacheManager
+                .getCache("user_round_countByTotalRewardAmountGreaterThanAndEntityTypeAndRoundId")
+                ?.get(
+                    "${threshold.stripTrailingZeros().toPlainString()}-${EntityType.APP}-$roundId"
+                )
+                ?.get()
         )
     }
 }
