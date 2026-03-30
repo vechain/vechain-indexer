@@ -32,11 +32,8 @@ interface UserRoundActionSummaryRepository : BaseIndexedRepository<UserRoundActi
     // type and round ID
     @Cacheable(
         value = ["user_round_countByTotalRewardAmountGreaterThanAndEntityTypeAndRoundId"],
-        key = "#totalRewardAmount + '-' + #entityType + '-' + #roundId",
-    )
-    @Query(
-        value = "{ 'totalRewardAmount': { '\$gt': ?0 }, 'entityType': ?1, 'roundId': ?2 }",
-        count = true,
+        key =
+            "#totalRewardAmount.stripTrailingZeros().toPlainString() + '-' + #entityType + '-' + #roundId",
     )
     fun countByTotalRewardAmountGreaterThanAndEntityTypeAndRoundId(
         totalRewardAmount: BigDecimal,

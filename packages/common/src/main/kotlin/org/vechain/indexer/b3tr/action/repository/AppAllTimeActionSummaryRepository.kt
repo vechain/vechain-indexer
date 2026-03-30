@@ -29,7 +29,6 @@ interface AppAllTimeActionSummaryRepository :
         value = ["app_all_time_action_countByTotalRewardAmountGreaterThanAndAppId"],
         key = "#totalRewardAmount.stripTrailingZeros().toPlainString() + '-' + #appId",
     )
-    @Query(value = "{ 'totalRewardAmount': { '\$gt': ?0 }, 'appId': ?1 }", count = true)
     fun countByTotalRewardAmountGreaterThanAndAppId(
         totalRewardAmount: java.math.BigDecimal,
         appId: String,
