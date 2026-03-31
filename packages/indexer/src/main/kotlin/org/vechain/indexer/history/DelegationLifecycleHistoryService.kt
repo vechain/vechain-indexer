@@ -82,16 +82,16 @@ class DelegationLifecycleHistoryService(
         validatorSnapshots: Map<String, ValidatorSnapshot>,
         order: Int,
     ): EventResult {
-        return when (event.eventType) {
-            HistoryEventName.STARGATE_DELEGATE_REQUEST.name ->
+        return when {
+            historyEvent?.eventName == HistoryEventName.STARGATE_DELEGATE_REQUEST ->
                 handleDelegateRequest(event, historyEvent, block, validatorSnapshots, order)
-            HistoryEventName.STARGATE_DELEGATE_EXIT_REQUEST.name ->
+            historyEvent?.eventName == HistoryEventName.STARGATE_DELEGATE_EXIT_REQUEST ->
                 handleDelegateExitRequest(event, historyEvent, block, order)
-            HistoryEventName.STARGATE_DELEGATE_REQUEST_CANCELLED.name ->
+            historyEvent?.eventName == HistoryEventName.STARGATE_DELEGATE_REQUEST_CANCELLED ->
                 handleDelegateRequestCancelled(event, historyEvent, order)
-            "Transfer" -> handleTransfer(event, historyEvent, order)
-            "ValidatorExitRequested",
-            "ValidationSignaledExit" ->
+            event.eventType == "Transfer" -> handleTransfer(event, historyEvent, order)
+            event.eventType == "ValidatorExitRequested" ||
+                event.eventType == "ValidationSignaledExit" ->
                 handleValidatorExitRequested(event, block, validatorSnapshots, historyEvent)
             else -> EventResult(historyEvent)
         }

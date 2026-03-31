@@ -215,6 +215,90 @@ class DelegationLifecycleHistoryServiceTest {
         }
 
     @Test
+    fun `raw stargate exit request updates lifecycle state and emits exited event next cycle`() =
+        runBlocking {
+            coEvery { validatorDelegationService.resolveCycleInfo("0xVAL", 5L, any()) } returns
+                (5L to 10L)
+            every { validatorDelegationService.nextStatus(Status.QUEUED) } returns Status.ACTIVE
+            every { validatorDelegationService.nextStatus(Status.EXITING) } returns Status.EXITED
+            every { validatorDelegationService.resolveNextCycleBlock(10L, 5L, 11L) } returns 15L
+
+            service.onEvent(
+                event =
+                    event(
+                        type = HistoryEventName.STARGATE_DELEGATE_REQUEST.name,
+                        params =
+                            mapOf(
+                                "delegationId" to "d1",
+                                "tokenId" to "t1",
+                                "validator" to "0xVAL",
+                                "owner" to "0xOWNER",
+                            ),
+                        txId = "tx-request",
+                    ),
+                historyEvent =
+                    historyRow(
+                        eventName = HistoryEventName.STARGATE_DELEGATE_REQUEST,
+                        delegationId = "d1",
+                        tokenId = "t1",
+                        validator = "0xVAL",
+                        owner = "0xOWNER",
+                        txId = "tx-request",
+                        block = block(5),
+                    ),
+                block = block(5),
+                validatorSnapshots = emptyMap(),
+                order = 1000,
+            )
+
+            val active = service.onBlockStart(block(10), emptyMap())
+
+            assertThat(active).hasSize(1)
+            assertThat(active.first().eventName)
+                .isEqualTo(HistoryEventName.STARGATE_DELEGATE_ACTIVE)
+
+            val exitRequest =
+                service.onEvent(
+                    event =
+                        event(
+                            type = "STARGATE_DELEGATION_EXIT_REQUEST",
+                            params =
+                                mapOf(
+                                    "delegationId" to "d1",
+                                    "tokenId" to "t1",
+                                    "validator" to "0xVAL",
+                                    "owner" to "0xOWNER",
+                                ),
+                            txId = "tx-exit-request",
+                        ),
+                    historyEvent =
+                        historyRow(
+                            eventName = HistoryEventName.STARGATE_DELEGATE_EXIT_REQUEST,
+                            delegationId = "d1",
+                            tokenId = "t1",
+                            validator = "0xVAL",
+                            owner = "0xOWNER",
+                            txId = "tx-exit-request",
+                            block = block(11),
+                        ),
+                    block = block(11),
+                    validatorSnapshots = emptyMap(),
+                    order = 1001,
+                )
+
+            assertThat(exitRequest.historyEvent?.delegationLifecycleStatus)
+                .isEqualTo(Status.EXITING)
+            assertThat(exitRequest.historyEvent?.delegationLifecycleNextCycle).isEqualTo(15L)
+
+            val exited = service.onBlockStart(block(15), emptyMap())
+
+            assertThat(exited).hasSize(1)
+            assertThat(exited.first().eventName)
+                .isEqualTo(HistoryEventName.STARGATE_DELEGATION_EXITED)
+            assertThat(exited.first().txId).isEqualTo("tx-exit-request")
+        }
+
+    @Test
     fun `ensureLoaded only aggregates rows with lifecycle status present`() {
         val aggregationSlot = slot<Aggregation>()
         every {
