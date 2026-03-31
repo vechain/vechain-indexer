@@ -191,6 +191,14 @@ class DelegationLifecycleHistoryServiceTest {
                 order = 1000,
             )
 
+            val blockEndSynthetic =
+                service.onBlockEnd(
+                    block(9),
+                    mapOf("0xOTHER" to snapshot("0xOTHER", startBlock = 1L)),
+                )
+
+            assertThat(blockEndSynthetic).isEmpty()
+
             val synthetic =
                 service.onBlockStart(
                     block(10),

@@ -102,17 +102,6 @@ class DelegationLifecycleHistoryService(
         validatorSnapshots: Map<String, ValidatorSnapshot>,
     ): List<IndexedHistoryEvent> {
         ensureLoaded()
-        if (validatorSnapshots.isEmpty()) return emptyList()
-
-        val currentValidators = validatorSnapshots.keys
-        val disappeared = validatorToIds.keys.filter { it !in currentValidators }.sorted()
-        if (disappeared.isEmpty()) return emptyList()
-
-        disappeared.forEach { validatorId ->
-            val delegationIds = validatorToIds[validatorId]?.toList()?.sorted().orEmpty()
-            delegationIds.forEach { delegationId -> removeState(delegationId) }
-        }
-
         return emptyList()
     }
 
