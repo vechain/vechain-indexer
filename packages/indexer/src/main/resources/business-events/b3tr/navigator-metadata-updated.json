@@ -1,0 +1,32 @@
+{
+  "name": "B3TR_MetadataURIUpdated",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "MetadataURIUpdated",
+      "alias": "metadataURIUpdatedEvent",
+      "conditions": [
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${NAVIGATOR_REGISTRY_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": [
+    {
+      "name": "navigator",
+      "eventName": "metadataURIUpdatedEvent",
+      "businessEventName": "navigator"
+    },
+    {
+      "name": "newURI",
+      "eventName": "metadataURIUpdatedEvent",
+      "businessEventName": "newURI"
+    }
+  ]
+}

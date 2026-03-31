@@ -1,0 +1,32 @@
+{
+  "name": "B3TR_DelegationRemoved",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "DelegationRemoved",
+      "alias": "delegationRemovedEvent",
+      "conditions": [
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${NAVIGATOR_REGISTRY_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": [
+    {
+      "name": "citizen",
+      "eventName": "delegationRemovedEvent",
+      "businessEventName": "citizen"
+    },
+    {
+      "name": "navigator",
+      "eventName": "delegationRemovedEvent",
+      "businessEventName": "navigator"
+    }
+  ]
+}

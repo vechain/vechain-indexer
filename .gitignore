@@ -74,3 +74,4 @@ __pycache__/
 gradle/docker.gradle.properties
 
 temp/
+.roro/
