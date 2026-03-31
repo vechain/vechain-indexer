@@ -108,27 +108,12 @@ class DelegationLifecycleHistoryService(
         val disappeared = validatorToIds.keys.filter { it !in currentValidators }.sorted()
         if (disappeared.isEmpty()) return emptyList()
 
-        val historyEvents = mutableListOf<IndexedHistoryEvent>()
-        var order = BLOCK_END_ORDER_BASE
-
         disappeared.forEach { validatorId ->
             val delegationIds = validatorToIds[validatorId]?.toList()?.sorted().orEmpty()
-            delegationIds.forEach { delegationId ->
-                val state = statesById[delegationId] ?: return@forEach
-                val exited = state.copy(status = Status.EXITED, forceExit = true, nextCycle = null)
-                historyEvents.add(
-                    createSyntheticHistoryEvent(
-                        block = block,
-                        state = exited,
-                        eventName = HistoryEventName.STARGATE_DELEGATION_EXITED_VALIDATOR,
-                        order = order++,
-                    )
-                )
-                removeState(delegationId)
-            }
+            delegationIds.forEach { delegationId -> removeState(delegationId) }
         }
 
-        return historyEvents
+        return emptyList()
     }
 
     fun invalidate() {
@@ -165,6 +150,7 @@ class DelegationLifecycleHistoryService(
                 cycleLength = cycleLength,
                 forceExit = false,
                 txId = event.txId,
+                requestBlockNumber = block.number,
             )
         putState(state)
         return EventResult(historyEvent.withLifecycleState(state, order))
@@ -209,8 +195,9 @@ class DelegationLifecycleHistoryService(
                 status = Status.EXITING,
                 nextCycle = nextCycle,
                 cycleLength = cycleLength,
-                forceExit = existing?.forceExit ?: false,
+                forceExit = false,
                 txId = event.txId,
+                requestBlockNumber = existing?.requestBlockNumber ?: block.number,
             )
         putState(state)
         return EventResult(historyEvent.withLifecycleState(state, order))
@@ -247,6 +234,7 @@ class DelegationLifecycleHistoryService(
                 cycleLength = existing?.cycleLength ?: 0L,
                 forceExit = false,
                 txId = event.txId,
+                requestBlockNumber = existing?.requestBlockNumber ?: event.blockNumber,
             )
 
         return EventResult(historyEvent.withLifecycleState(state, order))
@@ -289,14 +277,7 @@ class DelegationLifecycleHistoryService(
             val existing = statesById[delegationId] ?: return@forEach
             if (existing.status == Status.EXITED || existing.status == Status.EXITING)
                 return@forEach
-            putState(
-                existing.copy(
-                    status = Status.EXITING,
-                    nextCycle = exitAt,
-                    forceExit = true,
-                    txId = event.txId,
-                )
-            )
+            putState(existing.copy(status = Status.EXITING, nextCycle = exitAt, forceExit = true))
         }
 
         return EventResult(historyEvent)
@@ -316,21 +297,30 @@ class DelegationLifecycleHistoryService(
         if (unknown.isEmpty()) return
 
         unknown.keys.sorted().forEach { validatorId ->
-            val snapshot = validatorSnapshots[validatorId]
-            if (snapshot != null && snapshot.startBlock == 0L) return@forEach
-
-            val (cycleLength, nextCycle) =
-                validatorDelegationService.resolveCycleInfo(
-                    validatorId,
-                    block.number,
-                    validatorSnapshots,
-                )
-            if (nextCycle == 0L) return@forEach
+            val snapshot = validatorSnapshots[validatorId] ?: return@forEach
+            if (snapshot.startBlock == 0L) return@forEach
 
             unknown[validatorId].orEmpty().forEach { state ->
-                putState(state.copy(cycleLength = cycleLength, nextCycle = nextCycle))
+                val nextCycle = resolveInitialQueuedActivationBlock(state, snapshot)
+                if (nextCycle == 0L) return@forEach
+                putState(
+                    state.copy(cycleLength = snapshot.stakingPeriodLength, nextCycle = nextCycle)
+                )
             }
         }
+    }
+
+    private fun resolveInitialQueuedActivationBlock(
+        state: DelegationLifecycleState,
+        snapshot: ValidatorSnapshot,
+    ): Long {
+        if (snapshot.startBlock == 0L) return 0L
+        if (state.requestBlockNumber <= snapshot.startBlock) return snapshot.startBlock
+
+        val offset = state.requestBlockNumber - snapshot.startBlock
+        val positionInCycle = offset % snapshot.stakingPeriodLength
+        val currentCycleStart = state.requestBlockNumber - positionInCycle
+        return currentCycleStart + snapshot.stakingPeriodLength
     }
 
     @Synchronized
@@ -388,6 +378,7 @@ class DelegationLifecycleHistoryService(
                     cycleLength = row.delegationLifecycleCycleLength ?: 0L,
                     forceExit = row.delegationLifecycleForceExit == true,
                     txId = row.txId,
+                    requestBlockNumber = row.blockNumber,
                 )
             )
         }
@@ -470,6 +461,7 @@ class DelegationLifecycleHistoryService(
         val cycleLength: Long,
         val forceExit: Boolean,
         val txId: String,
+        val requestBlockNumber: Long,
     )
 
     data class EventResult(
@@ -479,6 +471,5 @@ class DelegationLifecycleHistoryService(
 
     companion object {
         private const val BLOCK_START_ORDER_BASE = 100
-        private const val BLOCK_END_ORDER_BASE = 900000
     }
 }

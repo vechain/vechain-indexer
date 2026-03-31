@@ -2,6 +2,7 @@ package org.vechain.indexer.history
 
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -156,6 +157,56 @@ class DelegationLifecycleHistoryServiceTest {
     }
 
     @Test
+    fun `queued delegation activates at validator start block once start becomes known`() =
+        runBlocking {
+            coEvery { validatorDelegationService.resolveCycleInfo("0xVAL", 5L, any()) } returns
+                (5L to 0L)
+            every { validatorDelegationService.nextStatus(Status.QUEUED) } returns Status.ACTIVE
+
+            service.onEvent(
+                event =
+                    event(
+                        type = HistoryEventName.STARGATE_DELEGATE_REQUEST.name,
+                        params =
+                            mapOf(
+                                "delegationId" to "d1",
+                                "tokenId" to "t1",
+                                "validator" to "0xVAL",
+                                "owner" to "0xOWNER",
+                            ),
+                        txId = "tx-request",
+                    ),
+                historyEvent =
+                    historyRow(
+                        eventName = HistoryEventName.STARGATE_DELEGATE_REQUEST,
+                        delegationId = "d1",
+                        tokenId = "t1",
+                        validator = "0xVAL",
+                        owner = "0xOWNER",
+                        txId = "tx-request",
+                        block = block(5),
+                    ),
+                block = block(5),
+                validatorSnapshots = mapOf("0xVAL" to snapshot("0xVAL", startBlock = 0L)),
+                order = 1000,
+            )
+
+            val synthetic =
+                service.onBlockStart(
+                    block(10),
+                    mapOf("0xVAL" to snapshot("0xVAL", startBlock = 10L)),
+                )
+
+            assertThat(synthetic).hasSize(1)
+            assertThat(synthetic.first().eventName)
+                .isEqualTo(HistoryEventName.STARGATE_DELEGATE_ACTIVE)
+            assertThat(synthetic.first().blockNumber).isEqualTo(10L)
+            coVerify(exactly = 1) {
+                validatorDelegationService.resolveCycleInfo("0xVAL", 5L, any())
+            }
+        }
+
+    @Test
     fun `validator exit request produces exited validator history event on exit block`() =
         runBlocking {
             coEvery { validatorDelegationService.resolveCycleInfo("0xVAL", 5L, any()) } returns
@@ -211,7 +262,7 @@ class DelegationLifecycleHistoryServiceTest {
             assertThat(synthetic).hasSize(1)
             assertThat(synthetic.first().eventName)
                 .isEqualTo(HistoryEventName.STARGATE_DELEGATION_EXITED_VALIDATOR)
-            assertThat(synthetic.first().txId).isEqualTo("tx-validator-exit")
+            assertThat(synthetic.first().txId).isEqualTo("tx-request")
         }
 
     @Test
@@ -297,6 +348,140 @@ class DelegationLifecycleHistoryServiceTest {
                 .isEqualTo(HistoryEventName.STARGATE_DELEGATION_EXITED)
             assertThat(exited.first().txId).isEqualTo("tx-exit-request")
         }
+
+    @Test
+    fun `user exit request overrides prior validator-forced exit classification`() = runBlocking {
+        coEvery { validatorDelegationService.resolveCycleInfo("0xVAL", 5L, any()) } returns
+            (5L to 10L)
+        coEvery { validatorDelegationService.getValidatorExitBlock("0xVAL", any()) } returns 20L
+        every { validatorDelegationService.nextStatus(Status.QUEUED) } returns Status.ACTIVE
+        every { validatorDelegationService.nextStatus(Status.EXITING) } returns Status.EXITED
+        every { validatorDelegationService.resolveNextCycleBlock(10L, 5L, 11L) } returns 15L
+
+        service.onEvent(
+            event =
+                event(
+                    type = HistoryEventName.STARGATE_DELEGATE_REQUEST.name,
+                    params =
+                        mapOf(
+                            "delegationId" to "d1",
+                            "tokenId" to "t1",
+                            "validator" to "0xVAL",
+                            "owner" to "0xOWNER",
+                        ),
+                    txId = "tx-request",
+                ),
+            historyEvent =
+                historyRow(
+                    eventName = HistoryEventName.STARGATE_DELEGATE_REQUEST,
+                    delegationId = "d1",
+                    tokenId = "t1",
+                    validator = "0xVAL",
+                    owner = "0xOWNER",
+                    txId = "tx-request",
+                    block = block(5),
+                ),
+            block = block(5),
+            validatorSnapshots = emptyMap(),
+            order = 1000,
+        )
+
+        service.onBlockStart(block(10), emptyMap())
+
+        service.onEvent(
+            event =
+                event(
+                    type = "ValidatorExitRequested",
+                    params = mapOf("validator" to "0xVAL"),
+                    address = "0xSTAKER",
+                    txId = "tx-validator-exit",
+                ),
+            historyEvent = null,
+            block = block(10),
+            validatorSnapshots = mapOf("0xVAL" to snapshot("0xVAL", exitBlock = 20L)),
+            order = 1001,
+        )
+
+        val exitRequest =
+            service.onEvent(
+                event =
+                    event(
+                        type = "STARGATE_DELEGATION_EXIT_REQUEST",
+                        params =
+                            mapOf(
+                                "delegationId" to "d1",
+                                "tokenId" to "t1",
+                                "validator" to "0xVAL",
+                                "owner" to "0xOWNER",
+                            ),
+                        txId = "tx-exit-request",
+                    ),
+                historyEvent =
+                    historyRow(
+                        eventName = HistoryEventName.STARGATE_DELEGATE_EXIT_REQUEST,
+                        delegationId = "d1",
+                        tokenId = "t1",
+                        validator = "0xVAL",
+                        owner = "0xOWNER",
+                        txId = "tx-exit-request",
+                        block = block(11),
+                    ),
+                block = block(11),
+                validatorSnapshots = emptyMap(),
+                order = 1002,
+            )
+
+        assertThat(exitRequest.historyEvent?.delegationLifecycleStatus).isEqualTo(Status.EXITING)
+        assertThat(exitRequest.historyEvent?.delegationLifecycleForceExit).isFalse()
+
+        val exited = service.onBlockStart(block(15), emptyMap())
+
+        assertThat(exited).hasSize(1)
+        assertThat(exited.first().eventName).isEqualTo(HistoryEventName.STARGATE_DELEGATION_EXITED)
+        assertThat(exited.first().txId).isEqualTo("tx-exit-request")
+    }
+
+    @Test
+    fun `validator disappearance does not emit synthetic exit history rows`() = runBlocking {
+        coEvery { validatorDelegationService.resolveCycleInfo("0xVAL", 5L, any()) } returns
+            (5L to 10L)
+        every { validatorDelegationService.nextStatus(Status.QUEUED) } returns Status.ACTIVE
+
+        service.onEvent(
+            event =
+                event(
+                    type = HistoryEventName.STARGATE_DELEGATE_REQUEST.name,
+                    params =
+                        mapOf(
+                            "delegationId" to "d1",
+                            "tokenId" to "t1",
+                            "validator" to "0xVAL",
+                            "owner" to "0xOWNER",
+                        ),
+                    txId = "tx-request",
+                ),
+            historyEvent =
+                historyRow(
+                    eventName = HistoryEventName.STARGATE_DELEGATE_REQUEST,
+                    delegationId = "d1",
+                    tokenId = "t1",
+                    validator = "0xVAL",
+                    owner = "0xOWNER",
+                    txId = "tx-request",
+                    block = block(5),
+                ),
+            block = block(5),
+            validatorSnapshots = emptyMap(),
+            order = 1000,
+        )
+
+        service.onBlockStart(block(10), emptyMap())
+
+        val synthetic =
+            service.onBlockEnd(block(11), mapOf("0xOTHER" to snapshot("0xOTHER", startBlock = 1L)))
+
+        assertThat(synthetic).isEmpty()
+    }
 
     @Test
     fun `ensureLoaded only aggregates rows with lifecycle status present`() {
@@ -391,11 +576,16 @@ class DelegationLifecycleHistoryServiceTest {
             origin = owner,
         )
 
-    private fun snapshot(validatorId: String, exitBlock: Long) =
+    private fun snapshot(
+        validatorId: String,
+        exitBlock: Long = 0L,
+        startBlock: Long = 1L,
+        stakingPeriodLength: Long = 5L,
+    ) =
         ValidatorSnapshot(
             validatorId = validatorId,
-            stakingPeriodLength = 5L,
-            startBlock = 1L,
+            stakingPeriodLength = stakingPeriodLength,
+            startBlock = startBlock,
             exitBlock = exitBlock,
         )
 }
