@@ -32,16 +32,21 @@ open class HistoryService(
     private val delegationLifecycleHistoryService: DelegationLifecycleHistoryService,
     private val validatorDelegationService: ValidatorDelegationService,
 ) {
+    /**
+     * Normalizes a block into history rows by combining recognised event-derived history,
+     * delegation lifecycle rows, and fallback `UNKNOWN_TX` rows for transactions that did not emit
+     * a recognised history event.
+     */
     open suspend fun processBlock(
         events: List<IndexedEvent>,
         block: Block,
         callResponses: List<InspectionResult>,
     ): List<IndexedHistoryEvent> {
-        val historyEvents = mutableListOf<IndexedHistoryEvent>()
-        val processedTxs = mutableSetOf<String>()
+        val indexedHistoryEvents = mutableListOf<IndexedHistoryEvent>()
+        val transactionIdsWithHistoryEvents = mutableSetOf<String>()
         val validatorSnapshots = validatorDelegationService.decodeValidatorSnapshots(callResponses)
 
-        historyEvents.addAll(
+        indexedHistoryEvents.addAll(
             delegationLifecycleHistoryService.onBlockStart(block, validatorSnapshots)
         )
 
@@ -52,33 +57,37 @@ open class HistoryService(
                 event.params.getEventType() == "TransferBatch" &&
                     eventName == HistoryEventName.TRANSFER_SF
             ) {
-                historyEvents.addAll(processBatchTransferEvents(event))
-                processedTxs.add(event.txId)
+                // A TransferBatch event fans out into one history row per token id/value pair.
+                indexedHistoryEvents.addAll(buildBatchTransferHistoryEvents(event))
+                transactionIdsWithHistoryEvents.add(event.txId)
                 continue
             }
 
             val lifecycleResult =
                 delegationLifecycleHistoryService.onEvent(
                     event = event,
-                    historyEvent = eventName?.let { createIndexedHistoryEvent(event, it) },
+                    historyEvent = eventName?.let { buildHistoryEvent(event, it) },
                     block = block,
                     validatorSnapshots = validatorSnapshots,
                     order = 1_000 + index,
                 )
 
             lifecycleResult.historyEvent?.let {
-                historyEvents.add(it)
-                processedTxs.add(event.txId)
+                indexedHistoryEvents.add(it)
+                transactionIdsWithHistoryEvents.add(event.txId)
             }
-            historyEvents.addAll(lifecycleResult.additionalEvents)
+            indexedHistoryEvents.addAll(lifecycleResult.additionalEvents)
         }
 
-        historyEvents.addAll(
+        indexedHistoryEvents.addAll(
             delegationLifecycleHistoryService.onBlockEnd(block, validatorSnapshots)
         )
-        historyEvents.addAll(getMissingTransactions(block, processedTxs))
+        // Keep account history complete even when a transaction has no mapped history event.
+        indexedHistoryEvents.addAll(
+            buildUnknownTransactionHistoryEvents(block, transactionIdsWithHistoryEvents)
+        )
 
-        return historyEvents
+        return indexedHistoryEvents
     }
 
     @Transactional(rollbackFor = [Exception::class])
@@ -87,7 +96,8 @@ open class HistoryService(
     }
 
     open fun processBlacklistEvents(events: List<IndexedEvent>) {
-        // Should only contain blacklist and whitelist events
+        // HistoryProcessor routes only blacklist-related events here; fail fast if that contract is
+        // broken.
         assertEventTypes(events, "NFT_Blacklisted", "NFT_Whitelisted")
 
         val (blacklistAddresses, whitelistAddresses) = EventUtils.partitionBlacklistEvents(events)
@@ -129,8 +139,10 @@ open class HistoryService(
         delegationLifecycleHistoryService.invalidate()
     }
 
-    private suspend fun processBatchTransferEvents(event: IndexedEvent): List<IndexedHistoryEvent> {
-        val historyEvents = mutableListOf<IndexedHistoryEvent>()
+    private suspend fun buildBatchTransferHistoryEvents(
+        event: IndexedEvent
+    ): List<IndexedHistoryEvent> {
+        val indexedHistoryEvents = mutableListOf<IndexedHistoryEvent>()
 
         val tokenIds = event.params.getReturnValues()["ids"] as? List<*> ?: emptyList<Any>()
         val values = event.params.getReturnValues()["values"] as? List<*> ?: emptyList<Any>()
@@ -138,7 +150,7 @@ open class HistoryService(
         for (i in tokenIds.indices) {
             val contractAddress =
                 event.address ?: error("No contract address in event ${event.txId}")
-            historyEvents.add(
+            indexedHistoryEvents.add(
                 IndexedHistoryEvent(
                     id = DigestUtils.sha1Hex("${event.id}-$i"),
                     blockId = event.blockId,
@@ -161,10 +173,11 @@ open class HistoryService(
                 )
             )
         }
-        return historyEvents
+        return indexedHistoryEvents
     }
 
-    private suspend fun createIndexedHistoryEvent(
+    /** Maps one recognised indexed event into the normalised history document shape. */
+    private suspend fun buildHistoryEvent(
         event: IndexedEvent,
         eventName: HistoryEventName,
     ): IndexedHistoryEvent {
@@ -245,12 +258,13 @@ open class HistoryService(
         )
     }
 
-    private fun getMissingTransactions(
+    /** Fallback function to handles all unknown transaction types */
+    private fun buildUnknownTransactionHistoryEvents(
         block: Block,
-        processedTxs: Set<String>,
+        transactionIdsWithHistoryEvents: Set<String>,
     ): List<IndexedHistoryEvent> =
         block.transactions
-            .filter { it.id !in processedTxs }
+            .filter { it.id !in transactionIdsWithHistoryEvents }
             .map { tx ->
                 IndexedHistoryEvent(
                     id = DigestUtils.sha1Hex(tx.id),

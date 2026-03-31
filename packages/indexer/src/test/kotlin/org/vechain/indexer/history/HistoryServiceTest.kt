@@ -17,8 +17,10 @@ import org.springframework.data.mongodb.core.aggregation.AggregationResults
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.SimpleBlockIndexerCoordinator
 import org.vechain.indexer.config.BusinessEventProperties
+import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.BusinessEventParamFixtures.BUSINESS_EVENT_PARAMS
+import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 import org.vechain.indexer.nft.NftBlacklistClient
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.InspectionResult
@@ -127,6 +129,52 @@ class HistoryServiceTest {
             assertThat(exitRequest.delegationLifecycleNextCycle)
                 .isEqualTo(exitResult.block.number + 5L)
             assertThat(exitRequest.delegationLifecycleCycleLength).isEqualTo(5L)
+        }
+
+    @Test
+    fun `processBlock adds UNKNOWN_TX rows for transactions without recognized history events`() =
+        runBlocking {
+            val block = BlockFixtures.BLOCK_MULTIPLE_TXS
+
+            val records = historyService.processBlock(emptyList(), block, emptyList())
+
+            assertThat(records).hasSize(block.transactions.size)
+            assertThat(records.map { it.eventName }).containsOnly(HistoryEventName.UNKNOWN_TX)
+            assertThat(records.map { it.txId })
+                .containsExactlyInAnyOrderElementsOf(block.transactions.map { it.id })
+        }
+
+    @Test
+    fun `processBlock skips UNKNOWN_TX fallback when a transaction already produced a history row`() =
+        runBlocking {
+            val transaction = BlockFixtures.BLOCK_RANDOM_TX.transactions.first()
+            val block = BlockFixtures.BLOCK_RANDOM_TX.copy(transactions = listOf(transaction))
+            val event =
+                buildIndexedEvent(
+                    id = "event-1",
+                    blockId = block.id,
+                    blockNumber = block.number,
+                    blockTimestamp = block.timestamp,
+                    txId = transaction.id,
+                    origin = transaction.origin,
+                    gasPayer = transaction.gasPayer,
+                    eventType = "VET_TRANSFER",
+                    params =
+                        AbiEventParameters(
+                            mapOf(
+                                "from" to transaction.origin,
+                                "to" to "0x00000000000000000000000000000000000000aa",
+                                "amount" to "10",
+                            ),
+                            "VET_TRANSFER",
+                        ),
+                )
+
+            val records = historyService.processBlock(listOf(event), block, emptyList())
+
+            assertThat(records).hasSize(1)
+            assertThat(records.single().eventName).isEqualTo(HistoryEventName.TRANSFER_VET)
+            assertThat(records.single().txId).isEqualTo(transaction.id)
         }
 
     private suspend fun captureIndexerResults(
