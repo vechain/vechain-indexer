@@ -1430,6 +1430,138 @@
         ],
         "type": "object"
       },
+      "NavigatorDelegation": {
+        "properties": {
+          "amount": {
+            "type": "string"
+          },
+          "appIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "blockTimestamp": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "citizen": {
+            "type": "string"
+          },
+          "eventType": {
+            "type": "string"
+          },
+          "navigator": {
+            "type": "string"
+          },
+          "roundId": {
+            "type": "string"
+          },
+          "txId": {
+            "type": "string"
+          },
+          "voteWeights": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "blockTimestamp",
+          "citizen",
+          "eventType",
+          "navigator",
+          "txId"
+        ],
+        "type": "object"
+      },
+      "NavigatorEvent": {
+        "properties": {
+          "announcedAtRound": {
+            "type": "string"
+          },
+          "blockTimestamp": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "effectiveRound": {
+            "type": "string"
+          },
+          "eventType": {
+            "type": "string"
+          },
+          "metadataURI": {
+            "type": "string"
+          },
+          "navigator": {
+            "type": "string"
+          },
+          "remainingStake": {
+            "type": "string"
+          },
+          "reportRoundId": {
+            "type": "string"
+          },
+          "reportURI": {
+            "type": "string"
+          },
+          "slashAmount": {
+            "type": "string"
+          },
+          "slashReason": {
+            "type": "string"
+          },
+          "stakeAmount": {
+            "type": "string"
+          },
+          "txId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "blockTimestamp",
+          "eventType",
+          "navigator",
+          "txId"
+        ],
+        "type": "object"
+      },
+      "NavigatorFee": {
+        "properties": {
+          "amount": {
+            "type": "string"
+          },
+          "blockTimestamp": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "citizen": {
+            "type": "string"
+          },
+          "eventType": {
+            "type": "string"
+          },
+          "navigator": {
+            "type": "string"
+          },
+          "roundId": {
+            "type": "string"
+          },
+          "txId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "amount",
+          "blockTimestamp",
+          "eventType",
+          "navigator",
+          "roundId",
+          "txId"
+        ],
+        "type": "object"
+      },
       "NftHoldersByBlockDto": {
         "properties": {
           "blockId": {
@@ -1649,6 +1781,60 @@
           "data": {
             "items": {
               "$ref": "#/components/schemas/IndexedTransferEvent"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationDetail"
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ],
+        "type": "object"
+      },
+      "PaginatedResponseNavigatorDelegation": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/NavigatorDelegation"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationDetail"
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ],
+        "type": "object"
+      },
+      "PaginatedResponseNavigatorEvent": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/NavigatorEvent"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationDetail"
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ],
+        "type": "object"
+      },
+      "PaginatedResponseNavigatorFee": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/NavigatorFee"
             },
             "type": "array"
           },
@@ -5042,6 +5228,499 @@
         "summary": "Get B3TR GM Level UserAllTimeActionSummary",
         "tags": [
           "B3TR - Galaxy Member NFTs"
+        ]
+      }
+    },
+    "/api/v1/b3tr/navigators/delegations": {
+      "get": {
+        "description": "Returns delegation created, updated, removed, and navigator vote cast events.",
+        "operationId": "getNavigatorDelegations",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "citizen",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "navigator",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Return records after this time (Unix time in seconds).",
+            "example": 1704143600,
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Return records before this time (Unix time in seconds).",
+            "example": 1704153600,
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The zero-based results page number",
+            "example": 0,
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The results page size",
+            "example": 20,
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 150,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The sort direction",
+            "in": "query",
+            "name": "direction",
+            "required": false,
+            "schema": {
+              "default": "DESC",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/XProjectIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponseNavigatorDelegation"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get navigator delegation events",
+        "tags": [
+          "B3TR Navigators"
+        ]
+      }
+    },
+    "/api/v1/b3tr/navigators/events": {
+      "get": {
+        "description": "Returns navigator registration, staking, exit, slash, metadata, and report events.",
+        "operationId": "getNavigatorEvents",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "navigator",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "eventType",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Return records after this time (Unix time in seconds).",
+            "example": 1704143600,
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Return records before this time (Unix time in seconds).",
+            "example": 1704153600,
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The zero-based results page number",
+            "example": 0,
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The results page size",
+            "example": 20,
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 150,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The sort direction",
+            "in": "query",
+            "name": "direction",
+            "required": false,
+            "schema": {
+              "default": "DESC",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/XProjectIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponseNavigatorEvent"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get navigator lifecycle events",
+        "tags": [
+          "B3TR Navigators"
+        ]
+      }
+    },
+    "/api/v1/b3tr/navigators/fees": {
+      "get": {
+        "description": "Returns fee deposited, claimed, and navigator fee taken events.",
+        "operationId": "getNavigatorFees",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "navigator",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Return records after this time (Unix time in seconds).",
+            "example": 1704143600,
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Return records before this time (Unix time in seconds).",
+            "example": 1704153600,
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The zero-based results page number",
+            "example": 0,
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The results page size",
+            "example": 20,
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 150,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The sort direction",
+            "in": "query",
+            "name": "direction",
+            "required": false,
+            "schema": {
+              "default": "DESC",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/XProjectIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponseNavigatorFee"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get navigator fee events",
+        "tags": [
+          "B3TR Navigators"
         ]
       }
     },
@@ -13576,6 +14255,10 @@
     {
       "description": "Endpoints for Galaxy Member level statistics.",
       "name": "B3TR - Galaxy Member NFTs"
+    },
+    {
+      "description": "Navigator lifecycle events, delegations, and fees",
+      "name": "B3TR Navigators"
     },
     {
       "description": "Query on chain transactions",
