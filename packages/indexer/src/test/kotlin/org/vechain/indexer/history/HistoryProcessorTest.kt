@@ -168,10 +168,11 @@ internal class HistoryProcessorTest {
 
     private fun assertSyntheticLifecycleHistoryIsSavedOnEmptyBlock(eventName: HistoryEventName) {
         val block = BlockFixtures.BLOCK_NO_CLAUSES
-        val records = listOf(syntheticHistoryEvent(block, eventName))
+        val returnedRecords = listOf(syntheticHistoryEvent(block, eventName))
 
-        coEvery { historyService.processBlock(emptyList(), block, emptyList()) } returns records
-        every { historyService.save(records) } returns Unit
+        coEvery { historyService.processBlock(emptyList(), block, emptyList()) } returns
+            returnedRecords
+        every { historyService.save(any()) } just Runs
 
         runBlocking {
             processor.process(
@@ -180,8 +181,9 @@ internal class HistoryProcessorTest {
         }
 
         coVerify(exactly = 1) { historyService.processBlock(emptyList(), block, emptyList()) }
-        verify(exactly = 1) { historyService.save(records) }
-        expect { that(records.single().eventName).isEqualTo(eventName) }
+        verify(exactly = 1) {
+            historyService.save(match { it.singleOrNull()?.eventName == eventName })
+        }
     }
 
     private fun syntheticHistoryEvent(
