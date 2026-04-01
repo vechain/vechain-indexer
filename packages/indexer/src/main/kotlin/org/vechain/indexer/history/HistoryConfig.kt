@@ -37,7 +37,7 @@ open class HistoryConfig() {
             .businessEvents("business-events", "abis")
             .businessEventSubstitutionParams(bEProperties.substitutions)
             .startBlock(startBlock)
-            .callDataClauses(listOf(ValidatorDecoder.buildClauses(getAllValidatorsAddress)[0]))
+            .callDataClauses(listOf(ValidatorDecoder.buildClauses(getAllValidatorsAddress).first()))
             .includeFullBlock()
             .includeVetTransfers()
             .build()
