@@ -1,0 +1,70 @@
+{
+  "name": "B3TR_ProposalWithdraw",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "ProposalWithdraw",
+      "alias": "proposalWithdraw",
+      "conditions": [
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${B3TR_GOVERNOR_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    },
+    {
+      "name": "Transfer",
+      "alias": "transferVOT3",
+      "conditions": [
+        {
+          "firstOperand": "from",
+          "isFirstStatic": false,
+          "secondOperand": "${B3TR_GOVERNOR_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        },
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${VOT3_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "firstEventName": "proposalWithdraw",
+      "firstEventProperty": "amount",
+      "secondEventName": "transferVOT3",
+      "secondEventProperty": "value",
+      "operator": "EQ"
+    }
+  ],
+  "paramsDefinition": [
+    {
+      "name": "to",
+      "eventName": "transferVOT3",
+      "businessEventName": "to"
+    },
+    {
+      "name": "from",
+      "eventName": "transferVOT3",
+      "businessEventName": "from"
+    },
+    {
+      "name": "value",
+      "eventName": "transferVOT3",
+      "businessEventName": "value"
+    },
+    {
+      "name": "proposalId",
+      "eventName": "proposalWithdraw",
+      "businessEventName": "proposalId"
+    }
+  ]
+}
