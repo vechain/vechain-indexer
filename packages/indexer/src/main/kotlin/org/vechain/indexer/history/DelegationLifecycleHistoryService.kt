@@ -102,7 +102,33 @@ class DelegationLifecycleHistoryService(
         validatorSnapshots: Map<String, ValidatorSnapshot>,
     ): List<IndexedHistoryEvent> {
         ensureLoaded()
-        return emptyList()
+        if (validatorSnapshots.isEmpty()) return emptyList()
+
+        val currentValidators = validatorSnapshots.keys
+        val disappeared = validatorToIds.keys.filter { it !in currentValidators }.sorted()
+        if (disappeared.isEmpty()) return emptyList()
+
+        val historyEvents = mutableListOf<IndexedHistoryEvent>()
+        var order = BLOCK_END_ORDER_BASE
+
+        disappeared.forEach { validatorId ->
+            val delegationIds = validatorToIds[validatorId]?.toList()?.sorted().orEmpty()
+            delegationIds.forEach { delegationId ->
+                val state = statesById[delegationId] ?: return@forEach
+                val exited = state.copy(status = Status.EXITED, forceExit = true, nextCycle = null)
+                historyEvents.add(
+                    createSyntheticHistoryEvent(
+                        block = block,
+                        state = exited,
+                        eventName = HistoryEventName.STARGATE_DELEGATION_EXITED_VALIDATOR,
+                        order = order++,
+                    )
+                )
+                removeState(delegationId)
+            }
+        }
+
+        return historyEvents
     }
 
     fun invalidate() {
@@ -185,7 +211,7 @@ class DelegationLifecycleHistoryService(
                 nextCycle = nextCycle,
                 cycleLength = cycleLength,
                 forceExit = false,
-                txId = event.txId,
+                txId = existing?.txId ?: event.txId,
                 requestBlockNumber = existing?.requestBlockNumber ?: block.number,
             )
         putState(state)
@@ -460,5 +486,6 @@ class DelegationLifecycleHistoryService(
 
     companion object {
         private const val BLOCK_START_ORDER_BASE = 100
+        private const val BLOCK_END_ORDER_BASE = 900000
     }
 }

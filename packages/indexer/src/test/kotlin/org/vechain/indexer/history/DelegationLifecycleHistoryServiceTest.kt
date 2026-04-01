@@ -192,10 +192,7 @@ class DelegationLifecycleHistoryServiceTest {
             )
 
             val blockEndSynthetic =
-                service.onBlockEnd(
-                    block(9),
-                    mapOf("0xOTHER" to snapshot("0xOTHER", startBlock = 1L)),
-                )
+                service.onBlockEnd(block(9), mapOf("0xVAL" to snapshot("0xVAL", startBlock = 0L)))
 
             assertThat(blockEndSynthetic).isEmpty()
 
@@ -354,7 +351,7 @@ class DelegationLifecycleHistoryServiceTest {
             assertThat(exited).hasSize(1)
             assertThat(exited.first().eventName)
                 .isEqualTo(HistoryEventName.STARGATE_DELEGATION_EXITED)
-            assertThat(exited.first().txId).isEqualTo("tx-exit-request")
+            assertThat(exited.first().txId).isEqualTo("tx-request")
         }
 
     @Test
@@ -446,50 +443,59 @@ class DelegationLifecycleHistoryServiceTest {
 
         assertThat(exited).hasSize(1)
         assertThat(exited.first().eventName).isEqualTo(HistoryEventName.STARGATE_DELEGATION_EXITED)
-        assertThat(exited.first().txId).isEqualTo("tx-exit-request")
+        assertThat(exited.first().txId).isEqualTo("tx-request")
     }
 
     @Test
-    fun `validator disappearance does not emit synthetic exit history rows`() = runBlocking {
-        coEvery { validatorDelegationService.resolveCycleInfo("0xVAL", 5L, any()) } returns
-            (5L to 10L)
-        every { validatorDelegationService.nextStatus(Status.QUEUED) } returns Status.ACTIVE
+    fun `validator disappearance emits synthetic exit history row and prevents later activation`() =
+        runBlocking {
+            coEvery { validatorDelegationService.resolveCycleInfo("0xVAL", 5L, any()) } returns
+                (5L to 15L)
 
-        service.onEvent(
-            event =
-                event(
-                    type = HistoryEventName.STARGATE_DELEGATE_REQUEST.name,
-                    params =
-                        mapOf(
-                            "delegationId" to "d1",
-                            "tokenId" to "t1",
-                            "validator" to "0xVAL",
-                            "owner" to "0xOWNER",
-                        ),
-                    txId = "tx-request",
-                ),
-            historyEvent =
-                historyRow(
-                    eventName = HistoryEventName.STARGATE_DELEGATE_REQUEST,
-                    delegationId = "d1",
-                    tokenId = "t1",
-                    validator = "0xVAL",
-                    owner = "0xOWNER",
-                    txId = "tx-request",
-                    block = block(5),
-                ),
-            block = block(5),
-            validatorSnapshots = emptyMap(),
-            order = 1000,
-        )
+            service.onEvent(
+                event =
+                    event(
+                        type = HistoryEventName.STARGATE_DELEGATE_REQUEST.name,
+                        params =
+                            mapOf(
+                                "delegationId" to "d1",
+                                "tokenId" to "t1",
+                                "validator" to "0xVAL",
+                                "owner" to "0xOWNER",
+                            ),
+                        txId = "tx-request",
+                    ),
+                historyEvent =
+                    historyRow(
+                        eventName = HistoryEventName.STARGATE_DELEGATE_REQUEST,
+                        delegationId = "d1",
+                        tokenId = "t1",
+                        validator = "0xVAL",
+                        owner = "0xOWNER",
+                        txId = "tx-request",
+                        block = block(5),
+                    ),
+                block = block(5),
+                validatorSnapshots = emptyMap(),
+                order = 1000,
+            )
 
-        service.onBlockStart(block(10), emptyMap())
+            val synthetic =
+                service.onBlockEnd(
+                    block(11),
+                    mapOf("0xOTHER" to snapshot("0xOTHER", startBlock = 1L)),
+                )
 
-        val synthetic =
-            service.onBlockEnd(block(11), mapOf("0xOTHER" to snapshot("0xOTHER", startBlock = 1L)))
+            assertThat(synthetic).hasSize(1)
+            assertThat(synthetic.first().eventName)
+                .isEqualTo(HistoryEventName.STARGATE_DELEGATION_EXITED_VALIDATOR)
+            assertThat(synthetic.first().txId).isEqualTo("tx-request")
+            assertThat(synthetic.first().blockNumber).isEqualTo(11L)
 
-        assertThat(synthetic).isEmpty()
-    }
+            val later = service.onBlockStart(block(15), emptyMap())
+
+            assertThat(later).isEmpty()
+        }
 
     @Test
     fun `ensureLoaded only aggregates rows with lifecycle status present`() {
