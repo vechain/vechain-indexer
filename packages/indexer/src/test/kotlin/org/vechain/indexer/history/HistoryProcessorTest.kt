@@ -53,19 +53,19 @@ internal class HistoryProcessorTest {
     }
 
     @Test
-    fun `process - if no events or transaction ar present then historyService shouldn't be called`() {
+    fun `process - if no events or transactions are present then processBlock should still be called`() {
+        val block = BlockFixtures.BLOCK_NO_CLAUSES
+
+        coEvery { historyService.processBlock(emptyList(), block, emptyList()) } returns emptyList()
+
         runBlocking {
             processor.process(
-                IndexingResult.BlockResult(
-                    BlockFixtures.BLOCK_NO_CLAUSES,
-                    emptyList(),
-                    emptyList(),
-                    Status.FULLY_SYNCED,
-                )
+                IndexingResult.BlockResult(block, emptyList(), emptyList(), Status.FULLY_SYNCED)
             )
         }
 
-        verify { historyService wasNot Called }
+        coVerify(exactly = 1) { historyService.processBlock(emptyList(), block, emptyList()) }
+        verify(exactly = 0) { historyService.save(any()) }
     }
 
     @Test
@@ -144,4 +144,56 @@ internal class HistoryProcessorTest {
         coVerify(exactly = 1) { historyService.processBlock(events, block, emptyList()) }
         verify(exactly = 1) { historyService.save(records) }
     }
+
+    @Test
+    fun `process - empty block saves synthetic delegate active history rows`() {
+        assertSyntheticLifecycleHistoryIsSavedOnEmptyBlock(
+            HistoryEventName.STARGATE_DELEGATE_ACTIVE
+        )
+    }
+
+    @Test
+    fun `process - empty block saves synthetic validator exit history rows`() {
+        assertSyntheticLifecycleHistoryIsSavedOnEmptyBlock(
+            HistoryEventName.STARGATE_DELEGATION_EXITED_VALIDATOR
+        )
+    }
+
+    @Test
+    fun `process - empty block saves synthetic delegation exited history rows`() {
+        assertSyntheticLifecycleHistoryIsSavedOnEmptyBlock(
+            HistoryEventName.STARGATE_DELEGATION_EXITED
+        )
+    }
+
+    private fun assertSyntheticLifecycleHistoryIsSavedOnEmptyBlock(eventName: HistoryEventName) {
+        val block = BlockFixtures.BLOCK_NO_CLAUSES
+        val records = listOf(syntheticHistoryEvent(block, eventName))
+
+        coEvery { historyService.processBlock(emptyList(), block, emptyList()) } returns records
+        every { historyService.save(records) } returns Unit
+
+        runBlocking {
+            processor.process(
+                IndexingResult.BlockResult(block, emptyList(), emptyList(), Status.FULLY_SYNCED)
+            )
+        }
+
+        coVerify(exactly = 1) { historyService.processBlock(emptyList(), block, emptyList()) }
+        verify(exactly = 1) { historyService.save(records) }
+        expect { that(records.single().eventName).isEqualTo(eventName) }
+    }
+
+    private fun syntheticHistoryEvent(
+        block: org.vechain.indexer.thor.model.Block,
+        eventName: HistoryEventName,
+    ) =
+        IndexedHistoryEvent(
+            id = "history-${eventName.name}",
+            blockId = block.id,
+            blockNumber = block.number,
+            blockTimestamp = block.timestamp,
+            txId = "tx-${eventName.name}",
+            eventName = eventName,
+        )
 }

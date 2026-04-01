@@ -31,10 +31,6 @@ open class HistoryProcessor(
                 "Expected IndexingResult.BlockResult (full block result required)"
             )
         }
-        // If no events or transactions, do nothing
-        if (entry.events().isEmpty() && entry.block.transactions.isEmpty()) {
-            return
-        }
 
         // Filter out blacklist and whitelist events and handle them separately
         val (blacklistEvents, historyEvents) =
