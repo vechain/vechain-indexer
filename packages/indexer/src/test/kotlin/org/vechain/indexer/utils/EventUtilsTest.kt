@@ -18,6 +18,7 @@ class EventUtilsTest {
                     "B3TR_Vot3ToB3trSwap" to HistoryEventName.B3TR_SWAP_VOT3_TO_B3TR,
                     "B3TR_B3trToVot3Swap" to HistoryEventName.B3TR_SWAP_B3TR_TO_VOT3,
                     "B3TR_ProposalDeposit" to HistoryEventName.B3TR_PROPOSAL_SUPPORT,
+                    "B3TR_ProposalWithdraw" to HistoryEventName.B3TR_PROPOSAL_WITHDRAW,
                     "B3TR_ClaimReward" to HistoryEventName.B3TR_CLAIM_REWARD,
                     "B3TR_GMUpgrade" to HistoryEventName.B3TR_UPGRADE_GM,
                     "B3TR_ActionReward" to HistoryEventName.B3TR_ACTION,
