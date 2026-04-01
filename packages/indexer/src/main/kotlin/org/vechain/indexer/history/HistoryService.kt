@@ -258,7 +258,7 @@ open class HistoryService(
         )
     }
 
-    /** Fallback function to handles all unknown transaction types */
+    /** Fallback function to handle all unknown transaction types */
     private fun buildUnknownTransactionHistoryEvents(
         block: Block,
         transactionIdsWithHistoryEvents: Set<String>,
