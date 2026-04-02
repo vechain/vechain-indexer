@@ -11,8 +11,6 @@ import org.vechain.indexer.BaseIndexedRepository
 @Profile("validator", "delegation", "stargate", "vet-delegated-by-block")
 @Repository
 interface DelegationRepository : BaseIndexedRepository<Delegation, String> {
-    @Query("{ 'notify': ?0 }") fun findByNotify(notify: Boolean): List<Delegation>
-
     @Query("{ 'validatorNextCycle': { '\$in': ?0 }, 'status': { '\$in': ?1 } }")
     fun findByValidatorNextCycleInAndStatusIn(
         blockNumber: List<Long>,

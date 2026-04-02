@@ -50,6 +50,7 @@ from compare_endpoints import (
     HttpResponseError,
     compare_json,
     fetch_json,
+    ignored_paths_for_matching_error_statuses,
     normalize_ignored_paths,
     ssl_context_for,
 )
@@ -719,11 +720,16 @@ def execute_test_case(
                 pair_diffs.append(
                     ("status", f"status code mismatch: {status_codes.get(n1)} != {status_codes.get(n2)}")
                 )
+            effective_ignored_paths = ignored_paths_for_matching_error_statuses(
+                status_codes.get(n1, 0),
+                status_codes.get(n2, 0),
+                ignored_paths,
+            )
             pair_diffs.extend(
                 compare_json(
                 responses[n1],
                 responses[n2],
-                ignored_paths=ignored_paths,
+                ignored_paths=effective_ignored_paths,
                 unordered_lists=unordered_lists,
             )
             )

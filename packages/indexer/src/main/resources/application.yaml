@@ -114,11 +114,6 @@ veworld:
       steering-committee: ${STEERING_COMMITTEE_ADDRESS:0x7E54f0790153647Ec0651c35cEd28171Adb5D44A}
       all-stakeholders: ${ALL_STAKEHOLDERS_ADDRESS:0xA6416A72F816d3a69f33D0814700545C8E3fe4BE}
       legacy-descriptions: ${LEGACY_DESCRIPTIONS_ADDRESS:0x6957f76d0749EbF4d098F5EDba1F657635F0D483}
-scheduler:
-  delegationHistory:
-    initial-delay: ${DELEGATION_HISTORY_INITIAL_DELAY:30s}
-    interval: ${DELEGATION_HISTORY_INTERVAL:30s}
-
 indexer:
   genesis:
     vet-balances:
@@ -182,7 +177,7 @@ indexer:
     transfers: ${VERSION_TRANSFERS:1}
     fungible-token-interactions: ${VERSION_FUNGIBLE_TOKEN_INTERACTIONS:1}
     transactions: ${VERSION_TRANSACTIONS:1}
-    history: ${VERSION_HISTORY:1}
+    history: ${VERSION_HISTORY:2}
     nft-blacklist: ${VERSION_NFT_BLACKLIST:1}
     vevote-comments: ${VERSION_VEVOTE_COMMENTS:1}
     vevote-results: ${VERSION_VEVOTE_RESULTS:1}
@@ -211,7 +206,7 @@ indexer:
     average-fees-per-user: ${VERSION_AVERAGE_FEES_PER_USER:1}
     validator: ${VERSION_VALIDATOR:1}
     validator-rewards: ${VERSION_VALIDATOR_BLOCKS:1}
-    delegation: ${VERSION_DELEGATION:1}
+    delegation: ${VERSION_DELEGATION:2}
     token-rewards: ${VERSION_TOKEN_REWARDS:1}
     stargate-token: ${VERSION_STARGATE_TOKEN:1}
     total-accounts: ${VERSION_TOTAL_ACCOUNTS:1}

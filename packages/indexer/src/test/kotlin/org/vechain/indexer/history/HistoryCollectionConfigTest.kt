@@ -58,6 +58,15 @@ class HistoryCollectionConfigTest {
         )
         assertTrue(
             capturedIndexes.any {
+                it.indexKeys["delegationId"] == 1 &&
+                    it.indexKeys["blockNumber"] == -1 &&
+                    it.indexKeys["delegationLifecycleOrder"] == -1 &&
+                    it.indexOptions["name"] ==
+                        "delegationId_1_blockNumber_-1_delegationLifecycleOrder_-1"
+            }
+        )
+        assertTrue(
+            capturedIndexes.any {
                 it.indexKeys["to"] == 1 &&
                     it.indexKeys["eventName"] == 1 &&
                     it.indexKeys["blockTimestamp"] == -1 &&

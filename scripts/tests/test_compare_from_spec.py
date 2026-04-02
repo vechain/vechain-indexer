@@ -104,6 +104,57 @@ class CompareFromSpecTest(unittest.TestCase):
         self.assertEqual(result.status_codes, {"baseline": 404, "candidate": 404})
         self.assertEqual(result.errors, {})
 
+    def test_matching_404s_ignore_volatile_error_fields(self) -> None:
+        operation = MODULE.Operation(path="/api/v1/b3tr/richlist/{address}", method="GET")
+        test_case = MODULE.TestCase(
+            operation=operation,
+            path_params={"address": "0xeb0c565f69557481c6c7fa347cae273128a0996e"},
+            query_params={"scope": "ALL"},
+            label="GET /api/v1/b3tr/richlist/{address}",
+        )
+        baseline_error = MODULE.HttpResponseError(
+            status_code=404,
+            reason="Not Found",
+            body={
+                "id": "20b2ad69-9eb4-4a28-bfdd-290cee4e40a2",
+                "timestamp": 1774866165,
+                "message": "Not Found",
+                "path": "/api/v1/b3tr/richlist/0xeb0c565f69557481c6c7fa347cae273128a0996e",
+            },
+            url="https://baseline.example.com",
+        )
+        candidate_error = MODULE.HttpResponseError(
+            status_code=404,
+            reason="Not Found",
+            body={
+                "id": "505e863f-b6b7-4c69-bc75-e56ae2b5d17c",
+                "timestamp": 1774866166,
+                "message": "Not Found",
+                "path": "/api/v1/b3tr/richlist/0xeb0c565f69557481c6c7fa347cae273128a0996e",
+            },
+            url="https://candidate.example.com",
+        )
+
+        with patch.object(MODULE, "fetch_json", side_effect=[baseline_error, candidate_error]):
+            result = MODULE.execute_test_case(
+                test_case,
+                endpoints=[
+                    ("baseline", "https://baseline.example.com"),
+                    ("candidate", "https://candidate.example.com"),
+                ],
+                common_headers={},
+                timeout=5,
+                insecure=False,
+                cafile=None,
+                ignored_paths=set(),
+                unordered_lists=False,
+            )
+
+        self.assertTrue(result.all_match)
+        self.assertFalse(result.has_mismatch)
+        self.assertEqual(result.status_codes, {"baseline": 404, "candidate": 404})
+        self.assertEqual(result.diffs["baseline vs candidate"], [])
+
     def test_different_http_statuses_are_reported_as_differences(self) -> None:
         operation = MODULE.Operation(path="/api/v1/b3tr/richlist/{address}", method="GET")
         test_case = MODULE.TestCase(

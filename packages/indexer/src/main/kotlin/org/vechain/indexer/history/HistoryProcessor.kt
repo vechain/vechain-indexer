@@ -2,6 +2,7 @@ package org.vechain.indexer.history
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
@@ -30,10 +31,6 @@ open class HistoryProcessor(
                 "Expected IndexingResult.BlockResult (full block result required)"
             )
         }
-        // If no events or transactions, do nothing
-        if (entry.events().isEmpty() && entry.block.transactions.isEmpty()) {
-            return
-        }
 
         // Filter out blacklist and whitelist events and handle them separately
         val (blacklistEvents, historyEvents) =
@@ -43,7 +40,7 @@ open class HistoryProcessor(
                     it.eventType == "NFT_Blacklisted" || it.eventType == "NFT_Whitelisted"
                 })
 
-        val records = historyService.processEvents(historyEvents, entry.block)
+        val records = historyService.processBlock(historyEvents, entry.block, entry.callResults)
 
         if (records.isNotEmpty()) {
             historyService.save(records)
@@ -52,5 +49,11 @@ open class HistoryProcessor(
         if (blacklistEvents.isNotEmpty()) {
             historyService.processBlacklistEvents(blacklistEvents)
         }
+    }
+
+    @Transactional(rollbackFor = [Exception::class])
+    override fun rollback(blockNumber: Long) {
+        historyService.invalidateDelegationLifecycleState()
+        super.rollback(blockNumber)
     }
 }
