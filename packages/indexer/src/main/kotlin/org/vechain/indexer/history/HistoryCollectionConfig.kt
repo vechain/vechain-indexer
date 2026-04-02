@@ -62,6 +62,14 @@ open class HistoryCollectionConfig(
                     Index()
                         .on(IndexedHistoryEvent::tokenId.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
+                "delegationId_1_blockNumber_-1_delegationLifecycleOrder_-1" to
+                    Index()
+                        .on(IndexedHistoryEvent::delegationId.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::blockNumber.name, Sort.Direction.DESC)
+                        .on(
+                            IndexedHistoryEvent.DELEGATION_LIFECYCLE_ORDER_FIELD,
+                            Sort.Direction.DESC,
+                        ),
                 // Action endpoints query narrower shapes and benefit from dedicated compounds.
                 "to_1_eventName_1_blockTimestamp_-1" to
                     Index()

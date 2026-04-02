@@ -13,6 +13,7 @@ import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.BusinessEventParamFixtures.BUSINESS_EVENT_PARAMS
 import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.thor.model.InspectionResult
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.hasSize
@@ -33,6 +34,8 @@ class HistoryIndexerTest {
     fun setUp() {
         MockKAnnotations.init(this)
         every { businessEventProperties.substitutions } returns BUSINESS_EVENT_PARAMS
+        coEvery { thorClient.inspectClauses(any(), any()) } returns
+            listOf(InspectionResult("0x", emptyList(), emptyList(), 0, false, ""))
     }
 
     @Test
@@ -55,6 +58,7 @@ class HistoryIndexerTest {
                         startBlock = b3trBlock.number,
                         syncLoggerInterval = 1L,
                         bEProperties = businessEventProperties,
+                        getAllValidatorsAddress = "0xvalidators",
                     )
 
             // Create a coordinator to run the indexer
@@ -102,6 +106,7 @@ class HistoryIndexerTest {
                     startBlock = dexBlock.number,
                     syncLoggerInterval = 1L,
                     bEProperties = businessEventProperties,
+                    getAllValidatorsAddress = "0xvalidators",
                 )
 
         // Create a coordinator to run the indexer
@@ -147,6 +152,7 @@ class HistoryIndexerTest {
                     startBlock = mpSales.number,
                     syncLoggerInterval = 1L,
                     bEProperties = businessEventProperties,
+                    getAllValidatorsAddress = "0xvalidators",
                 )
 
         // Create a coordinator to run the indexer
@@ -202,6 +208,7 @@ class HistoryIndexerTest {
                     startBlock = startBlock.number,
                     syncLoggerInterval = 1L,
                     bEProperties = businessEventProperties,
+                    getAllValidatorsAddress = "0xvalidators",
                 )
 
         // Create a coordinator to run the indexer
@@ -262,6 +269,7 @@ class HistoryIndexerTest {
                     startBlock = startBlock.number,
                     syncLoggerInterval = 1L,
                     bEProperties = businessEventProperties,
+                    getAllValidatorsAddress = "0xvalidators",
                 )
 
         // Create a coordinator to run the indexer
