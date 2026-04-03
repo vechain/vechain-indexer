@@ -99,7 +99,7 @@ open class NavigatorService(
         val nav = resolveExisting(address, accumulator) ?: return
         val updated =
             nav.copy(
-                version = accumulator.resolve(address).second,
+                version = accumulator.resolve(address).nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
@@ -117,7 +117,7 @@ open class NavigatorService(
         val nav = resolveExisting(address, accumulator) ?: return
         val updated =
             nav.copy(
-                version = accumulator.resolve(address).second,
+                version = accumulator.resolve(address).nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
@@ -135,7 +135,7 @@ open class NavigatorService(
         val nav = resolveExisting(address, accumulator) ?: return
         val updated =
             nav.copy(
-                version = accumulator.resolve(address).second,
+                version = accumulator.resolve(address).nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
@@ -155,7 +155,7 @@ open class NavigatorService(
         val nav = resolveExisting(address, accumulator) ?: return
         val updated =
             nav.copy(
-                version = accumulator.resolve(address).second,
+                version = accumulator.resolve(address).nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
@@ -174,7 +174,7 @@ open class NavigatorService(
         val nav = resolveExisting(address, accumulator) ?: return
         val updated =
             nav.copy(
-                version = accumulator.resolve(address).second,
+                version = accumulator.resolve(address).nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
@@ -192,7 +192,7 @@ open class NavigatorService(
         val nav = resolveExisting(address, accumulator) ?: return
         val updated =
             nav.copy(
-                version = accumulator.resolve(address).second,
+                version = accumulator.resolve(address).nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
@@ -210,7 +210,7 @@ open class NavigatorService(
         val nav = resolveExisting(address, accumulator) ?: return
         val updated =
             nav.copy(
-                version = accumulator.resolve(address).second,
+                version = accumulator.resolve(address).nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
@@ -228,7 +228,7 @@ open class NavigatorService(
         val nav = resolveExisting(address, accumulator) ?: return
         val updated =
             nav.copy(
-                version = accumulator.resolve(address).second,
+                version = accumulator.resolve(address).nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
@@ -248,7 +248,7 @@ open class NavigatorService(
         val amount = ev.params.getAsString("amount") ?: "0"
         val updated =
             nav.copy(
-                version = accumulator.resolve(address).second,
+                version = accumulator.resolve(address).nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
@@ -269,7 +269,7 @@ open class NavigatorService(
         val nav = resolveExisting(address, accumulator) ?: return
         val updated =
             nav.copy(
-                version = accumulator.resolve(address).second,
+                version = accumulator.resolve(address).nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
@@ -286,7 +286,7 @@ open class NavigatorService(
         val nav = resolveExisting(address, accumulator) ?: return
         val updated =
             nav.copy(
-                version = accumulator.resolve(address).second,
+                version = accumulator.resolve(address).nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
