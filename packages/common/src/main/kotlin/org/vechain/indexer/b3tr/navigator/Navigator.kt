@@ -1,7 +1,9 @@
 package org.vechain.indexer.b3tr.navigator
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonProperty
 import java.math.BigDecimal
+import java.math.BigInteger
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
@@ -20,9 +22,9 @@ constructor(
     @JsonIgnore override val blockNumber: Long,
     @JsonIgnore override val blockTimestamp: Long,
     val status: NavigatorStatus,
-    @Field(targetType = FieldType.DECIMAL128) val stake: BigDecimal,
+    @JsonIgnore @Field(targetType = FieldType.DECIMAL128) val stake: BigDecimal,
     val citizenCount: Int,
-    @Field(targetType = FieldType.DECIMAL128) val totalDelegated: BigDecimal,
+    @JsonIgnore @Field(targetType = FieldType.DECIMAL128) val totalDelegated: BigDecimal,
     val metadataURI: String?,
     val registeredAt: Long,
     val exitAnnouncedRound: String?,
@@ -31,6 +33,14 @@ constructor(
     val lastReportURI: String?,
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = address
+
+    @get:JsonProperty("stake")
+    val stakeValue: BigInteger
+        get() = stake.toBigInteger()
+
+    @get:JsonProperty("totalDelegated")
+    val totalDelegatedValue: BigInteger
+        get() = totalDelegated.toBigInteger()
 }
 
 enum class NavigatorStatus {

@@ -5,6 +5,7 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.slot
 import java.math.BigDecimal
+import java.math.BigInteger
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -167,9 +168,9 @@ internal class NavigatorApiServiceTest {
         val overview = service.getOverview()
 
         assertEquals(2L, overview.activeNavigators)
-        assertEquals("125000", overview.totalStaked)
+        assertEquals(BigInteger("125000"), overview.totalStaked)
         assertEquals(8L, overview.totalCitizens)
-        assertEquals("300000", overview.totalDelegated)
+        assertEquals(BigInteger("300000"), overview.totalDelegated)
     }
 
     @Test
@@ -180,9 +181,9 @@ internal class NavigatorApiServiceTest {
         val overview = service.getOverview()
 
         assertEquals(0L, overview.activeNavigators)
-        assertEquals("0", overview.totalStaked)
+        assertEquals(BigInteger.ZERO, overview.totalStaked)
         assertEquals(0L, overview.totalCitizens)
-        assertEquals("0", overview.totalDelegated)
+        assertEquals(BigInteger.ZERO, overview.totalDelegated)
     }
 
     private fun navFixture(

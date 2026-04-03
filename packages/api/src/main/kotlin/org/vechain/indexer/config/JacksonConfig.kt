@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import java.math.BigDecimal
 import java.math.BigInteger
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -17,7 +16,6 @@ open class JacksonConfig {
         val module =
             SimpleModule().apply {
                 addSerializer(BigInteger::class.java, ToStringSerializer.instance)
-                addSerializer(BigDecimal::class.java, ToStringSerializer.instance)
             }
 
         return ObjectMapper().apply {

@@ -1,6 +1,7 @@
 package org.vechain.indexer.b3tr.navigator
 
 import java.math.BigDecimal
+import java.math.BigInteger
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
@@ -12,9 +13,9 @@ import org.springframework.stereotype.Service
 
 data class NavigatorOverview(
     val activeNavigators: Long,
-    val totalStaked: String,
+    val totalStaked: BigInteger,
     val totalCitizens: Long,
-    val totalDelegated: String,
+    val totalDelegated: BigInteger,
 )
 
 @Profile("b3tr")
@@ -49,9 +50,9 @@ open class NavigatorApiService(private val mongoTemplate: MongoTemplate) {
 
         return NavigatorOverview(
             activeNavigators = activeNavigators.size.toLong(),
-            totalStaked = totalStaked.toPlainString(),
+            totalStaked = totalStaked.toBigInteger(),
             totalCitizens = totalCitizens,
-            totalDelegated = totalDelegated.toPlainString(),
+            totalDelegated = totalDelegated.toBigInteger(),
         )
     }
 
