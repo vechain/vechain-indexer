@@ -23,6 +23,15 @@ import org.vechain.indexer.validation.ValidPageSize
 @RequestMapping(NAVIGATOR_PATH)
 open class NavigatorController(private val navigatorApiService: NavigatorApiService) {
 
+    @GetMapping("/overview")
+    @Operation(
+        summary = "Get navigator overview",
+        description =
+            "Returns aggregate stats: active navigators, total B3TR staked, total citizens, total VOT3 delegated.",
+    )
+    @CommonApiResponses
+    open fun getOverview(): NavigatorOverview = navigatorApiService.getOverview()
+
     @GetMapping
     @Operation(
         summary = "Get navigators",

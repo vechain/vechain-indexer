@@ -1,5 +1,6 @@
 package org.vechain.indexer.b3tr.navigator
 
+import java.math.BigInteger
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
@@ -8,6 +9,13 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
+
+data class NavigatorOverview(
+    val activeNavigators: Long,
+    val totalStaked: String,
+    val totalCitizens: Long,
+    val totalDelegated: String,
+)
 
 @Profile("b3tr")
 @Service
@@ -22,6 +30,29 @@ open class NavigatorApiService(private val mongoTemplate: MongoTemplate) {
         navigator?.let { criteria.and(Navigator::address.name).`is`(it.lowercase()) }
         statuses?.let { criteria.and(Navigator::status.name).`in`(it.map { s -> s.name }) }
         return runQuery(criteria, pageable)
+    }
+
+    fun getOverview(): NavigatorOverview {
+        val activeQuery =
+            Query(Criteria.where(Navigator::status.name).`is`(NavigatorStatus.ACTIVE.name))
+        val activeNavigators = mongoTemplate.find(activeQuery, Navigator::class.java)
+
+        var totalStaked = BigInteger.ZERO
+        var totalCitizens = 0L
+        var totalDelegated = BigInteger.ZERO
+
+        for (nav in activeNavigators) {
+            totalStaked += nav.stake.toBigIntegerOrNull() ?: BigInteger.ZERO
+            totalCitizens += nav.citizenCount
+            totalDelegated += nav.totalDelegated.toBigIntegerOrNull() ?: BigInteger.ZERO
+        }
+
+        return NavigatorOverview(
+            activeNavigators = activeNavigators.size.toLong(),
+            totalStaked = totalStaked.toString(),
+            totalCitizens = totalCitizens,
+            totalDelegated = totalDelegated.toString(),
+        )
     }
 
     private fun runQuery(criteria: Criteria, pageable: Pageable): Slice<Navigator> {

@@ -148,4 +148,63 @@ internal class NavigatorApiServiceTest {
         assertFalse(result.hasNext())
         assertEquals(10, result.content.size)
     }
+
+    // ============================================================================
+    // Overview
+    // ============================================================================
+
+    @Test
+    fun `getOverview aggregates active navigators`() {
+        val querySlot = slot<Query>()
+        val navigators =
+            listOf(
+                navFixture("0xnav1", stake = "50000", citizenCount = 3, totalDelegated = "100000"),
+                navFixture("0xnav2", stake = "75000", citizenCount = 5, totalDelegated = "200000"),
+            )
+        every { mongoTemplate.find(capture(querySlot), Navigator::class.java) } returns navigators
+
+        val overview = service.getOverview()
+
+        assertEquals(2L, overview.activeNavigators)
+        assertEquals("125000", overview.totalStaked)
+        assertEquals(8L, overview.totalCitizens)
+        assertEquals("300000", overview.totalDelegated)
+    }
+
+    @Test
+    fun `getOverview returns zeros when no active navigators`() {
+        val querySlot = slot<Query>()
+        every { mongoTemplate.find(capture(querySlot), Navigator::class.java) } returns emptyList()
+
+        val overview = service.getOverview()
+
+        assertEquals(0L, overview.activeNavigators)
+        assertEquals("0", overview.totalStaked)
+        assertEquals(0L, overview.totalCitizens)
+        assertEquals("0", overview.totalDelegated)
+    }
+
+    private fun navFixture(
+        address: String,
+        stake: String = "50000",
+        citizenCount: Int = 0,
+        totalDelegated: String = "0",
+    ) =
+        Navigator(
+            address = address,
+            version = 1,
+            blockId = "b",
+            blockNumber = 1L,
+            blockTimestamp = 1L,
+            status = NavigatorStatus.ACTIVE,
+            stake = stake,
+            citizenCount = citizenCount,
+            totalDelegated = totalDelegated,
+            metadataURI = null,
+            registeredAt = 1L,
+            exitAnnouncedRound = null,
+            exitEffectiveRound = null,
+            lastReportRound = null,
+            lastReportURI = null,
+        )
 }

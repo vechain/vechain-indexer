@@ -1484,6 +1484,31 @@
         ],
         "type": "object"
       },
+      "NavigatorOverview": {
+        "properties": {
+          "activeNavigators": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalCitizens": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalDelegated": {
+            "type": "string"
+          },
+          "totalStaked": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "activeNavigators",
+          "totalCitizens",
+          "totalDelegated",
+          "totalStaked"
+        ],
+        "type": "object"
+      },
       "NftHoldersByBlockDto": {
         "properties": {
           "blockId": {
@@ -3311,7 +3336,7 @@
     "/api/v1/accounts/overview/{address}": {
       "get": {
         "description": "\n            Retrieves the account overview including VTHO earned from three sources:\n            - Block rewards (pre-Hayabusa authority nodes + post-Hayabusa validators)\n            - Passive VTHO generation from VET holdings (genesis to Hayabusa only)\n            - Stargate VTHO claimed (delegation rewards)\n\n            The response includes individual breakdowns and a computed total.\n        ",
-        "operationId": "getOverview",
+        "operationId": "getOverview_1",
         "parameters": [
           {
             "description": "The address of the account to retrieve the overview for.",
@@ -5258,6 +5283,93 @@
           }
         },
         "summary": "Get navigators",
+        "tags": [
+          "B3TR Navigators"
+        ]
+      }
+    },
+    "/api/v1/b3tr/navigators/overview": {
+      "get": {
+        "description": "Returns aggregate stats: active navigators, total B3TR staked, total citizens, total VOT3 delegated.",
+        "operationId": "getOverview",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XProjectIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/NavigatorOverview"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get navigator overview",
         "tags": [
           "B3TR Navigators"
         ]
