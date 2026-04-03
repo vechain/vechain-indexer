@@ -1484,6 +1484,34 @@
         ],
         "type": "object"
       },
+      "NavigatorCitizen": {
+        "properties": {
+          "active": {
+            "type": "boolean"
+          },
+          "address": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "delegatedAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "navigator": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "active",
+          "address",
+          "amount",
+          "delegatedAt",
+          "navigator"
+        ],
+        "type": "object"
+      },
       "NavigatorOverview": {
         "properties": {
           "activeNavigators": {
@@ -1746,6 +1774,24 @@
           "data": {
             "items": {
               "$ref": "#/components/schemas/Navigator"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationDetail"
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ],
+        "type": "object"
+      },
+      "PaginatedResponseNavigatorCitizen": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/NavigatorCitizen"
             },
             "type": "array"
           },
@@ -5283,6 +5329,141 @@
           }
         },
         "summary": "Get navigators",
+        "tags": [
+          "B3TR Navigators"
+        ]
+      }
+    },
+    "/api/v1/b3tr/navigators/citizens": {
+      "get": {
+        "description": "Returns the list of active citizen delegations for a navigator, with address, amount, and start date.",
+        "operationId": "getCitizens",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "navigator",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The zero-based results page number",
+            "example": 0,
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The results page size",
+            "example": 20,
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 150,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The sort direction",
+            "in": "query",
+            "name": "direction",
+            "required": false,
+            "schema": {
+              "default": "DESC",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/XProjectIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponseNavigatorCitizen"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get citizens delegated to a navigator",
         "tags": [
           "B3TR Navigators"
         ]

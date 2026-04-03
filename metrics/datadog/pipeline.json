@@ -159,6 +159,12 @@
         },
         {
           "filter": {
+            "query": "@http.url_details.path:\"/api/v1/b3tr/navigators/citizens\""
+          },
+          "name": "/api/v1/b3tr/navigators/citizens"
+        },
+        {
+          "filter": {
             "query": "@http.url_details.path:\"/api/v1/b3tr/navigators/overview\""
           },
           "name": "/api/v1/b3tr/navigators/overview"

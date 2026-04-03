@@ -29,7 +29,7 @@ open class NavigatorApiService(private val mongoTemplate: MongoTemplate) {
         val criteria = Criteria()
         navigator?.let { criteria.and(Navigator::address.name).`is`(it.lowercase()) }
         statuses?.let { criteria.and(Navigator::status.name).`in`(it.map { s -> s.name }) }
-        return runQuery(criteria, pageable)
+        return runQuery(criteria, pageable, Navigator::class.java)
     }
 
     fun getOverview(): NavigatorOverview {
@@ -55,10 +55,19 @@ open class NavigatorApiService(private val mongoTemplate: MongoTemplate) {
         )
     }
 
-    private fun runQuery(criteria: Criteria, pageable: Pageable): Slice<Navigator> {
+    fun findCitizens(navigator: String, pageable: Pageable): Slice<NavigatorCitizen> {
+        val criteria =
+            Criteria.where(NavigatorCitizen::navigator.name)
+                .`is`(navigator.lowercase())
+                .and(NavigatorCitizen::active.name)
+                .`is`(true)
+        return runQuery(criteria, pageable, NavigatorCitizen::class.java)
+    }
+
+    private fun <T> runQuery(criteria: Criteria, pageable: Pageable, clazz: Class<T>): Slice<T> {
         val query = Query(criteria).with(pageable)
         query.limit(pageable.pageSize + 1)
-        val raw = mongoTemplate.find(query, Navigator::class.java)
+        val raw = mongoTemplate.find(query, clazz)
         val hasNext = raw.size > pageable.pageSize
         val content = if (hasNext) raw.dropLast(1) else raw
         return SliceImpl(content, pageable, hasNext)
