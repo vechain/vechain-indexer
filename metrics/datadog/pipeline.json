@@ -159,24 +159,6 @@
         },
         {
           "filter": {
-            "query": "@http.url_details.path:\"/api/v1/b3tr/navigators/delegations\""
-          },
-          "name": "/api/v1/b3tr/navigators/delegations"
-        },
-        {
-          "filter": {
-            "query": "@http.url_details.path:\"/api/v1/b3tr/navigators/events\""
-          },
-          "name": "/api/v1/b3tr/navigators/events"
-        },
-        {
-          "filter": {
-            "query": "@http.url_details.path:\"/api/v1/b3tr/navigators/fees\""
-          },
-          "name": "/api/v1/b3tr/navigators/fees"
-        },
-        {
-          "filter": {
             "query": "@http.url_details.path:\"/api/v1/b3tr/treasury/transfers\""
           },
           "name": "/api/v1/b3tr/treasury/transfers"
@@ -222,6 +204,12 @@
             "query": "@http.url_details.path:\"/api/v1/accounts/totals\""
           },
           "name": "/api/v1/accounts/totals"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:\"/api/v1/b3tr/navigators\""
+          },
+          "name": "/api/v1/b3tr/navigators"
         },
         {
           "filter": {
