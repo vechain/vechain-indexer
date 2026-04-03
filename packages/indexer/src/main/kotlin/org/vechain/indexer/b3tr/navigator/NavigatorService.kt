@@ -17,6 +17,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 @Profile("b3tr", "b3tr-navigator")
 open class NavigatorService(
     private val repository: NavigatorRepository,
+    private val citizenRepository: NavigatorCitizenRepository,
     private val mongoTemplate: MongoTemplate,
     private val inlineVersioningProperties: InlineVersioningProperties,
 ) {
@@ -263,16 +264,19 @@ open class NavigatorService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<Navigator>,
     ) {
-        // DelegationUpdated only has newAmount, not the old amount.
-        // We can't compute the delta precisely, so we just update block metadata.
         val address = ev.params.getAsString("navigator")?.lowercase() ?: return
+        val citizen = ev.params.getAsString("citizen")?.lowercase() ?: return
         val nav = resolveExisting(address, accumulator) ?: return
+        val newAmount = ev.params.getAsString("newAmount")?.toBigIntegerOrNull() ?: BigInteger.ZERO
+        val oldAmount = getCitizenAmount(citizen)
+        val delta = newAmount - oldAmount
         val updated =
             nav.copy(
                 version = accumulator.resolve(address).nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
+                totalDelegated = addBigInt(nav.totalDelegated, delta.toString()),
             )
         accumulator.put(address, nav, updated)
     }
@@ -283,7 +287,9 @@ open class NavigatorService(
         accumulator: VersionedDocumentAccumulator<Navigator>,
     ) {
         val address = ev.params.getAsString("navigator")?.lowercase() ?: return
+        val citizen = ev.params.getAsString("citizen")?.lowercase() ?: return
         val nav = resolveExisting(address, accumulator) ?: return
+        val citizenAmount = getCitizenAmount(citizen)
         val updated =
             nav.copy(
                 version = accumulator.resolve(address).nextVersion,
@@ -291,6 +297,7 @@ open class NavigatorService(
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
                 citizenCount = maxOf(0, nav.citizenCount - 1),
+                totalDelegated = subtractBigInt(nav.totalDelegated, citizenAmount.toString()),
             )
         accumulator.put(address, nav, updated)
     }
@@ -309,9 +316,19 @@ open class NavigatorService(
         return current.add(amount).toString()
     }
 
+    private fun getCitizenAmount(citizenAddress: String): BigInteger =
+        citizenRepository.findById(citizenAddress).orElse(null)?.amount?.toBigIntegerOrNull()
+            ?: BigInteger.ZERO
+
     private fun addBigInt(a: String, b: String): String {
         val av = a.toBigIntegerOrNull() ?: BigInteger.ZERO
         val bv = b.toBigIntegerOrNull() ?: BigInteger.ZERO
         return av.add(bv).toString()
+    }
+
+    private fun subtractBigInt(a: String, b: String): String {
+        val av = a.toBigIntegerOrNull() ?: BigInteger.ZERO
+        val bv = b.toBigIntegerOrNull() ?: BigInteger.ZERO
+        return maxOf(BigInteger.ZERO, av - bv).toString()
     }
 }

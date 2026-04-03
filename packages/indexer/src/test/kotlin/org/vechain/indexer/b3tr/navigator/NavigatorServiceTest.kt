@@ -20,6 +20,8 @@ import org.vechain.indexer.utils.BlockDetails
 internal class NavigatorServiceTest {
     @MockK lateinit var repository: NavigatorRepository
 
+    @MockK lateinit var citizenRepository: NavigatorCitizenRepository
+
     @MockK lateinit var mongoTemplate: MongoTemplate
 
     @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
@@ -33,7 +35,13 @@ internal class NavigatorServiceTest {
         MockKAnnotations.init(this)
         every { inlineVersioningProperties.blockWindow } returns 10000L
         every { inlineVersioningProperties.maxVersions } returns 100
-        service = NavigatorService(repository, mongoTemplate, inlineVersioningProperties)
+        service =
+            NavigatorService(
+                repository,
+                citizenRepository,
+                mongoTemplate,
+                inlineVersioningProperties,
+            )
     }
 
     private fun newAccumulator(): VersionedDocumentAccumulator<Navigator> =
@@ -313,9 +321,37 @@ internal class NavigatorServiceTest {
     }
 
     @Test
-    fun `DelegationRemoved decrements citizenCount`() {
-        val existing = navigatorFixture("0xnav1", citizenCount = 3)
+    fun `DelegationUpdated adjusts totalDelegated using citizen old amount`() {
+        val existing = navigatorFixture("0xnav1", citizenCount = 2, totalDelegated = "100000")
         every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
+        every { citizenRepository.findById("0xcit1") } returns
+            java.util.Optional.of(citizenFixture("0xcit1", amount = "40000"))
+
+        val acc = newAccumulator()
+        acc.startBlock()
+        service.processBlockEvents(
+            listOf(
+                event(
+                    "B3TR_DelegationUpdated",
+                    mapOf("navigator" to "0xnav1", "citizen" to "0xcit1", "newAmount" to "70000"),
+                )
+            ),
+            block,
+            acc,
+        )
+
+        val (updated, _) = acc.results()
+        // delta = 70000 - 40000 = 30000, totalDelegated = 100000 + 30000 = 130000
+        assertEquals("130000", updated[0].totalDelegated)
+        assertEquals(2, updated[0].citizenCount)
+    }
+
+    @Test
+    fun `DelegationRemoved decrements citizenCount and subtracts citizen amount`() {
+        val existing = navigatorFixture("0xnav1", citizenCount = 3, totalDelegated = "150000")
+        every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
+        every { citizenRepository.findById("0xcit1") } returns
+            java.util.Optional.of(citizenFixture("0xcit1", amount = "50000"))
 
         val acc = newAccumulator()
         acc.startBlock()
@@ -332,12 +368,14 @@ internal class NavigatorServiceTest {
 
         val (updated, _) = acc.results()
         assertEquals(2, updated[0].citizenCount)
+        assertEquals("100000", updated[0].totalDelegated)
     }
 
     @Test
     fun `DelegationRemoved does not go below zero`() {
-        val existing = navigatorFixture("0xnav1", citizenCount = 0)
+        val existing = navigatorFixture("0xnav1", citizenCount = 0, totalDelegated = "0")
         every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
+        every { citizenRepository.findById("0xcit1") } returns java.util.Optional.empty()
 
         val acc = newAccumulator()
         acc.startBlock()
@@ -354,6 +392,7 @@ internal class NavigatorServiceTest {
 
         val (updated, _) = acc.results()
         assertEquals(0, updated[0].citizenCount)
+        assertEquals("0", updated[0].totalDelegated)
     }
 
     // ============================================================================
@@ -444,6 +483,19 @@ internal class NavigatorServiceTest {
     // ============================================================================
     // Helpers
     // ============================================================================
+
+    private fun citizenFixture(address: String, amount: String = "50000") =
+        NavigatorCitizen(
+            address = address,
+            version = 1,
+            blockId = "block-0",
+            blockNumber = 50L,
+            blockTimestamp = 500L,
+            navigator = "0xnav1",
+            amount = amount,
+            delegatedAt = 500L,
+            active = true,
+        )
 
     private fun navigatorFixture(
         address: String,
