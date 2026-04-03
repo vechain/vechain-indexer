@@ -9,138 +9,51 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.NAVIGATOR_PATH
-import org.vechain.indexer.docs.AfterParameter
-import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.utils.PaginationUtils
-import org.vechain.indexer.utils.TimeValidationUtils
-import org.vechain.indexer.validation.ValidNonNegativeLong
 import org.vechain.indexer.validation.ValidPageSize
 
 @Profile("b3tr")
-@Tag(name = "B3TR Navigators", description = "Navigator lifecycle events, delegations, and fees")
+@Tag(name = "B3TR Navigators", description = "Query navigators and their current state")
 @Validated
 @RestController
 @RequestMapping(NAVIGATOR_PATH)
 open class NavigatorController(private val navigatorApiService: NavigatorApiService) {
 
-    @GetMapping("/events")
+    @GetMapping
     @Operation(
-        summary = "Get navigator lifecycle events",
+        summary = "Get navigators",
         description =
-            "Returns navigator registration, staking, exit, slash, metadata, and report events.",
+            "Returns navigators with their current state. Filter by status (ACTIVE, EXITING, DEACTIVATED) or address.",
     )
-    @AfterParameter
-    @BeforeParameter
     @CommonApiResponses
     @PaginationParameters
-    open fun getNavigatorEvents(
+    open fun getNavigators(
         @RequestParam(required = false) navigator: String?,
-        @RequestParam(required = false) eventType: String?,
-        @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
-        @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
+        @RequestParam(required = false) status: List<String>?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
-    ): PaginatedResponse<NavigatorEvent> {
-        TimeValidationUtils.validateTimestamps(after, before)
+    ): PaginatedResponse<Navigator> {
         val pageable =
-            PaginationUtils.toPageable(
-                page,
-                size,
-                direction,
-                NavigatorEvent::blockTimestamp.name,
-                NavigatorEvent::txId.name,
-                "_id",
-            )
+            PaginationUtils.toPageable(page, size, direction, Navigator::blockTimestamp.name, "_id")
         return paginatedResponse(
-            navigatorApiService.findEvents(
+            navigatorApiService.findNavigators(
                 navigator = navigator,
-                eventType = eventType,
-                after = after,
-                before = before,
+                statuses = parseStatuses(status),
                 pageable = pageable,
             )
         )
     }
 
-    @GetMapping("/delegations")
-    @Operation(
-        summary = "Get navigator delegation events",
-        description =
-            "Returns delegation created, updated, removed, and navigator vote cast events.",
-    )
-    @AfterParameter
-    @BeforeParameter
-    @CommonApiResponses
-    @PaginationParameters
-    open fun getNavigatorDelegations(
-        @RequestParam(required = false) citizen: String?,
-        @RequestParam(required = false) navigator: String?,
-        @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
-        @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
-        @RequestParam(required = false) page: Int?,
-        @ValidPageSize @RequestParam(required = false) size: Int?,
-        @RequestParam(required = false) direction: String?,
-    ): PaginatedResponse<NavigatorDelegation> {
-        TimeValidationUtils.validateTimestamps(after, before)
-        val pageable =
-            PaginationUtils.toPageable(
-                page,
-                size,
-                direction,
-                NavigatorDelegation::blockTimestamp.name,
-                NavigatorDelegation::txId.name,
-                "_id",
-            )
-        return paginatedResponse(
-            navigatorApiService.findDelegations(
-                citizen = citizen,
-                navigator = navigator,
-                after = after,
-                before = before,
-                pageable = pageable,
-            )
-        )
-    }
-
-    @GetMapping("/fees")
-    @Operation(
-        summary = "Get navigator fee events",
-        description = "Returns fee deposited, claimed, and navigator fee taken events.",
-    )
-    @AfterParameter
-    @BeforeParameter
-    @CommonApiResponses
-    @PaginationParameters
-    open fun getNavigatorFees(
-        @RequestParam(required = false) navigator: String?,
-        @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
-        @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
-        @RequestParam(required = false) page: Int?,
-        @ValidPageSize @RequestParam(required = false) size: Int?,
-        @RequestParam(required = false) direction: String?,
-    ): PaginatedResponse<NavigatorFee> {
-        TimeValidationUtils.validateTimestamps(after, before)
-        val pageable =
-            PaginationUtils.toPageable(
-                page,
-                size,
-                direction,
-                NavigatorFee::blockTimestamp.name,
-                NavigatorFee::txId.name,
-                "_id",
-            )
-        return paginatedResponse(
-            navigatorApiService.findFees(
-                navigator = navigator,
-                after = after,
-                before = before,
-                pageable = pageable,
-            )
-        )
+    private fun parseStatuses(raw: List<String>?): List<NavigatorStatus>? {
+        if (raw.isNullOrEmpty()) return null
+        return raw.mapNotNull { s ->
+                NavigatorStatus.entries.find { it.name.equals(s.trim(), ignoreCase = true) }
+            }
+            .ifEmpty { null }
     }
 }

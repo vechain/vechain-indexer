@@ -13,65 +13,21 @@ import org.springframework.stereotype.Service
 @Service
 open class NavigatorApiService(private val mongoTemplate: MongoTemplate) {
 
-    fun findEvents(
+    fun findNavigators(
         navigator: String? = null,
-        eventType: String? = null,
-        after: Long? = null,
-        before: Long? = null,
+        statuses: List<NavigatorStatus>? = null,
         pageable: Pageable,
-    ): Slice<NavigatorEvent> {
+    ): Slice<Navigator> {
         val criteria = Criteria()
-        navigator?.let { criteria.and(NavigatorEvent::navigator.name).`is`(it.lowercase()) }
-        eventType?.let { criteria.and(NavigatorEvent::eventType.name).`is`(it) }
-        addTimestampCriteria(criteria, NavigatorEvent::blockTimestamp.name, after, before)
-        return runQuery(criteria, pageable, NavigatorEvent::class.java)
+        navigator?.let { criteria.and(Navigator::address.name).`is`(it.lowercase()) }
+        statuses?.let { criteria.and(Navigator::status.name).`in`(it.map { s -> s.name }) }
+        return runQuery(criteria, pageable)
     }
 
-    fun findDelegations(
-        citizen: String? = null,
-        navigator: String? = null,
-        after: Long? = null,
-        before: Long? = null,
-        pageable: Pageable,
-    ): Slice<NavigatorDelegation> {
-        val criteria = Criteria()
-        citizen?.let { criteria.and(NavigatorDelegation::citizen.name).`is`(it.lowercase()) }
-        navigator?.let { criteria.and(NavigatorDelegation::navigator.name).`is`(it.lowercase()) }
-        addTimestampCriteria(criteria, NavigatorDelegation::blockTimestamp.name, after, before)
-        return runQuery(criteria, pageable, NavigatorDelegation::class.java)
-    }
-
-    fun findFees(
-        navigator: String? = null,
-        after: Long? = null,
-        before: Long? = null,
-        pageable: Pageable,
-    ): Slice<NavigatorFee> {
-        val criteria = Criteria()
-        navigator?.let { criteria.and(NavigatorFee::navigator.name).`is`(it.lowercase()) }
-        addTimestampCriteria(criteria, NavigatorFee::blockTimestamp.name, after, before)
-        return runQuery(criteria, pageable, NavigatorFee::class.java)
-    }
-
-    private fun addTimestampCriteria(
-        criteria: Criteria,
-        field: String,
-        after: Long?,
-        before: Long?,
-    ) {
-        if (after != null && before != null) {
-            criteria.and(field).gte(after).lte(before)
-        } else if (before != null) {
-            criteria.and(field).lte(before)
-        } else if (after != null) {
-            criteria.and(field).gte(after)
-        }
-    }
-
-    private fun <T> runQuery(criteria: Criteria, pageable: Pageable, clazz: Class<T>): Slice<T> {
+    private fun runQuery(criteria: Criteria, pageable: Pageable): Slice<Navigator> {
         val query = Query(criteria).with(pageable)
         query.limit(pageable.pageSize + 1)
-        val raw = mongoTemplate.find(query, clazz)
+        val raw = mongoTemplate.find(query, Navigator::class.java)
         val hasNext = raw.size > pageable.pageSize
         val content = if (hasNext) raw.dropLast(1) else raw
         return SliceImpl(content, pageable, hasNext)

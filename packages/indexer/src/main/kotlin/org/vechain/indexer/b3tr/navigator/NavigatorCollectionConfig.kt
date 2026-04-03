@@ -14,35 +14,31 @@ import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("b3tr", "b3tr-navigator")
 @Configuration
-open class NavigatorEventCollectionConfig(
+open class NavigatorCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, appCoroutineScope, NavigatorEvent::class.java) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, Navigator::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
     @Value("\${indexer.version.b3tr-navigator}") private val version: Int = 1
 
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            indexerName = IndexerNames.NAVIGATOR_EVENT.NAME,
-            NavigatorEvent::class.java,
+            indexerName = IndexerNames.NAVIGATOR.NAME,
+            Navigator::class.java,
             version,
         )
         ensureCollection()
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "blockNumber_-1" to
-                    Index().on(NavigatorEvent::blockNumber.name, Sort.Direction.DESC),
-                "navigator_event_navigator_1_blockTimestamp_-1" to
+                "blockNumber_-1" to Index().on(Navigator::blockNumber.name, Sort.Direction.DESC),
+                "navigator_status_1" to Index().on(Navigator::status.name, Sort.Direction.ASC),
+                "navigator_status_1_blockTimestamp_-1" to
                     Index()
-                        .on(NavigatorEvent::navigator.name, Sort.Direction.ASC)
-                        .on(NavigatorEvent::blockTimestamp.name, Sort.Direction.DESC),
-                "navigator_event_eventType_1_blockTimestamp_-1" to
-                    Index()
-                        .on(NavigatorEvent::eventType.name, Sort.Direction.ASC)
-                        .on(NavigatorEvent::blockTimestamp.name, Sort.Direction.DESC),
+                        .on(Navigator::status.name, Sort.Direction.ASC)
+                        .on(Navigator::blockTimestamp.name, Sort.Direction.DESC),
             )
         )
     }

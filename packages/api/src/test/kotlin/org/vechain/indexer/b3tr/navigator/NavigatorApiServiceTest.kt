@@ -1,246 +1,151 @@
 package org.vechain.indexer.b3tr.navigator
 
 import io.mockk.every
-import io.mockk.mockk
+import io.mockk.impl.annotations.MockK
+import io.mockk.junit5.MockKExtension
 import io.mockk.slot
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Query
-import strikt.api.expectThat
-import strikt.assertions.hasSize
-import strikt.assertions.isEqualTo
-import strikt.assertions.isFalse
-import strikt.assertions.isTrue
 
-class NavigatorApiServiceTest {
+@ExtendWith(MockKExtension::class)
+internal class NavigatorApiServiceTest {
+    @MockK lateinit var mongoTemplate: MongoTemplate
 
-    private val mongoTemplate: MongoTemplate = mockk()
-    private val service = NavigatorApiService(mongoTemplate)
+    private lateinit var service: NavigatorApiService
 
-    private val pageable =
-        PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "blockTimestamp", "txId", "_id"))
+    private val pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "blockTimestamp"))
 
-    // -- findEvents --
-
-    @Test
-    fun `findEvents builds empty criteria when no filters provided`() {
-        val querySlot = slot<Query>()
-
-        every { mongoTemplate.find(capture(querySlot), NavigatorEvent::class.java) } returns
-            listOf(event("e1"), event("e2"))
-
-        val result = service.findEvents(pageable = pageable)
-
-        expectThat(result.content).hasSize(2)
-        expectThat(result.hasNext()).isFalse()
-        expectThat(querySlot.captured.queryObject.keys).hasSize(0)
+    @BeforeEach
+    fun setUp() {
+        service = NavigatorApiService(mongoTemplate)
     }
 
     @Test
-    fun `findEvents adds navigator criteria when provided`() {
+    fun `findNavigators with no filters returns all navigators`() {
         val querySlot = slot<Query>()
+        every { mongoTemplate.find(capture(querySlot), Navigator::class.java) } returns emptyList()
 
-        every { mongoTemplate.find(capture(querySlot), NavigatorEvent::class.java) } returns
-            listOf(event("e1"))
-
-        val result = service.findEvents(navigator = "0xNav1", pageable = pageable)
-
-        expectThat(result.content).hasSize(1)
-        val doc = querySlot.captured.queryObject
-        expectThat(doc["navigator"].toString()).isEqualTo("0xnav1")
-    }
-
-    @Test
-    fun `findEvents adds eventType criteria when provided`() {
-        val querySlot = slot<Query>()
-
-        every { mongoTemplate.find(capture(querySlot), NavigatorEvent::class.java) } returns
-            listOf(event("e1"))
-
-        val result = service.findEvents(eventType = "NavigatorRegistered", pageable = pageable)
-
-        expectThat(result.content).hasSize(1)
-        val doc = querySlot.captured.queryObject
-        expectThat(doc["eventType"].toString()).isEqualTo("NavigatorRegistered")
-    }
-
-    @Test
-    fun `findEvents adds gte criteria when only after provided`() {
-        val querySlot = slot<Query>()
-
-        every { mongoTemplate.find(capture(querySlot), NavigatorEvent::class.java) } returns
-            emptyList()
-
-        service.findEvents(after = 1000L, pageable = pageable)
+        val result = service.findNavigators(pageable = pageable)
 
         val doc = querySlot.captured.queryObject
-        val timestampDoc = doc["blockTimestamp"] as org.bson.Document
-        expectThat(timestampDoc["\$gte"]).isEqualTo(1000L)
+        assertTrue(doc.isEmpty())
+        assertFalse(result.hasNext())
     }
 
     @Test
-    fun `findEvents adds gte and lte criteria when both provided`() {
+    fun `findNavigators filters by navigator address in lowercase`() {
         val querySlot = slot<Query>()
+        every { mongoTemplate.find(capture(querySlot), Navigator::class.java) } returns emptyList()
 
-        every { mongoTemplate.find(capture(querySlot), NavigatorEvent::class.java) } returns
-            emptyList()
-
-        service.findEvents(after = 1000L, before = 2000L, pageable = pageable)
+        service.findNavigators(navigator = "0xNAV1", pageable = pageable)
 
         val doc = querySlot.captured.queryObject
-        val timestampDoc = doc["blockTimestamp"] as org.bson.Document
-        expectThat(timestampDoc["\$gte"]).isEqualTo(1000L)
-        expectThat(timestampDoc["\$lte"]).isEqualTo(2000L)
+        assertEquals("0xnav1", doc["address"])
     }
 
     @Test
-    fun `findEvents hasNext true when more results exist`() {
-        val small = PageRequest.of(0, 2, Sort.by(Sort.Direction.DESC, "blockTimestamp"))
-
-        every { mongoTemplate.find(any<Query>(), NavigatorEvent::class.java) } returns
-            listOf(event("e1"), event("e2"), event("e3"))
-
-        val result = service.findEvents(pageable = small)
-
-        expectThat(result.content).hasSize(2)
-        expectThat(result.hasNext()).isTrue()
-    }
-
-    @Test
-    fun `findEvents hasNext false when results fit page`() {
-        every { mongoTemplate.find(any<Query>(), NavigatorEvent::class.java) } returns
-            listOf(event("e1"))
-
-        val result = service.findEvents(pageable = pageable)
-
-        expectThat(result.content).hasSize(1)
-        expectThat(result.hasNext()).isFalse()
-    }
-
-    // -- findDelegations --
-
-    @Test
-    fun `findDelegations adds citizen criteria when provided`() {
+    fun `findNavigators filters by status list`() {
         val querySlot = slot<Query>()
+        every { mongoTemplate.find(capture(querySlot), Navigator::class.java) } returns emptyList()
 
-        every { mongoTemplate.find(capture(querySlot), NavigatorDelegation::class.java) } returns
-            listOf(delegation("d1"))
-
-        val result = service.findDelegations(citizen = "0xCitizen1", pageable = pageable)
-
-        expectThat(result.content).hasSize(1)
-        val doc = querySlot.captured.queryObject
-        expectThat(doc["citizen"].toString()).isEqualTo("0xcitizen1")
-    }
-
-    @Test
-    fun `findDelegations adds navigator criteria when provided`() {
-        val querySlot = slot<Query>()
-
-        every { mongoTemplate.find(capture(querySlot), NavigatorDelegation::class.java) } returns
-            listOf(delegation("d1"))
-
-        val result = service.findDelegations(navigator = "0xNav1", pageable = pageable)
-
-        expectThat(result.content).hasSize(1)
-        val doc = querySlot.captured.queryObject
-        expectThat(doc["navigator"].toString()).isEqualTo("0xnav1")
-    }
-
-    @Test
-    fun `findDelegations combines citizen and navigator filters`() {
-        val querySlot = slot<Query>()
-
-        every { mongoTemplate.find(capture(querySlot), NavigatorDelegation::class.java) } returns
-            emptyList()
-
-        service.findDelegations(citizen = "0xCitizen1", navigator = "0xNav1", pageable = pageable)
-
-        val doc = querySlot.captured.queryObject
-        expectThat(doc["citizen"].toString()).isEqualTo("0xcitizen1")
-        expectThat(doc["navigator"].toString()).isEqualTo("0xnav1")
-    }
-
-    // -- findFees --
-
-    @Test
-    fun `findFees adds navigator criteria when provided`() {
-        val querySlot = slot<Query>()
-
-        every { mongoTemplate.find(capture(querySlot), NavigatorFee::class.java) } returns
-            listOf(fee("f1"))
-
-        val result = service.findFees(navigator = "0xNav1", pageable = pageable)
-
-        expectThat(result.content).hasSize(1)
-        val doc = querySlot.captured.queryObject
-        expectThat(doc["navigator"].toString()).isEqualTo("0xnav1")
-    }
-
-    @Test
-    fun `findFees builds empty criteria when no filters provided`() {
-        val querySlot = slot<Query>()
-
-        every { mongoTemplate.find(capture(querySlot), NavigatorFee::class.java) } returns
-            listOf(fee("f1"), fee("f2"))
-
-        val result = service.findFees(pageable = pageable)
-
-        expectThat(result.content).hasSize(2)
-        expectThat(querySlot.captured.queryObject.keys).hasSize(0)
-    }
-
-    // -- helpers --
-
-    private fun event(id: String, eventType: String = "NavigatorRegistered") =
-        NavigatorEvent(
-            id = id,
-            blockId = "0xblock",
-            blockNumber = 100L,
-            blockTimestamp = 1000L,
-            txId = "0xtx-$id",
-            navigator = "0xnav",
-            eventType = eventType,
-            stakeAmount = null,
-            metadataURI = null,
-            slashAmount = null,
-            slashReason = null,
-            remainingStake = null,
-            announcedAtRound = null,
-            effectiveRound = null,
-            reportRoundId = null,
-            reportURI = null,
+        service.findNavigators(
+            statuses = listOf(NavigatorStatus.ACTIVE, NavigatorStatus.EXITING),
+            pageable = pageable,
         )
 
-    private fun delegation(id: String, eventType: String = "DelegationCreated") =
-        NavigatorDelegation(
-            id = id,
-            blockId = "0xblock",
-            blockNumber = 100L,
-            blockTimestamp = 1000L,
-            txId = "0xtx-$id",
-            citizen = "0xcitizen",
-            navigator = "0xnav",
-            eventType = eventType,
-            amount = "1000",
-            roundId = null,
-            appIds = null,
-            voteWeights = null,
+        val doc = querySlot.captured.queryObject
+        @Suppress("UNCHECKED_CAST") val statusFilter = doc["status"] as Map<String, Any>
+        @Suppress("UNCHECKED_CAST") val inValues = statusFilter["\$in"] as List<String>
+        assertEquals(2, inValues.size)
+        assertTrue(inValues.contains("ACTIVE"))
+        assertTrue(inValues.contains("EXITING"))
+    }
+
+    @Test
+    fun `findNavigators combines navigator and status filters`() {
+        val querySlot = slot<Query>()
+        every { mongoTemplate.find(capture(querySlot), Navigator::class.java) } returns emptyList()
+
+        service.findNavigators(
+            navigator = "0xnav1",
+            statuses = listOf(NavigatorStatus.ACTIVE),
+            pageable = pageable,
         )
 
-    private fun fee(id: String, eventType: String = "FeeDeposited") =
-        NavigatorFee(
-            id = id,
-            blockId = "0xblock",
-            blockNumber = 100L,
-            blockTimestamp = 1000L,
-            txId = "0xtx-$id",
-            navigator = "0xnav",
-            eventType = eventType,
-            roundId = "1",
-            amount = "1000",
-            citizen = null,
-        )
+        val doc = querySlot.captured.queryObject
+        assertEquals("0xnav1", doc["address"])
+        @Suppress("UNCHECKED_CAST") val statusFilter = doc["status"] as Map<String, Any>
+        @Suppress("UNCHECKED_CAST") val inValues = statusFilter["\$in"] as List<String>
+        assertEquals(listOf("ACTIVE"), inValues)
+    }
+
+    @Test
+    fun `findNavigators detects hasNext when extra record returned`() {
+        val querySlot = slot<Query>()
+        val navigators =
+            (1..11).map { i ->
+                Navigator(
+                    address = "0xnav$i",
+                    version = 1,
+                    blockId = "b",
+                    blockNumber = i.toLong(),
+                    blockTimestamp = i.toLong(),
+                    status = NavigatorStatus.ACTIVE,
+                    stake = "50000",
+                    citizenCount = 0,
+                    totalDelegated = "0",
+                    metadataURI = null,
+                    registeredAt = 1L,
+                    exitAnnouncedRound = null,
+                    exitEffectiveRound = null,
+                    lastReportRound = null,
+                    lastReportURI = null,
+                )
+            }
+        every { mongoTemplate.find(capture(querySlot), Navigator::class.java) } returns navigators
+
+        val result = service.findNavigators(pageable = pageable)
+
+        assertTrue(result.hasNext())
+        assertEquals(10, result.content.size)
+    }
+
+    @Test
+    fun `findNavigators returns hasNext false when exact page size`() {
+        val querySlot = slot<Query>()
+        val navigators =
+            (1..10).map { i ->
+                Navigator(
+                    address = "0xnav$i",
+                    version = 1,
+                    blockId = "b",
+                    blockNumber = i.toLong(),
+                    blockTimestamp = i.toLong(),
+                    status = NavigatorStatus.ACTIVE,
+                    stake = "50000",
+                    citizenCount = 0,
+                    totalDelegated = "0",
+                    metadataURI = null,
+                    registeredAt = 1L,
+                    exitAnnouncedRound = null,
+                    exitEffectiveRound = null,
+                    lastReportRound = null,
+                    lastReportURI = null,
+                )
+            }
+        every { mongoTemplate.find(capture(querySlot), Navigator::class.java) } returns navigators
+
+        val result = service.findNavigators(pageable = pageable)
+
+        assertFalse(result.hasNext())
+        assertEquals(10, result.content.size)
+    }
 }

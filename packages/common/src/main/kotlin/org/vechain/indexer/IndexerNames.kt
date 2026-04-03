@@ -206,19 +206,9 @@ object IndexerNames {
         const val COLLECTION = "b3tr_balances"
     }
 
-    object NAVIGATOR_EVENT {
-        const val NAME = "NavigatorEventIndexer"
-        const val COLLECTION = "b3tr_navigator_events"
-    }
-
-    object NAVIGATOR_DELEGATION {
-        const val NAME = "NavigatorDelegationIndexer"
-        const val COLLECTION = "b3tr_navigator_delegations"
-    }
-
-    object NAVIGATOR_FEE {
-        const val NAME = "NavigatorFeeIndexer"
-        const val COLLECTION = "b3tr_navigator_fees"
+    object NAVIGATOR {
+        const val NAME = "NavigatorIndexer"
+        const val COLLECTION = "b3tr_navigators"
     }
 
     /** Returns a map of indexer NAME → COLLECTION for every nested object that defines both. */
