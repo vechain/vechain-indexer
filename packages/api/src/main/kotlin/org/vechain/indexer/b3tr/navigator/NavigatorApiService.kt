@@ -1,6 +1,6 @@
 package org.vechain.indexer.b3tr.navigator
 
-import java.math.BigInteger
+import java.math.BigDecimal
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
@@ -37,21 +37,21 @@ open class NavigatorApiService(private val mongoTemplate: MongoTemplate) {
             Query(Criteria.where(Navigator::status.name).`is`(NavigatorStatus.ACTIVE.name))
         val activeNavigators = mongoTemplate.find(activeQuery, Navigator::class.java)
 
-        var totalStaked = BigInteger.ZERO
+        var totalStaked = BigDecimal.ZERO
         var totalCitizens = 0L
-        var totalDelegated = BigInteger.ZERO
+        var totalDelegated = BigDecimal.ZERO
 
         for (nav in activeNavigators) {
-            totalStaked += nav.stake.toBigIntegerOrNull() ?: BigInteger.ZERO
+            totalStaked += nav.stake
             totalCitizens += nav.citizenCount
-            totalDelegated += nav.totalDelegated.toBigIntegerOrNull() ?: BigInteger.ZERO
+            totalDelegated += nav.totalDelegated
         }
 
         return NavigatorOverview(
             activeNavigators = activeNavigators.size.toLong(),
-            totalStaked = totalStaked.toString(),
+            totalStaked = totalStaked.toPlainString(),
             totalCitizens = totalCitizens,
-            totalDelegated = totalDelegated.toString(),
+            totalDelegated = totalDelegated.toPlainString(),
         )
     }
 

@@ -1,9 +1,12 @@
 package org.vechain.indexer.b3tr.navigator
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import java.math.BigDecimal
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import org.springframework.data.mongodb.core.mapping.Field
+import org.springframework.data.mongodb.core.mapping.FieldType
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
 
@@ -17,7 +20,7 @@ constructor(
     @JsonIgnore override val blockNumber: Long,
     @JsonIgnore override val blockTimestamp: Long,
     val navigator: String,
-    val amount: String,
+    @Field(targetType = FieldType.DECIMAL128) val amount: BigDecimal,
     val delegatedAt: Long,
     val active: Boolean,
 ) : VersionedDocument {

@@ -63,7 +63,9 @@ open class NavigatorCitizenService(
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
                 navigator = navigator,
-                amount = ev.params.getAsString("amount") ?: "0",
+                amount =
+                    ev.params.getAsString("amount")?.toBigDecimalOrNull()
+                        ?: java.math.BigDecimal.ZERO,
                 delegatedAt = block.blockTimestamp,
                 active = true,
             )
@@ -84,7 +86,7 @@ open class NavigatorCitizenService(
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
-                amount = ev.params.getAsString("newAmount") ?: current.amount,
+                amount = ev.params.getAsString("newAmount")?.toBigDecimalOrNull() ?: current.amount,
             )
         accumulator.put(citizen, existing, updated)
     }

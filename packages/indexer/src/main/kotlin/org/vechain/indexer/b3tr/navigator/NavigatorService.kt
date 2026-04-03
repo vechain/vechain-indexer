@@ -1,6 +1,6 @@
 package org.vechain.indexer.b3tr.navigator
 
-import java.math.BigInteger
+import java.math.BigDecimal
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
@@ -78,9 +78,9 @@ open class NavigatorService(
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
                 status = NavigatorStatus.ACTIVE,
-                stake = ev.params.getAsString("stakeAmount") ?: "0",
+                stake = ev.params.getAsString("stakeAmount").toBigDecimalOrZero(),
                 citizenCount = 0,
-                totalDelegated = "0",
+                totalDelegated = BigDecimal.ZERO,
                 metadataURI = ev.params.getAsString("metadataURI"),
                 registeredAt = block.blockTimestamp,
                 exitAnnouncedRound = null,
@@ -98,13 +98,16 @@ open class NavigatorService(
     ) {
         val address = ev.params.getAsString("navigator")?.lowercase() ?: return
         val nav = resolveExisting(address, accumulator) ?: return
+        val newStake =
+            ev.params.getAsString("newTotal")?.toBigDecimalOrNull()
+                ?: (nav.stake + ev.params.getAsString("amount").toBigDecimalOrZero())
         val updated =
             nav.copy(
                 version = accumulator.resolve(address).nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
-                stake = ev.params.getAsString("newTotal") ?: addStake(nav.stake, ev),
+                stake = newStake,
             )
         accumulator.put(address, nav, updated)
     }
@@ -122,7 +125,7 @@ open class NavigatorService(
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
-                stake = ev.params.getAsString("remaining") ?: nav.stake,
+                stake = ev.params.getAsString("remaining")?.toBigDecimalOrNull() ?: nav.stake,
             )
         accumulator.put(address, nav, updated)
     }
@@ -161,7 +164,7 @@ open class NavigatorService(
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
                 status = NavigatorStatus.DEACTIVATED,
-                stake = "0",
+                stake = BigDecimal.ZERO,
             )
         accumulator.put(address, nav, updated)
     }
@@ -197,7 +200,7 @@ open class NavigatorService(
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
-                stake = ev.params.getAsString("remainingStake") ?: nav.stake,
+                stake = ev.params.getAsString("remainingStake")?.toBigDecimalOrNull() ?: nav.stake,
             )
         accumulator.put(address, nav, updated)
     }
@@ -246,7 +249,7 @@ open class NavigatorService(
     ) {
         val address = ev.params.getAsString("navigator")?.lowercase() ?: return
         val nav = resolveExisting(address, accumulator) ?: return
-        val amount = ev.params.getAsString("amount") ?: "0"
+        val amount = ev.params.getAsString("amount").toBigDecimalOrZero()
         val updated =
             nav.copy(
                 version = accumulator.resolve(address).nextVersion,
@@ -254,7 +257,7 @@ open class NavigatorService(
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
                 citizenCount = nav.citizenCount + 1,
-                totalDelegated = addBigInt(nav.totalDelegated, amount),
+                totalDelegated = nav.totalDelegated + amount,
             )
         accumulator.put(address, nav, updated)
     }
@@ -267,7 +270,7 @@ open class NavigatorService(
         val address = ev.params.getAsString("navigator")?.lowercase() ?: return
         val citizen = ev.params.getAsString("citizen")?.lowercase() ?: return
         val nav = resolveExisting(address, accumulator) ?: return
-        val newAmount = ev.params.getAsString("newAmount")?.toBigIntegerOrNull() ?: BigInteger.ZERO
+        val newAmount = ev.params.getAsString("newAmount").toBigDecimalOrZero()
         val oldAmount = getCitizenAmount(citizen)
         val delta = newAmount - oldAmount
         val updated =
@@ -276,7 +279,7 @@ open class NavigatorService(
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
-                totalDelegated = addBigInt(nav.totalDelegated, delta.toString()),
+                totalDelegated = nav.totalDelegated + delta,
             )
         accumulator.put(address, nav, updated)
     }
@@ -297,7 +300,7 @@ open class NavigatorService(
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
                 citizenCount = maxOf(0, nav.citizenCount - 1),
-                totalDelegated = subtractBigInt(nav.totalDelegated, citizenAmount.toString()),
+                totalDelegated = maxOf(BigDecimal.ZERO, nav.totalDelegated - citizenAmount),
             )
         accumulator.put(address, nav, updated)
     }
@@ -310,25 +313,9 @@ open class NavigatorService(
         return existing
     }
 
-    private fun addStake(currentStake: String, ev: IndexedEvent): String {
-        val current = currentStake.toBigIntegerOrNull() ?: BigInteger.ZERO
-        val amount = ev.params.getAsString("amount")?.toBigIntegerOrNull() ?: BigInteger.ZERO
-        return current.add(amount).toString()
-    }
+    private fun getCitizenAmount(citizenAddress: String): BigDecimal =
+        citizenRepository.findById(citizenAddress).orElse(null)?.amount ?: BigDecimal.ZERO
 
-    private fun getCitizenAmount(citizenAddress: String): BigInteger =
-        citizenRepository.findById(citizenAddress).orElse(null)?.amount?.toBigIntegerOrNull()
-            ?: BigInteger.ZERO
-
-    private fun addBigInt(a: String, b: String): String {
-        val av = a.toBigIntegerOrNull() ?: BigInteger.ZERO
-        val bv = b.toBigIntegerOrNull() ?: BigInteger.ZERO
-        return av.add(bv).toString()
-    }
-
-    private fun subtractBigInt(a: String, b: String): String {
-        val av = a.toBigIntegerOrNull() ?: BigInteger.ZERO
-        val bv = b.toBigIntegerOrNull() ?: BigInteger.ZERO
-        return maxOf(BigInteger.ZERO, av - bv).toString()
-    }
+    private fun String?.toBigDecimalOrZero(): BigDecimal =
+        this?.toBigDecimalOrNull() ?: BigDecimal.ZERO
 }

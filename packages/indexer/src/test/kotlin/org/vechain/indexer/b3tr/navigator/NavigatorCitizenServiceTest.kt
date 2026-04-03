@@ -4,6 +4,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -73,7 +74,7 @@ internal class NavigatorCitizenServiceTest {
         val citizen = updated[0]
         assertEquals("0xcit1", citizen.address)
         assertEquals("0xnav1", citizen.navigator)
-        assertEquals("50000", citizen.amount)
+        assertEquals(BigDecimal("50000"), citizen.amount)
         assertEquals(1000L, citizen.delegatedAt)
         assertTrue(citizen.active)
     }
@@ -108,7 +109,7 @@ internal class NavigatorCitizenServiceTest {
         )
 
         val (updated, _) = acc.results()
-        assertEquals("75000", updated[0].amount)
+        assertEquals(BigDecimal("75000"), updated[0].amount)
         assertTrue(updated[0].active)
     }
 
@@ -173,7 +174,7 @@ internal class NavigatorCitizenServiceTest {
 
         val (updated, _) = acc.results()
         assertEquals("0xnav2", updated[0].navigator)
-        assertEquals("30000", updated[0].amount)
+        assertEquals(BigDecimal("30000"), updated[0].amount)
         assertTrue(updated[0].active)
     }
 
@@ -190,7 +191,7 @@ internal class NavigatorCitizenServiceTest {
             blockNumber = 50L,
             blockTimestamp = 500L,
             navigator = navigator,
-            amount = amount,
+            amount = BigDecimal(amount),
             delegatedAt = 500L,
             active = active,
         )

@@ -4,6 +4,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -86,9 +87,9 @@ internal class NavigatorServiceTest {
         val nav = updated[0]
         assertEquals("0xnav1", nav.address)
         assertEquals(NavigatorStatus.ACTIVE, nav.status)
-        assertEquals("50000", nav.stake)
+        assertEquals(BigDecimal("50000"), nav.stake)
         assertEquals(0, nav.citizenCount)
-        assertEquals("0", nav.totalDelegated)
+        assertEquals(BigDecimal.ZERO, nav.totalDelegated)
         assertEquals("ipfs://meta", nav.metadataURI)
         assertEquals(1000L, nav.registeredAt)
         assertEquals(1, nav.version)
@@ -112,7 +113,7 @@ internal class NavigatorServiceTest {
         )
 
         val (updated, _) = acc.results()
-        assertEquals("75000", updated[0].stake)
+        assertEquals(BigDecimal("75000"), updated[0].stake)
     }
 
     @Test
@@ -129,7 +130,7 @@ internal class NavigatorServiceTest {
         )
 
         val (updated, _) = acc.results()
-        assertEquals("60000", updated[0].stake)
+        assertEquals(BigDecimal("60000"), updated[0].stake)
     }
 
     @Test
@@ -148,7 +149,7 @@ internal class NavigatorServiceTest {
         )
 
         val (updated, _) = acc.results()
-        assertEquals("50000", updated[0].stake)
+        assertEquals(BigDecimal("50000"), updated[0].stake)
     }
 
     // ============================================================================
@@ -198,7 +199,7 @@ internal class NavigatorServiceTest {
 
         val (updated, _) = acc.results()
         assertEquals(NavigatorStatus.DEACTIVATED, updated[0].status)
-        assertEquals("0", updated[0].stake)
+        assertEquals(BigDecimal.ZERO, updated[0].stake)
     }
 
     // ============================================================================
@@ -241,7 +242,7 @@ internal class NavigatorServiceTest {
         )
 
         val (updated, _) = acc.results()
-        assertEquals("45000", updated[0].stake)
+        assertEquals(BigDecimal("45000"), updated[0].stake)
     }
 
     // ============================================================================
@@ -317,7 +318,7 @@ internal class NavigatorServiceTest {
 
         val (updated, _) = acc.results()
         assertEquals(3, updated[0].citizenCount)
-        assertEquals("150000", updated[0].totalDelegated)
+        assertEquals(BigDecimal("150000"), updated[0].totalDelegated)
     }
 
     @Test
@@ -342,7 +343,7 @@ internal class NavigatorServiceTest {
 
         val (updated, _) = acc.results()
         // delta = 70000 - 40000 = 30000, totalDelegated = 100000 + 30000 = 130000
-        assertEquals("130000", updated[0].totalDelegated)
+        assertEquals(BigDecimal("130000"), updated[0].totalDelegated)
         assertEquals(2, updated[0].citizenCount)
     }
 
@@ -368,7 +369,7 @@ internal class NavigatorServiceTest {
 
         val (updated, _) = acc.results()
         assertEquals(2, updated[0].citizenCount)
-        assertEquals("100000", updated[0].totalDelegated)
+        assertEquals(BigDecimal("100000"), updated[0].totalDelegated)
     }
 
     @Test
@@ -392,7 +393,7 @@ internal class NavigatorServiceTest {
 
         val (updated, _) = acc.results()
         assertEquals(0, updated[0].citizenCount)
-        assertEquals("0", updated[0].totalDelegated)
+        assertEquals(BigDecimal.ZERO, updated[0].totalDelegated)
     }
 
     // ============================================================================
@@ -475,9 +476,9 @@ internal class NavigatorServiceTest {
         val nav = updated[0]
         assertEquals("0xnav1", nav.address)
         assertEquals(NavigatorStatus.ACTIVE, nav.status)
-        assertEquals("50000", nav.stake)
+        assertEquals(BigDecimal("50000"), nav.stake)
         assertEquals(2, nav.citizenCount)
-        assertEquals("30000", nav.totalDelegated)
+        assertEquals(BigDecimal("30000"), nav.totalDelegated)
     }
 
     // ============================================================================
@@ -492,7 +493,7 @@ internal class NavigatorServiceTest {
             blockNumber = 50L,
             blockTimestamp = 500L,
             navigator = "0xnav1",
-            amount = amount,
+            amount = BigDecimal(amount),
             delegatedAt = 500L,
             active = true,
         )
@@ -512,9 +513,9 @@ internal class NavigatorServiceTest {
             blockNumber = 50L,
             blockTimestamp = 500L,
             status = status,
-            stake = stake,
+            stake = BigDecimal(stake),
             citizenCount = citizenCount,
-            totalDelegated = totalDelegated,
+            totalDelegated = BigDecimal(totalDelegated),
             metadataURI = metadataURI,
             registeredAt = 500L,
             exitAnnouncedRound = null,

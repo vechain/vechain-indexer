@@ -4,6 +4,7 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.slot
+import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -99,9 +100,9 @@ internal class NavigatorApiServiceTest {
                     blockNumber = i.toLong(),
                     blockTimestamp = i.toLong(),
                     status = NavigatorStatus.ACTIVE,
-                    stake = "50000",
+                    stake = BigDecimal("50000"),
                     citizenCount = 0,
-                    totalDelegated = "0",
+                    totalDelegated = BigDecimal.ZERO,
                     metadataURI = null,
                     registeredAt = 1L,
                     exitAnnouncedRound = null,
@@ -130,9 +131,9 @@ internal class NavigatorApiServiceTest {
                     blockNumber = i.toLong(),
                     blockTimestamp = i.toLong(),
                     status = NavigatorStatus.ACTIVE,
-                    stake = "50000",
+                    stake = BigDecimal("50000"),
                     citizenCount = 0,
-                    totalDelegated = "0",
+                    totalDelegated = BigDecimal.ZERO,
                     metadataURI = null,
                     registeredAt = 1L,
                     exitAnnouncedRound = null,
@@ -197,9 +198,9 @@ internal class NavigatorApiServiceTest {
             blockNumber = 1L,
             blockTimestamp = 1L,
             status = NavigatorStatus.ACTIVE,
-            stake = stake,
+            stake = BigDecimal(stake),
             citizenCount = citizenCount,
-            totalDelegated = totalDelegated,
+            totalDelegated = BigDecimal(totalDelegated),
             metadataURI = null,
             registeredAt = 1L,
             exitAnnouncedRound = null,
