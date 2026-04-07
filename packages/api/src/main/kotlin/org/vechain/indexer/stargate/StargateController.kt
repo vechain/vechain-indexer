@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
 import org.vechain.indexer.accounts.TimeFrame
+import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
 import org.vechain.indexer.constants.STARGATE_PATH
 import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.AfterParameter
@@ -26,9 +27,11 @@ import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.RangeParameter
 import org.vechain.indexer.docs.RewardsTypeParameter
+import org.vechain.indexer.docs.StargateTokenHistoryEventNameParameter
 import org.vechain.indexer.docs.TokenIdParameter
 import org.vechain.indexer.docs.TokenLevelParameter
 import org.vechain.indexer.exception.BadRequestException
+import org.vechain.indexer.history.IndexedHistoryEvent
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
@@ -44,9 +47,11 @@ import org.vechain.indexer.thor.Address
 import org.vechain.indexer.timeseries.TimeRangePreset
 import org.vechain.indexer.timeseries.TimeSeriesRecord
 import org.vechain.indexer.utils.PaginationUtils
+import org.vechain.indexer.utils.TimeValidationUtils
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidNonNegativeLong
 import org.vechain.indexer.validation.ValidPageSize
+import org.vechain.indexer.validation.ValidStargateTokenHistoryEventName
 import org.vechain.indexer.validation.ValidTimeRangePreset
 import org.vechain.indexer.validation.ValidTokenId
 import org.vechain.indexer.validation.ValidTokenLevel
@@ -58,6 +63,7 @@ import org.vechain.indexer.validation.ValidTokenLevel
 @RequestMapping(STARGATE_PATH)
 open class StargateController(
     private val stargateService: StargateService,
+    private val stargateTokenHistoryService: StargateTokenHistoryService,
     private val vthoGeneratedByBlockRepository: VthoGeneratedByBlockRepository,
     private val vetStakedByBlockRepository: VetStakedByBlockRepository,
     private val vetDelegatedByBlockRepository: VetDelegatedByBlockRepository,
@@ -304,6 +310,51 @@ open class StargateController(
             manager?.value?.lowercase(),
             owner?.value?.lowercase(),
             pageable,
+        )
+    }
+
+    @GetMapping("/tokens/{tokenId}/history")
+    @Operation(
+        summary = "Get Stargate token history",
+        description =
+            "Retrieve the Stargate lifecycle timeline for a token, including Stargate protocol events, " +
+                "synthetic delegation lifecycle events, Stargate NFT transfers, NFT sales, and VeVote casts.",
+    )
+    @TokenIdParameter(required = true, `in` = ParameterIn.PATH)
+    @StargateTokenHistoryEventNameParameter
+    @AfterParameter
+    @BeforeParameter
+    @CommonApiResponses
+    @PaginationParameters
+    open fun getStargateTokenHistory(
+        @ValidTokenId @PathVariable("tokenId") tokenId: String,
+        @ValidStargateTokenHistoryEventName
+        @RequestParam(name = "eventNames", required = false)
+        eventNames: List<String>?,
+        @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
+        @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int? = DEFAULT_PAGE_SIZE,
+        @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<IndexedHistoryEvent> {
+        TimeValidationUtils.validateTimestamps(after, before)
+
+        val pageable =
+            PaginationUtils.toPageable(
+                page,
+                size,
+                direction,
+                IndexedHistoryEvent::blockTimestamp.name,
+            )
+
+        return paginatedResponse(
+            stargateTokenHistoryService.findTokenHistory(
+                tokenId = tokenId,
+                eventNames = eventNames,
+                before = before,
+                after = after,
+                pageable = pageable,
+            )
         )
     }
 

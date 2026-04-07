@@ -12,7 +12,6 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import strikt.api.expectThat
-import strikt.assertions.contains
 import strikt.assertions.isEqualTo
 import strikt.assertions.isFalse
 import strikt.assertions.isTrue
@@ -37,6 +36,35 @@ class OpenApiDocumentationContractTest {
                 findParameter(parameters, "contractAddress", "query").at("/schema/pattern").asText()
             )
             .isEqualTo("^(0x)?[0-9a-fA-F]{40}$")
+    }
+
+    @Test
+    fun `stargate token history route is present without a contractAddress filter`() {
+        val spec = fetchSpec()
+        val operation = spec.at("/paths/~1api~1v1~1stargate~1tokens~1{tokenId}~1history/get")
+        val parameters = operation.at("/parameters")
+        val eventNamesEnum =
+            findParameter(parameters, "eventNames", "query")
+                .at("/schema/items/enum")
+                .map { it.asText() }
+                .toList()
+
+        expectThat(operation.isMissingNode).isFalse()
+        expectThat(findParameter(parameters, "tokenId", "path").at("/schema/pattern").asText())
+            .isEqualTo("^(0x)?[A-Fa-f0-9]+$")
+        expectThat(eventNamesEnum.contains("STARGATE_UNSTAKE")).isTrue()
+        expectThat(eventNamesEnum.contains("NFT_SALE")).isTrue()
+        expectThat(eventNamesEnum.contains("VEVOTE_VOTE_CAST")).isTrue()
+        expectThat(parameters.firstOrNull { it.path("name").asText() == "contractAddress" } == null)
+            .isTrue()
+    }
+
+    @Test
+    fun `deprecated generic token history route is marked deprecated in generated spec`() {
+        val spec = fetchSpec()
+        val operation = spec.at("/paths/~1api~1v2~1history~1token~1{tokenId}/get")
+
+        expectThat(operation.at("/deprecated").asBoolean()).isTrue()
     }
 
     @Test
@@ -69,10 +97,12 @@ class OpenApiDocumentationContractTest {
         val spec = fetchSpec()
         val responses = spec.at("/paths/~1api~1v2~1history~1{account}/get/responses")
 
-        expectThat(contentTypes(responses.at("/404/content")))
-            .contains("application/json", "application/problem+json")
-        expectThat(contentTypes(responses.at("/500/content")))
-            .contains("application/json", "application/problem+json")
+        expectThat(contentTypes(responses.at("/404/content")).contains("application/json")).isTrue()
+        expectThat(contentTypes(responses.at("/404/content")).contains("application/problem+json"))
+            .isTrue()
+        expectThat(contentTypes(responses.at("/500/content")).contains("application/json")).isTrue()
+        expectThat(contentTypes(responses.at("/500/content")).contains("application/problem+json"))
+            .isTrue()
     }
 
     @Test
