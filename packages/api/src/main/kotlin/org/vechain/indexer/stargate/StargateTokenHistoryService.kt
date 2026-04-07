@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
 import org.vechain.indexer.history.HistoryEventName
 import org.vechain.indexer.history.IndexedHistoryEvent
+import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.utils.BigIntegerUtils
 
 @Profile("stargate")
@@ -22,7 +23,7 @@ class StargateTokenHistoryService(
     )
     stargateNftContract: String,
 ) {
-    private val stargateNftContract = stargateNftContract.lowercase()
+    private val stargateNftContract = HexUtils.normalise(stargateNftContract)
     private val protocolEventNames = PROTOCOL_EVENT_NAMES.map { it.name }
     private val nftScopedEventNames = NFT_SCOPED_EVENT_NAMES.map { it.name }
 
