@@ -7851,6 +7851,200 @@
         ]
       }
     },
+    "/api/v1/stargate/tokens/{tokenId}/history": {
+      "get": {
+        "description": "Retrieve the Stargate lifecycle timeline for a token, including Stargate protocol events, synthetic delegation lifecycle events, Stargate NFT transfers, NFT sales, and VeVote casts.",
+        "operationId": "getStargateTokenHistory",
+        "parameters": [
+          {
+            "description": "A valid tokenId",
+            "in": "path",
+            "name": "tokenId",
+            "required": true,
+            "schema": {
+              "pattern": "^(0x)?[A-Fa-f0-9]+$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter by Stargate token history event names.",
+            "in": "query",
+            "name": "eventName",
+            "required": false,
+            "schema": {
+              "items": {
+                "enum": [
+                  "STARGATE_DELEGATE_LEGACY",
+                  "STARGATE_CLAIM_REWARDS_BASE_LEGACY",
+                  "STARGATE_CLAIM_REWARDS_DELEGATE_LEGACY",
+                  "STARGATE_UNDELEGATE_LEGACY",
+                  "STARGATE_STAKE",
+                  "STARGATE_UNSTAKE",
+                  "STARGATE_DELEGATE_ACTIVE",
+                  "STARGATE_DELEGATE_REQUEST",
+                  "STARGATE_DELEGATE_EXIT_REQUEST",
+                  "STARGATE_DELEGATION_EXITED_VALIDATOR",
+                  "STARGATE_DELEGATION_EXITED",
+                  "STARGATE_DELEGATE_REQUEST_CANCELLED",
+                  "STARGATE_CLAIM_REWARDS",
+                  "STARGATE_BOOST",
+                  "STARGATE_MANAGER_ADDED",
+                  "STARGATE_MANAGER_REMOVED",
+                  "TRANSFER_NFT",
+                  "NFT_SALE",
+                  "VEVOTE_VOTE_CAST"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          {
+            "description": "Return records after this time (Unix time in seconds).",
+            "example": 1704143600,
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Return records before this time (Unix time in seconds).",
+            "example": 1704153600,
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The zero-based results page number",
+            "example": 0,
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The results page size",
+            "example": 20,
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 150,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The sort direction",
+            "in": "query",
+            "name": "direction",
+            "required": false,
+            "schema": {
+              "default": "DESC",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/XProjectIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponseIndexedHistoryEvent"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get Stargate token history",
+        "tags": [
+          "Stargate"
+        ]
+      }
+    },
     "/api/v1/stargate/total-vet-delegated": {
       "get": {
         "operationId": "getTotalVetDelegated",
@@ -13092,6 +13286,8 @@
     },
     "/api/v2/history/token/{tokenId}": {
       "get": {
+        "deprecated": true,
+        "description": "Deprecated: this endpoint scopes history by tokenId and optional emitter contract only, which is not safe for contract-ambiguous NFT domains such as Stargate. Use /api/v1/stargate/tokens/{tokenId}/history for Stargate token timelines.",
         "operationId": "getTokenHistory",
         "parameters": [
           {
@@ -13113,20 +13309,24 @@
               "items": {
                 "enum": [
                   "STARGATE_DELEGATE_LEGACY",
-                  "STARGATE_STAKE",
-                  "STARGATE_DELEGATE_REQUEST",
-                  "STARGATE_DELEGATE_ACTIVE",
+                  "STARGATE_CLAIM_REWARDS_BASE_LEGACY",
+                  "STARGATE_CLAIM_REWARDS_DELEGATE_LEGACY",
                   "STARGATE_UNDELEGATE_LEGACY",
+                  "STARGATE_STAKE",
+                  "STARGATE_UNSTAKE",
+                  "STARGATE_DELEGATE_ACTIVE",
+                  "STARGATE_DELEGATE_REQUEST",
                   "STARGATE_DELEGATE_EXIT_REQUEST",
                   "STARGATE_DELEGATION_EXITED_VALIDATOR",
                   "STARGATE_DELEGATION_EXITED",
+                  "STARGATE_DELEGATE_REQUEST_CANCELLED",
                   "STARGATE_CLAIM_REWARDS",
                   "STARGATE_BOOST",
                   "STARGATE_MANAGER_ADDED",
                   "STARGATE_MANAGER_REMOVED",
-                  "VEVOTE_VOTE_CAST",
-                  "NFT_SALE",
                   "TRANSFER_NFT",
+                  "NFT_SALE",
+                  "VEVOTE_VOTE_CAST",
                   "B3TR_UPGRADE_GM"
                 ],
                 "type": "string"
@@ -13285,7 +13485,7 @@
             "description": "Service not available"
           }
         },
-        "summary": "Get token history",
+        "summary": "Get token history (deprecated)",
         "tags": [
           "History"
         ]

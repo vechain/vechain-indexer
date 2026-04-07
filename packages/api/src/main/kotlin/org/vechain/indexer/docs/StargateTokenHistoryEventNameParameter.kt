@@ -5,17 +5,7 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Schema
 import org.springframework.core.annotation.AliasFor
-import org.vechain.indexer.history.HistoryEventName
 
-/**
- * Parameter annotation for filtering by token-specific event names.
- *
- * The allowableValues are a curated subset of HistoryEventName for token history queries. This
- * includes STARGATE_* events, VEVOTE_VOTE_CAST, NFT_SALE, TRANSFER_NFT, and B3TR_UPGRADE_GM.
- *
- * @see HistoryEventName
- * @see ValidTokenEventName
- */
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)
 @Parameter(
@@ -47,14 +37,13 @@ import org.vechain.indexer.history.HistoryEventName
                             "TRANSFER_NFT",
                             "NFT_SALE",
                             "VEVOTE_VOTE_CAST",
-                            "B3TR_UPGRADE_GM",
                         ],
                 )
         ),
-    description = "Filter by specific transaction names.",
+    description = "Filter by Stargate token history event names.",
     required = false,
 )
-annotation class TokenEventNameParameter(
+annotation class StargateTokenHistoryEventNameParameter(
     @get:AliasFor(annotation = Parameter::class, attribute = "description")
-    val description: String = "Filter by specific transaction names."
+    val description: String = "Filter by Stargate token history event names."
 )

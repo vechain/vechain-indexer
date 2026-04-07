@@ -441,6 +441,12 @@
         },
         {
           "filter": {
+            "query": "@http.url_details.path:/api/v1/stargate/tokens/*/history"
+          },
+          "name": "/api/v1/stargate/tokens/{tokenId}/history"
+        },
+        {
+          "filter": {
             "query": "@http.url_details.path:/api/v1/stargate/total-vet-staked/historic/*"
           },
           "name": "/api/v1/stargate/total-vet-staked/historic/{range}"
