@@ -25,9 +25,14 @@ constructor(
     val citizen: String,
     val eventType: String,
     @JsonIgnore @Field(targetType = FieldType.DECIMAL128) val amount: BigDecimal?,
+    @JsonIgnore @Field(targetType = FieldType.DECIMAL128) val delta: BigDecimal?,
 ) : IndexedDocument {
 
     @get:JsonProperty("amount")
     val amountValue: BigInteger?
         get() = amount?.toBigInteger()
+
+    @get:JsonProperty("delta")
+    val deltaValue: BigInteger?
+        get() = delta?.toBigInteger()
 }
