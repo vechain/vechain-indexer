@@ -7869,7 +7869,7 @@
           {
             "description": "Filter by Stargate token history event names.",
             "in": "query",
-            "name": "eventNames",
+            "name": "eventName",
             "required": false,
             "schema": {
               "items": {

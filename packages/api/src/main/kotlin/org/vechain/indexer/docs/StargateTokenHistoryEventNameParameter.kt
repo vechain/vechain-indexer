@@ -10,7 +10,7 @@ import org.springframework.core.annotation.AliasFor
 @Retention(AnnotationRetention.RUNTIME)
 @Parameter(
     `in` = ParameterIn.QUERY,
-    name = "eventNames",
+    name = "eventName",
     array =
         ArraySchema(
             schema =

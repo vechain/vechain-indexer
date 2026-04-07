@@ -329,8 +329,8 @@ open class StargateController(
     open fun getStargateTokenHistory(
         @ValidTokenId @PathVariable("tokenId") tokenId: String,
         @ValidStargateTokenHistoryEventName
-        @RequestParam(name = "eventNames", required = false)
-        eventNames: List<String>?,
+        @RequestParam(name = "eventName", required = false)
+        eventName: List<String>?,
         @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
         @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
         @RequestParam(required = false) page: Int?,
@@ -350,7 +350,7 @@ open class StargateController(
         return paginatedResponse(
             stargateTokenHistoryService.findTokenHistory(
                 tokenId = tokenId,
-                eventNames = eventNames,
+                eventNames = eventName,
                 before = before,
                 after = after,
                 pageable = pageable,

@@ -44,7 +44,7 @@ class OpenApiDocumentationContractTest {
         val operation = spec.at("/paths/~1api~1v1~1stargate~1tokens~1{tokenId}~1history/get")
         val parameters = operation.at("/parameters")
         val eventNamesEnum =
-            findParameter(parameters, "eventNames", "query")
+            findParameter(parameters, "eventName", "query")
                 .at("/schema/items/enum")
                 .map { it.asText() }
                 .toList()
