@@ -85,6 +85,39 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
         )
     }
 
+    @GetMapping("/delegations")
+    @Operation(
+        summary = "Get delegation events for a navigator",
+        description =
+            "Returns the full history of delegation events (created, updated, removed) for a navigator or citizen.",
+    )
+    @CommonApiResponses
+    @PaginationParameters
+    open fun getDelegations(
+        @RequestParam(required = false) navigator: String?,
+        @RequestParam(required = false) citizen: String?,
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<NavigatorDelegationEvent> {
+        val pageable =
+            PaginationUtils.toPageable(
+                page,
+                size,
+                direction,
+                NavigatorDelegationEvent::blockTimestamp.name,
+                NavigatorDelegationEvent::txId.name,
+                "_id",
+            )
+        return paginatedResponse(
+            navigatorApiService.findDelegationEvents(
+                navigator = navigator,
+                citizen = citizen,
+                pageable = pageable,
+            )
+        )
+    }
+
     private fun parseStatuses(raw: List<String>?): List<NavigatorStatus>? {
         if (raw.isNullOrEmpty()) return null
         return raw.mapNotNull { s ->

@@ -1460,7 +1460,7 @@
             "type": "integer"
           },
           "stake": {
-            "type": "string"
+            "type": "integer"
           },
           "status": {
             "enum": [
@@ -1471,7 +1471,7 @@
             "type": "string"
           },
           "totalDelegated": {
-            "type": "string"
+            "type": "integer"
           }
         },
         "required": [
@@ -1493,7 +1493,7 @@
             "type": "string"
           },
           "amount": {
-            "type": "string"
+            "type": "integer"
           },
           "delegatedAt": {
             "format": "int64",
@@ -1512,6 +1512,37 @@
         ],
         "type": "object"
       },
+      "NavigatorDelegationEvent": {
+        "properties": {
+          "amount": {
+            "type": "integer"
+          },
+          "blockTimestamp": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "citizen": {
+            "type": "string"
+          },
+          "eventType": {
+            "type": "string"
+          },
+          "navigator": {
+            "type": "string"
+          },
+          "txId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "blockTimestamp",
+          "citizen",
+          "eventType",
+          "navigator",
+          "txId"
+        ],
+        "type": "object"
+      },
       "NavigatorOverview": {
         "properties": {
           "activeNavigators": {
@@ -1523,10 +1554,10 @@
             "type": "integer"
           },
           "totalDelegated": {
-            "type": "string"
+            "type": "integer"
           },
           "totalStaked": {
-            "type": "string"
+            "type": "integer"
           }
         },
         "required": [
@@ -1792,6 +1823,24 @@
           "data": {
             "items": {
               "$ref": "#/components/schemas/NavigatorCitizen"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationDetail"
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ],
+        "type": "object"
+      },
+      "PaginatedResponseNavigatorDelegationEvent": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/NavigatorDelegationEvent"
             },
             "type": "array"
           },
@@ -5464,6 +5513,149 @@
           }
         },
         "summary": "Get citizens delegated to a navigator",
+        "tags": [
+          "B3TR Navigators"
+        ]
+      }
+    },
+    "/api/v1/b3tr/navigators/delegations": {
+      "get": {
+        "description": "Returns the full history of delegation events (created, updated, removed) for a navigator or citizen.",
+        "operationId": "getDelegations_1",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "navigator",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "citizen",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The zero-based results page number",
+            "example": 0,
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The results page size",
+            "example": 20,
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 150,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The sort direction",
+            "in": "query",
+            "name": "direction",
+            "required": false,
+            "schema": {
+              "default": "DESC",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/XProjectIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponseNavigatorDelegationEvent"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get delegation events for a navigator",
         "tags": [
           "B3TR Navigators"
         ]

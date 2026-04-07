@@ -165,6 +165,12 @@
         },
         {
           "filter": {
+            "query": "@http.url_details.path:\"/api/v1/b3tr/navigators/delegations\""
+          },
+          "name": "/api/v1/b3tr/navigators/delegations"
+        },
+        {
+          "filter": {
             "query": "@http.url_details.path:\"/api/v1/b3tr/navigators/overview\""
           },
           "name": "/api/v1/b3tr/navigators/overview"

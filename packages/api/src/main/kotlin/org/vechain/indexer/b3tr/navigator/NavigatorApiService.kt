@@ -56,6 +56,19 @@ open class NavigatorApiService(private val mongoTemplate: MongoTemplate) {
         )
     }
 
+    fun findDelegationEvents(
+        navigator: String? = null,
+        citizen: String? = null,
+        pageable: Pageable,
+    ): Slice<NavigatorDelegationEvent> {
+        val criteria = Criteria()
+        navigator?.let {
+            criteria.and(NavigatorDelegationEvent::navigator.name).`is`(it.lowercase())
+        }
+        citizen?.let { criteria.and(NavigatorDelegationEvent::citizen.name).`is`(it.lowercase()) }
+        return runQuery(criteria, pageable, NavigatorDelegationEvent::class.java)
+    }
+
     fun findCitizens(navigator: String, pageable: Pageable): Slice<NavigatorCitizen> {
         val criteria =
             Criteria.where(NavigatorCitizen::navigator.name)
