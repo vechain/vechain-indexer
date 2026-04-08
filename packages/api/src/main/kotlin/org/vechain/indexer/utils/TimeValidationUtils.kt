@@ -19,11 +19,6 @@ object TimeValidationUtils {
         afterName: String = "after",
         beforeName: String = "before",
     ) {
-        if (after != null && before != null && after > before) {
-            throw BadRequestException(
-                "Invalid time range: '$afterName' timestamp is greater than '$beforeName'"
-            )
-        }
         if (after != null && after < 0) {
             throw BadRequestException("Invalid '$afterName' timestamp: cannot be negative")
         }
@@ -38,6 +33,11 @@ object TimeValidationUtils {
         if (before != null && before > MAX_SUPPORTED_UNIX_TIMESTAMP_LONG) {
             throw BadRequestException(
                 "Invalid '$beforeName' timestamp: exceeds supported Unix timestamp range"
+            )
+        }
+        if (after != null && before != null && after > before) {
+            throw BadRequestException(
+                "Invalid time range: '$afterName' timestamp is greater than '$beforeName'"
             )
         }
     }

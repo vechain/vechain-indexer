@@ -51,6 +51,20 @@ class TimeValidationUtilsTest {
     }
 
     @Test
+    fun `validateTimestamps rejects invalid timestamp before reversed range`() {
+        val exception =
+            assertThrows<BadRequestException> {
+                TimeValidationUtils.validateTimestamps(
+                    TimeValidationUtils.MAX_SUPPORTED_UNIX_TIMESTAMP_LONG + 1,
+                    1,
+                )
+            }
+
+        expectThat(exception.message)
+            .isEqualTo("Invalid 'after' timestamp: exceeds supported Unix timestamp range")
+    }
+
+    @Test
     fun `validateTimestamps rejects oversized default after parameter name`() {
         val exception =
             assertThrows<BadRequestException> {
