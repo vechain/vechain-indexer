@@ -96,7 +96,12 @@ open class AccountsController(private val accountsService: AccountsService) {
         @ValidNonNegativeLong @RequestParam startTimestamp: Long,
         @ValidNonNegativeLong @RequestParam endTimestamp: Long,
     ): List<AccountTotalsSeries> {
-        TimeValidationUtils.validateTimestamps(startTimestamp, endTimestamp)
+        TimeValidationUtils.validateTimestamps(
+            startTimestamp,
+            endTimestamp,
+            "startTimestamp",
+            "endTimestamp",
+        )
         return accountsService.getTotalSeries(startTimestamp, endTimestamp)
     }
 

@@ -45,7 +45,12 @@ open class AverageFeesPerUserController(
         @ValidNonNegativeLong @RequestParam startTimestamp: Long,
         @ValidNonNegativeLong @RequestParam endTimestamp: Long,
     ): List<AverageFeesPerUser> {
-        TimeValidationUtils.validateTimestamps(startTimestamp, endTimestamp)
+        TimeValidationUtils.validateTimestamps(
+            startTimestamp,
+            endTimestamp,
+            "startTimestamp",
+            "endTimestamp",
+        )
         return averageFeesPerUserService.getAverageFeesPerUser(startTimestamp, endTimestamp)
     }
 }

@@ -17,6 +17,7 @@ import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.timeseries.TimeSeriesResolution
 import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.utils.TimeSeriesUtils
+import org.vechain.indexer.utils.TimeValidationUtils
 
 /**
  * @notice Service handling reward aggregation and normalization for accounts.
@@ -120,10 +121,12 @@ open class AccountsService(
     }
 
     fun getTotalSeries(startTimestamp: Long, endTimestamp: Long): List<AccountTotalsSeries> {
-        require(startTimestamp >= 0) { "startTimestamp must be non-negative" }
-        require(endTimestamp >= startTimestamp) {
-            "endTimestamp must be greater than or equal to startTimestamp"
-        }
+        TimeValidationUtils.validateTimestamps(
+            startTimestamp,
+            endTimestamp,
+            "startTimestamp",
+            "endTimestamp",
+        )
 
         return when (TimeSeriesUtils.selectResolution(endTimestamp - startTimestamp)) {
             TimeSeriesResolution.RAW ->

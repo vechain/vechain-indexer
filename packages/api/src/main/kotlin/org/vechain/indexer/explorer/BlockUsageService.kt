@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service
 import org.vechain.indexer.explorer.repository.BlockUsageRepository
 import org.vechain.indexer.timeseries.TimeSeriesResolution
 import org.vechain.indexer.utils.TimeSeriesUtils
+import org.vechain.indexer.utils.TimeValidationUtils
 
 @Profile("explorer", "block-usage")
 @Service
@@ -26,10 +27,12 @@ open class BlockUsageService(private val blockUsageRepository: BlockUsageReposit
      * @return List of BlockUsage records matching the criteria
      */
     open fun getBlockUsage(startTimestamp: Long, endTimestamp: Long): List<BlockUsage> {
-        require(startTimestamp >= 0) { "startTimestamp must be non-negative" }
-        require(endTimestamp >= startTimestamp) {
-            "endTimestamp must be greater than or equal to startTimestamp"
-        }
+        TimeValidationUtils.validateTimestamps(
+            startTimestamp,
+            endTimestamp,
+            "startTimestamp",
+            "endTimestamp",
+        )
 
         return when (TimeSeriesUtils.selectResolution(endTimestamp - startTimestamp)) {
             TimeSeriesResolution.RAW ->
