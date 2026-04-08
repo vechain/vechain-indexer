@@ -192,6 +192,11 @@ open class HistoryService(
                 HistoryEventName.TRANSFER_VET -> event.params.getAsString("amount")!!
                 HistoryEventName.STARGATE_DELEGATE_REQUEST ->
                     event.params.getAsString("vetAmountStaked") ?: event.params.getAsString("value")
+                HistoryEventName.B3TR_NAVIGATOR_DELEGATION_CREATED ->
+                    event.params.getAsString("amount")
+                HistoryEventName.B3TR_NAVIGATOR_DELEGATION_UPDATED ->
+                    event.params.getAsString("newAmount")
+                HistoryEventName.B3TR_NAVIGATOR_DELEGATION_REMOVED -> null
                 else -> event.params.getAsString("value")
             }
 
@@ -209,6 +214,22 @@ open class HistoryService(
                 else -> null
             }
 
+        val isNavigatorDelegation =
+            eventName in
+                listOf(
+                    HistoryEventName.B3TR_NAVIGATOR_DELEGATION_CREATED,
+                    HistoryEventName.B3TR_NAVIGATOR_DELEGATION_UPDATED,
+                    HistoryEventName.B3TR_NAVIGATOR_DELEGATION_REMOVED,
+                )
+
+        val from =
+            if (isNavigatorDelegation) event.params.getAsString("citizen")
+            else event.params.getAsString("from")
+
+        val to =
+            if (isNavigatorDelegation) event.params.getAsString("navigator")
+            else event.params.getAsString("to")
+
         return IndexedHistoryEvent(
             id = DigestUtils.sha1Hex(event.id),
             blockId = event.blockId,
@@ -219,8 +240,8 @@ open class HistoryService(
             origin = event.origin,
             eventName = eventName,
             gasPayer = event.gasPayer,
-            from = event.params.getAsString("from"),
-            to = event.params.getAsString("to"),
+            from = from,
+            to = to,
             value = value,
             tokenId = tokenId,
             appId = event.params.getAsString("appId"),
