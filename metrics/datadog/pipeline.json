@@ -231,6 +231,12 @@
         },
         {
           "filter": {
+            "query": "@http.url_details.path:\"/api/v1/nfts/history\""
+          },
+          "name": "/api/v1/nfts/history"
+        },
+        {
+          "filter": {
             "query": "@http.url_details.path:\"/api/v1/stargate/nft-holders\""
           },
           "name": "/api/v1/stargate/nft-holders"

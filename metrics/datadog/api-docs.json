@@ -869,6 +869,9 @@
           "levelId": {
             "type": "string"
           },
+          "marketplaceAddress": {
+            "type": "string"
+          },
           "migrated": {
             "type": "boolean"
           },
@@ -918,9 +921,6 @@
             "type": "string"
           },
           "to": {
-            "type": "string"
-          },
-          "tokenAddress": {
             "type": "string"
           },
           "tokenId": {
@@ -1121,6 +1121,9 @@
           "levelId": {
             "type": "string"
           },
+          "marketplaceAddress": {
+            "type": "string"
+          },
           "migrated": {
             "type": "boolean"
           },
@@ -1170,9 +1173,6 @@
             "type": "string"
           },
           "to": {
-            "type": "string"
-          },
-          "tokenAddress": {
             "type": "string"
           },
           "tokenId": {
@@ -7131,6 +7131,194 @@
           }
         },
         "summary": "Get all contracts addresses by NFT owner",
+        "tags": [
+          "NFT"
+        ]
+      }
+    },
+    "/api/v1/nfts/history": {
+      "get": {
+        "description": "Retrieve NFT transfer and sale history for a specific contract and token ID. If eventName is omitted, the response includes both TRANSFER_NFT and NFT_SALE events.",
+        "operationId": "getNftHistory",
+        "parameters": [
+          {
+            "description": "A valid address",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            "in": "query",
+            "name": "contractAddress",
+            "required": true,
+            "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "A valid tokenId",
+            "in": "query",
+            "name": "tokenId",
+            "required": true,
+            "schema": {
+              "pattern": "^(0x)?[A-Fa-f0-9]+$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter by NFT history event names. Defaults to TRANSFER_NFT and NFT_SALE.",
+            "in": "query",
+            "name": "eventName",
+            "required": false,
+            "schema": {
+              "items": {
+                "enum": [
+                  "TRANSFER_NFT",
+                  "NFT_SALE"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          {
+            "description": "Return records after this time (Unix time in seconds).",
+            "example": 1704143600,
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Return records before this time (Unix time in seconds).",
+            "example": 1704153600,
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The zero-based results page number",
+            "example": 0,
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The results page size",
+            "example": 20,
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 150,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The sort direction",
+            "in": "query",
+            "name": "direction",
+            "required": false,
+            "schema": {
+              "default": "DESC",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/XProjectIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponseIndexedHistoryEvent"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get NFT token history",
         "tags": [
           "NFT"
         ]
