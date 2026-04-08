@@ -149,7 +149,7 @@ dd-get-dashboard: #@ Fetch Datadog dashboard config.
 	$(DD_SCRIPT) get-dashboard
 dd-generate-openapi: #@ Generate OpenAPI spec from API with embedded MongoDB.
 	./gradlew :packages:api:generateOpenApiSpec
-dd-refresh-generated: dd-generate-openapi dd-update-categories format-json #@ Refresh committed OpenAPI and Datadog generated JSON files.
+dd-refresh-generated: dd-generate-openapi dd-update-categories format-json #@ Refresh committed OpenAPI and Datadog generated JSON files for both main and WAF pipelines.
 dd-push-pipeline: #@ Push pipeline config to Datadog.
 	$(DD_SCRIPT) push-pipeline
 dd-push-app-pipeline: #@ Push Datadog app pipeline config.
@@ -158,9 +158,9 @@ dd-push-waf-pipeline: #@ Push Datadog WAF pipeline config.
 	$(DD_SCRIPT) push-waf-pipeline
 dd-push-dashboard: #@ Push dashboard config to Datadog.
 	$(DD_SCRIPT) push-dashboard
-dd-update-categories: #@ Update pipeline categories from api-docs.json.
+dd-update-categories: #@ Update main and WAF pipeline categories from api-docs.json.
 	$(DD_SCRIPT) update-categories
-dd-validate-categories: #@ Validate pipeline categories match api-docs.json.
+dd-validate-categories: #@ Validate main and WAF pipeline categories match api-docs.json.
 	$(DD_SCRIPT) validate-categories
 dd-sync: dd-get-pipeline dd-get-app-pipeline dd-get-waf-pipeline dd-get-dashboard #@ Fetch Datadog pipelines and dashboard.
 dd-push: dd-push-pipeline dd-push-app-pipeline dd-push-waf-pipeline dd-push-dashboard #@ Push Datadog pipelines and dashboard.
