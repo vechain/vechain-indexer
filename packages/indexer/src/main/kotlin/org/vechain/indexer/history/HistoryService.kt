@@ -247,11 +247,6 @@ open class HistoryService(
             outputToken = event.params.getAsString("outputToken"),
             inputValue = event.params.getAsString("inputValue"),
             outputValue = event.params.getAsString("outputValue"),
-            marketplaceAddress =
-                when (eventName) {
-                    HistoryEventName.NFT_SALE -> event.address
-                    else -> null
-                },
             owner = event.params.getAsString("owner"),
             delegationRewards = event.params.getAsString("delegationRewards"),
             vetGeneratedVthoRewards = event.params.getAsString("vetGeneratedVthoRewards"),

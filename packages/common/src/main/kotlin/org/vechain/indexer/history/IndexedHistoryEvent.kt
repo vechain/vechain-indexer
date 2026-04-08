@@ -46,7 +46,6 @@ constructor(
     val outputToken: String? = null,
     val inputValue: String? = null,
     val outputValue: String? = null,
-    val marketplaceAddress: String? = null,
     val levelId: String? = null,
     val owner: String? = null,
     val vetGeneratedVthoRewards: String? = null,
