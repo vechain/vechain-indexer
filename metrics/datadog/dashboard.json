@@ -5225,7 +5225,7 @@
                           }
                         },
                         {
-                          "facet": "@http.url_details.api_category",
+                          "facet": "@waf_api_category",
                           "limit": 100,
                           "sort": {
                             "aggregation": "count",

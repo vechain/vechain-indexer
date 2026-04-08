@@ -370,6 +370,7 @@ def cmd_push_dashboard(args):
 ELB_URL_ATTR = "@http.url_details.path"
 WAF_URL_ATTR = "@httpRequest.uri"
 API_CATEGORY_TARGET = "http.url_details.api_category"
+WAF_API_CATEGORY_TARGET = "waf_api_category"
 ENDPOINT_GROUP_TARGET = "endpoint_group"
 API_CATEGORY_PROCESSOR_NAME_FALLBACK = "Categorising the api calls"
 
@@ -501,7 +502,7 @@ def build_expected_waf_category_processors(config):
     return [
         {
             "name": get_api_category_processor_name(config),
-            "target": API_CATEGORY_TARGET,
+            "target": WAF_API_CATEGORY_TARGET,
             "categories": build_api_category_categories(
                 extract_endpoint_paths(spec), WAF_URL_ATTR
             ),
@@ -513,6 +514,7 @@ def upsert_category_processor(processors, name, target, categories):
     """Replace an existing category processor or append it if missing."""
     for proc in processors:
         if proc.get("type") == "category-processor" and proc.get("name") == name:
+            proc["target"] = target
             proc["categories"] = categories
             return True
 
@@ -591,6 +593,16 @@ def validate_pipeline_category_processors(path, processor_defs):
             )
             out_of_sync = True
             continue
+
+        if processor.get("target") != processor_def["target"]:
+            print(
+                (
+                    f"Processor '{path.name}:{processor_def['name']}' target differs:\n"
+                    f"  {path.name}: {processor.get('target')}\n"
+                    f"  expected: {processor_def['target']}"
+                )
+            )
+            out_of_sync = True
 
         out_of_sync = (
             report_category_diff(
