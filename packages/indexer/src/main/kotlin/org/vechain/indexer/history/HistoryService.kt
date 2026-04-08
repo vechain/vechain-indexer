@@ -215,7 +215,12 @@ open class HistoryService(
             blockNumber = event.blockNumber,
             blockTimestamp = event.blockTimestamp,
             txId = event.txId,
-            contractAddress = event.address,
+            contractAddress =
+                when (eventName) {
+                    HistoryEventName.NFT_SALE ->
+                        event.params.getAsString("tokenAddress") ?: event.address
+                    else -> event.address
+                },
             origin = event.origin,
             eventName = eventName,
             gasPayer = event.gasPayer,
@@ -242,7 +247,11 @@ open class HistoryService(
             outputToken = event.params.getAsString("outputToken"),
             inputValue = event.params.getAsString("inputValue"),
             outputValue = event.params.getAsString("outputValue"),
-            tokenAddress = event.params.getAsString("tokenAddress"),
+            marketplaceAddress =
+                when (eventName) {
+                    HistoryEventName.NFT_SALE -> event.address
+                    else -> null
+                },
             owner = event.params.getAsString("owner"),
             delegationRewards = event.params.getAsString("delegationRewards"),
             vetGeneratedVthoRewards = event.params.getAsString("vetGeneratedVthoRewards"),
