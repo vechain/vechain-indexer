@@ -869,9 +869,6 @@
           "levelId": {
             "type": "string"
           },
-          "marketplaceAddress": {
-            "type": "string"
-          },
           "migrated": {
             "type": "boolean"
           },
@@ -1119,9 +1116,6 @@
             "type": "string"
           },
           "levelId": {
-            "type": "string"
-          },
-          "marketplaceAddress": {
             "type": "string"
           },
           "migrated": {
