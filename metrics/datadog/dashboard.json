@@ -5217,7 +5217,7 @@
                       "group_by": [
                         {
                           "facet": "@project_id",
-                          "limit": 20,
+                          "limit": 100,
                           "should_exclude_missing": false,
                           "sort": {
                             "aggregation": "count",
@@ -5225,8 +5225,8 @@
                           }
                         },
                         {
-                          "facet": "@httpRequest.uri",
-                          "limit": 20,
+                          "facet": "@http.url_details.api_category",
+                          "limit": 100,
                           "sort": {
                             "aggregation": "count",
                             "order": "desc"
@@ -5245,7 +5245,7 @@
                   ],
                   "response_format": "scalar",
                   "sort": {
-                    "count": 20,
+                    "count": 100,
                     "order_by": [
                       {
                         "index": 0,
@@ -5256,7 +5256,7 @@
                   }
                 }
               ],
-              "title": "Project Requests by Raw Path",
+              "title": "Project Requests by Normalized Path",
               "title_align": "left",
               "title_size": "16",
               "type": "query_table"
