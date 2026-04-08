@@ -11,6 +11,10 @@ object TimeValidationUtils {
      *
      * @param after The timestamp to start the query from.
      * @param before The timestamp to end the query at.
+     * @param afterName The field name to use for the `after` timestamp in validation error
+     *   messages.
+     * @param beforeName The field name to use for the `before` timestamp in validation error
+     *   messages.
      * @throws BadRequestException If the timestamps are invalid.
      */
     fun validateTimestamps(

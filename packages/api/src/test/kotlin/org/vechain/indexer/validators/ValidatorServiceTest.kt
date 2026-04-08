@@ -5,10 +5,12 @@ import io.mockk.mockk
 import io.mockk.slot
 import java.math.BigInteger
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Query
+import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.validator.BlockStatus
@@ -98,6 +100,21 @@ class ValidatorServiceTest {
         io.mockk.verify(exactly = 1) {
             validatorBlockRepository.findMonthlyInTimestampRange(0L, 40_000_000L, validator)
         }
+    }
+
+    @Test
+    fun `getValidatorHistoricBlocks rejects oversized start timestamp`() {
+        val exception =
+            assertThrows<BadRequestException> {
+                service.getValidatorHistoricBlocks(
+                    31_556_889_832_694_401L,
+                    31_556_889_832_694_401L,
+                    "0xvalidator",
+                )
+            }
+
+        expectThat(exception.message)
+            .isEqualTo("Invalid 'startTimestamp' timestamp: exceeds supported Unix timestamp range")
     }
 
     // -- getValidatorBlockRewards tests --

@@ -6,7 +6,10 @@ import io.mockk.verify
 import java.math.BigDecimal
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
+import org.junit.jupiter.api.assertThrows
+import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.explorer.repository.AverageFeesPerUserRepository
+import org.vechain.indexer.utils.TimeValidationUtils.MAX_SUPPORTED_UNIX_TIMESTAMP_LONG
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 
@@ -49,9 +52,22 @@ class AverageFeesPerUserServiceTest {
 
     @Test
     fun `dayStartTimestamp accepts maximum supported unix timestamp`() {
-        val result = assertDoesNotThrow { service.dayStartTimestamp(31556889832694400L) }
+        val result = assertDoesNotThrow {
+            service.dayStartTimestamp(MAX_SUPPORTED_UNIX_TIMESTAMP_LONG)
+        }
 
-        expectThat(result).isEqualTo(31556889832694400L)
+        expectThat(result).isEqualTo(MAX_SUPPORTED_UNIX_TIMESTAMP_LONG)
+    }
+
+    @Test
+    fun `getAverageFeesPerUser rejects oversized start timestamp`() {
+        val exception =
+            assertThrows<BadRequestException> {
+                service.getAverageFeesPerUser(31_556_889_832_694_401L, 31_556_889_832_694_401L)
+            }
+
+        expectThat(exception.message)
+            .isEqualTo("Invalid 'startTimestamp' timestamp: exceeds supported Unix timestamp range")
     }
 
     private fun averageFeesPerUser(date: String, dayStartTimestamp: Long) =
