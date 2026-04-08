@@ -36,19 +36,22 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
     @Operation(
         summary = "Get navigators",
         description =
-            "Returns navigators with their current state. Filter by status (ACTIVE, EXITING, DEACTIVATED) or address.",
+            """Returns navigators with their current state.
+            Filter by status (ACTIVE, EXITING, DEACTIVATED) or address.
+            Order by: stake, totalDelegated, citizenCount, registeredAt (default).""",
     )
     @CommonApiResponses
     @PaginationParameters
     open fun getNavigators(
         @RequestParam(required = false) navigator: String?,
         @RequestParam(required = false) status: List<String>?,
+        @RequestParam(required = false) orderBy: String?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<Navigator> {
-        val pageable =
-            PaginationUtils.toPageable(page, size, direction, Navigator::blockTimestamp.name, "_id")
+        val sortField = resolveOrderBy(orderBy)
+        val pageable = PaginationUtils.toPageable(page, size, direction, sortField, "_id")
         return paginatedResponse(
             navigatorApiService.findNavigators(
                 navigator = navigator,
@@ -117,6 +120,16 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
             )
         )
     }
+
+    private fun resolveOrderBy(orderBy: String?): String =
+        when (orderBy?.lowercase()) {
+            "stake" -> Navigator::stake.name
+            "totaldelegated" -> Navigator::totalDelegated.name
+            "citizencount" -> Navigator::citizenCount.name
+            "registeredat" -> Navigator::registeredAt.name
+            null -> Navigator::registeredAt.name
+            else -> Navigator::registeredAt.name
+        }
 
     private fun parseStatuses(raw: List<String>?): List<NavigatorStatus>? {
         if (raw.isNullOrEmpty()) return null

@@ -1524,6 +1524,9 @@
           "citizen": {
             "type": "string"
           },
+          "delta": {
+            "type": "integer"
+          },
           "eventType": {
             "type": "string"
           },
@@ -5239,7 +5242,7 @@
     },
     "/api/v1/b3tr/navigators": {
       "get": {
-        "description": "Returns navigators with their current state. Filter by status (ACTIVE, EXITING, DEACTIVATED) or address.",
+        "description": "Returns navigators with their current state.\n            Filter by status (ACTIVE, EXITING, DEACTIVATED) or address.\n            Order by: stake, totalDelegated, citizenCount, registeredAt (default).",
         "operationId": "getNavigators",
         "parameters": [
           {
@@ -5259,6 +5262,14 @@
                 "type": "string"
               },
               "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "orderBy",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           },
           {

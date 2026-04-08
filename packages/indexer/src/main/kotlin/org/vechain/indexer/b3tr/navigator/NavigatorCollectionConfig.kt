@@ -39,6 +39,13 @@ open class NavigatorCollectionConfig(
                     Index()
                         .on(Navigator::status.name, Sort.Direction.ASC)
                         .on(Navigator::blockTimestamp.name, Sort.Direction.DESC),
+                "navigator_stake_-1" to Index().on(Navigator::stake.name, Sort.Direction.DESC),
+                "navigator_totalDelegated_-1" to
+                    Index().on(Navigator::totalDelegated.name, Sort.Direction.DESC),
+                "navigator_citizenCount_-1" to
+                    Index().on(Navigator::citizenCount.name, Sort.Direction.DESC),
+                "navigator_registeredAt_-1" to
+                    Index().on(Navigator::registeredAt.name, Sort.Direction.DESC),
             )
         )
     }
