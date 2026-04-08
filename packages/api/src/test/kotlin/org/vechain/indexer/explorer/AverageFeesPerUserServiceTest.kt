@@ -5,6 +5,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import java.math.BigDecimal
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
 import org.vechain.indexer.explorer.repository.AverageFeesPerUserRepository
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
@@ -44,6 +45,13 @@ class AverageFeesPerUserServiceTest {
                 1_704_153_600L,
             )
         }
+    }
+
+    @Test
+    fun `dayStartTimestamp accepts maximum supported unix timestamp`() {
+        val result = assertDoesNotThrow { service.dayStartTimestamp(31556889832694400L) }
+
+        expectThat(result).isEqualTo(31556889832694400L)
     }
 
     private fun averageFeesPerUser(date: String, dayStartTimestamp: Long) =

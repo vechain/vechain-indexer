@@ -42,7 +42,12 @@ open class VetBalanceController(private val vetBalanceService: VetBalanceService
         @ValidNonNegativeLong @RequestParam startTimestamp: Long,
         @ValidNonNegativeLong @RequestParam endTimestamp: Long,
     ): List<VetBalance> {
-        TimeValidationUtils.validateTimestamps(startTimestamp, endTimestamp)
+        TimeValidationUtils.validateTimestamps(
+            startTimestamp,
+            endTimestamp,
+            "startTimestamp",
+            "endTimestamp",
+        )
 
         return vetBalanceService.getByAddressInTimeRange(address, startTimestamp, endTimestamp)
     }
