@@ -1,5 +1,6 @@
 package org.vechain.indexer.history
 
+import java.math.BigDecimal
 import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.b3tr.ProofUtils
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
+import org.vechain.indexer.b3tr.navigator.NavigatorCitizenRepository
 import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.nft.NftBlacklistClient
@@ -31,6 +33,7 @@ open class HistoryService(
     private val blacklistClient: NftBlacklistClient,
     private val delegationLifecycleHistoryService: DelegationLifecycleHistoryService,
     private val validatorDelegationService: ValidatorDelegationService,
+    private val navigatorCitizenRepository: NavigatorCitizenRepository,
 ) {
     /**
      * Normalizes a block into history rows by combining recognised event-derived history,
@@ -187,21 +190,38 @@ open class HistoryService(
                 else -> event.params.getAsString("tokenId")
             }
 
-        val value =
-            when (eventName) {
-                HistoryEventName.TRANSFER_VET -> event.params.getAsString("amount")!!
-                HistoryEventName.STARGATE_DELEGATE_REQUEST ->
-                    event.params.getAsString("vetAmountStaked") ?: event.params.getAsString("value")
-                HistoryEventName.B3TR_NAVIGATOR_DELEGATION_CREATED ->
-                    event.params.getAsString("amount")
-                HistoryEventName.B3TR_NAVIGATOR_DELEGATION_UPDATED ->
-                    event.params.getAsString("newAmount")
-                HistoryEventName.B3TR_NAVIGATOR_DELEGATION_REMOVED -> null
-                else -> event.params.getAsString("value")
-            }
+        // For DelegationUpdated (mapped as INCREASED by EventUtils), compute delta and resolve
+        // the correct event name: INCREASED if delta > 0, REDUCED if delta < 0.
+        val resolvedEventName: HistoryEventName
+        val value: String?
+
+        if (eventName == HistoryEventName.B3TR_NAVIGATOR_DELEGATION_INCREASED) {
+            val citizen = event.params.getAsString("citizen")?.lowercase() ?: ""
+            val newAmount =
+                event.params.getAsString("newAmount")?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+            val oldAmount = getNavigatorCitizenAmount(citizen)
+            val delta = newAmount - oldAmount
+            resolvedEventName =
+                if (delta < BigDecimal.ZERO) HistoryEventName.B3TR_NAVIGATOR_DELEGATION_REDUCED
+                else HistoryEventName.B3TR_NAVIGATOR_DELEGATION_INCREASED
+            value = delta.abs().toBigInteger().toString()
+        } else {
+            resolvedEventName = eventName
+            value =
+                when (eventName) {
+                    HistoryEventName.TRANSFER_VET -> event.params.getAsString("amount")!!
+                    HistoryEventName.STARGATE_DELEGATE_REQUEST ->
+                        event.params.getAsString("vetAmountStaked")
+                            ?: event.params.getAsString("value")
+                    HistoryEventName.B3TR_NAVIGATOR_DELEGATION_CREATED ->
+                        event.params.getAsString("amount")
+                    HistoryEventName.B3TR_NAVIGATOR_DELEGATION_REMOVED -> null
+                    else -> event.params.getAsString("value")
+                }
+        }
 
         val isBlacklisted =
-            when (eventName) {
+            when (resolvedEventName) {
                 HistoryEventName.TRANSFER_NFT,
                 HistoryEventName.TRANSFER_SF -> {
                     val contractAddress =
@@ -215,10 +235,11 @@ open class HistoryService(
             }
 
         val isNavigatorDelegation =
-            eventName in
+            resolvedEventName in
                 listOf(
                     HistoryEventName.B3TR_NAVIGATOR_DELEGATION_CREATED,
-                    HistoryEventName.B3TR_NAVIGATOR_DELEGATION_UPDATED,
+                    HistoryEventName.B3TR_NAVIGATOR_DELEGATION_INCREASED,
+                    HistoryEventName.B3TR_NAVIGATOR_DELEGATION_REDUCED,
                     HistoryEventName.B3TR_NAVIGATOR_DELEGATION_REMOVED,
                 )
 
@@ -238,7 +259,7 @@ open class HistoryService(
             txId = event.txId,
             contractAddress = event.address,
             origin = event.origin,
-            eventName = eventName,
+            eventName = resolvedEventName,
             gasPayer = event.gasPayer,
             from = from,
             to = to,
@@ -278,6 +299,12 @@ open class HistoryService(
             isBlacklisted = isBlacklisted,
         )
     }
+
+    private fun getNavigatorCitizenAmount(citizenAddress: String): BigDecimal =
+        if (citizenAddress.isBlank()) BigDecimal.ZERO
+        else
+            navigatorCitizenRepository.findById(citizenAddress).orElse(null)?.amount
+                ?: BigDecimal.ZERO
 
     /** Fallback function to handle all unknown transaction types */
     private fun buildUnknownTransactionHistoryEvents(

@@ -49,7 +49,7 @@ object EventUtils {
             "B3TR_ProposalVote" -> HistoryEventName.B3TR_PROPOSAL_VOTE
             "B3TR_XAllocationVote" -> HistoryEventName.B3TR_XALLOCATION_VOTE
             "B3TR_DelegationCreated" -> HistoryEventName.B3TR_NAVIGATOR_DELEGATION_CREATED
-            "B3TR_DelegationUpdated" -> HistoryEventName.B3TR_NAVIGATOR_DELEGATION_UPDATED
+            "B3TR_DelegationUpdated" -> HistoryEventName.B3TR_NAVIGATOR_DELEGATION_INCREASED
             "B3TR_DelegationRemoved" -> HistoryEventName.B3TR_NAVIGATOR_DELEGATION_REMOVED
             "Transfer" -> {
                 when {
