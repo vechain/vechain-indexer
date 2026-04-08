@@ -60,6 +60,33 @@ class OpenApiDocumentationContractTest {
     }
 
     @Test
+    fun `nft history route is present with required contract and token filters`() {
+        val spec = fetchSpec()
+        val operation = spec.at("/paths/~1api~1v1~1nfts~1history/get")
+        val parameters = operation.at("/parameters")
+        val eventNamesEnum =
+            findParameter(parameters, "eventName", "query")
+                .at("/schema/items/enum")
+                .map { it.asText() }
+                .toList()
+
+        expectThat(operation.isMissingNode).isFalse()
+        expectThat(
+                findParameter(parameters, "contractAddress", "query").at("/required").asBoolean()
+            )
+            .isTrue()
+        expectThat(
+                findParameter(parameters, "contractAddress", "query").at("/schema/pattern").asText()
+            )
+            .isEqualTo("^(0x)?[0-9a-fA-F]{40}$")
+        expectThat(findParameter(parameters, "tokenId", "query").at("/required").asBoolean())
+            .isTrue()
+        expectThat(findParameter(parameters, "tokenId", "query").at("/schema/pattern").asText())
+            .isEqualTo("^(0x)?[A-Fa-f0-9]+$")
+        expectThat(eventNamesEnum).isEqualTo(listOf("TRANSFER_NFT", "NFT_SALE"))
+    }
+
+    @Test
     fun `deprecated generic token history route is marked deprecated in generated spec`() {
         val spec = fetchSpec()
         val operation = spec.at("/paths/~1api~1v2~1history~1token~1{tokenId}/get")
