@@ -4,7 +4,7 @@ import org.vechain.indexer.exception.BadRequestException
 
 object TimeValidationUtils {
     const val MAX_SUPPORTED_UNIX_TIMESTAMP = "31556889832694400"
-    val MAX_SUPPORTED_UNIX_TIMESTAMP_LONG = MAX_SUPPORTED_UNIX_TIMESTAMP.toLong()
+    const val MAX_SUPPORTED_UNIX_TIMESTAMP_LONG = 31556889832694400L
 
     /**
      * Validate the timestamps provided for a time range query.
