@@ -5242,10 +5242,12 @@
     },
     "/api/v1/b3tr/navigators": {
       "get": {
-        "description": "Returns navigators with their current state.\n            Filter by status (ACTIVE, EXITING, DEACTIVATED) or address.\n            Order by: stake, totalDelegated, citizenCount, registeredAt (default).",
+        "description": "Returns a paginated list of navigators with their current state including stake, citizen count, and delegation totals. Supports filtering by status and address, and ordering by various fields.",
         "operationId": "getNavigators",
         "parameters": [
           {
+            "description": "Filter by navigator address.",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             "in": "query",
             "name": "navigator",
             "required": false,
@@ -5254,21 +5256,35 @@
             }
           },
           {
+            "description": "Filter by navigator status. Multiple values allowed.",
             "in": "query",
             "name": "status",
             "required": false,
             "schema": {
               "items": {
+                "enum": [
+                  "ACTIVE",
+                  "EXITING",
+                  "DEACTIVATED"
+                ],
                 "type": "string"
               },
               "type": "array"
             }
           },
           {
+            "description": "Field to order results by.",
             "in": "query",
             "name": "orderBy",
             "required": false,
             "schema": {
+              "default": "registeredAt",
+              "enum": [
+                "stake",
+                "totalDelegated",
+                "citizenCount",
+                "registeredAt"
+              ],
               "type": "string"
             }
           },
@@ -5396,10 +5412,12 @@
     },
     "/api/v1/b3tr/navigators/citizens": {
       "get": {
-        "description": "Returns the list of active citizen delegations for a navigator, with address, amount, and start date.",
+        "description": "Returns a paginated list of active citizen delegations for a specific navigator. Each entry includes the citizen address, delegated VOT3 amount, and delegation start date.",
         "operationId": "getCitizens",
         "parameters": [
           {
+            "description": "Navigator address to list citizens for.",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             "in": "query",
             "name": "navigator",
             "required": true,
@@ -5531,10 +5549,12 @@
     },
     "/api/v1/b3tr/navigators/delegations": {
       "get": {
-        "description": "Returns the full history of delegation events (created, updated, removed) for a navigator or citizen.",
+        "description": "Returns the full chronological history of delegation events (created, updated, removed) for a navigator or citizen. Each event includes the absolute amount and a delta field showing the change (positive for increases, negative for decreases).",
         "operationId": "getDelegations_1",
         "parameters": [
           {
+            "description": "Filter by navigator address.",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             "in": "query",
             "name": "navigator",
             "required": false,
@@ -5543,6 +5563,8 @@
             }
           },
           {
+            "description": "Filter by citizen address.",
+            "example": "0x3f90bf8b314c42005103b3c94505634fa680dcee",
             "in": "query",
             "name": "citizen",
             "required": false,
@@ -5666,7 +5688,7 @@
             "description": "Service not available"
           }
         },
-        "summary": "Get delegation events for a navigator",
+        "summary": "Get delegation event history",
         "tags": [
           "B3TR Navigators"
         ]
@@ -5674,7 +5696,7 @@
     },
     "/api/v1/b3tr/navigators/overview": {
       "get": {
-        "description": "Returns aggregate stats: active navigators, total B3TR staked, total citizens, total VOT3 delegated.",
+        "description": "Returns aggregate statistics across all active navigators: total count, total B3TR staked, total citizens delegating, and total VOT3 delegated.",
         "operationId": "getOverview",
         "parameters": [
           {
@@ -14262,12 +14284,12 @@
   ],
   "tags": [
     {
-      "description": "Stargate related queries",
-      "name": "Stargate"
+      "description": "Query VeBetterDAO navigators — professional voting delegates who stake B3TR and vote on behalf of citizens.",
+      "name": "B3TR Navigators"
     },
     {
-      "description": "Query navigators and their current state",
-      "name": "B3TR Navigators"
+      "description": "Stargate related queries",
+      "name": "Stargate"
     },
     {
       "description": "Indexer API for VeVote.",

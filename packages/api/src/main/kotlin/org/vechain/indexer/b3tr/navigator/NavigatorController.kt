@@ -1,6 +1,9 @@
 package org.vechain.indexer.b3tr.navigator
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.media.ArraySchema
+import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
@@ -17,7 +20,11 @@ import org.vechain.indexer.utils.PaginationUtils
 import org.vechain.indexer.validation.ValidPageSize
 
 @Profile("b3tr")
-@Tag(name = "B3TR Navigators", description = "Query navigators and their current state")
+@Tag(
+    name = "B3TR Navigators",
+    description =
+        "Query VeBetterDAO navigators — professional voting delegates who stake B3TR and vote on behalf of citizens.",
+)
 @Validated
 @RestController
 @RequestMapping(NAVIGATOR_PATH)
@@ -27,7 +34,7 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
     @Operation(
         summary = "Get navigator overview",
         description =
-            "Returns aggregate stats: active navigators, total B3TR staked, total citizens, total VOT3 delegated.",
+            "Returns aggregate statistics across all active navigators: total count, total B3TR staked, total citizens delegating, and total VOT3 delegated.",
     )
     @CommonApiResponses
     open fun getOverview(): NavigatorOverview = navigatorApiService.getOverview()
@@ -36,16 +43,42 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
     @Operation(
         summary = "Get navigators",
         description =
-            """Returns navigators with their current state.
-            Filter by status (ACTIVE, EXITING, DEACTIVATED) or address.
-            Order by: stake, totalDelegated, citizenCount, registeredAt (default).""",
+            "Returns a paginated list of navigators with their current state including stake, citizen count, and delegation totals. Supports filtering by status and address, and ordering by various fields.",
     )
     @CommonApiResponses
     @PaginationParameters
     open fun getNavigators(
-        @RequestParam(required = false) navigator: String?,
-        @RequestParam(required = false) status: List<String>?,
-        @RequestParam(required = false) orderBy: String?,
+        @Parameter(
+            description = "Filter by navigator address.",
+            example = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            schema = Schema(type = "string"),
+        )
+        @RequestParam(required = false)
+        navigator: String?,
+        @Parameter(
+            description = "Filter by navigator status. Multiple values allowed.",
+            array =
+                ArraySchema(
+                    schema =
+                        Schema(
+                            type = "string",
+                            allowableValues = ["ACTIVE", "EXITING", "DEACTIVATED"],
+                        )
+                ),
+        )
+        @RequestParam(required = false)
+        status: List<String>?,
+        @Parameter(
+            description = "Field to order results by.",
+            schema =
+                Schema(
+                    type = "string",
+                    allowableValues = ["stake", "totalDelegated", "citizenCount", "registeredAt"],
+                    defaultValue = "registeredAt",
+                ),
+        )
+        @RequestParam(required = false)
+        orderBy: String?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
@@ -65,12 +98,19 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
     @Operation(
         summary = "Get citizens delegated to a navigator",
         description =
-            "Returns the list of active citizen delegations for a navigator, with address, amount, and start date.",
+            "Returns a paginated list of active citizen delegations for a specific navigator. Each entry includes the citizen address, delegated VOT3 amount, and delegation start date.",
     )
     @CommonApiResponses
     @PaginationParameters
     open fun getCitizens(
-        @RequestParam navigator: String,
+        @Parameter(
+            description = "Navigator address to list citizens for.",
+            required = true,
+            example = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            schema = Schema(type = "string"),
+        )
+        @RequestParam
+        navigator: String,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
@@ -90,15 +130,27 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
 
     @GetMapping("/delegations")
     @Operation(
-        summary = "Get delegation events for a navigator",
+        summary = "Get delegation event history",
         description =
-            "Returns the full history of delegation events (created, updated, removed) for a navigator or citizen.",
+            "Returns the full chronological history of delegation events (created, updated, removed) for a navigator or citizen. Each event includes the absolute amount and a delta field showing the change (positive for increases, negative for decreases).",
     )
     @CommonApiResponses
     @PaginationParameters
     open fun getDelegations(
-        @RequestParam(required = false) navigator: String?,
-        @RequestParam(required = false) citizen: String?,
+        @Parameter(
+            description = "Filter by navigator address.",
+            example = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            schema = Schema(type = "string"),
+        )
+        @RequestParam(required = false)
+        navigator: String?,
+        @Parameter(
+            description = "Filter by citizen address.",
+            example = "0x3f90bf8b314c42005103b3c94505634fa680dcee",
+            schema = Schema(type = "string"),
+        )
+        @RequestParam(required = false)
+        citizen: String?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
