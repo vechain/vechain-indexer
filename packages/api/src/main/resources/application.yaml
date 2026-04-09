@@ -57,10 +57,6 @@ spring.data:
     auto-index-creation: false
     uri: ${MONGO_URI:mongodb://api:password@localhost:27017/vechain?authSource=admin}
 
-token:
-  registry:
-    url: ${TOKEN_REGISTRY_URL:https://vechain.github.io/token-registry}
-
 thor:
   url: ${THOR_URL:https://testnet.vechain.org}
 

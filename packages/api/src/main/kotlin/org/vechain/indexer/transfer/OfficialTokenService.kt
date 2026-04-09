@@ -1,5 +1,6 @@
 package org.vechain.indexer.transfer
 
+import jakarta.annotation.PostConstruct
 import java.nio.file.Files
 import java.nio.file.Paths
 import kotlinx.serialization.builtins.ListSerializer
@@ -7,21 +8,40 @@ import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.context.annotation.Profile
-import org.springframework.core.ParameterizedTypeReference
 import org.springframework.stereotype.Service
-import org.springframework.web.reactive.function.client.WebClient
 import org.vechain.indexer.config.NetworkDetectionService
 import org.vechain.indexer.config.VeChainNetwork
 import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
 
 @Profile("transfers")
 @Service
-open class OfficialTokenService(
-    private val networkDetectionService: NetworkDetectionService,
-    private val officialTokenRepoRest: WebClient,
-) {
+open class OfficialTokenService(private val networkDetectionService: NetworkDetectionService) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
+
+    @PostConstruct
+    internal open fun validateRegistryOnStartup() {
+        val network = getNetworkType()
+        if (network != VeChainNetwork.MAINNET && network != VeChainNetwork.TESTNET) {
+            logger.info("Skipping token registry validation for unsupported network {}", network)
+            return
+        }
+
+        try {
+            val tokens = getTokenRegistryInfoFromJson(network)
+            logger.info(
+                "Validated local token registry for network {} with {} entries",
+                network,
+                tokens.size,
+            )
+        } catch (e: Exception) {
+            throw IllegalStateException(
+                "Failed to load local token registry for network $network. " +
+                    "Check bundled token-registry/$network.json",
+                e,
+            )
+        }
+    }
 
     /**
      * Gets the list of official token addresses, excluding VTHO. Results are cached for 1 hour.
@@ -50,22 +70,13 @@ open class OfficialTokenService(
     }
 
     /**
-     * Loads token registry from API with fallback to local JSON.
+     * Loads token registry from local JSON.
      *
      * @param network The network type to load tokens for
      * @return List of TokenRegistry entries
      */
     internal open fun loadTokenRegistry(network: VeChainNetwork): List<TokenRegistry> {
-        return try {
-            val tokens = getTokenRegistryInfoFromApi(network)
-            logger.info("${tokens.size} official tokens loaded from API for network $network")
-            tokens
-        } catch (e: Exception) {
-            logger.warn(
-                "Token registry not loaded from API. Will load from local JSON. ${e.message}"
-            )
-            getTokenRegistryInfoFromJson(network)
-        }
+        return getTokenRegistryInfoFromJson(network)
     }
 
     /**
@@ -101,27 +112,5 @@ open class OfficialTokenService(
         val jsonData = String(Files.readAllBytes(path))
 
         return Json.Default.decodeFromString(ListSerializer(TokenRegistry.serializer()), jsonData)
-    }
-
-    /**
-     * Loads token registry from remote API.
-     *
-     * @param network The network type to load tokens for
-     * @return List of TokenRegistry entries
-     * @throws Exception if the API call fails or returns null
-     */
-    internal open fun getTokenRegistryInfoFromApi(network: VeChainNetwork): List<TokenRegistry> {
-        // Only main and test supported. Return empty list for other networks.
-        if (network != VeChainNetwork.MAINNET && network != VeChainNetwork.TESTNET) {
-            logger.debug("Network type $network not supported for token registry API")
-            return emptyList()
-        }
-
-        return officialTokenRepoRest
-            .get()
-            .uri("/$network.json")
-            .retrieve()
-            .bodyToMono(object : ParameterizedTypeReference<List<TokenRegistry>>() {})
-            .block() ?: throw Exception("Call to token registry API failed for network: $network")
     }
 }
