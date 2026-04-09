@@ -117,34 +117,39 @@ abstract class CollectionConfig(
     ) {
         val start = TimeSource.Monotonic.markNow()
 
-        // Auto-add blockNumber_-1 for all IndexedDocument collections
-        val allIndexes =
-            if (
-                IndexedDocument::class.java.isAssignableFrom(entityClass) &&
-                    indexes.none { it.first == BLOCK_NUMBER_INDEX_NAME }
-            ) {
-                listOf(BLOCK_NUMBER_INDEX_NAME to Index().on("blockNumber", Sort.Direction.DESC)) +
-                    indexes
-            } else {
-                indexes.toList()
-            }
+        ensureBlockNumberIndex(entityClass)
 
-        if (allIndexes.isEmpty()) {
-            logger.info("No indexes configured for ${entityClass.simpleName}.")
+        if (indexes.isEmpty()) {
+            logger.info("No additional indexes configured for ${entityClass.simpleName}.")
             return
         }
 
         logger.info(
-            "Ensuring ${allIndexes.size} indexes for ${entityClass.simpleName} before startup continues"
+            "Ensuring ${indexes.size} indexes for ${entityClass.simpleName} before startup continues"
         )
 
-        for ((indexName, index) in allIndexes) {
+        for ((indexName, index) in indexes) {
             ensureIndex(indexName, index, entityClass, partialFilter)
         }
 
         logger.info(
             "Finished ensuring indexes for ${entityClass.simpleName} in {}.",
             start.elapsedNow(),
+        )
+    }
+
+    /**
+     * Ensures a blockNumber_-1 index exists for all IndexedDocument collections. Always uses
+     * [INDEXED_DOCUMENT_PARTIAL_FILTER] so the index is consistent regardless of which partial
+     * filter the caller passes to [ensureIndexes].
+     */
+    private fun ensureBlockNumberIndex(entityClass: Class<*>) {
+        if (!IndexedDocument::class.java.isAssignableFrom(entityClass)) return
+        ensureIndex(
+            BLOCK_NUMBER_INDEX_NAME,
+            Index().on("blockNumber", Sort.Direction.DESC),
+            entityClass,
+            INDEXED_DOCUMENT_PARTIAL_FILTER,
         )
     }
 
