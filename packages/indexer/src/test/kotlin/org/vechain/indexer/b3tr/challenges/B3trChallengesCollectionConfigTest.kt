@@ -28,6 +28,8 @@ class B3trChallengesCollectionConfigTest {
             indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
         } returns false
         every { mongoTemplate.collectionExists(B3trChallenge::class.java) } returns true
+        every { mongoTemplate.getCollectionName(B3trChallenge::class.java) } returns
+            "b3tr_challenges"
         every { mongoTemplate.indexOps(B3trChallenge::class.java) } returns indexOperations
         every { indexOperations.ensureIndex(capture(capturedIndexes)) } returns "created"
 
