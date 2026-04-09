@@ -3,7 +3,6 @@ package org.vechain.indexer.config.mongo
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -13,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.IndexDefinition
 import org.springframework.data.mongodb.core.index.IndexOperations
+import org.springframework.data.mongodb.core.query.Query
 import org.vechain.indexer.accounts.AccountOverview
 import org.vechain.indexer.accounts.VetBalance
 import org.vechain.indexer.accounts.mongo.AccountOverviewCollectionConfig
@@ -43,8 +43,11 @@ class StartupCollectionIndexesTest {
             indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
         } returns false
         every { mongoTemplate.collectionExists(AccountOverview::class.java) } returns true
-        every { mongoTemplate.findOne(any(), AccountOverview::class.java) } returns
-            mockk<AccountOverview>(relaxed = true)
+        every { mongoTemplate.getCollectionName(AccountOverview::class.java) } returns
+            "account_overviews"
+        every {
+            mongoTemplate.exists(any<Query>(), AccountOverview::class.java, "account_overviews")
+        } returns true
         every { mongoTemplate.indexOps(AccountOverview::class.java) } returns indexOperations
         every { indexOperations.ensureIndex(capture(capturedIndexes)) } returns "created"
 
@@ -61,7 +64,9 @@ class StartupCollectionIndexesTest {
                 it.indexKeys["blockNumber"] == -1 && it.indexOptions["name"] == "blockNumber_-1"
             }
         )
-        verify(exactly = 1) { mongoTemplate.findOne(any(), AccountOverview::class.java) }
+        verify(exactly = 1) {
+            mongoTemplate.exists(any<Query>(), AccountOverview::class.java, "account_overviews")
+        }
         verify(exactly = 0) { genesisVetBalanceLoader.loadGenesisAllocations() }
     }
 
@@ -72,8 +77,9 @@ class StartupCollectionIndexesTest {
             indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
         } returns false
         every { mongoTemplate.collectionExists(VetBalance::class.java) } returns true
-        every { mongoTemplate.findOne(any(), VetBalance::class.java) } returns
-            mockk<VetBalance>(relaxed = true)
+        every { mongoTemplate.getCollectionName(VetBalance::class.java) } returns "vet_balances"
+        every { mongoTemplate.exists(any<Query>(), VetBalance::class.java, "vet_balances") } returns
+            true
         every { mongoTemplate.indexOps(VetBalance::class.java) } returns indexOperations
         every { indexOperations.ensureIndex(capture(capturedIndexes)) } returns "created"
 
@@ -90,7 +96,9 @@ class StartupCollectionIndexesTest {
                 it.indexKeys["blockNumber"] == -1 && it.indexOptions["name"] == "blockNumber_-1"
             }
         )
-        verify(exactly = 1) { mongoTemplate.findOne(any(), VetBalance::class.java) }
+        verify(exactly = 1) {
+            mongoTemplate.exists(any<Query>(), VetBalance::class.java, "vet_balances")
+        }
         verify(exactly = 0) { genesisVetBalanceLoader.loadGenesisAllocations() }
     }
 
