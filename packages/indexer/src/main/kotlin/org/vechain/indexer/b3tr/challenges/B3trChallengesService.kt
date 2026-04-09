@@ -1,7 +1,6 @@
 package org.vechain.indexer.b3tr.challenges
 
 import java.math.BigInteger
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
@@ -10,15 +9,9 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.b3tr.challenges.repository.B3trChallengeRepository
 import org.vechain.indexer.config.InlineVersioningProperties
-import org.vechain.indexer.event.AbiLoader
-import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.event.utils.FunctionReturnDecoder
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.HexUtils
-import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.thor.model.BlockRevision
-import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.utils.EventUtils.groupByBlock
 
 @Profile("b3tr", "b3tr-challenges")
@@ -27,9 +20,6 @@ open class B3trChallengesService(
     private val repository: B3trChallengeRepository,
     private val mongoTemplate: MongoTemplate,
     private val inlineVersioningProperties: InlineVersioningProperties,
-    private val thorClient: ThorClient,
-    @param:Value("\${business-event.substitutions.CHALLENGES_CONTRACT}")
-    private val challengesContract: String,
 ) {
     private val trackedEventTypes =
         setOf(
@@ -45,21 +35,6 @@ open class B3trChallengesService(
             "ChallengePayoutClaimed",
             "ChallengeRefundClaimed",
         )
-
-    private val functionAbis: Map<String, AbiElement> by lazy {
-        AbiLoader.loadFunctions(
-                basePath = "abis/b3tr",
-                functionNames =
-                    listOf(
-                        "getChallenge",
-                        "getChallengeParticipants",
-                        "getChallengeInvited",
-                        "getChallengeDeclined",
-                        "getChallengeSelectedApps",
-                    ),
-            )
-            .associateBy { it.name ?: error("ABI function without name") }
-    }
 
     open fun findByChallengeId(challengeId: Long): B3trChallenge? =
         repository.findByIdOrNull(B3trChallenge.documentId(challengeId))
@@ -85,19 +60,17 @@ open class B3trChallengesService(
                 findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) }
             )
 
-        groupByBlock(challengeEvents).forEach { (blockDetails, blockEvents) ->
+        groupByBlock(challengeEvents).forEach { (_, blockEvents) ->
             accumulator.startBlock()
             blockEvents
                 .groupBy { getChallengeId(it) }
                 .forEach { (challengeId, eventsForChallenge) ->
                     val recordId = B3trChallenge.documentId(challengeId)
                     val (existing, nextVersion) = accumulator.resolve(recordId)
-                    val snapshot = fetchSnapshot(challengeId, blockDetails.blockId)
                     val updated =
                         buildChallengeDocument(
                             challengeId = challengeId,
                             existing = existing,
-                            snapshot = snapshot,
                             eventsForChallenge = eventsForChallenge,
                             version = nextVersion,
                         )
@@ -122,186 +95,249 @@ open class B3trChallengesService(
         )
     }
 
-    internal open suspend fun fetchSnapshot(
-        challengeId: Long,
-        blockId: String,
-    ): ChallengeContractSnapshot {
-        val revision = BlockRevision.Id(blockId)
-        val clauses =
-            listOf(
-                ContractUtils.createClause(
-                    challengesContract,
-                    getFunctionAbi("getChallenge"),
-                    BigInteger.valueOf(challengeId),
-                ),
-                ContractUtils.createClause(
-                    challengesContract,
-                    getFunctionAbi("getChallengeParticipants"),
-                    BigInteger.valueOf(challengeId),
-                ),
-                ContractUtils.createClause(
-                    challengesContract,
-                    getFunctionAbi("getChallengeInvited"),
-                    BigInteger.valueOf(challengeId),
-                ),
-                ContractUtils.createClause(
-                    challengesContract,
-                    getFunctionAbi("getChallengeDeclined"),
-                    BigInteger.valueOf(challengeId),
-                ),
-                ContractUtils.createClause(
-                    challengesContract,
-                    getFunctionAbi("getChallengeSelectedApps"),
-                    BigInteger.valueOf(challengeId),
-                ),
-            )
-
-        val responses = thorClient.inspectClauses(clauses, revision)
-        require(responses.size == clauses.size) {
-            "Unexpected response count for challenge $challengeId: ${responses.size}"
-        }
-
-        val challenge = decodeResponseMap(responses[0].data, "getChallenge")
-        val participants = decodeResponseMap(responses[1].data, "getChallengeParticipants")
-        val invited = decodeResponseMap(responses[2].data, "getChallengeInvited")
-        val declined = decodeResponseMap(responses[3].data, "getChallengeDeclined")
-        val selectedApps = decodeResponseMap(responses[4].data, "getChallengeSelectedApps")
-
-        return ChallengeContractSnapshot(
-            kind = ChallengeKind.fromOrdinal(toIntValue(challenge["kind"])),
-            visibility = ChallengeVisibility.fromOrdinal(toIntValue(challenge["visibility"])),
-            thresholdMode = ThresholdMode.fromOrdinal(toIntValue(challenge["thresholdMode"])),
-            status = ChallengeStatus.fromOrdinal(toIntValue(challenge["status"])),
-            settlementMode = SettlementMode.fromOrdinal(toIntValue(challenge["settlementMode"])),
-            creator = normaliseAddress(challenge["creator"]),
-            stakeAmount = toBigIntegerValue(challenge["stakeAmount"]),
-            startRound = toIntValue(challenge["startRound"]),
-            endRound = toIntValue(challenge["endRound"]),
-            duration = toIntValue(challenge["duration"]),
-            threshold = toBigIntegerValue(challenge["threshold"]),
-            allApps = toBooleanValue(challenge["allApps"]),
-            totalPrize = toBigIntegerValue(challenge["totalPrize"]),
-            participantCount = toIntValue(challenge["participantCount"]),
-            invitedCount = toIntValue(challenge["invitedCount"]),
-            declinedCount = toIntValue(challenge["declinedCount"]),
-            selectedAppsCount = toIntValue(challenge["selectedAppsCount"]),
-            bestScore = toBigIntegerValue(challenge["bestScore"]),
-            bestCount = toIntValue(challenge["bestCount"]),
-            qualifiedCount = toIntValue(challenge["qualifiedCount"]),
-            payoutsClaimed = toIntValue(challenge["payoutsClaimed"]),
-            participants = addressList(participants["participants"]),
-            invited = addressList(invited["invited"]),
-            declined = addressList(declined["declined"]),
-            selectedApps = stringList(selectedApps["selectedApps"]),
-        )
-    }
-
     private fun buildChallengeDocument(
         challengeId: Long,
         existing: B3trChallenge?,
-        snapshot: ChallengeContractSnapshot,
         eventsForChallenge: List<IndexedEvent>,
         version: Int,
     ): B3trChallenge {
         val latestEvent = eventsForChallenge.last()
         val createdEvent = eventsForChallenge.firstOrNull { it.eventType == "ChallengeCreated" }
-        val newEligibleInvitees =
-            eventsForChallenge
-                .filter { it.eventType == "ChallengeInviteAdded" }
-                .mapNotNull { event ->
-                    event.params.getReturnValues()["invitee"]?.let(::normaliseAddress)
+
+        require(existing == null || createdEvent == null) {
+            "Unexpected ChallengeCreated event for existing challenge $challengeId"
+        }
+
+        val state =
+            existing?.toMutableState()
+                ?: createChallengeState(
+                    createdEvent ?: error("Missing ChallengeCreated for $challengeId")
+                )
+
+        eventsForChallenge
+            .filterNot { it.eventType == "ChallengeCreated" }
+            .forEach { event -> applyEvent(challengeId, state, event) }
+
+        return state.toDocument(challengeId, version, latestEvent)
+    }
+
+    private fun createChallengeState(createEvent: IndexedEvent): MutableChallengeState {
+        val kind = ChallengeKind.fromOrdinal(toIntValue(eventValue(createEvent, "kind")))
+        val creator = getAddress(createEvent, "creator")
+        val stakeAmount = toBigIntegerValue(eventValue(createEvent, "stakeAmount"))
+
+        return MutableChallengeState(
+            kind = kind,
+            visibility =
+                ChallengeVisibility.fromOrdinal(toIntValue(eventValue(createEvent, "visibility"))),
+            thresholdMode =
+                ThresholdMode.fromOrdinal(toIntValue(eventValue(createEvent, "thresholdMode"))),
+            status = ChallengeStatus.Pending,
+            settlementMode = SettlementMode.None,
+            creator = creator,
+            stakeAmount = stakeAmount,
+            startRound = toIntValue(eventValue(createEvent, "startRound")),
+            endRound = toIntValue(eventValue(createEvent, "endRound")),
+            threshold = toBigIntegerValue(eventValue(createEvent, "threshold")),
+            allApps = toBooleanValue(eventValue(createEvent, "allApps")),
+            totalPrize = stakeAmount,
+            bestScore = BigInteger.ZERO,
+            bestCount = 0,
+            qualifiedCount = 0,
+            payoutsClaimed = 0,
+            participants =
+                if (kind == ChallengeKind.Stake) {
+                    mutableListOf(creator)
+                } else {
+                    mutableListOf()
+                },
+            invited = mutableListOf(),
+            declined = mutableListOf(),
+            selectedApps = stringList(eventValue(createEvent, "selectedApps")),
+            eligibleInvitees = mutableListOf(),
+            claimedBy = mutableListOf(),
+            refundedBy = mutableListOf(),
+            createdAtBlockNumber = createEvent.blockNumber,
+            createdAtBlockTimestamp = createEvent.blockTimestamp,
+            createdTxId = createEvent.txId,
+        )
+    }
+
+    private fun applyEvent(challengeId: Long, state: MutableChallengeState, event: IndexedEvent) {
+        when (event.eventType) {
+            "ChallengeInviteAdded" -> {
+                val invitee = getAddress(event, "invitee")
+                swapRemove(state.declined, invitee)
+                addDistinct(state.invited, invitee)
+                addDistinct(state.eligibleInvitees, invitee)
+            }
+
+            "ChallengeJoined" -> {
+                val participant = getAddress(event, "participant")
+                swapRemove(state.invited, participant)
+                swapRemove(state.declined, participant)
+                if (
+                    addDistinct(state.participants, participant) &&
+                        state.kind == ChallengeKind.Stake
+                ) {
+                    state.totalPrize += state.stakeAmount
                 }
+            }
 
-        val claimedBy =
-            mergeAddresses(
-                existing?.claimedBy,
-                eventsForChallenge
-                    .filter { it.eventType == "ChallengePayoutClaimed" }
-                    .mapNotNull { event ->
-                        event.params.getReturnValues()["account"]?.let(::normaliseAddress)
-                    },
-            )
-        val refundedBy =
-            mergeAddresses(
-                existing?.refundedBy,
-                eventsForChallenge
-                    .filter { it.eventType == "ChallengeRefundClaimed" }
-                    .mapNotNull { event ->
-                        event.params.getReturnValues()["account"]?.let(::normaliseAddress)
-                    },
-            )
-        val eligibleInvitees =
-            mergeAddresses(
-                existing?.eligibleInvitees,
-                snapshot.invited + snapshot.declined + newEligibleInvitees,
-            )
+            "ChallengeLeft" -> {
+                val participant = getAddress(event, "participant")
+                if (
+                    swapRemove(state.participants, participant) && state.kind == ChallengeKind.Stake
+                ) {
+                    state.totalPrize -= state.stakeAmount
+                }
+                if (participant in state.eligibleInvitees) {
+                    addDistinct(state.invited, participant)
+                }
+            }
 
-        return B3trChallenge(
+            "ChallengeDeclined" -> {
+                val participant = getAddress(event, "participant")
+                if (
+                    swapRemove(state.participants, participant) && state.kind == ChallengeKind.Stake
+                ) {
+                    state.totalPrize -= state.stakeAmount
+                }
+                swapRemove(state.invited, participant)
+                swapRemove(state.declined, participant)
+                addDistinct(state.declined, participant)
+                addDistinct(state.eligibleInvitees, participant)
+            }
+
+            "ChallengeCancelled" -> state.status = ChallengeStatus.Cancelled
+
+            "ChallengeActivated" -> state.status = ChallengeStatus.Active
+
+            "ChallengeInvalidated" -> state.status = ChallengeStatus.Invalid
+
+            "ChallengeFinalized" -> {
+                state.status = ChallengeStatus.Finalized
+                state.settlementMode =
+                    SettlementMode.fromOrdinal(toIntValue(eventValue(event, "settlementMode")))
+                state.bestScore = toBigIntegerValue(eventValue(event, "bestScore"))
+                state.bestCount = toIntValue(eventValue(event, "bestCount"))
+                state.qualifiedCount = toIntValue(eventValue(event, "qualifiedCount"))
+            }
+
+            "ChallengePayoutClaimed" -> {
+                addDistinct(state.claimedBy, getAddress(event, "account"))
+                state.payoutsClaimed++
+            }
+
+            "ChallengeRefundClaimed" -> addDistinct(state.refundedBy, getAddress(event, "account"))
+
+            else -> error("Unsupported challenge event ${event.eventType} for $challengeId")
+        }
+    }
+
+    private fun B3trChallenge.toMutableState() =
+        MutableChallengeState(
+            kind = kind,
+            visibility = visibility,
+            thresholdMode = thresholdMode,
+            status = status,
+            settlementMode = settlementMode,
+            creator = creator,
+            stakeAmount = stakeAmount,
+            startRound = startRound,
+            endRound = endRound,
+            threshold = threshold,
+            allApps = allApps,
+            totalPrize = totalPrize,
+            bestScore = bestScore,
+            bestCount = bestCount,
+            qualifiedCount = qualifiedCount,
+            payoutsClaimed = payoutsClaimed,
+            participants = participants.toMutableList(),
+            invited = invited.toMutableList(),
+            declined = declined.toMutableList(),
+            selectedApps = selectedApps,
+            eligibleInvitees = eligibleInvitees.toMutableList(),
+            claimedBy = claimedBy.toMutableList(),
+            refundedBy = refundedBy.toMutableList(),
+            createdAtBlockNumber = createdAtBlockNumber,
+            createdAtBlockTimestamp = createdAtBlockTimestamp,
+            createdTxId = createdTxId,
+        )
+
+    private fun MutableChallengeState.toDocument(
+        challengeId: Long,
+        version: Int,
+        latestEvent: IndexedEvent,
+    ) =
+        B3trChallenge(
             version = version,
             blockId = latestEvent.blockId,
             blockNumber = latestEvent.blockNumber,
             blockTimestamp = latestEvent.blockTimestamp,
             challengeId = challengeId,
-            kind = snapshot.kind,
-            visibility = snapshot.visibility,
-            thresholdMode = snapshot.thresholdMode,
-            status = snapshot.status,
-            settlementMode = snapshot.settlementMode,
-            creator = snapshot.creator,
-            stakeAmount = snapshot.stakeAmount,
-            startRound = snapshot.startRound,
-            endRound = snapshot.endRound,
-            duration = snapshot.duration,
-            threshold = snapshot.threshold,
-            allApps = snapshot.allApps,
-            totalPrize = snapshot.totalPrize,
-            participantCount = snapshot.participantCount,
-            invitedCount = snapshot.invitedCount,
-            declinedCount = snapshot.declinedCount,
-            selectedAppsCount = snapshot.selectedAppsCount,
-            bestScore = snapshot.bestScore,
-            bestCount = snapshot.bestCount,
-            qualifiedCount = snapshot.qualifiedCount,
-            payoutsClaimed = snapshot.payoutsClaimed,
-            participants = snapshot.participants,
-            invited = snapshot.invited,
-            declined = snapshot.declined,
-            selectedApps = snapshot.selectedApps,
-            eligibleInvitees = eligibleInvitees,
-            claimedBy = claimedBy,
-            refundedBy = refundedBy,
-            createdAtBlockNumber =
-                existing?.createdAtBlockNumber
-                    ?: createdEvent?.blockNumber
-                    ?: latestEvent.blockNumber,
-            createdAtBlockTimestamp =
-                existing?.createdAtBlockTimestamp
-                    ?: createdEvent?.blockTimestamp
-                    ?: latestEvent.blockTimestamp,
-            createdTxId = existing?.createdTxId ?: createdEvent?.txId ?: latestEvent.txId,
+            kind = kind,
+            visibility = visibility,
+            thresholdMode = thresholdMode,
+            status = status,
+            settlementMode = settlementMode,
+            creator = creator,
+            stakeAmount = stakeAmount,
+            startRound = startRound,
+            endRound = endRound,
+            duration = endRound - startRound + 1,
+            threshold = threshold,
+            allApps = allApps,
+            totalPrize = totalPrize,
+            participantCount = participants.size,
+            invitedCount = invited.size,
+            declinedCount = declined.size,
+            selectedAppsCount = selectedApps.size,
+            bestScore = bestScore,
+            bestCount = bestCount,
+            qualifiedCount = qualifiedCount,
+            payoutsClaimed = payoutsClaimed,
+            participants = participants.toList(),
+            invited = invited.toList(),
+            declined = declined.toList(),
+            selectedApps = selectedApps,
+            eligibleInvitees = eligibleInvitees.toList(),
+            claimedBy = claimedBy.toList(),
+            refundedBy = refundedBy.toList(),
+            createdAtBlockNumber = createdAtBlockNumber,
+            createdAtBlockTimestamp = createdAtBlockTimestamp,
+            createdTxId = createdTxId,
         )
-    }
+
+    private fun eventValue(event: IndexedEvent, key: String): Any? =
+        event.params.getReturnValues()[key]
 
     private fun getChallengeId(event: IndexedEvent): Long =
-        toLongValue(event.params.getReturnValues()["challengeId"])
+        toLongValue(eventValue(event, "challengeId"))
 
-    private fun getFunctionAbi(name: String): AbiElement =
-        functionAbis[name] ?: throw IllegalArgumentException("Function '$name' not found")
+    private fun getAddress(event: IndexedEvent, key: String): String =
+        normaliseAddress(eventValue(event, key))
 
-    private fun decodeResponseMap(data: String?, functionName: String): Map<String, Any?> {
-        require(!data.isNullOrBlank() && data != "0x") { "Missing response data for $functionName" }
-
-        return FunctionReturnDecoder.decode(data, getFunctionAbi(functionName).outputs)
+    private fun addDistinct(addresses: MutableList<String>, address: String): Boolean {
+        if (address in addresses) return false
+        addresses.add(address)
+        return true
     }
 
-    private fun addressList(value: Any?): List<String> =
-        (value as? List<*>)?.mapNotNull { it?.let(::normaliseAddress) }?.distinct() ?: emptyList()
+    private fun swapRemove(addresses: MutableList<String>, address: String): Boolean {
+        val index = addresses.indexOf(address)
+        if (index == -1) return false
+
+        val lastIndex = addresses.lastIndex
+        if (index != lastIndex) {
+            addresses[index] = addresses[lastIndex]
+        }
+        addresses.removeAt(lastIndex)
+        return true
+    }
 
     private fun stringList(value: Any?): List<String> =
         (value as? List<*>)?.mapNotNull { it?.toString() }?.distinct() ?: emptyList()
-
-    private fun mergeAddresses(existing: List<String>?, additional: List<String>): List<String> =
-        (existing.orEmpty() + additional).distinct()
 
     private fun normaliseAddress(value: Any?): String {
         val address = value?.toString() ?: error("Expected address value")
@@ -324,30 +360,31 @@ open class B3trChallengesService(
     private fun toLongValue(value: Any?): Long = toBigIntegerValue(value).toLong()
 }
 
-internal data class ChallengeContractSnapshot(
-    val kind: ChallengeKind,
-    val visibility: ChallengeVisibility,
-    val thresholdMode: ThresholdMode,
-    val status: ChallengeStatus,
-    val settlementMode: SettlementMode,
-    val creator: String,
-    val stakeAmount: BigInteger,
-    val startRound: Int,
-    val endRound: Int,
-    val duration: Int,
-    val threshold: BigInteger,
-    val allApps: Boolean,
-    val totalPrize: BigInteger,
-    val participantCount: Int,
-    val invitedCount: Int,
-    val declinedCount: Int,
-    val selectedAppsCount: Int,
-    val bestScore: BigInteger,
-    val bestCount: Int,
-    val qualifiedCount: Int,
-    val payoutsClaimed: Int,
-    val participants: List<String>,
-    val invited: List<String>,
-    val declined: List<String>,
+private data class MutableChallengeState(
+    var kind: ChallengeKind,
+    var visibility: ChallengeVisibility,
+    var thresholdMode: ThresholdMode,
+    var status: ChallengeStatus,
+    var settlementMode: SettlementMode,
+    var creator: String,
+    var stakeAmount: BigInteger,
+    var startRound: Int,
+    var endRound: Int,
+    var threshold: BigInteger,
+    var allApps: Boolean,
+    var totalPrize: BigInteger,
+    var bestScore: BigInteger,
+    var bestCount: Int,
+    var qualifiedCount: Int,
+    var payoutsClaimed: Int,
+    val participants: MutableList<String>,
+    val invited: MutableList<String>,
+    val declined: MutableList<String>,
     val selectedApps: List<String>,
+    val eligibleInvitees: MutableList<String>,
+    val claimedBy: MutableList<String>,
+    val refundedBy: MutableList<String>,
+    val createdAtBlockNumber: Long,
+    val createdAtBlockTimestamp: Long,
+    val createdTxId: String,
 )
