@@ -8,7 +8,6 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
-import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.stargate.tokenReward.TokenReward
@@ -36,9 +35,6 @@ open class TokenRewardCollectionConfig(
         // Ensure indexes
         ensureIndexes(
             listOf(
-                // For getLatestRecord() and deleteAllByBlockNumberGreaterThanEqual()
-                "blockNumber_-1" to
-                    Index().on(IndexedDocument::blockNumber.name, Sort.Direction.DESC),
                 "validator_1_rewardPeriod_1_cycle_-1" to
                     Index()
                         .on(TokenReward::validator.name, Sort.Direction.ASC)

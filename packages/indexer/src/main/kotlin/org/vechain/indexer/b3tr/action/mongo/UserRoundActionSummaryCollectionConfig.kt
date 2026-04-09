@@ -67,7 +67,6 @@ open class UserRoundActionSummaryCollectionConfig(
                         .on(UserRoundActionSummary::roundId.name, Sort.Direction.ASC)
                         .on(UserRoundActionSummary::totalRewardAmount.name, Sort.Direction.ASC)
                         .on(UserRoundActionSummary::entity.name, Sort.Direction.ASC),
-                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
             )
         )
     }

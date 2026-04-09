@@ -59,7 +59,6 @@ open class AppAllTimeActionSummaryCollectionConfig(
                         .on(AppAllTimeActionSummary::appId.name, Sort.Direction.ASC)
                         .on(AppAllTimeActionSummary::actionsRewarded.name, Sort.Direction.ASC)
                         .on(AppAllTimeActionSummary::user.name, Sort.Direction.ASC),
-                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
             )
         )
     }

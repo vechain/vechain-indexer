@@ -46,7 +46,6 @@ open class B3trBalanceCollectionConfig(
                     Index()
                         .on(B3trBalance::b3trBalance.name, Sort.Direction.DESC)
                         .on("_id", Sort.Direction.ASC),
-                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
             )
         )
     }

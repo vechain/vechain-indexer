@@ -36,7 +36,6 @@ open class GmNftCollectionConfig(
             listOf(
                 "attachedNodeId_1" to Index().on(GmNft::attachedNodeId.name, Sort.Direction.ASC),
                 "blockNumber_1" to Index().on("blockNumber", Sort.Direction.ASC),
-                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
                 "level_1_owner_1" to
                     Index()
                         .on(GmNft::level.name, Sort.Direction.ASC)

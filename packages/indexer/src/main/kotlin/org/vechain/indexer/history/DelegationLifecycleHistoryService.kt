@@ -131,6 +131,10 @@ class DelegationLifecycleHistoryService(
         return historyEvents
     }
 
+    fun preload() {
+        ensureLoaded()
+    }
+
     fun invalidate() {
         statesById.clear()
         tokenIdToId.clear()

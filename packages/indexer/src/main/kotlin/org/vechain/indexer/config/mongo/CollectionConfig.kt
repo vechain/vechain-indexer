@@ -5,6 +5,7 @@ import kotlin.time.TimeSource
 import kotlinx.coroutines.CoroutineScope
 import org.bson.Document
 import org.slf4j.LoggerFactory
+import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
 import org.springframework.data.mongodb.core.index.PartialIndexFilter
@@ -23,6 +24,8 @@ abstract class CollectionConfig(
          */
         val INDEXED_DOCUMENT_PARTIAL_FILTER: Document =
             Document("blockNumber", Document("\$exists", true))
+
+        const val BLOCK_NUMBER_INDEX_NAME = "blockNumber_-1"
     }
 
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -110,16 +113,29 @@ abstract class CollectionConfig(
         partialFilter: Document? = INDEXED_DOCUMENT_PARTIAL_FILTER,
     ) {
         val start = TimeSource.Monotonic.markNow()
-        if (indexes.isEmpty()) {
+
+        // Auto-add blockNumber_-1 for all IndexedDocument collections
+        val allIndexes =
+            if (
+                IndexedDocument::class.java.isAssignableFrom(entityClass) &&
+                    indexes.none { it.first == BLOCK_NUMBER_INDEX_NAME }
+            ) {
+                listOf(BLOCK_NUMBER_INDEX_NAME to Index().on("blockNumber", Sort.Direction.DESC)) +
+                    indexes
+            } else {
+                indexes.toList()
+            }
+
+        if (allIndexes.isEmpty()) {
             logger.info("No indexes configured for ${entityClass.simpleName}.")
             return
         }
 
         logger.info(
-            "Ensuring ${indexes.size} indexes for ${entityClass.simpleName} before startup continues"
+            "Ensuring ${allIndexes.size} indexes for ${entityClass.simpleName} before startup continues"
         )
 
-        for ((indexName, index) in indexes) {
+        for ((indexName, index) in allIndexes) {
             ensureIndex(indexName, index, entityClass, partialFilter)
         }
 
