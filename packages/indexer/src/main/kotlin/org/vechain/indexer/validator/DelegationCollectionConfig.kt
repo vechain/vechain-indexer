@@ -33,6 +33,7 @@ open class DelegationCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
+                "blockNumber_-1" to Index().on(Delegation::blockNumber.name, Sort.Direction.DESC),
                 "validator_1_status_1" to
                     Index()
                         .on(Delegation::validator.name, Sort.Direction.ASC)

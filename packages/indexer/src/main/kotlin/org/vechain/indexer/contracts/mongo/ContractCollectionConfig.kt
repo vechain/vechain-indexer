@@ -34,11 +34,12 @@ open class ContractCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
+                "blockNumber_-1" to Index().on(Contract::blockNumber.name, Sort.Direction.DESC),
                 // Supports query: master == address, sorted by createdOn desc
                 "master_1_createdOn_-1" to
                     Index()
                         .on(Contract::master.name, Sort.Direction.ASC)
-                        .on(Contract::createdOn.name, Sort.Direction.DESC)
+                        .on(Contract::createdOn.name, Sort.Direction.DESC),
             )
         )
     }
