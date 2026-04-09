@@ -18,7 +18,7 @@ fetch_registry() {
     local formatted_file="${TMP_DIR}/${network}.formatted.json"
 
     log "Fetching ${network}.json from ${url}"
-    curl -sS "${url}" -o "${downloaded_file}"
+    curl -fLsS "${url}" -o "${downloaded_file}"
 
     log "Validating ${network}.json structure"
     jq -e '
