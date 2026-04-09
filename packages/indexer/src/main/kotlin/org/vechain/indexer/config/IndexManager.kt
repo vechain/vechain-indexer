@@ -54,6 +54,7 @@ open class IndexManager(
                     .forEach {
                         val start = TimeSource.Monotonic.markNow()
                         it.initCollection()
+                        it.removeStaleIndexes()
                         logger.info(
                             "Collection bootstrap for {} completed in {}",
                             it.modelObj.simpleName,

@@ -109,6 +109,7 @@ class StartupCollectionIndexesTest {
             indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
         } returns false
         every { mongoTemplate.collectionExists(any<Class<*>>()) } returns true
+        every { mongoTemplate.getCollectionName(any<Class<*>>()) } returns "test_collection"
         every { mongoTemplate.indexOps(any<Class<*>>()) } returns indexOperations
         every { indexOperations.ensureIndex(capture(capturedIndexes)) } returns "created"
 
@@ -133,6 +134,7 @@ class StartupCollectionIndexesTest {
             indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
         } returns false
         every { mongoTemplate.collectionExists(Contract::class.java) } returns true
+        every { mongoTemplate.getCollectionName(Contract::class.java) } returns "contracts"
         every { mongoTemplate.indexOps(Contract::class.java) } returns indexOperations
         every { indexOperations.ensureIndex(capture(capturedIndexes)) } returns "created"
 
@@ -157,6 +159,7 @@ class StartupCollectionIndexesTest {
             indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
         } returns false
         every { mongoTemplate.collectionExists(Delegation::class.java) } returns true
+        every { mongoTemplate.getCollectionName(Delegation::class.java) } returns "delegations"
         every { mongoTemplate.indexOps(Delegation::class.java) } returns indexOperations
         every { indexOperations.ensureIndex(capture(capturedIndexes)) } returns "created"
 

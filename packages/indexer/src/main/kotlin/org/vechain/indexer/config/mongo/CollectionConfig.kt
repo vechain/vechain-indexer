@@ -29,6 +29,7 @@ abstract class CollectionConfig(
     }
 
     private val logger = LoggerFactory.getLogger(this::class.java)
+    private val ensuredIndexNamesByCollection = mutableMapOf<String, MutableSet<String>>()
 
     abstract fun initCollection()
 
@@ -90,6 +91,8 @@ abstract class CollectionConfig(
         entityClass: Class<*> = modelObj,
         partialFilter: Document? = null,
     ) {
+        val collectionName = mongoTemplate.getCollectionName(entityClass)
+        ensuredIndexNamesByCollection.getOrPut(collectionName) { mutableSetOf() }.add(indexName)
         try {
             logger.info("Creating Index:    $indexName for ${entityClass.simpleName}")
             val indexDef = index.named(indexName).background()
@@ -143,5 +146,31 @@ abstract class CollectionConfig(
             "Finished ensuring indexes for ${entityClass.simpleName} in {}.",
             start.elapsedNow(),
         )
+    }
+
+    /**
+     * Removes indexes from MongoDB that are not tracked by [ensureIndexes] calls during
+     * [initCollection]. Call this after all [ensureIndexes] calls have completed.
+     */
+    fun removeStaleIndexes() {
+        ensuredIndexNamesByCollection.forEach { (collectionName, expectedNames) ->
+            val existingIndexes = mongoTemplate.indexOps(collectionName).indexInfo
+            existingIndexes.forEach { indexInfo ->
+                val name = indexInfo.name
+                if (name != "_id_" && name !in expectedNames) {
+                    try {
+                        logger.info("Removing stale index: {} from {}", name, collectionName)
+                        mongoTemplate.indexOps(collectionName).dropIndex(name)
+                    } catch (e: Exception) {
+                        logger.warn(
+                            "Failed to remove stale index: {} from {}",
+                            name,
+                            collectionName,
+                            e,
+                        )
+                    }
+                }
+            }
+        }
     }
 }
