@@ -1,11 +1,14 @@
 package org.vechain.indexer.config.mongo
 
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 import kotlinx.coroutines.CoroutineScope
 import org.bson.Document
 import org.slf4j.LoggerFactory
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
 import org.springframework.data.mongodb.core.index.PartialIndexFilter
+import org.springframework.data.mongodb.core.query.Query
 
 abstract class CollectionConfig(
     private val mongoTemplate: MongoTemplate,
@@ -23,6 +26,31 @@ abstract class CollectionConfig(
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     abstract fun initCollection()
+
+    protected fun collectionHasDocuments(entityClass: Class<*> = modelObj): Boolean {
+        val start = TimeSource.Monotonic.markNow()
+        val query = Query().limit(1).also { it.fields().include("_id") }
+        val result = mongoTemplate.findOne(query, entityClass)
+        val elapsed = start.elapsedNow()
+
+        if (elapsed > 1.seconds) {
+            logger.warn(
+                "Document existence probe for {} took {} and found documents={}",
+                entityClass.simpleName,
+                elapsed,
+                result != null,
+            )
+        } else {
+            logger.info(
+                "Document existence probe for {} completed in {} and found documents={}",
+                entityClass.simpleName,
+                elapsed,
+                result != null,
+            )
+        }
+
+        return result != null
+    }
 
     fun ensureCollection() {
         // Create the collection if it does not exist
@@ -74,6 +102,7 @@ abstract class CollectionConfig(
         entityClass: Class<*> = modelObj,
         partialFilter: Document? = INDEXED_DOCUMENT_PARTIAL_FILTER,
     ) {
+        val start = TimeSource.Monotonic.markNow()
         if (indexes.isEmpty()) {
             logger.info("No indexes configured for ${entityClass.simpleName}.")
             return
@@ -87,6 +116,9 @@ abstract class CollectionConfig(
             ensureIndex(indexName, index, entityClass, partialFilter)
         }
 
-        logger.info("Finished ensuring indexes for ${entityClass.simpleName}.")
+        logger.info(
+            "Finished ensuring indexes for ${entityClass.simpleName} in {}.",
+            start.elapsedNow(),
+        )
     }
 }

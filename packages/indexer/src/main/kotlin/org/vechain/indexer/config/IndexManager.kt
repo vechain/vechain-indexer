@@ -1,5 +1,6 @@
 package org.vechain.indexer.config
 
+import kotlin.time.TimeSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
@@ -46,7 +47,15 @@ open class IndexManager(
                 indexerVersionCollectionConfig.ensureIndexes()
                 collectionConfigs
                     .sortedBy { it.modelObj.simpleName }
-                    .forEach { it.initCollection() }
+                    .forEach {
+                        val start = TimeSource.Monotonic.markNow()
+                        it.initCollection()
+                        logger.info(
+                            "Collection bootstrap for {} completed in {}",
+                            it.modelObj.simpleName,
+                            start.elapsedNow(),
+                        )
+                    }
                 indexBootstrapState.markReady(initializerCount)
 
                 logger.info("Collection bootstrap complete. Starting indexers")

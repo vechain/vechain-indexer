@@ -1,5 +1,6 @@
 package org.vechain.indexer
 
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 import org.slf4j.LoggerFactory
 import org.springframework.transaction.annotation.Transactional
@@ -10,13 +11,13 @@ import org.vechain.indexer.thor.model.BlockIdentifier
 
 abstract class BaseProcessor(
     private val repository: BaseIndexedRepository<*, *>,
-    private val indexerName: String,
+    protected val indexerName: String,
     protected val checkpointService: CheckpointService,
     protected val collectionName: String,
     processorMetrics: ProcessorMetrics,
 ) : IndexerProcessor {
 
-    private val logger = LoggerFactory.getLogger(this::class.java)
+    protected val startupLogger = LoggerFactory.getLogger(this::class.java)
     private val metricsRecorder = ProcessorMetricsRecorder(indexerName, processorMetrics)
 
     abstract suspend fun processEntry(entry: IndexingResult)
@@ -37,6 +38,7 @@ abstract class BaseProcessor(
     }
 
     override fun getLastSyncedBlock(): BlockIdentifier? {
+        val start = TimeSource.Monotonic.markNow()
         val checkpoint = checkpointService.getCheckpoint(collectionName)
         val latestRecord =
             try {
@@ -44,7 +46,7 @@ abstract class BaseProcessor(
                     BlockIdentifier(number = it.blockNumber, id = it.blockId)
                 }
             } catch (e: Exception) {
-                logger.error(
+                startupLogger.error(
                     "Failed to get latest record for {} (collection: {})",
                     indexerName,
                     collectionName,
@@ -52,13 +54,51 @@ abstract class BaseProcessor(
                 )
                 throw e
             }
-        return listOfNotNull(latestRecord, checkpoint).maxByOrNull { it.number }
+        val result = listOfNotNull(latestRecord, checkpoint).maxByOrNull { it.number }
+        val elapsed = start.elapsedNow()
+        if (elapsed > 1.seconds) {
+            startupLogger.warn(
+                "{}: getLastSyncedBlock for {} took {} and returned {}",
+                indexerName,
+                collectionName,
+                elapsed,
+                result?.number,
+            )
+        } else {
+            startupLogger.info(
+                "{}: getLastSyncedBlock for {} completed in {} and returned {}",
+                indexerName,
+                collectionName,
+                elapsed,
+                result?.number,
+            )
+        }
+        return result
     }
 
     @Transactional(rollbackFor = [Exception::class])
     override fun rollback(blockNumber: Long) {
+        val start = TimeSource.Monotonic.markNow()
         resetProcessingState()
         checkpointService.saveCheckpoint(collectionName, blockNumber - 1)
         repository.deleteAllByBlockNumberGreaterThanEqual(blockNumber)
+        val elapsed = start.elapsedNow()
+        if (elapsed > 1.seconds) {
+            startupLogger.warn(
+                "{}: rollback for {} at block {} took {}",
+                indexerName,
+                collectionName,
+                blockNumber,
+                elapsed,
+            )
+        } else {
+            startupLogger.info(
+                "{}: rollback for {} at block {} completed in {}",
+                indexerName,
+                collectionName,
+                blockNumber,
+                elapsed,
+            )
+        }
     }
 }
