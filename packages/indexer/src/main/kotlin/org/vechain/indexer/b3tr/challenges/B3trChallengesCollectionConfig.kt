@@ -49,9 +49,7 @@ open class B3trChallengesCollectionConfig(
                     Index().on(B3trChallenge::participants.name, Sort.Direction.ASC),
                 "invited_1" to Index().on(B3trChallenge::invited.name, Sort.Direction.ASC),
                 "declined_1" to Index().on(B3trChallenge::declined.name, Sort.Direction.ASC),
-                "selectedApps_1" to
-                    Index().on(B3trChallenge::selectedApps.name, Sort.Direction.ASC),
-                "blockNumber_-1" to Index().on(B3trChallenge::blockNumber.name, Sort.Direction.DESC),
+                "selectedApps_1" to Index().on(B3trChallenge::selectedApps.name, Sort.Direction.ASC),
             )
         )
     }
