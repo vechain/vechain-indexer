@@ -1074,6 +1074,10 @@
               "B3TR_ACTION",
               "B3TR_PROPOSAL_VOTE",
               "B3TR_XALLOCATION_VOTE",
+              "B3TR_NAVIGATOR_DELEGATION_CREATED",
+              "B3TR_NAVIGATOR_DELEGATION_INCREASED",
+              "B3TR_NAVIGATOR_DELEGATION_DECREASED",
+              "B3TR_NAVIGATOR_DELEGATION_REMOVED",
               "TRANSFER_VET",
               "TRANSFER_FT",
               "TRANSFER_NFT",
@@ -1443,7 +1447,7 @@
           "exitAnnouncedRound": {
             "type": "string"
           },
-          "exitEffectiveRound": {
+          "exitEffectiveDeadline": {
             "type": "string"
           },
           "lastReportRound": {

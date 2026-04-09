@@ -34,7 +34,12 @@ open class NavigatorDelegationEventConfig {
             .blockBatchSize(syncBlockBatchSize)
             .businessEvents("business-events/b3tr", "abis/b3tr")
             .businessEventNames(
-                listOf("B3TR_DelegationCreated", "B3TR_DelegationUpdated", "B3TR_DelegationRemoved")
+                listOf(
+                    "B3TR_DelegationCreated",
+                    "B3TR_DelegationIncreased",
+                    "B3TR_DelegationDecreased",
+                    "B3TR_DelegationRemoved",
+                )
             )
             .businessEventContracts(listOf(navigatorRegistryAddress))
             .businessEventSubstitutionParams(bEProperties.substitutions)

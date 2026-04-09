@@ -80,7 +80,7 @@ internal class NavigatorCitizenServiceTest {
     }
 
     @Test
-    fun `DelegationUpdated changes amount`() {
+    fun `DelegationIncreased updates amount to newTotal`() {
         val existing = citizenFixture("0xcit1", navigator = "0xnav1", amount = "50000")
         every { repository.findById("0xcit1") } returns java.util.Optional.of(existing)
 
@@ -89,7 +89,7 @@ internal class NavigatorCitizenServiceTest {
         service.processBlockEvents(
             listOf(
                 buildIndexedEvent(
-                    eventType = "B3TR_DelegationUpdated",
+                    eventType = "B3TR_DelegationIncreased",
                     blockId = block.blockId,
                     blockNumber = block.blockNumber,
                     blockTimestamp = block.blockTimestamp,
@@ -98,9 +98,10 @@ internal class NavigatorCitizenServiceTest {
                             mapOf(
                                 "citizen" to "0xcit1",
                                 "navigator" to "0xnav1",
-                                "newAmount" to "75000",
+                                "addedAmount" to "25000",
+                                "newTotal" to "75000",
                             ),
-                            "B3TR_DelegationUpdated",
+                            "B3TR_DelegationIncreased",
                         ),
                 )
             ),
@@ -110,6 +111,41 @@ internal class NavigatorCitizenServiceTest {
 
         val (updated, _) = acc.results()
         assertEquals(BigDecimal("75000"), updated[0].amount)
+        assertTrue(updated[0].active)
+    }
+
+    @Test
+    fun `DelegationDecreased updates amount to newTotal`() {
+        val existing = citizenFixture("0xcit1", navigator = "0xnav1", amount = "50000")
+        every { repository.findById("0xcit1") } returns java.util.Optional.of(existing)
+
+        val acc = newAccumulator()
+        acc.startBlock()
+        service.processBlockEvents(
+            listOf(
+                buildIndexedEvent(
+                    eventType = "B3TR_DelegationDecreased",
+                    blockId = block.blockId,
+                    blockNumber = block.blockNumber,
+                    blockTimestamp = block.blockTimestamp,
+                    params =
+                        AbiEventParameters(
+                            mapOf(
+                                "citizen" to "0xcit1",
+                                "navigator" to "0xnav1",
+                                "removedAmount" to "20000",
+                                "newTotal" to "30000",
+                            ),
+                            "B3TR_DelegationDecreased",
+                        ),
+                )
+            ),
+            block,
+            acc,
+        )
+
+        val (updated, _) = acc.results()
+        assertEquals(BigDecimal("30000"), updated[0].amount)
         assertTrue(updated[0].active)
     }
 

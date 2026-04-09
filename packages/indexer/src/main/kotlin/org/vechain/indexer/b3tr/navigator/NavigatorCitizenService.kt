@@ -1,5 +1,6 @@
 package org.vechain.indexer.b3tr.navigator
 
+import java.math.BigDecimal
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
@@ -30,7 +31,8 @@ open class NavigatorCitizenService(
         for (ev in events) {
             when (ev.eventType) {
                 "B3TR_DelegationCreated" -> handleCreated(ev, blockDetails, accumulator)
-                "B3TR_DelegationUpdated" -> handleUpdated(ev, blockDetails, accumulator)
+                "B3TR_DelegationIncreased" -> handleIncreased(ev, blockDetails, accumulator)
+                "B3TR_DelegationDecreased" -> handleDecreased(ev, blockDetails, accumulator)
                 "B3TR_DelegationRemoved" -> handleRemoved(ev, blockDetails, accumulator)
             }
         }
@@ -63,16 +65,14 @@ open class NavigatorCitizenService(
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
                 navigator = navigator,
-                amount =
-                    ev.params.getAsString("amount")?.toBigDecimalOrNull()
-                        ?: java.math.BigDecimal.ZERO,
+                amount = ev.params.getAsString("amount")?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
                 delegatedAt = block.blockTimestamp,
                 active = true,
             )
         accumulator.put(citizen, existing, created)
     }
 
-    private fun handleUpdated(
+    private fun handleIncreased(
         ev: IndexedEvent,
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<NavigatorCitizen>,
@@ -80,13 +80,34 @@ open class NavigatorCitizenService(
         val citizen = ev.params.getAsString("citizen")?.lowercase() ?: return
         val (existing, nextVersion) = accumulator.resolve(citizen)
         val current = existing ?: return
+        val newTotal = ev.params.getAsString("newTotal")?.toBigDecimalOrNull() ?: current.amount
         val updated =
             current.copy(
                 version = nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
-                amount = ev.params.getAsString("newAmount")?.toBigDecimalOrNull() ?: current.amount,
+                amount = newTotal,
+            )
+        accumulator.put(citizen, existing, updated)
+    }
+
+    private fun handleDecreased(
+        ev: IndexedEvent,
+        block: BlockDetails,
+        accumulator: VersionedDocumentAccumulator<NavigatorCitizen>,
+    ) {
+        val citizen = ev.params.getAsString("citizen")?.lowercase() ?: return
+        val (existing, nextVersion) = accumulator.resolve(citizen)
+        val current = existing ?: return
+        val newTotal = ev.params.getAsString("newTotal")?.toBigDecimalOrNull() ?: current.amount
+        val updated =
+            current.copy(
+                version = nextVersion,
+                blockId = block.blockId,
+                blockNumber = block.blockNumber,
+                blockTimestamp = block.blockTimestamp,
+                amount = newTotal,
             )
         accumulator.put(citizen, existing, updated)
     }

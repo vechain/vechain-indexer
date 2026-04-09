@@ -170,7 +170,7 @@ internal class NavigatorServiceTest {
                     mapOf(
                         "navigator" to "0xnav1",
                         "announcedAtRound" to "5",
-                        "effectiveRound" to "6",
+                        "effectiveDeadline" to "6",
                     ),
                 )
             ),
@@ -181,25 +181,7 @@ internal class NavigatorServiceTest {
         val (updated, _) = acc.results()
         assertEquals(NavigatorStatus.EXITING, updated[0].status)
         assertEquals("5", updated[0].exitAnnouncedRound)
-        assertEquals("6", updated[0].exitEffectiveRound)
-    }
-
-    @Test
-    fun `ExitFinalized sets status to DEACTIVATED and stake to 0`() {
-        val existing = navigatorFixture("0xnav1", status = NavigatorStatus.EXITING, stake = "50000")
-        every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
-
-        val acc = newAccumulator()
-        acc.startBlock()
-        service.processBlockEvents(
-            listOf(event("B3TR_ExitFinalized", mapOf("navigator" to "0xnav1"))),
-            block,
-            acc,
-        )
-
-        val (updated, _) = acc.results()
-        assertEquals(NavigatorStatus.DEACTIVATED, updated[0].status)
-        assertEquals(BigDecimal.ZERO, updated[0].stake)
+        assertEquals("6", updated[0].exitEffectiveDeadline)
     }
 
     // ============================================================================
@@ -322,19 +304,22 @@ internal class NavigatorServiceTest {
     }
 
     @Test
-    fun `DelegationUpdated adjusts totalDelegated using citizen old amount`() {
+    fun `DelegationIncreased adds addedAmount to totalDelegated`() {
         val existing = navigatorFixture("0xnav1", citizenCount = 2, totalDelegated = "100000")
         every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
-        every { citizenRepository.findById("0xcit1") } returns
-            java.util.Optional.of(citizenFixture("0xcit1", amount = "40000"))
 
         val acc = newAccumulator()
         acc.startBlock()
         service.processBlockEvents(
             listOf(
                 event(
-                    "B3TR_DelegationUpdated",
-                    mapOf("navigator" to "0xnav1", "citizen" to "0xcit1", "newAmount" to "70000"),
+                    "B3TR_DelegationIncreased",
+                    mapOf(
+                        "navigator" to "0xnav1",
+                        "citizen" to "0xcit1",
+                        "addedAmount" to "30000",
+                        "newTotal" to "70000",
+                    ),
                 )
             ),
             block,
@@ -342,8 +327,35 @@ internal class NavigatorServiceTest {
         )
 
         val (updated, _) = acc.results()
-        // delta = 70000 - 40000 = 30000, totalDelegated = 100000 + 30000 = 130000
         assertEquals(BigDecimal("130000"), updated[0].totalDelegated)
+        assertEquals(2, updated[0].citizenCount)
+    }
+
+    @Test
+    fun `DelegationDecreased subtracts removedAmount from totalDelegated`() {
+        val existing = navigatorFixture("0xnav1", citizenCount = 2, totalDelegated = "100000")
+        every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
+
+        val acc = newAccumulator()
+        acc.startBlock()
+        service.processBlockEvents(
+            listOf(
+                event(
+                    "B3TR_DelegationDecreased",
+                    mapOf(
+                        "navigator" to "0xnav1",
+                        "citizen" to "0xcit1",
+                        "removedAmount" to "20000",
+                        "newTotal" to "20000",
+                    ),
+                )
+            ),
+            block,
+            acc,
+        )
+
+        val (updated, _) = acc.results()
+        assertEquals(BigDecimal("80000"), updated[0].totalDelegated)
         assertEquals(2, updated[0].citizenCount)
     }
 
@@ -519,7 +531,7 @@ internal class NavigatorServiceTest {
             metadataURI = metadataURI,
             registeredAt = 500L,
             exitAnnouncedRound = null,
-            exitEffectiveRound = null,
+            exitEffectiveDeadline = null,
             lastReportRound = null,
             lastReportURI = null,
         )

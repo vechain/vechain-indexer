@@ -1,10 +1,10 @@
 {
-  "name": "B3TR_DelegationUpdated",
+  "name": "B3TR_DelegationIncreased",
   "sameClause": true,
   "events": [
     {
-      "name": "DelegationUpdated",
-      "alias": "delegationUpdatedEvent",
+      "name": "DelegationIncreased",
+      "alias": "delegationIncreasedEvent",
       "conditions": [
         {
           "firstOperand": "address",
@@ -20,18 +20,23 @@
   "paramsDefinition": [
     {
       "name": "citizen",
-      "eventName": "delegationUpdatedEvent",
+      "eventName": "delegationIncreasedEvent",
       "businessEventName": "citizen"
     },
     {
       "name": "navigator",
-      "eventName": "delegationUpdatedEvent",
+      "eventName": "delegationIncreasedEvent",
       "businessEventName": "navigator"
     },
     {
-      "name": "newAmount",
-      "eventName": "delegationUpdatedEvent",
-      "businessEventName": "newAmount"
+      "name": "addedAmount",
+      "eventName": "delegationIncreasedEvent",
+      "businessEventName": "addedAmount"
+    },
+    {
+      "name": "newTotal",
+      "eventName": "delegationIncreasedEvent",
+      "businessEventName": "newTotal"
     }
   ]
 }

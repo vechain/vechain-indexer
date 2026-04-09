@@ -44,14 +44,14 @@ open class NavigatorConfig {
                     "B3TR_StakeAdded",
                     "B3TR_StakeWithdrawn",
                     "B3TR_ExitAnnounced",
-                    "B3TR_ExitFinalized",
                     "B3TR_NavigatorDeactivated",
                     "B3TR_NavigatorSlashed",
                     "B3TR_MetadataURIUpdated",
                     "B3TR_ReportSubmitted",
                     // Delegations
                     "B3TR_DelegationCreated",
-                    "B3TR_DelegationUpdated",
+                    "B3TR_DelegationIncreased",
+                    "B3TR_DelegationDecreased",
                     "B3TR_DelegationRemoved",
                     "B3TR_NavigatorVoteCast",
                     // Fees

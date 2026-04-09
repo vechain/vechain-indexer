@@ -35,13 +35,15 @@ open class NavigatorService(
                 "B3TR_StakeAdded" -> handleStakeAdded(ev, blockDetails, accumulator)
                 "B3TR_StakeWithdrawn" -> handleStakeWithdrawn(ev, blockDetails, accumulator)
                 "B3TR_ExitAnnounced" -> handleExitAnnounced(ev, blockDetails, accumulator)
-                "B3TR_ExitFinalized" -> handleExitFinalized(ev, blockDetails, accumulator)
                 "B3TR_NavigatorDeactivated" -> handleDeactivated(ev, blockDetails, accumulator)
                 "B3TR_NavigatorSlashed" -> handleSlashed(ev, blockDetails, accumulator)
                 "B3TR_MetadataURIUpdated" -> handleMetadataUpdated(ev, blockDetails, accumulator)
                 "B3TR_ReportSubmitted" -> handleReportSubmitted(ev, blockDetails, accumulator)
                 "B3TR_DelegationCreated" -> handleDelegationCreated(ev, blockDetails, accumulator)
-                "B3TR_DelegationUpdated" -> handleDelegationUpdated(ev, blockDetails, accumulator)
+                "B3TR_DelegationIncreased" ->
+                    handleDelegationIncreased(ev, blockDetails, accumulator)
+                "B3TR_DelegationDecreased" ->
+                    handleDelegationDecreased(ev, blockDetails, accumulator)
                 "B3TR_DelegationRemoved" -> handleDelegationRemoved(ev, blockDetails, accumulator)
                 // Events that don't mutate navigator state
                 "B3TR_NavigatorVoteCast",
@@ -84,7 +86,7 @@ open class NavigatorService(
                 metadataURI = ev.params.getAsString("metadataURI"),
                 registeredAt = block.blockTimestamp,
                 exitAnnouncedRound = null,
-                exitEffectiveRound = null,
+                exitEffectiveDeadline = null,
                 lastReportRound = null,
                 lastReportURI = null,
             )
@@ -145,26 +147,7 @@ open class NavigatorService(
                 blockTimestamp = block.blockTimestamp,
                 status = NavigatorStatus.EXITING,
                 exitAnnouncedRound = ev.params.getAsString("announcedAtRound"),
-                exitEffectiveRound = ev.params.getAsString("effectiveRound"),
-            )
-        accumulator.put(address, nav, updated)
-    }
-
-    private fun handleExitFinalized(
-        ev: IndexedEvent,
-        block: BlockDetails,
-        accumulator: VersionedDocumentAccumulator<Navigator>,
-    ) {
-        val address = ev.params.getAsString("navigator")?.lowercase() ?: return
-        val nav = resolveExisting(address, accumulator) ?: return
-        val updated =
-            nav.copy(
-                version = accumulator.resolve(address).nextVersion,
-                blockId = block.blockId,
-                blockNumber = block.blockNumber,
-                blockTimestamp = block.blockTimestamp,
-                status = NavigatorStatus.DEACTIVATED,
-                stake = BigDecimal.ZERO,
+                exitEffectiveDeadline = ev.params.getAsString("effectiveDeadline"),
             )
         accumulator.put(address, nav, updated)
     }
@@ -262,24 +245,40 @@ open class NavigatorService(
         accumulator.put(address, nav, updated)
     }
 
-    private fun handleDelegationUpdated(
+    private fun handleDelegationIncreased(
         ev: IndexedEvent,
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<Navigator>,
     ) {
         val address = ev.params.getAsString("navigator")?.lowercase() ?: return
-        val citizen = ev.params.getAsString("citizen")?.lowercase() ?: return
         val nav = resolveExisting(address, accumulator) ?: return
-        val newAmount = ev.params.getAsString("newAmount").toBigDecimalOrZero()
-        val oldAmount = getCitizenAmount(citizen)
-        val delta = newAmount - oldAmount
+        val addedAmount = ev.params.getAsString("addedAmount").toBigDecimalOrZero()
         val updated =
             nav.copy(
                 version = accumulator.resolve(address).nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
-                totalDelegated = nav.totalDelegated + delta,
+                totalDelegated = nav.totalDelegated + addedAmount,
+            )
+        accumulator.put(address, nav, updated)
+    }
+
+    private fun handleDelegationDecreased(
+        ev: IndexedEvent,
+        block: BlockDetails,
+        accumulator: VersionedDocumentAccumulator<Navigator>,
+    ) {
+        val address = ev.params.getAsString("navigator")?.lowercase() ?: return
+        val nav = resolveExisting(address, accumulator) ?: return
+        val removedAmount = ev.params.getAsString("removedAmount").toBigDecimalOrZero()
+        val updated =
+            nav.copy(
+                version = accumulator.resolve(address).nextVersion,
+                blockId = block.blockId,
+                blockNumber = block.blockNumber,
+                blockTimestamp = block.blockTimestamp,
+                totalDelegated = maxOf(BigDecimal.ZERO, nav.totalDelegated - removedAmount),
             )
         accumulator.put(address, nav, updated)
     }

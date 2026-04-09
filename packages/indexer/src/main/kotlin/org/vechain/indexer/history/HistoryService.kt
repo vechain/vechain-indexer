@@ -194,8 +194,10 @@ open class HistoryService(
                     event.params.getAsString("vetAmountStaked") ?: event.params.getAsString("value")
                 HistoryEventName.B3TR_NAVIGATOR_DELEGATION_CREATED ->
                     event.params.getAsString("amount")
-                HistoryEventName.B3TR_NAVIGATOR_DELEGATION_UPDATED ->
-                    event.params.getAsString("newAmount")
+                HistoryEventName.B3TR_NAVIGATOR_DELEGATION_INCREASED ->
+                    event.params.getAsString("addedAmount")
+                HistoryEventName.B3TR_NAVIGATOR_DELEGATION_DECREASED ->
+                    event.params.getAsString("removedAmount")
                 HistoryEventName.B3TR_NAVIGATOR_DELEGATION_REMOVED -> null
                 else -> event.params.getAsString("value")
             }
@@ -218,7 +220,8 @@ open class HistoryService(
             eventName in
                 listOf(
                     HistoryEventName.B3TR_NAVIGATOR_DELEGATION_CREATED,
-                    HistoryEventName.B3TR_NAVIGATOR_DELEGATION_UPDATED,
+                    HistoryEventName.B3TR_NAVIGATOR_DELEGATION_INCREASED,
+                    HistoryEventName.B3TR_NAVIGATOR_DELEGATION_DECREASED,
                     HistoryEventName.B3TR_NAVIGATOR_DELEGATION_REMOVED,
                 )
 

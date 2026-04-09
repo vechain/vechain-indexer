@@ -29,9 +29,9 @@
       "businessEventName": "announcedAtRound"
     },
     {
-      "name": "effectiveRound",
+      "name": "effectiveDeadline",
       "eventName": "exitAnnouncedEvent",
-      "businessEventName": "effectiveRound"
+      "businessEventName": "effectiveDeadline"
     }
   ]
 }

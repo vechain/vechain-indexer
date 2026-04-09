@@ -107,7 +107,7 @@ internal class NavigatorApiServiceTest {
                     metadataURI = null,
                     registeredAt = 1L,
                     exitAnnouncedRound = null,
-                    exitEffectiveRound = null,
+                    exitEffectiveDeadline = null,
                     lastReportRound = null,
                     lastReportURI = null,
                 )
@@ -138,7 +138,7 @@ internal class NavigatorApiServiceTest {
                     metadataURI = null,
                     registeredAt = 1L,
                     exitAnnouncedRound = null,
-                    exitEffectiveRound = null,
+                    exitEffectiveDeadline = null,
                     lastReportRound = null,
                     lastReportURI = null,
                 )
@@ -205,7 +205,7 @@ internal class NavigatorApiServiceTest {
             metadataURI = null,
             registeredAt = 1L,
             exitAnnouncedRound = null,
-            exitEffectiveRound = null,
+            exitEffectiveDeadline = null,
             lastReportRound = null,
             lastReportURI = null,
         )

@@ -28,7 +28,7 @@ constructor(
     val metadataURI: String?,
     val registeredAt: Long,
     val exitAnnouncedRound: String?,
-    val exitEffectiveRound: String?,
+    val exitEffectiveDeadline: String?,
     val lastReportRound: String?,
     val lastReportURI: String?,
 ) : VersionedDocument {
