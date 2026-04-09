@@ -34,14 +34,18 @@ open class NavigatorProcessor(
         val accumulator = VersionedDocumentAccumulator<Navigator>(service::findByAddress)
 
         if (entry is IndexingResult.BlockResult) {
+            val blockDetails =
+                BlockDetails(
+                    blockId = entry.block.id,
+                    blockNumber = entry.block.number,
+                    blockTimestamp = entry.block.timestamp,
+                )
             accumulator.startBlock()
+
+            // Check expired exits first — transitions EXITING → DEACTIVATED
+            service.checkExpiredExits(blockDetails, accumulator)
+
             if (entry.events().isNotEmpty()) {
-                val blockDetails =
-                    BlockDetails(
-                        blockId = entry.block.id,
-                        blockNumber = entry.block.number,
-                        blockTimestamp = entry.block.timestamp,
-                    )
                 service.processBlockEvents(entry.events(), blockDetails, accumulator)
             }
         } else if (entry.events().isNotEmpty()) {

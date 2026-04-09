@@ -13,4 +13,6 @@ interface NavigatorRepository : BaseIndexedRepository<Navigator, String> {
 
     @Query("{ 'status': { '\$in': ?0 } }")
     fun findByStatusIn(statuses: List<NavigatorStatus>, pageable: Pageable): Slice<Navigator>
+
+    fun findByStatus(status: NavigatorStatus): List<Navigator>
 }

@@ -24,6 +24,32 @@ open class NavigatorService(
 
     open fun findByAddress(address: String): Navigator? = repository.findByIdOrNull(address)
 
+    /**
+     * Checks EXITING navigators whose exitEffectiveDeadline has passed and transitions them to
+     * DEACTIVATED. Called on every processed block so exits are resolved without an on-chain event.
+     */
+    open fun checkExpiredExits(
+        blockDetails: BlockDetails,
+        accumulator: VersionedDocumentAccumulator<Navigator>,
+    ) {
+        val exitingNavigators = repository.findByStatus(NavigatorStatus.EXITING)
+        for (nav in exitingNavigators) {
+            val deadline = nav.exitEffectiveDeadline?.toLongOrNull() ?: continue
+            if (blockDetails.blockNumber >= deadline) {
+                val (existing, nextVersion) = accumulator.resolve(nav.address)
+                val updated =
+                    (existing ?: nav).copy(
+                        version = nextVersion,
+                        blockId = blockDetails.blockId,
+                        blockNumber = blockDetails.blockNumber,
+                        blockTimestamp = blockDetails.blockTimestamp,
+                        status = NavigatorStatus.DEACTIVATED,
+                    )
+                accumulator.put(nav.address, existing ?: nav, updated)
+            }
+        }
+    }
+
     open fun processBlockEvents(
         events: List<IndexedEvent>,
         blockDetails: BlockDetails,
