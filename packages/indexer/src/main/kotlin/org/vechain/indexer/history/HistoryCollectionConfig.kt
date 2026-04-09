@@ -89,16 +89,14 @@ open class HistoryCollectionConfig(
         )
 
         // Covering index for DelegationLifecycleHistoryService.ensureLoaded() aggregation.
-        // Uses a partial filter so only delegation documents (~15K) are indexed, not
-        // the entire history collection.
+        // The partial filter restricts the index to delegation documents only (~15K entries),
+        // which satisfies the aggregation's match(delegationLifecycleStatus exists/ne null).
+        // The key order matches the sort/group stages: group(delegationId) with
+        // sort(delegationId asc, blockNumber desc, delegationLifecycleOrder desc).
         ensureIndexes(
             listOf(
-                "dlcStatus_1_delegationId_1_blockNumber_-1_dlcOrder_-1" to
+                "dlc_delegationId_1_blockNumber_-1_dlcOrder_-1" to
                     Index()
-                        .on(
-                            IndexedHistoryEvent.DELEGATION_LIFECYCLE_STATUS_FIELD,
-                            Sort.Direction.ASC,
-                        )
                         .on(IndexedHistoryEvent::delegationId.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::blockNumber.name, Sort.Direction.DESC)
                         .on(
