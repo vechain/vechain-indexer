@@ -26,7 +26,7 @@ import org.web3j.abi.datatypes.Address as AbiAddress
 import org.web3j.abi.datatypes.Function
 import org.web3j.abi.datatypes.generated.Uint256
 
-@Profile("b3tr-challenges")
+@Profile("b3tr", "b3tr-challenges")
 @Service
 open class ChallengesService(
     private val repository: B3trChallengeRepository,

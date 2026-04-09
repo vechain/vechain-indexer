@@ -21,7 +21,7 @@ import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.utils.EventUtils.groupByBlock
 
-@Profile("b3tr-challenges")
+@Profile("b3tr", "b3tr-challenges")
 @Service
 open class B3trChallengesService(
     private val repository: B3trChallengeRepository,

@@ -22,7 +22,7 @@ import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
 
-@Profile("b3tr-challenges")
+@Profile("b3tr", "b3tr-challenges")
 @Tag(name = "B3TR - Challenges", description = "Query indexed B3TR challenges.")
 @Validated
 @RestController

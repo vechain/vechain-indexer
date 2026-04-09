@@ -10,7 +10,7 @@ import org.vechain.indexer.b3tr.challenges.repository.B3trChallengeRepository
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 
-@Profile("b3tr-challenges")
+@Profile("b3tr", "b3tr-challenges")
 @Component
 open class B3trChallengesProcessor(
     repository: B3trChallengeRepository,

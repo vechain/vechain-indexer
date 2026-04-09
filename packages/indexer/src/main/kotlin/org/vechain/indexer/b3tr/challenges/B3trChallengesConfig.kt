@@ -10,7 +10,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("b3tr-challenges")
+@Profile("b3tr", "b3tr-challenges")
 open class B3trChallengesConfig {
     @Bean
     open fun b3trChallengesIndexer(
