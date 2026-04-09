@@ -8,7 +8,9 @@ import org.slf4j.LoggerFactory
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
 import org.springframework.data.mongodb.core.index.PartialIndexFilter
+import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
+import org.vechain.indexer.IndexedDocument
 
 abstract class CollectionConfig(
     private val mongoTemplate: MongoTemplate,
@@ -28,28 +30,33 @@ abstract class CollectionConfig(
     abstract fun initCollection()
 
     protected fun collectionHasDocuments(entityClass: Class<*> = modelObj): Boolean {
+        require(IndexedDocument::class.java.isAssignableFrom(entityClass)) {
+            "collectionHasDocuments requires an IndexedDocument entity: ${entityClass.name}"
+        }
+
         val start = TimeSource.Monotonic.markNow()
-        val query = Query().limit(1).also { it.fields().include("_id") }
-        val result = mongoTemplate.findOne(query, entityClass)
+        val query = Query.query(Criteria.where("blockNumber").exists(true))
+        val result =
+            mongoTemplate.exists(query, entityClass, mongoTemplate.getCollectionName(entityClass))
         val elapsed = start.elapsedNow()
 
         if (elapsed > 1.seconds) {
             logger.warn(
-                "Document existence probe for {} took {} and found documents={}",
+                "Indexed-document existence probe for {} took {} and found documents={}",
                 entityClass.simpleName,
                 elapsed,
-                result != null,
+                result,
             )
         } else {
             logger.info(
-                "Document existence probe for {} completed in {} and found documents={}",
+                "Indexed-document existence probe for {} completed in {} and found documents={}",
                 entityClass.simpleName,
                 elapsed,
-                result != null,
+                result,
             )
         }
 
-        return result != null
+        return result
     }
 
     fun ensureCollection() {
