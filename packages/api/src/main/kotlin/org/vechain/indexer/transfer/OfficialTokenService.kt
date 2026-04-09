@@ -1,8 +1,6 @@
 package org.vechain.indexer.transfer
 
 import jakarta.annotation.PostConstruct
-import java.nio.file.Files
-import java.nio.file.Paths
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
@@ -103,13 +101,11 @@ open class OfficialTokenService(private val networkDetectionService: NetworkDete
             return emptyList()
         }
 
-        val path =
-            Paths.get(
-                javaClass.classLoader.getResource("token-registry/$network.json")?.toURI()
-                    ?: throw Exception("Token registry not found for network: $network")
-            )
-
-        val jsonData = String(Files.readAllBytes(path))
+        val resourcePath = "token-registry/$network.json"
+        val jsonData =
+            javaClass.classLoader.getResourceAsStream(resourcePath)?.use { inputStream ->
+                inputStream.readBytes().toString(Charsets.UTF_8)
+            } ?: throw Exception("Token registry not found for network: $network")
 
         return Json.Default.decodeFromString(ListSerializer(TokenRegistry.serializer()), jsonData)
     }
