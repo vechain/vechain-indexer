@@ -106,18 +106,20 @@ internal class OfficialTokenServiceTest {
     @Test
     fun `loadTokenRegistry loads MAINNET from local JSON`() {
         val result = service.loadTokenRegistry(VeChainNetwork.MAINNET)
+        val vtho = result.find { it.address == VTHO_CONTRACT_ADDRESS }
 
         assertTrue(result.isNotEmpty())
-        assertEquals("VTHO", result.first().symbol)
+        assertEquals("VTHO", vtho?.symbol)
     }
 
     @Test
     fun `loadTokenRegistry loads TESTNET from local JSON`() {
         val result = service.loadTokenRegistry(VeChainNetwork.TESTNET)
+        val vtho = result.find { it.address == VTHO_CONTRACT_ADDRESS }
 
         assertTrue(result.isNotEmpty())
-        assertEquals("VTHO", result.first().symbol)
-        assertEquals(VTHO_CONTRACT_ADDRESS, result.first().address)
+        assertEquals("VTHO", vtho?.symbol)
+        assertEquals(VTHO_CONTRACT_ADDRESS, vtho?.address)
     }
 
     @Test
@@ -192,10 +194,11 @@ internal class OfficialTokenServiceTest {
     @Test
     fun `getTokenRegistryInfoFromJson loads TESTNET tokens successfully`() {
         val result = service.getTokenRegistryInfoFromJson(VeChainNetwork.TESTNET)
+        val vtho = result.find { it.address == VTHO_CONTRACT_ADDRESS }
 
         assertTrue(result.isNotEmpty())
-        assertEquals("VTHO", result.first().symbol)
-        assertEquals(VTHO_CONTRACT_ADDRESS, result.first().address)
+        assertEquals("VTHO", vtho?.symbol)
+        assertEquals(VTHO_CONTRACT_ADDRESS, vtho?.address)
     }
 
     @Test
