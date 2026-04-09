@@ -5,6 +5,7 @@ import kotlin.time.TimeSource
 import kotlinx.coroutines.CoroutineScope
 import org.bson.Document
 import org.slf4j.LoggerFactory
+import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
 import org.springframework.data.mongodb.core.index.PartialIndexFilter
@@ -23,9 +24,12 @@ abstract class CollectionConfig(
          */
         val INDEXED_DOCUMENT_PARTIAL_FILTER: Document =
             Document("blockNumber", Document("\$exists", true))
+
+        const val BLOCK_NUMBER_INDEX_NAME = "blockNumber_-1"
     }
 
     private val logger = LoggerFactory.getLogger(this::class.java)
+    private val ensuredIndexNamesByCollection = mutableMapOf<String, MutableSet<String>>()
 
     abstract fun initCollection()
 
@@ -87,6 +91,8 @@ abstract class CollectionConfig(
         entityClass: Class<*> = modelObj,
         partialFilter: Document? = null,
     ) {
+        val collectionName = mongoTemplate.getCollectionName(entityClass)
+        ensuredIndexNamesByCollection.getOrPut(collectionName) { mutableSetOf() }.add(indexName)
         try {
             logger.info("Creating Index:    $indexName for ${entityClass.simpleName}")
             val indexDef = index.named(indexName).background()
@@ -110,8 +116,11 @@ abstract class CollectionConfig(
         partialFilter: Document? = INDEXED_DOCUMENT_PARTIAL_FILTER,
     ) {
         val start = TimeSource.Monotonic.markNow()
+
+        ensureBlockNumberIndex(entityClass)
+
         if (indexes.isEmpty()) {
-            logger.info("No indexes configured for ${entityClass.simpleName}.")
+            logger.info("No additional indexes configured for ${entityClass.simpleName}.")
             return
         }
 
@@ -127,5 +136,46 @@ abstract class CollectionConfig(
             "Finished ensuring indexes for ${entityClass.simpleName} in {}.",
             start.elapsedNow(),
         )
+    }
+
+    /**
+     * Ensures a blockNumber_-1 index exists for all IndexedDocument collections. Always uses
+     * [INDEXED_DOCUMENT_PARTIAL_FILTER] so the index is consistent regardless of which partial
+     * filter the caller passes to [ensureIndexes].
+     */
+    private fun ensureBlockNumberIndex(entityClass: Class<*>) {
+        if (!IndexedDocument::class.java.isAssignableFrom(entityClass)) return
+        ensureIndex(
+            BLOCK_NUMBER_INDEX_NAME,
+            Index().on("blockNumber", Sort.Direction.DESC),
+            entityClass,
+            INDEXED_DOCUMENT_PARTIAL_FILTER,
+        )
+    }
+
+    /**
+     * Removes indexes from MongoDB that are not tracked by [ensureIndexes] calls during
+     * [initCollection]. Call this after all [ensureIndexes] calls have completed.
+     */
+    fun removeStaleIndexes() {
+        ensuredIndexNamesByCollection.forEach { (collectionName, expectedNames) ->
+            val existingIndexes = mongoTemplate.indexOps(collectionName).indexInfo
+            existingIndexes.forEach { indexInfo ->
+                val name = indexInfo.name
+                if (name != "_id_" && name !in expectedNames) {
+                    try {
+                        logger.info("Removing stale index: {} from {}", name, collectionName)
+                        mongoTemplate.indexOps(collectionName).dropIndex(name)
+                    } catch (e: Exception) {
+                        logger.warn(
+                            "Failed to remove stale index: {} from {}",
+                            name,
+                            collectionName,
+                            e,
+                        )
+                    }
+                }
+            }
+        }
     }
 }

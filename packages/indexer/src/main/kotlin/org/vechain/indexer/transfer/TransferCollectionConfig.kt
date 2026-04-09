@@ -33,8 +33,6 @@ open class TransferCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "transfer_blockNumber_-1" to
-                    Index().on(IndexedTransferEvent::blockNumber.name, Sort.Direction.DESC),
                 "transfer_to_1_blockTimestamp_-1_txId_-1__id_-1" to
                     Index()
                         .on(IndexedTransferEvent::to.name, Sort.Direction.ASC)

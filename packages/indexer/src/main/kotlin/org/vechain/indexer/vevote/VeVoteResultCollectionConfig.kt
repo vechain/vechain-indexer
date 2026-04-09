@@ -33,8 +33,6 @@ open class VeVoteResultCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "blockNumber_-1" to
-                    Index().on(VeVoteProposalResult::blockNumber.name, Sort.Direction.DESC),
                 "support_1" to Index().on(VeVoteProposalResult::support.name, Sort.Direction.ASC),
                 "proposalId_1" to
                     Index().on(VeVoteProposalResult::proposalId.name, Sort.Direction.ASC),

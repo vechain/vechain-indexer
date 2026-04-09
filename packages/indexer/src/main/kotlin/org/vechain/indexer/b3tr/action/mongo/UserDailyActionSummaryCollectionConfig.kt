@@ -84,7 +84,6 @@ open class UserDailyActionSummaryCollectionConfig(
                         .on(UserDailyActionSummary::date.name, Sort.Direction.ASC)
                         .on(UserDailyActionSummary::totalRewardAmount.name, Sort.Direction.ASC)
                         .on(UserDailyActionSummary::entity.name, Sort.Direction.ASC),
-                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
             )
         )
     }

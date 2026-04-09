@@ -67,7 +67,6 @@ open class AppDailyActionSummaryCollectionConfig(
                         .on(AppDailyActionSummary::date.name, Sort.Direction.ASC)
                         .on(AppDailyActionSummary::actionsRewarded.name, Sort.Direction.ASC)
                         .on(AppDailyActionSummary::user.name, Sort.Direction.ASC),
-                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
             )
         )
     }

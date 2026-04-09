@@ -2,13 +2,6 @@ name: Validate Token Registry
 
 on:
   pull_request:
-    paths:
-      - 'packages/api/src/main/resources/token-registry/**'
-      - 'packages/api/src/main/kotlin/org/vechain/indexer/transfer/OfficialTokenService.kt'
-      - 'packages/api/src/main/kotlin/org/vechain/indexer/transfer/TokenRegistry.kt'
-      - 'scripts/refresh_token_registry.sh'
-      - '.github/workflows/validate-token-registry.yml'
-      - '.github/workflows/sync-token-registry.yml'
 
 permissions:
   contents: read

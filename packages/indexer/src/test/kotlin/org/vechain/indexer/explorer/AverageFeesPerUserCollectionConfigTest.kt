@@ -27,6 +27,8 @@ class AverageFeesPerUserCollectionConfigTest {
             indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
         } returns false
         every { mongoTemplate.collectionExists(AverageFeesPerUser::class.java) } returns true
+        every { mongoTemplate.getCollectionName(AverageFeesPerUser::class.java) } returns
+            "average_fees_per_user"
         every { mongoTemplate.indexOps(AverageFeesPerUser::class.java) } returns indexOperations
         every { indexOperations.ensureIndex(capture(capturedIndexes)) } returns "created"
 

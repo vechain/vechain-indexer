@@ -32,6 +32,8 @@ class HistoryCollectionConfigTest {
             indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
         } returns false
         every { mongoTemplate.collectionExists(IndexedHistoryEvent::class.java) } returns true
+        every { mongoTemplate.getCollectionName(IndexedHistoryEvent::class.java) } returns
+            "history_events"
         every { mongoTemplate.indexOps(IndexedHistoryEvent::class.java) } returns indexOperations
         every { indexOperations.ensureIndex(capture(capturedIndexes)) } returns "created"
 
@@ -99,6 +101,8 @@ class HistoryCollectionConfigTest {
             indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
         } returns false
         every { mongoTemplate.collectionExists(IndexedHistoryEvent::class.java) } returns true
+        every { mongoTemplate.getCollectionName(IndexedHistoryEvent::class.java) } returns
+            "history_events"
         every { mongoTemplate.indexOps(IndexedHistoryEvent::class.java) } returns indexOperations
         every { indexOperations.ensureIndex(any()) } throws RuntimeException("boom")
 
