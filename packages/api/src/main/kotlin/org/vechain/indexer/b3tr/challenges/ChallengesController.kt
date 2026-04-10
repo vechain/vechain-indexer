@@ -156,6 +156,29 @@ open class ChallengesController(private val challengesService: ChallengesService
                 ),
         )
 
+    @GetMapping("explore")
+    @Operation(summary = "Get public active challenges created by others.")
+    @AddressParameter(name = "wallet", required = true)
+    @CommonApiResponses
+    @PaginationParameters
+    open fun getExploreChallenges(
+        @ValidAddress @RequestParam wallet: Address,
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<B3trChallengeUiResponse> =
+        challengesService.getExploreChallenges(
+            wallet = wallet,
+            pageable =
+                toPageable(
+                    page,
+                    size,
+                    direction,
+                    B3trChallenge::createdAtBlockTimestamp.name,
+                    B3trChallenge::challengeId.name,
+                ),
+        )
+
     @GetMapping("history")
     @Operation(summary = "Get viewer challenge history.")
     @AddressParameter(name = "wallet", required = true)

@@ -159,6 +159,12 @@
         },
         {
           "filter": {
+            "query": "@http.url_details.path:\"/api/v1/b3tr/challenges/explore\""
+          },
+          "name": "/api/v1/b3tr/challenges/explore"
+        },
+        {
+          "filter": {
             "query": "@http.url_details.path:\"/api/v1/b3tr/challenges/history\""
           },
           "name": "/api/v1/b3tr/challenges/history"

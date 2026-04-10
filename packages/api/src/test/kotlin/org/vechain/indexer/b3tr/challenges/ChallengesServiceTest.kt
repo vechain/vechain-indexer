@@ -198,6 +198,107 @@ class ChallengesServiceTest {
     }
 
     @Test
+    fun `getExploreChallenges returns public active challenges from other participants`() {
+        stubUiRuntime(currentRound = 5, maxParticipants = 100)
+        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
+            listOf(
+                challenge(
+                    participantCount = 2,
+                    startRound = 5,
+                    visibility = ChallengeVisibility.Public,
+                    creator = wallet("abc"),
+                    participants = listOf(wallet("abc"), wallet("123")),
+                )
+            )
+
+        val result = service.getExploreChallenges(viewer, pageable)
+
+        assertEquals(1, result.data.size)
+        val item = result.data.single()
+        assertEquals(ChallengeStatus.Active, item.status)
+        assertEquals(ParticipantStatus.None, item.viewerStatus)
+        assertFalse(item.isCreator)
+        assertFalse(item.isJoined)
+    }
+
+    @Test
+    fun `getExploreChallenges excludes viewer created challenges`() {
+        stubUiRuntime(currentRound = 5, maxParticipants = 100)
+        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
+            listOf(
+                challenge(
+                    participantCount = 2,
+                    startRound = 5,
+                    visibility = ChallengeVisibility.Public,
+                    creator = viewerWallet,
+                    participants = listOf(wallet("123"), wallet("456")),
+                )
+            )
+
+        val result = service.getExploreChallenges(viewer, pageable)
+
+        assertTrue(result.data.isEmpty())
+    }
+
+    @Test
+    fun `getExploreChallenges excludes viewer joined challenges`() {
+        stubUiRuntime(currentRound = 5, maxParticipants = 100)
+        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
+            listOf(
+                challenge(
+                    participantCount = 2,
+                    startRound = 5,
+                    visibility = ChallengeVisibility.Public,
+                    creator = wallet("abc"),
+                    participants = listOf(viewerWallet, wallet("123")),
+                )
+            )
+
+        val result = service.getExploreChallenges(viewer, pageable)
+
+        assertTrue(result.data.isEmpty())
+    }
+
+    @Test
+    fun `getExploreChallenges excludes pending joinable challenges`() {
+        stubUiRuntime(currentRound = 5, maxParticipants = 100)
+        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
+            listOf(
+                challenge(
+                    participantCount = 1,
+                    startRound = 6,
+                    visibility = ChallengeVisibility.Public,
+                    creator = wallet("abc"),
+                    participants = listOf(wallet("abc")),
+                )
+            )
+
+        val result = service.getExploreChallenges(viewer, pageable)
+
+        assertTrue(result.data.isEmpty())
+    }
+
+    @Test
+    fun `getExploreChallenges excludes ended challenges awaiting finalization`() {
+        stubUiRuntime(currentRound = 7, maxParticipants = 100)
+        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
+            listOf(
+                challenge(
+                    participantCount = 2,
+                    startRound = 5,
+                    endRound = 6,
+                    visibility = ChallengeVisibility.Public,
+                    creator = wallet("abc"),
+                    participants = listOf(wallet("abc"), wallet("123")),
+                )
+            )
+
+        val result = service.getExploreChallenges(viewer, pageable)
+
+        assertTrue(result.data.isEmpty())
+    }
+
+    @Test
     fun `getChallengeHistory returns finished challenge without pending refund action`() {
         stubUiRuntime(currentRound = 7, maxParticipants = 100)
         every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns

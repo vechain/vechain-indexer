@@ -113,6 +113,12 @@ open class ChallengesService(
     ): PaginatedResponse<B3trChallengeUiResponse> =
         getUiChallenges(ChallengeUiSection.Open, wallet, pageable)
 
+    open fun getExploreChallenges(
+        wallet: Address,
+        pageable: Pageable,
+    ): PaginatedResponse<B3trChallengeUiResponse> =
+        getUiChallenges(ChallengeUiSection.Explore, wallet, pageable)
+
     open fun getChallengeHistory(
         wallet: Address,
         pageable: Pageable,
@@ -400,6 +406,18 @@ open class ChallengesService(
                             Criteria.where(B3trChallenge::startRound.name).gt(currentRound),
                         )
                 )
+            ChallengeUiSection.Explore ->
+                Query(
+                    Criteria()
+                        .andOperator(
+                            Criteria.where(B3trChallenge::status.name)
+                                .`in`(listOf(ChallengeStatus.Pending, ChallengeStatus.Active)),
+                            Criteria.where(B3trChallenge::visibility.name)
+                                .`is`(ChallengeVisibility.Public),
+                            Criteria.where(B3trChallenge::startRound.name).lte(currentRound),
+                            Criteria.where(B3trChallenge::endRound.name).gte(currentRound),
+                        )
+                )
             ChallengeUiSection.History ->
                 buildViewerChallengeQuery(
                     wallet = wallet,
@@ -615,6 +633,11 @@ open class ChallengesService(
             ChallengeUiSection.Active ->
                 isLive && !uiState.canFinalize && (uiState.isCreator || uiState.isJoined)
             ChallengeUiSection.Open -> uiState.canJoin
+            ChallengeUiSection.Explore ->
+                uiState.status == ChallengeStatus.Active &&
+                    !uiState.canFinalize &&
+                    !uiState.isCreator &&
+                    !uiState.isJoined
             ChallengeUiSection.History ->
                 (uiState.viewerStatus == ParticipantStatus.Declined && uiState.canAccept) ||
                     (isDone && (uiState.isCreator || uiState.isJoined) && !needsPastAction)
@@ -695,6 +718,7 @@ private enum class ChallengeUiSection {
     NeededActions,
     Active,
     Open,
+    Explore,
     History,
 }
 
