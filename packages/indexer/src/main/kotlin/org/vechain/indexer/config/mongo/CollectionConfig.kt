@@ -117,7 +117,15 @@ abstract class CollectionConfig(
     ) {
         val start = TimeSource.Monotonic.markNow()
 
-        ensureBlockNumberIndex(entityClass)
+        val blockNumberCovered =
+            indexes.any { (_, index) ->
+                index.indexKeys.entries.firstOrNull()?.let {
+                    it.key == "blockNumber" && it.value == -1
+                } ?: false
+            }
+        if (!blockNumberCovered) {
+            ensureBlockNumberIndex(entityClass)
+        }
 
         if (indexes.isEmpty()) {
             logger.info("No additional indexes configured for ${entityClass.simpleName}.")
