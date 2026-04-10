@@ -1,6 +1,5 @@
 package org.vechain.indexer.b3tr.challenges
 
-import kotlin.jvm.java
 import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
