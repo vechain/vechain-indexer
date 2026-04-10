@@ -28,7 +28,6 @@ open class CacheConfig(private val cacheProperties: CacheProperties) {
                 "app_round_countByAppIdAndRoundId",
                 "app_round_countByTotalRewardAmountGreaterThanAndAppIdAndRoundId",
                 "app_round_countByActionsRewardedGreaterThanAndAppIdAndRoundId",
-                "user_daily_action_countByAppIdAndDate",
                 "user_daily_action_countByTotalRewardAmountGreaterThanAndEntityTypeAndDate",
                 "user_daily_action_countByActionsRewardedGreaterThanAndEntityTypeAndDate",
                 "user_daily_action_countByEntityTypeAndDate",
@@ -37,6 +36,7 @@ open class CacheConfig(private val cacheProperties: CacheProperties) {
                 "user_round_countByEntityTypeAndRoundId",
                 "official_token_addresses",
                 "gmNft_countByLevelAndOwnerNot",
+                "b3tr_richlist_total_holders",
             )
     }
 

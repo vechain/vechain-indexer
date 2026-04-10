@@ -68,7 +68,7 @@ enabled_nets:
         user-all-time-count-by-entity-type:
           max-size: '1000'
           ttl-seconds: '1200'
-        user-all-time-count-by-reward:
+        user-all-time-count-by-total-reward:
           max-size: '1000'
           ttl-seconds: '300'
         user-all-time-count-by-actions:
@@ -77,13 +77,31 @@ enabled_nets:
         app-all-time-count-by-app-id:
           max-size: '1000'
           ttl-seconds: '300'
+        app-all-time-count-by-total-reward:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-all-time-count-by-actions:
+          max-size: '1000'
+          ttl-seconds: '300'
         app-daily-count:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-daily-count-by-total-reward:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-daily-count-by-actions:
           max-size: '1000'
           ttl-seconds: '300'
         app-round-count:
           max-size: '1000'
           ttl-seconds: '300'
-        user-daily-count:
+        app-round-count-by-total-reward:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-round-count-by-actions:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-daily-count-by-total-reward:
           max-size: '1000'
           ttl-seconds: '300'
         user-daily-count-by-actions:
@@ -92,7 +110,7 @@ enabled_nets:
         user-daily-count-by-entity-type:
           max-size: '1000'
           ttl-seconds: '300'
-        user-round-count-by-reward:
+        user-round-count-by-total-reward:
           max-size: '1000'
           ttl-seconds: '300'
         user-round-count-by-actions:
@@ -106,6 +124,9 @@ enabled_nets:
           ttl-seconds: '3600'
         gm-nft-count:
           max-size: '1000'
+          ttl-seconds: '300'
+        b3tr-richlist-total-holders:
+          max-size: '10'
           ttl-seconds: '300'
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -288,7 +309,7 @@ enabled_nets:
         user-all-time-count-by-entity-type:
           max-size: '1000'
           ttl-seconds: '1200'
-        user-all-time-count-by-reward:
+        user-all-time-count-by-total-reward:
           max-size: '1000'
           ttl-seconds: '300'
         user-all-time-count-by-actions:
@@ -297,13 +318,31 @@ enabled_nets:
         app-all-time-count-by-app-id:
           max-size: '1000'
           ttl-seconds: '300'
+        app-all-time-count-by-total-reward:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-all-time-count-by-actions:
+          max-size: '1000'
+          ttl-seconds: '300'
         app-daily-count:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-daily-count-by-total-reward:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-daily-count-by-actions:
           max-size: '1000'
           ttl-seconds: '300'
         app-round-count:
           max-size: '1000'
           ttl-seconds: '300'
-        user-daily-count:
+        app-round-count-by-total-reward:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-round-count-by-actions:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-daily-count-by-total-reward:
           max-size: '1000'
           ttl-seconds: '300'
         user-daily-count-by-actions:
@@ -312,7 +351,7 @@ enabled_nets:
         user-daily-count-by-entity-type:
           max-size: '1000'
           ttl-seconds: '300'
-        user-round-count-by-reward:
+        user-round-count-by-total-reward:
           max-size: '1000'
           ttl-seconds: '300'
         user-round-count-by-actions:
@@ -326,6 +365,9 @@ enabled_nets:
           ttl-seconds: '3600'
         gm-nft-count:
           max-size: '1000'
+          ttl-seconds: '300'
+        b3tr-richlist-total-holders:
+          max-size: '10'
           ttl-seconds: '300'
       log_metric_filters:
         - name: "AppUnhealthy"

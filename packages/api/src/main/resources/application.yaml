@@ -109,9 +109,6 @@ cache:
     app_round_countByActionsRewardedGreaterThanAndAppIdAndRoundId:
       max-size: ${CACHE_APP_ROUND_COUNT_BY_ACTIONS_MAX_SIZE:1000}
       ttl-seconds: ${CACHE_APP_ROUND_COUNT_BY_ACTIONS_TTL_SECONDS:300}
-    user_daily_action_countByAppIdAndDate:
-      max-size: ${CACHE_USER_DAILY_COUNT_MAX_SIZE:1000}
-      ttl-seconds: ${CACHE_USER_DAILY_COUNT_TTL_SECONDS:300}
     user_daily_action_countByTotalRewardAmountGreaterThanAndEntityTypeAndDate:
       max-size: ${CACHE_USER_DAILY_COUNT_BY_TOTAL_REWARD_MAX_SIZE:1000}
       ttl-seconds: ${CACHE_USER_DAILY_COUNT_BY_TOTAL_REWARD_TTL_SECONDS:300}
@@ -136,3 +133,6 @@ cache:
     gmNft_countByLevelAndOwnerNot:
       max-size: ${CACHE_GM_NFT_COUNT_MAX_SIZE:1000}
       ttl-seconds: ${CACHE_GM_NFT_COUNT_TTL_SECONDS:300}
+    b3tr_richlist_total_holders:
+      max-size: ${CACHE_B3TR_RICHLIST_TOTAL_HOLDERS_MAX_SIZE:10}
+      ttl-seconds: ${CACHE_B3TR_RICHLIST_TOTAL_HOLDERS_TTL_SECONDS:300}
