@@ -136,3 +136,6 @@ cache:
     gmNft_countByLevelAndOwnerNot:
       max-size: ${CACHE_GM_NFT_COUNT_MAX_SIZE:1000}
       ttl-seconds: ${CACHE_GM_NFT_COUNT_TTL_SECONDS:300}
+    b3tr_richlist_total_holders:
+      max-size: ${CACHE_B3TR_RICHLIST_TOTAL_HOLDERS_MAX_SIZE:10}
+      ttl-seconds: ${CACHE_B3TR_RICHLIST_TOTAL_HOLDERS_TTL_SECONDS:300}
