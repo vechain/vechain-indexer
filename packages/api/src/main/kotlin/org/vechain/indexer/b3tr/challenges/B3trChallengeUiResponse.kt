@@ -104,6 +104,7 @@ internal data class ChallengeUiState(
     val isCreator: Boolean,
     val isJoined: Boolean,
     val isInvitationPending: Boolean,
+    val isAwaitingFinalization: Boolean,
     val canJoin: Boolean,
     val canLeave: Boolean,
     val canAccept: Boolean,

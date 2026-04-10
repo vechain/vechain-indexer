@@ -593,9 +593,11 @@ open class ChallengesService(
                 } else {
                     viewerContext.isCreator
                 }
-        val canFinalize =
+        val isAwaitingFinalization =
             viewerContext.status == ChallengeStatus.Active &&
                 challenge.endRound < runtimeContext.currentRound
+        val canFinalize =
+            isAwaitingFinalization && (viewerContext.isCreator || viewerContext.isJoined)
 
         return ChallengeUiState(
             status = viewerContext.status,
@@ -604,6 +606,7 @@ open class ChallengesService(
             isCreator = viewerContext.isCreator,
             isJoined = viewerContext.isJoined,
             isInvitationPending = viewerContext.isInvitationPending,
+            isAwaitingFinalization = isAwaitingFinalization,
             canJoin = canJoin,
             canLeave = canLeave,
             canAccept = canAccept,
@@ -631,11 +634,11 @@ open class ChallengesService(
                     ((uiState.canAccept || uiState.canDecline) &&
                         uiState.viewerStatus != ParticipantStatus.Declined)
             ChallengeUiSection.Active ->
-                isLive && !uiState.canFinalize && (uiState.isCreator || uiState.isJoined)
+                isLive && !uiState.isAwaitingFinalization && (uiState.isCreator || uiState.isJoined)
             ChallengeUiSection.Open -> uiState.canJoin
             ChallengeUiSection.Explore ->
                 uiState.status == ChallengeStatus.Active &&
-                    !uiState.canFinalize &&
+                    !uiState.isAwaitingFinalization &&
                     !uiState.isCreator &&
                     !uiState.isJoined
             ChallengeUiSection.History ->

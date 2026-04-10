@@ -176,6 +176,25 @@ class ChallengesServiceTest {
     }
 
     @Test
+    fun `getNeededActionChallenges excludes finalizable challenges for unrelated wallets`() {
+        stubUiRuntime(currentRound = 7, maxParticipants = 100)
+        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
+            listOf(
+                challenge(
+                    participantCount = 2,
+                    startRound = 5,
+                    endRound = 6,
+                    creator = wallet("abc"),
+                    participants = listOf(wallet("abc"), wallet("123")),
+                )
+            )
+
+        val result = service.getNeededActionChallenges(viewer, pageable)
+
+        assertTrue(result.data.isEmpty())
+    }
+
+    @Test
     fun `getOpenChallenges returns joinable public pending challenges`() {
         stubUiRuntime(currentRound = 5, maxParticipants = 100)
         every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
