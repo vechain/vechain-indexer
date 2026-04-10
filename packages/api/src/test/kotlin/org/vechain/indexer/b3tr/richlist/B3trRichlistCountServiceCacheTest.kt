@@ -4,6 +4,9 @@ import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -67,6 +70,29 @@ internal class B3trRichlistCountServiceCacheTest {
         assertEquals(7L, all)
         assertEquals(9L, vot3)
         verify(exactly = 2) { mongoTemplate.count(any<Query>(), any(), any<String>()) }
+    }
+
+    @Test
+    fun `concurrent total holder count for same scope is computed once`() {
+        every { mongoTemplate.count(any<Query>(), any(), any<String>()) } answers
+            {
+                Thread.sleep(100)
+                42L
+            }
+        val executor = Executors.newFixedThreadPool(4)
+
+        try {
+            val futures =
+                List(4) {
+                    executor.submit(Callable { service.getPositiveHolderCount(RichlistScope.ALL) })
+                }
+
+            futures.forEach { assertEquals(42L, it.get(2, TimeUnit.SECONDS)) }
+        } finally {
+            executor.shutdownNow()
+        }
+
+        verify(exactly = 1) { mongoTemplate.count(any<Query>(), any(), any<String>()) }
     }
 
     companion object {

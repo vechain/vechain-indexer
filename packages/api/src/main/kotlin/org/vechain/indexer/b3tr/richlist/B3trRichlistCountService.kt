@@ -16,7 +16,7 @@ open class B3trRichlistCountService(private val mongoTemplate: MongoTemplate) {
 
     private val collection = IndexerNames.B3TR_BALANCE.COLLECTION
 
-    @Cacheable(value = ["b3tr_richlist_total_holders"], key = "#scope.name()")
+    @Cacheable(value = ["b3tr_richlist_total_holders"], key = "#scope.name()", sync = true)
     open fun getPositiveHolderCount(scope: RichlistScope): Long {
         return countBalancesGreaterThan(scope, BigDecimal.ZERO)
     }
