@@ -32,7 +32,7 @@ open class B3trRichlistService(
         cursor: String? = null,
         scope: RichlistScope = RichlistScope.ALL,
     ): PaginatedResponse<B3trRichlistItem> {
-        val sortField = sortFieldForScope(scope)
+        val sortField = scope.sortField
         val criteria = Criteria.where(sortField).gt(BigDecimal.ZERO)
         val (pageSize, query) =
             CursorPaginationUtils.buildCursorQuery(
@@ -52,14 +52,14 @@ open class B3trRichlistService(
         }
 
         val first = page.first()
-        val firstBalance = balanceForScope(first, scope)
+        val firstBalance = scope.balanceFor(first)
         val startRank = b3trRichlistCountService.countBalancesGreaterThan(scope, firstBalance) + 1
 
         val items =
             page.mapIndexed { index, doc ->
                 B3trRichlistItem(
                     address = doc.address,
-                    balance = balanceForScope(doc, scope).toBigIntegerExact(),
+                    balance = scope.balanceFor(doc).toBigIntegerExact(),
                     rank = startRank + index,
                 )
             }
@@ -88,7 +88,7 @@ open class B3trRichlistService(
                 ?: throw ResourceNotFoundException(
                     "Address not found in B3TR/VOT3 holders: $address"
                 )
-        val balance = balanceForScope(doc, scope)
+        val balance = scope.balanceFor(doc)
         val totalHolders = b3trRichlistCountService.getPositiveHolderCount(scope)
         if (balance <= BigDecimal.ZERO) {
             return B3trRankResponse(
@@ -109,18 +109,4 @@ open class B3trRichlistService(
             topPercentage = topPercentage,
         )
     }
-
-    private fun sortFieldForScope(scope: RichlistScope): String =
-        when (scope) {
-            RichlistScope.ALL -> "totalBalance"
-            RichlistScope.VOT3 -> "vot3Balance"
-            RichlistScope.B3TR -> "b3trBalance"
-        }
-
-    private fun balanceForScope(doc: B3trBalance, scope: RichlistScope): BigDecimal =
-        when (scope) {
-            RichlistScope.ALL -> doc.totalBalance
-            RichlistScope.VOT3 -> doc.vot3Balance
-            RichlistScope.B3TR -> doc.b3trBalance
-        }
 }

@@ -23,16 +23,9 @@ open class B3trRichlistCountService(private val mongoTemplate: MongoTemplate) {
 
     open fun countBalancesGreaterThan(scope: RichlistScope, threshold: BigDecimal): Long {
         return mongoTemplate.count(
-            Query.query(Criteria.where(sortFieldForScope(scope)).gt(threshold)),
+            Query.query(Criteria.where(scope.sortField).gt(threshold)),
             B3trBalance::class.java,
             collection,
         )
     }
-
-    private fun sortFieldForScope(scope: RichlistScope): String =
-        when (scope) {
-            RichlistScope.ALL -> "totalBalance"
-            RichlistScope.VOT3 -> "vot3Balance"
-            RichlistScope.B3TR -> "b3trBalance"
-        }
 }
