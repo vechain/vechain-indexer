@@ -26,19 +26,23 @@ open class B3trRichlistCacheWarmer(
         val warmer = cacheProperties.warmers.b3trRichlistTotalHolders
         if (!warmer.enabled) return
 
-        val now = Instant.now().toEpochMilli()
+        val now = currentTimeMillis()
         val lastWarmAt = lastWarmAtMillis.get()
-        if (lastWarmAt != 0L && now - lastWarmAt < warmer.refreshIntervalMs) return
+        if (!isDue(now, lastWarmAt, warmer.refreshIntervalMs)) return
 
         if (b3trBalanceRepository.getLatestRecord() == null) return
 
         if (!warming.compareAndSet(false, true)) return
 
         try {
+            val lockedNow = currentTimeMillis()
+            val lockedLastWarmAt = lastWarmAtMillis.get()
+            if (!isDue(lockedNow, lockedLastWarmAt, warmer.refreshIntervalMs)) return
+
             RichlistScope.entries.forEach { scope ->
                 b3trRichlistCountService.refreshPositiveHolderCount(scope)
             }
-            lastWarmAtMillis.set(now)
+            lastWarmAtMillis.set(lockedNow)
             logger.debug("Refreshed B3TR richlist total holder cache")
         } catch (e: Exception) {
             logger.warn("Failed to refresh B3TR richlist total holder cache", e)
@@ -46,5 +50,11 @@ open class B3trRichlistCacheWarmer(
         } finally {
             warming.set(false)
         }
+    }
+
+    protected open fun currentTimeMillis(): Long = Instant.now().toEpochMilli()
+
+    private fun isDue(now: Long, lastWarmAt: Long, refreshIntervalMs: Long): Boolean {
+        return lastWarmAt == 0L || now - lastWarmAt >= refreshIntervalMs
     }
 }
