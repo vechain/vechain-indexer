@@ -41,7 +41,9 @@ open class NavigatorDelegationEventService(
                     buildEvent(ev, id, amount = newTotal, delta = removedAmount.negate())
                 }
                 "B3TR_DelegationRemoved" -> {
-                    buildEvent(ev, id, amount = BigDecimal.ZERO, delta = null)
+                    val amount =
+                        ev.params.getAsString("amount")?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                    buildEvent(ev, id, amount = BigDecimal.ZERO, delta = amount.negate())
                 }
                 else -> error("Unexpected event type: ${ev.eventType}")
             }

@@ -17,7 +17,6 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 @Profile("b3tr", "b3tr-navigator")
 open class NavigatorService(
     private val repository: NavigatorRepository,
-    private val citizenRepository: NavigatorCitizenRepository,
     private val mongoTemplate: MongoTemplate,
     private val inlineVersioningProperties: InlineVersioningProperties,
 ) {
@@ -315,9 +314,8 @@ open class NavigatorService(
         accumulator: VersionedDocumentAccumulator<Navigator>,
     ) {
         val address = ev.params.getAsString("navigator")?.lowercase() ?: return
-        val citizen = ev.params.getAsString("citizen")?.lowercase() ?: return
         val nav = resolveExisting(address, accumulator) ?: return
-        val citizenAmount = getCitizenAmount(citizen)
+        val amount = ev.params.getAsString("amount").toBigDecimalOrZero()
         val updated =
             nav.copy(
                 version = accumulator.resolve(address).nextVersion,
@@ -325,7 +323,7 @@ open class NavigatorService(
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
                 citizenCount = maxOf(0, nav.citizenCount - 1),
-                totalDelegated = maxOf(BigDecimal.ZERO, nav.totalDelegated - citizenAmount),
+                totalDelegated = maxOf(BigDecimal.ZERO, nav.totalDelegated - amount),
             )
         accumulator.put(address, nav, updated)
     }
@@ -337,9 +335,6 @@ open class NavigatorService(
         val (existing, _) = accumulator.resolve(address)
         return existing
     }
-
-    private fun getCitizenAmount(citizenAddress: String): BigDecimal =
-        citizenRepository.findById(citizenAddress).orElse(null)?.amount ?: BigDecimal.ZERO
 
     private fun String?.toBigDecimalOrZero(): BigDecimal =
         this?.toBigDecimalOrNull() ?: BigDecimal.ZERO

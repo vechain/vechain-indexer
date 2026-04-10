@@ -21,8 +21,6 @@ import org.vechain.indexer.utils.BlockDetails
 internal class NavigatorServiceTest {
     @MockK lateinit var repository: NavigatorRepository
 
-    @MockK lateinit var citizenRepository: NavigatorCitizenRepository
-
     @MockK lateinit var mongoTemplate: MongoTemplate
 
     @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
@@ -36,13 +34,7 @@ internal class NavigatorServiceTest {
         MockKAnnotations.init(this)
         every { inlineVersioningProperties.blockWindow } returns 10000L
         every { inlineVersioningProperties.maxVersions } returns 100
-        service =
-            NavigatorService(
-                repository,
-                citizenRepository,
-                mongoTemplate,
-                inlineVersioningProperties,
-            )
+        service = NavigatorService(repository, mongoTemplate, inlineVersioningProperties)
     }
 
     private fun newAccumulator(): VersionedDocumentAccumulator<Navigator> =
@@ -360,11 +352,9 @@ internal class NavigatorServiceTest {
     }
 
     @Test
-    fun `DelegationRemoved decrements citizenCount and subtracts citizen amount`() {
+    fun `DelegationRemoved decrements citizenCount and subtracts amount`() {
         val existing = navigatorFixture("0xnav1", citizenCount = 3, totalDelegated = "150000")
         every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
-        every { citizenRepository.findById("0xcit1") } returns
-            java.util.Optional.of(citizenFixture("0xcit1", amount = "50000"))
 
         val acc = newAccumulator()
         acc.startBlock()
@@ -372,7 +362,7 @@ internal class NavigatorServiceTest {
             listOf(
                 event(
                     "B3TR_DelegationRemoved",
-                    mapOf("navigator" to "0xnav1", "citizen" to "0xcit1"),
+                    mapOf("navigator" to "0xnav1", "citizen" to "0xcit1", "amount" to "50000"),
                 )
             ),
             block,
@@ -388,7 +378,6 @@ internal class NavigatorServiceTest {
     fun `DelegationRemoved does not go below zero`() {
         val existing = navigatorFixture("0xnav1", citizenCount = 0, totalDelegated = "0")
         every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
-        every { citizenRepository.findById("0xcit1") } returns java.util.Optional.empty()
 
         val acc = newAccumulator()
         acc.startBlock()
@@ -396,7 +385,7 @@ internal class NavigatorServiceTest {
             listOf(
                 event(
                     "B3TR_DelegationRemoved",
-                    mapOf("navigator" to "0xnav1", "citizen" to "0xcit1"),
+                    mapOf("navigator" to "0xnav1", "citizen" to "0xcit1", "amount" to "0"),
                 )
             ),
             block,
@@ -496,19 +485,6 @@ internal class NavigatorServiceTest {
     // ============================================================================
     // Helpers
     // ============================================================================
-
-    private fun citizenFixture(address: String, amount: String = "50000") =
-        NavigatorCitizen(
-            address = address,
-            version = 1,
-            blockId = "block-0",
-            blockNumber = 50L,
-            blockTimestamp = 500L,
-            navigator = "0xnav1",
-            amount = BigDecimal(amount),
-            delegatedAt = 500L,
-            active = true,
-        )
 
     private fun navigatorFixture(
         address: String,

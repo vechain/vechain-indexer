@@ -198,7 +198,8 @@ open class HistoryService(
                     event.params.getAsString("addedAmount")
                 HistoryEventName.B3TR_NAVIGATOR_DELEGATION_DECREASED ->
                     event.params.getAsString("removedAmount")
-                HistoryEventName.B3TR_NAVIGATOR_DELEGATION_REMOVED -> null
+                HistoryEventName.B3TR_NAVIGATOR_DELEGATION_REMOVED ->
+                    event.params.getAsString("amount")
                 else -> event.params.getAsString("value")
             }
 

@@ -27,6 +27,11 @@
       "name": "navigator",
       "eventName": "delegationRemovedEvent",
       "businessEventName": "navigator"
+    },
+    {
+      "name": "amount",
+      "eventName": "delegationRemovedEvent",
+      "businessEventName": "amount"
     }
   ]
 }
