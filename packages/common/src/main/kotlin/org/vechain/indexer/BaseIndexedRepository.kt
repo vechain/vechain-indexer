@@ -13,5 +13,5 @@ interface BaseIndexedRepository<T : IndexedDocument, ID> : CrudRepository<T, ID>
 
     fun deleteAllByBlockNumberGreaterThanEqual(start: Long)
 
-    @Query("{}") fun findAll(pageable: Pageable): Slice<T>
+    @Query("{'blockNumber': {'\$exists': true}}") fun findAll(pageable: Pageable): Slice<T>
 }
