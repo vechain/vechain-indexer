@@ -17,6 +17,7 @@ data class CacheProperties(
         var enabled: Boolean = true,
         var tickIntervalMs: Long = 60_000,
         var b3trRichlistTotalHolders: WarmerSpec = WarmerSpec(),
+        var globalOverviewCounts: WarmerSpec = WarmerSpec(),
     )
 
     data class WarmerSpec(var enabled: Boolean = false, var refreshIntervalMs: Long = 540_000)

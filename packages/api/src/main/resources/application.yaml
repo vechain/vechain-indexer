@@ -142,3 +142,6 @@ cache:
     b3tr-richlist-total-holders:
       enabled: ${CACHE_B3TR_RICHLIST_TOTAL_HOLDERS_WARMER_ENABLED:true}
       refresh-interval-ms: ${CACHE_B3TR_RICHLIST_TOTAL_HOLDERS_WARMER_REFRESH_INTERVAL_MS:540000}
+    global-overview-counts:
+      enabled: ${CACHE_GLOBAL_OVERVIEW_COUNTS_WARMER_ENABLED:true}
+      refresh-interval-ms: ${CACHE_GLOBAL_OVERVIEW_COUNTS_WARMER_REFRESH_INTERVAL_MS:900000}
