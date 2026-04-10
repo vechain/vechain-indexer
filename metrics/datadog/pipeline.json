@@ -153,6 +153,30 @@
         },
         {
           "filter": {
+            "query": "@http.url_details.path:\"/api/v1/b3tr/challenges/active\""
+          },
+          "name": "/api/v1/b3tr/challenges/active"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:\"/api/v1/b3tr/challenges/history\""
+          },
+          "name": "/api/v1/b3tr/challenges/history"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:\"/api/v1/b3tr/challenges/needed-actions\""
+          },
+          "name": "/api/v1/b3tr/challenges/needed-actions"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:\"/api/v1/b3tr/challenges/open\""
+          },
+          "name": "/api/v1/b3tr/challenges/open"
+        },
+        {
+          "filter": {
             "query": "@http.url_details.path:\"/api/v1/b3tr/galaxy-members/level-overview\""
           },
           "name": "/api/v1/b3tr/galaxy-members/level-overview"
@@ -204,6 +228,12 @@
             "query": "@http.url_details.path:\"/api/v1/accounts/totals\""
           },
           "name": "/api/v1/accounts/totals"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:\"/api/v1/b3tr/challenges\""
+          },
+          "name": "/api/v1/b3tr/challenges"
         },
         {
           "filter": {
@@ -486,6 +516,12 @@
             "query": "@http.url_details.path:/api/v1/accounts/overview/*"
           },
           "name": "/api/v1/accounts/overview/{address}"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:/api/v1/b3tr/challenges/*"
+          },
+          "name": "/api/v1/b3tr/challenges/{challengeId}"
         },
         {
           "filter": {
