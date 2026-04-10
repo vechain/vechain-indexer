@@ -195,6 +195,7 @@ class ChallengesServiceTest {
         val item = result.data.single()
         assertTrue(item.canJoin)
         assertEquals(100, item.maxParticipants)
+        assertEquals("Spring Sprint", item.title)
     }
 
     @Test
@@ -441,6 +442,10 @@ class ChallengesServiceTest {
             status = status,
             settlementMode = settlementMode,
             creator = creator,
+            title = "Spring Sprint",
+            description = "",
+            imageURI = "",
+            metadataURI = "",
             stakeAmount = BigInteger.TEN,
             startRound = startRound,
             endRound = endRound,

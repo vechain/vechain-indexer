@@ -17,6 +17,10 @@ class B3trChallengeEventUtilsTest {
         assertEquals(SettlementMode.None, state.settlementMode)
         assertEquals(BigInteger.TEN, state.stakeAmount)
         assertEquals(BigInteger.TEN, state.totalPrize)
+        assertEquals("Spring Sprint", state.title)
+        assertEquals("", state.description)
+        assertEquals("", state.imageURI)
+        assertEquals("", state.metadataURI)
         assertIterableEquals(listOf(CREATOR), state.participants)
         assertIterableEquals(listOf(APP_ID), state.selectedApps)
         assertEquals(100L, state.createdAtBlockNumber)
@@ -214,6 +218,10 @@ class B3trChallengeEventUtilsTest {
                     "threshold" to BigInteger.ZERO,
                     "allApps" to false,
                     "selectedApps" to listOf(APP_ID),
+                    "title" to "Spring Sprint",
+                    "description" to "",
+                    "imageURI" to "",
+                    "metadataURI" to "",
                 ),
         )
 

@@ -19,6 +19,10 @@ internal object B3trChallengeEventUtils {
             status = ChallengeStatus.Pending,
             settlementMode = SettlementMode.None,
             creator = creator,
+            title = stringValue(eventValue(createEvent, "title")),
+            description = stringValue(eventValue(createEvent, "description")),
+            imageURI = stringValue(eventValue(createEvent, "imageURI")),
+            metadataURI = stringValue(eventValue(createEvent, "metadataURI")),
             stakeAmount = stakeAmount,
             startRound = toIntValue(eventValue(createEvent, "startRound")),
             endRound = toIntValue(eventValue(createEvent, "endRound")),
@@ -137,6 +141,10 @@ internal fun B3trChallenge.toMutableState() =
         status = status,
         settlementMode = settlementMode,
         creator = creator,
+        title = title,
+        description = description,
+        imageURI = imageURI,
+        metadataURI = metadataURI,
         stakeAmount = stakeAmount,
         startRound = startRound,
         endRound = endRound,
@@ -176,6 +184,10 @@ internal fun MutableChallengeState.toDocument(
         status = status,
         settlementMode = settlementMode,
         creator = creator,
+        title = title,
+        description = description,
+        imageURI = imageURI,
+        metadataURI = metadataURI,
         stakeAmount = stakeAmount,
         startRound = startRound,
         endRound = endRound,
@@ -229,6 +241,8 @@ private fun swapRemove(addresses: MutableList<String>, address: String): Boolean
 private fun stringList(value: Any?): List<String> =
     (value as? List<*>)?.mapNotNull { it?.toString() }?.distinct() ?: emptyList()
 
+private fun stringValue(value: Any?): String = value?.toString() ?: ""
+
 private fun normaliseAddress(value: Any?): String {
     val address = value?.toString() ?: error("Expected address value")
     return HexUtils.normalise(address)
@@ -254,6 +268,10 @@ internal data class MutableChallengeState(
     var status: ChallengeStatus,
     var settlementMode: SettlementMode,
     var creator: String,
+    var title: String,
+    var description: String,
+    var imageURI: String,
+    var metadataURI: String,
     var stakeAmount: BigInteger,
     var startRound: Int,
     var endRound: Int,

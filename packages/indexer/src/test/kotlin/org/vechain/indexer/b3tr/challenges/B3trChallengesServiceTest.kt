@@ -96,6 +96,10 @@ class B3trChallengesServiceTest {
         assertEquals(100L, challenge.createdAtBlockNumber)
         assertEquals(ChallengeStatus.Finalized, challenge.status)
         assertEquals(SettlementMode.TopWinners, challenge.settlementMode)
+        assertEquals("Spring Sprint", challenge.title)
+        assertEquals("", challenge.description)
+        assertEquals("", challenge.imageURI)
+        assertEquals("", challenge.metadataURI)
         assertEquals(BigInteger.TEN, challenge.stakeAmount)
         assertEquals(5, challenge.startRound)
         assertEquals(6, challenge.endRound)
@@ -274,6 +278,10 @@ class B3trChallengesServiceTest {
         kind: ChallengeKind = ChallengeKind.Stake,
         visibility: ChallengeVisibility = ChallengeVisibility.Private,
         thresholdMode: ThresholdMode = ThresholdMode.None,
+        title: String = "Spring Sprint",
+        description: String = "",
+        imageURI: String = "",
+        metadataURI: String = "",
         stakeAmount: BigInteger = BigInteger.TEN,
         startRound: Int = 5,
         endRound: Int = 6,
@@ -293,6 +301,10 @@ class B3trChallengesServiceTest {
                     "kind" to kind.ordinal,
                     "visibility" to visibility.ordinal,
                     "thresholdMode" to thresholdMode.ordinal,
+                    "title" to title,
+                    "description" to description,
+                    "imageURI" to imageURI,
+                    "metadataURI" to metadataURI,
                     "stakeAmount" to stakeAmount,
                     "startRound" to startRound,
                     "threshold" to threshold,
@@ -321,6 +333,10 @@ class B3trChallengesServiceTest {
             status = ChallengeStatus.Pending,
             settlementMode = SettlementMode.None,
             creator = "0x0000000000000000000000000000000000000abc",
+            title = "Spring Sprint",
+            description = "",
+            imageURI = "",
+            metadataURI = "",
             stakeAmount = BigInteger.TEN,
             startRound = 5,
             endRound = 6,

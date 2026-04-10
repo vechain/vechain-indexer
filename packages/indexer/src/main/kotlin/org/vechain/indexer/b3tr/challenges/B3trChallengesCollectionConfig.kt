@@ -21,7 +21,7 @@ open class B3trChallengesCollectionConfig(
 ) : CollectionConfig(mongoTemplate, appCoroutineScope, B3trChallenge::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Value("\${indexer.version.b3tr-challenges}") private val version: Int = 1
+    @Value("\${indexer.version.b3tr-challenges}") private val version: Int = 2
 
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
