@@ -45,6 +45,7 @@ internal class ActionServiceTest {
                 appAllTimeRepo,
                 appDailyRepo,
                 appRoundRepo,
+                kotlinx.coroutines.Dispatchers.IO.limitedParallelism(4),
             )
     }
 

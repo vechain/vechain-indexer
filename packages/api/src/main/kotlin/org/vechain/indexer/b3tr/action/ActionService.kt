@@ -1,9 +1,10 @@
 package org.vechain.indexer.b3tr.action
 
 import java.time.LocalDate
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.b3tr.AppId
@@ -37,6 +38,7 @@ open class ActionService(
     private val appAllTimeRepo: AppAllTimeActionSummaryRepository,
     private val appDailyRepo: AppDailyActionSummaryRepository,
     private val appRoundRepo: AppRoundActionSummaryRepository,
+    @Qualifier("queryDispatcher") private val queryDispatcher: CoroutineDispatcher,
 ) {
     // User Actions
     open fun getUserActionsForApp(
@@ -675,26 +677,20 @@ open class ActionService(
     private fun computeRanksInParallel(
         rankByRewardQuery: () -> Long,
         rankByActionsQuery: () -> Long,
-    ): Pair<Long, Long> =
-        runBlocking(Dispatchers.IO) {
-            val rewardDeferred = async { rankByRewardQuery() }
-            val actionsDeferred = async { rankByActionsQuery() }
-            Pair(rewardDeferred.await() + 1, actionsDeferred.await() + 1)
-        }
+    ): Pair<Long, Long> = runBlocking {
+        val rewardDeferred = async(queryDispatcher) { rankByRewardQuery() }
+        val actionsDeferred = async(queryDispatcher) { rankByActionsQuery() }
+        Pair(rewardDeferred.await() + 1, actionsDeferred.await() + 1)
+    }
 
     private fun <T> computeRanksAndQueryInParallel(
         rankByRewardQuery: () -> Long,
         rankByActionsQuery: () -> Long,
         additionalQuery: () -> T,
-    ): Triple<Long, Long, T> =
-        runBlocking(Dispatchers.IO) {
-            val rewardDeferred = async { rankByRewardQuery() }
-            val actionsDeferred = async { rankByActionsQuery() }
-            val additionalDeferred = async { additionalQuery() }
-            Triple(
-                rewardDeferred.await() + 1,
-                actionsDeferred.await() + 1,
-                additionalDeferred.await(),
-            )
-        }
+    ): Triple<Long, Long, T> = runBlocking {
+        val rewardDeferred = async(queryDispatcher) { rankByRewardQuery() }
+        val actionsDeferred = async(queryDispatcher) { rankByActionsQuery() }
+        val additionalDeferred = async(queryDispatcher) { additionalQuery() }
+        Triple(rewardDeferred.await() + 1, actionsDeferred.await() + 1, additionalDeferred.await())
+    }
 }
