@@ -52,6 +52,7 @@ test-common: #@ Run all the common tests.
 SCHEMA_TEST_BASE_URL ?= http://host.docker.internal:8080
 SCHEMA_TEST_MAX_EXAMPLES ?= 200
 SCHEMA_TEST_MAX_RESPONSE_TIME_SECONDS ?= 2
+SCHEMA_TEST_WORKERS ?= 16
 
 test-api-schema: #@ Run API schema tests via Docker against a running API (default: localhost:8080).
 	docker run --rm \
@@ -63,7 +64,8 @@ test-api-schema: #@ Run API schema tests via Docker against a running API (defau
 		--max-examples=$(SCHEMA_TEST_MAX_EXAMPLES) \
 		--checks=status_code_conformance,not_a_server_error,content_type_conformance \
 		--phases=examples,coverage,fuzzing,stateful \
-		--max-response-time=$(SCHEMA_TEST_MAX_RESPONSE_TIME_SECONDS)
+		--max-response-time=$(SCHEMA_TEST_MAX_RESPONSE_TIME_SECONDS) \
+		--workers=$(SCHEMA_TEST_WORKERS)
 
 # Load Testing
 LOAD_TEST_COMMAND=docker compose -f load-testing/docker-compose.yaml

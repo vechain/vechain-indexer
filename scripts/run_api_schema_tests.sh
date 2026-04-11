@@ -61,6 +61,7 @@ SCHEMA_URL="${BASE_URL}/api-docs"
 SCHEMATHESIS_BIN="${SCHEMATHESIS_BIN:-schemathesis}"
 MAX_RESPONSE_MILLISECONDS="${MAX_RESPONSE_MILLISECONDS:-2000}"
 HYPOTHESIS_MAX_EXAMPLES="${HYPOTHESIS_MAX_EXAMPLES:-200}"
+SCHEMATHESIS_WORKERS="${SCHEMATHESIS_WORKERS:-16}"
 
 if [[ ! "${MAX_RESPONSE_MILLISECONDS}" =~ ^[0-9]+$ ]]; then
   echo "MAX_RESPONSE_MILLISECONDS must be a whole number representing milliseconds" >&2
@@ -83,4 +84,5 @@ echo "Running schema-driven tests against ${BASE_URL}" >&2
   --checks=content_type_conformance \
   --stateful=links \
   --max-response-time="${MAX_RESPONSE_MILLISECONDS}" \
+  --workers="${SCHEMATHESIS_WORKERS}" \
   "$@"
