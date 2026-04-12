@@ -429,6 +429,9 @@ open class TokenRewardService(
                             period = period,
                             rewards = rewards,
                             mainTracker = rewardTracker,
+                            blockId = blockId,
+                            blockNumber = blockNumber,
+                            blockTimestamp = blockTimestamp,
                         )
                     )
                     rewardShare // reset to new cycle value
@@ -518,12 +521,15 @@ open class TokenRewardService(
         period: RewardPeriod,
         rewards: BigInteger,
         mainTracker: TokenReward,
+        blockId: String,
+        blockNumber: Long,
+        blockTimestamp: Long,
     ): TokenReward =
         TokenReward(
             id = id,
-            blockId = mainTracker.blockId,
-            blockNumber = mainTracker.blockNumber,
-            blockTimestamp = mainTracker.blockTimestamp,
+            blockId = blockId,
+            blockNumber = blockNumber,
+            blockTimestamp = blockTimestamp,
             tokenId = mainTracker.tokenId,
             cycle = mainTracker.cycle,
             validator = mainTracker.validator,

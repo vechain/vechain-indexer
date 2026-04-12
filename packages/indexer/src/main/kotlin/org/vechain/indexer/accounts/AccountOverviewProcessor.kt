@@ -73,7 +73,7 @@ open class AccountOverviewProcessor(
             val batch = service.getAccountsNeedingHayabusaSettlement(block.timestamp, pageable)
 
             if (batch.content.isNotEmpty()) {
-                service.settleHayabusaBatch(batch.content, block.timestamp)
+                service.settleHayabusaBatch(batch.content, block)
                 totalSettled += batch.content.size
                 logger.info("Settled {} accounts (total: {})", batch.content.size, totalSettled)
             }

@@ -221,6 +221,7 @@ open class TotalAccountsService(
                         period = timeFrame,
                         total = total,
                         mainTracker = totalAccountsTracker,
+                        block = block,
                     )
                 )
                 newAccountsCount
@@ -290,12 +291,13 @@ open class TotalAccountsService(
         period: TimeFrame,
         total: Long,
         mainTracker: TotalAccounts,
+        block: Block,
     ): TotalAccounts =
         TotalAccounts(
             id = id,
-            blockId = mainTracker.blockId,
-            blockNumber = mainTracker.blockNumber,
-            blockTimestamp = mainTracker.blockTimestamp,
+            blockId = block.id,
+            blockNumber = block.number,
+            blockTimestamp = block.timestamp,
             total = total,
             timeFrame = period,
             dayOfMonth = mainTracker.dayOfMonth,
