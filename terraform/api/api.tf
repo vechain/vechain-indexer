@@ -1174,7 +1174,7 @@ module "waf" {
   # Rate limiting configuration (defaults to 2000 requests per 5 minutes per IP)
   rate_limit                     = local.env.alb.waf.waf_rate_limit
   rate_limit_exception_list      = local.env.alb.waf.waf_rate_limit_exception_list
-  rate_limit_bypass_header_name  = lookup(local.env.alb.waf, "waf_rate_limit_bypass_header_name", "")
+  rate_limit_bypass_header_name  = try(data.terraform_remote_state.vpc.outputs.waf_rate_limit_bypass_token, "") != "" ? lookup(local.env.alb.waf, "waf_rate_limit_bypass_header_name", "") : ""
   rate_limit_bypass_header_value = try(data.terraform_remote_state.vpc.outputs.waf_rate_limit_bypass_token, "")
 
   # Required variables
