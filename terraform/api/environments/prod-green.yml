@@ -40,6 +40,7 @@ alb:
       - "185.57.113.46/32"
       - "81.39.47.171/32"
       - "90.26.60.41/32"
+    waf_rate_limit_bypass_header_name: "x-rate-limit-bypass"
 
 mongoatlas_project_id:           64d6337acba67e1132a3a4e1
 slack_secret_arn:                arn:aws:secretsmanager:eu-west-1:905964754131:secret:veworld-mongodb-alerts/slack/api-token-NvxUZd

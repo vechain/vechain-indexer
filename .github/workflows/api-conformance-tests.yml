@@ -56,6 +56,8 @@ jobs:
     env:
       MAX_RESPONSE_MILLISECONDS: "5000"
       HYPOTHESIS_MAX_EXAMPLES: "250"
+      SCHEMATHESIS_WORKERS: "4"
+      RATE_LIMIT_BYPASS_TOKEN: ${{ secrets.RATE_LIMIT_BYPASS_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
