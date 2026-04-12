@@ -1077,9 +1077,38 @@ data "aws_secretsmanager_secret_version" "dd_api_key" {
   secret_id = local.env.datadog.indexer.api_key_arn
 }
 
+################################################################################
+# WAF Rate Limit Bypass Token
+# Shared across blue/green — first color to deploy creates the secret,
+# subsequent deploys read the existing one.
+################################################################################
+
+locals {
+  waf_bypass_secret_name = "/prod/${var.project}/waf-rate-limit-bypass-token"
+}
+
+resource "null_resource" "ensure_waf_bypass_secret" {
+  count = startswith(local.env.environment, "prod") ? 1 : 0
+
+  triggers = {
+    secret_name = local.waf_bypass_secret_name
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      aws secretsmanager describe-secret --secret-id "${local.waf_bypass_secret_name}" --region ${local.env.region} 2>/dev/null || \
+      aws secretsmanager create-secret \
+        --name "${local.waf_bypass_secret_name}" \
+        --secret-string "$(openssl rand -hex 32)" \
+        --region ${local.env.region}
+    EOT
+  }
+}
+
 data "aws_secretsmanager_secret_version" "waf_rate_limit_bypass_token" {
-  count     = try(data.terraform_remote_state.vpc.outputs.waf_rate_limit_bypass_token_secret_arn, "") != "" ? 1 : 0
-  secret_id = data.terraform_remote_state.vpc.outputs.waf_rate_limit_bypass_token_secret_arn
+  count      = startswith(local.env.environment, "prod") ? 1 : 0
+  secret_id  = local.waf_bypass_secret_name
+  depends_on = [null_resource.ensure_waf_bypass_secret]
 }
 
 data "aws_security_groups" "ecs_sg_list" {

@@ -110,24 +110,3 @@ module "vpclogs_s3" {
   enable_flow_log_s3                  = "false"
   create_s3_bucket                    = "false"
 }
-
-################################################################################
-# WAF Rate Limit Bypass Token
-################################################################################
-
-resource "random_password" "waf_rate_limit_bypass_token" {
-  count   = local.env.environment == "prod" ? 1 : 0
-  length  = 64
-  special = false
-}
-
-resource "aws_secretsmanager_secret" "waf_rate_limit_bypass_token" {
-  count = local.env.environment == "prod" ? 1 : 0
-  name  = "/${local.env.environment}/${var.project}/waf-rate-limit-bypass-token"
-}
-
-resource "aws_secretsmanager_secret_version" "waf_rate_limit_bypass_token" {
-  count         = local.env.environment == "prod" ? 1 : 0
-  secret_id     = aws_secretsmanager_secret.waf_rate_limit_bypass_token[0].id
-  secret_string = random_password.waf_rate_limit_bypass_token[0].result
-}
