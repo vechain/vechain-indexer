@@ -128,6 +128,16 @@ jobs:
           set -e
           echo "exit_code=${exit_code}" >> "$GITHUB_OUTPUT"
 
+      - name: Redact bypass token from logs
+        if: always() && env.RATE_LIMIT_BYPASS_TOKEN != ''
+        shell: bash
+        run: |
+          for f in ./schemathesis-output/network.log ./schemathesis-output/run.log; do
+            if [[ -f "$f" ]]; then
+              sed -i "s/${RATE_LIMIT_BYPASS_TOKEN}/***REDACTED***/g" "$f"
+            fi
+          done
+
       - name: Generate conformance report
         if: always()
         run: |

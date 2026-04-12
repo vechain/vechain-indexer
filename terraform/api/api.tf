@@ -1077,6 +1077,11 @@ data "aws_secretsmanager_secret_version" "dd_api_key" {
   secret_id = local.env.datadog.indexer.api_key_arn
 }
 
+data "aws_secretsmanager_secret_version" "waf_rate_limit_bypass_token" {
+  count     = try(data.terraform_remote_state.vpc.outputs.waf_rate_limit_bypass_token_secret_arn, "") != "" ? 1 : 0
+  secret_id = data.terraform_remote_state.vpc.outputs.waf_rate_limit_bypass_token_secret_arn
+}
+
 data "aws_security_groups" "ecs_sg_list" {
   filter {
     name   = "vpc-id"
@@ -1174,8 +1179,8 @@ module "waf" {
   # Rate limiting configuration (defaults to 2000 requests per 5 minutes per IP)
   rate_limit                     = local.env.alb.waf.waf_rate_limit
   rate_limit_exception_list      = local.env.alb.waf.waf_rate_limit_exception_list
-  rate_limit_bypass_header_name  = try(data.terraform_remote_state.vpc.outputs.waf_rate_limit_bypass_token, "") != "" ? lookup(local.env.alb.waf, "waf_rate_limit_bypass_header_name", "") : ""
-  rate_limit_bypass_header_value = try(data.terraform_remote_state.vpc.outputs.waf_rate_limit_bypass_token, "")
+  rate_limit_bypass_header_name  = length(data.aws_secretsmanager_secret_version.waf_rate_limit_bypass_token) > 0 ? lookup(local.env.alb.waf, "waf_rate_limit_bypass_header_name", "") : ""
+  rate_limit_bypass_header_value = try(data.aws_secretsmanager_secret_version.waf_rate_limit_bypass_token[0].secret_string, "")
 
   # Required variables
   managed_rule_group_statement_rules = []

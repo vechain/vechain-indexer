@@ -54,6 +54,7 @@ SCHEMA_TEST_MAX_EXAMPLES ?= 200
 SCHEMA_TEST_MAX_RESPONSE_TIME_SECONDS ?= 2
 SCHEMA_TEST_WORKERS ?= 4
 RATE_LIMIT_BYPASS_TOKEN ?=
+RATE_LIMIT_BYPASS_HEADER ?= x-rate-limit-bypass
 
 test-api-schema: #@ Run API schema tests via Docker against a running API (default: localhost:8080).
 	docker run --rm \
@@ -67,7 +68,7 @@ test-api-schema: #@ Run API schema tests via Docker against a running API (defau
 		--phases=examples,coverage,fuzzing,stateful \
 		--max-response-time=$(SCHEMA_TEST_MAX_RESPONSE_TIME_SECONDS) \
 		--workers=$(SCHEMA_TEST_WORKERS) \
-		$(if $(RATE_LIMIT_BYPASS_TOKEN),-H "x-rate-limit-bypass: $(RATE_LIMIT_BYPASS_TOKEN)")
+		$(if $(RATE_LIMIT_BYPASS_TOKEN),-H "$(RATE_LIMIT_BYPASS_HEADER): $(RATE_LIMIT_BYPASS_TOKEN)")
 
 # Load Testing
 LOAD_TEST_COMMAND=docker compose -f load-testing/docker-compose.yaml

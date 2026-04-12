@@ -33,8 +33,7 @@ output "atlas_export_bucket_id" {
   value       = local.env.environment == "prod" ? mongodbatlas_cloud_backup_snapshot_export_bucket.main[0].export_bucket_id : ""
 }
 
-output "waf_rate_limit_bypass_token" {
-  description = "Token for bypassing WAF rate limiting in conformance tests"
-  value       = local.env.environment == "prod" ? aws_secretsmanager_secret_version.waf_rate_limit_bypass_token[0].secret_string : ""
-  sensitive   = true
+output "waf_rate_limit_bypass_token_secret_arn" {
+  description = "ARN of the Secrets Manager secret containing the WAF rate limit bypass token"
+  value       = local.env.environment == "prod" ? aws_secretsmanager_secret.waf_rate_limit_bypass_token[0].arn : ""
 }
