@@ -35,7 +35,10 @@ open class NavigatorApiService(private val mongoTemplate: MongoTemplate) {
 
     fun getOverview(): NavigatorOverview {
         val activeQuery =
-            Query(Criteria.where(Navigator::status.name).`is`(NavigatorStatus.ACTIVE.name))
+            Query(
+                Criteria.where(Navigator::status.name)
+                    .`in`(NavigatorStatus.ACTIVE.name, NavigatorStatus.EXITING.name)
+            )
         val activeNavigators = mongoTemplate.find(activeQuery, Navigator::class.java)
 
         var totalStaked = BigDecimal.ZERO
