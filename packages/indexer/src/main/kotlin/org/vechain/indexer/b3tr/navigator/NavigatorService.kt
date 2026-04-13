@@ -3,6 +3,9 @@ package org.vechain.indexer.b3tr.navigator
 import java.math.BigDecimal
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.query.Criteria
+import org.springframework.data.mongodb.core.query.Query
+import org.springframework.data.mongodb.core.query.Update
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -43,8 +46,11 @@ open class NavigatorService(
                         blockNumber = blockDetails.blockNumber,
                         blockTimestamp = blockDetails.blockTimestamp,
                         status = NavigatorStatus.DEACTIVATED,
+                        citizenCount = 0,
+                        totalDelegated = BigDecimal.ZERO,
                     )
                 accumulator.put(nav.address, existing ?: nav, updated)
+                deactivateCitizensForNavigator(nav.address)
             }
         }
     }
@@ -191,8 +197,11 @@ open class NavigatorService(
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
                 status = NavigatorStatus.DEACTIVATED,
+                citizenCount = 0,
+                totalDelegated = BigDecimal.ZERO,
             )
         accumulator.put(address, nav, updated)
+        deactivateCitizensForNavigator(address)
     }
 
     private fun handleSlashed(
@@ -334,6 +343,23 @@ open class NavigatorService(
     ): Navigator? {
         val (existing, _) = accumulator.resolve(address)
         return existing
+    }
+
+    /**
+     * Bulk-deactivates all active citizens for a navigator using a single MongoDB updateMany.
+     * Called when a navigator transitions to DEACTIVATED — delegations become void on-chain and no
+     * DelegationRemoved events will be emitted.
+     */
+    private fun deactivateCitizensForNavigator(navigatorAddress: String) {
+        val query =
+            Query(
+                Criteria.where(NavigatorCitizen::navigator.name)
+                    .`is`(navigatorAddress)
+                    .and(NavigatorCitizen::active.name)
+                    .`is`(true)
+            )
+        val update = Update.update(NavigatorCitizen::active.name, false)
+        mongoTemplate.updateMulti(query, update, NavigatorCitizen::class.java)
     }
 
     private fun String?.toBigDecimalOrZero(): BigDecimal =
