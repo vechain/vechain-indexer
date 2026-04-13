@@ -95,7 +95,7 @@ class StargateEventService(
             "DelegationInitiated" ->
                 handleDelegate(event, base!!, validatorSnapshots, existingTokens)
             "DelegationExitRequested" -> handleDelegateExitRequest(event, base!!, existingTokens)
-            "DelegationWithdrawn" -> handleExitDelegate(base!!, existingTokens)
+            "DelegationWithdrawn" -> handleExitDelegate(event, base!!, existingTokens)
             "TokenManagerAdded" -> handleManagerAdded(event, base!!, existingTokens)
             "TokenManagerRemoved" -> handleManagerRemoved(event, base!!, existingTokens)
             "MaturityPeriodBoosted" -> handleTokenBoosted(event, base!!, existingTokens)
@@ -175,6 +175,9 @@ class StargateEventService(
             existingTokens.add(base)
             return base.copy(
                 totalBootstrapRewardsClaimed = base.totalBootstrapRewardsClaimed + rewards,
+                blockId = event.blockId,
+                blockNumber = event.blockNumber,
+                blockTimestamp = event.blockTimestamp,
                 version = base.version + 1,
             )
         } else {
@@ -182,6 +185,9 @@ class StargateEventService(
             return base.copy(
                 totalRewardsClaimed =
                     base.totalRewardsClaimed + event.params.getAsBigInteger("amount")!!,
+                blockId = event.blockId,
+                blockNumber = event.blockNumber,
+                blockTimestamp = event.blockTimestamp,
                 version = base.version + 1,
             )
         }
@@ -189,6 +195,7 @@ class StargateEventService(
 
     // Delegation withdrawn event
     private fun handleExitDelegate(
+        event: IndexedEvent,
         base: StargateToken,
         existingTokens: MutableList<StargateToken>,
     ): StargateToken {
@@ -199,6 +206,9 @@ class StargateEventService(
         existingTokens.add(base)
         return base.copy(
             version = base.version + 1,
+            blockId = event.blockId,
+            blockNumber = event.blockNumber,
+            blockTimestamp = event.blockTimestamp,
             delegationStatus = Status.NONE,
             validatorId = null,
         )
@@ -224,6 +234,9 @@ class StargateEventService(
             delegationStatus = Status.QUEUED,
             delegationNextPeriod = nextCycleStart,
             delegationPeriodLength = periodLength,
+            blockId = event.blockId,
+            blockNumber = event.blockNumber,
+            blockTimestamp = event.blockTimestamp,
             version = base.version + 1,
         )
     }
@@ -271,6 +284,9 @@ class StargateEventService(
                 existingTokens.add(base)
                 base.copy(
                     version = base.version + 1,
+                    blockId = event.blockId,
+                    blockNumber = event.blockNumber,
+                    blockTimestamp = event.blockTimestamp,
                     delegationStatus = Status.EXITING,
                     delegationNextPeriod =
                         validatorDelegationService.resolveNextCycleBlock(

@@ -1,12 +1,16 @@
 package org.vechain.indexer.accounts
 
 import io.mockk.MockKAnnotations
+import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.slot
+import io.mockk.spyk
 import java.math.BigInteger
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -508,6 +512,9 @@ internal class AccountOverviewServiceTest {
         val result = service.callResolveForMutation(recordId, b, accumulator, resolved)
 
         assertEquals(4, result.version)
+        assertEquals(b.id, result.blockId)
+        assertEquals(b.number, result.blockNumber)
+        assertEquals(b.timestamp, result.blockTimestamp)
         assertEquals(b.timestamp, result.lastSeen)
 
         val (updatedList, archivedList) = accumulator.results()
@@ -555,10 +562,39 @@ internal class AccountOverviewServiceTest {
 
         assertSame(first, second)
         assertEquals(4, second.version)
+        assertEquals(b.id, second.blockId)
+        assertEquals(b.number, second.blockNumber)
+        assertEquals(b.timestamp, second.blockTimestamp)
         assertEquals(b.timestamp, second.lastSeen)
 
         val (_, archivedList) = accumulator.results()
         assertSame(existing, archivedList.find { it.address == recordId })
+    }
+
+    @Test
+    fun `settleHayabusaBatch stamps current block metadata on settled accounts`() {
+        val hayabusaBlock = block(number = 1000L)
+        val existingAccount =
+            existingAccountOverview("0xTEST", version = 3)
+                .copy(
+                    vetBalance = BigInteger("1000000000"),
+                    lastVthoSettlement = hayabusaBlock.timestamp - 10,
+                )
+        val updatedSlot = slot<List<AccountOverview>>()
+        val existingSlot = slot<List<AccountOverview>>()
+        val spyService = spyk(service)
+        every { spyService.save(capture(updatedSlot), capture(existingSlot)) } just Runs
+
+        spyService.settleHayabusaBatch(listOf(existingAccount), hayabusaBlock)
+
+        val updated = updatedSlot.captured.single()
+        assertSame(existingAccount, existingSlot.captured.single())
+        assertEquals(hayabusaBlock.id, updated.blockId)
+        assertEquals(hayabusaBlock.number, updated.blockNumber)
+        assertEquals(hayabusaBlock.timestamp, updated.blockTimestamp)
+        assertEquals(hayabusaBlock.timestamp, updated.lastSeen)
+        assertEquals(hayabusaBlock.timestamp, updated.lastVthoSettlement)
+        assertEquals(existingAccount.version + 1, updated.version)
     }
 
     // Helper for creating VTHO Transfer events
