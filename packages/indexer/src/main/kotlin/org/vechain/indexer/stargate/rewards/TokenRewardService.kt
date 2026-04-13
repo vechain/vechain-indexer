@@ -511,10 +511,14 @@ open class TokenRewardService(
      * @param id Unique doc ID (validator-tokenId-period).
      * @param period RewardPeriod (DAY, WEEK, MONTH, YEAR, CYCLE).
      * @param rewards Total reward for the period.
-     * @param mainTracker Current ALL tracker providing context.
+     * @param mainTracker Current ALL tracker providing token, cycle, and time-period context.
+     * @param blockId Block hash used to stamp the new document.
+     * @param blockNumber Block number used to stamp the new document.
+     * @param blockTimestamp Block timestamp used to stamp the new document.
      * @return New TokenReward doc representing finalized period totals.
      * @notice Create a finalized reward document for a closed period.
-     * @dev Copies metadata from the main tracker but stores only the finalized reward total.
+     * @dev Stamps the document with the provided block info and copies token/validator/time-period
+     *   metadata from the main tracker.
      */
     fun createPeriodReward(
         id: String,

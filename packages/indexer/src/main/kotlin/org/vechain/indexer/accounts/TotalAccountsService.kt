@@ -282,8 +282,9 @@ open class TotalAccountsService(
      * @param period The time frame type (DAY, WEEK, MONTH, YEAR).
      * @param total The total accounts count for the completed period.
      * @param mainTracker The global tracker ("ALL") providing context fields.
-     * @return A new Accounts entity for the archived period.
-     * @notice Creates a new Accounts record representing a completed period.
+     * @param block The block used for stamping blockId, blockNumber, and blockTimestamp.
+     * @return A new TotalAccounts entity for the archived period.
+     * @notice Creates a new TotalAccounts record representing a completed period.
      * @dev Used to snapshot daily, weekly, monthly, and yearly totals.
      */
     fun createPeriodAccounts(

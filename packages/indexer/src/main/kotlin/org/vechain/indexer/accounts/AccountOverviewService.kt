@@ -337,10 +337,11 @@ open class AccountOverviewService(
      * Settle passive VTHO for a batch of accounts at the Hayabusa fork.
      *
      * Calculates the final passive VTHO earnings from each account's lastVthoSettlement up to the
-     * Hayabusa timestamp, then saves the updates.
+     * Hayabusa block's timestamp, stamps updated records with the block's id/number/timestamp, then
+     * saves the updates.
      *
      * @param accounts The batch of accounts to settle
-     * @param hayabusaTimestamp The timestamp of the Hayabusa block
+     * @param block The Hayabusa fork block used for settlement timestamp and record stamping
      */
     @Transactional
     open fun settleHayabusaBatch(accounts: List<AccountOverview>, block: Block) {
