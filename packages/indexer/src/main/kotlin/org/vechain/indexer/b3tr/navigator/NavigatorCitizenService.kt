@@ -118,8 +118,12 @@ open class NavigatorCitizenService(
         accumulator: VersionedDocumentAccumulator<NavigatorCitizen>,
     ) {
         val citizen = ev.params.getAsString("citizen")?.lowercase() ?: return
+        val navigator = ev.params.getAsString("navigator")?.lowercase() ?: return
         val (existing, nextVersion) = accumulator.resolve(citizen)
         val current = existing ?: return
+        // Skip if citizen already re-delegated to a different navigator (e.g. auto-clear
+        // DelegationRemoved for old navigator arrived after DelegationCreated for new one)
+        if (current.navigator != navigator) return
         val updated =
             current.copy(
                 version = nextVersion,
