@@ -5,6 +5,7 @@ import java.math.BigInteger
 import java.util.Optional
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.data.domain.PageRequest
@@ -12,6 +13,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Query
 import org.vechain.indexer.b3tr.challenges.repository.B3trChallengeRepository
+import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Clause
@@ -97,13 +99,156 @@ class ChallengesServiceTest {
 
     @Test
     fun `getChallenge recomputes invalid status from current round and participant count`() {
-        coEvery { thorClient.inspectClauses(any(), any()) } returns listOf(currentRoundResult(8))
+        stubUiRuntime(currentRound = 8, maxParticipants = 100)
         every { repository.findById(B3trChallenge.documentId(1L)) } returns
             Optional.of(challenge(participantCount = 1, startRound = 5))
 
         val result = service.getChallenge(1L)
 
         assertEquals(ChallengeStatus.Invalid, result.status)
+        assertEquals(ParticipantStatus.None, result.viewerStatus)
+        assertEquals(100, result.maxParticipants)
+        assertFalse(result.canJoin)
+    }
+
+    @Test
+    fun `getChallenge returns anonymous detail with guest defaults`() {
+        stubUiRuntime(currentRound = 5, maxParticipants = 100)
+        every { repository.findById(B3trChallenge.documentId(1L)) } returns
+            Optional.of(
+                challenge(
+                    participantCount = 1,
+                    startRound = 6,
+                    participants = listOf(wallet("abc")),
+                    selectedApps = listOf("0xapp1", "0xapp2"),
+                    allApps = false,
+                )
+            )
+
+        val result = service.getChallenge(1L)
+
+        assertEquals(ChallengeStatus.Pending, result.status)
+        assertEquals(ParticipantStatus.None, result.viewerStatus)
+        assertFalse(result.isCreator)
+        assertFalse(result.isJoined)
+        assertTrue(result.canJoin)
+        assertEquals(listOf("0xapp1", "0xapp2"), result.selectedApps)
+    }
+
+    @Test
+    fun `getChallenge returns invitation actions for invited viewer`() {
+        stubUiRuntime(currentRound = 5, maxParticipants = 100)
+        every { repository.findById(B3trChallenge.documentId(1L)) } returns
+            Optional.of(
+                challenge(
+                    participantCount = 1,
+                    startRound = 6,
+                    visibility = ChallengeVisibility.Private,
+                    invited = listOf(viewerWallet),
+                )
+            )
+
+        val result = service.getChallenge(1L, viewer)
+
+        assertEquals(ParticipantStatus.Invited, result.viewerStatus)
+        assertTrue(result.isInvitationPending)
+        assertTrue(result.canAccept)
+        assertTrue(result.canDecline)
+    }
+
+    @Test
+    fun `getChallenge returns creator actions for private pending challenge`() {
+        stubUiRuntime(currentRound = 5, maxParticipants = 100)
+        every { repository.findById(B3trChallenge.documentId(1L)) } returns
+            Optional.of(
+                challenge(
+                    participantCount = 1,
+                    startRound = 6,
+                    visibility = ChallengeVisibility.Private,
+                    creator = viewerWallet,
+                    participants = listOf(viewerWallet),
+                    invited = listOf(wallet("123")),
+                )
+            )
+
+        val result = service.getChallenge(1L, viewer)
+
+        assertTrue(result.isCreator)
+        assertTrue(result.isJoined)
+        assertTrue(result.canCancel)
+        assertTrue(result.canAddInvites)
+        assertEquals(listOf(wallet("123")), result.invited)
+    }
+
+    @Test
+    fun `getChallenge returns claim action for qualified split winner`() {
+        stubUiRuntime(currentRound = 7, maxParticipants = 100, participantActions = 6)
+        every { repository.findById(B3trChallenge.documentId(1L)) } returns
+            Optional.of(
+                challenge(
+                    participantCount = 2,
+                    startRound = 5,
+                    kind = ChallengeKind.Sponsored,
+                    status = ChallengeStatus.Finalized,
+                    settlementMode = SettlementMode.QualifiedSplit,
+                    threshold = BigInteger.valueOf(5),
+                    creator = wallet("abc"),
+                    participants = listOf(viewerWallet, wallet("123")),
+                    totalPrize = BigInteger.valueOf(500),
+                )
+            )
+
+        val result = service.getChallenge(1L, viewer)
+
+        assertEquals(ParticipantStatus.Joined, result.viewerStatus)
+        assertTrue(result.canClaim)
+    }
+
+    @Test
+    fun `getChallenge returns refund action for invalid stake participant`() {
+        stubUiRuntime(currentRound = 7, maxParticipants = 100)
+        every { repository.findById(B3trChallenge.documentId(1L)) } returns
+            Optional.of(
+                challenge(
+                    participantCount = 1,
+                    startRound = 5,
+                    kind = ChallengeKind.Stake,
+                    status = ChallengeStatus.Invalid,
+                    participants = listOf(viewerWallet),
+                )
+            )
+
+        val result = service.getChallenge(1L, viewer)
+
+        assertTrue(result.canRefund)
+        assertFalse(result.canClaim)
+    }
+
+    @Test
+    fun `getChallenge returns finalize action when active challenge has ended`() {
+        stubUiRuntime(currentRound = 7, maxParticipants = 100)
+        every { repository.findById(B3trChallenge.documentId(1L)) } returns
+            Optional.of(
+                challenge(
+                    participantCount = 2,
+                    startRound = 5,
+                    endRound = 6,
+                    creator = viewerWallet,
+                    participants = listOf(viewerWallet, wallet("123")),
+                )
+            )
+
+        val result = service.getChallenge(1L, viewer)
+
+        assertEquals(ChallengeStatus.Active, result.status)
+        assertTrue(result.canFinalize)
+    }
+
+    @Test
+    fun `getChallenge throws when challenge does not exist`() {
+        every { repository.findById(B3trChallenge.documentId(99L)) } returns Optional.empty()
+
+        assertThrows(ResourceNotFoundException::class.java) { service.getChallenge(99L) }
     }
 
     @Test

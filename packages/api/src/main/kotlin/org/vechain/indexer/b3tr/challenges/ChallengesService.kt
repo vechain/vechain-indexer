@@ -125,14 +125,16 @@ open class ChallengesService(
     ): PaginatedResponse<B3trChallengeUiResponse> =
         getUiChallenges(ChallengeUiSection.History, wallet, pageable)
 
-    open fun getChallenge(challengeId: Long): B3trChallengeDetailResponse {
+    open fun getChallenge(challengeId: Long, wallet: Address? = null): B3trChallengeDetailResponse {
         val challenge =
             repository.findByIdOrNull(B3trChallenge.documentId(challengeId))
                 ?: throw ResourceNotFoundException("Challenge not found for id $challengeId")
 
-        return B3trChallengeDetailResponse.from(
+        val runtimeContext = getChallengeRuntimeContext()
+        return buildChallengeDetailResponse(
             challenge = challenge,
-            status = computeEffectiveStatus(challenge, getCurrentRound()),
+            wallet = normalizeWallet(wallet),
+            runtimeContext = runtimeContext,
         )
     }
 
@@ -162,8 +164,32 @@ open class ChallengesService(
         pageable: Pageable,
     ): PaginatedResponse<B3trChallengeUiResponse> {
         val runtimeContext = getChallengeRuntimeContext()
-        val normalizedWallet = HexUtils.normalise(wallet.value)
-        return findUiPage(section, normalizedWallet, runtimeContext, pageable)
+        return findUiPage(section, normalizeWallet(wallet), runtimeContext, pageable)
+    }
+
+    private fun buildChallengeDetailResponse(
+        challenge: B3trChallenge,
+        wallet: String,
+        runtimeContext: ChallengeRuntimeContext,
+    ): B3trChallengeDetailResponse {
+        val viewerContext = buildViewerContext(challenge, wallet, runtimeContext.currentRound)
+        val participantActions =
+            getParticipantActions(
+                candidates = listOf(challenge),
+                viewerContexts = mapOf(challenge.challengeId to viewerContext),
+                wallet = wallet,
+            )[challenge.challengeId] ?: BigInteger.ZERO
+
+        return B3trChallengeDetailResponse.from(
+            challenge = challenge,
+            state =
+                buildUiState(
+                    challenge = challenge,
+                    runtimeContext = runtimeContext,
+                    viewerContext = viewerContext,
+                    participantActions = participantActions,
+                ),
+        )
     }
 
     private fun findDirectPage(
@@ -691,6 +717,9 @@ open class ChallengesService(
             "$name not configured"
         }
     }
+
+    private fun normalizeWallet(wallet: Address?): String =
+        wallet?.value?.let(HexUtils::normalise) ?: ""
 }
 
 private data class ChallengeFilters(

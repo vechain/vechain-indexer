@@ -83,9 +83,12 @@ open class ChallengesController(private val challengesService: ChallengesService
 
     @GetMapping("{challengeId}")
     @Operation(summary = "Get a single indexed B3TR challenge.")
+    @AddressParameter(name = "wallet", required = false)
     @CommonApiResponses
-    open fun getChallenge(@PathVariable challengeId: Long): B3trChallengeDetailResponse =
-        challengesService.getChallenge(challengeId)
+    open fun getChallenge(
+        @PathVariable challengeId: Long,
+        @ValidAddress @RequestParam(required = false) wallet: Address?,
+    ): B3trChallengeDetailResponse = challengesService.getChallenge(challengeId, wallet)
 
     @GetMapping("needed-actions")
     @Operation(summary = "Get challenges that require viewer action.")
