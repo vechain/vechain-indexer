@@ -11,7 +11,6 @@ import org.springframework.test.util.ReflectionTestUtils
 import org.vechain.indexer.accounts.AccountTotalsSeriesRecordType.SERIES
 import org.vechain.indexer.accounts.repository.AccountOverviewRepository
 import org.vechain.indexer.accounts.repository.AccountTotalsSeriesRepository
-import org.vechain.indexer.accounts.repository.TotalAccountsRepository
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccount
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountRepository
@@ -23,24 +22,18 @@ import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
 
 class AccountsServiceTest {
-    private val totalAccountsRepository: TotalAccountsRepository = mockk()
     private val accountOverviewRepository: AccountOverviewRepository = mockk()
     private val accountTotalsSeriesRepository: AccountTotalsSeriesRepository = mockk()
     private val vthoClaimedByAccountRepository: VthoClaimedByAccountRepository = mockk()
 
     private val service =
-        AccountsService(
-                totalAccountsRepository,
-                accountOverviewRepository,
-                accountTotalsSeriesRepository,
+        AccountsService(accountOverviewRepository, accountTotalsSeriesRepository).also {
+            ReflectionTestUtils.setField(
+                it,
+                "vthoClaimedByAccountRepository",
+                vthoClaimedByAccountRepository,
             )
-            .also {
-                ReflectionTestUtils.setField(
-                    it,
-                    "vthoClaimedByAccountRepository",
-                    vthoClaimedByAccountRepository,
-                )
-            }
+        }
 
     @Test
     fun `getTotalSeries returns raw records for short ranges`() {
