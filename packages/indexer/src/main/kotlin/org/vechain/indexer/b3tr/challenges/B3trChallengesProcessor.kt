@@ -1,41 +1,37 @@
-package org.vechain.indexer.accounts
+package org.vechain.indexer.b3tr.challenges
 
-import kotlin.collections.isNotEmpty
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.accounts.repository.TotalAccountsRepository
+import org.vechain.indexer.b3tr.challenges.repository.B3trChallengeRepository
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 
-@Profile("accounts", "total-accounts")
+@Profile("b3tr", "b3tr-challenges")
 @Component
-@Deprecated("V1 total-accounts processor is deprecated. Use AccountTotalsSeriesProcessor instead.")
-open class TotalAccountsProcessor(
-    private val service: TotalAccountsService,
-    repository: TotalAccountsRepository,
+open class B3trChallengesProcessor(
+    repository: B3trChallengeRepository,
     mongoTemplate: MongoTemplate,
+    private val service: B3trChallengesService,
     checkpointService: CheckpointService,
     processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = repository,
         mongoTemplate = mongoTemplate,
-        indexerName = IndexerNames.TOTAL_ACCOUNTS.NAME,
+        indexerName = IndexerNames.B3TR_CHALLENGES.NAME,
         checkpointService = checkpointService,
-        collectionName = IndexerNames.TOTAL_ACCOUNTS.COLLECTION,
+        collectionName = IndexerNames.B3TR_CHALLENGES.COLLECTION,
         processorMetrics = processorMetrics,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
-        if (entry !is IndexingResult.BlockResult) {
-            throw IllegalArgumentException("Entry must be an IndexingResult.BlockResult")
-        }
-        val (updated, existing) = service.processBlock(entry.block, entry.callResults())
+        if (entry.events().isEmpty()) return
 
-        if (updated.isNotEmpty()) {
+        val (updated, existing) = service.processEvents(entry.events())
+        if (updated.isNotEmpty() || existing.isNotEmpty()) {
             service.save(updated, existing)
         }
     }

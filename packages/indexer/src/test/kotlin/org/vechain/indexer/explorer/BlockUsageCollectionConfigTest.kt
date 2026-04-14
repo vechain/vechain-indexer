@@ -29,6 +29,7 @@ class BlockUsageCollectionConfigTest {
             indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
         } returns false
         every { mongoTemplate.collectionExists(BlockUsage::class.java) } returns true
+        every { mongoTemplate.getCollectionName(BlockUsage::class.java) } returns "block_usage"
         every { mongoTemplate.indexOps(BlockUsage::class.java) } returns indexOperations
         every { indexOperations.ensureIndex(capture(capturedIndexes)) } returns "created"
 

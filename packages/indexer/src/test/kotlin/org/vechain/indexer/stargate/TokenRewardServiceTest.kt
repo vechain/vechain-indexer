@@ -186,6 +186,59 @@ class TokenRewardServiceTest {
     }
 
     @Test
+    fun `updateRewardInfo stamps current block metadata on rollover records`() {
+        val validator = "0x00000000000000000000000000000000000000a1"
+
+        service.updateValidatorCycleCache(
+            validator,
+            DecodedValidatorInfo(
+                vthoTotalSupply = BigInteger.ZERO,
+                vthoBurned = BigInteger.ZERO,
+                vetPriceUsd = BigInteger.TEN,
+                vthoPriceUsd = BigInteger.TEN,
+                totalWeight = BigInteger.ZERO,
+                decodedValidators =
+                    mapOf(
+                        "masters" to listOf(validator),
+                        "stakingPeriodLengths" to listOf(BigInteger.ONE),
+                        "startBlocks" to listOf(BigInteger.ZERO),
+                        "completedPeriods" to listOf(BigInteger.ZERO),
+                        "delegatorsStake" to listOf(BigInteger.ONE),
+                    ),
+            ),
+        )
+        service.validatorCycleCache[validator]!!.totalEffectiveDelegations = BigInteger.ONE
+
+        val rewardTracker =
+            tokenReward(validator, "10001", stake = BigInteger.ONE)
+                .copy(
+                    blockId = "0xold",
+                    blockNumber = 99L,
+                    blockTimestamp = 1234481490L,
+                    dayOfMonth = 1,
+                    month = 1,
+                    year = 2025,
+                    dayReward = BigInteger("3"),
+                )
+        val blockTimestamp = Instant.parse("2025-01-02T00:00:00Z").epochSecond
+
+        val (updated, _) =
+            service.updateRewardInfo(
+                listOf(rewardTracker),
+                totalBlockReward = BigInteger.TEN,
+                validator = validator,
+                blockNumber = 123L,
+                blockTimestamp = blockTimestamp,
+                blockId = "0xnew",
+            )
+
+        val dayRewardRecord = updated.first { it.rewardPeriod == RewardPeriod.DAY }
+        assertThat(dayRewardRecord.blockId).isEqualTo("0xnew")
+        assertThat(dayRewardRecord.blockNumber).isEqualTo(123L)
+        assertThat(dayRewardRecord.blockTimestamp).isEqualTo(blockTimestamp)
+    }
+
+    @Test
     fun `getOrFetchRewardsNewCycle creates new docs for missing delegations`() {
         val validator = "0x00000000000000000000000000000000000000a1"
 

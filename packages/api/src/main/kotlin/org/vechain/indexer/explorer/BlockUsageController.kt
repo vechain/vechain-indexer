@@ -12,7 +12,7 @@ import org.vechain.indexer.constants.EXPLORER_PATH
 import org.vechain.indexer.docs.AfterParameter
 import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.CommonApiResponses
-import org.vechain.indexer.exception.BadRequestException
+import org.vechain.indexer.utils.TimeValidationUtils
 import org.vechain.indexer.validation.ValidNonNegativeLong
 
 @Profile("explorer", "block-usage")
@@ -60,11 +60,12 @@ open class BlockUsageController(private val blockUsageService: BlockUsageService
         @ValidNonNegativeLong @RequestParam startTimestamp: Long,
         @ValidNonNegativeLong @RequestParam endTimestamp: Long,
     ): List<BlockUsage> {
-        if (endTimestamp < startTimestamp) {
-            throw BadRequestException(
-                "endTimestamp must be greater than or equal to startTimestamp"
-            )
-        }
+        TimeValidationUtils.validateTimestamps(
+            startTimestamp,
+            endTimestamp,
+            "startTimestamp",
+            "endTimestamp",
+        )
         return blockUsageService.getBlockUsage(startTimestamp, endTimestamp)
     }
 }

@@ -145,8 +145,18 @@ open class HistoryController(private val historyService: HistoryService) {
         )
     }
 
+    @Deprecated(
+        "Generic token history is deprecated for contract-ambiguous NFT domains. Use /api/v1/stargate/tokens/{tokenId}/history for Stargate tokens."
+    )
     @GetMapping("v2/history/token/{tokenId}")
-    @Operation(summary = "Get token history")
+    @Operation(
+        summary = "Get token history (deprecated)",
+        description =
+            "Deprecated: this endpoint scopes history by tokenId and optional emitter contract only, " +
+                "which is not safe for contract-ambiguous NFT domains such as Stargate. " +
+                "Use /api/v1/stargate/tokens/{tokenId}/history for Stargate token timelines.",
+        deprecated = true,
+    )
     @TokenIdParameter(required = true, `in` = ParameterIn.PATH)
     @TokenEventNameParameter
     @AfterParameter

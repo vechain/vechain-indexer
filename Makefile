@@ -52,6 +52,9 @@ test-common: #@ Run all the common tests.
 SCHEMA_TEST_BASE_URL ?= http://host.docker.internal:8080
 SCHEMA_TEST_MAX_EXAMPLES ?= 200
 SCHEMA_TEST_MAX_RESPONSE_TIME_SECONDS ?= 2
+SCHEMA_TEST_WORKERS ?= 4
+RATE_LIMIT_BYPASS_TOKEN ?=
+RATE_LIMIT_BYPASS_HEADER ?= x-rate-limit-bypass
 
 test-api-schema: #@ Run API schema tests via Docker against a running API (default: localhost:8080).
 	docker run --rm \
@@ -63,7 +66,9 @@ test-api-schema: #@ Run API schema tests via Docker against a running API (defau
 		--max-examples=$(SCHEMA_TEST_MAX_EXAMPLES) \
 		--checks=status_code_conformance,not_a_server_error,content_type_conformance \
 		--phases=examples,coverage,fuzzing,stateful \
-		--max-response-time=$(SCHEMA_TEST_MAX_RESPONSE_TIME_SECONDS)
+		--max-response-time=$(SCHEMA_TEST_MAX_RESPONSE_TIME_SECONDS) \
+		--workers=$(SCHEMA_TEST_WORKERS) \
+		$(if $(RATE_LIMIT_BYPASS_TOKEN),-H "$(RATE_LIMIT_BYPASS_HEADER): $(RATE_LIMIT_BYPASS_TOKEN)")
 
 # Load Testing
 LOAD_TEST_COMMAND=docker compose -f load-testing/docker-compose.yaml
@@ -149,7 +154,7 @@ dd-get-dashboard: #@ Fetch Datadog dashboard config.
 	$(DD_SCRIPT) get-dashboard
 dd-generate-openapi: #@ Generate OpenAPI spec from API with embedded MongoDB.
 	./gradlew :packages:api:generateOpenApiSpec
-dd-refresh-generated: dd-generate-openapi dd-update-categories format-json #@ Refresh committed OpenAPI and Datadog generated JSON files.
+dd-refresh-generated: dd-generate-openapi dd-update-categories format-json #@ Refresh committed OpenAPI and Datadog generated JSON files for both main and WAF pipelines.
 dd-push-pipeline: #@ Push pipeline config to Datadog.
 	$(DD_SCRIPT) push-pipeline
 dd-push-app-pipeline: #@ Push Datadog app pipeline config.
@@ -158,9 +163,9 @@ dd-push-waf-pipeline: #@ Push Datadog WAF pipeline config.
 	$(DD_SCRIPT) push-waf-pipeline
 dd-push-dashboard: #@ Push dashboard config to Datadog.
 	$(DD_SCRIPT) push-dashboard
-dd-update-categories: #@ Update pipeline categories from api-docs.json.
+dd-update-categories: #@ Update main and WAF pipeline categories from api-docs.json.
 	$(DD_SCRIPT) update-categories
-dd-validate-categories: #@ Validate pipeline categories match api-docs.json.
+dd-validate-categories: #@ Validate main and WAF pipeline categories match api-docs.json.
 	$(DD_SCRIPT) validate-categories
 dd-sync: dd-get-pipeline dd-get-app-pipeline dd-get-waf-pipeline dd-get-dashboard #@ Fetch Datadog pipelines and dashboard.
 dd-push: dd-push-pipeline dd-push-app-pipeline dd-push-waf-pipeline dd-push-dashboard #@ Push Datadog pipelines and dashboard.

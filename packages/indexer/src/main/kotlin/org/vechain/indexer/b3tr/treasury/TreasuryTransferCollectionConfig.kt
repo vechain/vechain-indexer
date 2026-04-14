@@ -33,9 +33,6 @@ open class TreasuryTransferCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                // For getLatestRecord() and deleteAllByBlockNumberGreaterThanEqual()
-                "blockNumber_-1" to
-                    Index().on(TreasuryTransfer::blockNumber.name, Sort.Direction.DESC),
                 "treasury_transfer_category_1_blockTimestamp_-1__id_-1" to
                     Index()
                         .on(TreasuryTransfer::category.name, Sort.Direction.ASC)

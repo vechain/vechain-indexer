@@ -176,11 +176,6 @@ object IndexerNames {
         const val COLLECTION = "stargate_token_rewards"
     }
 
-    object TOTAL_ACCOUNTS {
-        const val NAME = "TotalAccountsIndexer"
-        const val COLLECTION = "total_accounts"
-    }
-
     object ACCOUNT_TOTALS_SERIES {
         const val NAME = "AccountTotalsSeriesIndexer"
         const val COLLECTION = "account_totals_series"
@@ -224,6 +219,11 @@ object IndexerNames {
     object NAVIGATOR_FEE {
         const val NAME = "NavigatorFeeIndexer"
         const val COLLECTION = "b3tr_navigator_fees"
+    }
+
+    object B3TR_CHALLENGES {
+        const val NAME = "B3trChallengesIndexer"
+        const val COLLECTION = "b3tr_challenges"
     }
 
     /** Returns a map of indexer NAME → COLLECTION for every nested object that defines both. */

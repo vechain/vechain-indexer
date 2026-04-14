@@ -13,12 +13,12 @@ data class TokenRegistry(
     val totalSupply: String,
     val website: String? = null,
     val whitePaper: String? = null,
-    val links: List<SocialLink>? = null,
+    val links: SocialLinks? = null,
     val crossChainProvider: CrossChainProvider? = null,
 )
 
 @Serializable
-data class SocialLink(
+data class SocialLinks(
     val twitter: String? = null,
     val medium: String? = null,
     val github: String? = null,

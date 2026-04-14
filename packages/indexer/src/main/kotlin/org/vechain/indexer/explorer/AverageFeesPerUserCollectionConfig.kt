@@ -37,8 +37,6 @@ open class AverageFeesPerUserCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "blockNumber_-1" to
-                    Index().on(AverageFeesPerUser::blockNumber.name, Sort.Direction.DESC),
                 "recordType_1_blockNumber_-1" to
                     Index()
                         .on(AverageFeesPerUser::recordType.name, Sort.Direction.ASC)

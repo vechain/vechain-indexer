@@ -61,6 +61,9 @@ SCHEMA_URL="${BASE_URL}/api-docs"
 SCHEMATHESIS_BIN="${SCHEMATHESIS_BIN:-schemathesis}"
 MAX_RESPONSE_MILLISECONDS="${MAX_RESPONSE_MILLISECONDS:-2000}"
 HYPOTHESIS_MAX_EXAMPLES="${HYPOTHESIS_MAX_EXAMPLES:-200}"
+SCHEMATHESIS_WORKERS="${SCHEMATHESIS_WORKERS:-4}"
+RATE_LIMIT_BYPASS_TOKEN="${RATE_LIMIT_BYPASS_TOKEN:-}"
+RATE_LIMIT_BYPASS_HEADER="${RATE_LIMIT_BYPASS_HEADER:-x-rate-limit-bypass}"
 
 if [[ ! "${MAX_RESPONSE_MILLISECONDS}" =~ ^[0-9]+$ ]]; then
   echo "MAX_RESPONSE_MILLISECONDS must be a whole number representing milliseconds" >&2
@@ -74,6 +77,11 @@ fi
 
 echo "Running schema-driven tests against ${BASE_URL}" >&2
 
+BYPASS_HEADER_ARGS=()
+if [[ -n "${RATE_LIMIT_BYPASS_TOKEN}" ]]; then
+  BYPASS_HEADER_ARGS=(-H "${RATE_LIMIT_BYPASS_HEADER}: ${RATE_LIMIT_BYPASS_TOKEN}")
+fi
+
 "${SCHEMATHESIS_BIN}" run "${SCHEMA_URL}" \
   --base-url="${BASE_URL}" \
   --hypothesis-derandomize \
@@ -83,4 +91,6 @@ echo "Running schema-driven tests against ${BASE_URL}" >&2
   --checks=content_type_conformance \
   --stateful=links \
   --max-response-time="${MAX_RESPONSE_MILLISECONDS}" \
+  --workers="${SCHEMATHESIS_WORKERS}" \
+  "${BYPASS_HEADER_ARGS[@]}" \
   "$@"

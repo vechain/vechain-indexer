@@ -74,6 +74,554 @@
       "name": "Backfill missing project ID",
       "target": "project_id",
       "type": "category-processor"
+    },
+    {
+      "categories": [
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/actions/global/overview\""
+          },
+          "name": "/api/v1/b3tr/actions/global/overview"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/actions/leaderboards/apps\""
+          },
+          "name": "/api/v1/b3tr/actions/leaderboards/apps"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/actions/leaderboards/users\""
+          },
+          "name": "/api/v1/b3tr/actions/leaderboards/users"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/navigators/fees/history\""
+          },
+          "name": "/api/v1/b3tr/navigators/fees/history"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/navigators/fees/summary\""
+          },
+          "name": "/api/v1/b3tr/navigators/fees/summary"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/challenges/active\""
+          },
+          "name": "/api/v1/b3tr/challenges/active"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/challenges/explore\""
+          },
+          "name": "/api/v1/b3tr/challenges/explore"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/challenges/history\""
+          },
+          "name": "/api/v1/b3tr/challenges/history"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/challenges/needed-actions\""
+          },
+          "name": "/api/v1/b3tr/challenges/needed-actions"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/challenges/open\""
+          },
+          "name": "/api/v1/b3tr/challenges/open"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/galaxy-members/level-overview\""
+          },
+          "name": "/api/v1/b3tr/galaxy-members/level-overview"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/navigators/citizens\""
+          },
+          "name": "/api/v1/b3tr/navigators/citizens"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/navigators/delegations\""
+          },
+          "name": "/api/v1/b3tr/navigators/delegations"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/navigators/overview\""
+          },
+          "name": "/api/v1/b3tr/navigators/overview"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/treasury/transfers\""
+          },
+          "name": "/api/v1/b3tr/treasury/transfers"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/xallocations/earnings\""
+          },
+          "name": "/api/v1/b3tr/xallocations/earnings"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/validators/blocks/missed\""
+          },
+          "name": "/api/v1/validators/blocks/missed"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/validators/delegations/count\""
+          },
+          "name": "/api/v1/validators/delegations/count"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/vevote/proposal/results\""
+          },
+          "name": "/api/v1/vevote/proposal/results"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/vevote/proposals/comments\""
+          },
+          "name": "/api/v1/vevote/proposals/comments"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v2/b3tr/proposals/results\""
+          },
+          "name": "/api/v2/b3tr/proposals/results"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/challenges\""
+          },
+          "name": "/api/v1/b3tr/challenges"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/navigators\""
+          },
+          "name": "/api/v1/b3tr/navigators"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/richlist\""
+          },
+          "name": "/api/v1/b3tr/richlist"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/explorer/average-fees-per-user\""
+          },
+          "name": "/api/v1/explorer/average-fees-per-user"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/explorer/block-usage\""
+          },
+          "name": "/api/v1/explorer/block-usage"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/nfts/contracts\""
+          },
+          "name": "/api/v1/nfts/contracts"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/nfts/history\""
+          },
+          "name": "/api/v1/nfts/history"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/stargate/nft-holders\""
+          },
+          "name": "/api/v1/stargate/nft-holders"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/stargate/tokens\""
+          },
+          "name": "/api/v1/stargate/tokens"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/stargate/total-vet-delegated\""
+          },
+          "name": "/api/v1/stargate/total-vet-delegated"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/stargate/total-vet-staked\""
+          },
+          "name": "/api/v1/stargate/total-vet-staked"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/stargate/total-vtho-claimed\""
+          },
+          "name": "/api/v1/stargate/total-vtho-claimed"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/stargate/total-vtho-generated\""
+          },
+          "name": "/api/v1/stargate/total-vtho-generated"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/transactions/contract\""
+          },
+          "name": "/api/v1/transactions/contract"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/transactions/delegated\""
+          },
+          "name": "/api/v1/transactions/delegated"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/transfers/forBlock\""
+          },
+          "name": "/api/v1/transfers/forBlock"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/transfers/from\""
+          },
+          "name": "/api/v1/transfers/from"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/transfers/fungible-tokens-contracts\""
+          },
+          "name": "/api/v1/transfers/fungible-tokens-contracts"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/transfers/to\""
+          },
+          "name": "/api/v1/transfers/to"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/validators/block-rewards\""
+          },
+          "name": "/api/v1/validators/block-rewards"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/validators/blocks\""
+          },
+          "name": "/api/v1/validators/blocks"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/validators/delegations\""
+          },
+          "name": "/api/v1/validators/delegations"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/vevote/historic-proposals\""
+          },
+          "name": "/api/v1/vevote/historic-proposals"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v2/accounts/total\""
+          },
+          "name": "/api/v2/accounts/total"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v2/accounts/totals\""
+          },
+          "name": "/api/v2/accounts/totals"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/nfts\""
+          },
+          "name": "/api/v1/nfts"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/transactions\""
+          },
+          "name": "/api/v1/transactions"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/transfers\""
+          },
+          "name": "/api/v1/transfers"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/validators\""
+          },
+          "name": "/api/v1/validators"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api-docs\""
+          },
+          "name": "/api-docs"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/b3tr/actions/apps/*/overview"
+          },
+          "name": "/api/v1/b3tr/actions/apps/{appId}/overview"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/b3tr/actions/leaderboards/apps/*"
+          },
+          "name": "/api/v1/b3tr/actions/leaderboards/apps/{appId}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/b3tr/actions/users/*/daily-summaries"
+          },
+          "name": "/api/v1/b3tr/actions/users/{wallet}/daily-summaries"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/b3tr/actions/users/*/overview"
+          },
+          "name": "/api/v1/b3tr/actions/users/{wallet}/overview"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/b3tr/users/*/proposals/comments"
+          },
+          "name": "/api/v1/b3tr/users/{wallet}/proposals/comments"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/accounts/balance/vet/*"
+          },
+          "name": "/api/v1/accounts/balance/vet/{address}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/b3tr/actions/apps/*"
+          },
+          "name": "/api/v1/b3tr/actions/apps/{appId}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/b3tr/actions/users/*"
+          },
+          "name": "/api/v1/b3tr/actions/users/{wallet}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/b3tr/proposals/*/comments"
+          },
+          "name": "/api/v1/b3tr/proposals/{proposalId}/comments"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/b3tr/proposals/*/results"
+          },
+          "name": "/api/v1/b3tr/proposals/{proposalId}/results"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/b3tr/xallocations/*/results"
+          },
+          "name": "/api/v1/b3tr/xallocations/{roundId}/results"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/stargate/nft-holders/historic/*"
+          },
+          "name": "/api/v1/stargate/nft-holders/historic/{range}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/stargate/tokens/*/history"
+          },
+          "name": "/api/v1/stargate/tokens/{tokenId}/history"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/stargate/total-vet-staked/historic/*"
+          },
+          "name": "/api/v1/stargate/total-vet-staked/historic/{range}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/stargate/total-vtho-claimed/historic/*"
+          },
+          "name": "/api/v1/stargate/total-vtho-claimed/historic/{range}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/stargate/total-vtho-generated/historic/*"
+          },
+          "name": "/api/v1/stargate/total-vtho-generated/historic/{range}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/validators/blocks/historic/*"
+          },
+          "name": "/api/v1/validators/blocks/historic/{validator}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v2/b3tr/proposals/*/results"
+          },
+          "name": "/api/v2/b3tr/proposals/{proposalId}/results"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/accounts/overview/*"
+          },
+          "name": "/api/v1/accounts/overview/{address}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/b3tr/challenges/*"
+          },
+          "name": "/api/v1/b3tr/challenges/{challengeId}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/b3tr/richlist/*"
+          },
+          "name": "/api/v1/b3tr/richlist/{address}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/contracts/by-master/*"
+          },
+          "name": "/api/v1/contracts/by-master/{address}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/stargate/nft-holders/*"
+          },
+          "name": "/api/v1/stargate/nft-holders/{period}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/stargate/token-rewards/*"
+          },
+          "name": "/api/v1/stargate/token-rewards/{tokenId}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/stargate/total-vtho-claimed/*"
+          },
+          "name": "/api/v1/stargate/total-vtho-claimed/{account}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/stargate/vet-delegated/*"
+          },
+          "name": "/api/v1/stargate/vet-delegated/{period}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/stargate/vet-staked/*"
+          },
+          "name": "/api/v1/stargate/vet-staked/{period}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/stargate/vtho-claimed/*"
+          },
+          "name": "/api/v1/stargate/vtho-claimed/{period}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/stargate/vtho-generated/*"
+          },
+          "name": "/api/v1/stargate/vtho-generated/{period}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/validators/block-rewards/*"
+          },
+          "name": "/api/v1/validators/block-rewards/{blockNumber}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v2/history/token/*"
+          },
+          "name": "/api/v2/history/token/{tokenId}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/contracts/*"
+          },
+          "name": "/api/v1/contracts/{address}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/history/*"
+          },
+          "name": "/api/v1/history/{account}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/transactions/*"
+          },
+          "name": "/api/v1/transactions/{txId}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/validators/*"
+          },
+          "name": "/api/v1/validators/{validatorId}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v2/history/*"
+          },
+          "name": "/api/v2/history/{account}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/b3tr/actions/users/*/app/*/overview"
+          },
+          "name": "/api/v1/b3tr/actions/users/{wallet}/app/{appId}/overview"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/stargate/total-vtho-claimed/*/*"
+          },
+          "name": "/api/v1/stargate/total-vtho-claimed/{account}/{tokenId}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/*"
+          },
+          "name": "Unknown"
+        }
+      ],
+      "is_enabled": true,
+      "name": "Categorising the api calls",
+      "target": "waf_api_category",
+      "type": "category-processor"
     }
   ],
   "tags": [],
