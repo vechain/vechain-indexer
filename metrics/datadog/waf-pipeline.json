@@ -97,6 +97,36 @@
         },
         {
           "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/challenges/active\""
+          },
+          "name": "/api/v1/b3tr/challenges/active"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/challenges/explore\""
+          },
+          "name": "/api/v1/b3tr/challenges/explore"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/challenges/history\""
+          },
+          "name": "/api/v1/b3tr/challenges/history"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/challenges/needed-actions\""
+          },
+          "name": "/api/v1/b3tr/challenges/needed-actions"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/challenges/open\""
+          },
+          "name": "/api/v1/b3tr/challenges/open"
+        },
+        {
+          "filter": {
             "query": "@httpRequest.uri:\"/api/v1/b3tr/galaxy-members/level-overview\""
           },
           "name": "/api/v1/b3tr/galaxy-members/level-overview"
@@ -148,6 +178,12 @@
             "query": "@httpRequest.uri:\"/api/v1/accounts/totals\""
           },
           "name": "/api/v1/accounts/totals"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/challenges\""
+          },
+          "name": "/api/v1/b3tr/challenges"
         },
         {
           "filter": {
@@ -430,6 +466,12 @@
             "query": "@httpRequest.uri:/api/v1/accounts/overview/*"
           },
           "name": "/api/v1/accounts/overview/{address}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/b3tr/challenges/*"
+          },
+          "name": "/api/v1/b3tr/challenges/{challengeId}"
         },
         {
           "filter": {
