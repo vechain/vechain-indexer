@@ -176,11 +176,6 @@ object IndexerNames {
         const val COLLECTION = "stargate_token_rewards"
     }
 
-    object TOTAL_ACCOUNTS {
-        const val NAME = "TotalAccountsIndexer"
-        const val COLLECTION = "total_accounts"
-    }
-
     object ACCOUNT_TOTALS_SERIES {
         const val NAME = "AccountTotalsSeriesIndexer"
         const val COLLECTION = "account_totals_series"

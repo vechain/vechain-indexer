@@ -16,7 +16,6 @@ import org.springframework.data.mongodb.core.query.Query
 import org.vechain.indexer.accounts.AccountOverview
 import org.vechain.indexer.accounts.VetBalance
 import org.vechain.indexer.accounts.mongo.AccountOverviewCollectionConfig
-import org.vechain.indexer.accounts.mongo.TotalAccountsCollectionConfig
 import org.vechain.indexer.accounts.mongo.VetBalanceCollectionConfig
 import org.vechain.indexer.config.genesis.GenesisVetBalanceLoader
 import org.vechain.indexer.contracts.Contract
@@ -100,31 +99,6 @@ class StartupCollectionIndexesTest {
             mongoTemplate.exists(any<Query>(), VetBalance::class.java, "vet_balances")
         }
         verify(exactly = 0) { genesisVetBalanceLoader.loadGenesisAllocations() }
-    }
-
-    @Test
-    fun `total accounts creates blockNumber startup index`() {
-        val capturedIndexes = mutableListOf<IndexDefinition>()
-        every {
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
-        } returns false
-        every { mongoTemplate.collectionExists(any<Class<*>>()) } returns true
-        every { mongoTemplate.getCollectionName(any<Class<*>>()) } returns "test_collection"
-        every { mongoTemplate.indexOps(any<Class<*>>()) } returns indexOperations
-        every { indexOperations.ensureIndex(capture(capturedIndexes)) } returns "created"
-
-        TotalAccountsCollectionConfig(
-                mongoTemplate = mongoTemplate,
-                appCoroutineScope = CoroutineScope(Dispatchers.Unconfined),
-                indexerVersionService = indexerVersionService,
-            )
-            .initCollection()
-
-        assertTrue(
-            capturedIndexes.any {
-                it.indexKeys["blockNumber"] == -1 && it.indexOptions["name"] == "blockNumber_-1"
-            }
-        )
     }
 
     @Test

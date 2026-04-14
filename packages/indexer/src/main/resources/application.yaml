@@ -208,7 +208,6 @@ indexer:
     delegation: ${VERSION_DELEGATION:2}
     token-rewards: ${VERSION_TOKEN_REWARDS:1}
     stargate-token: ${VERSION_STARGATE_TOKEN:1}
-    total-accounts: ${VERSION_TOTAL_ACCOUNTS:1}
     account-totals-series: ${VERSION_ACCOUNT_TOTALS_SERIES:1}
     account-overview: ${VERSION_ACCOUNT_OVERVIEW:1}
     b3tr-balance: ${VERSION_B3TR_BALANCE:1}

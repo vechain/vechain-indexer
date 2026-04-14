@@ -895,10 +895,6 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.delegation
     },
     {
-      name  = "VERSION_TOTAL_ACCOUNTS"
-      value = each.value.indexer.version.total-accounts
-    },
-    {
       name  = "VERSION_ACCOUNT_TOTALS_SERIES"
       value = each.value.indexer.version.account-totals-series
     },
