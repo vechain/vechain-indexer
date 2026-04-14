@@ -67,7 +67,8 @@ open class NavigatorService(
                 "B3TR_StakeWithdrawn" -> handleStakeWithdrawn(ev, blockDetails, accumulator)
                 "B3TR_ExitAnnounced" -> handleExitAnnounced(ev, blockDetails, accumulator)
                 "B3TR_NavigatorDeactivated" -> handleDeactivated(ev, blockDetails, accumulator)
-                "B3TR_NavigatorSlashed" -> handleSlashed(ev, blockDetails, accumulator)
+                "B3TR_NavigatorSlashed",
+                "B3TR_NavigatorMinorSlashed" -> handleSlashed(ev, blockDetails, accumulator)
                 "B3TR_MetadataURIUpdated" -> handleMetadataUpdated(ev, blockDetails, accumulator)
                 "B3TR_ReportSubmitted" -> handleReportSubmitted(ev, blockDetails, accumulator)
                 "B3TR_DelegationCreated" -> handleDelegationCreated(ev, blockDetails, accumulator)

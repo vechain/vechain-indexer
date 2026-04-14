@@ -52,6 +52,8 @@ object EventUtils {
             "B3TR_DelegationIncreased" -> HistoryEventName.B3TR_NAVIGATOR_DELEGATION_INCREASED
             "B3TR_DelegationDecreased" -> HistoryEventName.B3TR_NAVIGATOR_DELEGATION_DECREASED
             "B3TR_DelegationRemoved" -> HistoryEventName.B3TR_NAVIGATOR_DELEGATION_REMOVED
+            "B3TR_NavigatorSlashed" -> HistoryEventName.B3TR_NAVIGATOR_SLASHED
+            "B3TR_NavigatorMinorSlashed" -> HistoryEventName.B3TR_NAVIGATOR_MINOR_SLASHED
             "Transfer" -> {
                 when {
                     params.params["value"] != null -> HistoryEventName.TRANSFER_FT

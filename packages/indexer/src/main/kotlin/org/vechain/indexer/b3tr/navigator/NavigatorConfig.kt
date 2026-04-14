@@ -46,6 +46,7 @@ open class NavigatorConfig {
                     "B3TR_ExitAnnounced",
                     "B3TR_NavigatorDeactivated",
                     "B3TR_NavigatorSlashed",
+                    "B3TR_NavigatorMinorSlashed",
                     "B3TR_MetadataURIUpdated",
                     "B3TR_ReportSubmitted",
                     // Delegations

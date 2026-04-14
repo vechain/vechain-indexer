@@ -200,6 +200,8 @@ open class HistoryService(
                     event.params.getAsString("removedAmount")
                 HistoryEventName.B3TR_NAVIGATOR_DELEGATION_REMOVED ->
                     event.params.getAsString("amount")
+                HistoryEventName.B3TR_NAVIGATOR_SLASHED,
+                HistoryEventName.B3TR_NAVIGATOR_MINOR_SLASHED -> event.params.getAsString("amount")
                 else -> event.params.getAsString("value")
             }
 
@@ -226,13 +228,26 @@ open class HistoryService(
                     HistoryEventName.B3TR_NAVIGATOR_DELEGATION_REMOVED,
                 )
 
+        val isNavigatorSlash =
+            eventName in
+                listOf(
+                    HistoryEventName.B3TR_NAVIGATOR_SLASHED,
+                    HistoryEventName.B3TR_NAVIGATOR_MINOR_SLASHED,
+                )
+
         val from =
-            if (isNavigatorDelegation) event.params.getAsString("citizen")
-            else event.params.getAsString("from")
+            when {
+                isNavigatorDelegation -> event.params.getAsString("citizen")
+                isNavigatorSlash -> event.params.getAsString("navigator")
+                else -> event.params.getAsString("from")
+            }
 
         val to =
-            if (isNavigatorDelegation) event.params.getAsString("navigator")
-            else event.params.getAsString("to")
+            when {
+                isNavigatorDelegation -> event.params.getAsString("navigator")
+                isNavigatorSlash -> null
+                else -> event.params.getAsString("to")
+            }
 
         return IndexedHistoryEvent(
             id = DigestUtils.sha1Hex(event.id),

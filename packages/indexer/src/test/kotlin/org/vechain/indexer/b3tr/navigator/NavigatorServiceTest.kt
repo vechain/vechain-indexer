@@ -219,6 +219,34 @@ internal class NavigatorServiceTest {
         assertEquals(BigDecimal("45000"), updated[0].stake)
     }
 
+    @Test
+    fun `NavigatorMinorSlashed updates stake to remainingStake`() {
+        val existing = navigatorFixture("0xnav1", stake = "50000")
+        every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
+
+        val acc = newAccumulator()
+        acc.startBlock()
+        service.processBlockEvents(
+            listOf(
+                event(
+                    "B3TR_NavigatorMinorSlashed",
+                    mapOf(
+                        "navigator" to "0xnav1",
+                        "amount" to "5000",
+                        "remainingStake" to "45000",
+                        "roundId" to "3",
+                        "infractionFlags" to "7",
+                    ),
+                )
+            ),
+            block,
+            acc,
+        )
+
+        val (updated, _) = acc.results()
+        assertEquals(BigDecimal("45000"), updated[0].stake)
+    }
+
     // ============================================================================
     // Metadata & Reports
     // ============================================================================
