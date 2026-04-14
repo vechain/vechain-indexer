@@ -47,6 +47,17 @@ class ChallengesServiceTest {
             ),
         )
 
+    private fun pageRequest(page: Int, size: Int) =
+        PageRequest.of(
+            page,
+            size,
+            Sort.by(
+                Sort.Direction.DESC,
+                B3trChallenge::createdAtBlockTimestamp.name,
+                B3trChallenge::challengeId.name,
+            ),
+        )
+
     @Test
     fun `getChallenges keeps all-app challenges when filtering by appId`() {
         val querySlot = slot<Query>()
@@ -464,6 +475,32 @@ class ChallengesServiceTest {
     }
 
     @Test
+    fun `getExploreChallenges paginates ui pages without overlap or overflow`() {
+        stubUiRuntime(currentRound = 5, maxParticipants = 100)
+        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
+            (30L downTo 1L).map { challengeId ->
+                challenge(
+                    challengeId = challengeId,
+                    participantCount = 2,
+                    startRound = 5,
+                    visibility = ChallengeVisibility.Public,
+                    creator = wallet((challengeId + 100).toString(16)),
+                )
+            }
+
+        val firstPage = service.getExploreChallenges(viewer, pageRequest(page = 0, size = 12))
+        val secondPage = service.getExploreChallenges(viewer, pageRequest(page = 1, size = 12))
+        val thirdPage = service.getExploreChallenges(viewer, pageRequest(page = 2, size = 12))
+
+        assertEquals((30L downTo 19L).toList(), firstPage.data.map { it.challengeId })
+        assertEquals((18L downTo 7L).toList(), secondPage.data.map { it.challengeId })
+        assertEquals((6L downTo 1L).toList(), thirdPage.data.map { it.challengeId })
+        assertTrue(firstPage.pagination.hasNext)
+        assertTrue(secondPage.pagination.hasNext)
+        assertFalse(thirdPage.pagination.hasNext)
+    }
+
+    @Test
     fun `getChallengeHistory returns finished challenge without pending refund action`() {
         stubUiRuntime(currentRound = 7, maxParticipants = 100)
         every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
@@ -484,6 +521,62 @@ class ChallengesServiceTest {
         assertTrue(neededActions.data.isEmpty())
         assertEquals(1, history.data.size)
         assertFalse(history.data.single().canRefund)
+    }
+
+    @Test
+    fun `getChallenges paginates computed status pages without overlap or overflow`() {
+        coEvery { thorClient.inspectClauses(any(), any()) } returns listOf(currentRoundResult(5))
+        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
+            (30L downTo 1L).map { challengeId ->
+                challenge(challengeId = challengeId, participantCount = 2, startRound = 5)
+            }
+
+        val firstPage =
+            service.getChallenges(
+                status = ChallengeStatus.Active,
+                kind = null,
+                visibility = null,
+                creator = null,
+                participant = null,
+                invitee = null,
+                appId = null,
+                startRound = null,
+                endRound = null,
+                pageable = pageRequest(page = 0, size = 12),
+            )
+        val secondPage =
+            service.getChallenges(
+                status = ChallengeStatus.Active,
+                kind = null,
+                visibility = null,
+                creator = null,
+                participant = null,
+                invitee = null,
+                appId = null,
+                startRound = null,
+                endRound = null,
+                pageable = pageRequest(page = 1, size = 12),
+            )
+        val thirdPage =
+            service.getChallenges(
+                status = ChallengeStatus.Active,
+                kind = null,
+                visibility = null,
+                creator = null,
+                participant = null,
+                invitee = null,
+                appId = null,
+                startRound = null,
+                endRound = null,
+                pageable = pageRequest(page = 2, size = 12),
+            )
+
+        assertEquals((30L downTo 19L).toList(), firstPage.data.map { it.challengeId })
+        assertEquals((18L downTo 7L).toList(), secondPage.data.map { it.challengeId })
+        assertEquals((6L downTo 1L).toList(), thirdPage.data.map { it.challengeId })
+        assertTrue(firstPage.pagination.hasNext)
+        assertTrue(secondPage.pagination.hasNext)
+        assertFalse(thirdPage.pagination.hasNext)
     }
 
     @Test
