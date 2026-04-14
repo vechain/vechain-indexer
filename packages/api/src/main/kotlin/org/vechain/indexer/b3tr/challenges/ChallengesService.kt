@@ -238,20 +238,20 @@ open class ChallengesService(
             hasMoreCandidates = candidates.size == chunkSize
             skipCandidates += candidates.size.toLong()
 
-            candidates.forEach { candidate ->
+            for (candidate in candidates) {
                 val computedStatus = computeEffectiveStatus(candidate, currentRound)
                 if (computedStatus != filters.status) {
-                    return@forEach
+                    continue
                 }
 
                 if (skippedMatches < requiredOffset) {
                     skippedMatches++
-                    return@forEach
+                    continue
                 }
 
                 collected.add(B3trChallengeResponse.from(candidate, computedStatus))
                 if (collected.size > pageSize) {
-                    return@forEach
+                    break
                 }
             }
         }
@@ -301,7 +301,7 @@ open class ChallengesService(
                     wallet = wallet,
                 )
 
-            candidates.forEach { candidate ->
+            for (candidate in candidates) {
                 val viewerContext = viewerContexts.getValue(candidate.challengeId)
                 val uiState =
                     buildUiState(
@@ -313,17 +313,17 @@ open class ChallengesService(
                     )
 
                 if (!belongsToSection(section, uiState)) {
-                    return@forEach
+                    continue
                 }
 
                 if (skippedMatches < requiredOffset) {
                     skippedMatches++
-                    return@forEach
+                    continue
                 }
 
                 collected.add(B3trChallengeUiResponse.from(candidate, uiState))
                 if (collected.size > pageSize) {
-                    return@forEach
+                    break
                 }
             }
         }
