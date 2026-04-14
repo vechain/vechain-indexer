@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM amazoncorretto:21-alpine3.20 AS builder
+FROM amazoncorretto:21-alpine3.21 AS builder
 
 RUN apk update && apk upgrade
 RUN apk add --no-cache curl
@@ -35,7 +35,7 @@ RUN --mount=type=cache,target=/root/.gradle/caches \
     --mount=type=secret,id=gradle_props,target=/root/.gradle/gradle.properties,required=false \
     ./gradlew packages:$PACKAGE_NAME:build -x test
 
-FROM amazoncorretto:21-alpine3.20 AS prod
+FROM amazoncorretto:21-alpine3.21 AS prod
 
 RUN apk update && apk upgrade
 RUN apk add --no-cache curl

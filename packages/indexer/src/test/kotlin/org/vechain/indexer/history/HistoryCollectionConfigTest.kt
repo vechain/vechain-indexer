@@ -60,6 +60,24 @@ class HistoryCollectionConfigTest {
         )
         assertTrue(
             capturedIndexes.any {
+                it.indexKeys["tokenId"] == 1 &&
+                    it.indexKeys["eventName"] == 1 &&
+                    it.indexKeys["blockTimestamp"] == -1 &&
+                    it.indexOptions["name"] == "tokenId_1_eventName_1_blockTimestamp_-1"
+            }
+        )
+        assertTrue(
+            capturedIndexes.any {
+                it.indexKeys["contractAddress"] == 1 &&
+                    it.indexKeys["tokenId"] == 1 &&
+                    it.indexKeys["eventName"] == 1 &&
+                    it.indexKeys["blockTimestamp"] == -1 &&
+                    it.indexOptions["name"] ==
+                        "contractAddress_1_tokenId_1_eventName_1_blockTimestamp_-1"
+            }
+        )
+        assertTrue(
+            capturedIndexes.any {
                 it.indexKeys["delegationId"] == 1 &&
                     it.indexKeys["blockNumber"] == -1 &&
                     it.indexKeys["delegationLifecycleOrder"] == -1 &&

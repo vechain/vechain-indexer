@@ -168,12 +168,12 @@ module "ecs-lb-service-api" {
       value = each.value.api.cache.user-all-time-count-by-entity-type.ttl-seconds
     },
     {
-      name  = "CACHE_USER_ALL_TIME_COUNT_BY_REWARD_MAX_SIZE"
-      value = each.value.api.cache.user-all-time-count-by-reward.max-size
+      name  = "CACHE_USER_ALL_TIME_COUNT_BY_TOTAL_REWARD_MAX_SIZE"
+      value = each.value.api.cache.user-all-time-count-by-total-reward.max-size
     },
     {
-      name  = "CACHE_USER_ALL_TIME_COUNT_BY_REWARD_TTL_SECONDS"
-      value = each.value.api.cache.user-all-time-count-by-reward.ttl-seconds
+      name  = "CACHE_USER_ALL_TIME_COUNT_BY_TOTAL_REWARD_TTL_SECONDS"
+      value = each.value.api.cache.user-all-time-count-by-total-reward.ttl-seconds
     },
     {
       name  = "CACHE_USER_ALL_TIME_COUNT_BY_ACTIONS_MAX_SIZE"
@@ -192,12 +192,44 @@ module "ecs-lb-service-api" {
       value = each.value.api.cache.app-all-time-count-by-app-id.ttl-seconds
     },
     {
+      name  = "CACHE_APP_ALL_TIME_COUNT_BY_TOTAL_REWARD_MAX_SIZE"
+      value = each.value.api.cache.app-all-time-count-by-total-reward.max-size
+    },
+    {
+      name  = "CACHE_APP_ALL_TIME_COUNT_BY_TOTAL_REWARD_TTL_SECONDS"
+      value = each.value.api.cache.app-all-time-count-by-total-reward.ttl-seconds
+    },
+    {
+      name  = "CACHE_APP_ALL_TIME_COUNT_BY_ACTIONS_MAX_SIZE"
+      value = each.value.api.cache.app-all-time-count-by-actions.max-size
+    },
+    {
+      name  = "CACHE_APP_ALL_TIME_COUNT_BY_ACTIONS_TTL_SECONDS"
+      value = each.value.api.cache.app-all-time-count-by-actions.ttl-seconds
+    },
+    {
       name  = "CACHE_APP_DAILY_COUNT_MAX_SIZE"
       value = each.value.api.cache.app-daily-count.max-size
     },
     {
       name  = "CACHE_APP_DAILY_COUNT_TTL_SECONDS"
       value = each.value.api.cache.app-daily-count.ttl-seconds
+    },
+    {
+      name  = "CACHE_APP_DAILY_COUNT_BY_TOTAL_REWARD_MAX_SIZE"
+      value = each.value.api.cache.app-daily-count-by-total-reward.max-size
+    },
+    {
+      name  = "CACHE_APP_DAILY_COUNT_BY_TOTAL_REWARD_TTL_SECONDS"
+      value = each.value.api.cache.app-daily-count-by-total-reward.ttl-seconds
+    },
+    {
+      name  = "CACHE_APP_DAILY_COUNT_BY_ACTIONS_MAX_SIZE"
+      value = each.value.api.cache.app-daily-count-by-actions.max-size
+    },
+    {
+      name  = "CACHE_APP_DAILY_COUNT_BY_ACTIONS_TTL_SECONDS"
+      value = each.value.api.cache.app-daily-count-by-actions.ttl-seconds
     },
     {
       name  = "CACHE_APP_ROUND_COUNT_MAX_SIZE"
@@ -208,12 +240,28 @@ module "ecs-lb-service-api" {
       value = each.value.api.cache.app-round-count.ttl-seconds
     },
     {
-      name  = "CACHE_USER_DAILY_COUNT_MAX_SIZE"
-      value = each.value.api.cache.user-daily-count.max-size
+      name  = "CACHE_APP_ROUND_COUNT_BY_TOTAL_REWARD_MAX_SIZE"
+      value = each.value.api.cache.app-round-count-by-total-reward.max-size
     },
     {
-      name  = "CACHE_USER_DAILY_COUNT_TTL_SECONDS"
-      value = each.value.api.cache.user-daily-count.ttl-seconds
+      name  = "CACHE_APP_ROUND_COUNT_BY_TOTAL_REWARD_TTL_SECONDS"
+      value = each.value.api.cache.app-round-count-by-total-reward.ttl-seconds
+    },
+    {
+      name  = "CACHE_APP_ROUND_COUNT_BY_ACTIONS_MAX_SIZE"
+      value = each.value.api.cache.app-round-count-by-actions.max-size
+    },
+    {
+      name  = "CACHE_APP_ROUND_COUNT_BY_ACTIONS_TTL_SECONDS"
+      value = each.value.api.cache.app-round-count-by-actions.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_DAILY_COUNT_BY_TOTAL_REWARD_MAX_SIZE"
+      value = each.value.api.cache.user-daily-count-by-total-reward.max-size
+    },
+    {
+      name  = "CACHE_USER_DAILY_COUNT_BY_TOTAL_REWARD_TTL_SECONDS"
+      value = each.value.api.cache.user-daily-count-by-total-reward.ttl-seconds
     },
     {
       name  = "CACHE_USER_DAILY_COUNT_BY_ACTIONS_MAX_SIZE"
@@ -232,12 +280,12 @@ module "ecs-lb-service-api" {
       value = each.value.api.cache.user-daily-count-by-entity-type.ttl-seconds
     },
     {
-      name  = "CACHE_USER_ROUND_COUNT_BY_REWARD_MAX_SIZE"
-      value = each.value.api.cache.user-round-count-by-reward.max-size
+      name  = "CACHE_USER_ROUND_COUNT_BY_TOTAL_REWARD_MAX_SIZE"
+      value = each.value.api.cache.user-round-count-by-total-reward.max-size
     },
     {
-      name  = "CACHE_USER_ROUND_COUNT_BY_REWARD_TTL_SECONDS"
-      value = each.value.api.cache.user-round-count-by-reward.ttl-seconds
+      name  = "CACHE_USER_ROUND_COUNT_BY_TOTAL_REWARD_TTL_SECONDS"
+      value = each.value.api.cache.user-round-count-by-total-reward.ttl-seconds
     },
     {
       name  = "CACHE_USER_ROUND_COUNT_BY_ACTIONS_MAX_SIZE"
@@ -270,6 +318,14 @@ module "ecs-lb-service-api" {
     {
       name  = "CACHE_GM_NFT_COUNT_TTL_SECONDS"
       value = each.value.api.cache.gm-nft-count.ttl-seconds
+    },
+    {
+      name  = "CACHE_B3TR_RICHLIST_TOTAL_HOLDERS_MAX_SIZE"
+      value = each.value.api.cache.b3tr-richlist-total-holders.max-size
+    },
+    {
+      name  = "CACHE_B3TR_RICHLIST_TOTAL_HOLDERS_TTL_SECONDS"
+      value = each.value.api.cache.b3tr-richlist-total-holders.ttl-seconds
     },
     { name  = "THOR_URL"
       value = each.value.thor_url
@@ -535,12 +591,12 @@ module "ecs-backend-service" {
       value = each.value.api.cache.user-all-time-count-by-entity-type.ttl-seconds
     },
     {
-      name  = "CACHE_USER_ALL_TIME_COUNT_BY_REWARD_MAX_SIZE"
-      value = each.value.api.cache.user-all-time-count-by-reward.max-size
+      name  = "CACHE_USER_ALL_TIME_COUNT_BY_TOTAL_REWARD_MAX_SIZE"
+      value = each.value.api.cache.user-all-time-count-by-total-reward.max-size
     },
     {
-      name  = "CACHE_USER_ALL_TIME_COUNT_BY_REWARD_TTL_SECONDS"
-      value = each.value.api.cache.user-all-time-count-by-reward.ttl-seconds
+      name  = "CACHE_USER_ALL_TIME_COUNT_BY_TOTAL_REWARD_TTL_SECONDS"
+      value = each.value.api.cache.user-all-time-count-by-total-reward.ttl-seconds
     },
     {
       name  = "CACHE_USER_ALL_TIME_COUNT_BY_ACTIONS_MAX_SIZE"
@@ -559,12 +615,44 @@ module "ecs-backend-service" {
       value = each.value.api.cache.app-all-time-count-by-app-id.ttl-seconds
     },
     {
+      name  = "CACHE_APP_ALL_TIME_COUNT_BY_TOTAL_REWARD_MAX_SIZE"
+      value = each.value.api.cache.app-all-time-count-by-total-reward.max-size
+    },
+    {
+      name  = "CACHE_APP_ALL_TIME_COUNT_BY_TOTAL_REWARD_TTL_SECONDS"
+      value = each.value.api.cache.app-all-time-count-by-total-reward.ttl-seconds
+    },
+    {
+      name  = "CACHE_APP_ALL_TIME_COUNT_BY_ACTIONS_MAX_SIZE"
+      value = each.value.api.cache.app-all-time-count-by-actions.max-size
+    },
+    {
+      name  = "CACHE_APP_ALL_TIME_COUNT_BY_ACTIONS_TTL_SECONDS"
+      value = each.value.api.cache.app-all-time-count-by-actions.ttl-seconds
+    },
+    {
       name  = "CACHE_APP_DAILY_COUNT_MAX_SIZE"
       value = each.value.api.cache.app-daily-count.max-size
     },
     {
       name  = "CACHE_APP_DAILY_COUNT_TTL_SECONDS"
       value = each.value.api.cache.app-daily-count.ttl-seconds
+    },
+    {
+      name  = "CACHE_APP_DAILY_COUNT_BY_TOTAL_REWARD_MAX_SIZE"
+      value = each.value.api.cache.app-daily-count-by-total-reward.max-size
+    },
+    {
+      name  = "CACHE_APP_DAILY_COUNT_BY_TOTAL_REWARD_TTL_SECONDS"
+      value = each.value.api.cache.app-daily-count-by-total-reward.ttl-seconds
+    },
+    {
+      name  = "CACHE_APP_DAILY_COUNT_BY_ACTIONS_MAX_SIZE"
+      value = each.value.api.cache.app-daily-count-by-actions.max-size
+    },
+    {
+      name  = "CACHE_APP_DAILY_COUNT_BY_ACTIONS_TTL_SECONDS"
+      value = each.value.api.cache.app-daily-count-by-actions.ttl-seconds
     },
     {
       name  = "CACHE_APP_ROUND_COUNT_MAX_SIZE"
@@ -575,12 +663,28 @@ module "ecs-backend-service" {
       value = each.value.api.cache.app-round-count.ttl-seconds
     },
     {
-      name  = "CACHE_USER_DAILY_COUNT_MAX_SIZE"
-      value = each.value.api.cache.user-daily-count.max-size
+      name  = "CACHE_APP_ROUND_COUNT_BY_TOTAL_REWARD_MAX_SIZE"
+      value = each.value.api.cache.app-round-count-by-total-reward.max-size
     },
     {
-      name  = "CACHE_USER_DAILY_COUNT_TTL_SECONDS"
-      value = each.value.api.cache.user-daily-count.ttl-seconds
+      name  = "CACHE_APP_ROUND_COUNT_BY_TOTAL_REWARD_TTL_SECONDS"
+      value = each.value.api.cache.app-round-count-by-total-reward.ttl-seconds
+    },
+    {
+      name  = "CACHE_APP_ROUND_COUNT_BY_ACTIONS_MAX_SIZE"
+      value = each.value.api.cache.app-round-count-by-actions.max-size
+    },
+    {
+      name  = "CACHE_APP_ROUND_COUNT_BY_ACTIONS_TTL_SECONDS"
+      value = each.value.api.cache.app-round-count-by-actions.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_DAILY_COUNT_BY_TOTAL_REWARD_MAX_SIZE"
+      value = each.value.api.cache.user-daily-count-by-total-reward.max-size
+    },
+    {
+      name  = "CACHE_USER_DAILY_COUNT_BY_TOTAL_REWARD_TTL_SECONDS"
+      value = each.value.api.cache.user-daily-count-by-total-reward.ttl-seconds
     },
     {
       name  = "CACHE_USER_DAILY_COUNT_BY_ACTIONS_MAX_SIZE"
@@ -599,12 +703,12 @@ module "ecs-backend-service" {
       value = each.value.api.cache.user-daily-count-by-entity-type.ttl-seconds
     },
     {
-      name  = "CACHE_USER_ROUND_COUNT_BY_REWARD_MAX_SIZE"
-      value = each.value.api.cache.user-round-count-by-reward.max-size
+      name  = "CACHE_USER_ROUND_COUNT_BY_TOTAL_REWARD_MAX_SIZE"
+      value = each.value.api.cache.user-round-count-by-total-reward.max-size
     },
     {
-      name  = "CACHE_USER_ROUND_COUNT_BY_REWARD_TTL_SECONDS"
-      value = each.value.api.cache.user-round-count-by-reward.ttl-seconds
+      name  = "CACHE_USER_ROUND_COUNT_BY_TOTAL_REWARD_TTL_SECONDS"
+      value = each.value.api.cache.user-round-count-by-total-reward.ttl-seconds
     },
     {
       name  = "CACHE_USER_ROUND_COUNT_BY_ACTIONS_MAX_SIZE"
@@ -637,6 +741,14 @@ module "ecs-backend-service" {
     {
       name  = "CACHE_GM_NFT_COUNT_TTL_SECONDS"
       value = each.value.api.cache.gm-nft-count.ttl-seconds
+    },
+    {
+      name  = "CACHE_B3TR_RICHLIST_TOTAL_HOLDERS_MAX_SIZE"
+      value = each.value.api.cache.b3tr-richlist-total-holders.max-size
+    },
+    {
+      name  = "CACHE_B3TR_RICHLIST_TOTAL_HOLDERS_TTL_SECONDS"
+      value = each.value.api.cache.b3tr-richlist-total-holders.ttl-seconds
     },
     {
       name  = "VERSION_NFTS"
@@ -989,6 +1101,40 @@ data "aws_secretsmanager_secret_version" "dd_api_key" {
   secret_id = local.env.datadog.indexer.api_key_arn
 }
 
+################################################################################
+# WAF Rate Limit Bypass Token
+# Shared across blue/green — first color to deploy creates the secret,
+# subsequent deploys read the existing one.
+################################################################################
+
+locals {
+  waf_bypass_secret_name = "/prod/${var.project}/waf-rate-limit-bypass-token"
+}
+
+resource "null_resource" "ensure_waf_bypass_secret" {
+  count = startswith(local.env.environment, "prod") ? 1 : 0
+
+  triggers = {
+    secret_name = local.waf_bypass_secret_name
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      aws secretsmanager describe-secret --secret-id "${local.waf_bypass_secret_name}" --region ${local.env.region} 2>/dev/null || \
+      aws secretsmanager create-secret \
+        --name "${local.waf_bypass_secret_name}" \
+        --secret-string "$(openssl rand -hex 32)" \
+        --region ${local.env.region}
+    EOT
+  }
+}
+
+data "aws_secretsmanager_secret_version" "waf_rate_limit_bypass_token" {
+  count      = startswith(local.env.environment, "prod") ? 1 : 0
+  secret_id  = local.waf_bypass_secret_name
+  depends_on = [null_resource.ensure_waf_bypass_secret]
+}
+
 data "aws_security_groups" "ecs_sg_list" {
   filter {
     name   = "vpc-id"
@@ -1068,7 +1214,7 @@ module "vpc-endpoints" {
 
 module "waf" {
   count  = startswith(local.env.environment, "prod") ? 1 : 0
-  source = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//waf?ref=waf_indexer_fix"
+  source = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//waf?ref=v.3.2.0"
 
   env          = local.env.environment
   project_name = "${var.project}-indexer"
@@ -1084,8 +1230,10 @@ module "waf" {
   resource_arn  = [for service in module.ecs-lb-service-api : service.alb_arn]
 
   # Rate limiting configuration (defaults to 2000 requests per 5 minutes per IP)
-  rate_limit                = local.env.alb.waf.waf_rate_limit
-  rate_limit_exception_list = local.env.alb.waf.waf_rate_limit_exception_list
+  rate_limit                     = local.env.alb.waf.waf_rate_limit
+  rate_limit_exception_list      = local.env.alb.waf.waf_rate_limit_exception_list
+  rate_limit_bypass_header_name  = length(data.aws_secretsmanager_secret_version.waf_rate_limit_bypass_token) > 0 ? lookup(local.env.alb.waf, "waf_rate_limit_bypass_header_name", "") : ""
+  rate_limit_bypass_header_value = try(data.aws_secretsmanager_secret_version.waf_rate_limit_bypass_token[0].secret_string, "")
 
   # Required variables
   managed_rule_group_statement_rules = []

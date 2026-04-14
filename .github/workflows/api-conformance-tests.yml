@@ -56,6 +56,8 @@ jobs:
     env:
       MAX_RESPONSE_MILLISECONDS: "5000"
       HYPOTHESIS_MAX_EXAMPLES: "250"
+      SCHEMATHESIS_WORKERS: "4"
+      RATE_LIMIT_BYPASS_TOKEN: ${{ secrets.RATE_LIMIT_BYPASS_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -125,6 +127,16 @@ jobs:
           exit_code="${PIPESTATUS[0]}"
           set -e
           echo "exit_code=${exit_code}" >> "$GITHUB_OUTPUT"
+
+      - name: Redact bypass token from logs
+        if: always() && env.RATE_LIMIT_BYPASS_TOKEN != ''
+        shell: bash
+        run: |
+          for f in ./schemathesis-output/network.log ./schemathesis-output/run.log; do
+            if [[ -f "$f" ]]; then
+              sed -i "s/${RATE_LIMIT_BYPASS_TOKEN}/***REDACTED***/g" "$f"
+            fi
+          done
 
       - name: Generate conformance report
         if: always()
