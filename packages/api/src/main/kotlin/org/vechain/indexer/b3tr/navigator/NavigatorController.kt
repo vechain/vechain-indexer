@@ -173,6 +173,51 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
         )
     }
 
+    @GetMapping("/fees/summary")
+    @Operation(
+        summary = "Get navigator fee summary",
+        description =
+            "Returns total fees earned and claimed for a navigator, or globally if no navigator specified.",
+    )
+    @CommonApiResponses
+    open fun getFeeSummary(
+        @Parameter(
+            description = "Filter by navigator address. Omit for global totals.",
+            example = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            schema = Schema(type = "string"),
+        )
+        @RequestParam(required = false)
+        navigator: String?
+    ): NavigatorFeeSummary = navigatorApiService.getFeeSummary(navigator)
+
+    @GetMapping("/fees/history")
+    @Operation(
+        summary = "Get per-round fee history",
+        description =
+            "Returns a paginated list of per-round fee records for a navigator, showing deposited amount, claim status, and unlock round.",
+    )
+    @CommonApiResponses
+    @PaginationParameters
+    open fun getFeeHistory(
+        @Parameter(
+            description = "Navigator address.",
+            required = true,
+            example = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            schema = Schema(type = "string"),
+        )
+        @RequestParam
+        navigator: String,
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<NavigatorFee> {
+        val pageable =
+            PaginationUtils.toPageable(page, size, direction, NavigatorFee::roundId.name, "_id")
+        return paginatedResponse(
+            navigatorApiService.findFeeHistory(navigator = navigator, pageable = pageable)
+        )
+    }
+
     private fun resolveOrderBy(orderBy: String?): String =
         when (orderBy?.lowercase()) {
             "stake" -> Navigator::stake.name

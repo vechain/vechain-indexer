@@ -221,6 +221,11 @@ object IndexerNames {
         const val COLLECTION = "b3tr_navigator_delegation_events"
     }
 
+    object NAVIGATOR_FEE {
+        const val NAME = "NavigatorFeeIndexer"
+        const val COLLECTION = "b3tr_navigator_fees"
+    }
+
     /** Returns a map of indexer NAME → COLLECTION for every nested object that defines both. */
     fun nameToCollection(): Map<String, String> =
         IndexerNames::class

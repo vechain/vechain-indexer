@@ -153,6 +153,18 @@
         },
         {
           "filter": {
+            "query": "@http.url_details.path:\"/api/v1/b3tr/navigators/fees/history\""
+          },
+          "name": "/api/v1/b3tr/navigators/fees/history"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:\"/api/v1/b3tr/navigators/fees/summary\""
+          },
+          "name": "/api/v1/b3tr/navigators/fees/summary"
+        },
+        {
+          "filter": {
             "query": "@http.url_details.path:\"/api/v1/b3tr/galaxy-members/level-overview\""
           },
           "name": "/api/v1/b3tr/galaxy-members/level-overview"

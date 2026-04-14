@@ -1078,6 +1078,8 @@
               "B3TR_NAVIGATOR_DELEGATION_INCREASED",
               "B3TR_NAVIGATOR_DELEGATION_DECREASED",
               "B3TR_NAVIGATOR_DELEGATION_REMOVED",
+              "B3TR_NAVIGATOR_SLASHED",
+              "B3TR_NAVIGATOR_MINOR_SLASHED",
               "TRANSFER_VET",
               "TRANSFER_FT",
               "TRANSFER_NFT",
@@ -1550,6 +1552,62 @@
         ],
         "type": "object"
       },
+      "NavigatorFee": {
+        "properties": {
+          "claimed": {
+            "type": "boolean"
+          },
+          "claimedAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "depositedAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "navigator": {
+            "type": "string"
+          },
+          "roundId": {
+            "type": "string"
+          },
+          "totalDeposited": {
+            "type": "integer"
+          },
+          "unlockRound": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "claimed",
+          "depositedAt",
+          "id",
+          "navigator",
+          "roundId",
+          "totalDeposited",
+          "unlockRound"
+        ],
+        "type": "object"
+      },
+      "NavigatorFeeSummary": {
+        "properties": {
+          "totalClaimed": {
+            "type": "integer"
+          },
+          "totalEarned": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "totalClaimed",
+          "totalEarned"
+        ],
+        "type": "object"
+      },
       "NavigatorOverview": {
         "properties": {
           "activeNavigators": {
@@ -1848,6 +1906,24 @@
           "data": {
             "items": {
               "$ref": "#/components/schemas/NavigatorDelegationEvent"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationDetail"
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ],
+        "type": "object"
+      },
+      "PaginatedResponseNavigatorFee": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/NavigatorFee"
             },
             "type": "array"
           },
@@ -5693,6 +5769,240 @@
           }
         },
         "summary": "Get delegation event history",
+        "tags": [
+          "B3TR Navigators"
+        ]
+      }
+    },
+    "/api/v1/b3tr/navigators/fees/history": {
+      "get": {
+        "description": "Returns a paginated list of per-round fee records for a navigator, showing deposited amount, claim status, and unlock round.",
+        "operationId": "getFeeHistory",
+        "parameters": [
+          {
+            "description": "Navigator address.",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            "in": "query",
+            "name": "navigator",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The zero-based results page number",
+            "example": 0,
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The results page size",
+            "example": 20,
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 150,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The sort direction",
+            "in": "query",
+            "name": "direction",
+            "required": false,
+            "schema": {
+              "default": "DESC",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/XProjectIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponseNavigatorFee"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get per-round fee history",
+        "tags": [
+          "B3TR Navigators"
+        ]
+      }
+    },
+    "/api/v1/b3tr/navigators/fees/summary": {
+      "get": {
+        "description": "Returns total fees earned and claimed for a navigator, or globally if no navigator specified.",
+        "operationId": "getFeeSummary",
+        "parameters": [
+          {
+            "description": "Filter by navigator address. Omit for global totals.",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            "in": "query",
+            "name": "navigator",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/XProjectIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/NavigatorFeeSummary"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get navigator fee summary",
         "tags": [
           "B3TR Navigators"
         ]

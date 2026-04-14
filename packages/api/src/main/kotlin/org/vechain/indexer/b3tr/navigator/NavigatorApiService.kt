@@ -11,6 +11,8 @@ import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
 
+data class NavigatorFeeSummary(val totalEarned: BigInteger, val totalClaimed: BigInteger)
+
 data class NavigatorOverview(
     val activeNavigators: Long,
     val totalStaked: BigInteger,
@@ -79,6 +81,29 @@ open class NavigatorApiService(private val mongoTemplate: MongoTemplate) {
                 .and(NavigatorCitizen::active.name)
                 .`is`(true)
         return runQuery(criteria, pageable, NavigatorCitizen::class.java)
+    }
+
+    fun getFeeSummary(navigator: String?): NavigatorFeeSummary {
+        val criteria = Criteria()
+        navigator?.let { criteria.and(NavigatorFee::navigator.name).`is`(it.lowercase()) }
+        val fees = mongoTemplate.find(Query(criteria), NavigatorFee::class.java)
+
+        var totalEarned = BigDecimal.ZERO
+        var totalClaimed = BigDecimal.ZERO
+        for (fee in fees) {
+            totalEarned += fee.totalDeposited
+            if (fee.claimed) totalClaimed += fee.totalDeposited
+        }
+
+        return NavigatorFeeSummary(
+            totalEarned = totalEarned.toBigInteger(),
+            totalClaimed = totalClaimed.toBigInteger(),
+        )
+    }
+
+    fun findFeeHistory(navigator: String, pageable: Pageable): Slice<NavigatorFee> {
+        val criteria = Criteria.where(NavigatorFee::navigator.name).`is`(navigator.lowercase())
+        return runQuery(criteria, pageable, NavigatorFee::class.java)
     }
 
     private fun <T> runQuery(criteria: Criteria, pageable: Pageable, clazz: Class<T>): Slice<T> {
