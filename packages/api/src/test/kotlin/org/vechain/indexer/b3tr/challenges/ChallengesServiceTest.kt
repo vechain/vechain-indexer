@@ -78,16 +78,17 @@ class ChallengesServiceTest {
             pageable = pageable,
         )
 
-        val queryObject = querySlot.captured.queryObject.toJson()
-        assertTrue(queryObject.contains("\"allApps\""))
-        assertTrue(queryObject.contains("\"selectedApps\""))
+        val queryObject = querySlot.captured.queryObject
+        assertTrue(containsKey(queryObject, "allApps"))
+        assertTrue(containsKey(queryObject, "selectedApps"))
     }
 
     @Test
     fun `getChallenges returns pending stored challenge as active when current round has started`() {
+        val querySlot = slot<Query>()
         val challenge = challenge(participantCount = 2, startRound = 5)
         coEvery { thorClient.inspectClauses(any(), any()) } returns listOf(currentRoundResult(5))
-        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
+        every { mongoTemplate.find(capture(querySlot), B3trChallenge::class.java) } returns
             listOf(challenge)
 
         val result =
@@ -106,6 +107,9 @@ class ChallengesServiceTest {
 
         assertEquals(1, result.data.size)
         assertEquals(ChallengeStatus.Active, result.data.single().status)
+        val queryObject = querySlot.captured.queryObject
+        assertTrue(containsKey(queryObject, "startRound"))
+        assertTrue(containsKey(queryObject, "participantCount"))
     }
 
     @Test
@@ -312,15 +316,18 @@ class ChallengesServiceTest {
     @Test
     fun `finalizable challenge appears in needed actions instead of active`() {
         stubUiRuntime(currentRound = 7, maxParticipants = 100)
-        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
+        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returnsMany
             listOf(
-                challenge(
-                    participantCount = 2,
-                    startRound = 5,
-                    endRound = 6,
-                    creator = viewerWallet,
-                    participants = listOf(viewerWallet, wallet("123")),
-                )
+                listOf(
+                    challenge(
+                        participantCount = 2,
+                        startRound = 5,
+                        endRound = 6,
+                        creator = viewerWallet,
+                        participants = listOf(viewerWallet, wallet("123")),
+                    )
+                ),
+                emptyList(),
             )
 
         val neededActions = service.getNeededActionChallenges(viewer, pageable)
@@ -352,8 +359,9 @@ class ChallengesServiceTest {
 
     @Test
     fun `getOpenChallenges returns joinable public pending challenges`() {
+        val querySlot = slot<Query>()
         stubUiRuntime(currentRound = 5, maxParticipants = 100)
-        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
+        every { mongoTemplate.find(capture(querySlot), B3trChallenge::class.java) } returns
             listOf(
                 challenge(
                     participantCount = 1,
@@ -371,6 +379,9 @@ class ChallengesServiceTest {
         assertTrue(item.canJoin)
         assertEquals(100, item.maxParticipants)
         assertEquals("Spring Sprint", item.title)
+        val queryObject = querySlot.captured.queryObject
+        assertTrue(containsKey(queryObject, "participantCount"))
+        assertTrue(containsKey(queryObject, "creator"))
     }
 
     @Test
@@ -399,85 +410,67 @@ class ChallengesServiceTest {
 
     @Test
     fun `getExploreChallenges excludes viewer created challenges`() {
+        val querySlot = slot<Query>()
         stubUiRuntime(currentRound = 5, maxParticipants = 100)
-        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
-            listOf(
-                challenge(
-                    participantCount = 2,
-                    startRound = 5,
-                    visibility = ChallengeVisibility.Public,
-                    creator = viewerWallet,
-                    participants = listOf(wallet("123"), wallet("456")),
-                )
-            )
+        every { mongoTemplate.find(capture(querySlot), B3trChallenge::class.java) } returns
+            emptyList()
 
         val result = service.getExploreChallenges(viewer, pageable)
 
         assertTrue(result.data.isEmpty())
+        val queryObject = querySlot.captured.queryObject
+        assertTrue(containsKey(queryObject, "creator"))
+        assertTrue(containsValue(queryObject, viewerWallet))
     }
 
     @Test
     fun `getExploreChallenges excludes viewer joined challenges`() {
+        val querySlot = slot<Query>()
         stubUiRuntime(currentRound = 5, maxParticipants = 100)
-        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
-            listOf(
-                challenge(
-                    participantCount = 2,
-                    startRound = 5,
-                    visibility = ChallengeVisibility.Public,
-                    creator = wallet("abc"),
-                    participants = listOf(viewerWallet, wallet("123")),
-                )
-            )
+        every { mongoTemplate.find(capture(querySlot), B3trChallenge::class.java) } returns
+            emptyList()
 
         val result = service.getExploreChallenges(viewer, pageable)
 
         assertTrue(result.data.isEmpty())
+        val queryObject = querySlot.captured.queryObject
+        assertTrue(containsKey(queryObject, "participants"))
+        assertTrue(containsValue(queryObject, viewerWallet))
     }
 
     @Test
     fun `getExploreChallenges excludes pending joinable challenges`() {
+        val querySlot = slot<Query>()
         stubUiRuntime(currentRound = 5, maxParticipants = 100)
-        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
-            listOf(
-                challenge(
-                    participantCount = 1,
-                    startRound = 6,
-                    visibility = ChallengeVisibility.Public,
-                    creator = wallet("abc"),
-                    participants = listOf(wallet("abc")),
-                )
-            )
+        every { mongoTemplate.find(capture(querySlot), B3trChallenge::class.java) } returns
+            emptyList()
 
         val result = service.getExploreChallenges(viewer, pageable)
 
         assertTrue(result.data.isEmpty())
+        val queryObject = querySlot.captured.queryObject
+        assertTrue(containsKey(queryObject, "startRound"))
+        assertTrue(containsKey(queryObject, "participantCount"))
     }
 
     @Test
     fun `getExploreChallenges excludes ended challenges awaiting finalization`() {
+        val querySlot = slot<Query>()
         stubUiRuntime(currentRound = 7, maxParticipants = 100)
-        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
-            listOf(
-                challenge(
-                    participantCount = 2,
-                    startRound = 5,
-                    endRound = 6,
-                    visibility = ChallengeVisibility.Public,
-                    creator = wallet("abc"),
-                    participants = listOf(wallet("abc"), wallet("123")),
-                )
-            )
+        every { mongoTemplate.find(capture(querySlot), B3trChallenge::class.java) } returns
+            emptyList()
 
         val result = service.getExploreChallenges(viewer, pageable)
 
         assertTrue(result.data.isEmpty())
+        val queryObject = querySlot.captured.queryObject
+        assertTrue(containsKey(queryObject, "endRound"))
     }
 
     @Test
     fun `getExploreChallenges paginates ui pages without overlap or overflow`() {
         stubUiRuntime(currentRound = 5, maxParticipants = 100)
-        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
+        stubPagedFind(
             (30L downTo 1L).map { challengeId ->
                 challenge(
                     challengeId = challengeId,
@@ -487,6 +480,7 @@ class ChallengesServiceTest {
                     creator = wallet((challengeId + 100).toString(16)),
                 )
             }
+        )
 
         val firstPage = service.getExploreChallenges(viewer, pageRequest(page = 0, size = 12))
         val secondPage = service.getExploreChallenges(viewer, pageRequest(page = 1, size = 12))
@@ -526,10 +520,11 @@ class ChallengesServiceTest {
     @Test
     fun `getChallenges paginates computed status pages without overlap or overflow`() {
         coEvery { thorClient.inspectClauses(any(), any()) } returns listOf(currentRoundResult(5))
-        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
+        stubPagedFind(
             (30L downTo 1L).map { challengeId ->
                 challenge(challengeId = challengeId, participantCount = 2, startRound = 5)
             }
+        )
 
         val firstPage =
             service.getChallenges(
@@ -661,6 +656,39 @@ class ChallengesServiceTest {
                 }
             }
     }
+
+    private fun stubPagedFind(challenges: List<B3trChallenge>) {
+        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } answers
+            {
+                val query = firstArg<Query>()
+                val limit = query.limit
+                challenges.drop(query.skip.toInt()).let { page ->
+                    if (limit > 0) {
+                        page.take(limit)
+                    } else {
+                        page
+                    }
+                }
+            }
+    }
+
+    private fun containsKey(value: Any?, key: String): Boolean =
+        when (value) {
+            is Map<*, *> ->
+                value.entries.any { entry -> entry.key == key || containsKey(entry.value, key) }
+            is Iterable<*> -> value.any { containsKey(it, key) }
+            else -> false
+        }
+
+    private fun containsValue(value: Any?, expected: Any): Boolean =
+        when (value) {
+            is Map<*, *> ->
+                value.entries.any { entry ->
+                    entry.key == expected || containsValue(entry.value, expected)
+                }
+            is Iterable<*> -> value.any { containsValue(it, expected) }
+            else -> value == expected
+        }
 
     private fun challenge(
         participantCount: Int,
