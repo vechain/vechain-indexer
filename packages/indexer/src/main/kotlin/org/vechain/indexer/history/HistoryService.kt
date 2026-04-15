@@ -254,7 +254,7 @@ open class HistoryService(
 
         val to =
             when {
-                isNavigatorDelegation -> event.params.getAsString("navigator")
+                isNavigatorDelegation -> null
                 isNavigatorEvent -> null
                 else -> event.params.getAsString("to")
             }
