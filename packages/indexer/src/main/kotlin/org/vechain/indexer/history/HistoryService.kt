@@ -202,6 +202,13 @@ open class HistoryService(
                     event.params.getAsString("amount")
                 HistoryEventName.B3TR_NAVIGATOR_SLASHED,
                 HistoryEventName.B3TR_NAVIGATOR_MINOR_SLASHED -> event.params.getAsString("amount")
+                HistoryEventName.B3TR_NAVIGATOR_REGISTERED ->
+                    event.params.getAsString("stakeAmount")
+                HistoryEventName.B3TR_NAVIGATOR_STAKE_ADDED -> event.params.getAsString("amount")
+                HistoryEventName.B3TR_NAVIGATOR_STAKE_WITHDRAWN ->
+                    event.params.getAsString("amount")
+                HistoryEventName.B3TR_NAVIGATOR_FEE_DEPOSITED,
+                HistoryEventName.B3TR_NAVIGATOR_FEE_CLAIMED -> event.params.getAsString("amount")
                 else -> event.params.getAsString("value")
             }
 
@@ -228,24 +235,29 @@ open class HistoryService(
                     HistoryEventName.B3TR_NAVIGATOR_DELEGATION_REMOVED,
                 )
 
-        val isNavigatorSlash =
+        val isNavigatorEvent =
             eventName in
                 listOf(
                     HistoryEventName.B3TR_NAVIGATOR_SLASHED,
                     HistoryEventName.B3TR_NAVIGATOR_MINOR_SLASHED,
+                    HistoryEventName.B3TR_NAVIGATOR_REGISTERED,
+                    HistoryEventName.B3TR_NAVIGATOR_STAKE_ADDED,
+                    HistoryEventName.B3TR_NAVIGATOR_STAKE_WITHDRAWN,
+                    HistoryEventName.B3TR_NAVIGATOR_FEE_DEPOSITED,
+                    HistoryEventName.B3TR_NAVIGATOR_FEE_CLAIMED,
                 )
 
         val from =
             when {
                 isNavigatorDelegation -> event.params.getAsString("citizen")
-                isNavigatorSlash -> event.params.getAsString("navigator")
+                isNavigatorEvent -> event.params.getAsString("navigator")
                 else -> event.params.getAsString("from")
             }
 
         val to =
             when {
                 isNavigatorDelegation -> event.params.getAsString("navigator")
-                isNavigatorSlash -> null
+                isNavigatorEvent -> null
                 else -> event.params.getAsString("to")
             }
 
