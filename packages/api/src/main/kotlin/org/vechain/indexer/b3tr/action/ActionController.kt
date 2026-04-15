@@ -48,8 +48,8 @@ open class ActionController(private val service: ActionService) {
     @Operation(summary = "Get B3TR actions for a user")
     @AddressParameter(name = "wallet", required = true, `in` = ParameterIn.PATH)
     @AppIdParameter
-    @AfterParameter(description = "Return records after this time (Unix time in milliseconds)")
-    @BeforeParameter(description = "Return records before this time (Unix time in milliseconds)")
+    @AfterParameter
+    @BeforeParameter
     @CommonApiResponses
     @PaginationParameters
     open fun getUserActions(
@@ -87,8 +87,8 @@ open class ActionController(private val service: ActionService) {
     @GetMapping("/actions/apps/{appId}")
     @Operation(summary = "Get B3TR actions for an app")
     @AppIdParameter(required = true, `in` = ParameterIn.PATH)
-    @AfterParameter(description = "Return records after this time (Unix time in milliseconds)")
-    @BeforeParameter(description = "Return records before this time (Unix time in milliseconds)")
+    @AfterParameter
+    @BeforeParameter
     @CommonApiResponses
     @PaginationParameters
     open fun getAppActions(

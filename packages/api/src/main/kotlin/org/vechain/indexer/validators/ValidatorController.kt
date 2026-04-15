@@ -313,12 +313,12 @@ open class ValidatorController(
     )
     @AfterParameter(
         name = "startTimestamp",
-        description = "Start timestamp (inclusive)",
+        description = "Start timestamp in Unix seconds (inclusive)",
         required = true,
     )
     @BeforeParameter(
         name = "endTimestamp",
-        description = "End timestamp (inclusive)",
+        description = "End timestamp in Unix seconds (inclusive)",
         required = true,
     )
     @CommonApiResponses

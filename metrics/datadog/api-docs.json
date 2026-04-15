@@ -3733,7 +3733,7 @@
             }
           },
           {
-            "description": "Return records after this time (Unix time in milliseconds)",
+            "description": "Return records after this time (Unix time in seconds).",
             "example": 1704143600,
             "in": "query",
             "name": "after",
@@ -3746,7 +3746,7 @@
             }
           },
           {
-            "description": "Return records before this time (Unix time in milliseconds)",
+            "description": "Return records before this time (Unix time in seconds).",
             "example": 1704153600,
             "in": "query",
             "name": "before",
@@ -4620,7 +4620,7 @@
             }
           },
           {
-            "description": "Return records after this time (Unix time in milliseconds)",
+            "description": "Return records after this time (Unix time in seconds).",
             "example": 1704143600,
             "in": "query",
             "name": "after",
@@ -4633,7 +4633,7 @@
             }
           },
           {
-            "description": "Return records before this time (Unix time in milliseconds)",
+            "description": "Return records before this time (Unix time in seconds).",
             "example": 1704153600,
             "in": "query",
             "name": "before",
@@ -13040,7 +13040,7 @@
             }
           },
           {
-            "description": "Start timestamp (inclusive)",
+            "description": "Start timestamp in Unix seconds (inclusive)",
             "example": 1704143600,
             "in": "query",
             "name": "startTimestamp",
@@ -13053,7 +13053,7 @@
             }
           },
           {
-            "description": "End timestamp (inclusive)",
+            "description": "End timestamp in Unix seconds (inclusive)",
             "example": 1704153600,
             "in": "query",
             "name": "endTimestamp",
