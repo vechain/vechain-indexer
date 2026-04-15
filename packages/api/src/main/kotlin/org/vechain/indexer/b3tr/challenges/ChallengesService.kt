@@ -40,38 +40,6 @@ open class ChallengesService(
     private val currentRoundFunction = Function("currentRoundId", emptyList(), emptyList())
     private val maxParticipantsFunction = Function("maxParticipants", emptyList(), emptyList())
 
-    open fun getChallenges(
-        status: ChallengeStatus?,
-        kind: ChallengeKind?,
-        visibility: ChallengeVisibility?,
-        creator: Address?,
-        participant: Address?,
-        invitee: Address?,
-        appId: String?,
-        startRound: Int?,
-        endRound: Int?,
-        pageable: Pageable,
-    ): PaginatedResponse<B3trChallengeResponse> {
-        val currentRound = getCurrentRound()
-
-        return findChallengePage(
-            filters =
-                ChallengeFilters(
-                    status = status,
-                    kind = kind,
-                    visibility = visibility,
-                    creator = creator?.value,
-                    participant = participant?.value,
-                    invitee = invitee?.value,
-                    appId = appId,
-                    startRound = startRound,
-                    endRound = endRound,
-                ),
-            currentRound = currentRound,
-            pageable = pageable,
-        )
-    }
-
     open fun getNeededActionChallenges(
         wallet: Address,
         pageable: Pageable,
@@ -102,7 +70,7 @@ open class ChallengesService(
     ): PaginatedResponse<B3trChallengeUiResponse> =
         getUiChallenges(ChallengeUiSection.History, wallet, pageable)
 
-    open fun getChallenge(challengeId: Long, wallet: Address? = null): B3trChallengeDetailResponse {
+    open fun getChallenge(challengeId: Long): B3trChallengeDetailResponse {
         val challenge =
             repository.findByIdOrNull(B3trChallenge.documentId(challengeId))
                 ?: throw ResourceNotFoundException("Challenge not found for id $challengeId")
@@ -110,7 +78,7 @@ open class ChallengesService(
         val runtimeContext = getChallengeRuntimeContext()
         return buildChallengeDetailResponse(
             challenge = challenge,
-            wallet = normalizeWallet(wallet),
+            wallet = "",
             runtimeContext = runtimeContext,
         )
     }
@@ -181,15 +149,6 @@ open class ChallengesService(
                 ),
         )
     }
-
-    private fun findChallengePage(
-        filters: ChallengeFilters,
-        currentRound: Int,
-        pageable: Pageable,
-    ): PaginatedResponse<B3trChallengeResponse> =
-        findPage(query = buildChallengeQuery(filters, currentRound), pageable = pageable) {
-            B3trChallengeResponse.from(it, computeEffectiveStatus(it, currentRound))
-        }
 
     private fun findQueryUiPage(
         query: Query,
@@ -283,54 +242,6 @@ open class ChallengesService(
         val page = if (hasNext) results.dropLast(1) else results
         val slice = SliceImpl(page.map(mapper), pageable, hasNext)
         return paginatedResponse(slice)
-    }
-
-    private fun buildBaseQuery(filters: ChallengeFilters): Query {
-        val criteria = mutableListOf<Criteria>()
-
-        filters.status?.let { criteria.add(Criteria.where(B3trChallenge::status.name).`is`(it)) }
-        filters.kind?.let { criteria.add(Criteria.where(B3trChallenge::kind.name).`is`(it)) }
-        filters.visibility?.let {
-            criteria.add(Criteria.where(B3trChallenge::visibility.name).`is`(it))
-        }
-        filters.creator?.let {
-            criteria.add(Criteria.where(B3trChallenge::creator.name).`is`(HexUtils.normalise(it)))
-        }
-        filters.participant?.let {
-            criteria.add(
-                Criteria.where(B3trChallenge::participants.name).`is`(HexUtils.normalise(it))
-            )
-        }
-        filters.invitee?.let {
-            criteria.add(Criteria.where(B3trChallenge::invited.name).`is`(HexUtils.normalise(it)))
-        }
-        filters.appId?.let {
-            criteria.add(
-                Criteria()
-                    .orOperator(
-                        Criteria.where(B3trChallenge::allApps.name).`is`(true),
-                        Criteria.where(B3trChallenge::selectedApps.name).`is`(it),
-                    )
-            )
-        }
-        filters.startRound?.let {
-            criteria.add(Criteria.where(B3trChallenge::startRound.name).`is`(it))
-        }
-        filters.endRound?.let {
-            criteria.add(Criteria.where(B3trChallenge::endRound.name).`is`(it))
-        }
-
-        return if (criteria.isEmpty()) {
-            Query()
-        } else {
-            Query(Criteria().andOperator(*criteria.toTypedArray()))
-        }
-    }
-
-    private fun buildChallengeQuery(filters: ChallengeFilters, currentRound: Int): Query {
-        val baseQuery = buildBaseQuery(filters.copy(status = null))
-        buildEffectiveStatusCriteria(filters.status, currentRound)?.let(baseQuery::addCriteria)
-        return baseQuery
     }
 
     private fun buildUiSectionQuery(
@@ -724,15 +635,6 @@ open class ChallengesService(
         }
     }
 
-    private fun getCurrentRound(): Int = runBlocking {
-        val responses =
-            thorClient.inspectClauses(
-                listOf(createClause(xAllocVotingContract, currentRoundFunction)),
-                BlockRevision.Keyword.BEST,
-            )
-        decodeUint256(responses.firstOrNull()?.data).toInt()
-    }
-
     private fun getChallengeRuntimeContext(): ChallengeRuntimeContext = runBlocking {
         requireConfiguredAddress(challengesContract, "CHALLENGES_CONTRACT")
         val responses =
@@ -772,18 +674,6 @@ open class ChallengesService(
     private fun normalizeWallet(wallet: Address?): String =
         wallet?.value?.let(HexUtils::normalise) ?: ""
 }
-
-private data class ChallengeFilters(
-    val status: ChallengeStatus?,
-    val kind: ChallengeKind?,
-    val visibility: ChallengeVisibility?,
-    val creator: String?,
-    val participant: String?,
-    val invitee: String?,
-    val appId: String?,
-    val startRound: Int?,
-    val endRound: Int?,
-)
 
 private data class ChallengeRuntimeContext(val currentRound: Int, val maxParticipants: Int)
 
