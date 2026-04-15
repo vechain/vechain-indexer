@@ -59,56 +59,6 @@ class ChallengesServiceTest {
         )
 
     @Test
-    fun `getChallenges keeps all-app challenges when filtering by appId`() {
-        val querySlot = slot<Query>()
-        coEvery { thorClient.inspectClauses(any(), any()) } returns listOf(currentRoundResult(5))
-        every { mongoTemplate.find(capture(querySlot), B3trChallenge::class.java) } returns
-            emptyList()
-
-        service.getChallenges(
-            status = null,
-            kind = null,
-            visibility = null,
-            creator = null,
-            participant = null,
-            invitee = null,
-            appId = "0xapp",
-            startRound = null,
-            endRound = null,
-            pageable = pageable,
-        )
-
-        val queryObject = querySlot.captured.queryObject.toJson()
-        assertTrue(queryObject.contains("\"allApps\""))
-        assertTrue(queryObject.contains("\"selectedApps\""))
-    }
-
-    @Test
-    fun `getChallenges returns pending stored challenge as active when current round has started`() {
-        val challenge = challenge(participantCount = 2, startRound = 5)
-        coEvery { thorClient.inspectClauses(any(), any()) } returns listOf(currentRoundResult(5))
-        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
-            listOf(challenge)
-
-        val result =
-            service.getChallenges(
-                status = ChallengeStatus.Active,
-                kind = null,
-                visibility = null,
-                creator = null,
-                participant = null,
-                invitee = null,
-                appId = null,
-                startRound = null,
-                endRound = null,
-                pageable = pageable,
-            )
-
-        assertEquals(1, result.data.size)
-        assertEquals(ChallengeStatus.Active, result.data.single().status)
-    }
-
-    @Test
     fun `getChallenge recomputes invalid status from current round and participant count`() {
         stubUiRuntime(currentRound = 8, maxParticipants = 100)
         every { repository.findById(B3trChallenge.documentId(1L)) } returns
@@ -147,7 +97,7 @@ class ChallengesServiceTest {
     }
 
     @Test
-    fun `getChallenge returns invitation actions for invited viewer`() {
+    fun `getChallenge returns anonymous detail for invited challenge`() {
         stubUiRuntime(currentRound = 5, maxParticipants = 100)
         every { repository.findById(B3trChallenge.documentId(1L)) } returns
             Optional.of(
@@ -159,16 +109,16 @@ class ChallengesServiceTest {
                 )
             )
 
-        val result = service.getChallenge(1L, viewer)
+        val result = service.getChallenge(1L)
 
-        assertEquals(ParticipantStatus.Invited, result.viewerStatus)
-        assertTrue(result.isInvitationPending)
-        assertTrue(result.canAccept)
-        assertTrue(result.canDecline)
+        assertEquals(ParticipantStatus.None, result.viewerStatus)
+        assertFalse(result.isInvitationPending)
+        assertFalse(result.canAccept)
+        assertFalse(result.canDecline)
     }
 
     @Test
-    fun `getChallenge returns creator actions for private pending challenge`() {
+    fun `getChallenge returns anonymous detail for creator challenge`() {
         stubUiRuntime(currentRound = 5, maxParticipants = 100)
         every { repository.findById(B3trChallenge.documentId(1L)) } returns
             Optional.of(
@@ -182,17 +132,17 @@ class ChallengesServiceTest {
                 )
             )
 
-        val result = service.getChallenge(1L, viewer)
+        val result = service.getChallenge(1L)
 
-        assertTrue(result.isCreator)
-        assertTrue(result.isJoined)
-        assertTrue(result.canCancel)
-        assertTrue(result.canAddInvites)
+        assertFalse(result.isCreator)
+        assertFalse(result.isJoined)
+        assertFalse(result.canCancel)
+        assertFalse(result.canAddInvites)
         assertEquals(listOf(wallet("123")), result.invited)
     }
 
     @Test
-    fun `getChallenge returns claim action for qualified split winner`() {
+    fun `getChallenge returns anonymous detail for finalized winner`() {
         stubUiRuntime(currentRound = 7, maxParticipants = 100, participantActions = 6)
         every { repository.findById(B3trChallenge.documentId(1L)) } returns
             Optional.of(
@@ -209,14 +159,14 @@ class ChallengesServiceTest {
                 )
             )
 
-        val result = service.getChallenge(1L, viewer)
+        val result = service.getChallenge(1L)
 
-        assertEquals(ParticipantStatus.Joined, result.viewerStatus)
-        assertTrue(result.canClaim)
+        assertEquals(ParticipantStatus.None, result.viewerStatus)
+        assertFalse(result.canClaim)
     }
 
     @Test
-    fun `getChallenge returns refund action for invalid stake participant`() {
+    fun `getChallenge returns anonymous detail for invalid challenge`() {
         stubUiRuntime(currentRound = 7, maxParticipants = 100)
         every { repository.findById(B3trChallenge.documentId(1L)) } returns
             Optional.of(
@@ -229,14 +179,14 @@ class ChallengesServiceTest {
                 )
             )
 
-        val result = service.getChallenge(1L, viewer)
+        val result = service.getChallenge(1L)
 
-        assertTrue(result.canRefund)
+        assertFalse(result.canRefund)
         assertFalse(result.canClaim)
     }
 
     @Test
-    fun `getChallenge returns finalize action when active challenge has ended`() {
+    fun `getChallenge returns anonymous detail for challenge awaiting finalization`() {
         stubUiRuntime(currentRound = 7, maxParticipants = 100)
         every { repository.findById(B3trChallenge.documentId(1L)) } returns
             Optional.of(
@@ -249,10 +199,10 @@ class ChallengesServiceTest {
                 )
             )
 
-        val result = service.getChallenge(1L, viewer)
+        val result = service.getChallenge(1L)
 
         assertEquals(ChallengeStatus.Active, result.status)
-        assertTrue(result.canFinalize)
+        assertFalse(result.canFinalize)
     }
 
     @Test
@@ -312,15 +262,18 @@ class ChallengesServiceTest {
     @Test
     fun `finalizable challenge appears in needed actions instead of active`() {
         stubUiRuntime(currentRound = 7, maxParticipants = 100)
-        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
+        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returnsMany
             listOf(
-                challenge(
-                    participantCount = 2,
-                    startRound = 5,
-                    endRound = 6,
-                    creator = viewerWallet,
-                    participants = listOf(viewerWallet, wallet("123")),
-                )
+                listOf(
+                    challenge(
+                        participantCount = 2,
+                        startRound = 5,
+                        endRound = 6,
+                        creator = viewerWallet,
+                        participants = listOf(viewerWallet, wallet("123")),
+                    )
+                ),
+                emptyList(),
             )
 
         val neededActions = service.getNeededActionChallenges(viewer, pageable)
@@ -352,8 +305,9 @@ class ChallengesServiceTest {
 
     @Test
     fun `getOpenChallenges returns joinable public pending challenges`() {
+        val querySlot = slot<Query>()
         stubUiRuntime(currentRound = 5, maxParticipants = 100)
-        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
+        every { mongoTemplate.find(capture(querySlot), B3trChallenge::class.java) } returns
             listOf(
                 challenge(
                     participantCount = 1,
@@ -371,6 +325,9 @@ class ChallengesServiceTest {
         assertTrue(item.canJoin)
         assertEquals(100, item.maxParticipants)
         assertEquals("Spring Sprint", item.title)
+        val queryObject = querySlot.captured.queryObject
+        assertTrue(containsKey(queryObject, "participantCount"))
+        assertTrue(containsKey(queryObject, "creator"))
     }
 
     @Test
@@ -399,85 +356,67 @@ class ChallengesServiceTest {
 
     @Test
     fun `getExploreChallenges excludes viewer created challenges`() {
+        val querySlot = slot<Query>()
         stubUiRuntime(currentRound = 5, maxParticipants = 100)
-        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
-            listOf(
-                challenge(
-                    participantCount = 2,
-                    startRound = 5,
-                    visibility = ChallengeVisibility.Public,
-                    creator = viewerWallet,
-                    participants = listOf(wallet("123"), wallet("456")),
-                )
-            )
+        every { mongoTemplate.find(capture(querySlot), B3trChallenge::class.java) } returns
+            emptyList()
 
         val result = service.getExploreChallenges(viewer, pageable)
 
         assertTrue(result.data.isEmpty())
+        val queryObject = querySlot.captured.queryObject
+        assertTrue(containsKey(queryObject, "creator"))
+        assertTrue(containsValue(queryObject, viewerWallet))
     }
 
     @Test
     fun `getExploreChallenges excludes viewer joined challenges`() {
+        val querySlot = slot<Query>()
         stubUiRuntime(currentRound = 5, maxParticipants = 100)
-        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
-            listOf(
-                challenge(
-                    participantCount = 2,
-                    startRound = 5,
-                    visibility = ChallengeVisibility.Public,
-                    creator = wallet("abc"),
-                    participants = listOf(viewerWallet, wallet("123")),
-                )
-            )
+        every { mongoTemplate.find(capture(querySlot), B3trChallenge::class.java) } returns
+            emptyList()
 
         val result = service.getExploreChallenges(viewer, pageable)
 
         assertTrue(result.data.isEmpty())
+        val queryObject = querySlot.captured.queryObject
+        assertTrue(containsKey(queryObject, "participants"))
+        assertTrue(containsValue(queryObject, viewerWallet))
     }
 
     @Test
     fun `getExploreChallenges excludes pending joinable challenges`() {
+        val querySlot = slot<Query>()
         stubUiRuntime(currentRound = 5, maxParticipants = 100)
-        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
-            listOf(
-                challenge(
-                    participantCount = 1,
-                    startRound = 6,
-                    visibility = ChallengeVisibility.Public,
-                    creator = wallet("abc"),
-                    participants = listOf(wallet("abc")),
-                )
-            )
+        every { mongoTemplate.find(capture(querySlot), B3trChallenge::class.java) } returns
+            emptyList()
 
         val result = service.getExploreChallenges(viewer, pageable)
 
         assertTrue(result.data.isEmpty())
+        val queryObject = querySlot.captured.queryObject
+        assertTrue(containsKey(queryObject, "startRound"))
+        assertTrue(containsKey(queryObject, "participantCount"))
     }
 
     @Test
     fun `getExploreChallenges excludes ended challenges awaiting finalization`() {
+        val querySlot = slot<Query>()
         stubUiRuntime(currentRound = 7, maxParticipants = 100)
-        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
-            listOf(
-                challenge(
-                    participantCount = 2,
-                    startRound = 5,
-                    endRound = 6,
-                    visibility = ChallengeVisibility.Public,
-                    creator = wallet("abc"),
-                    participants = listOf(wallet("abc"), wallet("123")),
-                )
-            )
+        every { mongoTemplate.find(capture(querySlot), B3trChallenge::class.java) } returns
+            emptyList()
 
         val result = service.getExploreChallenges(viewer, pageable)
 
         assertTrue(result.data.isEmpty())
+        val queryObject = querySlot.captured.queryObject
+        assertTrue(containsKey(queryObject, "endRound"))
     }
 
     @Test
     fun `getExploreChallenges paginates ui pages without overlap or overflow`() {
         stubUiRuntime(currentRound = 5, maxParticipants = 100)
-        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
+        stubPagedFind(
             (30L downTo 1L).map { challengeId ->
                 challenge(
                     challengeId = challengeId,
@@ -487,6 +426,7 @@ class ChallengesServiceTest {
                     creator = wallet((challengeId + 100).toString(16)),
                 )
             }
+        )
 
         val firstPage = service.getExploreChallenges(viewer, pageRequest(page = 0, size = 12))
         val secondPage = service.getExploreChallenges(viewer, pageRequest(page = 1, size = 12))
@@ -521,62 +461,6 @@ class ChallengesServiceTest {
         assertTrue(neededActions.data.isEmpty())
         assertEquals(1, history.data.size)
         assertFalse(history.data.single().canRefund)
-    }
-
-    @Test
-    fun `getChallenges paginates computed status pages without overlap or overflow`() {
-        coEvery { thorClient.inspectClauses(any(), any()) } returns listOf(currentRoundResult(5))
-        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
-            (30L downTo 1L).map { challengeId ->
-                challenge(challengeId = challengeId, participantCount = 2, startRound = 5)
-            }
-
-        val firstPage =
-            service.getChallenges(
-                status = ChallengeStatus.Active,
-                kind = null,
-                visibility = null,
-                creator = null,
-                participant = null,
-                invitee = null,
-                appId = null,
-                startRound = null,
-                endRound = null,
-                pageable = pageRequest(page = 0, size = 12),
-            )
-        val secondPage =
-            service.getChallenges(
-                status = ChallengeStatus.Active,
-                kind = null,
-                visibility = null,
-                creator = null,
-                participant = null,
-                invitee = null,
-                appId = null,
-                startRound = null,
-                endRound = null,
-                pageable = pageRequest(page = 1, size = 12),
-            )
-        val thirdPage =
-            service.getChallenges(
-                status = ChallengeStatus.Active,
-                kind = null,
-                visibility = null,
-                creator = null,
-                participant = null,
-                invitee = null,
-                appId = null,
-                startRound = null,
-                endRound = null,
-                pageable = pageRequest(page = 2, size = 12),
-            )
-
-        assertEquals((30L downTo 19L).toList(), firstPage.data.map { it.challengeId })
-        assertEquals((18L downTo 7L).toList(), secondPage.data.map { it.challengeId })
-        assertEquals((6L downTo 1L).toList(), thirdPage.data.map { it.challengeId })
-        assertTrue(firstPage.pagination.hasNext)
-        assertTrue(secondPage.pagination.hasNext)
-        assertFalse(thirdPage.pagination.hasNext)
     }
 
     @Test
@@ -661,6 +545,39 @@ class ChallengesServiceTest {
                 }
             }
     }
+
+    private fun stubPagedFind(challenges: List<B3trChallenge>) {
+        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } answers
+            {
+                val query = firstArg<Query>()
+                val limit = query.limit
+                challenges.drop(query.skip.toInt()).let { page ->
+                    if (limit > 0) {
+                        page.take(limit)
+                    } else {
+                        page
+                    }
+                }
+            }
+    }
+
+    private fun containsKey(value: Any?, key: String): Boolean =
+        when (value) {
+            is Map<*, *> ->
+                value.entries.any { entry -> entry.key == key || containsKey(entry.value, key) }
+            is Iterable<*> -> value.any { containsKey(it, key) }
+            else -> false
+        }
+
+    private fun containsValue(value: Any?, expected: Any): Boolean =
+        when (value) {
+            is Map<*, *> ->
+                value.entries.any { entry ->
+                    entry.key == expected || containsValue(entry.value, expected)
+                }
+            is Iterable<*> -> value.any { containsValue(it, expected) }
+            else -> value == expected
+        }
 
     private fun challenge(
         participantCount: Int,

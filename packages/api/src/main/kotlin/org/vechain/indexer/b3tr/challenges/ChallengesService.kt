@@ -40,61 +40,6 @@ open class ChallengesService(
     private val currentRoundFunction = Function("currentRoundId", emptyList(), emptyList())
     private val maxParticipantsFunction = Function("maxParticipants", emptyList(), emptyList())
 
-    open fun getChallenges(
-        status: ChallengeStatus?,
-        kind: ChallengeKind?,
-        visibility: ChallengeVisibility?,
-        creator: Address?,
-        participant: Address?,
-        invitee: Address?,
-        appId: String?,
-        startRound: Int?,
-        endRound: Int?,
-        pageable: Pageable,
-    ): PaginatedResponse<B3trChallengeResponse> {
-        val currentRound = getCurrentRound()
-
-        return if (
-            status == null ||
-                status == ChallengeStatus.Finalized ||
-                status == ChallengeStatus.Cancelled
-        ) {
-            findDirectPage(
-                filters =
-                    ChallengeFilters(
-                        status = status,
-                        kind = kind,
-                        visibility = visibility,
-                        creator = creator?.value,
-                        participant = participant?.value,
-                        invitee = invitee?.value,
-                        appId = appId,
-                        startRound = startRound,
-                        endRound = endRound,
-                    ),
-                currentRound = currentRound,
-                pageable = pageable,
-            )
-        } else {
-            findComputedStatusPage(
-                filters =
-                    ChallengeFilters(
-                        status = status,
-                        kind = kind,
-                        visibility = visibility,
-                        creator = creator?.value,
-                        participant = participant?.value,
-                        invitee = invitee?.value,
-                        appId = appId,
-                        startRound = startRound,
-                        endRound = endRound,
-                    ),
-                currentRound = currentRound,
-                pageable = pageable,
-            )
-        }
-    }
-
     open fun getNeededActionChallenges(
         wallet: Address,
         pageable: Pageable,
@@ -125,7 +70,7 @@ open class ChallengesService(
     ): PaginatedResponse<B3trChallengeUiResponse> =
         getUiChallenges(ChallengeUiSection.History, wallet, pageable)
 
-    open fun getChallenge(challengeId: Long, wallet: Address? = null): B3trChallengeDetailResponse {
+    open fun getChallenge(challengeId: Long): B3trChallengeDetailResponse {
         val challenge =
             repository.findByIdOrNull(B3trChallenge.documentId(challengeId))
                 ?: throw ResourceNotFoundException("Challenge not found for id $challengeId")
@@ -133,7 +78,7 @@ open class ChallengesService(
         val runtimeContext = getChallengeRuntimeContext()
         return buildChallengeDetailResponse(
             challenge = challenge,
-            wallet = normalizeWallet(wallet),
+            wallet = "",
             runtimeContext = runtimeContext,
         )
     }
@@ -164,7 +109,20 @@ open class ChallengesService(
         pageable: Pageable,
     ): PaginatedResponse<B3trChallengeUiResponse> {
         val runtimeContext = getChallengeRuntimeContext()
-        return findUiPage(section, normalizeWallet(wallet), runtimeContext, pageable)
+        val normalizedWallet = normalizeWallet(wallet)
+
+        return when (section) {
+            ChallengeUiSection.NeededActions,
+            ChallengeUiSection.History ->
+                findHybridUiPage(section, normalizedWallet, runtimeContext, pageable)
+            else ->
+                findQueryUiPage(
+                    query = buildUiSectionQuery(section, normalizedWallet, runtimeContext),
+                    wallet = normalizedWallet,
+                    runtimeContext = runtimeContext,
+                    pageable = pageable,
+                )
+        }
     }
 
     private fun buildChallengeDetailResponse(
@@ -192,79 +150,15 @@ open class ChallengesService(
         )
     }
 
-    private fun findDirectPage(
-        filters: ChallengeFilters,
-        currentRound: Int,
+    private fun findQueryUiPage(
+        query: Query,
+        wallet: String,
+        runtimeContext: ChallengeRuntimeContext,
         pageable: Pageable,
-    ): PaginatedResponse<B3trChallengeResponse> {
-        val query = buildBaseQuery(filters)
-        query.with(pageable).limit(pageable.pageSize + 1)
+    ): PaginatedResponse<B3trChallengeUiResponse> =
+        findPage(query, pageable) { buildUiResponse(it, wallet, runtimeContext) }
 
-        val results = mongoTemplate.find(query, B3trChallenge::class.java)
-        val hasNext = results.size > pageable.pageSize
-        val page = if (hasNext) results.dropLast(1) else results
-        val slice =
-            SliceImpl(
-                page.map {
-                    B3trChallengeResponse.from(it, computeEffectiveStatus(it, currentRound))
-                },
-                pageable,
-                hasNext,
-            )
-        return paginatedResponse(slice)
-    }
-
-    private fun findComputedStatusPage(
-        filters: ChallengeFilters,
-        currentRound: Int,
-        pageable: Pageable,
-    ): PaginatedResponse<B3trChallengeResponse> {
-        val pageSize = pageable.pageSize
-        val requiredOffset = pageable.offset
-        val chunkSize = maxOf(pageSize * 2, 100)
-        val collected = mutableListOf<B3trChallengeResponse>()
-
-        var skippedMatches = 0L
-        var skipCandidates = 0L
-        var hasMoreCandidates = true
-
-        while (hasMoreCandidates && collected.size <= pageSize) {
-            val query = buildComputedStatusQuery(filters)
-            query.with(pageable.sort)
-            query.skip(skipCandidates)
-            query.limit(chunkSize)
-
-            val candidates = mongoTemplate.find(query, B3trChallenge::class.java)
-            hasMoreCandidates = candidates.size == chunkSize
-            skipCandidates += candidates.size.toLong()
-
-            for (candidate in candidates) {
-                val computedStatus = computeEffectiveStatus(candidate, currentRound)
-                if (computedStatus != filters.status) {
-                    continue
-                }
-
-                if (skippedMatches < requiredOffset) {
-                    skippedMatches++
-                    continue
-                }
-
-                collected.add(B3trChallengeResponse.from(candidate, computedStatus))
-                if (collected.size > pageSize) {
-                    break
-                }
-            }
-        }
-
-        val hasNext = collected.size > pageSize
-        return paginatedResponse(
-            data = if (hasNext) collected.dropLast(1) else collected,
-            hasNext = hasNext,
-            cursor = null,
-        )
-    }
-
-    private fun findUiPage(
+    private fun findHybridUiPage(
         section: ChallengeUiSection,
         wallet: String,
         runtimeContext: ChallengeRuntimeContext,
@@ -280,7 +174,7 @@ open class ChallengesService(
         var hasMoreCandidates = true
 
         while (hasMoreCandidates && collected.size <= pageSize) {
-            val query = buildUiSectionQuery(section, wallet, runtimeContext.currentRound)
+            val query = buildUiSectionQuery(section, wallet, runtimeContext)
             query.with(pageable.sort)
             query.skip(skipCandidates)
             query.limit(chunkSize)
@@ -336,161 +230,229 @@ open class ChallengesService(
         )
     }
 
-    private fun buildBaseQuery(filters: ChallengeFilters): Query {
-        val criteria = mutableListOf<Criteria>()
+    private fun <T : Any> findPage(
+        query: Query,
+        pageable: Pageable,
+        mapper: (B3trChallenge) -> T,
+    ): PaginatedResponse<T> {
+        query.with(pageable).limit(pageable.pageSize + 1)
 
-        filters.status?.let { criteria.add(Criteria.where(B3trChallenge::status.name).`is`(it)) }
-        filters.kind?.let { criteria.add(Criteria.where(B3trChallenge::kind.name).`is`(it)) }
-        filters.visibility?.let {
-            criteria.add(Criteria.where(B3trChallenge::visibility.name).`is`(it))
-        }
-        filters.creator?.let {
-            criteria.add(Criteria.where(B3trChallenge::creator.name).`is`(HexUtils.normalise(it)))
-        }
-        filters.participant?.let {
-            criteria.add(
-                Criteria.where(B3trChallenge::participants.name).`is`(HexUtils.normalise(it))
-            )
-        }
-        filters.invitee?.let {
-            criteria.add(Criteria.where(B3trChallenge::invited.name).`is`(HexUtils.normalise(it)))
-        }
-        filters.appId?.let {
-            criteria.add(
-                Criteria()
-                    .orOperator(
-                        Criteria.where(B3trChallenge::allApps.name).`is`(true),
-                        Criteria.where(B3trChallenge::selectedApps.name).`is`(it),
-                    )
-            )
-        }
-        filters.startRound?.let {
-            criteria.add(Criteria.where(B3trChallenge::startRound.name).`is`(it))
-        }
-        filters.endRound?.let {
-            criteria.add(Criteria.where(B3trChallenge::endRound.name).`is`(it))
-        }
-
-        return if (criteria.isEmpty()) {
-            Query()
-        } else {
-            Query(Criteria().andOperator(*criteria.toTypedArray()))
-        }
-    }
-
-    private fun buildComputedStatusQuery(filters: ChallengeFilters): Query {
-        val baseQuery = buildBaseQuery(filters.copy(status = null))
-        val statusCriteria =
-            when (filters.status) {
-                ChallengeStatus.Pending ->
-                    Criteria.where(B3trChallenge::status.name).`is`(ChallengeStatus.Pending)
-                ChallengeStatus.Active ->
-                    Criteria.where(B3trChallenge::status.name)
-                        .`in`(listOf(ChallengeStatus.Pending, ChallengeStatus.Active))
-                ChallengeStatus.Invalid ->
-                    Criteria.where(B3trChallenge::status.name)
-                        .`in`(listOf(ChallengeStatus.Pending, ChallengeStatus.Invalid))
-                else -> null
-            }
-
-        if (statusCriteria == null) {
-            return baseQuery
-        }
-
-        baseQuery.addCriteria(statusCriteria)
-        return baseQuery
+        val results = mongoTemplate.find(query, B3trChallenge::class.java)
+        val hasNext = results.size > pageable.pageSize
+        val page = if (hasNext) results.dropLast(1) else results
+        val slice = SliceImpl(page.map(mapper), pageable, hasNext)
+        return paginatedResponse(slice)
     }
 
     private fun buildUiSectionQuery(
         section: ChallengeUiSection,
         wallet: String,
-        currentRound: Int,
-    ): Query =
-        when (section) {
+        runtimeContext: ChallengeRuntimeContext,
+    ): Query = Query(buildUiSectionCriteria(section, wallet, runtimeContext))
+
+    private fun buildUiSectionCriteria(
+        section: ChallengeUiSection,
+        wallet: String,
+        runtimeContext: ChallengeRuntimeContext,
+    ): Criteria {
+        val currentRound = runtimeContext.currentRound
+        val effectiveActiveCriteria =
+            buildEffectiveStatusCriteria(ChallengeStatus.Active, currentRound)
+                ?: error("Active criteria should be available")
+        val effectiveInvalidCriteria =
+            buildEffectiveStatusCriteria(ChallengeStatus.Invalid, currentRound)
+                ?: error("Invalid criteria should be available")
+
+        return when (section) {
             ChallengeUiSection.NeededActions ->
-                buildViewerChallengeQuery(
-                    wallet = wallet,
-                    includeInvited = true,
-                    includeDeclined = false,
-                    statuses = null,
+                orCriteria(
+                    andCriteria(
+                        buildPendingBeforeStartCriteria(currentRound),
+                        Criteria.where(B3trChallenge::invited.name).`is`(wallet),
+                        Criteria.where(B3trChallenge::declined.name).ne(wallet),
+                    ),
+                    andCriteria(
+                        buildViewerRelevanceCriteria(wallet),
+                        effectiveActiveCriteria,
+                        Criteria.where(B3trChallenge::endRound.name).lt(currentRound),
+                    ),
+                    andCriteria(
+                        Criteria.where(B3trChallenge::status.name).`is`(ChallengeStatus.Finalized),
+                        Criteria.where(B3trChallenge::claimedBy.name).ne(wallet),
+                        orCriteria(
+                            andCriteria(
+                                Criteria.where(B3trChallenge::settlementMode.name)
+                                    .`is`(SettlementMode.CreatorRefund),
+                                Criteria.where(B3trChallenge::creator.name).`is`(wallet),
+                            ),
+                            andCriteria(
+                                Criteria.where(B3trChallenge::settlementMode.name)
+                                    .ne(SettlementMode.CreatorRefund),
+                                Criteria.where(B3trChallenge::participants.name).`is`(wallet),
+                            ),
+                        ),
+                    ),
+                    andCriteria(
+                        Criteria.where(B3trChallenge::refundedBy.name).ne(wallet),
+                        orCriteria(
+                            andCriteria(
+                                Criteria.where(B3trChallenge::kind.name).`is`(ChallengeKind.Stake),
+                                Criteria.where(B3trChallenge::participants.name).`is`(wallet),
+                            ),
+                            andCriteria(
+                                Criteria.where(B3trChallenge::kind.name)
+                                    .`is`(ChallengeKind.Sponsored),
+                                Criteria.where(B3trChallenge::creator.name).`is`(wallet),
+                            ),
+                        ),
+                        orCriteria(
+                            Criteria.where(B3trChallenge::status.name)
+                                .`is`(ChallengeStatus.Cancelled),
+                            effectiveInvalidCriteria,
+                        ),
+                    ),
                 )
             ChallengeUiSection.Active ->
-                buildViewerChallengeQuery(
-                    wallet = wallet,
-                    includeInvited = false,
-                    includeDeclined = false,
-                    statuses = listOf(ChallengeStatus.Pending, ChallengeStatus.Active),
+                andCriteria(
+                    buildViewerRelevanceCriteria(wallet),
+                    orCriteria(
+                        buildPendingBeforeStartCriteria(currentRound),
+                        andCriteria(
+                            effectiveActiveCriteria,
+                            Criteria.where(B3trChallenge::endRound.name).gte(currentRound),
+                        ),
+                    ),
                 )
             ChallengeUiSection.Open ->
-                Query(
-                    Criteria()
-                        .andOperator(
-                            Criteria.where(B3trChallenge::status.name)
-                                .`is`(ChallengeStatus.Pending),
-                            Criteria.where(B3trChallenge::visibility.name)
-                                .`is`(ChallengeVisibility.Public),
-                            Criteria.where(B3trChallenge::startRound.name).gt(currentRound),
-                        )
+                andCriteria(
+                    buildPendingBeforeStartCriteria(currentRound),
+                    Criteria.where(B3trChallenge::visibility.name).`is`(ChallengeVisibility.Public),
+                    Criteria.where(B3trChallenge::participantCount.name)
+                        .lt(runtimeContext.maxParticipants),
+                    Criteria.where(B3trChallenge::creator.name).ne(wallet),
+                    Criteria.where(B3trChallenge::participants.name).ne(wallet),
                 )
             ChallengeUiSection.Explore ->
-                Query(
-                    Criteria()
-                        .andOperator(
-                            Criteria.where(B3trChallenge::status.name)
-                                .`in`(listOf(ChallengeStatus.Pending, ChallengeStatus.Active)),
-                            Criteria.where(B3trChallenge::visibility.name)
-                                .`is`(ChallengeVisibility.Public),
-                            Criteria.where(B3trChallenge::startRound.name).lte(currentRound),
-                            Criteria.where(B3trChallenge::endRound.name).gte(currentRound),
-                        )
+                andCriteria(
+                    effectiveActiveCriteria,
+                    Criteria.where(B3trChallenge::visibility.name).`is`(ChallengeVisibility.Public),
+                    Criteria.where(B3trChallenge::endRound.name).gte(currentRound),
+                    Criteria.where(B3trChallenge::creator.name).ne(wallet),
+                    Criteria.where(B3trChallenge::participants.name).ne(wallet),
                 )
             ChallengeUiSection.History ->
-                buildViewerChallengeQuery(
-                    wallet = wallet,
-                    includeInvited = false,
-                    includeDeclined = true,
-                    statuses = null,
+                orCriteria(
+                    andCriteria(
+                        buildPendingBeforeStartCriteria(currentRound),
+                        Criteria.where(B3trChallenge::declined.name).`is`(wallet),
+                        Criteria.where(B3trChallenge::participantCount.name)
+                            .lt(runtimeContext.maxParticipants),
+                    ),
+                    andCriteria(
+                        buildViewerRelevanceCriteria(wallet),
+                        buildEffectiveDoneCriteria(currentRound),
+                    ),
+                )
+        }
+    }
+
+    private fun buildEffectiveStatusCriteria(
+        status: ChallengeStatus?,
+        currentRound: Int,
+    ): Criteria? =
+        when (status) {
+            null -> null
+            ChallengeStatus.Pending -> buildPendingBeforeStartCriteria(currentRound)
+            ChallengeStatus.Active ->
+                orCriteria(
+                    Criteria.where(B3trChallenge::status.name).`is`(ChallengeStatus.Active),
+                    buildPendingBecameActiveCriteria(currentRound),
+                )
+            ChallengeStatus.Finalized ->
+                Criteria.where(B3trChallenge::status.name).`is`(ChallengeStatus.Finalized)
+            ChallengeStatus.Cancelled ->
+                Criteria.where(B3trChallenge::status.name).`is`(ChallengeStatus.Cancelled)
+            ChallengeStatus.Invalid ->
+                orCriteria(
+                    Criteria.where(B3trChallenge::status.name).`is`(ChallengeStatus.Invalid),
+                    buildPendingBecameInvalidCriteria(currentRound),
                 )
         }
 
-    private fun buildViewerChallengeQuery(
+    private fun buildPendingBeforeStartCriteria(currentRound: Int): Criteria =
+        andCriteria(
+            Criteria.where(B3trChallenge::status.name).`is`(ChallengeStatus.Pending),
+            Criteria.where(B3trChallenge::startRound.name).gt(currentRound),
+        )
+
+    private fun buildPendingBecameActiveCriteria(currentRound: Int): Criteria =
+        andCriteria(
+            Criteria.where(B3trChallenge::status.name).`is`(ChallengeStatus.Pending),
+            Criteria.where(B3trChallenge::startRound.name).lte(currentRound),
+            orCriteria(
+                andCriteria(
+                    Criteria.where(B3trChallenge::kind.name).`is`(ChallengeKind.Stake),
+                    Criteria.where(B3trChallenge::participantCount.name).gte(2),
+                ),
+                andCriteria(
+                    Criteria.where(B3trChallenge::kind.name).`is`(ChallengeKind.Sponsored),
+                    Criteria.where(B3trChallenge::participantCount.name).gte(1),
+                ),
+            ),
+        )
+
+    private fun buildPendingBecameInvalidCriteria(currentRound: Int): Criteria =
+        andCriteria(
+            Criteria.where(B3trChallenge::status.name).`is`(ChallengeStatus.Pending),
+            Criteria.where(B3trChallenge::startRound.name).lte(currentRound),
+            orCriteria(
+                andCriteria(
+                    Criteria.where(B3trChallenge::kind.name).`is`(ChallengeKind.Stake),
+                    Criteria.where(B3trChallenge::participantCount.name).lt(2),
+                ),
+                andCriteria(
+                    Criteria.where(B3trChallenge::kind.name).`is`(ChallengeKind.Sponsored),
+                    Criteria.where(B3trChallenge::participantCount.name).lt(1),
+                ),
+            ),
+        )
+
+    private fun buildEffectiveDoneCriteria(currentRound: Int): Criteria =
+        orCriteria(
+            Criteria.where(B3trChallenge::status.name).`is`(ChallengeStatus.Finalized),
+            Criteria.where(B3trChallenge::status.name).`is`(ChallengeStatus.Cancelled),
+            buildPendingBecameInvalidCriteria(currentRound),
+            Criteria.where(B3trChallenge::status.name).`is`(ChallengeStatus.Invalid),
+        )
+
+    private fun buildViewerRelevanceCriteria(wallet: String): Criteria =
+        orCriteria(
+            Criteria.where(B3trChallenge::creator.name).`is`(wallet),
+            Criteria.where(B3trChallenge::participants.name).`is`(wallet),
+        )
+
+    private fun buildUiResponse(
+        challenge: B3trChallenge,
         wallet: String,
-        includeInvited: Boolean,
-        includeDeclined: Boolean,
-        statuses: List<ChallengeStatus>?,
-    ): Query {
-        val walletCriteria =
-            mutableListOf(
-                Criteria.where(B3trChallenge::creator.name).`is`(wallet),
-                Criteria.where(B3trChallenge::participants.name).`is`(wallet),
+        runtimeContext: ChallengeRuntimeContext,
+        participantActions: BigInteger = BigInteger.ZERO,
+    ): B3trChallengeUiResponse {
+        val viewerContext = buildViewerContext(challenge, wallet, runtimeContext.currentRound)
+        val uiState =
+            buildUiState(
+                challenge = challenge,
+                runtimeContext = runtimeContext,
+                viewerContext = viewerContext,
+                participantActions = participantActions,
             )
-
-        if (includeInvited) {
-            walletCriteria.add(Criteria.where(B3trChallenge::invited.name).`is`(wallet))
-        }
-        if (includeDeclined) {
-            walletCriteria.add(Criteria.where(B3trChallenge::declined.name).`is`(wallet))
-        }
-
-        val relevanceCriteria =
-            if (walletCriteria.size == 1) {
-                walletCriteria.single()
-            } else {
-                Criteria().orOperator(*walletCriteria.toTypedArray())
-            }
-
-        return if (statuses.isNullOrEmpty()) {
-            Query(relevanceCriteria)
-        } else {
-            Query(
-                Criteria()
-                    .andOperator(
-                        relevanceCriteria,
-                        Criteria.where(B3trChallenge::status.name).`in`(statuses),
-                    )
-            )
-        }
+        return B3trChallengeUiResponse.from(challenge, uiState)
     }
+
+    private fun andCriteria(vararg criteria: Criteria): Criteria =
+        if (criteria.size == 1) criteria.single() else Criteria().andOperator(*criteria)
+
+    private fun orCriteria(vararg criteria: Criteria): Criteria =
+        if (criteria.size == 1) criteria.single() else Criteria().orOperator(*criteria)
 
     private fun buildViewerContext(
         challenge: B3trChallenge,
@@ -673,15 +635,6 @@ open class ChallengesService(
         }
     }
 
-    private fun getCurrentRound(): Int = runBlocking {
-        val responses =
-            thorClient.inspectClauses(
-                listOf(createClause(xAllocVotingContract, currentRoundFunction)),
-                BlockRevision.Keyword.BEST,
-            )
-        decodeUint256(responses.firstOrNull()?.data).toInt()
-    }
-
     private fun getChallengeRuntimeContext(): ChallengeRuntimeContext = runBlocking {
         requireConfiguredAddress(challengesContract, "CHALLENGES_CONTRACT")
         val responses =
@@ -721,18 +674,6 @@ open class ChallengesService(
     private fun normalizeWallet(wallet: Address?): String =
         wallet?.value?.let(HexUtils::normalise) ?: ""
 }
-
-private data class ChallengeFilters(
-    val status: ChallengeStatus?,
-    val kind: ChallengeKind?,
-    val visibility: ChallengeVisibility?,
-    val creator: String?,
-    val participant: String?,
-    val invitee: String?,
-    val appId: String?,
-    val startRound: Int?,
-    val endRound: Int?,
-)
 
 private data class ChallengeRuntimeContext(val currentRound: Int, val maxParticipants: Int)
 

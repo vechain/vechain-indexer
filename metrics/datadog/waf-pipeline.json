@@ -205,12 +205,6 @@
         },
         {
           "filter": {
-            "query": "@httpRequest.uri:\"/api/v1/b3tr/challenges\""
-          },
-          "name": "/api/v1/b3tr/challenges"
-        },
-        {
-          "filter": {
             "query": "@httpRequest.uri:\"/api/v1/b3tr/navigators\""
           },
           "name": "/api/v1/b3tr/navigators"
