@@ -175,12 +175,6 @@
         },
         {
           "filter": {
-            "query": "@httpRequest.uri:\"/api/v1/b3tr/challenges\""
-          },
-          "name": "/api/v1/b3tr/challenges"
-        },
-        {
-          "filter": {
             "query": "@httpRequest.uri:\"/api/v1/b3tr/richlist\""
           },
           "name": "/api/v1/b3tr/richlist"

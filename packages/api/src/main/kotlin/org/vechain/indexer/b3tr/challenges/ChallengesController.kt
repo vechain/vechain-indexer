@@ -1,9 +1,6 @@
 package org.vechain.indexer.b3tr.challenges
 
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
-import io.swagger.v3.oas.annotations.enums.ParameterIn
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
@@ -28,67 +25,11 @@ import org.vechain.indexer.validation.ValidPageSize
 @RestController
 @RequestMapping(CHALLENGES_PATH)
 open class ChallengesController(private val challengesService: ChallengesService) {
-    @GetMapping
-    @Operation(summary = "Get indexed B3TR challenges.")
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "status",
-        schema = Schema(enumAsRef = true, implementation = ChallengeStatus::class),
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "kind",
-        schema = Schema(enumAsRef = true, implementation = ChallengeKind::class),
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "visibility",
-        schema = Schema(enumAsRef = true, implementation = ChallengeVisibility::class),
-    )
-    @CommonApiResponses
-    @PaginationParameters
-    open fun getChallenges(
-        @RequestParam(required = false) status: ChallengeStatus?,
-        @RequestParam(required = false) kind: ChallengeKind?,
-        @RequestParam(required = false) visibility: ChallengeVisibility?,
-        @ValidAddress @RequestParam(required = false) creator: Address?,
-        @ValidAddress @RequestParam(required = false) participant: Address?,
-        @ValidAddress @RequestParam(required = false) invitee: Address?,
-        @RequestParam(required = false) appId: String?,
-        @RequestParam(required = false) startRound: Int?,
-        @RequestParam(required = false) endRound: Int?,
-        @RequestParam(required = false) page: Int?,
-        @ValidPageSize @RequestParam(required = false) size: Int?,
-        @RequestParam(required = false) direction: String?,
-    ): PaginatedResponse<B3trChallengeResponse> =
-        challengesService.getChallenges(
-            status = status,
-            kind = kind,
-            visibility = visibility,
-            creator = creator,
-            participant = participant,
-            invitee = invitee,
-            appId = appId,
-            startRound = startRound,
-            endRound = endRound,
-            pageable =
-                toPageable(
-                    page,
-                    size,
-                    direction,
-                    B3trChallenge::createdAtBlockTimestamp.name,
-                    B3trChallenge::challengeId.name,
-                ),
-        )
-
     @GetMapping("{challengeId}")
     @Operation(summary = "Get a single indexed B3TR challenge.")
-    @AddressParameter(name = "wallet", required = false)
     @CommonApiResponses
-    open fun getChallenge(
-        @PathVariable challengeId: Long,
-        @ValidAddress @RequestParam(required = false) wallet: Address?,
-    ): B3trChallengeDetailResponse = challengesService.getChallenge(challengeId, wallet)
+    open fun getChallenge(@PathVariable challengeId: Long): B3trChallengeDetailResponse =
+        challengesService.getChallenge(challengeId)
 
     @GetMapping("needed-actions")
     @Operation(summary = "Get challenges that require viewer action.")
