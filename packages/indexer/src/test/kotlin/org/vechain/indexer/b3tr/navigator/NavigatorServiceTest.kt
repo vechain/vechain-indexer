@@ -184,6 +184,8 @@ internal class NavigatorServiceTest {
     fun `NavigatorDeactivated sets status to DEACTIVATED`() {
         val existing = navigatorFixture("0xnav1")
         every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
+        every { mongoTemplate.updateMulti(any(), any(), NavigatorCitizen::class.java) } returns
+            com.mongodb.client.result.UpdateResult.acknowledged(0, 0, null)
 
         val acc = newAccumulator()
         acc.startBlock()
