@@ -169,12 +169,12 @@ module "ecs-lb-service-api" {
       value = each.value.api.cache.user-all-time-count-by-entity-type.ttl-seconds
     },
     {
-      name  = "CACHE_USER_ALL_TIME_COUNT_BY_REWARD_MAX_SIZE"
-      value = each.value.api.cache.user-all-time-count-by-reward.max-size
+      name  = "CACHE_USER_ALL_TIME_COUNT_BY_TOTAL_REWARD_MAX_SIZE"
+      value = each.value.api.cache.user-all-time-count-by-total-reward.max-size
     },
     {
-      name  = "CACHE_USER_ALL_TIME_COUNT_BY_REWARD_TTL_SECONDS"
-      value = each.value.api.cache.user-all-time-count-by-reward.ttl-seconds
+      name  = "CACHE_USER_ALL_TIME_COUNT_BY_TOTAL_REWARD_TTL_SECONDS"
+      value = each.value.api.cache.user-all-time-count-by-total-reward.ttl-seconds
     },
     {
       name  = "CACHE_USER_ALL_TIME_COUNT_BY_ACTIONS_MAX_SIZE"
@@ -193,12 +193,44 @@ module "ecs-lb-service-api" {
       value = each.value.api.cache.app-all-time-count-by-app-id.ttl-seconds
     },
     {
+      name  = "CACHE_APP_ALL_TIME_COUNT_BY_TOTAL_REWARD_MAX_SIZE"
+      value = each.value.api.cache.app-all-time-count-by-total-reward.max-size
+    },
+    {
+      name  = "CACHE_APP_ALL_TIME_COUNT_BY_TOTAL_REWARD_TTL_SECONDS"
+      value = each.value.api.cache.app-all-time-count-by-total-reward.ttl-seconds
+    },
+    {
+      name  = "CACHE_APP_ALL_TIME_COUNT_BY_ACTIONS_MAX_SIZE"
+      value = each.value.api.cache.app-all-time-count-by-actions.max-size
+    },
+    {
+      name  = "CACHE_APP_ALL_TIME_COUNT_BY_ACTIONS_TTL_SECONDS"
+      value = each.value.api.cache.app-all-time-count-by-actions.ttl-seconds
+    },
+    {
       name  = "CACHE_APP_DAILY_COUNT_MAX_SIZE"
       value = each.value.api.cache.app-daily-count.max-size
     },
     {
       name  = "CACHE_APP_DAILY_COUNT_TTL_SECONDS"
       value = each.value.api.cache.app-daily-count.ttl-seconds
+    },
+    {
+      name  = "CACHE_APP_DAILY_COUNT_BY_TOTAL_REWARD_MAX_SIZE"
+      value = each.value.api.cache.app-daily-count-by-total-reward.max-size
+    },
+    {
+      name  = "CACHE_APP_DAILY_COUNT_BY_TOTAL_REWARD_TTL_SECONDS"
+      value = each.value.api.cache.app-daily-count-by-total-reward.ttl-seconds
+    },
+    {
+      name  = "CACHE_APP_DAILY_COUNT_BY_ACTIONS_MAX_SIZE"
+      value = each.value.api.cache.app-daily-count-by-actions.max-size
+    },
+    {
+      name  = "CACHE_APP_DAILY_COUNT_BY_ACTIONS_TTL_SECONDS"
+      value = each.value.api.cache.app-daily-count-by-actions.ttl-seconds
     },
     {
       name  = "CACHE_APP_ROUND_COUNT_MAX_SIZE"
@@ -209,12 +241,28 @@ module "ecs-lb-service-api" {
       value = each.value.api.cache.app-round-count.ttl-seconds
     },
     {
-      name  = "CACHE_USER_DAILY_COUNT_MAX_SIZE"
-      value = each.value.api.cache.user-daily-count.max-size
+      name  = "CACHE_APP_ROUND_COUNT_BY_TOTAL_REWARD_MAX_SIZE"
+      value = each.value.api.cache.app-round-count-by-total-reward.max-size
     },
     {
-      name  = "CACHE_USER_DAILY_COUNT_TTL_SECONDS"
-      value = each.value.api.cache.user-daily-count.ttl-seconds
+      name  = "CACHE_APP_ROUND_COUNT_BY_TOTAL_REWARD_TTL_SECONDS"
+      value = each.value.api.cache.app-round-count-by-total-reward.ttl-seconds
+    },
+    {
+      name  = "CACHE_APP_ROUND_COUNT_BY_ACTIONS_MAX_SIZE"
+      value = each.value.api.cache.app-round-count-by-actions.max-size
+    },
+    {
+      name  = "CACHE_APP_ROUND_COUNT_BY_ACTIONS_TTL_SECONDS"
+      value = each.value.api.cache.app-round-count-by-actions.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_DAILY_COUNT_BY_TOTAL_REWARD_MAX_SIZE"
+      value = each.value.api.cache.user-daily-count-by-total-reward.max-size
+    },
+    {
+      name  = "CACHE_USER_DAILY_COUNT_BY_TOTAL_REWARD_TTL_SECONDS"
+      value = each.value.api.cache.user-daily-count-by-total-reward.ttl-seconds
     },
     {
       name  = "CACHE_USER_DAILY_COUNT_BY_ACTIONS_MAX_SIZE"
@@ -233,12 +281,12 @@ module "ecs-lb-service-api" {
       value = each.value.api.cache.user-daily-count-by-entity-type.ttl-seconds
     },
     {
-      name  = "CACHE_USER_ROUND_COUNT_BY_REWARD_MAX_SIZE"
-      value = each.value.api.cache.user-round-count-by-reward.max-size
+      name  = "CACHE_USER_ROUND_COUNT_BY_TOTAL_REWARD_MAX_SIZE"
+      value = each.value.api.cache.user-round-count-by-total-reward.max-size
     },
     {
-      name  = "CACHE_USER_ROUND_COUNT_BY_REWARD_TTL_SECONDS"
-      value = each.value.api.cache.user-round-count-by-reward.ttl-seconds
+      name  = "CACHE_USER_ROUND_COUNT_BY_TOTAL_REWARD_TTL_SECONDS"
+      value = each.value.api.cache.user-round-count-by-total-reward.ttl-seconds
     },
     {
       name  = "CACHE_USER_ROUND_COUNT_BY_ACTIONS_MAX_SIZE"
@@ -272,8 +320,24 @@ module "ecs-lb-service-api" {
       name  = "CACHE_GM_NFT_COUNT_TTL_SECONDS"
       value = each.value.api.cache.gm-nft-count.ttl-seconds
     },
+    {
+      name  = "CACHE_B3TR_RICHLIST_TOTAL_HOLDERS_MAX_SIZE"
+      value = each.value.api.cache.b3tr-richlist-total-holders.max-size
+    },
+    {
+      name  = "CACHE_B3TR_RICHLIST_TOTAL_HOLDERS_TTL_SECONDS"
+      value = each.value.api.cache.b3tr-richlist-total-holders.ttl-seconds
+    },
     { name  = "THOR_URL"
       value = each.value.thor_url
+    },
+    {
+      name  = "X_ALLOC_VOTING_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.X_ALLOC_VOTING_CONTRACT
+    },
+    {
+      name  = "CHALLENGES_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.CHALLENGES_CONTRACT
     },
     {
       name  = "MONGO_URI"
@@ -448,6 +512,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.b3tr-sustainable-actions
     },
     {
+      name  = "INDEXER_START_BLOCK_B3TR_CHALLENGES"
+      value = each.value.indexer.start-block.b3tr-challenges
+    },
+    {
       name  = "INDEXER_START_BLOCK_HISTORIC_PROPOSALS"
       value = each.value.indexer.start-block.historic-proposals
     },
@@ -612,6 +680,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.b3tr-gm-nft-level-overview
     },
     {
+      name  = "VERSION_B3TR_CHALLENGES"
+      value = each.value.indexer.version.b3tr-challenges
+    },
+    {
       name  = "VERSION_BLOCK_USAGE"
       value = each.value.indexer.version.block-usage
     },
@@ -638,10 +710,6 @@ module "ecs-backend-service" {
     {
       name  = "VERSION_DELEGATION"
       value = each.value.indexer.version.delegation
-    },
-    {
-      name = "VERSION_TOTAL_ACCOUNTS"
-      value = each.value.indexer.version.total-accounts
     },
     {
       name  = "VERSION_ACCOUNT_TOTALS_SERIES"
@@ -698,6 +766,10 @@ module "ecs-backend-service" {
     {
       name  = "X_ALLOC_VOTING_CONTRACT"
       value = each.value.indexer.business-event.substitutions.X_ALLOC_VOTING_CONTRACT
+    },
+    {
+      name  = "CHALLENGES_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.CHALLENGES_CONTRACT
     },
     {
       name  = "X2EARN_REWARDS_POOL_CONTRACT"
@@ -770,6 +842,10 @@ module "ecs-backend-service" {
     {
       name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_B3TR"
       value = each.value.indexer.sync-block-batch-size.b3tr
+    },
+    {
+      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_B3TR_CHALLENGES"
+      value = each.value.indexer.sync-block-batch-size.b3tr-challenges
     },
     {
       name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_CONTRACTS"

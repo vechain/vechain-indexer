@@ -2,6 +2,7 @@ package org.vechain.indexer.accounts
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
@@ -36,6 +37,7 @@ open class AccountTotalsSeriesProcessor(
         service.save(records)
     }
 
+    @Transactional(rollbackFor = [Exception::class])
     override fun rollback(blockNumber: Long) {
         service.clearProcessingState()
         super.rollback(blockNumber)

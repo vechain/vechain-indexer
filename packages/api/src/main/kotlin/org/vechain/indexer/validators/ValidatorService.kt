@@ -11,7 +11,6 @@ import org.springframework.data.mongodb.core.findOne
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
-import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.explorer.TimestampUtils.SECONDS_PER_DAY
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
@@ -20,13 +19,12 @@ import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.timeseries.TimeSeriesResolution
 import org.vechain.indexer.utils.TimeSeriesUtils
+import org.vechain.indexer.utils.TimeValidationUtils
 import org.vechain.indexer.validator.BlockStatus
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator
 import org.vechain.indexer.validator.ValidatorBlock
 import org.vechain.indexer.validator.ValidatorBlockRepository
-import org.vechain.indexer.validators.ErrorMessages.ERROR_END_TIME_CANNOT_BE_LESS_THAN_START_TIME
-import org.vechain.indexer.validators.ErrorMessages.ERROR_START_TIME_CANNOT_BE_NEGATIVE
 
 @Profile("validator")
 @Service
@@ -148,12 +146,12 @@ open class ValidatorService(
         endTimestamp: Long,
         validator: String,
     ): List<ValidatorBlock> {
-        if (startTimestamp < 0) {
-            throw BadRequestException(ERROR_START_TIME_CANNOT_BE_NEGATIVE)
-        }
-        if (endTimestamp <= startTimestamp) {
-            throw BadRequestException(ERROR_END_TIME_CANNOT_BE_LESS_THAN_START_TIME)
-        }
+        TimeValidationUtils.validateTimestamps(
+            startTimestamp,
+            endTimestamp,
+            "startTimestamp",
+            "endTimestamp",
+        )
 
         val latestBeforeOrAt = { timestamp: Long ->
             validatorBlockRepository

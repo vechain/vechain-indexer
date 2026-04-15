@@ -124,6 +124,17 @@ def normalize_ignored_paths(paths: List[str]) -> Set[Path]:
         out.add(p)
     return out
 
+
+def ignored_paths_for_matching_error_statuses(
+    status1: int,
+    status2: int,
+    base_ignored_paths: Set[Path] | None = None,
+) -> Set[Path]:
+    ignored = set(base_ignored_paths or set())
+    if status1 == status2 and 400 <= status1 < 600:
+        ignored.update({"root.id", "root.timestamp"})
+    return ignored
+
 def is_primitive(x: Any) -> bool:
     return isinstance(x, (str, int, float, bool, type(None)))
 
@@ -294,7 +305,17 @@ if __name__ == "__main__":
         )
         sys.exit(1)
 
-    diffs = compare_json(a, b, ignored_paths=ignored, unordered_lists=args.unordered_lists)
+    effective_ignored = ignored_paths_for_matching_error_statuses(
+        status1,
+        status2,
+        ignored,
+    )
+    diffs = compare_json(
+        a,
+        b,
+        ignored_paths=effective_ignored,
+        unordered_lists=args.unordered_lists,
+    )
 
     if args.pretty:
         print("\n--- JSON #1 (normalized) ---")

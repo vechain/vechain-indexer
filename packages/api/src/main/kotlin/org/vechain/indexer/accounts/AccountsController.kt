@@ -1,9 +1,7 @@
 package org.vechain.indexer.accounts
 
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
@@ -18,16 +16,11 @@ import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.AfterParameter
 import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.CommonApiResponses
-import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.exception.ResourceNotFoundException
-import org.vechain.indexer.rest.PaginatedResponse
-import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
-import org.vechain.indexer.utils.PaginationUtils
 import org.vechain.indexer.utils.TimeValidationUtils
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidNonNegativeLong
-import org.vechain.indexer.validation.ValidPageSize
 
 @Profile("accounts")
 @Tag(name = "Accounts", description = "VeChain Thor Accounts Overview")
@@ -35,42 +28,6 @@ import org.vechain.indexer.validation.ValidPageSize
 @RestController
 @RequestMapping(API_ROOT)
 open class AccountsController(private val accountsService: AccountsService) {
-    @Deprecated("Use /api/v2/accounts/totals instead.")
-    @GetMapping("$API_VERSION/accounts/totals")
-    @Operation(
-        summary = "Retrieve total unique accounts overview (deprecated)",
-        description =
-            """
-            Retrieves historical totals of unique VeChain accounts tracked per time frame (DAY, WEEK, MONTH, YEAR).
-            The "ALL" account aggregates totals across all time frames.
-            
-            If no `timeFrame` is provided, the response defaults to showing the full cumulative totals (ALL).
-
-            Deprecated: use `GET /api/v2/accounts/totals` for cumulative time-series responses.
-        """,
-        deprecated = true,
-    )
-    @Parameter(
-        name = "timeFrame",
-        `in` = ParameterIn.QUERY,
-        description = "Time frame to query totals for (DAY, WEEK, MONTH, YEAR, ALL).",
-        required = false,
-        schema = Schema(implementation = AccountQueryTimeFrame::class),
-    )
-    @CommonApiResponses
-    @PaginationParameters
-    open fun getTotalAccounts(
-        @RequestParam(required = false) timeFrame: AccountQueryTimeFrame?,
-        @RequestParam(required = false) page: Int?,
-        @ValidPageSize @RequestParam(required = false) size: Int?,
-        @RequestParam(required = false) direction: String?,
-    ): PaginatedResponse<TotalAccounts> {
-        val pageable =
-            PaginationUtils.toPageable(page, size, direction, TotalAccounts::blockTimestamp.name)
-        val accounts = accountsService.getTotal(timeFrame, pageable)
-        return paginatedResponse(accounts)
-    }
-
     @GetMapping("/v2/accounts/totals")
     @Operation(
         summary = "Get cumulative total account counts for a timestamp range",
@@ -96,7 +53,12 @@ open class AccountsController(private val accountsService: AccountsService) {
         @ValidNonNegativeLong @RequestParam startTimestamp: Long,
         @ValidNonNegativeLong @RequestParam endTimestamp: Long,
     ): List<AccountTotalsSeries> {
-        TimeValidationUtils.validateTimestamps(startTimestamp, endTimestamp)
+        TimeValidationUtils.validateTimestamps(
+            startTimestamp,
+            endTimestamp,
+            "startTimestamp",
+            "endTimestamp",
+        )
         return accountsService.getTotalSeries(startTimestamp, endTimestamp)
     }
 

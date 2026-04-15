@@ -35,7 +35,6 @@ interface AppDailyActionSummaryRepository :
         value = ["app_daily_action_countByTotalRewardAmountGreaterThanAndAppIdAndDate"],
         key = "#totalRewardAmount.stripTrailingZeros().toPlainString() + '-' + #appId + '-' + #date",
     )
-    @Query(value = "{ 'totalRewardAmount': { '\$gt': ?0 }, 'appId': ?1, 'date': ?2 }", count = true)
     fun countByTotalRewardAmountGreaterThanAndAppIdAndDate(
         totalRewardAmount: java.math.BigDecimal,
         appId: String,

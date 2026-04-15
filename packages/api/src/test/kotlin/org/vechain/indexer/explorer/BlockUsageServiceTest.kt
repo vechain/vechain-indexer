@@ -4,6 +4,8 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
+import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.explorer.repository.BlockUsageRepository
 import strikt.api.expectThat
 import strikt.assertions.hasSize
@@ -55,6 +57,17 @@ class BlockUsageServiceTest {
         service.getBlockUsage(0L, 40_000_000L)
 
         verify(exactly = 1) { repository.findMonthlyInTimestampRange(0L, 40_000_000L) }
+    }
+
+    @Test
+    fun `getBlockUsage rejects oversized start timestamp`() {
+        val exception =
+            assertThrows<BadRequestException> {
+                service.getBlockUsage(31_556_889_832_694_401L, 31_556_889_832_694_401L)
+            }
+
+        expectThat(exception.message)
+            .isEqualTo("Invalid 'startTimestamp' timestamp: exceeds supported Unix timestamp range")
     }
 
     private fun blockUsage(blockNumber: Long = 1L, blockTimestamp: Long) =

@@ -10,6 +10,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.b3tr.action.SustainabilityProofV2
 import org.vechain.indexer.b3tr.voting.AppVote
 import org.vechain.indexer.b3tr.voting.Support
+import org.vechain.indexer.validator.Status
 
 @Document(collection = IndexerNames.HISTORY.COLLECTION)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -45,7 +46,6 @@ constructor(
     val outputToken: String? = null,
     val inputValue: String? = null,
     val outputValue: String? = null,
-    val tokenAddress: String? = null,
     val levelId: String? = null,
     val owner: String? = null,
     val vetGeneratedVthoRewards: String? = null,
@@ -58,8 +58,19 @@ constructor(
     val periodClaimed: Long? = null,
     val boostedBlocks: String? = null,
     @JsonIgnore val isBlacklisted: Boolean? = null,
+    @JsonIgnore val delegationLifecycleStatus: Status? = null,
+    @JsonIgnore val delegationLifecycleNextCycle: Long? = null,
+    @JsonIgnore val delegationLifecycleCycleLength: Long? = null,
+    @JsonIgnore val delegationLifecycleForceExit: Boolean? = null,
+    @JsonIgnore val delegationLifecycleOrder: Int? = null,
 ) : IndexedDocument {
     companion object {
+        const val DELEGATION_LIFECYCLE_STATUS_FIELD = "delegationLifecycleStatus"
+        const val DELEGATION_LIFECYCLE_NEXT_CYCLE_FIELD = "delegationLifecycleNextCycle"
+        const val DELEGATION_LIFECYCLE_CYCLE_LENGTH_FIELD = "delegationLifecycleCycleLength"
+        const val DELEGATION_LIFECYCLE_FORCE_EXIT_FIELD = "delegationLifecycleForceExit"
+        const val DELEGATION_LIFECYCLE_ORDER_FIELD = "delegationLifecycleOrder"
+
         fun getAppVotes(appIds: Any?, voteWeights: Any?): List<AppVote>? {
             // Ensure both are non-null and cast to List<String>
             val appIdsList = appIds as? List<*> ?: return null

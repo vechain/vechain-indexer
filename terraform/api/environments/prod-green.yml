@@ -40,6 +40,7 @@ alb:
       - "185.57.113.46/32"
       - "81.39.47.171/32"
       - "90.26.60.41/32"
+    waf_rate_limit_bypass_header_name: "x-rate-limit-bypass"
 
 mongoatlas_project_id:           64d6337acba67e1132a3a4e1
 slack_secret_arn:                arn:aws:secretsmanager:eu-west-1:905964754131:secret:veworld-mongodb-alerts/slack/api-token-NvxUZd
@@ -47,7 +48,6 @@ datadog:
   secret_arn:                       arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/datadog_keys-NFBO6v
   indexer:
     api_key_arn:                 arn:aws:secretsmanager:eu-west-1:905964754131:secret:/prod/indexer/datadog-api-key-YHxcKv
-    app_key_arn:                 arn:aws:secretsmanager:eu-west-1:905964754131:secret:/prod/indexer/datadog-application-key-jZB5jk
 
 enabled_nets:
   main:
@@ -70,7 +70,7 @@ enabled_nets:
         user-all-time-count-by-entity-type:
           max-size: '1000'
           ttl-seconds: '1200'
-        user-all-time-count-by-reward:
+        user-all-time-count-by-total-reward:
           max-size: '1000'
           ttl-seconds: '300'
         user-all-time-count-by-actions:
@@ -79,13 +79,31 @@ enabled_nets:
         app-all-time-count-by-app-id:
           max-size: '1000'
           ttl-seconds: '300'
+        app-all-time-count-by-total-reward:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-all-time-count-by-actions:
+          max-size: '1000'
+          ttl-seconds: '300'
         app-daily-count:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-daily-count-by-total-reward:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-daily-count-by-actions:
           max-size: '1000'
           ttl-seconds: '300'
         app-round-count:
           max-size: '1000'
           ttl-seconds: '300'
-        user-daily-count:
+        app-round-count-by-total-reward:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-round-count-by-actions:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-daily-count-by-total-reward:
           max-size: '1000'
           ttl-seconds: '300'
         user-daily-count-by-actions:
@@ -94,7 +112,7 @@ enabled_nets:
         user-daily-count-by-entity-type:
           max-size: '1000'
           ttl-seconds: '300'
-        user-round-count-by-reward:
+        user-round-count-by-total-reward:
           max-size: '1000'
           ttl-seconds: '300'
         user-round-count-by-actions:
@@ -108,6 +126,9 @@ enabled_nets:
           ttl-seconds: '3600'
         gm-nft-count:
           max-size: '1000'
+          ttl-seconds: '300'
+        b3tr-richlist-total-holders:
+          max-size: '10'
           ttl-seconds: '300'
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -137,6 +158,7 @@ enabled_nets:
         stargate:                   '22044000'
         historic-proposals:       '4510483'
         b3tr:                       '18868500'
+        b3tr-challenges:            '24565096'
         b3tr-treasury:              '18868500'
         b3tr-balance:               '18868500'
         b3tr-x-alloc-result:        '18926115'
@@ -163,6 +185,7 @@ enabled_nets:
         vevote: '125'
         stargate: '125'
         b3tr: '75'
+        b3tr-challenges: '100'
         historic-proposals: '125'
       channel-batch-size: '15'
       checkpoint-save-interval-seconds: '60'
@@ -184,7 +207,7 @@ enabled_nets:
         transfers: '1'
         fungible-token-interactions: '1'
         transactions: '1'
-        history: '1'
+        history: '2'
         nft-blacklist: '1'
         vevote-comments: '1'
         vevote-results: '4'
@@ -197,6 +220,7 @@ enabled_nets:
         stargate-vet-delegated-by-block: '8'
         b3tr-proposal-comments: '1'
         b3tr-proposal-results: '6'
+        b3tr-challenges: '1'
         b3tr-app-all-time-action-summary: '5'
         b3tr-app-round-action-summary: '5'
         b3tr-app-daily-action-summary: '5'
@@ -214,8 +238,7 @@ enabled_nets:
         validator-rewards: '3'
         stargate-token: '7'
         token-rewards: '5'
-        delegation: '8'
-        total-accounts: '4'
+        delegation: '9'
         account-totals-series: '2'
         account-overview: '6'
         b3tr-balance: '4'
@@ -228,6 +251,7 @@ enabled_nets:
           B3TR_DBA_POOL_CONTRACT: '0x98c1d097c39969bb5de754266f60d22bd105b368'
           GM_NFT_CONTRACT: '0x93b8cd34a7fc4f53271b9011161f7a2b5fea9d1f'
           X_ALLOC_VOTING_CONTRACT: '0x89a00bb0947a30ff95beef77a66aede3842fe5b7'
+          CHALLENGES_CONTRACT: '0x68669db619977e56f604386146694520c896528e'
           NODE_MANAGEMENT_CONTRACT: '0xB0EF9D89C6b49CbA6BBF86Bf2FDf0Eee4968c6AB'
           X_ALLOC_POOL_CONTRACT: '0x4191776F05f4bE4848d3f4d587345078B439C7d3'
           X2EARN_REWARDS_POOL_CONTRACT: '0x6bee7ddab6c99d5b2af0554eaea484ce18f52631'
@@ -290,7 +314,7 @@ enabled_nets:
         user-all-time-count-by-entity-type:
           max-size: '1000'
           ttl-seconds: '1200'
-        user-all-time-count-by-reward:
+        user-all-time-count-by-total-reward:
           max-size: '1000'
           ttl-seconds: '300'
         user-all-time-count-by-actions:
@@ -299,13 +323,31 @@ enabled_nets:
         app-all-time-count-by-app-id:
           max-size: '1000'
           ttl-seconds: '300'
+        app-all-time-count-by-total-reward:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-all-time-count-by-actions:
+          max-size: '1000'
+          ttl-seconds: '300'
         app-daily-count:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-daily-count-by-total-reward:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-daily-count-by-actions:
           max-size: '1000'
           ttl-seconds: '300'
         app-round-count:
           max-size: '1000'
           ttl-seconds: '300'
-        user-daily-count:
+        app-round-count-by-total-reward:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-round-count-by-actions:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-daily-count-by-total-reward:
           max-size: '1000'
           ttl-seconds: '300'
         user-daily-count-by-actions:
@@ -314,7 +356,7 @@ enabled_nets:
         user-daily-count-by-entity-type:
           max-size: '1000'
           ttl-seconds: '300'
-        user-round-count-by-reward:
+        user-round-count-by-total-reward:
           max-size: '1000'
           ttl-seconds: '300'
         user-round-count-by-actions:
@@ -328,6 +370,9 @@ enabled_nets:
           ttl-seconds: '3600'
         gm-nft-count:
           max-size: '1000'
+          ttl-seconds: '300'
+        b3tr-richlist-total-holders:
+          max-size: '10'
           ttl-seconds: '300'
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -356,6 +401,7 @@ enabled_nets:
         vevote:                     '22331866'
         stargate:                   '23188260'
         b3tr:                       '22126050'
+        b3tr-challenges:            '24614309'
         b3tr-treasury:              '22126050'
         b3tr-balance:               '22126050'
         b3tr-x-alloc-result:        '22126050'
@@ -383,6 +429,7 @@ enabled_nets:
         vevote: '125'
         stargate: '125'
         b3tr: '75'
+        b3tr-challenges: '100'
         historic-proposals: '125'
       channel-batch-size: '15'
       checkpoint-save-interval-seconds: '60'
@@ -404,7 +451,7 @@ enabled_nets:
         transfers: '1'
         fungible-token-interactions: '1'
         transactions: '1'
-        history: '1'
+        history: '2'
         nft-blacklist: '1'
         vevote-comments: '1'
         vevote-results: '4'
@@ -417,6 +464,7 @@ enabled_nets:
         stargate-vet-delegated-by-block: '8'
         b3tr-proposal-comments: '1'
         b3tr-proposal-results: '6'
+        b3tr-challenges: '1'
         b3tr-app-all-time-action-summary: '5'
         b3tr-app-round-action-summary: '5'
         b3tr-app-daily-action-summary: '5'
@@ -434,8 +482,7 @@ enabled_nets:
         validator-rewards: '3'
         stargate-token: '8'
         token-rewards: '4'
-        delegation: '7'
-        total-accounts: '4'
+        delegation: '8'
         account-totals-series: '2'
         account-overview: '6'
         b3tr-balance: '4'
@@ -448,6 +495,7 @@ enabled_nets:
           B3TR_DBA_POOL_CONTRACT: '0x328710f4925c3e4c04961882b96c50cc7cd9d958'
           GM_NFT_CONTRACT: '0x38a59fa7fd7039884465a0ff285b8c4b6fe394ca'
           X_ALLOC_VOTING_CONTRACT: '0x8800592c463f0b21ae08732559ee8e146db1d7b2'
+          CHALLENGES_CONTRACT: '0x8dd62fb5438bdce3dfdcfeb2a2a18fcef1b7e6ab'
           X_ALLOC_POOL_CONTRACT: '0x6f7b4bc19b4dc99005b473b9c45ce2815bbe7533'
           X2EARN_REWARDS_POOL_CONTRACT: '0x2d2a2207c68a46fc79325d7718e639d1047b0d8b'
           VOTER_REWARDS_CONTRACT: '0x851ef91801899a4e7e4a3174a9300b3e20c957e8'

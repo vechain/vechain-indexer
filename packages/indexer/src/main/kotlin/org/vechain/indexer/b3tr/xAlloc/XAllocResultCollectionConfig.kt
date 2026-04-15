@@ -36,7 +36,6 @@ open class XAllocResultCollectionConfig(
             listOf(
                 "roundId_-1" to Index().on(XAllocResult::roundId.name, Sort.Direction.DESC),
                 "appId_-1" to Index().on(XAllocResult::appId.name, Sort.Direction.DESC),
-                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
             )
         )
     }

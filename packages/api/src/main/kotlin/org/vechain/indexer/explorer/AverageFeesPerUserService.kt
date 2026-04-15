@@ -5,6 +5,7 @@ import java.time.ZoneOffset
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.explorer.repository.AverageFeesPerUserRepository
+import org.vechain.indexer.utils.TimeValidationUtils
 
 @Profile("explorer", "average-fees-per-user")
 @Service
@@ -13,10 +14,12 @@ open class AverageFeesPerUserService(private val repository: AverageFeesPerUserR
         startTimestamp: Long,
         endTimestamp: Long,
     ): List<AverageFeesPerUser> {
-        require(startTimestamp >= 0) { "startTimestamp must be non-negative" }
-        require(endTimestamp >= startTimestamp) {
-            "endTimestamp must be greater than or equal to startTimestamp"
-        }
+        TimeValidationUtils.validateTimestamps(
+            startTimestamp,
+            endTimestamp,
+            "startTimestamp",
+            "endTimestamp",
+        )
 
         val startDayStartTimestamp = dayStartTimestamp(startTimestamp)
         val endDayStartTimestamp = dayStartTimestamp(endTimestamp)

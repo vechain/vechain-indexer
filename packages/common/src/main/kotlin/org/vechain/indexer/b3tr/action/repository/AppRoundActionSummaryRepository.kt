@@ -42,10 +42,6 @@ interface AppRoundActionSummaryRepository : BaseIndexedRepository<AppRoundAction
         key =
             "#totalRewardAmount.stripTrailingZeros().toPlainString() + '-' + #appId + '-' + #roundId",
     )
-    @Query(
-        value = "{ 'totalRewardAmount': { '\$gt': ?0 }, 'appId': ?1, 'roundId': ?2 }",
-        count = true,
-    )
     fun countByTotalRewardAmountGreaterThanAndAppIdAndRoundId(
         totalRewardAmount: java.math.BigDecimal,
         appId: String,

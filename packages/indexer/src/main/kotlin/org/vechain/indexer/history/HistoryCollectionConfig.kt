@@ -1,6 +1,7 @@
 package org.vechain.indexer.history
 
 import kotlinx.coroutines.CoroutineScope
+import org.bson.Document
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
@@ -33,9 +34,6 @@ open class HistoryCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                // For getLatestRecord() and deleteAllByBlockNumberGreaterThanEqual()
-                "blockNumber_-1" to
-                    Index().on(IndexedHistoryEvent::blockNumber.name, Sort.Direction.DESC),
                 // Core account history queries fan out across these fields with blockTimestamp
                 // sort.
                 "origin_1_blockTimestamp_-1" to
@@ -62,6 +60,25 @@ open class HistoryCollectionConfig(
                     Index()
                         .on(IndexedHistoryEvent::tokenId.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
+                "tokenId_1_eventName_1_blockTimestamp_-1" to
+                    Index()
+                        .on(IndexedHistoryEvent::tokenId.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
+                "contractAddress_1_tokenId_1_eventName_1_blockTimestamp_-1" to
+                    Index()
+                        .on(IndexedHistoryEvent::contractAddress.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::tokenId.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
+                "delegationId_1_blockNumber_-1_delegationLifecycleOrder_-1" to
+                    Index()
+                        .on(IndexedHistoryEvent::delegationId.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::blockNumber.name, Sort.Direction.DESC)
+                        .on(
+                            IndexedHistoryEvent.DELEGATION_LIFECYCLE_ORDER_FIELD,
+                            Sort.Direction.DESC,
+                        ),
                 // Action endpoints query narrower shapes and benefit from dedicated compounds.
                 "to_1_eventName_1_blockTimestamp_-1" to
                     Index()
@@ -80,6 +97,29 @@ open class HistoryCollectionConfig(
                         .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
             )
+        )
+
+        // Covering index for DelegationLifecycleHistoryService.ensureLoaded() aggregation.
+        // The partial filter restricts the index to delegation documents only (~15K entries),
+        // which satisfies the aggregation's match(delegationLifecycleStatus exists/ne null).
+        // The key order matches the sort/group stages: group(delegationId) with
+        // sort(delegationId asc, blockNumber desc, delegationLifecycleOrder desc).
+        ensureIndexes(
+            listOf(
+                "dlc_delegationId_1_blockNumber_-1_dlcOrder_-1" to
+                    Index()
+                        .on(IndexedHistoryEvent::delegationId.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::blockNumber.name, Sort.Direction.DESC)
+                        .on(
+                            IndexedHistoryEvent.DELEGATION_LIFECYCLE_ORDER_FIELD,
+                            Sort.Direction.DESC,
+                        )
+            ),
+            partialFilter =
+                Document(
+                    IndexedHistoryEvent.DELEGATION_LIFECYCLE_STATUS_FIELD,
+                    Document("\$exists", true),
+                ),
         )
     }
 }

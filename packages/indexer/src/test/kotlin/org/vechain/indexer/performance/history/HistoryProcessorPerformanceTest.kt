@@ -10,6 +10,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
+import org.vechain.indexer.history.DelegationLifecycleHistoryService
 import org.vechain.indexer.history.HistoryConfig
 import org.vechain.indexer.history.HistoryProcessor
 import org.vechain.indexer.history.HistoryRepository
@@ -17,6 +18,7 @@ import org.vechain.indexer.history.HistoryService
 import org.vechain.indexer.nft.NftBlacklistClient
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
+import org.vechain.indexer.validator.ValidatorDelegationService
 
 @Disabled("Performance test - run explicitly with --tests when needed")
 @ActiveProfiles("history")
@@ -29,6 +31,8 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var mongoTemplate: MongoTemplate
 
     @Autowired lateinit var blacklistClient: NftBlacklistClient
+    @Autowired lateinit var delegationLifecycleHistoryService: DelegationLifecycleHistoryService
+    @Autowired lateinit var validatorDelegationService: ValidatorDelegationService
 
     @Autowired lateinit var checkpointService: CheckpointService
     @Autowired lateinit var processorMetrics: ProcessorMetrics
@@ -85,6 +89,8 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
                         historyRepository,
                         mongoTemplate,
                         blacklistClient,
+                        delegationLifecycleHistoryService,
+                        validatorDelegationService,
                         profiler,
                     )
                 ProfiledHistoryProcessor(
@@ -111,6 +117,7 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
                 startBlock = startBlock,
                 syncLoggerInterval = 100L,
                 bEProperties = businessEventProperties,
+                getAllValidatorsAddress = "0xvalidators",
             )
     }
 

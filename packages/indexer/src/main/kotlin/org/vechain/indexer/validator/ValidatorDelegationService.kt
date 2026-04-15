@@ -17,7 +17,7 @@ import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeValidators
 import org.vechain.indexer.validator.logic.ValidatorAssembler.listOf
 import org.vechain.indexer.validator.logic.ValidatorCalculator.calculateNextCycleStart
 
-@Profile("validator", "delegation", "stargate", "stargate-token")
+@Profile("validator", "delegation", "stargate", "stargate-token", "history")
 @Service
 class ValidatorDelegationService(
     private val thorClient: ThorClient,

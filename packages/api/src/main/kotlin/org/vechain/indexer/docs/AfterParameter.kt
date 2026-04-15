@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.Schema
 import org.springframework.core.annotation.AliasFor
+import org.vechain.indexer.utils.TimeValidationUtils
 
 @Target(
     AnnotationTarget.VALUE_PARAMETER,
@@ -12,7 +13,15 @@ import org.springframework.core.annotation.AliasFor
 )
 @Retention(AnnotationRetention.RUNTIME)
 @Repeatable
-@Parameter(schema = Schema(type = "integer", format = "int64", minimum = "0"))
+@Parameter(
+    schema =
+        Schema(
+            type = "integer",
+            format = "int64",
+            minimum = "0",
+            maximum = TimeValidationUtils.MAX_SUPPORTED_UNIX_TIMESTAMP,
+        )
+)
 annotation class AfterParameter(
     @get:AliasFor(annotation = Parameter::class, attribute = "name") val name: String = "after",
     @get:AliasFor(annotation = Parameter::class, attribute = "description")

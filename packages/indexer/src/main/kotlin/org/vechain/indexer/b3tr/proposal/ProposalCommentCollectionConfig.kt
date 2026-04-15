@@ -33,9 +33,6 @@ open class ProposalCommentCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                // For getLatestRecord() and deleteAllByBlockNumberGreaterThanEqual()
-                "blockNumber_-1" to
-                    Index().on(ProposalComment::blockNumber.name, Sort.Direction.DESC),
                 "voter_-1" to Index().on(ProposalComment::voter.name, Sort.Direction.DESC),
                 "proposalId_-1" to Index().on(ProposalComment::proposalId.name, Sort.Direction.DESC),
             )

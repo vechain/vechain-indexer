@@ -8,10 +8,8 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.count
 import org.springframework.data.mongodb.core.index.Index
 import org.springframework.data.mongodb.core.insert
-import org.springframework.data.mongodb.core.query.Query
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.accounts.VetBalance
@@ -52,11 +50,9 @@ open class VetBalanceCollectionConfig(
     }
 
     private fun preloadGenesisIfCollectionEmpty() {
-        val existingCount = mongoTemplate.count<VetBalance>(Query())
-        if (existingCount > 0) {
+        if (collectionHasDocuments()) {
             logger.info(
-                "Skipping genesis preload for ${modelObj.simpleName}: collection already has {} records.",
-                existingCount,
+                "Skipping genesis preload for ${modelObj.simpleName}: collection already has records."
             )
             return
         }

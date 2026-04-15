@@ -1,9 +1,11 @@
 package org.vechain.indexer.config
 
+import kotlin.time.TimeSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.ExitCodeGenerator
 import org.springframework.boot.SpringApplication
@@ -17,6 +19,7 @@ import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerRunner
 import org.vechain.indexer.config.metrics.IndexerHealthMetrics
 import org.vechain.indexer.config.mongo.CollectionConfig
+import org.vechain.indexer.history.DelegationLifecycleHistoryService
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.version.IndexerVersionCollectionConfig
 
@@ -31,6 +34,8 @@ open class IndexManager(
     private val metrics: IndexerHealthMetrics,
     private val applicationContext: ApplicationContext,
     @param:Value("\${indexer.channel-batch-size}") private val channelBatchSize: Int,
+    @param:Autowired(required = false)
+    private val delegationLifecycleHistoryService: DelegationLifecycleHistoryService? = null,
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -46,8 +51,24 @@ open class IndexManager(
                 indexerVersionCollectionConfig.ensureIndexes()
                 collectionConfigs
                     .sortedBy { it.modelObj.simpleName }
-                    .forEach { it.initCollection() }
+                    .forEach {
+                        val start = TimeSource.Monotonic.markNow()
+                        it.initCollection()
+                        it.removeStaleIndexes()
+                        logger.info(
+                            "Collection bootstrap for {} completed in {}",
+                            it.modelObj.simpleName,
+                            start.elapsedNow(),
+                        )
+                    }
                 indexBootstrapState.markReady(initializerCount)
+
+                delegationLifecycleHistoryService?.let {
+                    logger.info("Preloading delegation lifecycle state")
+                    val start = TimeSource.Monotonic.markNow()
+                    it.preload()
+                    logger.info("Delegation lifecycle preload completed in {}", start.elapsedNow())
+                }
 
                 logger.info("Collection bootstrap complete. Starting indexers")
                 startIndexers()

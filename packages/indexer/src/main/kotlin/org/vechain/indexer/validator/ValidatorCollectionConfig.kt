@@ -33,8 +33,6 @@ open class ValidatorCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                // For getLatestRecord() and deleteAllByBlockNumberGreaterThanEqual()
-                "blockNumber_-1" to Index().on(Validator::blockNumber.name, Sort.Direction.DESC),
                 "endorser_1" to Index().on(Validator::endorser.name, Sort.Direction.ASC),
                 "validatorTvl_-1" to Index().on(Validator::validatorTvl.name, Sort.Direction.DESC),
                 "delegatorTvl_-1" to Index().on(Validator::delegatorTvl.name, Sort.Direction.DESC),

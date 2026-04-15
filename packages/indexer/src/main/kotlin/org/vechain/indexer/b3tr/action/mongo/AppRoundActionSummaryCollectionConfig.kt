@@ -67,7 +67,6 @@ open class AppRoundActionSummaryCollectionConfig(
                     Index()
                         .on(AppRoundActionSummary::roundId.name, Sort.Direction.ASC)
                         .on(AppRoundActionSummary::user.name, Sort.Direction.ASC),
-                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
             )
         )
     }

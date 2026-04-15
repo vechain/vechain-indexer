@@ -238,7 +238,6 @@ open class DelegationService(
                     existing,
                     existing.copy(
                         status = validatorDelegationService.nextStatus(existing.status),
-                        notify = true,
                         blockId = block.id,
                         blockNumber = block.number,
                         blockTimestamp = block.timestamp,
@@ -415,6 +414,7 @@ open class DelegationService(
                         block.number,
                     ),
                 version = nextVersion,
+                txId = ev.txId,
             ),
         )
     }
@@ -521,7 +521,7 @@ open class DelegationService(
                     blockNumber = block.number,
                     blockTimestamp = block.timestamp,
                     version = nextVersion,
-                    force = true,
+                    txId = ev.txId,
                 ),
             )
         }
@@ -549,8 +549,6 @@ open class DelegationService(
                     blockNumber = block.number,
                     blockTimestamp = block.timestamp,
                     version = nextVersion,
-                    notify = true,
-                    force = true,
                 ),
             )
         }

@@ -337,13 +337,14 @@ open class AccountOverviewService(
      * Settle passive VTHO for a batch of accounts at the Hayabusa fork.
      *
      * Calculates the final passive VTHO earnings from each account's lastVthoSettlement up to the
-     * Hayabusa timestamp, then saves the updates.
+     * Hayabusa block's timestamp, stamps updated records with the block's id/number/timestamp, then
+     * saves the updates.
      *
      * @param accounts The batch of accounts to settle
-     * @param hayabusaTimestamp The timestamp of the Hayabusa block
+     * @param block The Hayabusa fork block used for settlement timestamp and record stamping
      */
     @Transactional
-    open fun settleHayabusaBatch(accounts: List<AccountOverview>, hayabusaTimestamp: Long) {
+    open fun settleHayabusaBatch(accounts: List<AccountOverview>, block: Block) {
         val updated = mutableListOf<AccountOverview>()
         val existing = mutableListOf<AccountOverview>()
 
@@ -351,14 +352,20 @@ open class AccountOverviewService(
             val lastSettlement = account.lastVthoSettlement ?: return@forEach
 
             // Calculate passive VTHO from last settlement to Hayabusa
-            val durationSeconds = BigInteger.valueOf(hayabusaTimestamp - lastSettlement)
+            val durationSeconds = BigInteger.valueOf(block.timestamp - lastSettlement)
             val passiveVtho = calculatePassiveVtho(account.vetBalance, durationSeconds)
 
             // Create updated record with settled passive VTHO
             val updatedAccount =
-                account.copy(version = account.version + 1, lastSeen = hayabusaTimestamp)
+                account.copy(
+                    blockId = block.id,
+                    blockNumber = block.number,
+                    blockTimestamp = block.timestamp,
+                    version = account.version + 1,
+                    lastSeen = block.timestamp,
+                )
             updatedAccount.vthoPassiveGeneration += passiveVtho
-            updatedAccount.lastVthoSettlement = hayabusaTimestamp
+            updatedAccount.lastVthoSettlement = block.timestamp
 
             existing.add(account)
             updated.add(updatedAccount)
@@ -593,7 +600,14 @@ open class AccountOverviewService(
         val (existing, nextVersion) = accumulator.resolve(recordId)
         val result =
             if (existing != null) {
-                val copy = existing.copy(version = nextVersion, lastSeen = block.timestamp)
+                val copy =
+                    existing.copy(
+                        blockId = block.id,
+                        blockNumber = block.number,
+                        blockTimestamp = block.timestamp,
+                        version = nextVersion,
+                        lastSeen = block.timestamp,
+                    )
                 accumulator.put(recordId, existing, copy)
                 copy
             } else {

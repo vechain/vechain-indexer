@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.vechain.indexer.b3tr.AppId
 import org.vechain.indexer.b3tr.action.repository.AppAllTimeActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.AppDailyActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.AppRoundActionSummaryRepository
@@ -44,6 +45,7 @@ internal class ActionServiceTest {
                 appAllTimeRepo,
                 appDailyRepo,
                 appRoundRepo,
+                kotlinx.coroutines.Dispatchers.IO.limitedParallelism(4),
             )
     }
 
@@ -240,5 +242,119 @@ internal class ActionServiceTest {
         assertEquals(7, result.rankByActionsRewarded)
         assertEquals(listOf("app1", "app2"), result.uniqueXAppInteractions)
         assertEquals(roundId, result.roundId)
+    }
+
+    @Test
+    fun `getAppAllTimeOverview returns correct overview when data exists`() {
+        val appId = AppId("app-1")
+        val impact = mockk<Impact>(relaxed = true)
+        val overview = mockk<UserAllTimeActionSummary>(relaxed = true)
+
+        every { userAllTimeRepo.findByEntity(appId.value) } returns overview
+        every { overview.totalRewardAmount } returns BigDecimal("1136571.207515180010875330")
+        every { overview.actionsRewarded } returns 12
+        every { overview.totalImpact } returns impact
+        every {
+            userAllTimeRepo.countByTotalRewardAmountGreaterThanAndEntityType(
+                BigDecimal("1136571.207515180010875330"),
+                EntityType.APP,
+            )
+        } returns 3
+        every {
+            userAllTimeRepo.countByActionsRewardedGreaterThanAndEntityType(12, EntityType.APP)
+        } returns 5
+        every { appAllTimeRepo.countByAppId(appId.value) } returns 42
+
+        val result = service.getAppAllTimeOverview(appId)
+
+        assertEquals(appId.value, result.appId)
+        assertEquals(1136571.20751518, result.totalRewardAmount)
+        assertEquals(12, result.actionsRewarded)
+        assertEquals(impact, result.totalImpact)
+        assertEquals(4, result.rankByReward)
+        assertEquals(6, result.rankByActionsRewarded)
+        assertEquals(42, result.totalUniqueUserInteractions)
+        assertEquals(null, result.roundId)
+        assertEquals(null, result.date)
+    }
+
+    @Test
+    fun `getAppDailyOverview returns correct overview when data exists`() {
+        val appId = AppId("app-2")
+        val date = "2026-03-30"
+        val impact = mockk<Impact>(relaxed = true)
+        val overview = mockk<UserDailyActionSummary>(relaxed = true)
+
+        every { userDailyRepo.findByEntityAndDate(appId.value, date) } returns overview
+        every { overview.totalRewardAmount } returns BigDecimal("422891.777656074258776724")
+        every { overview.actionsRewarded } returns 8
+        every { overview.totalImpact } returns impact
+        every {
+            userDailyRepo.countByTotalRewardAmountGreaterThanAndEntityTypeAndDate(
+                BigDecimal("422891.777656074258776724"),
+                EntityType.APP,
+                date,
+            )
+        } returns 1
+        every {
+            userDailyRepo.countByActionsRewardedGreaterThanAndEntityTypeAndDate(
+                8,
+                EntityType.APP,
+                date,
+            )
+        } returns 2
+        every { appDailyRepo.countByAppIdAndDate(appId.value, date) } returns 15
+
+        val result = service.getAppDailyOverview(appId, date)
+
+        assertEquals(appId.value, result.appId)
+        assertEquals(422891.77765607426, result.totalRewardAmount)
+        assertEquals(8, result.actionsRewarded)
+        assertEquals(impact, result.totalImpact)
+        assertEquals(2, result.rankByReward)
+        assertEquals(3, result.rankByActionsRewarded)
+        assertEquals(15, result.totalUniqueUserInteractions)
+        assertEquals(null, result.roundId)
+        assertEquals(date, result.date)
+    }
+
+    @Test
+    fun `getAppRoundOverview returns correct overview when data exists`() {
+        val appId = AppId("app-3")
+        val roundId = 7
+        val impact = mockk<Impact>(relaxed = true)
+        val overview = mockk<UserRoundActionSummary>(relaxed = true)
+
+        every { userRoundRepo.findByEntityAndRoundId(appId.value, roundId) } returns overview
+        every { overview.totalRewardAmount } returns BigDecimal("4876.273810888064122202")
+        every { overview.actionsRewarded } returns 21
+        every { overview.totalImpact } returns impact
+        every {
+            userRoundRepo.countByTotalRewardAmountGreaterThanAndEntityTypeAndRoundId(
+                BigDecimal("4876.273810888064122202"),
+                EntityType.APP,
+                roundId,
+            )
+        } returns 9
+        every {
+            userRoundRepo.countByActionsRewardedGreaterThanAndEntityTypeAndRoundId(
+                21,
+                EntityType.APP,
+                roundId,
+            )
+        } returns 4
+        every { appRoundRepo.countByAppIdAndRoundId(appId.value, roundId) } returns 6
+
+        val result = service.getAppRoundOverview(appId, roundId)
+
+        assertEquals(appId.value, result.appId)
+        assertEquals(4876.273810888064, result.totalRewardAmount)
+        assertEquals(21, result.actionsRewarded)
+        assertEquals(impact, result.totalImpact)
+        assertEquals(10, result.rankByReward)
+        assertEquals(5, result.rankByActionsRewarded)
+        assertEquals(6, result.totalUniqueUserInteractions)
+        assertEquals(roundId, result.roundId)
+        assertEquals(null, result.date)
     }
 }

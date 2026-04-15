@@ -32,6 +32,8 @@ class HistoryCollectionConfigTest {
             indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
         } returns false
         every { mongoTemplate.collectionExists(IndexedHistoryEvent::class.java) } returns true
+        every { mongoTemplate.getCollectionName(IndexedHistoryEvent::class.java) } returns
+            "history_events"
         every { mongoTemplate.indexOps(IndexedHistoryEvent::class.java) } returns indexOperations
         every { indexOperations.ensureIndex(capture(capturedIndexes)) } returns "created"
 
@@ -54,6 +56,33 @@ class HistoryCollectionConfigTest {
                 it.indexKeys["tokenId"] == 1 &&
                     it.indexKeys["blockTimestamp"] == -1 &&
                     it.indexOptions["name"] == "tokenId_1_blockTimestamp_-1"
+            }
+        )
+        assertTrue(
+            capturedIndexes.any {
+                it.indexKeys["tokenId"] == 1 &&
+                    it.indexKeys["eventName"] == 1 &&
+                    it.indexKeys["blockTimestamp"] == -1 &&
+                    it.indexOptions["name"] == "tokenId_1_eventName_1_blockTimestamp_-1"
+            }
+        )
+        assertTrue(
+            capturedIndexes.any {
+                it.indexKeys["contractAddress"] == 1 &&
+                    it.indexKeys["tokenId"] == 1 &&
+                    it.indexKeys["eventName"] == 1 &&
+                    it.indexKeys["blockTimestamp"] == -1 &&
+                    it.indexOptions["name"] ==
+                        "contractAddress_1_tokenId_1_eventName_1_blockTimestamp_-1"
+            }
+        )
+        assertTrue(
+            capturedIndexes.any {
+                it.indexKeys["delegationId"] == 1 &&
+                    it.indexKeys["blockNumber"] == -1 &&
+                    it.indexKeys["delegationLifecycleOrder"] == -1 &&
+                    it.indexOptions["name"] ==
+                        "delegationId_1_blockNumber_-1_delegationLifecycleOrder_-1"
             }
         )
         assertTrue(
@@ -90,6 +119,8 @@ class HistoryCollectionConfigTest {
             indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
         } returns false
         every { mongoTemplate.collectionExists(IndexedHistoryEvent::class.java) } returns true
+        every { mongoTemplate.getCollectionName(IndexedHistoryEvent::class.java) } returns
+            "history_events"
         every { mongoTemplate.indexOps(IndexedHistoryEvent::class.java) } returns indexOperations
         every { indexOperations.ensureIndex(any()) } throws RuntimeException("boom")
 
