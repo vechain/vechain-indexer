@@ -66,8 +66,6 @@ open class TransactionCountService(
                     (previous?.totalRevertedClauses ?: BigInteger.ZERO) + revertedClauses,
             )
 
-        lastPersistedSummary = summary
-        lastProcessedBlockNumber = block.number
         return ProcessingResult(current = summary, previous = previous, shouldPersist = true)
     }
 
@@ -103,6 +101,12 @@ open class TransactionCountService(
             blockWindow = inlineVersioningProperties.blockWindow,
             maxVersions = inlineVersioningProperties.maxVersions,
         )
+        recordPersistedSummary(summary)
+    }
+
+    internal fun recordPersistedSummary(summary: TransactionCountSummary) {
+        lastPersistedSummary = summary
+        lastProcessedBlockNumber = summary.blockNumber
     }
 
     data class ProcessingResult(

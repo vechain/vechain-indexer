@@ -104,6 +104,7 @@ class TransactionCountServiceTest {
 
         val firstResult = service.processBlock(block)
         val first = firstResult.current
+        service.recordPersistedSummary(first)
         val next = block.copy(number = block.number + 1, id = "0xnext")
         val nextResult = service.processBlock(next)
         val result = nextResult.current
@@ -133,6 +134,7 @@ class TransactionCountServiceTest {
         every { repository.findByIdOrNull(TransactionCountSummary.SUMMARY_ID) } returns previous
 
         val first = service.processBlock(firstBlock).current
+        service.recordPersistedSummary(first)
         val emptyBlock =
             BlockFixtures.BLOCK_NO_CLAUSES.copy(
                 number = firstBlock.number + 1,
@@ -168,6 +170,7 @@ class TransactionCountServiceTest {
         every { repository.findByIdOrNull(TransactionCountSummary.SUMMARY_ID) } returns previous
 
         val first = service.processBlock(firstBlock).current
+        service.recordPersistedSummary(first)
         val emptyBlock =
             BlockFixtures.BLOCK_NO_CLAUSES.copy(
                 number = firstBlock.number + 1,
@@ -218,6 +221,7 @@ class TransactionCountServiceTest {
         every { repository.findByIdOrNull(TransactionCountSummary.SUMMARY_ID) } returns previous
 
         val first = service.processBlock(firstBlock).current
+        service.recordPersistedSummary(first)
         val emptyBlock =
             BlockFixtures.BLOCK_NO_CLAUSES.copy(
                 number = firstBlock.number + 1,
@@ -239,6 +243,26 @@ class TransactionCountServiceTest {
         assertEquals(first.blockNumber, result.previous?.blockNumber)
         assertEquals(first.version, result.previous?.version)
         verify(exactly = 1) { repository.findByIdOrNull(TransactionCountSummary.SUMMARY_ID) }
+    }
+
+    @Test
+    fun `processBlock does not cache unpersisted summary as latest persisted state`() {
+        val block = BlockFixtures.BLOCK_SINGLE_CLAUSE
+        val previous =
+            createSummary(
+                blockNumber = block.number - 1,
+                totalTransactions = BigInteger.valueOf(10),
+                totalClauses = BigInteger.valueOf(20),
+                totalRevertedTransactions = BigInteger.ONE,
+                totalRevertedClauses = BigInteger.valueOf(2),
+            )
+        every { repository.findByIdOrNull(TransactionCountSummary.SUMMARY_ID) } returns previous
+
+        val result = service.processBlock(block)
+
+        assertEquals(previous, service.getPreviousSummary(block.number + 1))
+        assertTrue(result.shouldPersist)
+        verify(exactly = 2) { repository.findByIdOrNull(TransactionCountSummary.SUMMARY_ID) }
     }
 
     @Test
