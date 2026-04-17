@@ -10,11 +10,17 @@ import org.vechain.indexer.thor.HexUtils
 
 @Profile("transactions")
 @Service
-open class TransactionService(private val transactionRepository: TransactionRepository) {
+open class TransactionService(
+    private val transactionRepository: TransactionRepository,
+    private val transactionCountSummaryRepository: TransactionCountSummaryRepository,
+) {
 
     open fun findById(id: String): IndexedTransaction? {
         return transactionRepository.findByIdOrNull(HexUtils.normalise(id))
     }
+
+    open fun getLatestCount(): TransactionCountSummary? =
+        transactionCountSummaryRepository.findFirstByOrderByBlockNumberDesc()
 
     open fun findByOriginOrDelegator(
         address: Address,

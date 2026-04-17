@@ -2850,6 +2850,21 @@
         ],
         "type": "object"
       },
+      "TransactionCountSummary": {
+        "properties": {
+          "totalClauses": {
+            "type": "integer"
+          },
+          "totalTransactions": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "totalClauses",
+          "totalTransactions"
+        ],
+        "type": "object"
+      },
       "TreasuryTransfer": {
         "properties": {
           "blockTimestamp": {
@@ -11252,6 +11267,93 @@
           }
         },
         "summary": "Get all transactions for a contract address",
+        "tags": [
+          "Transactions"
+        ]
+      }
+    },
+    "/api/v1/transactions/count": {
+      "get": {
+        "description": "\n            Returns the cumulative number of transactions and clauses observed on VeChain up to the\n            most recently indexed block. Clause totals are included here because clauses are a\n            property of transactions and consumers typically want both together.\n        ",
+        "operationId": "getTransactionCount",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XProjectIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionCountSummary"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get the total transaction and clause counts on VeChain",
         "tags": [
           "Transactions"
         ]
