@@ -3,9 +3,6 @@ package org.vechain.indexer.b3tr.navigator
 import java.math.BigDecimal
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.data.mongodb.core.query.Query
-import org.springframework.data.mongodb.core.query.Update
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -34,24 +31,26 @@ open class NavigatorService(
         blockDetails: BlockDetails,
         accumulator: VersionedDocumentAccumulator<Navigator>,
     ) {
-        val exitingNavigators = repository.findByStatus(NavigatorStatus.EXITING)
+        val exitingNavigators =
+            repository.findByStatusAndExitEffectiveDeadlineBlockLessThanEqual(
+                NavigatorStatus.EXITING,
+                blockDetails.blockNumber,
+            )
         for (nav in exitingNavigators) {
-            val deadline = nav.exitEffectiveDeadline?.toLongOrNull() ?: continue
-            if (blockDetails.blockNumber >= deadline) {
-                val (existing, nextVersion) = accumulator.resolve(nav.address)
-                val updated =
-                    (existing ?: nav).copy(
-                        version = nextVersion,
-                        blockId = blockDetails.blockId,
-                        blockNumber = blockDetails.blockNumber,
-                        blockTimestamp = blockDetails.blockTimestamp,
-                        status = NavigatorStatus.DEACTIVATED,
-                        citizenCount = 0,
-                        totalDelegated = BigDecimal.ZERO,
-                    )
-                accumulator.put(nav.address, existing ?: nav, updated)
-                deactivateCitizensForNavigator(nav.address)
-            }
+            val (existing, nextVersion) = accumulator.resolve(nav.address)
+            val current = existing ?: nav
+            if (current.status != NavigatorStatus.EXITING) continue
+            val updated =
+                current.copy(
+                    version = nextVersion,
+                    blockId = blockDetails.blockId,
+                    blockNumber = blockDetails.blockNumber,
+                    blockTimestamp = blockDetails.blockTimestamp,
+                    status = NavigatorStatus.DEACTIVATED,
+                    citizenCount = 0,
+                    totalDelegated = BigDecimal.ZERO,
+                )
+            accumulator.put(nav.address, current, updated)
         }
     }
 
@@ -119,6 +118,7 @@ open class NavigatorService(
                 registeredAt = block.blockTimestamp,
                 exitAnnouncedRound = null,
                 exitEffectiveDeadline = null,
+                exitEffectiveDeadlineBlock = null,
                 lastReportRound = null,
                 lastReportURI = null,
             )
@@ -180,6 +180,8 @@ open class NavigatorService(
                 status = NavigatorStatus.EXITING,
                 exitAnnouncedRound = ev.params.getAsString("announcedAtRound"),
                 exitEffectiveDeadline = ev.params.getAsString("effectiveDeadline"),
+                exitEffectiveDeadlineBlock =
+                    ev.params.getAsString("effectiveDeadline")?.toLongOrNull(),
             )
         accumulator.put(address, nav, updated)
     }
@@ -202,7 +204,6 @@ open class NavigatorService(
                 totalDelegated = BigDecimal.ZERO,
             )
         accumulator.put(address, nav, updated)
-        deactivateCitizensForNavigator(address)
     }
 
     private fun handleSlashed(
@@ -344,23 +345,6 @@ open class NavigatorService(
     ): Navigator? {
         val (existing, _) = accumulator.resolve(address)
         return existing
-    }
-
-    /**
-     * Bulk-deactivates all active citizens for a navigator using a single MongoDB updateMany.
-     * Called when a navigator transitions to DEACTIVATED — delegations become void on-chain and no
-     * DelegationRemoved events will be emitted.
-     */
-    private fun deactivateCitizensForNavigator(navigatorAddress: String) {
-        val query =
-            Query(
-                Criteria.where(NavigatorCitizen::navigator.name)
-                    .`is`(navigatorAddress)
-                    .and(NavigatorCitizen::active.name)
-                    .`is`(true)
-            )
-        val update = Update.update(NavigatorCitizen::active.name, false)
-        mongoTemplate.updateMulti(query, update, NavigatorCitizen::class.java)
     }
 
     private fun String?.toBigDecimalOrZero(): BigDecimal =

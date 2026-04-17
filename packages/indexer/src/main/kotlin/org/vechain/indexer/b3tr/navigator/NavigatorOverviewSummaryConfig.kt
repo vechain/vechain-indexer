@@ -12,12 +12,11 @@ import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
 @Profile("b3tr", "b3tr-navigator")
-open class NavigatorCitizenConfig {
-
+open class NavigatorOverviewSummaryConfig {
     @Bean
-    open fun navigatorCitizenIndexer(
+    open fun navigatorOverviewSummaryIndexer(
         thorClient: ThorClient,
-        processor: NavigatorCitizenProcessor,
+        processor: NavigatorOverviewSummaryProcessor,
         @Value("\${indexer.start-block.b3tr-navigator}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.b3tr-navigator}") syncBlockBatchSize: Long,
@@ -26,7 +25,7 @@ open class NavigatorCitizenConfig {
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.NAVIGATOR_CITIZEN.NAME)
+            .name(IndexerNames.NAVIGATOR_OVERVIEW_SUMMARY.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)
@@ -35,12 +34,17 @@ open class NavigatorCitizenConfig {
             .businessEvents("business-events/b3tr", "abis/b3tr")
             .businessEventNames(
                 listOf(
+                    "B3TR_NavigatorRegistered",
+                    "B3TR_StakeAdded",
+                    "B3TR_StakeWithdrawn",
+                    "B3TR_ExitAnnounced",
+                    "B3TR_NavigatorDeactivated",
+                    "B3TR_NavigatorSlashed",
+                    "B3TR_NavigatorMinorSlashed",
                     "B3TR_DelegationCreated",
                     "B3TR_DelegationIncreased",
                     "B3TR_DelegationDecreased",
                     "B3TR_DelegationRemoved",
-                    "B3TR_ExitAnnounced",
-                    "B3TR_NavigatorDeactivated",
                 )
             )
             .businessEventContracts(listOf(navigatorRegistryAddress))

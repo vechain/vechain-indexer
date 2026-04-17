@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.NAVIGATOR_PATH
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
+import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.utils.PaginationUtils
@@ -155,6 +156,9 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<NavigatorDelegationEvent> {
+        if (navigator.isNullOrBlank() && citizen.isNullOrBlank()) {
+            throw BadRequestException("Either navigator or citizen must be provided")
+        }
         val pageable =
             PaginationUtils.toPageable(
                 page,

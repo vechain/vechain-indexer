@@ -29,6 +29,7 @@ constructor(
     val registeredAt: Long,
     val exitAnnouncedRound: String?,
     val exitEffectiveDeadline: String?,
+    @JsonIgnore val exitEffectiveDeadlineBlock: Long?,
     val lastReportRound: String?,
     val lastReportURI: String?,
 ) : VersionedDocument {

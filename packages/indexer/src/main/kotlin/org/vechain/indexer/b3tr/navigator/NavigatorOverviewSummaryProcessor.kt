@@ -14,34 +14,33 @@ import org.vechain.indexer.utils.EventUtils.groupByBlock
 
 @Profile("b3tr", "b3tr-navigator")
 @Component
-open class NavigatorCitizenProcessor(
-    repository: NavigatorCitizenRepository,
+open class NavigatorOverviewSummaryProcessor(
+    repository: NavigatorOverviewSummaryRepository,
     mongoTemplate: MongoTemplate,
-    private val service: NavigatorCitizenService,
+    private val service: NavigatorOverviewSummaryService,
     checkpointService: CheckpointService,
     processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = repository,
         mongoTemplate = mongoTemplate,
-        indexerName = IndexerNames.NAVIGATOR_CITIZEN.NAME,
+        indexerName = IndexerNames.NAVIGATOR_OVERVIEW_SUMMARY.NAME,
         checkpointService = checkpointService,
-        collectionName = IndexerNames.NAVIGATOR_CITIZEN.COLLECTION,
+        collectionName = IndexerNames.NAVIGATOR_OVERVIEW_SUMMARY.COLLECTION,
         processorMetrics = processorMetrics,
     ) {
-
     override suspend fun processEntry(entry: IndexingResult) {
-        val accumulator = VersionedDocumentAccumulator<NavigatorCitizen>(service::findByAddress)
+        val accumulator = VersionedDocumentAccumulator<NavigatorOverviewSummary>(service::findById)
 
         if (entry is IndexingResult.BlockResult) {
-            accumulator.startBlock()
             val blockDetails =
                 BlockDetails(
                     blockId = entry.block.id,
                     blockNumber = entry.block.number,
                     blockTimestamp = entry.block.timestamp,
                 )
-            service.processExpiredDelegations(blockDetails, accumulator)
+            accumulator.startBlock()
+            service.checkExpiredExits(blockDetails, accumulator)
             if (entry.events().isNotEmpty()) {
                 service.processBlockEvents(entry.events(), blockDetails, accumulator)
             }

@@ -221,6 +221,16 @@ object IndexerNames {
         const val COLLECTION = "b3tr_navigator_fees"
     }
 
+    object NAVIGATOR_OVERVIEW_SUMMARY {
+        const val NAME = "NavigatorOverviewSummaryIndexer"
+        const val COLLECTION = "b3tr_navigator_overview_summaries"
+    }
+
+    object NAVIGATOR_FEE_SUMMARY {
+        const val NAME = "NavigatorFeeSummaryIndexer"
+        const val COLLECTION = "b3tr_navigator_fee_summaries"
+    }
+
     object B3TR_CHALLENGES {
         const val NAME = "B3trChallengesIndexer"
         const val COLLECTION = "b3tr_challenges"

@@ -9,6 +9,7 @@ import org.springframework.data.domain.SliceImpl
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 
 data class NavigatorFeeSummary(val totalEarned: BigInteger, val totalClaimed: BigInteger)
@@ -22,7 +23,11 @@ data class NavigatorOverview(
 
 @Profile("b3tr")
 @Service
-open class NavigatorApiService(private val mongoTemplate: MongoTemplate) {
+open class NavigatorApiService(
+    private val mongoTemplate: MongoTemplate,
+    private val overviewSummaryRepository: NavigatorOverviewSummaryRepository,
+    private val feeSummaryRepository: NavigatorFeeSummaryRepository,
+) {
 
     fun findNavigators(
         navigator: String? = null,
@@ -36,28 +41,13 @@ open class NavigatorApiService(private val mongoTemplate: MongoTemplate) {
     }
 
     fun getOverview(): NavigatorOverview {
-        val activeQuery =
-            Query(
-                Criteria.where(Navigator::status.name)
-                    .`in`(NavigatorStatus.ACTIVE.name, NavigatorStatus.EXITING.name)
-            )
-        val activeNavigators = mongoTemplate.find(activeQuery, Navigator::class.java)
-
-        var totalStaked = BigDecimal.ZERO
-        var totalCitizens = 0L
-        var totalDelegated = BigDecimal.ZERO
-
-        for (nav in activeNavigators) {
-            totalStaked += nav.stake
-            totalCitizens += nav.citizenCount
-            totalDelegated += nav.totalDelegated
-        }
+        val summary = overviewSummaryRepository.findByIdOrNull(NavigatorOverviewSummary.GLOBAL_ID)
 
         return NavigatorOverview(
-            activeNavigators = activeNavigators.size.toLong(),
-            totalStaked = totalStaked.toBigInteger(),
-            totalCitizens = totalCitizens,
-            totalDelegated = totalDelegated.toBigInteger(),
+            activeNavigators = summary?.activeNavigators ?: 0L,
+            totalStaked = (summary?.totalStaked ?: BigDecimal.ZERO).toBigInteger(),
+            totalCitizens = summary?.totalCitizens ?: 0L,
+            totalDelegated = (summary?.totalDelegated ?: BigDecimal.ZERO).toBigInteger(),
         )
     }
 
@@ -84,20 +74,14 @@ open class NavigatorApiService(private val mongoTemplate: MongoTemplate) {
     }
 
     fun getFeeSummary(navigator: String?): NavigatorFeeSummary {
-        val criteria = Criteria()
-        navigator?.let { criteria.and(NavigatorFee::navigator.name).`is`(it.lowercase()) }
-        val fees = mongoTemplate.find(Query(criteria), NavigatorFee::class.java)
-
-        var totalEarned = BigDecimal.ZERO
-        var totalClaimed = BigDecimal.ZERO
-        for (fee in fees) {
-            totalEarned += fee.totalDeposited
-            if (fee.claimed) totalClaimed += fee.totalDeposited
-        }
+        val id =
+            navigator?.lowercase()?.let(NavigatorFeeSummaryDocument::navigatorSummaryId)
+                ?: NavigatorFeeSummaryDocument.GLOBAL_ID
+        val summary = feeSummaryRepository.findByIdOrNull(id)
 
         return NavigatorFeeSummary(
-            totalEarned = totalEarned.toBigInteger(),
-            totalClaimed = totalClaimed.toBigInteger(),
+            totalEarned = (summary?.totalEarned ?: BigDecimal.ZERO).toBigInteger(),
+            totalClaimed = (summary?.totalClaimed ?: BigDecimal.ZERO).toBigInteger(),
         )
     }
 

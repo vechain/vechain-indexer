@@ -15,4 +15,9 @@ interface NavigatorRepository : BaseIndexedRepository<Navigator, String> {
     fun findByStatusIn(statuses: List<NavigatorStatus>, pageable: Pageable): Slice<Navigator>
 
     fun findByStatus(status: NavigatorStatus): List<Navigator>
+
+    fun findByStatusAndExitEffectiveDeadlineBlockLessThanEqual(
+        status: NavigatorStatus,
+        exitEffectiveDeadlineBlock: Long,
+    ): List<Navigator>
 }

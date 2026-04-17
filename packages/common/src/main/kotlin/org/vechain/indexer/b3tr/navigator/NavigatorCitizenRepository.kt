@@ -6,4 +6,11 @@ import org.vechain.indexer.BaseIndexedRepository
 
 @Profile("b3tr", "b3tr-navigator")
 @Repository
-interface NavigatorCitizenRepository : BaseIndexedRepository<NavigatorCitizen, String>
+interface NavigatorCitizenRepository : BaseIndexedRepository<NavigatorCitizen, String> {
+    fun findByNavigatorAndActive(navigator: String, active: Boolean): List<NavigatorCitizen>
+
+    fun findByActiveAndNavigatorExitEffectiveDeadlineBlockLessThanEqual(
+        active: Boolean,
+        navigatorExitEffectiveDeadlineBlock: Long,
+    ): List<NavigatorCitizen>
+}

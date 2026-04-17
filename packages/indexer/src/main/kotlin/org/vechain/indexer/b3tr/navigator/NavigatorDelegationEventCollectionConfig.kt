@@ -35,14 +35,25 @@ open class NavigatorDelegationEventCollectionConfig(
             listOf(
                 "blockNumber_-1" to
                     Index().on(NavigatorDelegationEvent::blockNumber.name, Sort.Direction.DESC),
-                "deleg_event_navigator_1_blockTimestamp_-1" to
+                "deleg_event_navigator_1_blockTimestamp_-1_txId_-1__id_-1" to
                     Index()
                         .on(NavigatorDelegationEvent::navigator.name, Sort.Direction.ASC)
-                        .on(NavigatorDelegationEvent::blockTimestamp.name, Sort.Direction.DESC),
-                "deleg_event_citizen_1_blockTimestamp_-1" to
+                        .on(NavigatorDelegationEvent::blockTimestamp.name, Sort.Direction.DESC)
+                        .on(NavigatorDelegationEvent::txId.name, Sort.Direction.DESC)
+                        .on("_id", Sort.Direction.DESC),
+                "deleg_event_citizen_1_blockTimestamp_-1_txId_-1__id_-1" to
                     Index()
                         .on(NavigatorDelegationEvent::citizen.name, Sort.Direction.ASC)
-                        .on(NavigatorDelegationEvent::blockTimestamp.name, Sort.Direction.DESC),
+                        .on(NavigatorDelegationEvent::blockTimestamp.name, Sort.Direction.DESC)
+                        .on(NavigatorDelegationEvent::txId.name, Sort.Direction.DESC)
+                        .on("_id", Sort.Direction.DESC),
+                "deleg_event_navigator_1_citizen_1_blockTimestamp_-1_txId_-1__id_-1" to
+                    Index()
+                        .on(NavigatorDelegationEvent::navigator.name, Sort.Direction.ASC)
+                        .on(NavigatorDelegationEvent::citizen.name, Sort.Direction.ASC)
+                        .on(NavigatorDelegationEvent::blockTimestamp.name, Sort.Direction.DESC)
+                        .on(NavigatorDelegationEvent::txId.name, Sort.Direction.DESC)
+                        .on("_id", Sort.Direction.DESC),
             )
         )
     }

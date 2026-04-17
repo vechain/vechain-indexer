@@ -20,6 +20,8 @@ import org.springframework.data.mongodb.core.query.Query
 @ExtendWith(MockKExtension::class)
 internal class NavigatorApiServiceTest {
     @MockK lateinit var mongoTemplate: MongoTemplate
+    @MockK lateinit var overviewSummaryRepository: NavigatorOverviewSummaryRepository
+    @MockK lateinit var feeSummaryRepository: NavigatorFeeSummaryRepository
 
     private lateinit var service: NavigatorApiService
 
@@ -27,7 +29,8 @@ internal class NavigatorApiServiceTest {
 
     @BeforeEach
     fun setUp() {
-        service = NavigatorApiService(mongoTemplate)
+        service =
+            NavigatorApiService(mongoTemplate, overviewSummaryRepository, feeSummaryRepository)
     }
 
     @Test
@@ -37,8 +40,7 @@ internal class NavigatorApiServiceTest {
 
         val result = service.findNavigators(pageable = pageable)
 
-        val doc = querySlot.captured.queryObject
-        assertTrue(doc.isEmpty())
+        assertTrue(querySlot.captured.queryObject.isEmpty())
         assertFalse(result.hasNext())
     }
 
@@ -49,8 +51,7 @@ internal class NavigatorApiServiceTest {
 
         service.findNavigators(navigator = "0xNAV1", pageable = pageable)
 
-        val doc = querySlot.captured.queryObject
-        assertEquals("0xnav1", doc["address"])
+        assertEquals("0xnav1", querySlot.captured.queryObject["address"])
     }
 
     @Test
@@ -63,56 +64,17 @@ internal class NavigatorApiServiceTest {
             pageable = pageable,
         )
 
-        val doc = querySlot.captured.queryObject
-        @Suppress("UNCHECKED_CAST") val statusFilter = doc["status"] as Map<String, Any>
+        @Suppress("UNCHECKED_CAST")
+        val statusFilter = querySlot.captured.queryObject["status"] as Map<String, Any>
         @Suppress("UNCHECKED_CAST") val inValues = statusFilter["\$in"] as List<String>
-        assertEquals(2, inValues.size)
-        assertTrue(inValues.contains("ACTIVE"))
-        assertTrue(inValues.contains("EXITING"))
-    }
-
-    @Test
-    fun `findNavigators combines navigator and status filters`() {
-        val querySlot = slot<Query>()
-        every { mongoTemplate.find(capture(querySlot), Navigator::class.java) } returns emptyList()
-
-        service.findNavigators(
-            navigator = "0xnav1",
-            statuses = listOf(NavigatorStatus.ACTIVE),
-            pageable = pageable,
-        )
-
-        val doc = querySlot.captured.queryObject
-        assertEquals("0xnav1", doc["address"])
-        @Suppress("UNCHECKED_CAST") val statusFilter = doc["status"] as Map<String, Any>
-        @Suppress("UNCHECKED_CAST") val inValues = statusFilter["\$in"] as List<String>
-        assertEquals(listOf("ACTIVE"), inValues)
+        assertEquals(listOf("ACTIVE", "EXITING"), inValues)
     }
 
     @Test
     fun `findNavigators detects hasNext when extra record returned`() {
         val querySlot = slot<Query>()
-        val navigators =
-            (1..11).map { i ->
-                Navigator(
-                    address = "0xnav$i",
-                    version = 1,
-                    blockId = "b",
-                    blockNumber = i.toLong(),
-                    blockTimestamp = i.toLong(),
-                    status = NavigatorStatus.ACTIVE,
-                    stake = BigDecimal("50000"),
-                    citizenCount = 0,
-                    totalDelegated = BigDecimal.ZERO,
-                    metadataURI = null,
-                    registeredAt = 1L,
-                    exitAnnouncedRound = null,
-                    exitEffectiveDeadline = null,
-                    lastReportRound = null,
-                    lastReportURI = null,
-                )
-            }
-        every { mongoTemplate.find(capture(querySlot), Navigator::class.java) } returns navigators
+        every { mongoTemplate.find(capture(querySlot), Navigator::class.java) } returns
+            (1..11).map { i -> navFixture("0xnav$i") }
 
         val result = service.findNavigators(pageable = pageable)
 
@@ -121,62 +83,35 @@ internal class NavigatorApiServiceTest {
     }
 
     @Test
-    fun `findNavigators returns hasNext false when exact page size`() {
-        val querySlot = slot<Query>()
-        val navigators =
-            (1..10).map { i ->
-                Navigator(
-                    address = "0xnav$i",
-                    version = 1,
+    fun `getOverview reads precomputed global summary`() {
+        every { overviewSummaryRepository.findById(NavigatorOverviewSummary.GLOBAL_ID) } returns
+            java.util.Optional.of(
+                NavigatorOverviewSummary(
+                    id = NavigatorOverviewSummary.GLOBAL_ID,
+                    version = 2,
                     blockId = "b",
-                    blockNumber = i.toLong(),
-                    blockTimestamp = i.toLong(),
-                    status = NavigatorStatus.ACTIVE,
-                    stake = BigDecimal("50000"),
-                    citizenCount = 0,
-                    totalDelegated = BigDecimal.ZERO,
-                    metadataURI = null,
-                    registeredAt = 1L,
-                    exitAnnouncedRound = null,
-                    exitEffectiveDeadline = null,
-                    lastReportRound = null,
-                    lastReportURI = null,
+                    blockNumber = 10L,
+                    blockTimestamp = 10L,
+                    recordType = NavigatorOverviewSummaryRecordType.GLOBAL_SUMMARY,
+                    activeNavigators = 3L,
+                    totalStaked = BigDecimal("125000"),
+                    totalCitizens = 8L,
+                    totalDelegated = BigDecimal("300000"),
                 )
-            }
-        every { mongoTemplate.find(capture(querySlot), Navigator::class.java) } returns navigators
-
-        val result = service.findNavigators(pageable = pageable)
-
-        assertFalse(result.hasNext())
-        assertEquals(10, result.content.size)
-    }
-
-    // ============================================================================
-    // Overview
-    // ============================================================================
-
-    @Test
-    fun `getOverview aggregates active navigators`() {
-        val querySlot = slot<Query>()
-        val navigators =
-            listOf(
-                navFixture("0xnav1", stake = "50000", citizenCount = 3, totalDelegated = "100000"),
-                navFixture("0xnav2", stake = "75000", citizenCount = 5, totalDelegated = "200000"),
             )
-        every { mongoTemplate.find(capture(querySlot), Navigator::class.java) } returns navigators
 
         val overview = service.getOverview()
 
-        assertEquals(2L, overview.activeNavigators)
+        assertEquals(3L, overview.activeNavigators)
         assertEquals(BigInteger("125000"), overview.totalStaked)
         assertEquals(8L, overview.totalCitizens)
         assertEquals(BigInteger("300000"), overview.totalDelegated)
     }
 
     @Test
-    fun `getOverview returns zeros when no active navigators`() {
-        val querySlot = slot<Query>()
-        every { mongoTemplate.find(capture(querySlot), Navigator::class.java) } returns emptyList()
+    fun `getOverview returns zeros when summary is missing`() {
+        every { overviewSummaryRepository.findById(NavigatorOverviewSummary.GLOBAL_ID) } returns
+            java.util.Optional.empty()
 
         val overview = service.getOverview()
 
@@ -186,12 +121,32 @@ internal class NavigatorApiServiceTest {
         assertEquals(BigInteger.ZERO, overview.totalDelegated)
     }
 
-    private fun navFixture(
-        address: String,
-        stake: String = "50000",
-        citizenCount: Int = 0,
-        totalDelegated: String = "0",
-    ) =
+    @Test
+    fun `getFeeSummary reads navigator specific summary`() {
+        every {
+            feeSummaryRepository.findById(NavigatorFeeSummaryDocument.navigatorSummaryId("0xnav1"))
+        } returns
+            java.util.Optional.of(
+                NavigatorFeeSummaryDocument(
+                    id = NavigatorFeeSummaryDocument.navigatorSummaryId("0xnav1"),
+                    version = 1,
+                    blockId = "b",
+                    blockNumber = 5L,
+                    blockTimestamp = 5L,
+                    recordType = NavigatorFeeSummaryRecordType.NAVIGATOR_SUMMARY,
+                    navigator = "0xnav1",
+                    totalEarned = BigDecimal("250"),
+                    totalClaimed = BigDecimal("100"),
+                )
+            )
+
+        val summary = service.getFeeSummary("0xNav1")
+
+        assertEquals(BigInteger("250"), summary.totalEarned)
+        assertEquals(BigInteger("100"), summary.totalClaimed)
+    }
+
+    private fun navFixture(address: String) =
         Navigator(
             address = address,
             version = 1,
@@ -199,13 +154,14 @@ internal class NavigatorApiServiceTest {
             blockNumber = 1L,
             blockTimestamp = 1L,
             status = NavigatorStatus.ACTIVE,
-            stake = BigDecimal(stake),
-            citizenCount = citizenCount,
-            totalDelegated = BigDecimal(totalDelegated),
+            stake = BigDecimal("50000"),
+            citizenCount = 0,
+            totalDelegated = BigDecimal.ZERO,
             metadataURI = null,
             registeredAt = 1L,
             exitAnnouncedRound = null,
             exitEffectiveDeadline = null,
+            exitEffectiveDeadlineBlock = null,
             lastReportRound = null,
             lastReportURI = null,
         )

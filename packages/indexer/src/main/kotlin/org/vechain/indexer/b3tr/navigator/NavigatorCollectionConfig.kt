@@ -35,6 +35,10 @@ open class NavigatorCollectionConfig(
             listOf(
                 "blockNumber_-1" to Index().on(Navigator::blockNumber.name, Sort.Direction.DESC),
                 "navigator_status_1" to Index().on(Navigator::status.name, Sort.Direction.ASC),
+                "navigator_status_1_exitEffectiveDeadlineBlock_1" to
+                    Index()
+                        .on(Navigator::status.name, Sort.Direction.ASC)
+                        .on(Navigator::exitEffectiveDeadlineBlock.name, Sort.Direction.ASC),
                 "navigator_status_1_blockTimestamp_-1" to
                     Index()
                         .on(Navigator::status.name, Sort.Direction.ASC)

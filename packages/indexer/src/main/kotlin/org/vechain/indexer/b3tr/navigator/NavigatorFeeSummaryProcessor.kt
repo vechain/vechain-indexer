@@ -14,36 +14,32 @@ import org.vechain.indexer.utils.EventUtils.groupByBlock
 
 @Profile("b3tr", "b3tr-navigator")
 @Component
-open class NavigatorCitizenProcessor(
-    repository: NavigatorCitizenRepository,
+open class NavigatorFeeSummaryProcessor(
+    repository: NavigatorFeeSummaryRepository,
     mongoTemplate: MongoTemplate,
-    private val service: NavigatorCitizenService,
+    private val service: NavigatorFeeSummaryService,
     checkpointService: CheckpointService,
     processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = repository,
         mongoTemplate = mongoTemplate,
-        indexerName = IndexerNames.NAVIGATOR_CITIZEN.NAME,
+        indexerName = IndexerNames.NAVIGATOR_FEE_SUMMARY.NAME,
         checkpointService = checkpointService,
-        collectionName = IndexerNames.NAVIGATOR_CITIZEN.COLLECTION,
+        collectionName = IndexerNames.NAVIGATOR_FEE_SUMMARY.COLLECTION,
         processorMetrics = processorMetrics,
     ) {
-
     override suspend fun processEntry(entry: IndexingResult) {
-        val accumulator = VersionedDocumentAccumulator<NavigatorCitizen>(service::findByAddress)
-
+        val accumulator =
+            VersionedDocumentAccumulator<NavigatorFeeSummaryDocument>(service::findById)
         if (entry is IndexingResult.BlockResult) {
             accumulator.startBlock()
-            val blockDetails =
-                BlockDetails(
-                    blockId = entry.block.id,
-                    blockNumber = entry.block.number,
-                    blockTimestamp = entry.block.timestamp,
-                )
-            service.processExpiredDelegations(blockDetails, accumulator)
             if (entry.events().isNotEmpty()) {
-                service.processBlockEvents(entry.events(), blockDetails, accumulator)
+                service.processBlockEvents(
+                    entry.events(),
+                    BlockDetails(entry.block.id, entry.block.number, entry.block.timestamp),
+                    accumulator,
+                )
             }
         } else if (entry.events().isNotEmpty()) {
             groupByBlock(entry.events()).forEach { (blockDetails, blockEvents) ->

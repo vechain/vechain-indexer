@@ -184,8 +184,6 @@ internal class NavigatorServiceTest {
     fun `NavigatorDeactivated sets status to DEACTIVATED`() {
         val existing = navigatorFixture("0xnav1")
         every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
-        every { mongoTemplate.updateMulti(any(), any(), NavigatorCitizen::class.java) } returns
-            com.mongodb.client.result.UpdateResult.acknowledged(0, 0, null)
 
         val acc = newAccumulator()
         acc.startBlock()
@@ -197,6 +195,36 @@ internal class NavigatorServiceTest {
 
         val (updated, _) = acc.results()
         assertEquals(NavigatorStatus.DEACTIVATED, updated[0].status)
+    }
+
+    @Test
+    fun `checkExpiredExits only updates expired exiting navigators`() {
+        val existing =
+            navigatorFixture(
+                "0xnav1",
+                status = NavigatorStatus.EXITING,
+                citizenCount = 2,
+                totalDelegated = "90000",
+                exitEffectiveDeadlineBlock = 100L,
+            )
+        every {
+            repository.findByStatusAndExitEffectiveDeadlineBlockLessThanEqual(
+                NavigatorStatus.EXITING,
+                100L,
+            )
+        } returns listOf(existing)
+        every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
+
+        val acc = newAccumulator()
+        acc.startBlock()
+
+        service.checkExpiredExits(block, acc)
+
+        val (updated, _) = acc.results()
+        assertEquals(1, updated.size)
+        assertEquals(NavigatorStatus.DEACTIVATED, updated[0].status)
+        assertEquals(0, updated[0].citizenCount)
+        assertEquals(BigDecimal.ZERO, updated[0].totalDelegated)
     }
 
     @Test
@@ -523,6 +551,7 @@ internal class NavigatorServiceTest {
         citizenCount: Int = 0,
         totalDelegated: String = "0",
         metadataURI: String? = null,
+        exitEffectiveDeadlineBlock: Long? = null,
     ) =
         Navigator(
             address = address,
@@ -538,6 +567,7 @@ internal class NavigatorServiceTest {
             registeredAt = 500L,
             exitAnnouncedRound = null,
             exitEffectiveDeadline = null,
+            exitEffectiveDeadlineBlock = exitEffectiveDeadlineBlock,
             lastReportRound = null,
             lastReportURI = null,
         )

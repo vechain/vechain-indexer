@@ -14,45 +14,35 @@ import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("b3tr", "b3tr-navigator")
 @Configuration
-open class NavigatorCitizenCollectionConfig(
+open class NavigatorOverviewSummaryCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, appCoroutineScope, NavigatorCitizen::class.java) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, NavigatorOverviewSummary::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
     @Value("\${indexer.version.b3tr-navigator}") private val version: Int = 1
 
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            indexerName = IndexerNames.NAVIGATOR_CITIZEN.NAME,
-            NavigatorCitizen::class.java,
+            indexerName = IndexerNames.NAVIGATOR_OVERVIEW_SUMMARY.NAME,
+            NavigatorOverviewSummary::class.java,
             version,
         )
         ensureCollection()
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "blockNumber_-1" to
-                    Index().on(NavigatorCitizen::blockNumber.name, Sort.Direction.DESC),
-                "citizen_navigator_1_active_1" to
+                "recordType_1_status_1_exitEffectiveDeadlineBlock_1" to
                     Index()
-                        .on(NavigatorCitizen::navigator.name, Sort.Direction.ASC)
-                        .on(NavigatorCitizen::active.name, Sort.Direction.ASC),
-                "citizen_navigator_1_active_1_delegatedAt_-1__id_-1" to
-                    Index()
-                        .on(NavigatorCitizen::navigator.name, Sort.Direction.ASC)
-                        .on(NavigatorCitizen::active.name, Sort.Direction.ASC)
-                        .on(NavigatorCitizen::delegatedAt.name, Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.DESC),
-                "citizen_active_1_navigatorExitEffectiveDeadlineBlock_1" to
-                    Index()
-                        .on(NavigatorCitizen::active.name, Sort.Direction.ASC)
+                        .on(NavigatorOverviewSummary::recordType.name, Sort.Direction.ASC)
+                        .on(NavigatorOverviewSummary::status.name, Sort.Direction.ASC)
                         .on(
-                            NavigatorCitizen::navigatorExitEffectiveDeadlineBlock.name,
+                            NavigatorOverviewSummary::exitEffectiveDeadlineBlock.name,
                             Sort.Direction.ASC,
-                        ),
-            )
+                        )
+            ),
+            partialFilter = null,
         )
     }
 }
