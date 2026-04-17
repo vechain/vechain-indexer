@@ -22,12 +22,14 @@ open class TransactionCountController(
 
     @GetMapping("/count")
     @Operation(
-        summary = "Get the total transaction and clause counts on VeChain",
+        summary = "Get cumulative transaction, clause, and reverted totals on VeChain",
         description =
             """
-            Returns the cumulative number of transactions and clauses observed on VeChain up to the
-            most recently indexed block. Clause totals are included here because clauses are a
-            property of transactions and consumers typically want both together.
+            Returns the cumulative number of transactions, clauses, reverted transactions, and
+            reverted clauses observed on VeChain up to the most recently indexed block. Clause
+            totals are included because clauses are a property of transactions, and reverted totals
+            cover reverted transactions plus the clauses contained within those reverted
+            transactions.
         """,
     )
     @CommonApiResponses
