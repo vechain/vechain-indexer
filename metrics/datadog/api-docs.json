@@ -2855,12 +2855,20 @@
           "totalClauses": {
             "type": "integer"
           },
+          "totalRevertedClauses": {
+            "type": "integer"
+          },
+          "totalRevertedTransactions": {
+            "type": "integer"
+          },
           "totalTransactions": {
             "type": "integer"
           }
         },
         "required": [
           "totalClauses",
+          "totalRevertedClauses",
+          "totalRevertedTransactions",
           "totalTransactions"
         ],
         "type": "object"
@@ -11274,7 +11282,7 @@
     },
     "/api/v1/transactions/count": {
       "get": {
-        "description": "\n            Returns the cumulative number of transactions and clauses observed on VeChain up to the\n            most recently indexed block. Clause totals are included here because clauses are a\n            property of transactions and consumers typically want both together.\n        ",
+        "description": "\n            Returns the cumulative number of transactions, clauses, reverted transactions, and\n            reverted clauses observed on VeChain up to the most recently indexed block. Clause\n            totals are included because clauses are a property of transactions, and reverted totals\n            cover reverted transactions plus the clauses contained within those reverted\n            transactions.\n        ",
         "operationId": "getTransactionCount",
         "parameters": [
           {
@@ -11353,7 +11361,7 @@
             "description": "Service not available"
           }
         },
-        "summary": "Get the total transaction and clause counts on VeChain",
+        "summary": "Get cumulative transaction, clause, and reverted totals on VeChain",
         "tags": [
           "Transactions"
         ]

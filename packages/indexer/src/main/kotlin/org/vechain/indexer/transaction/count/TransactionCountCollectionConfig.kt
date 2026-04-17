@@ -13,7 +13,7 @@ import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.transaction.TransactionCountSummary
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("transactions")
+@Profile("transactions", "transaction-count")
 @Configuration
 open class TransactionCountCollectionConfig(
     mongoTemplate: MongoTemplate,
@@ -21,7 +21,7 @@ open class TransactionCountCollectionConfig(
     appCoroutineScope: CoroutineScope,
 ) : CollectionConfig(mongoTemplate, appCoroutineScope, TransactionCountSummary::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    @Value("\${indexer.version.transaction-count:1}") private val version: Int = 1
+    @Value("\${indexer.version.transaction-count:3}") private val version: Int = 3
 
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")

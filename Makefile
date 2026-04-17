@@ -44,7 +44,7 @@ test-e2e: #@ Run all the end-to-end tests.
 test-api: #@ Run all the API tests.
 	./gradlew clean :package:api:test
 test-indexer: #@ Run all the indexer tests.
-	./gradlew clean :package:indexer:test
+	./gradlew :package:indexer:test
 test-common: #@ Run all the common tests.
 	./gradlew clean :package:common:test
 

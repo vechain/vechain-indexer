@@ -8,19 +8,13 @@ import org.springframework.stereotype.Service
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.HexUtils
 
-@Profile("transactions")
+@Profile("transactions", "transaction")
 @Service
-open class TransactionService(
-    private val transactionRepository: TransactionRepository,
-    private val transactionCountSummaryRepository: TransactionCountSummaryRepository,
-) {
+open class TransactionService(private val transactionRepository: TransactionRepository) {
 
     open fun findById(id: String): IndexedTransaction? {
         return transactionRepository.findByIdOrNull(HexUtils.normalise(id))
     }
-
-    open fun getLatestCount(): TransactionCountSummary? =
-        transactionCountSummaryRepository.findFirstByOrderByBlockNumberDesc()
 
     open fun findByOriginOrDelegator(
         address: Address,

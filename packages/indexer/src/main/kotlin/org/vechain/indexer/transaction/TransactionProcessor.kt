@@ -9,7 +9,7 @@ import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 
-@Profile("transactions")
+@Profile("transactions", "transaction")
 @Component
 open class TransactionProcessor(
     private val transactionService: TransactionService,
