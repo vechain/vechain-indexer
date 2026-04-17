@@ -3,6 +3,7 @@ package org.vechain.indexer.transaction.count
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
@@ -40,6 +41,7 @@ open class TransactionCountProcessor(
         }
     }
 
+    @Transactional(rollbackFor = [Exception::class])
     override fun rollback(blockNumber: Long) {
         service.resetCache()
         super.rollback(blockNumber)
