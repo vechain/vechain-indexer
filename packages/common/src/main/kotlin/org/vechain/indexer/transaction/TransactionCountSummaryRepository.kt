@@ -7,7 +7,4 @@ import org.vechain.indexer.BaseIndexedRepository
 @Profile("transactions")
 @Repository
 interface TransactionCountSummaryRepository :
-    BaseIndexedRepository<TransactionCountSummary, String> {
-
-    fun findFirstByOrderByBlockNumberDesc(): TransactionCountSummary?
-}
+    BaseIndexedRepository<TransactionCountSummary, String>

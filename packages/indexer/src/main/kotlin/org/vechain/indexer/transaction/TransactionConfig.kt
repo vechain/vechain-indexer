@@ -10,7 +10,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("transactions")
+@Profile("transactions", "transaction")
 open class TransactionConfig {
     @Bean
     open fun transactionIndexer(
