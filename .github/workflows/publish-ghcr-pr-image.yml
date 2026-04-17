@@ -1,8 +1,8 @@
 name: Publish PR Image
 
 on:
-  issue_comment:
-    types: [created]
+  pull_request:
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
     inputs:
       pr_number:
@@ -11,7 +11,7 @@ on:
         type: string
 
 concurrency:
-  group: pr-${{ github.event.issue.number || inputs.pr_number }}-ghcr-pr-publish
+  group: pr-${{ github.event.pull_request.number || inputs.pr_number }}-ghcr-pr-publish
   cancel-in-progress: true
 
 permissions:
@@ -25,34 +25,24 @@ env:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    if: >-
-      (github.event_name == 'workflow_dispatch') ||
-      (github.event.issue.pull_request && contains(github.event.comment.body, '/build-image'))
     outputs:
       pr_number: ${{ steps.meta.outputs.pr_number }}
       head_sha: ${{ steps.meta.outputs.head_sha }}
-      head_ref: ${{ steps.meta.outputs.head_ref }}
     steps:
-      - name: Add reaction to comment
-        if: github.event_name == 'issue_comment'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh api \
-            --method POST \
-            repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions \
-            -f content='rocket'
-
       - name: Resolve PR metadata
         id: meta
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          PR_NUMBER="${{ github.event.issue.number || inputs.pr_number }}"
-          PR_JSON=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json headRefOid,headRefName)
-          echo "pr_number=${PR_NUMBER}"       >> "$GITHUB_OUTPUT"
-          echo "head_sha=$(echo "$PR_JSON" | jq -r .headRefOid)"  >> "$GITHUB_OUTPUT"
-          echo "head_ref=$(echo "$PR_JSON" | jq -r .headRefName)" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "pr_number=${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
+            echo "head_sha=${{ github.event.pull_request.head.sha }}" >> "$GITHUB_OUTPUT"
+          else
+            PR_NUMBER="${{ inputs.pr_number }}"
+            PR_JSON=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json headRefOid)
+            echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+            echo "head_sha=$(echo "$PR_JSON" | jq -r .headRefOid)" >> "$GITHUB_OUTPUT"
+          fi
 
   build:
     needs: validate
