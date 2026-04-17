@@ -32,6 +32,21 @@ import org.vechain.indexer.validation.ValidPageSize
 @RequestMapping(TRANSACTIONS_PATH)
 open class TransactionController(private val transactionService: TransactionService) {
 
+    @GetMapping("/count")
+    @Operation(
+        summary = "Get the total transaction and clause counts on VeChain",
+        description =
+            """
+            Returns the cumulative number of transactions and clauses observed on VeChain up to the
+            most recently indexed block. Clause totals are included here because clauses are a
+            property of transactions and consumers typically want both together.
+        """,
+    )
+    @CommonApiResponses
+    open fun getTransactionCount(): TransactionCountSummary =
+        transactionService.getLatestCount()
+            ?: throw ResourceNotFoundException("Transaction count not found")
+
     @GetMapping("{txId}")
     @Operation(summary = "Get transaction by ID")
     @TransactionIdParameter

@@ -81,6 +81,11 @@ object IndexerNames {
         const val COLLECTION = "transactions"
     }
 
+    object TRANSACTION_COUNT {
+        const val NAME = "TransactionCountIndexer"
+        const val COLLECTION = "transaction_counts"
+    }
+
     object TRANSFER {
         const val NAME = "TransferIndexer"
         const val COLLECTION = "transfer_events"
