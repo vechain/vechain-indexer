@@ -2855,12 +2855,20 @@
           "totalClauses": {
             "type": "integer"
           },
+          "totalRevertedClauses": {
+            "type": "integer"
+          },
+          "totalRevertedTransactions": {
+            "type": "integer"
+          },
           "totalTransactions": {
             "type": "integer"
           }
         },
         "required": [
           "totalClauses",
+          "totalRevertedClauses",
+          "totalRevertedTransactions",
           "totalTransactions"
         ],
         "type": "object"
