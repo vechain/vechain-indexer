@@ -18,6 +18,7 @@ import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.utils.PaginationUtils
+import org.vechain.indexer.validation.ValidNavigatorStatus
 import org.vechain.indexer.validation.ValidPageSize
 
 @Profile("b3tr")
@@ -67,6 +68,7 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
                         )
                 ),
         )
+        @ValidNavigatorStatus
         @RequestParam(required = false)
         status: List<String>?,
         @Parameter(
@@ -234,9 +236,8 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
 
     private fun parseStatuses(raw: List<String>?): List<NavigatorStatus>? {
         if (raw.isNullOrEmpty()) return null
-        return raw.mapNotNull { s ->
-                NavigatorStatus.entries.find { it.name.equals(s.trim(), ignoreCase = true) }
-            }
-            .ifEmpty { null }
+        return raw.map { status ->
+            NavigatorStatus.entries.first { it.name.equals(status.trim(), ignoreCase = true) }
+        }
     }
 }
