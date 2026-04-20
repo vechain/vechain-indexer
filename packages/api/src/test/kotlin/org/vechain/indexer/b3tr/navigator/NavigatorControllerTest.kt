@@ -14,6 +14,8 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.SliceImpl
 import org.springframework.data.domain.Sort
 import org.vechain.indexer.exception.BadRequestException
+import org.vechain.indexer.exception.ResourceNotFoundException
+import org.vechain.indexer.thor.Address
 
 @ExtendWith(MockKExtension::class)
 internal class NavigatorControllerTest {
@@ -49,5 +51,17 @@ internal class NavigatorControllerTest {
             pageableSlot.captured.sort.getOrderFor("roundId")?.direction,
         )
         assertNotNull(pageableSlot.captured.sort.getOrderFor("_id"))
+    }
+
+    @Test
+    fun `getNavigatorById throws when navigator is missing`() {
+        every { navigatorApiService.getNavigatorById("0xnav1") } returns null
+
+        val exception =
+            assertThrows(ResourceNotFoundException::class.java) {
+                controller.getNavigatorById(Address("0xnav1"))
+            }
+
+        assertEquals("Navigator not found for id 0xnav1", exception.message)
     }
 }

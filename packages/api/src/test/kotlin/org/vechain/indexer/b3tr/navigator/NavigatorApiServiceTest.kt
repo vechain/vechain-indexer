@@ -20,6 +20,7 @@ import org.springframework.data.mongodb.core.query.Query
 @ExtendWith(MockKExtension::class)
 internal class NavigatorApiServiceTest {
     @MockK lateinit var mongoTemplate: MongoTemplate
+    @MockK lateinit var navigatorRepository: NavigatorRepository
     @MockK lateinit var overviewSummaryRepository: NavigatorOverviewSummaryRepository
     @MockK lateinit var feeSummaryRepository: NavigatorFeeSummaryRepository
 
@@ -30,7 +31,12 @@ internal class NavigatorApiServiceTest {
     @BeforeEach
     fun setUp() {
         service =
-            NavigatorApiService(mongoTemplate, overviewSummaryRepository, feeSummaryRepository)
+            NavigatorApiService(
+                mongoTemplate,
+                navigatorRepository,
+                overviewSummaryRepository,
+                feeSummaryRepository,
+            )
     }
 
     @Test
@@ -42,16 +48,6 @@ internal class NavigatorApiServiceTest {
 
         assertTrue(querySlot.captured.queryObject.isEmpty())
         assertFalse(result.hasNext())
-    }
-
-    @Test
-    fun `findNavigators filters by navigator address in lowercase`() {
-        val querySlot = slot<Query>()
-        every { mongoTemplate.find(capture(querySlot), Navigator::class.java) } returns emptyList()
-
-        service.findNavigators(navigator = "0xNAV1", pageable = pageable)
-
-        assertEquals("0xnav1", querySlot.captured.queryObject["address"])
     }
 
     @Test
@@ -80,6 +76,16 @@ internal class NavigatorApiServiceTest {
 
         assertTrue(result.hasNext())
         assertEquals(10, result.content.size)
+    }
+
+    @Test
+    fun `getNavigatorById normalises address`() {
+        every { navigatorRepository.findById("0xnav1") } returns
+            java.util.Optional.of(navFixture("0xnav1"))
+
+        val result = service.getNavigatorById("0xNAV1")
+
+        assertEquals("0xnav1", result?.address)
     }
 
     @Test

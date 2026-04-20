@@ -25,20 +25,22 @@ data class NavigatorOverview(
 @Service
 open class NavigatorApiService(
     private val mongoTemplate: MongoTemplate,
+    private val navigatorRepository: NavigatorRepository,
     private val overviewSummaryRepository: NavigatorOverviewSummaryRepository,
     private val feeSummaryRepository: NavigatorFeeSummaryRepository,
 ) {
 
     fun findNavigators(
-        navigator: String? = null,
         statuses: List<NavigatorStatus>? = null,
         pageable: Pageable,
     ): Slice<Navigator> {
         val criteria = Criteria()
-        navigator?.let { criteria.and(Navigator::address.name).`is`(it.lowercase()) }
         statuses?.let { criteria.and(Navigator::status.name).`in`(it.map { s -> s.name }) }
         return runQuery(criteria, pageable, Navigator::class.java)
     }
+
+    fun getNavigatorById(navigatorId: String): Navigator? =
+        navigatorRepository.findByIdOrNull(navigatorId.lowercase())
 
     fun getOverview(): NavigatorOverview {
         val summary = overviewSummaryRepository.findByIdOrNull(NavigatorOverviewSummary.GLOBAL_ID)

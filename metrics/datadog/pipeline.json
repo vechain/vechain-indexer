@@ -561,6 +561,12 @@
         },
         {
           "filter": {
+            "query": "@http.url_details.path:/api/v1/b3tr/navigators/*"
+          },
+          "name": "/api/v1/b3tr/navigators/{navigatorId}"
+        },
+        {
+          "filter": {
             "query": "@http.url_details.path:/api/v1/b3tr/richlist/*"
           },
           "name": "/api/v1/b3tr/richlist/{address}"
