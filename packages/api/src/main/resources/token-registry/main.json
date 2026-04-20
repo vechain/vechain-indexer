@@ -113,7 +113,7 @@
     "icon": "bbe48eedf5b23a5e268672276ba889eea5d00256.png",
     "name": "HackenAI",
     "symbol": "HAI",
-    "totalSupply": "95821788402856923"
+    "totalSupply": "95817015525925808"
   },
   {
     "address": "0x1b44a9718e12031530604137f854160759677192",
@@ -189,7 +189,7 @@
     },
     "name": "WorldOfV",
     "symbol": "WoV",
-    "totalSupply": "190191481761273688749462753",
+    "totalSupply": "190188270199051466527240662",
     "website": "https://www.worldofv.art/",
     "whitePaper": "https://medium.com/@WorldofV/world-of-v-tokenomics-the-beginning-of-our-journey-together-d428907c22af"
   },
@@ -244,7 +244,7 @@
     },
     "name": "Veiled VET",
     "symbol": "VVET",
-    "totalSupply": "11791997020473383567652617"
+    "totalSupply": "10361213112859027235361632"
   },
   {
     "address": "0x8e57aadf0992afcc41f7843656c6c7129f738f7b",
@@ -374,7 +374,7 @@
     },
     "name": "VFoxToken",
     "symbol": "VFA",
-    "totalSupply": "9125808336081380474584715",
+    "totalSupply": "9125525053848154317135685",
     "website": "https://vfox-alliance.com/",
     "whitePaper": "https://medium.com/@vfox.alphice/tokenomics-vfa-f3ab4c4f0cf7"
   },
@@ -413,7 +413,7 @@
     },
     "name": "MVA Token",
     "symbol": "MVA",
-    "totalSupply": "9944268815760139435340323",
+    "totalSupply": "9941540903792559518481610",
     "website": "https://mvanft.io/"
   },
   {
@@ -717,7 +717,7 @@
     },
     "name": "B3TR",
     "symbol": "B3TR",
-    "totalSupply": "386413862674391040000000000",
+    "totalSupply": "399939917280337920000000000",
     "website": "https://vebetter.com/",
     "whitePaper": "https://files.vebetter.com/vebetterdaocontainer/VeBetter_Whitepaper_v2-OCR.pdf"
   },
@@ -728,7 +728,7 @@
     "icon": "dcc6e7f09932a389a536fe74107cd73af445dd65.png",
     "name": "VOT3",
     "symbol": "VOT3",
-    "totalSupply": "249833696123900702319292823"
+    "totalSupply": "265382763175235560112748541"
   },
   {
     "address": "0x867bca2f3f187bb7bfb900ebcd3155746537a9a9",
@@ -766,7 +766,7 @@
     },
     "name": "veB3TR",
     "symbol": "veB3TR",
-    "totalSupply": "2312118321112665677562885",
+    "totalSupply": "2400541499423950901026697",
     "website": "https://veDelegate.vet/"
   },
   {
@@ -812,7 +812,7 @@
     },
     "name": "CarbonYears",
     "symbol": "CY",
-    "totalSupply": "207483205466403751307247",
+    "totalSupply": "208908274632995964317660",
     "website": "https://pauseyourcarbon.com/"
   },
   {
@@ -834,7 +834,7 @@
     },
     "name": "Better VET",
     "symbol": "BVET",
-    "totalSupply": "18046259765457231891847700",
+    "totalSupply": "18821883342465348839991199",
     "website": "https://www.betterswap.io/"
   },
   {
@@ -924,7 +924,7 @@
     },
     "name": "BTC@vechain",
     "symbol": "BTC",
-    "totalSupply": "585568",
+    "totalSupply": "605568",
     "website": "https://bridge.wanchain.org/AssetBridge"
   },
   {
@@ -942,7 +942,7 @@
     },
     "name": "USDT@vechain",
     "symbol": "USDT",
-    "totalSupply": "6769783113",
+    "totalSupply": "5167070494",
     "website": "https://bridge.wanchain.org/AssetBridge"
   },
   {
@@ -960,7 +960,7 @@
     },
     "name": "USDC@vechain",
     "symbol": "USDC",
-    "totalSupply": "21697524267",
+    "totalSupply": "17444505608",
     "website": "https://bridge.wanchain.org/AssetBridge"
   },
   {
@@ -978,7 +978,7 @@
     },
     "name": "WAN@vechain",
     "symbol": "WAN",
-    "totalSupply": "2298594163876669969476",
+    "totalSupply": "8027440469423320901212",
     "website": "https://bridge.wanchain.org/AssetBridge"
   },
   {
@@ -1023,5 +1023,19 @@
     "name": "VENI",
     "symbol": "VENI",
     "totalSupply": "1000000000000000000000000000"
+  },
+  {
+    "address": "0x2180239b5e7642222ca848cf8385405eb2677604",
+    "decimals": 18,
+    "desc": " $COMPOST is the Sproutly rewards token designed to boost gamification and reward community engagement. It allows users to enhance the growth of their NFTrees and unlock special features within the ecosystem. By applying $COMPOST, players can accelerate their trees' development and earn unique rewards, fostering active participation and long-term commitment.",
+    "icon": "cf5407dbf927bd7094bc717f0e02f97af98eb965.png",
+    "links": {
+      "telegram": "https://t.me/sproutlyrwa",
+      "twitter": "https://x.com/sproutlyrwa"
+    },
+    "name": "COMPOST Token",
+    "symbol": "COMPOST",
+    "totalSupply": "1000001000000000000000000",
+    "website": "https://sproutlyrwa.com/"
   }
 ]

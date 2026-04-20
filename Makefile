@@ -170,6 +170,10 @@ dd-validate-categories: #@ Validate main and WAF pipeline categories match api-d
 dd-sync: dd-get-pipeline dd-get-app-pipeline dd-get-waf-pipeline dd-get-dashboard #@ Fetch Datadog pipelines and dashboard.
 dd-push: dd-push-pipeline dd-push-app-pipeline dd-push-waf-pipeline dd-push-dashboard #@ Push Datadog pipelines and dashboard.
 
+# Token Registry
+refresh-token-registry: #@ Refresh bundled token registry files from vechain.github.io.
+	bash scripts/refresh_token_registry.sh
+
 # Database
 DB_COMMAND=docker compose -f database/docker-compose-mongo.yaml
 DB_MAKE_KEY=mkdir -p database/keys && [ -f database/keys/keyfile ] || openssl rand -base64 756 > database/keys/keyfile
