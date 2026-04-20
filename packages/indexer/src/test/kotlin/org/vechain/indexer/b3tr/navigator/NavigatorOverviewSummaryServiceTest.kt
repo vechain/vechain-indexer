@@ -4,6 +4,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import io.mockk.verify
 import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
@@ -134,5 +135,48 @@ internal class NavigatorOverviewSummaryServiceTest {
         assertEquals(NavigatorStatus.DEACTIVATED, results[existingState.id]?.status)
         assertEquals(0L, results[NavigatorOverviewSummary.GLOBAL_ID]?.activeNavigators)
         assertEquals(BigDecimal.ZERO, results[NavigatorOverviewSummary.GLOBAL_ID]?.totalDelegated)
+    }
+
+    @Test
+    fun `register and delegation only query navigator state once`() {
+        val accumulator = newAccumulator()
+        accumulator.startBlock()
+
+        service.processBlockEvents(
+            listOf(
+                buildIndexedEvent(
+                    eventType = "B3TR_NavigatorRegistered",
+                    blockId = block.blockId,
+                    blockNumber = block.blockNumber,
+                    blockTimestamp = block.blockTimestamp,
+                    params =
+                        AbiEventParameters(
+                            mapOf("navigator" to "0xnav1", "stakeAmount" to "50000"),
+                            "B3TR_NavigatorRegistered",
+                        ),
+                ),
+                buildIndexedEvent(
+                    eventType = "B3TR_DelegationCreated",
+                    blockId = block.blockId,
+                    blockNumber = block.blockNumber,
+                    blockTimestamp = block.blockTimestamp,
+                    params =
+                        AbiEventParameters(
+                            mapOf(
+                                "navigator" to "0xnav1",
+                                "citizen" to "0xcit1",
+                                "amount" to "25000",
+                            ),
+                            "B3TR_DelegationCreated",
+                        ),
+                ),
+            ),
+            block,
+            accumulator,
+        )
+
+        verify(exactly = 1) {
+            repository.findById(NavigatorOverviewSummary.navigatorStateId("0xnav1"))
+        }
     }
 }

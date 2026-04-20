@@ -11,6 +11,7 @@ import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
+import org.vechain.indexer.utils.ParamUtils.getAsInt
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Service
@@ -53,7 +54,7 @@ open class NavigatorFeeService(
         accumulator: VersionedDocumentAccumulator<NavigatorFee>,
     ) {
         val navigator = ev.params.getAsString("navigator")?.lowercase() ?: return
-        val roundId = ev.params.getAsString("roundId") ?: return
+        val roundId = ev.params.getAsInt("roundId") ?: return
         val amount = ev.params.getAsString("amount")?.toBigDecimalOrNull() ?: BigDecimal.ZERO
         val id = NavigatorFee.buildId(navigator, roundId)
         val (existing, nextVersion) = accumulator.resolve(id)
@@ -69,7 +70,6 @@ open class NavigatorFeeService(
                 )
             accumulator.put(id, existing, updated)
         } else {
-            val roundIdLong = roundId.toLongOrNull() ?: 0L
             val created =
                 NavigatorFee(
                     id = id,
@@ -83,7 +83,7 @@ open class NavigatorFeeService(
                     claimed = false,
                     claimedAt = null,
                     depositedAt = block.blockTimestamp,
-                    unlockRound = roundIdLong + NavigatorFee.FEE_LOCK_PERIOD,
+                    unlockRound = roundId.toLong() + NavigatorFee.FEE_LOCK_PERIOD,
                 )
             accumulator.put(id, existing, created)
         }
@@ -95,7 +95,7 @@ open class NavigatorFeeService(
         accumulator: VersionedDocumentAccumulator<NavigatorFee>,
     ) {
         val navigator = ev.params.getAsString("navigator")?.lowercase() ?: return
-        val roundId = ev.params.getAsString("roundId") ?: return
+        val roundId = ev.params.getAsInt("roundId") ?: return
         val id = NavigatorFee.buildId(navigator, roundId)
         val (existing, nextVersion) = accumulator.resolve(id)
         val current = existing ?: return

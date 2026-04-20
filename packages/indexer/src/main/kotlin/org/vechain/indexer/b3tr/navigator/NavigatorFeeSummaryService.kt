@@ -114,7 +114,6 @@ open class NavigatorFeeSummaryService(
         val (existing, nextVersion) = accumulator.resolve(id)
         val current =
             existing
-                ?: repository.findByIdOrNull(id)
                 ?: NavigatorFeeSummaryDocument(
                     id = id,
                     version = 0,
@@ -136,6 +135,6 @@ open class NavigatorFeeSummaryService(
                     recordType = recordType,
                     navigator = navigator,
                 )
-        accumulator.put(id, existing ?: repository.findByIdOrNull(id), updated)
+        accumulator.put(id, existing, updated)
     }
 }

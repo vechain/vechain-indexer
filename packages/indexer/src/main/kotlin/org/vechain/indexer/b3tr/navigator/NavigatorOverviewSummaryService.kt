@@ -254,7 +254,7 @@ open class NavigatorOverviewSummaryService(
     ) {
         val stateId = NavigatorOverviewSummary.navigatorStateId(navigator)
         val (existing, nextVersion) = accumulator.resolve(stateId)
-        val current = existing ?: repository.findByIdOrNull(stateId)
+        val current = existing
         if (current == null && !createIfMissing) return
         val base =
             current

@@ -4,6 +4,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import io.mockk.verify
 import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
@@ -78,5 +79,45 @@ internal class NavigatorFeeSummaryServiceTest {
             BigDecimal("100"),
             results[NavigatorFeeSummaryDocument.navigatorSummaryId("0xnav1")]?.totalEarned,
         )
+    }
+
+    @Test
+    fun `deposit and claim only query each fee summary once`() {
+        val accumulator = newAccumulator()
+        accumulator.startBlock()
+
+        service.processBlockEvents(
+            listOf(
+                buildIndexedEvent(
+                    eventType = "B3TR_FeeDeposited",
+                    blockId = block.blockId,
+                    blockNumber = block.blockNumber,
+                    blockTimestamp = block.blockTimestamp,
+                    params =
+                        AbiEventParameters(
+                            mapOf("navigator" to "0xnav1", "roundId" to "1", "amount" to "100"),
+                            "B3TR_FeeDeposited",
+                        ),
+                ),
+                buildIndexedEvent(
+                    eventType = "B3TR_FeeClaimed",
+                    blockId = block.blockId,
+                    blockNumber = block.blockNumber,
+                    blockTimestamp = block.blockTimestamp,
+                    params =
+                        AbiEventParameters(
+                            mapOf("navigator" to "0xnav1", "roundId" to "1", "amount" to "40"),
+                            "B3TR_FeeClaimed",
+                        ),
+                ),
+            ),
+            block,
+            accumulator,
+        )
+
+        verify(exactly = 1) { repository.findById(NavigatorFeeSummaryDocument.GLOBAL_ID) }
+        verify(exactly = 1) {
+            repository.findById(NavigatorFeeSummaryDocument.navigatorSummaryId("0xnav1"))
+        }
     }
 }
