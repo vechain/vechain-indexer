@@ -14,7 +14,7 @@ import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
 
 @Service
-@Profile("b3tr", "b3tr-navigator")
+@Profile("b3tr", "b3tr-navigator", "b3tr-navigator-main")
 open class NavigatorService(
     private val repository: NavigatorRepository,
     private val mongoTemplate: MongoTemplate,

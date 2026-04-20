@@ -12,7 +12,7 @@ import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
 
 @Service
-@Profile("b3tr", "b3tr-navigator")
+@Profile("b3tr", "b3tr-navigator", "b3tr-navigator-citizen")
 open class NavigatorCitizenService(
     private val repository: NavigatorCitizenRepository,
     private val mongoTemplate: MongoTemplate,

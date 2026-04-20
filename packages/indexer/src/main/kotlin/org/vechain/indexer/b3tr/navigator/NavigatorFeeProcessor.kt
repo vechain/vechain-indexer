@@ -12,7 +12,7 @@ import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.EventUtils.groupByBlock
 
-@Profile("b3tr", "b3tr-navigator")
+@Profile("b3tr", "b3tr-navigator", "b3tr-navigator-fee")
 @Component
 open class NavigatorFeeProcessor(
     repository: NavigatorFeeRepository,

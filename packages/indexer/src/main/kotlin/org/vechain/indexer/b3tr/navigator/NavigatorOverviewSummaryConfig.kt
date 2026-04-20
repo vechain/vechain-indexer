@@ -11,7 +11,7 @@ import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("b3tr", "b3tr-navigator")
+@Profile("b3tr", "b3tr-navigator", "b3tr-navigator-overview-summary")
 open class NavigatorOverviewSummaryConfig {
     @Bean
     open fun navigatorOverviewSummaryIndexer(

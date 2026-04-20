@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.event.model.generic.IndexedEvent
 
 @Service
-@Profile("b3tr", "b3tr-navigator")
+@Profile("b3tr", "b3tr-navigator", "b3tr-navigator-delegation-event")
 open class NavigatorDelegationEventService(
     private val repository: NavigatorDelegationEventRepository
 ) {

@@ -13,7 +13,7 @@ import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
 
 @Service
-@Profile("b3tr", "b3tr-navigator")
+@Profile("b3tr", "b3tr-navigator", "b3tr-navigator-fee-summary")
 open class NavigatorFeeSummaryService(
     private val repository: NavigatorFeeSummaryRepository,
     private val mongoTemplate: MongoTemplate,
