@@ -7,6 +7,7 @@ import io.mockk.junit5.MockKExtension
 import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -165,7 +166,11 @@ internal class NavigatorCitizenServiceTest {
                     blockTimestamp = block.blockTimestamp,
                     params =
                         AbiEventParameters(
-                            mapOf("citizen" to "0xcit1", "navigator" to "0xnav1"),
+                            mapOf(
+                                "citizen" to "0xcit1",
+                                "navigator" to "0xnav1",
+                                "amount" to "50000",
+                            ),
                             "B3TR_DelegationRemoved",
                         ),
                 )
@@ -214,11 +219,124 @@ internal class NavigatorCitizenServiceTest {
         assertTrue(updated[0].active)
     }
 
+    @Test
+    fun `DelegationCreated fails fast when required params are missing`() {
+        val acc = newAccumulator()
+        acc.startBlock()
+
+        assertThrows(IllegalStateException::class.java) {
+            service.processBlockEvents(
+                listOf(
+                    buildIndexedEvent(
+                        eventType = "B3TR_DelegationCreated",
+                        blockId = block.blockId,
+                        blockNumber = block.blockNumber,
+                        blockTimestamp = block.blockTimestamp,
+                        params =
+                            AbiEventParameters(
+                                mapOf("citizen" to "0xCit1", "amount" to "50000"),
+                                "B3TR_DelegationCreated",
+                            ),
+                    )
+                ),
+                block,
+                acc,
+            )
+        }
+    }
+
+    @Test
+    fun `ExitAnnounced annotates active citizens with deadline block`() {
+        val existing = citizenFixture("0xcit1", navigator = "0xnav1")
+        every { repository.findByNavigatorAndActive("0xnav1", true) } returns listOf(existing)
+        every { repository.findById("0xcit1") } returns java.util.Optional.of(existing)
+
+        val acc = newAccumulator()
+        acc.startBlock()
+        service.processBlockEvents(
+            listOf(
+                buildIndexedEvent(
+                    eventType = "B3TR_ExitAnnounced",
+                    blockId = block.blockId,
+                    blockNumber = block.blockNumber,
+                    blockTimestamp = block.blockTimestamp,
+                    params =
+                        AbiEventParameters(
+                            mapOf(
+                                "navigator" to "0xnav1",
+                                "announcedAtRound" to "5",
+                                "effectiveDeadline" to "120",
+                            ),
+                            "B3TR_ExitAnnounced",
+                        ),
+                )
+            ),
+            block,
+            acc,
+        )
+
+        val (updated, _) = acc.results()
+        assertEquals(120L, updated[0].navigatorExitEffectiveDeadlineBlock)
+    }
+
+    @Test
+    fun `NavigatorDeactivated deactivates active citizens for navigator`() {
+        val existing = citizenFixture("0xcit1", navigator = "0xnav1")
+        every { repository.findByNavigatorAndActive("0xnav1", true) } returns listOf(existing)
+        every { repository.findById("0xcit1") } returns java.util.Optional.of(existing)
+
+        val acc = newAccumulator()
+        acc.startBlock()
+        service.processBlockEvents(
+            listOf(
+                buildIndexedEvent(
+                    eventType = "B3TR_NavigatorDeactivated",
+                    blockId = block.blockId,
+                    blockNumber = block.blockNumber,
+                    blockTimestamp = block.blockTimestamp,
+                    params =
+                        AbiEventParameters(
+                            mapOf("navigator" to "0xnav1", "slashPercentage" to "100"),
+                            "B3TR_NavigatorDeactivated",
+                        ),
+                )
+            ),
+            block,
+            acc,
+        )
+
+        val (updated, _) = acc.results()
+        assertFalse(updated[0].active)
+    }
+
+    @Test
+    fun `processExpiredDelegations deactivates expired active citizens`() {
+        val existing =
+            citizenFixture(
+                "0xcit1",
+                navigator = "0xnav1",
+                navigatorExitEffectiveDeadlineBlock = 100L,
+            )
+        every {
+            repository.findByActiveAndNavigatorExitEffectiveDeadlineBlockLessThanEqual(true, 100L)
+        } returns listOf(existing)
+        every { repository.findById("0xcit1") } returns java.util.Optional.of(existing)
+
+        val acc = newAccumulator()
+        acc.startBlock()
+
+        service.processExpiredDelegations(block, acc)
+
+        val (updated, _) = acc.results()
+        assertFalse(updated[0].active)
+    }
+
     private fun citizenFixture(
         address: String,
         navigator: String = "0xnav1",
         amount: String = "50000",
         active: Boolean = true,
+        navigatorExitEffectiveDeadlineBlock: Long? = null,
     ) =
         NavigatorCitizen(
             address = address,
@@ -230,5 +348,6 @@ internal class NavigatorCitizenServiceTest {
             amount = BigDecimal(amount),
             delegatedAt = 500L,
             active = active,
+            navigatorExitEffectiveDeadlineBlock = navigatorExitEffectiveDeadlineBlock,
         )
 }

@@ -44,7 +44,7 @@ test-e2e: #@ Run all the end-to-end tests.
 test-api: #@ Run all the API tests.
 	./gradlew clean :package:api:test
 test-indexer: #@ Run all the indexer tests.
-	./gradlew clean :package:indexer:test
+	./gradlew :package:indexer:test
 test-common: #@ Run all the common tests.
 	./gradlew clean :package:common:test
 
@@ -169,6 +169,10 @@ dd-validate-categories: #@ Validate main and WAF pipeline categories match api-d
 	$(DD_SCRIPT) validate-categories
 dd-sync: dd-get-pipeline dd-get-app-pipeline dd-get-waf-pipeline dd-get-dashboard #@ Fetch Datadog pipelines and dashboard.
 dd-push: dd-push-pipeline dd-push-app-pipeline dd-push-waf-pipeline dd-push-dashboard #@ Push Datadog pipelines and dashboard.
+
+# Token Registry
+refresh-token-registry: #@ Refresh bundled token registry files from vechain.github.io.
+	bash scripts/refresh_token_registry.sh
 
 # Database
 DB_COMMAND=docker compose -f database/docker-compose-mongo.yaml

@@ -2,21 +2,29 @@ package org.vechain.indexer.b3tr.navigator
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.NAVIGATOR_PATH
+import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
+import org.vechain.indexer.exception.BadRequestException
+import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
+import org.vechain.indexer.thor.Address
 import org.vechain.indexer.utils.PaginationUtils
+import org.vechain.indexer.validation.ValidAddress
+import org.vechain.indexer.validation.ValidNavigatorStatus
 import org.vechain.indexer.validation.ValidPageSize
 
 @Profile("b3tr")
@@ -43,18 +51,11 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
     @Operation(
         summary = "Get navigators",
         description =
-            "Returns a paginated list of navigators with their current state including stake, citizen count, and delegation totals. Supports filtering by status and address, and ordering by various fields.",
+            "Returns a paginated list of navigators with their current state including stake, citizen count, and delegation totals. Supports filtering by status and ordering by various fields.",
     )
     @CommonApiResponses
     @PaginationParameters
     open fun getNavigators(
-        @Parameter(
-            description = "Filter by navigator address.",
-            example = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
-            schema = Schema(type = "string"),
-        )
-        @RequestParam(required = false)
-        navigator: String?,
         @Parameter(
             description = "Filter by navigator status. Multiple values allowed.",
             array =
@@ -66,6 +67,7 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
                         )
                 ),
         )
+        @ValidNavigatorStatus
         @RequestParam(required = false)
         status: List<String>?,
         @Parameter(
@@ -87,11 +89,29 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
         val pageable = PaginationUtils.toPageable(page, size, direction, sortField, "_id")
         return paginatedResponse(
             navigatorApiService.findNavigators(
-                navigator = navigator,
                 statuses = parseStatuses(status),
                 pageable = pageable,
             )
         )
+    }
+
+    @GetMapping("/{navigatorId}")
+    @Operation(
+        summary = "Get navigator by ID",
+        description =
+            "Returns a single navigator with its current state including stake, citizen count, and delegation totals.",
+    )
+    @AddressParameter(
+        name = "navigatorId",
+        `in` = ParameterIn.PATH,
+        description = "Navigator address.",
+        required = true,
+    )
+    @CommonApiResponses
+    open fun getNavigatorById(@ValidAddress @PathVariable navigatorId: Address): Navigator {
+        val normalisedNavigatorId = navigatorId.value.lowercase()
+        return navigatorApiService.getNavigatorById(normalisedNavigatorId)
+            ?: throw ResourceNotFoundException("Navigator not found for id $normalisedNavigatorId")
     }
 
     @GetMapping("/citizens")
@@ -155,6 +175,9 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<NavigatorDelegationEvent> {
+        if (navigator.isNullOrBlank() && citizen.isNullOrBlank()) {
+            throw BadRequestException("Either navigator or citizen must be provided")
+        }
         val pageable =
             PaginationUtils.toPageable(
                 page,
@@ -230,9 +253,8 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
 
     private fun parseStatuses(raw: List<String>?): List<NavigatorStatus>? {
         if (raw.isNullOrEmpty()) return null
-        return raw.mapNotNull { s ->
-                NavigatorStatus.entries.find { it.name.equals(s.trim(), ignoreCase = true) }
-            }
-            .ifEmpty { null }
+        return raw.map { status ->
+            NavigatorStatus.entries.first { it.name.equals(status.trim(), ignoreCase = true) }
+        }
     }
 }

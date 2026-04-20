@@ -8,7 +8,7 @@ import org.vechain.indexer.thor.DecodedEvent
 import org.vechain.indexer.thor.DecodedOutputs
 import org.vechain.indexer.thor.model.Block
 
-@Profile("transactions")
+@Profile("transactions", "transaction")
 @Service
 class TransactionService(private val mongoTemplate: MongoTemplate) {
     fun processBlockTransactions(events: List<IndexedEvent>, block: Block) {

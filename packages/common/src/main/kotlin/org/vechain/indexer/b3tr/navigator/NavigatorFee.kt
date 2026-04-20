@@ -22,7 +22,7 @@ constructor(
     @JsonIgnore override val blockNumber: Long,
     @JsonIgnore override val blockTimestamp: Long,
     val navigator: String,
-    val roundId: String,
+    val roundId: Int,
     @JsonIgnore @Field(targetType = FieldType.DECIMAL128) val totalDeposited: BigDecimal,
     val claimed: Boolean,
     val claimedAt: Long?,
@@ -38,6 +38,6 @@ constructor(
     companion object {
         const val FEE_LOCK_PERIOD = 4L
 
-        fun buildId(navigator: String, roundId: String): String = "${navigator}_${roundId}"
+        fun buildId(navigator: String, roundId: Int): String = "${navigator}_${roundId}"
     }
 }

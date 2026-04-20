@@ -12,7 +12,7 @@ import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.EventUtils.groupByBlock
 
-@Profile("b3tr", "b3tr-navigator")
+@Profile("b3tr", "b3tr-navigator", "b3tr-navigator-citizen")
 @Component
 open class NavigatorCitizenProcessor(
     repository: NavigatorCitizenRepository,
@@ -35,13 +35,14 @@ open class NavigatorCitizenProcessor(
 
         if (entry is IndexingResult.BlockResult) {
             accumulator.startBlock()
+            val blockDetails =
+                BlockDetails(
+                    blockId = entry.block.id,
+                    blockNumber = entry.block.number,
+                    blockTimestamp = entry.block.timestamp,
+                )
+            service.processExpiredDelegations(blockDetails, accumulator)
             if (entry.events().isNotEmpty()) {
-                val blockDetails =
-                    BlockDetails(
-                        blockId = entry.block.id,
-                        blockNumber = entry.block.number,
-                        blockTimestamp = entry.block.timestamp,
-                    )
                 service.processBlockEvents(entry.events(), blockDetails, accumulator)
             }
         } else if (entry.events().isNotEmpty()) {

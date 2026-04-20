@@ -1,6 +1,5 @@
 package org.vechain.indexer.b3tr.navigator
 
-import java.math.BigDecimal
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
@@ -11,10 +10,9 @@ import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
-import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Service
-@Profile("b3tr", "b3tr-navigator")
+@Profile("b3tr", "b3tr-navigator", "b3tr-navigator-citizen")
 open class NavigatorCitizenService(
     private val repository: NavigatorCitizenRepository,
     private val mongoTemplate: MongoTemplate,
@@ -34,7 +32,35 @@ open class NavigatorCitizenService(
                 "B3TR_DelegationIncreased" -> handleIncreased(ev, blockDetails, accumulator)
                 "B3TR_DelegationDecreased" -> handleDecreased(ev, blockDetails, accumulator)
                 "B3TR_DelegationRemoved" -> handleRemoved(ev, blockDetails, accumulator)
+                "B3TR_ExitAnnounced" -> handleExitAnnounced(ev, blockDetails, accumulator)
+                "B3TR_NavigatorDeactivated" ->
+                    handleNavigatorDeactivated(ev, blockDetails, accumulator)
             }
+        }
+    }
+
+    open fun processExpiredDelegations(
+        blockDetails: BlockDetails,
+        accumulator: VersionedDocumentAccumulator<NavigatorCitizen>,
+    ) {
+        val expiringCitizens =
+            repository.findByActiveAndNavigatorExitEffectiveDeadlineBlockLessThanEqual(
+                true,
+                blockDetails.blockNumber,
+            )
+        expiringCitizens.forEach { citizen ->
+            val (existing, nextVersion) = accumulator.resolve(citizen.address)
+            val current = existing ?: citizen
+            if (!current.active) return@forEach
+            val updated =
+                current.copy(
+                    version = nextVersion,
+                    blockId = blockDetails.blockId,
+                    blockNumber = blockDetails.blockNumber,
+                    blockTimestamp = blockDetails.blockTimestamp,
+                    active = false,
+                )
+            accumulator.put(citizen.address, current, updated)
         }
     }
 
@@ -54,8 +80,9 @@ open class NavigatorCitizenService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<NavigatorCitizen>,
     ) {
-        val citizen = ev.params.getAsString("citizen")?.lowercase() ?: return
-        val navigator = ev.params.getAsString("navigator")?.lowercase() ?: return
+        ev.validateRequiredParams("citizen", "navigator", "amount")
+        val citizen = ev.requireAddressParam("citizen")
+        val navigator = ev.requireAddressParam("navigator")
         val (existing, nextVersion) = accumulator.resolve(citizen)
         val created =
             NavigatorCitizen(
@@ -65,9 +92,10 @@ open class NavigatorCitizenService(
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
                 navigator = navigator,
-                amount = ev.params.getAsString("amount")?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
+                amount = ev.requireBigDecimalParam("amount"),
                 delegatedAt = block.blockTimestamp,
                 active = true,
+                navigatorExitEffectiveDeadlineBlock = null,
             )
         accumulator.put(citizen, existing, created)
     }
@@ -77,10 +105,11 @@ open class NavigatorCitizenService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<NavigatorCitizen>,
     ) {
-        val citizen = ev.params.getAsString("citizen")?.lowercase() ?: return
+        ev.validateRequiredParams("citizen", "navigator", "addedAmount", "newTotal")
+        val citizen = ev.requireAddressParam("citizen")
         val (existing, nextVersion) = accumulator.resolve(citizen)
         val current = existing ?: return
-        val newTotal = ev.params.getAsString("newTotal")?.toBigDecimalOrNull() ?: current.amount
+        val newTotal = ev.requireBigDecimalParam("newTotal")
         val updated =
             current.copy(
                 version = nextVersion,
@@ -88,6 +117,7 @@ open class NavigatorCitizenService(
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
                 amount = newTotal,
+                navigatorExitEffectiveDeadlineBlock = current.navigatorExitEffectiveDeadlineBlock,
             )
         accumulator.put(citizen, existing, updated)
     }
@@ -97,10 +127,11 @@ open class NavigatorCitizenService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<NavigatorCitizen>,
     ) {
-        val citizen = ev.params.getAsString("citizen")?.lowercase() ?: return
+        ev.validateRequiredParams("citizen", "navigator", "removedAmount", "newTotal")
+        val citizen = ev.requireAddressParam("citizen")
         val (existing, nextVersion) = accumulator.resolve(citizen)
         val current = existing ?: return
-        val newTotal = ev.params.getAsString("newTotal")?.toBigDecimalOrNull() ?: current.amount
+        val newTotal = ev.requireBigDecimalParam("newTotal")
         val updated =
             current.copy(
                 version = nextVersion,
@@ -108,6 +139,7 @@ open class NavigatorCitizenService(
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
                 amount = newTotal,
+                navigatorExitEffectiveDeadlineBlock = current.navigatorExitEffectiveDeadlineBlock,
             )
         accumulator.put(citizen, existing, updated)
     }
@@ -117,8 +149,9 @@ open class NavigatorCitizenService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<NavigatorCitizen>,
     ) {
-        val citizen = ev.params.getAsString("citizen")?.lowercase() ?: return
-        val navigator = ev.params.getAsString("navigator")?.lowercase() ?: return
+        ev.validateRequiredParams("citizen", "navigator", "amount")
+        val citizen = ev.requireAddressParam("citizen")
+        val navigator = ev.requireAddressParam("navigator")
         val (existing, nextVersion) = accumulator.resolve(citizen)
         val current = existing ?: return
         // Skip if citizen already re-delegated to a different navigator (e.g. auto-clear
@@ -131,7 +164,55 @@ open class NavigatorCitizenService(
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
                 active = false,
+                navigatorExitEffectiveDeadlineBlock = current.navigatorExitEffectiveDeadlineBlock,
             )
         accumulator.put(citizen, existing, updated)
+    }
+
+    private fun handleExitAnnounced(
+        ev: IndexedEvent,
+        block: BlockDetails,
+        accumulator: VersionedDocumentAccumulator<NavigatorCitizen>,
+    ) {
+        ev.validateRequiredParams("navigator", "announcedAtRound", "effectiveDeadline")
+        val navigator = ev.requireAddressParam("navigator")
+        val exitEffectiveDeadlineBlock = ev.requireLongParam("effectiveDeadline")
+        repository.findByNavigatorAndActive(navigator, true).forEach { citizen ->
+            val (existing, nextVersion) = accumulator.resolve(citizen.address)
+            val current = existing ?: citizen
+            if (!current.active || current.navigator != navigator) return@forEach
+            val updated =
+                current.copy(
+                    version = nextVersion,
+                    blockId = block.blockId,
+                    blockNumber = block.blockNumber,
+                    blockTimestamp = block.blockTimestamp,
+                    navigatorExitEffectiveDeadlineBlock = exitEffectiveDeadlineBlock,
+                )
+            accumulator.put(citizen.address, current, updated)
+        }
+    }
+
+    private fun handleNavigatorDeactivated(
+        ev: IndexedEvent,
+        block: BlockDetails,
+        accumulator: VersionedDocumentAccumulator<NavigatorCitizen>,
+    ) {
+        ev.validateRequiredParams("navigator", "slashPercentage")
+        val navigator = ev.requireAddressParam("navigator")
+        repository.findByNavigatorAndActive(navigator, true).forEach { citizen ->
+            val (existing, nextVersion) = accumulator.resolve(citizen.address)
+            val current = existing ?: citizen
+            if (!current.active || current.navigator != navigator) return@forEach
+            val updated =
+                current.copy(
+                    version = nextVersion,
+                    blockId = block.blockId,
+                    blockNumber = block.blockNumber,
+                    blockTimestamp = block.blockTimestamp,
+                    active = false,
+                )
+            accumulator.put(citizen.address, current, updated)
+        }
     }
 }

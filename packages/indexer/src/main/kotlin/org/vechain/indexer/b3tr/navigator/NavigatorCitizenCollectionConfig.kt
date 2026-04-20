@@ -12,7 +12,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("b3tr", "b3tr-navigator")
+@Profile("b3tr", "b3tr-navigator", "b3tr-navigator-citizen")
 @Configuration
 open class NavigatorCitizenCollectionConfig(
     mongoTemplate: MongoTemplate,
@@ -39,8 +39,19 @@ open class NavigatorCitizenCollectionConfig(
                     Index()
                         .on(NavigatorCitizen::navigator.name, Sort.Direction.ASC)
                         .on(NavigatorCitizen::active.name, Sort.Direction.ASC),
-                "citizen_delegatedAt_-1" to
-                    Index().on(NavigatorCitizen::delegatedAt.name, Sort.Direction.DESC),
+                "citizen_navigator_1_active_1_delegatedAt_-1__id_-1" to
+                    Index()
+                        .on(NavigatorCitizen::navigator.name, Sort.Direction.ASC)
+                        .on(NavigatorCitizen::active.name, Sort.Direction.ASC)
+                        .on(NavigatorCitizen::delegatedAt.name, Sort.Direction.DESC)
+                        .on("_id", Sort.Direction.DESC),
+                "citizen_active_1_navigatorExitEffectiveDeadlineBlock_1" to
+                    Index()
+                        .on(NavigatorCitizen::active.name, Sort.Direction.ASC)
+                        .on(
+                            NavigatorCitizen::navigatorExitEffectiveDeadlineBlock.name,
+                            Sort.Direction.ASC,
+                        ),
             )
         )
     }

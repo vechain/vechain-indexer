@@ -8,7 +8,7 @@ import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 
-@Profile("b3tr", "b3tr-navigator")
+@Profile("b3tr", "b3tr-navigator", "b3tr-navigator-delegation-event")
 @Component
 open class NavigatorDelegationEventProcessor(
     private val service: NavigatorDelegationEventService,

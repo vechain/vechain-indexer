@@ -11,7 +11,7 @@ import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("b3tr", "b3tr-navigator")
+@Profile("b3tr", "b3tr-navigator", "b3tr-navigator-citizen")
 open class NavigatorCitizenConfig {
 
     @Bean
@@ -39,6 +39,8 @@ open class NavigatorCitizenConfig {
                     "B3TR_DelegationIncreased",
                     "B3TR_DelegationDecreased",
                     "B3TR_DelegationRemoved",
+                    "B3TR_ExitAnnounced",
+                    "B3TR_NavigatorDeactivated",
                 )
             )
             .businessEventContracts(listOf(navigatorRegistryAddress))

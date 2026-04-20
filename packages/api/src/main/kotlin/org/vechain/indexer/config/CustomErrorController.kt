@@ -34,7 +34,7 @@ class CustomErrorController : ErrorController {
     fun handleError(request: HttpServletRequest): ResponseEntity<ExceptionResponse> {
         val statusCode =
             request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE) as? Int
-                ?: HttpStatus.INTERNAL_SERVER_ERROR.value()
+                ?: HttpStatus.NOT_FOUND.value()
 
         val status = HttpStatus.resolve(statusCode) ?: HttpStatus.INTERNAL_SERVER_ERROR
 

@@ -25,7 +25,7 @@ import org.vechain.indexer.validation.TransactionId
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
 
-@Profile("transactions")
+@Profile("transactions", "transaction")
 @Tag(name = "Transactions", description = "Query on chain transactions")
 @Validated
 @RestController

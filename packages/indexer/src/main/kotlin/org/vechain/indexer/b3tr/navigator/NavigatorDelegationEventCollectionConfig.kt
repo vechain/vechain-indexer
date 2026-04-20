@@ -12,7 +12,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("b3tr", "b3tr-navigator")
+@Profile("b3tr", "b3tr-navigator", "b3tr-navigator-delegation-event")
 @Configuration
 open class NavigatorDelegationEventCollectionConfig(
     mongoTemplate: MongoTemplate,
@@ -35,14 +35,25 @@ open class NavigatorDelegationEventCollectionConfig(
             listOf(
                 "blockNumber_-1" to
                     Index().on(NavigatorDelegationEvent::blockNumber.name, Sort.Direction.DESC),
-                "deleg_event_navigator_1_blockTimestamp_-1" to
+                "deleg_event_navigator_1_blockTimestamp_-1_txId_-1__id_-1" to
                     Index()
                         .on(NavigatorDelegationEvent::navigator.name, Sort.Direction.ASC)
-                        .on(NavigatorDelegationEvent::blockTimestamp.name, Sort.Direction.DESC),
-                "deleg_event_citizen_1_blockTimestamp_-1" to
+                        .on(NavigatorDelegationEvent::blockTimestamp.name, Sort.Direction.DESC)
+                        .on(NavigatorDelegationEvent::txId.name, Sort.Direction.DESC)
+                        .on("_id", Sort.Direction.DESC),
+                "deleg_event_citizen_1_blockTimestamp_-1_txId_-1__id_-1" to
                     Index()
                         .on(NavigatorDelegationEvent::citizen.name, Sort.Direction.ASC)
-                        .on(NavigatorDelegationEvent::blockTimestamp.name, Sort.Direction.DESC),
+                        .on(NavigatorDelegationEvent::blockTimestamp.name, Sort.Direction.DESC)
+                        .on(NavigatorDelegationEvent::txId.name, Sort.Direction.DESC)
+                        .on("_id", Sort.Direction.DESC),
+                "deleg_event_navigator_1_citizen_1_blockTimestamp_-1_txId_-1__id_-1" to
+                    Index()
+                        .on(NavigatorDelegationEvent::navigator.name, Sort.Direction.ASC)
+                        .on(NavigatorDelegationEvent::citizen.name, Sort.Direction.ASC)
+                        .on(NavigatorDelegationEvent::blockTimestamp.name, Sort.Direction.DESC)
+                        .on(NavigatorDelegationEvent::txId.name, Sort.Direction.DESC)
+                        .on("_id", Sort.Direction.DESC),
             )
         )
     }

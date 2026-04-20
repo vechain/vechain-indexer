@@ -25,6 +25,7 @@ constructor(
     @JsonIgnore @Field(targetType = FieldType.DECIMAL128) val amount: BigDecimal,
     val delegatedAt: Long,
     val active: Boolean,
+    @JsonIgnore val navigatorExitEffectiveDeadlineBlock: Long?,
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = address
 

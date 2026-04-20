@@ -1,6 +1,5 @@
 package org.vechain.indexer.b3tr.navigator
 
-import java.math.BigDecimal
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
@@ -11,10 +10,9 @@ import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
-import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Service
-@Profile("b3tr", "b3tr-navigator")
+@Profile("b3tr", "b3tr-navigator", "b3tr-navigator-fee")
 open class NavigatorFeeService(
     private val repository: NavigatorFeeRepository,
     private val mongoTemplate: MongoTemplate,
@@ -52,9 +50,10 @@ open class NavigatorFeeService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<NavigatorFee>,
     ) {
-        val navigator = ev.params.getAsString("navigator")?.lowercase() ?: return
-        val roundId = ev.params.getAsString("roundId") ?: return
-        val amount = ev.params.getAsString("amount")?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+        ev.validateRequiredParams("navigator", "roundId", "amount")
+        val navigator = ev.requireAddressParam("navigator")
+        val roundId = ev.requireIntParam("roundId")
+        val amount = ev.requireBigDecimalParam("amount")
         val id = NavigatorFee.buildId(navigator, roundId)
         val (existing, nextVersion) = accumulator.resolve(id)
 
@@ -69,7 +68,6 @@ open class NavigatorFeeService(
                 )
             accumulator.put(id, existing, updated)
         } else {
-            val roundIdLong = roundId.toLongOrNull() ?: 0L
             val created =
                 NavigatorFee(
                     id = id,
@@ -83,7 +81,7 @@ open class NavigatorFeeService(
                     claimed = false,
                     claimedAt = null,
                     depositedAt = block.blockTimestamp,
-                    unlockRound = roundIdLong + NavigatorFee.FEE_LOCK_PERIOD,
+                    unlockRound = roundId.toLong() + NavigatorFee.FEE_LOCK_PERIOD,
                 )
             accumulator.put(id, existing, created)
         }
@@ -94,8 +92,9 @@ open class NavigatorFeeService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<NavigatorFee>,
     ) {
-        val navigator = ev.params.getAsString("navigator")?.lowercase() ?: return
-        val roundId = ev.params.getAsString("roundId") ?: return
+        ev.validateRequiredParams("navigator", "roundId", "amount")
+        val navigator = ev.requireAddressParam("navigator")
+        val roundId = ev.requireIntParam("roundId")
         val id = NavigatorFee.buildId(navigator, roundId)
         val (existing, nextVersion) = accumulator.resolve(id)
         val current = existing ?: return

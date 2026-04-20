@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.HexUtils
 
-@Profile("transactions")
+@Profile("transactions", "transaction")
 @Service
 open class TransactionService(private val transactionRepository: TransactionRepository) {
 

@@ -81,6 +81,11 @@ object IndexerNames {
         const val COLLECTION = "transactions"
     }
 
+    object TRANSACTION_COUNT {
+        const val NAME = "TransactionCountIndexer"
+        const val COLLECTION = "transaction_counts"
+    }
+
     object TRANSFER {
         const val NAME = "TransferIndexer"
         const val COLLECTION = "transfer_events"
@@ -219,6 +224,16 @@ object IndexerNames {
     object NAVIGATOR_FEE {
         const val NAME = "NavigatorFeeIndexer"
         const val COLLECTION = "b3tr_navigator_fees"
+    }
+
+    object NAVIGATOR_OVERVIEW_SUMMARY {
+        const val NAME = "NavigatorOverviewSummaryIndexer"
+        const val COLLECTION = "b3tr_navigator_overview_summaries"
+    }
+
+    object NAVIGATOR_FEE_SUMMARY {
+        const val NAME = "NavigatorFeeSummaryIndexer"
+        const val COLLECTION = "b3tr_navigator_fee_summaries"
     }
 
     object B3TR_CHALLENGES {

@@ -283,6 +283,12 @@
         },
         {
           "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/transactions/count\""
+          },
+          "name": "/api/v1/transactions/count"
+        },
+        {
+          "filter": {
             "query": "@httpRequest.uri:\"/api/v1/transactions/delegated\""
           },
           "name": "/api/v1/transactions/delegated"
@@ -496,6 +502,12 @@
             "query": "@httpRequest.uri:/api/v1/b3tr/challenges/*"
           },
           "name": "/api/v1/b3tr/challenges/{challengeId}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/b3tr/navigators/*"
+          },
+          "name": "/api/v1/b3tr/navigators/{navigatorId}"
         },
         {
           "filter": {

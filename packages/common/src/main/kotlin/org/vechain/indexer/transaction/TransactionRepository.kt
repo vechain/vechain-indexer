@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.repository.Query
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.BaseIndexedRepository
 
-@Profile("transactions")
+@Profile("transactions", "transaction")
 @Repository
 interface TransactionRepository : BaseIndexedRepository<IndexedTransaction, String> {
 
