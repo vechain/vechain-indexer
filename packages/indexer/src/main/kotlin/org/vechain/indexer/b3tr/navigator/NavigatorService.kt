@@ -6,6 +6,7 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.ResolvedRecord
 import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
@@ -132,11 +133,12 @@ open class NavigatorService(
     ) {
         ev.validateRequiredParams("navigator", "amount", "newTotal")
         val address = ev.requireAddressParam("navigator")
-        val nav = resolveExisting(address, accumulator) ?: return
+        val resolved = resolveRecord(address, accumulator)
+        val nav = resolved.existing ?: return
         val newStake = ev.requireBigDecimalParam("newTotal")
         val updated =
             nav.copy(
-                version = accumulator.resolve(address).nextVersion,
+                version = resolved.nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
@@ -152,10 +154,11 @@ open class NavigatorService(
     ) {
         ev.validateRequiredParams("navigator", "amount", "remaining")
         val address = ev.requireAddressParam("navigator")
-        val nav = resolveExisting(address, accumulator) ?: return
+        val resolved = resolveRecord(address, accumulator)
+        val nav = resolved.existing ?: return
         val updated =
             nav.copy(
-                version = accumulator.resolve(address).nextVersion,
+                version = resolved.nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
@@ -171,11 +174,12 @@ open class NavigatorService(
     ) {
         ev.validateRequiredParams("navigator", "announcedAtRound", "effectiveDeadline")
         val address = ev.requireAddressParam("navigator")
-        val nav = resolveExisting(address, accumulator) ?: return
+        val resolved = resolveRecord(address, accumulator)
+        val nav = resolved.existing ?: return
         val effectiveDeadline = ev.requireParam("effectiveDeadline")
         val updated =
             nav.copy(
-                version = accumulator.resolve(address).nextVersion,
+                version = resolved.nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
@@ -194,10 +198,11 @@ open class NavigatorService(
     ) {
         ev.validateRequiredParams("navigator", "slashPercentage")
         val address = ev.requireAddressParam("navigator")
-        val nav = resolveExisting(address, accumulator) ?: return
+        val resolved = resolveRecord(address, accumulator)
+        val nav = resolved.existing ?: return
         val updated =
             nav.copy(
-                version = accumulator.resolve(address).nextVersion,
+                version = resolved.nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
@@ -225,10 +230,11 @@ open class NavigatorService(
             ev.validateRequiredParams("navigator", "amount", "remainingStake", "reason")
         }
         val address = ev.requireAddressParam("navigator")
-        val nav = resolveExisting(address, accumulator) ?: return
+        val resolved = resolveRecord(address, accumulator)
+        val nav = resolved.existing ?: return
         val updated =
             nav.copy(
-                version = accumulator.resolve(address).nextVersion,
+                version = resolved.nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
@@ -244,10 +250,11 @@ open class NavigatorService(
     ) {
         ev.validateRequiredParams("navigator", "newURI")
         val address = ev.requireAddressParam("navigator")
-        val nav = resolveExisting(address, accumulator) ?: return
+        val resolved = resolveRecord(address, accumulator)
+        val nav = resolved.existing ?: return
         val updated =
             nav.copy(
-                version = accumulator.resolve(address).nextVersion,
+                version = resolved.nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
@@ -263,10 +270,11 @@ open class NavigatorService(
     ) {
         ev.validateRequiredParams("navigator", "roundId", "reportURI")
         val address = ev.requireAddressParam("navigator")
-        val nav = resolveExisting(address, accumulator) ?: return
+        val resolved = resolveRecord(address, accumulator)
+        val nav = resolved.existing ?: return
         val updated =
             nav.copy(
-                version = accumulator.resolve(address).nextVersion,
+                version = resolved.nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
@@ -283,11 +291,12 @@ open class NavigatorService(
     ) {
         ev.validateRequiredParams("citizen", "navigator", "amount")
         val address = ev.requireAddressParam("navigator")
-        val nav = resolveExisting(address, accumulator) ?: return
+        val resolved = resolveRecord(address, accumulator)
+        val nav = resolved.existing ?: return
         val amount = ev.requireBigDecimalParam("amount")
         val updated =
             nav.copy(
-                version = accumulator.resolve(address).nextVersion,
+                version = resolved.nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
@@ -304,11 +313,12 @@ open class NavigatorService(
     ) {
         ev.validateRequiredParams("citizen", "navigator", "addedAmount", "newTotal")
         val address = ev.requireAddressParam("navigator")
-        val nav = resolveExisting(address, accumulator) ?: return
+        val resolved = resolveRecord(address, accumulator)
+        val nav = resolved.existing ?: return
         val addedAmount = ev.requireBigDecimalParam("addedAmount")
         val updated =
             nav.copy(
-                version = accumulator.resolve(address).nextVersion,
+                version = resolved.nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
@@ -324,11 +334,12 @@ open class NavigatorService(
     ) {
         ev.validateRequiredParams("citizen", "navigator", "removedAmount", "newTotal")
         val address = ev.requireAddressParam("navigator")
-        val nav = resolveExisting(address, accumulator) ?: return
+        val resolved = resolveRecord(address, accumulator)
+        val nav = resolved.existing ?: return
         val removedAmount = ev.requireBigDecimalParam("removedAmount")
         val updated =
             nav.copy(
-                version = accumulator.resolve(address).nextVersion,
+                version = resolved.nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
@@ -344,11 +355,12 @@ open class NavigatorService(
     ) {
         ev.validateRequiredParams("citizen", "navigator", "amount")
         val address = ev.requireAddressParam("navigator")
-        val nav = resolveExisting(address, accumulator) ?: return
+        val resolved = resolveRecord(address, accumulator)
+        val nav = resolved.existing ?: return
         val amount = ev.requireBigDecimalParam("amount")
         val updated =
             nav.copy(
-                version = accumulator.resolve(address).nextVersion,
+                version = resolved.nextVersion,
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
@@ -358,11 +370,8 @@ open class NavigatorService(
         accumulator.put(address, nav, updated)
     }
 
-    private fun resolveExisting(
+    private fun resolveRecord(
         address: String,
         accumulator: VersionedDocumentAccumulator<Navigator>,
-    ): Navigator? {
-        val (existing, _) = accumulator.resolve(address)
-        return existing
-    }
+    ): ResolvedRecord<Navigator> = accumulator.resolve(address)
 }

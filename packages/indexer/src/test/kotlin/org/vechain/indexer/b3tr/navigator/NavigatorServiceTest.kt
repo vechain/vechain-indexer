@@ -4,6 +4,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import io.mockk.verify
 import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -113,6 +114,7 @@ internal class NavigatorServiceTest {
 
         val (updated, _) = acc.results()
         assertEquals(BigDecimal("75000"), updated[0].stake)
+        verify(exactly = 1) { repository.findById("0xnav1") }
     }
 
     @Test
