@@ -186,6 +186,7 @@ enabled_nets:
         transfers:                  '6'
         fungible-token-interactions: '4'
         transactions:               '6'
+        transaction-count:          '3'
         history:                    '10'
         nft-blacklist:              '6'
         vevote-comments:            '6'

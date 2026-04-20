@@ -767,6 +767,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.transactions
     },
     {
+      name  = "VERSION_TRANSACTION_COUNT"
+      value = each.value.indexer.version.transaction-count
+    },
+    {
       name  = "VERSION_HISTORY"
       value = each.value.indexer.version.history
     },

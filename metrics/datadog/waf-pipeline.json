@@ -283,6 +283,12 @@
         },
         {
           "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/transactions/count\""
+          },
+          "name": "/api/v1/transactions/count"
+        },
+        {
+          "filter": {
             "query": "@httpRequest.uri:\"/api/v1/transactions/delegated\""
           },
           "name": "/api/v1/transactions/delegated"

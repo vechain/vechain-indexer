@@ -12,7 +12,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("transactions")
+@Profile("transactions", "transaction")
 @Configuration
 open class TransactionCollectionConfig(
     mongoTemplate: MongoTemplate,

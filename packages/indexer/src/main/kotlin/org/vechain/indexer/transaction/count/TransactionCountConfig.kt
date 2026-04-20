@@ -1,4 +1,4 @@
-package org.vechain.indexer.transaction
+package org.vechain.indexer.transaction.count
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -10,23 +10,20 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("transactions", "transaction")
-open class TransactionConfig {
+@Profile("transactions", "transaction-count")
+open class TransactionCountConfig {
     @Bean
-    open fun transactionIndexer(
+    open fun transactionCountIndexer(
         thorClient: ThorClient,
-        processor: TransactionProcessor,
-        @Value("\${indexer.start-block.transactions}") startBlock: Long,
+        processor: TransactionCountProcessor,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.TRANSACTION.NAME)
+            .name(IndexerNames.TRANSACTION_COUNT.NAME)
             .thorClient(thorClient)
             .processor(processor)
-            .abis("abis")
-            .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .excludeVetTransfers()
+            .startBlock(0L)
             .includeFullBlock()
             .build()
 }

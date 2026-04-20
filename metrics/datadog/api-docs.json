@@ -3128,6 +3128,29 @@
         ],
         "type": "object"
       },
+      "TransactionCountSummary": {
+        "properties": {
+          "totalClauses": {
+            "type": "integer"
+          },
+          "totalRevertedClauses": {
+            "type": "integer"
+          },
+          "totalRevertedTransactions": {
+            "type": "integer"
+          },
+          "totalTransactions": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "totalClauses",
+          "totalRevertedClauses",
+          "totalRevertedTransactions",
+          "totalTransactions"
+        ],
+        "type": "object"
+      },
       "TreasuryTransfer": {
         "properties": {
           "blockTimestamp": {
@@ -12305,6 +12328,93 @@
           }
         },
         "summary": "Get all transactions for a contract address",
+        "tags": [
+          "Transactions"
+        ]
+      }
+    },
+    "/api/v1/transactions/count": {
+      "get": {
+        "description": "\n            Returns the cumulative number of transactions, clauses, reverted transactions, and\n            reverted clauses observed on VeChain up to the most recently indexed block. Clause\n            totals are included because clauses are a property of transactions, and reverted totals\n            cover reverted transactions plus the clauses contained within those reverted\n            transactions.\n        ",
+        "operationId": "getTransactionCount",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XProjectIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionCountSummary"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get cumulative transaction, clause, and reverted totals on VeChain",
         "tags": [
           "Transactions"
         ]
