@@ -11,7 +11,6 @@ import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
-import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Service
 @Profile("b3tr", "b3tr-navigator")
@@ -101,7 +100,8 @@ open class NavigatorService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<Navigator>,
     ) {
-        val address = ev.params.getAsString("navigator")?.lowercase() ?: return
+        ev.validateRequiredParams("navigator", "stakeAmount", "metadataURI")
+        val address = ev.requireAddressParam("navigator")
         val (existing, nextVersion) = accumulator.resolve(address)
         val created =
             Navigator(
@@ -111,10 +111,10 @@ open class NavigatorService(
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
                 status = NavigatorStatus.ACTIVE,
-                stake = ev.params.getAsString("stakeAmount").toBigDecimalOrZero(),
+                stake = ev.requireBigDecimalParam("stakeAmount"),
                 citizenCount = 0,
                 totalDelegated = BigDecimal.ZERO,
-                metadataURI = ev.params.getAsString("metadataURI"),
+                metadataURI = ev.requireParam("metadataURI"),
                 registeredAt = block.blockTimestamp,
                 exitAnnouncedRound = null,
                 exitEffectiveDeadline = null,
@@ -130,11 +130,10 @@ open class NavigatorService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<Navigator>,
     ) {
-        val address = ev.params.getAsString("navigator")?.lowercase() ?: return
+        ev.validateRequiredParams("navigator", "amount", "newTotal")
+        val address = ev.requireAddressParam("navigator")
         val nav = resolveExisting(address, accumulator) ?: return
-        val newStake =
-            ev.params.getAsString("newTotal")?.toBigDecimalOrNull()
-                ?: (nav.stake + ev.params.getAsString("amount").toBigDecimalOrZero())
+        val newStake = ev.requireBigDecimalParam("newTotal")
         val updated =
             nav.copy(
                 version = accumulator.resolve(address).nextVersion,
@@ -151,7 +150,8 @@ open class NavigatorService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<Navigator>,
     ) {
-        val address = ev.params.getAsString("navigator")?.lowercase() ?: return
+        ev.validateRequiredParams("navigator", "amount", "remaining")
+        val address = ev.requireAddressParam("navigator")
         val nav = resolveExisting(address, accumulator) ?: return
         val updated =
             nav.copy(
@@ -159,7 +159,7 @@ open class NavigatorService(
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
-                stake = ev.params.getAsString("remaining")?.toBigDecimalOrNull() ?: nav.stake,
+                stake = ev.requireBigDecimalParam("remaining"),
             )
         accumulator.put(address, nav, updated)
     }
@@ -169,8 +169,10 @@ open class NavigatorService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<Navigator>,
     ) {
-        val address = ev.params.getAsString("navigator")?.lowercase() ?: return
+        ev.validateRequiredParams("navigator", "announcedAtRound", "effectiveDeadline")
+        val address = ev.requireAddressParam("navigator")
         val nav = resolveExisting(address, accumulator) ?: return
+        val effectiveDeadline = ev.requireParam("effectiveDeadline")
         val updated =
             nav.copy(
                 version = accumulator.resolve(address).nextVersion,
@@ -178,10 +180,9 @@ open class NavigatorService(
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
                 status = NavigatorStatus.EXITING,
-                exitAnnouncedRound = ev.params.getAsString("announcedAtRound"),
-                exitEffectiveDeadline = ev.params.getAsString("effectiveDeadline"),
-                exitEffectiveDeadlineBlock =
-                    ev.params.getAsString("effectiveDeadline")?.toLongOrNull(),
+                exitAnnouncedRound = ev.requireParam("announcedAtRound"),
+                exitEffectiveDeadline = effectiveDeadline,
+                exitEffectiveDeadlineBlock = ev.requireLongParam("effectiveDeadline"),
             )
         accumulator.put(address, nav, updated)
     }
@@ -191,7 +192,8 @@ open class NavigatorService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<Navigator>,
     ) {
-        val address = ev.params.getAsString("navigator")?.lowercase() ?: return
+        ev.validateRequiredParams("navigator", "slashPercentage")
+        val address = ev.requireAddressParam("navigator")
         val nav = resolveExisting(address, accumulator) ?: return
         val updated =
             nav.copy(
@@ -211,7 +213,18 @@ open class NavigatorService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<Navigator>,
     ) {
-        val address = ev.params.getAsString("navigator")?.lowercase() ?: return
+        if (ev.eventType == "B3TR_NavigatorMinorSlashed") {
+            ev.validateRequiredParams(
+                "navigator",
+                "amount",
+                "remainingStake",
+                "roundId",
+                "infractionFlags",
+            )
+        } else {
+            ev.validateRequiredParams("navigator", "amount", "remainingStake", "reason")
+        }
+        val address = ev.requireAddressParam("navigator")
         val nav = resolveExisting(address, accumulator) ?: return
         val updated =
             nav.copy(
@@ -219,7 +232,7 @@ open class NavigatorService(
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
-                stake = ev.params.getAsString("remainingStake")?.toBigDecimalOrNull() ?: nav.stake,
+                stake = ev.requireBigDecimalParam("remainingStake"),
             )
         accumulator.put(address, nav, updated)
     }
@@ -229,7 +242,8 @@ open class NavigatorService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<Navigator>,
     ) {
-        val address = ev.params.getAsString("navigator")?.lowercase() ?: return
+        ev.validateRequiredParams("navigator", "newURI")
+        val address = ev.requireAddressParam("navigator")
         val nav = resolveExisting(address, accumulator) ?: return
         val updated =
             nav.copy(
@@ -237,7 +251,7 @@ open class NavigatorService(
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
-                metadataURI = ev.params.getAsString("newURI"),
+                metadataURI = ev.requireParam("newURI"),
             )
         accumulator.put(address, nav, updated)
     }
@@ -247,7 +261,8 @@ open class NavigatorService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<Navigator>,
     ) {
-        val address = ev.params.getAsString("navigator")?.lowercase() ?: return
+        ev.validateRequiredParams("navigator", "roundId", "reportURI")
+        val address = ev.requireAddressParam("navigator")
         val nav = resolveExisting(address, accumulator) ?: return
         val updated =
             nav.copy(
@@ -255,8 +270,8 @@ open class NavigatorService(
                 blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 blockTimestamp = block.blockTimestamp,
-                lastReportRound = ev.params.getAsString("roundId"),
-                lastReportURI = ev.params.getAsString("reportURI"),
+                lastReportRound = ev.requireParam("roundId"),
+                lastReportURI = ev.requireParam("reportURI"),
             )
         accumulator.put(address, nav, updated)
     }
@@ -266,9 +281,10 @@ open class NavigatorService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<Navigator>,
     ) {
-        val address = ev.params.getAsString("navigator")?.lowercase() ?: return
+        ev.validateRequiredParams("citizen", "navigator", "amount")
+        val address = ev.requireAddressParam("navigator")
         val nav = resolveExisting(address, accumulator) ?: return
-        val amount = ev.params.getAsString("amount").toBigDecimalOrZero()
+        val amount = ev.requireBigDecimalParam("amount")
         val updated =
             nav.copy(
                 version = accumulator.resolve(address).nextVersion,
@@ -286,9 +302,10 @@ open class NavigatorService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<Navigator>,
     ) {
-        val address = ev.params.getAsString("navigator")?.lowercase() ?: return
+        ev.validateRequiredParams("citizen", "navigator", "addedAmount", "newTotal")
+        val address = ev.requireAddressParam("navigator")
         val nav = resolveExisting(address, accumulator) ?: return
-        val addedAmount = ev.params.getAsString("addedAmount").toBigDecimalOrZero()
+        val addedAmount = ev.requireBigDecimalParam("addedAmount")
         val updated =
             nav.copy(
                 version = accumulator.resolve(address).nextVersion,
@@ -305,9 +322,10 @@ open class NavigatorService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<Navigator>,
     ) {
-        val address = ev.params.getAsString("navigator")?.lowercase() ?: return
+        ev.validateRequiredParams("citizen", "navigator", "removedAmount", "newTotal")
+        val address = ev.requireAddressParam("navigator")
         val nav = resolveExisting(address, accumulator) ?: return
-        val removedAmount = ev.params.getAsString("removedAmount").toBigDecimalOrZero()
+        val removedAmount = ev.requireBigDecimalParam("removedAmount")
         val updated =
             nav.copy(
                 version = accumulator.resolve(address).nextVersion,
@@ -324,9 +342,10 @@ open class NavigatorService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<Navigator>,
     ) {
-        val address = ev.params.getAsString("navigator")?.lowercase() ?: return
+        ev.validateRequiredParams("citizen", "navigator", "amount")
+        val address = ev.requireAddressParam("navigator")
         val nav = resolveExisting(address, accumulator) ?: return
-        val amount = ev.params.getAsString("amount").toBigDecimalOrZero()
+        val amount = ev.requireBigDecimalParam("amount")
         val updated =
             nav.copy(
                 version = accumulator.resolve(address).nextVersion,
@@ -346,7 +365,4 @@ open class NavigatorService(
         val (existing, _) = accumulator.resolve(address)
         return existing
     }
-
-    private fun String?.toBigDecimalOrZero(): BigDecimal =
-        this?.toBigDecimalOrNull() ?: BigDecimal.ZERO
 }

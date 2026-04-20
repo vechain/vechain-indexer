@@ -6,6 +6,8 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -99,7 +101,12 @@ internal class NavigatorServiceTest {
         val acc = newAccumulator()
         acc.startBlock()
         service.processBlockEvents(
-            listOf(event("B3TR_StakeAdded", mapOf("navigator" to "0xnav1", "newTotal" to "75000"))),
+            listOf(
+                event(
+                    "B3TR_StakeAdded",
+                    mapOf("navigator" to "0xnav1", "amount" to "25000", "newTotal" to "75000"),
+                )
+            ),
             block,
             acc,
         )
@@ -109,20 +116,27 @@ internal class NavigatorServiceTest {
     }
 
     @Test
-    fun `StakeAdded falls back to arithmetic when newTotal is missing`() {
+    fun `StakeAdded fails fast when required params are missing`() {
         val existing = navigatorFixture("0xnav1", stake = "50000")
         every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
 
         val acc = newAccumulator()
         acc.startBlock()
-        service.processBlockEvents(
-            listOf(event("B3TR_StakeAdded", mapOf("navigator" to "0xnav1", "amount" to "10000"))),
-            block,
-            acc,
-        )
+        val exception =
+            assertThrows(IllegalStateException::class.java) {
+                service.processBlockEvents(
+                    listOf(
+                        event(
+                            "B3TR_StakeAdded",
+                            mapOf("navigator" to "0xnav1", "amount" to "10000"),
+                        )
+                    ),
+                    block,
+                    acc,
+                )
+            }
 
-        val (updated, _) = acc.results()
-        assertEquals(BigDecimal("60000"), updated[0].stake)
+        assertTrue(exception.message!!.contains("Missing param 'newTotal'"))
     }
 
     @Test
@@ -134,7 +148,10 @@ internal class NavigatorServiceTest {
         acc.startBlock()
         service.processBlockEvents(
             listOf(
-                event("B3TR_StakeWithdrawn", mapOf("navigator" to "0xnav1", "remaining" to "50000"))
+                event(
+                    "B3TR_StakeWithdrawn",
+                    mapOf("navigator" to "0xnav1", "amount" to "25000", "remaining" to "50000"),
+                )
             ),
             block,
             acc,
@@ -188,7 +205,12 @@ internal class NavigatorServiceTest {
         val acc = newAccumulator()
         acc.startBlock()
         service.processBlockEvents(
-            listOf(event("B3TR_NavigatorDeactivated", mapOf("navigator" to "0xnav1"))),
+            listOf(
+                event(
+                    "B3TR_NavigatorDeactivated",
+                    mapOf("navigator" to "0xnav1", "slashPercentage" to "100"),
+                )
+            ),
             block,
             acc,
         )
@@ -238,7 +260,12 @@ internal class NavigatorServiceTest {
             listOf(
                 event(
                     "B3TR_NavigatorSlashed",
-                    mapOf("navigator" to "0xnav1", "remainingStake" to "45000"),
+                    mapOf(
+                        "navigator" to "0xnav1",
+                        "amount" to "5000",
+                        "remainingStake" to "45000",
+                        "reason" to "missing-report",
+                    ),
                 )
             ),
             block,

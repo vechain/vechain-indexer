@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Service
 @Profile("b3tr", "b3tr-navigator")
@@ -20,29 +19,25 @@ open class NavigatorDelegationEventService(
 
             when (ev.eventType) {
                 "B3TR_DelegationCreated" -> {
-                    val amount =
-                        ev.params.getAsString("amount")?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                    ev.validateRequiredParams("citizen", "navigator", "amount")
+                    val amount = ev.requireBigDecimalParam("amount")
                     buildEvent(ev, id, amount = amount, delta = amount)
                 }
                 "B3TR_DelegationIncreased" -> {
-                    val addedAmount =
-                        ev.params.getAsString("addedAmount")?.toBigDecimalOrNull()
-                            ?: BigDecimal.ZERO
-                    val newTotal =
-                        ev.params.getAsString("newTotal")?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                    ev.validateRequiredParams("citizen", "navigator", "addedAmount", "newTotal")
+                    val addedAmount = ev.requireBigDecimalParam("addedAmount")
+                    val newTotal = ev.requireBigDecimalParam("newTotal")
                     buildEvent(ev, id, amount = newTotal, delta = addedAmount)
                 }
                 "B3TR_DelegationDecreased" -> {
-                    val removedAmount =
-                        ev.params.getAsString("removedAmount")?.toBigDecimalOrNull()
-                            ?: BigDecimal.ZERO
-                    val newTotal =
-                        ev.params.getAsString("newTotal")?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                    ev.validateRequiredParams("citizen", "navigator", "removedAmount", "newTotal")
+                    val removedAmount = ev.requireBigDecimalParam("removedAmount")
+                    val newTotal = ev.requireBigDecimalParam("newTotal")
                     buildEvent(ev, id, amount = newTotal, delta = removedAmount.negate())
                 }
                 "B3TR_DelegationRemoved" -> {
-                    val amount =
-                        ev.params.getAsString("amount")?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                    ev.validateRequiredParams("citizen", "navigator", "amount")
+                    val amount = ev.requireBigDecimalParam("amount")
                     buildEvent(ev, id, amount = BigDecimal.ZERO, delta = amount.negate())
                 }
                 else -> error("Unexpected event type: ${ev.eventType}")
@@ -54,15 +49,15 @@ open class NavigatorDelegationEventService(
         if (records.isNotEmpty()) repository.saveAll(records)
     }
 
-    private fun buildEvent(ev: IndexedEvent, id: String, amount: BigDecimal?, delta: BigDecimal?) =
+    private fun buildEvent(ev: IndexedEvent, id: String, amount: BigDecimal, delta: BigDecimal) =
         NavigatorDelegationEvent(
             id = id,
             blockId = ev.blockId,
             blockNumber = ev.blockNumber,
             blockTimestamp = ev.blockTimestamp,
             txId = ev.txId,
-            navigator = ev.params.getAsString("navigator")?.lowercase() ?: "",
-            citizen = ev.params.getAsString("citizen")?.lowercase() ?: "",
+            navigator = ev.requireAddressParam("navigator"),
+            citizen = ev.requireAddressParam("citizen"),
             eventType = ev.eventType,
             amount = amount,
             delta = delta,

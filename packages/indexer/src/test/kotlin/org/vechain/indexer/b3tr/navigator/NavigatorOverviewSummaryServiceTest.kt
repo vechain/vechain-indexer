@@ -7,6 +7,8 @@ import io.mockk.junit5.MockKExtension
 import io.mockk.verify
 import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -53,7 +55,11 @@ internal class NavigatorOverviewSummaryServiceTest {
                     blockTimestamp = block.blockTimestamp,
                     params =
                         AbiEventParameters(
-                            mapOf("navigator" to "0xnav1", "stakeAmount" to "50000"),
+                            mapOf(
+                                "navigator" to "0xnav1",
+                                "stakeAmount" to "50000",
+                                "metadataURI" to "ipfs://meta",
+                            ),
                             "B3TR_NavigatorRegistered",
                         ),
                 ),
@@ -151,7 +157,11 @@ internal class NavigatorOverviewSummaryServiceTest {
                     blockTimestamp = block.blockTimestamp,
                     params =
                         AbiEventParameters(
-                            mapOf("navigator" to "0xnav1", "stakeAmount" to "50000"),
+                            mapOf(
+                                "navigator" to "0xnav1",
+                                "stakeAmount" to "50000",
+                                "metadataURI" to "ipfs://meta",
+                            ),
                             "B3TR_NavigatorRegistered",
                         ),
                 ),
@@ -178,5 +188,34 @@ internal class NavigatorOverviewSummaryServiceTest {
         verify(exactly = 1) {
             repository.findById(NavigatorOverviewSummary.navigatorStateId("0xnav1"))
         }
+    }
+
+    @Test
+    fun `delegation events fail fast when required params are missing`() {
+        val accumulator = newAccumulator()
+        accumulator.startBlock()
+
+        val exception =
+            assertThrows(IllegalStateException::class.java) {
+                service.processBlockEvents(
+                    listOf(
+                        buildIndexedEvent(
+                            eventType = "B3TR_DelegationCreated",
+                            blockId = block.blockId,
+                            blockNumber = block.blockNumber,
+                            blockTimestamp = block.blockTimestamp,
+                            params =
+                                AbiEventParameters(
+                                    mapOf("navigator" to "0xnav1", "amount" to "25000"),
+                                    "B3TR_DelegationCreated",
+                                ),
+                        )
+                    ),
+                    block,
+                    accumulator,
+                )
+            }
+
+        assertTrue(exception.message!!.contains("Missing param 'citizen'"))
     }
 }

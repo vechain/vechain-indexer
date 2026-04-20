@@ -7,6 +7,7 @@ import io.mockk.junit5.MockKExtension
 import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -165,7 +166,11 @@ internal class NavigatorCitizenServiceTest {
                     blockTimestamp = block.blockTimestamp,
                     params =
                         AbiEventParameters(
-                            mapOf("citizen" to "0xcit1", "navigator" to "0xnav1"),
+                            mapOf(
+                                "citizen" to "0xcit1",
+                                "navigator" to "0xnav1",
+                                "amount" to "50000",
+                            ),
                             "B3TR_DelegationRemoved",
                         ),
                 )
@@ -215,6 +220,32 @@ internal class NavigatorCitizenServiceTest {
     }
 
     @Test
+    fun `DelegationCreated fails fast when required params are missing`() {
+        val acc = newAccumulator()
+        acc.startBlock()
+
+        assertThrows(IllegalStateException::class.java) {
+            service.processBlockEvents(
+                listOf(
+                    buildIndexedEvent(
+                        eventType = "B3TR_DelegationCreated",
+                        blockId = block.blockId,
+                        blockNumber = block.blockNumber,
+                        blockTimestamp = block.blockTimestamp,
+                        params =
+                            AbiEventParameters(
+                                mapOf("citizen" to "0xCit1", "amount" to "50000"),
+                                "B3TR_DelegationCreated",
+                            ),
+                    )
+                ),
+                block,
+                acc,
+            )
+        }
+    }
+
+    @Test
     fun `ExitAnnounced annotates active citizens with deadline block`() {
         val existing = citizenFixture("0xcit1", navigator = "0xnav1")
         every { repository.findByNavigatorAndActive("0xnav1", true) } returns listOf(existing)
@@ -231,7 +262,11 @@ internal class NavigatorCitizenServiceTest {
                     blockTimestamp = block.blockTimestamp,
                     params =
                         AbiEventParameters(
-                            mapOf("navigator" to "0xnav1", "effectiveDeadline" to "120"),
+                            mapOf(
+                                "navigator" to "0xnav1",
+                                "announcedAtRound" to "5",
+                                "effectiveDeadline" to "120",
+                            ),
                             "B3TR_ExitAnnounced",
                         ),
                 )
@@ -261,7 +296,7 @@ internal class NavigatorCitizenServiceTest {
                     blockTimestamp = block.blockTimestamp,
                     params =
                         AbiEventParameters(
-                            mapOf("navigator" to "0xnav1"),
+                            mapOf("navigator" to "0xnav1", "slashPercentage" to "100"),
                             "B3TR_NavigatorDeactivated",
                         ),
                 )

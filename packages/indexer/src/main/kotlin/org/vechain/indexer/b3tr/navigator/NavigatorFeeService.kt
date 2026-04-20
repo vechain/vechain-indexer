@@ -1,6 +1,5 @@
 package org.vechain.indexer.b3tr.navigator
 
-import java.math.BigDecimal
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
@@ -11,8 +10,6 @@ import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
-import org.vechain.indexer.utils.ParamUtils.getAsInt
-import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Service
 @Profile("b3tr", "b3tr-navigator")
@@ -53,9 +50,10 @@ open class NavigatorFeeService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<NavigatorFee>,
     ) {
-        val navigator = ev.params.getAsString("navigator")?.lowercase() ?: return
-        val roundId = ev.params.getAsInt("roundId") ?: return
-        val amount = ev.params.getAsString("amount")?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+        ev.validateRequiredParams("navigator", "roundId", "amount")
+        val navigator = ev.requireAddressParam("navigator")
+        val roundId = ev.requireIntParam("roundId")
+        val amount = ev.requireBigDecimalParam("amount")
         val id = NavigatorFee.buildId(navigator, roundId)
         val (existing, nextVersion) = accumulator.resolve(id)
 
@@ -94,8 +92,9 @@ open class NavigatorFeeService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<NavigatorFee>,
     ) {
-        val navigator = ev.params.getAsString("navigator")?.lowercase() ?: return
-        val roundId = ev.params.getAsInt("roundId") ?: return
+        ev.validateRequiredParams("navigator", "roundId", "amount")
+        val navigator = ev.requireAddressParam("navigator")
+        val roundId = ev.requireIntParam("roundId")
         val id = NavigatorFee.buildId(navigator, roundId)
         val (existing, nextVersion) = accumulator.resolve(id)
         val current = existing ?: return

@@ -5,6 +5,7 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -75,5 +76,31 @@ internal class NavigatorFeeServiceTest {
         assertEquals("0xnav1_10", fee.id)
         assertEquals(14L, fee.unlockRound)
         assertEquals(true, fee.claimed)
+    }
+
+    @Test
+    fun `fee events fail fast when required params are missing`() {
+        val accumulator = newAccumulator()
+        accumulator.startBlock()
+
+        assertThrows(IllegalStateException::class.java) {
+            service.processBlockEvents(
+                listOf(
+                    buildIndexedEvent(
+                        eventType = "B3TR_FeeDeposited",
+                        blockId = block.blockId,
+                        blockNumber = block.blockNumber,
+                        blockTimestamp = block.blockTimestamp,
+                        params =
+                            AbiEventParameters(
+                                mapOf("navigator" to "0xnav1", "amount" to "100"),
+                                "B3TR_FeeDeposited",
+                            ),
+                    )
+                ),
+                block,
+                accumulator,
+            )
+        }
     }
 }

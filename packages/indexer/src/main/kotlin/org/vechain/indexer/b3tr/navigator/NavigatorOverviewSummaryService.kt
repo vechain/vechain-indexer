@@ -11,7 +11,6 @@ import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
-import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Service
 @Profile("b3tr", "b3tr-navigator")
@@ -95,8 +94,9 @@ open class NavigatorOverviewSummaryService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<NavigatorOverviewSummary>,
     ) {
-        val address = event.params.getAsString("navigator")?.lowercase() ?: return
-        val stake = event.params.getAsString("stakeAmount").toBigDecimalOrZero()
+        event.validateRequiredParams("navigator", "stakeAmount", "metadataURI")
+        val address = event.requireAddressParam("navigator")
+        val stake = event.requireBigDecimalParam("stakeAmount")
         updateNavigatorState(address, block, accumulator, createIfMissing = true) {
             it.copy(
                 navigator = address,
@@ -114,14 +114,10 @@ open class NavigatorOverviewSummaryService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<NavigatorOverviewSummary>,
     ) {
-        val address = event.params.getAsString("navigator")?.lowercase() ?: return
+        event.validateRequiredParams("navigator", "amount", "newTotal")
+        val address = event.requireAddressParam("navigator")
         updateNavigatorState(address, block, accumulator) { current ->
-            current.copy(
-                stake =
-                    event.params.getAsString("newTotal")?.toBigDecimalOrNull()
-                        ?: (current.stake ?: BigDecimal.ZERO) +
-                            event.params.getAsString("amount").toBigDecimalOrZero()
-            )
+            current.copy(stake = event.requireBigDecimalParam("newTotal"))
         }
     }
 
@@ -130,14 +126,10 @@ open class NavigatorOverviewSummaryService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<NavigatorOverviewSummary>,
     ) {
-        val address = event.params.getAsString("navigator")?.lowercase() ?: return
+        event.validateRequiredParams("navigator", "amount", "remaining")
+        val address = event.requireAddressParam("navigator")
         updateNavigatorState(address, block, accumulator) { current ->
-            current.copy(
-                stake =
-                    event.params.getAsString("remaining")?.toBigDecimalOrNull()
-                        ?: current.stake
-                        ?: BigDecimal.ZERO
-            )
+            current.copy(stake = event.requireBigDecimalParam("remaining"))
         }
     }
 
@@ -146,12 +138,12 @@ open class NavigatorOverviewSummaryService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<NavigatorOverviewSummary>,
     ) {
-        val address = event.params.getAsString("navigator")?.lowercase() ?: return
+        event.validateRequiredParams("navigator", "announcedAtRound", "effectiveDeadline")
+        val address = event.requireAddressParam("navigator")
         updateNavigatorState(address, block, accumulator) { current ->
             current.copy(
                 status = NavigatorStatus.EXITING,
-                exitEffectiveDeadlineBlock =
-                    event.params.getAsString("effectiveDeadline")?.toLongOrNull(),
+                exitEffectiveDeadlineBlock = event.requireLongParam("effectiveDeadline"),
             )
         }
     }
@@ -161,7 +153,8 @@ open class NavigatorOverviewSummaryService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<NavigatorOverviewSummary>,
     ) {
-        val address = event.params.getAsString("navigator")?.lowercase() ?: return
+        event.validateRequiredParams("navigator", "slashPercentage")
+        val address = event.requireAddressParam("navigator")
         updateNavigatorState(address, block, accumulator) { current ->
             current.copy(
                 status = NavigatorStatus.DEACTIVATED,
@@ -176,14 +169,20 @@ open class NavigatorOverviewSummaryService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<NavigatorOverviewSummary>,
     ) {
-        val address = event.params.getAsString("navigator")?.lowercase() ?: return
-        updateNavigatorState(address, block, accumulator) { current ->
-            current.copy(
-                stake =
-                    event.params.getAsString("remainingStake")?.toBigDecimalOrNull()
-                        ?: current.stake
-                        ?: BigDecimal.ZERO
+        if (event.eventType == "B3TR_NavigatorMinorSlashed") {
+            event.validateRequiredParams(
+                "navigator",
+                "amount",
+                "remainingStake",
+                "roundId",
+                "infractionFlags",
             )
+        } else {
+            event.validateRequiredParams("navigator", "amount", "remainingStake", "reason")
+        }
+        val address = event.requireAddressParam("navigator")
+        updateNavigatorState(address, block, accumulator) { current ->
+            current.copy(stake = event.requireBigDecimalParam("remainingStake"))
         }
     }
 
@@ -192,8 +191,9 @@ open class NavigatorOverviewSummaryService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<NavigatorOverviewSummary>,
     ) {
-        val address = event.params.getAsString("navigator")?.lowercase() ?: return
-        val amount = event.params.getAsString("amount").toBigDecimalOrZero()
+        event.validateRequiredParams("citizen", "navigator", "amount")
+        val address = event.requireAddressParam("navigator")
+        val amount = event.requireBigDecimalParam("amount")
         updateNavigatorState(address, block, accumulator) { current ->
             current.copy(
                 citizenCount = (current.citizenCount ?: 0) + 1,
@@ -207,8 +207,9 @@ open class NavigatorOverviewSummaryService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<NavigatorOverviewSummary>,
     ) {
-        val address = event.params.getAsString("navigator")?.lowercase() ?: return
-        val amount = event.params.getAsString("addedAmount").toBigDecimalOrZero()
+        event.validateRequiredParams("citizen", "navigator", "addedAmount", "newTotal")
+        val address = event.requireAddressParam("navigator")
+        val amount = event.requireBigDecimalParam("addedAmount")
         updateNavigatorState(address, block, accumulator) { current ->
             current.copy(delegatedTotal = (current.delegatedTotal ?: BigDecimal.ZERO) + amount)
         }
@@ -219,8 +220,9 @@ open class NavigatorOverviewSummaryService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<NavigatorOverviewSummary>,
     ) {
-        val address = event.params.getAsString("navigator")?.lowercase() ?: return
-        val amount = event.params.getAsString("removedAmount").toBigDecimalOrZero()
+        event.validateRequiredParams("citizen", "navigator", "removedAmount", "newTotal")
+        val address = event.requireAddressParam("navigator")
+        val amount = event.requireBigDecimalParam("removedAmount")
         updateNavigatorState(address, block, accumulator) { current ->
             current.copy(
                 delegatedTotal =
@@ -234,8 +236,9 @@ open class NavigatorOverviewSummaryService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<NavigatorOverviewSummary>,
     ) {
-        val address = event.params.getAsString("navigator")?.lowercase() ?: return
-        val amount = event.params.getAsString("amount").toBigDecimalOrZero()
+        event.validateRequiredParams("citizen", "navigator", "amount")
+        val address = event.requireAddressParam("navigator")
+        val amount = event.requireBigDecimalParam("amount")
         updateNavigatorState(address, block, accumulator) { current ->
             current.copy(
                 citizenCount = maxOf(0, (current.citizenCount ?: 0) - 1),
@@ -339,9 +342,6 @@ open class NavigatorOverviewSummaryService(
         } else {
             NavigatorContribution.ZERO
         }
-
-    private fun String?.toBigDecimalOrZero(): BigDecimal =
-        this?.toBigDecimalOrNull() ?: BigDecimal.ZERO
 }
 
 private data class NavigatorContribution(

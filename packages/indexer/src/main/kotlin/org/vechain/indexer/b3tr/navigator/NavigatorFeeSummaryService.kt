@@ -11,7 +11,6 @@ import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
-import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Service
 @Profile("b3tr", "b3tr-navigator")
@@ -54,8 +53,9 @@ open class NavigatorFeeSummaryService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<NavigatorFeeSummaryDocument>,
     ) {
-        val navigator = event.params.getAsString("navigator")?.lowercase() ?: return
-        val amount = event.params.getAsString("amount")?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+        event.validateRequiredParams("navigator", "roundId", "amount")
+        val navigator = event.requireAddressParam("navigator")
+        val amount = event.requireBigDecimalParam("amount")
         updateSummary(
             NavigatorFeeSummaryDocument.GLOBAL_ID,
             null,
@@ -81,8 +81,9 @@ open class NavigatorFeeSummaryService(
         block: BlockDetails,
         accumulator: VersionedDocumentAccumulator<NavigatorFeeSummaryDocument>,
     ) {
-        val navigator = event.params.getAsString("navigator")?.lowercase() ?: return
-        val amount = event.params.getAsString("amount")?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+        event.validateRequiredParams("navigator", "roundId", "amount")
+        val navigator = event.requireAddressParam("navigator")
+        val amount = event.requireBigDecimalParam("amount")
         updateSummary(
             NavigatorFeeSummaryDocument.GLOBAL_ID,
             null,

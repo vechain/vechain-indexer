@@ -7,6 +7,7 @@ import io.mockk.junit5.MockKExtension
 import io.mockk.verify
 import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -118,6 +119,32 @@ internal class NavigatorFeeSummaryServiceTest {
         verify(exactly = 1) { repository.findById(NavigatorFeeSummaryDocument.GLOBAL_ID) }
         verify(exactly = 1) {
             repository.findById(NavigatorFeeSummaryDocument.navigatorSummaryId("0xnav1"))
+        }
+    }
+
+    @Test
+    fun `fee summary events fail fast when required params are missing`() {
+        val accumulator = newAccumulator()
+        accumulator.startBlock()
+
+        assertThrows(IllegalStateException::class.java) {
+            service.processBlockEvents(
+                listOf(
+                    buildIndexedEvent(
+                        eventType = "B3TR_FeeClaimed",
+                        blockId = block.blockId,
+                        blockNumber = block.blockNumber,
+                        blockTimestamp = block.blockTimestamp,
+                        params =
+                            AbiEventParameters(
+                                mapOf("roundId" to "1", "amount" to "40"),
+                                "B3TR_FeeClaimed",
+                            ),
+                    )
+                ),
+                block,
+                accumulator,
+            )
         }
     }
 }
