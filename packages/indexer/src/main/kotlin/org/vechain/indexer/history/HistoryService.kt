@@ -207,7 +207,8 @@ open class HistoryService(
                 HistoryEventName.B3TR_NAVIGATOR_STAKE_ADDED -> event.params.getAsString("amount")
                 HistoryEventName.B3TR_NAVIGATOR_STAKE_WITHDRAWN ->
                     event.params.getAsString("amount")
-                HistoryEventName.B3TR_NAVIGATOR_FEE_CLAIMED -> event.params.getAsString("amount")
+                HistoryEventName.B3TR_NAVIGATOR_FEE_CLAIMED,
+                HistoryEventName.B3TR_NAVIGATOR_FEE_DEPOSITED -> event.params.getAsString("amount")
                 else -> event.params.getAsString("value")
             }
 
@@ -243,6 +244,7 @@ open class HistoryService(
                     HistoryEventName.B3TR_NAVIGATOR_STAKE_ADDED,
                     HistoryEventName.B3TR_NAVIGATOR_STAKE_WITHDRAWN,
                     HistoryEventName.B3TR_NAVIGATOR_FEE_CLAIMED,
+                    HistoryEventName.B3TR_NAVIGATOR_FEE_DEPOSITED,
                 )
 
         val from =
