@@ -1,7 +1,6 @@
 package org.vechain.indexer.b3tr.challenges
 
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
@@ -49,31 +48,24 @@ open class ChallengesController(private val challengesService: ChallengesService
         )
 
     @GetMapping("$CHALLENGES_PATH/{challengeId}")
-    @Operation(summary = "Get a single public indexed B3TR challenge.")
+    @Operation(summary = "Get a single indexed B3TR challenge.")
     @CommonApiResponses
     open fun getChallenge(@PathVariable challengeId: Long): ChallengeDetailResponse =
         challengesService.getChallenge(challengeId)
 
     @GetMapping("$B3TR_PATH/users/{wallet}/challenges")
-    @Operation(summary = "Get wallet-scoped indexed B3TR challenge states.")
+    @Operation(summary = "Get wallet-scoped indexed B3TR challenge references.")
     @AddressParameter(name = "wallet", required = true, `in` = ParameterIn.PATH)
-    @Parameter(
-        name = "type",
-        description = "Optional wallet challenge list type: actionable, participating, history.",
-        `in` = ParameterIn.QUERY,
-    )
     @CommonApiResponses
     @PaginationParameters
     open fun getUserChallenges(
         @ValidAddress @PathVariable wallet: Address,
-        @RequestParam(required = false) type: UserChallengeListType?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
-    ): PaginatedResponse<UserChallengeStateResponse> =
+    ): PaginatedResponse<UserChallengeRefResponse> =
         challengesService.getUserChallenges(
             wallet = wallet,
-            type = type,
             pageable =
                 toPageable(
                     page,
@@ -83,13 +75,4 @@ open class ChallengesController(private val challengesService: ChallengesService
                     B3trUserChallenge::challengeId.name,
                 ),
         )
-
-    @GetMapping("$B3TR_PATH/users/{wallet}/challenges/{challengeId}")
-    @Operation(summary = "Get a single wallet-scoped indexed B3TR challenge state.")
-    @AddressParameter(name = "wallet", required = true, `in` = ParameterIn.PATH)
-    @CommonApiResponses
-    open fun getUserChallenge(
-        @ValidAddress @PathVariable wallet: Address,
-        @PathVariable challengeId: Long,
-    ): UserChallengeStateResponse = challengesService.getUserChallenge(wallet, challengeId)
 }

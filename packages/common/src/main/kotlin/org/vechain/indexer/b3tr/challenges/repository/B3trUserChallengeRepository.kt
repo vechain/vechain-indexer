@@ -11,28 +11,10 @@ import org.vechain.indexer.b3tr.challenges.B3trUserChallenge
 @Profile("b3tr", "b3tr-challenges")
 @Repository
 interface B3trUserChallengeRepository : BaseIndexedRepository<B3trUserChallenge, String> {
-    @Query("{ 'wallet': ?0, 'isRelevant': true }")
+    @Query("{ 'wallet': ?0 }")
     fun findByWallet(wallet: String, pageable: Pageable): Slice<B3trUserChallenge>
 
-    @Query("{ 'wallet': ?0, 'isActionable': true }")
-    fun findByWalletAndIsActionableTrue(
-        wallet: String,
-        pageable: Pageable,
-    ): Slice<B3trUserChallenge>
-
-    @Query("{ 'wallet': ?0, 'isParticipating': true }")
-    fun findByWalletAndIsParticipatingTrue(
-        wallet: String,
-        pageable: Pageable,
-    ): Slice<B3trUserChallenge>
-
-    @Query("{ 'wallet': ?0, 'isHistorical': true }")
-    fun findByWalletAndIsHistoricalTrue(
-        wallet: String,
-        pageable: Pageable,
-    ): Slice<B3trUserChallenge>
-
-    @Query("{ 'wallet': ?0, 'challengeId': ?1, 'isRelevant': true }")
+    @Query("{ 'wallet': ?0, 'challengeId': ?1 }")
     fun findByWalletAndChallengeId(wallet: String, challengeId: Long): B3trUserChallenge?
 
     @Query("{ 'wallet': ?0 }") fun findAllByWallet(wallet: String): List<B3trUserChallenge>

@@ -553,12 +553,6 @@
         },
         {
           "filter": {
-            "query": "@httpRequest.uri:/api/v1/b3tr/users/*/challenges/*"
-          },
-          "name": "/api/v1/b3tr/users/{wallet}/challenges/{challengeId}"
-        },
-        {
-          "filter": {
             "query": "@httpRequest.uri:/api/v1/stargate/total-vtho-claimed/*/*"
           },
           "name": "/api/v1/stargate/total-vtho-claimed/{account}/{tokenId}"

@@ -54,7 +54,7 @@ class ChallengesServiceTest {
     @Test
     fun `getUserChallenges queries wallet list without stitching`() {
         every {
-            userChallengeRepository.findByWalletAndIsActionableTrue(
+            userChallengeRepository.findByWallet(
                 "0x0000000000000000000000000000000000000abc",
                 pageable,
             )
@@ -63,35 +63,12 @@ class ChallengesServiceTest {
         val result =
             service.getUserChallenges(
                 wallet = Address("0x0000000000000000000000000000000000000abc"),
-                type = UserChallengeListType.actionable,
                 pageable = pageable,
             )
 
         assertEquals(1, result.data.size)
-        assertEquals(listOf(ChallengeAction.AcceptInvite), result.data.single().availableActions)
         assertEquals(1L, result.data.single().challengeId)
-    }
-
-    @Test
-    fun `getChallenge throws when challenge does not exist`() {
-        every { challengeRepository.findById(B3trChallenge.documentId(99L)) } returns
-            java.util.Optional.empty()
-
-        assertThrows(ResourceNotFoundException::class.java) { service.getChallenge(99L) }
-    }
-
-    @Test
-    fun `getUserChallenge throws when wallet challenge does not exist`() {
-        every {
-            userChallengeRepository.findByWalletAndChallengeId(
-                "0x0000000000000000000000000000000000000abc",
-                99L,
-            )
-        } returns null
-
-        assertThrows(ResourceNotFoundException::class.java) {
-            service.getUserChallenge(Address("0x0000000000000000000000000000000000000abc"), 99L)
-        }
+        assertEquals(1L, result.data.single().createdAt)
     }
 
     private fun challenge() =
@@ -128,24 +105,48 @@ class ChallengesServiceTest {
             declinedCount = 0,
             selectedAppsCount = 0,
             winnersCount = 0,
-            bestScore = BigInteger.ZERO,
-            bestCount = 0,
-            payoutsClaimed = 0,
+            bestScore = BigInteger.valueOf(7),
+            bestCount = 2,
+            payoutsClaimed = 1,
             participants = listOf("0x0000000000000000000000000000000000000abc"),
             invited = emptyList(),
             declined = emptyList(),
             selectedApps = emptyList(),
             winners = emptyList(),
-            eligibleInvitees = emptyList(),
-            claimedBy = emptyList(),
-            refundedBy = emptyList(),
-            creatorRefunded = false,
+            eligibleInvitees = listOf("0x0000000000000000000000000000000000000def"),
+            claimedBy = listOf("0x0000000000000000000000000000000000000abc"),
+            refundedBy = listOf("0x0000000000000000000000000000000000000def"),
+            creatorRefunded = true,
             createdAtBlockNumber = 1L,
             createdAtBlockTimestamp = 1L,
             createdTxId = "0xtx",
             currentRound = 1,
             maxParticipants = 100,
         )
+
+    @Test
+    fun `getChallenge throws when challenge does not exist`() {
+        every { challengeRepository.findById(B3trChallenge.documentId(99L)) } returns
+            java.util.Optional.empty()
+
+        assertThrows(ResourceNotFoundException::class.java) { service.getChallenge(99L) }
+    }
+
+    @Test
+    fun `getChallenge exposes raw challenge detail facts`() {
+        every { challengeRepository.findById(B3trChallenge.documentId(1L)) } returns
+            java.util.Optional.of(challenge())
+
+        val result = service.getChallenge(1L)
+
+        assertEquals("7", result.bestScore)
+        assertEquals(2, result.bestCount)
+        assertEquals(1, result.payoutsClaimed)
+        assertEquals(listOf("0x0000000000000000000000000000000000000def"), result.eligibleInvitees)
+        assertEquals(listOf("0x0000000000000000000000000000000000000abc"), result.claimedBy)
+        assertEquals(listOf("0x0000000000000000000000000000000000000def"), result.refundedBy)
+        assertEquals(true, result.creatorRefunded)
+    }
 
     private fun userChallenge() =
         B3trUserChallenge(
@@ -156,12 +157,5 @@ class ChallengesServiceTest {
             wallet = "0x0000000000000000000000000000000000000abc",
             challengeId = 1L,
             challengeCreatedAtBlockTimestamp = 1L,
-            viewerRelation = ChallengeViewerRelation.Invited,
-            availableActions = listOf(ChallengeAction.AcceptInvite),
-            participantActions = BigInteger.ZERO,
-            isRelevant = true,
-            isActionable = true,
-            isParticipating = false,
-            isHistorical = false,
         )
 }

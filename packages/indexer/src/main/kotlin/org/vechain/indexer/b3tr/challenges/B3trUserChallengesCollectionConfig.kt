@@ -34,37 +34,9 @@ open class B3trUserChallengesCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "wallet_1_isRelevant_1_challengeCreatedAtBlockTimestamp_-1_challengeId_-1" to
+                "wallet_1_challengeCreatedAtBlockTimestamp_-1_challengeId_-1" to
                     Index()
                         .on(B3trUserChallenge::wallet.name, Sort.Direction.ASC)
-                        .on(B3trUserChallenge::isRelevant.name, Sort.Direction.ASC)
-                        .on(
-                            B3trUserChallenge::challengeCreatedAtBlockTimestamp.name,
-                            Sort.Direction.DESC,
-                        )
-                        .on(B3trUserChallenge::challengeId.name, Sort.Direction.DESC),
-                "wallet_1_isActionable_1_challengeCreatedAtBlockTimestamp_-1_challengeId_-1" to
-                    Index()
-                        .on(B3trUserChallenge::wallet.name, Sort.Direction.ASC)
-                        .on(B3trUserChallenge::isActionable.name, Sort.Direction.ASC)
-                        .on(
-                            B3trUserChallenge::challengeCreatedAtBlockTimestamp.name,
-                            Sort.Direction.DESC,
-                        )
-                        .on(B3trUserChallenge::challengeId.name, Sort.Direction.DESC),
-                "wallet_1_isParticipating_1_challengeCreatedAtBlockTimestamp_-1_challengeId_-1" to
-                    Index()
-                        .on(B3trUserChallenge::wallet.name, Sort.Direction.ASC)
-                        .on(B3trUserChallenge::isParticipating.name, Sort.Direction.ASC)
-                        .on(
-                            B3trUserChallenge::challengeCreatedAtBlockTimestamp.name,
-                            Sort.Direction.DESC,
-                        )
-                        .on(B3trUserChallenge::challengeId.name, Sort.Direction.DESC),
-                "wallet_1_isHistorical_1_challengeCreatedAtBlockTimestamp_-1_challengeId_-1" to
-                    Index()
-                        .on(B3trUserChallenge::wallet.name, Sort.Direction.ASC)
-                        .on(B3trUserChallenge::isHistorical.name, Sort.Direction.ASC)
                         .on(
                             B3trUserChallenge::challengeCreatedAtBlockTimestamp.name,
                             Sort.Direction.DESC,

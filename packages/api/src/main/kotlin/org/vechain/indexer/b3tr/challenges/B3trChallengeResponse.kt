@@ -100,11 +100,18 @@ data class ChallengeDetailResponse(
     val declinedCount: Int,
     val selectedAppsCount: Int,
     val winnersCount: Int,
+    val bestScore: String,
+    val bestCount: Int,
+    val payoutsClaimed: Int,
     val participants: List<String>,
     val invited: List<String>,
     val declined: List<String>,
     val selectedApps: List<String>,
     val winners: List<String>,
+    val eligibleInvitees: List<String>,
+    val claimedBy: List<String>,
+    val refundedBy: List<String>,
+    val creatorRefunded: Boolean,
 ) {
     companion object {
         fun from(challenge: B3trChallenge): ChallengeDetailResponse =
@@ -138,11 +145,18 @@ data class ChallengeDetailResponse(
                 declinedCount = challenge.declinedCount,
                 selectedAppsCount = challenge.selectedAppsCount,
                 winnersCount = challenge.winnersCount,
+                bestScore = challenge.bestScore.toString(),
+                bestCount = challenge.bestCount,
+                payoutsClaimed = challenge.payoutsClaimed,
                 participants = challenge.participants,
                 invited = challenge.invited,
                 declined = challenge.declined,
                 selectedApps = challenge.selectedApps,
                 winners = challenge.winners,
+                eligibleInvitees = challenge.eligibleInvitees,
+                claimedBy = challenge.claimedBy,
+                refundedBy = challenge.refundedBy,
+                creatorRefunded = challenge.creatorRefunded,
             )
     }
 }

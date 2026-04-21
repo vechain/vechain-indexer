@@ -1,7 +1,7 @@
 services:
 
   vechain-indexer:
-#    image: ghcr.io/vechain/vechain-indexer/indexer:5.15.4
+#    image: ghcr.io/vechain/vechain-indexer/indexer:pr.1272.987b1a2
     build:
       context: .
       args:
@@ -25,10 +25,10 @@ services:
     networks:
       - vechain
       - vechain-database
-#      - vechain-thor
+      - vechain-thor
 
   vechain-indexer-api:
-#    image: ghcr.io/vechain/vechain-indexer/api:5.15.4
+#    image: ghcr.io/vechain/vechain-indexer/api:pr.1272.987b1a2
     build:
       context: .
       args:
@@ -47,7 +47,7 @@ services:
       retries: 6
       start_period: 30s
     ports:
-      - "8080:8080"
+      - "8089:8080"
     tty: true
     networks:
       - vechain
@@ -64,6 +64,6 @@ networks:
   vechain-database:
     external: true
     name: vechain-database
-#  vechain-thor:
-#    external: true
-#    name: vechain-thor
+  vechain-thor:
+    external: true
+    name: vechain-thor

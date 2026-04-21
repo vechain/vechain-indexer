@@ -44,41 +44,14 @@ open class ChallengesService(
 
     open fun getUserChallenges(
         wallet: Address,
-        type: UserChallengeListType?,
         pageable: Pageable,
-    ): PaginatedResponse<UserChallengeStateResponse> {
+    ): PaginatedResponse<UserChallengeRefResponse> {
         val normalizedWallet = HexUtils.normalise(wallet.value)
-        val results =
-            when (type) {
-                null -> userChallengeRepository.findByWallet(normalizedWallet, pageable)
-                UserChallengeListType.actionable ->
-                    userChallengeRepository.findByWalletAndIsActionableTrue(
-                        normalizedWallet,
-                        pageable,
-                    )
-                UserChallengeListType.participating ->
-                    userChallengeRepository.findByWalletAndIsParticipatingTrue(
-                        normalizedWallet,
-                        pageable,
-                    )
-                UserChallengeListType.history ->
-                    userChallengeRepository.findByWalletAndIsHistoricalTrue(
-                        normalizedWallet,
-                        pageable,
-                    )
-            }
-
-        return paginatedResponse(results.map(UserChallengeStateResponse::from))
-    }
-
-    open fun getUserChallenge(wallet: Address, challengeId: Long): UserChallengeStateResponse {
-        val normalizedWallet = HexUtils.normalise(wallet.value)
-        return userChallengeRepository
-            .findByWalletAndChallengeId(normalizedWallet, challengeId)
-            ?.let { UserChallengeStateResponse.from(it) }
-            ?: throw ResourceNotFoundException(
-                "User challenge not found for wallet ${wallet.value} and id $challengeId"
-            )
+        return paginatedResponse(
+            userChallengeRepository
+                .findByWallet(normalizedWallet, pageable)
+                .map(UserChallengeRefResponse::from)
+        )
     }
 
     override fun getLatestIndexedBlocks(): Map<String, Long> =
