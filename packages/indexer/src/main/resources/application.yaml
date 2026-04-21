@@ -177,7 +177,7 @@ indexer:
     fungible-token-interactions: ${VERSION_FUNGIBLE_TOKEN_INTERACTIONS:1}
     transactions: ${VERSION_TRANSACTIONS:1}
     transaction-count: ${VERSION_TRANSACTION_COUNT:3}
-    history: ${VERSION_HISTORY:2}
+    history: ${VERSION_HISTORY:1}
     nft-blacklist: ${VERSION_NFT_BLACKLIST:1}
     vevote-comments: ${VERSION_VEVOTE_COMMENTS:1}
     vevote-results: ${VERSION_VEVOTE_RESULTS:1}
@@ -191,7 +191,7 @@ indexer:
     historic-proposals: ${VERSION_HISTORIC_PROPOSALS:1}
     b3tr-proposal-comments: ${VERSION_B3TR_PROPOSAL_COMMENTS:1}
     b3tr-proposal-results: ${VERSION_B3TR_PROPOSAL_RESULTS:1}
-    b3tr-challenges: ${VERSION_B3TR_CHALLENGES:2}
+    b3tr-challenges: ${VERSION_B3TR_CHALLENGES:1}
     b3tr-user-all-time-action-summary: ${VERSION_B3TR_USER_ALL_TIME_ACTION_SUMMARY:1}
     b3tr-user-round-action-summary: ${VERSION_B3TR_USER_ROUND_ACTION_SUMMARY:1}
     b3tr-user-daily-action-summary: ${VERSION_B3TR_USER_DAILY_ACTION_SUMMARY:1}
@@ -206,7 +206,7 @@ indexer:
     average-fees-per-user: ${VERSION_AVERAGE_FEES_PER_USER:1}
     validator: ${VERSION_VALIDATOR:1}
     validator-rewards: ${VERSION_VALIDATOR_BLOCKS:1}
-    delegation: ${VERSION_DELEGATION:2}
+    delegation: ${VERSION_DELEGATION:1}
     token-rewards: ${VERSION_TOKEN_REWARDS:1}
     stargate-token: ${VERSION_STARGATE_TOKEN:1}
     account-totals-series: ${VERSION_ACCOUNT_TOTALS_SERIES:1}
