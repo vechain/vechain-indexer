@@ -22,6 +22,7 @@ open class B3trChallengesService(
     private val trackedEventTypes =
         setOf(
             "ChallengeCreated",
+            "SplitWinConfigured",
             "ChallengeInviteAdded",
             "ChallengeJoined",
             "ChallengeLeft",
@@ -29,8 +30,10 @@ open class B3trChallengesService(
             "ChallengeCancelled",
             "ChallengeActivated",
             "ChallengeInvalidated",
-            "ChallengeFinalized",
+            "ChallengeCompleted",
             "ChallengePayoutClaimed",
+            "SplitWinPrizeClaimed",
+            "SplitWinCreatorRefunded",
             "ChallengeRefundClaimed",
         )
 

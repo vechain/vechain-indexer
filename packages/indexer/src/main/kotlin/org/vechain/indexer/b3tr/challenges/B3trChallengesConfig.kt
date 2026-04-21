@@ -33,6 +33,7 @@ open class B3trChallengesConfig {
             .abiEventNames(
                 listOf(
                     "ChallengeCreated",
+                    "SplitWinConfigured",
                     "ChallengeInviteAdded",
                     "ChallengeJoined",
                     "ChallengeLeft",
@@ -40,8 +41,10 @@ open class B3trChallengesConfig {
                     "ChallengeCancelled",
                     "ChallengeActivated",
                     "ChallengeInvalidated",
-                    "ChallengeFinalized",
+                    "ChallengeCompleted",
                     "ChallengePayoutClaimed",
+                    "SplitWinPrizeClaimed",
+                    "SplitWinCreatorRefunded",
                     "ChallengeRefundClaimed",
                 )
             )

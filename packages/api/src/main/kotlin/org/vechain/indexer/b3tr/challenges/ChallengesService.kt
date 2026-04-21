@@ -136,6 +136,7 @@ open class ChallengesService(
                 candidates = listOf(challenge),
                 viewerContexts = mapOf(challenge.challengeId to viewerContext),
                 wallet = wallet,
+                currentRound = runtimeContext.currentRound,
             )[challenge.challengeId] ?: BigInteger.ZERO
 
         return B3trChallengeDetailResponse.from(
@@ -193,6 +194,7 @@ open class ChallengesService(
                     candidates = candidates,
                     viewerContexts = viewerContexts,
                     wallet = wallet,
+                    currentRound = runtimeContext.currentRound,
                 )
 
             for (candidate in candidates) {
@@ -277,7 +279,7 @@ open class ChallengesService(
                         Criteria.where(B3trChallenge::endRound.name).lt(currentRound),
                     ),
                     andCriteria(
-                        Criteria.where(B3trChallenge::status.name).`is`(ChallengeStatus.Finalized),
+                        Criteria.where(B3trChallenge::status.name).`is`(ChallengeStatus.Completed),
                         Criteria.where(B3trChallenge::claimedBy.name).ne(wallet),
                         orCriteria(
                             andCriteria(
@@ -291,6 +293,20 @@ open class ChallengesService(
                                 Criteria.where(B3trChallenge::participants.name).`is`(wallet),
                             ),
                         ),
+                    ),
+                    // Split Win actionable: joined, not yet a winner, slots remaining, in active
+                    // window.
+                    andCriteria(
+                        Criteria.where(B3trChallenge::challengeType.name)
+                            .`is`(ChallengeType.SplitWin),
+                        Criteria.where(B3trChallenge::participants.name).`is`(wallet),
+                        Criteria.where(B3trChallenge::winners.name).ne(wallet),
+                        Criteria.where(B3trChallenge::startRound.name).lte(currentRound),
+                        Criteria.where(B3trChallenge::endRound.name).gte(currentRound),
+                        Criteria()
+                            .andOperator(
+                                Criteria.where(B3trChallenge::winnersClaimed.name).lt(Int.MAX_VALUE)
+                            ),
                     ),
                     andCriteria(
                         Criteria.where(B3trChallenge::refundedBy.name).ne(wallet),
@@ -327,8 +343,14 @@ open class ChallengesService(
                 andCriteria(
                     buildPendingBeforeStartCriteria(currentRound),
                     Criteria.where(B3trChallenge::visibility.name).`is`(ChallengeVisibility.Public),
-                    Criteria.where(B3trChallenge::participantCount.name)
-                        .lt(runtimeContext.maxParticipants),
+                    // Split Win has no participant cap; only enforce the limit on Max Actions
+                    // challenges.
+                    orCriteria(
+                        Criteria.where(B3trChallenge::challengeType.name)
+                            .`is`(ChallengeType.SplitWin),
+                        Criteria.where(B3trChallenge::participantCount.name)
+                            .lt(runtimeContext.maxParticipants),
+                    ),
                     Criteria.where(B3trChallenge::creator.name).ne(wallet),
                     Criteria.where(B3trChallenge::participants.name).ne(wallet),
                 )
@@ -345,8 +367,13 @@ open class ChallengesService(
                     andCriteria(
                         buildPendingBeforeStartCriteria(currentRound),
                         Criteria.where(B3trChallenge::declined.name).`is`(wallet),
-                        Criteria.where(B3trChallenge::participantCount.name)
-                            .lt(runtimeContext.maxParticipants),
+                        // Same Split Win exemption from cap as the Open section.
+                        orCriteria(
+                            Criteria.where(B3trChallenge::challengeType.name)
+                                .`is`(ChallengeType.SplitWin),
+                            Criteria.where(B3trChallenge::participantCount.name)
+                                .lt(runtimeContext.maxParticipants),
+                        ),
                     ),
                     andCriteria(
                         buildViewerRelevanceCriteria(wallet),
@@ -368,8 +395,8 @@ open class ChallengesService(
                     Criteria.where(B3trChallenge::status.name).`is`(ChallengeStatus.Active),
                     buildPendingBecameActiveCriteria(currentRound),
                 )
-            ChallengeStatus.Finalized ->
-                Criteria.where(B3trChallenge::status.name).`is`(ChallengeStatus.Finalized)
+            ChallengeStatus.Completed ->
+                Criteria.where(B3trChallenge::status.name).`is`(ChallengeStatus.Completed)
             ChallengeStatus.Cancelled ->
                 Criteria.where(B3trChallenge::status.name).`is`(ChallengeStatus.Cancelled)
             ChallengeStatus.Invalid ->
@@ -419,7 +446,7 @@ open class ChallengesService(
 
     private fun buildEffectiveDoneCriteria(currentRound: Int): Criteria =
         orCriteria(
-            Criteria.where(B3trChallenge::status.name).`is`(ChallengeStatus.Finalized),
+            Criteria.where(B3trChallenge::status.name).`is`(ChallengeStatus.Completed),
             Criteria.where(B3trChallenge::status.name).`is`(ChallengeStatus.Cancelled),
             buildPendingBecameInvalidCriteria(currentRound),
             Criteria.where(B3trChallenge::status.name).`is`(ChallengeStatus.Invalid),
@@ -466,6 +493,7 @@ open class ChallengesService(
         val viewerEligible = challenge.eligibleInvitees.contains(wallet)
         val isInvited = viewerStatus == ParticipantStatus.Invited || viewerEligible
         val isInvitationPending = status == ChallengeStatus.Pending && isInvited && !isJoined
+        val isSplitWinWinner = challenge.winners.contains(wallet)
 
         return ChallengeViewerContext(
             status = status,
@@ -473,6 +501,7 @@ open class ChallengesService(
             isCreator = isCreator,
             isJoined = isJoined,
             isInvitationPending = isInvitationPending,
+            isSplitWinWinner = isSplitWinWinner,
             hasClaimed = challenge.claimedBy.contains(wallet),
             hasRefunded = challenge.refundedBy.contains(wallet),
         )
@@ -490,11 +519,12 @@ open class ChallengesService(
         candidates: List<B3trChallenge>,
         viewerContexts: Map<Long, ChallengeViewerContext>,
         wallet: String,
+        currentRound: Int,
     ): Map<Long, BigInteger> {
         val claimableCandidates =
             candidates.filter { challenge ->
                 val viewerContext = viewerContexts.getValue(challenge.challengeId)
-                needsParticipantActions(challenge, viewerContext)
+                needsParticipantActions(challenge, viewerContext, currentRound)
             }
 
         if (claimableCandidates.isEmpty()) {
@@ -529,11 +559,24 @@ open class ChallengesService(
     private fun needsParticipantActions(
         challenge: B3trChallenge,
         viewerContext: ChallengeViewerContext,
-    ): Boolean =
-        viewerContext.status == ChallengeStatus.Finalized &&
+        currentRound: Int,
+    ): Boolean {
+        if (!viewerContext.isJoined) return false
+
+        // Split Win: read live progress while the challenge is Active so the user can see the
+        // threshold.
+        if (challenge.challengeType == ChallengeType.SplitWin) {
+            if (viewerContext.isSplitWinWinner) return false
+            if (challenge.winnersClaimed >= challenge.numWinners) return false
+            return viewerContext.status == ChallengeStatus.Active &&
+                currentRound in challenge.startRound..challenge.endRound
+        }
+
+        // Max Actions: only needed once Completed to compare against bestScore.
+        return viewerContext.status == ChallengeStatus.Completed &&
             !viewerContext.hasClaimed &&
-            viewerContext.isJoined &&
             challenge.settlementMode != SettlementMode.CreatorRefund
+    }
 
     private fun buildUiState(
         challenge: B3trChallenge,
@@ -541,8 +584,10 @@ open class ChallengesService(
         viewerContext: ChallengeViewerContext,
         participantActions: BigInteger,
     ): ChallengeUiState {
+        val isSplitWin = challenge.challengeType == ChallengeType.SplitWin
+        // Split Win has no participants cap; only Max Actions enforces the cap.
         val hasReachedParticipantLimit =
-            challenge.participantCount >= runtimeContext.maxParticipants
+            !isSplitWin && challenge.participantCount >= runtimeContext.maxParticipants
         val canJoin =
             viewerContext.status == ChallengeStatus.Pending &&
                 challenge.visibility == ChallengeVisibility.Public &&
@@ -563,15 +608,39 @@ open class ChallengesService(
                 challenge.visibility == ChallengeVisibility.Private &&
                 viewerContext.isCreator &&
                 runtimeContext.currentRound < challenge.startRound
+
+        // Max Actions: claim after Completed against bestScore.
         val canClaim =
-            !viewerContext.hasClaimed &&
-                viewerContext.status == ChallengeStatus.Finalized &&
+            !isSplitWin &&
+                !viewerContext.hasClaimed &&
+                viewerContext.status == ChallengeStatus.Completed &&
                 when (challenge.settlementMode) {
                     SettlementMode.CreatorRefund -> viewerContext.isCreator
-                    SettlementMode.QualifiedSplit ->
-                        viewerContext.isJoined && participantActions >= challenge.threshold
                     else -> viewerContext.isJoined && participantActions == challenge.bestScore
                 }
+
+        // Split Win: claim while Active, joined, threshold reached, slots remaining.
+        val slotsLeft = challenge.numWinners - challenge.winnersClaimed
+        val inSplitWinWindow =
+            runtimeContext.currentRound in challenge.startRound..challenge.endRound
+        val canClaimSplitWin =
+            isSplitWin &&
+                !viewerContext.isSplitWinWinner &&
+                viewerContext.status == ChallengeStatus.Active &&
+                viewerContext.isJoined &&
+                inSplitWinWindow &&
+                slotsLeft > 0 &&
+                participantActions >= challenge.threshold
+
+        val canClaimCreatorSplitWinRefund =
+            isSplitWin &&
+                viewerContext.isCreator &&
+                !viewerContext.hasRefunded &&
+                runtimeContext.currentRound > challenge.endRound &&
+                slotsLeft > 0 &&
+                (viewerContext.status == ChallengeStatus.Active ||
+                    viewerContext.status == ChallengeStatus.Completed)
+
         val canRefund =
             !viewerContext.hasRefunded &&
                 (viewerContext.status == ChallengeStatus.Cancelled ||
@@ -581,11 +650,14 @@ open class ChallengesService(
                 } else {
                     viewerContext.isCreator
                 }
-        val isAwaitingFinalization =
-            viewerContext.status == ChallengeStatus.Active &&
+
+        // Only Max Actions challenges require an explicit completion call after endRound.
+        val isAwaitingCompletion =
+            !isSplitWin &&
+                viewerContext.status == ChallengeStatus.Active &&
                 challenge.endRound < runtimeContext.currentRound
-        val canFinalize =
-            isAwaitingFinalization && (viewerContext.isCreator || viewerContext.isJoined)
+        val canComplete =
+            isAwaitingCompletion && (viewerContext.isCreator || viewerContext.isJoined)
 
         return ChallengeUiState(
             status = viewerContext.status,
@@ -594,7 +666,8 @@ open class ChallengesService(
             isCreator = viewerContext.isCreator,
             isJoined = viewerContext.isJoined,
             isInvitationPending = viewerContext.isInvitationPending,
-            isAwaitingFinalization = isAwaitingFinalization,
+            isSplitWinWinner = viewerContext.isSplitWinWinner,
+            isAwaitingCompletion = isAwaitingCompletion,
             canJoin = canJoin,
             canLeave = canLeave,
             canAccept = canAccept,
@@ -603,16 +676,23 @@ open class ChallengesService(
             canAddInvites = canAddInvites,
             canClaim = canClaim,
             canRefund = canRefund,
-            canFinalize = canFinalize,
+            canComplete = canComplete,
+            canClaimSplitWin = canClaimSplitWin,
+            canClaimCreatorSplitWinRefund = canClaimCreatorSplitWinRefund,
         )
     }
 
     private fun belongsToSection(section: ChallengeUiSection, uiState: ChallengeUiState): Boolean {
-        val needsPastAction = uiState.canClaim || uiState.canRefund || uiState.canFinalize
+        val needsPastAction =
+            uiState.canClaim ||
+                uiState.canRefund ||
+                uiState.canComplete ||
+                uiState.canClaimSplitWin ||
+                uiState.canClaimCreatorSplitWinRefund
         val isLive =
             uiState.status == ChallengeStatus.Pending || uiState.status == ChallengeStatus.Active
         val isDone =
-            uiState.status == ChallengeStatus.Finalized ||
+            uiState.status == ChallengeStatus.Completed ||
                 uiState.status == ChallengeStatus.Cancelled ||
                 uiState.status == ChallengeStatus.Invalid
 
@@ -622,11 +702,11 @@ open class ChallengesService(
                     ((uiState.canAccept || uiState.canDecline) &&
                         uiState.viewerStatus != ParticipantStatus.Declined)
             ChallengeUiSection.Active ->
-                isLive && !uiState.isAwaitingFinalization && (uiState.isCreator || uiState.isJoined)
+                isLive && !uiState.isAwaitingCompletion && (uiState.isCreator || uiState.isJoined)
             ChallengeUiSection.Open -> uiState.canJoin
             ChallengeUiSection.Explore ->
                 uiState.status == ChallengeStatus.Active &&
-                    !uiState.isAwaitingFinalization &&
+                    !uiState.isAwaitingCompletion &&
                     !uiState.isCreator &&
                     !uiState.isJoined
             ChallengeUiSection.History ->
@@ -683,6 +763,7 @@ private data class ChallengeViewerContext(
     val isCreator: Boolean,
     val isJoined: Boolean,
     val isInvitationPending: Boolean,
+    val isSplitWinWinner: Boolean,
     val hasClaimed: Boolean,
     val hasRefunded: Boolean,
 )

@@ -56,18 +56,17 @@ class B3trChallengesServiceTest {
                 challengeId = 1L,
                 returnValues = mapOf("invitee" to "0x0000000000000000000000000000000000000def"),
             )
-        val finalizedEvent =
+        val completedEvent =
             challengeEvent(
-                eventType = "ChallengeFinalized",
-                id = "finalize",
-                txId = "0xfinalize",
+                eventType = "ChallengeCompleted",
+                id = "complete",
+                txId = "0xcomplete",
                 challengeId = 1L,
                 returnValues =
                     mapOf(
                         "settlementMode" to SettlementMode.TopWinners.ordinal,
                         "bestScore" to BigInteger.valueOf(10),
                         "bestCount" to 1,
-                        "qualifiedCount" to 0,
                     ),
             )
         val payoutEvent =
@@ -85,7 +84,7 @@ class B3trChallengesServiceTest {
 
         val (updated, archived) =
             runBlocking {
-                service.processEvents(listOf(createEvent, inviteEvent, finalizedEvent, payoutEvent))
+                service.processEvents(listOf(createEvent, inviteEvent, completedEvent, payoutEvent))
             }
 
         assertEquals(1, updated.size)
@@ -94,7 +93,7 @@ class B3trChallengesServiceTest {
         assertEquals(1, challenge.version)
         assertEquals("0xcreate", challenge.createdTxId)
         assertEquals(100L, challenge.createdAtBlockNumber)
-        assertEquals(ChallengeStatus.Finalized, challenge.status)
+        assertEquals(ChallengeStatus.Completed, challenge.status)
         assertEquals(SettlementMode.TopWinners, challenge.settlementMode)
         assertEquals("Spring Sprint", challenge.title)
         assertEquals("", challenge.description)
@@ -277,7 +276,7 @@ class B3trChallengesServiceTest {
         creator: String = "0x0000000000000000000000000000000000000abc",
         kind: ChallengeKind = ChallengeKind.Stake,
         visibility: ChallengeVisibility = ChallengeVisibility.Private,
-        thresholdMode: ThresholdMode = ThresholdMode.None,
+        challengeType: ChallengeType = ChallengeType.MaxActions,
         title: String = "Spring Sprint",
         description: String = "",
         imageURI: String = "",
@@ -300,7 +299,7 @@ class B3trChallengesServiceTest {
                     "endRound" to endRound,
                     "kind" to kind.ordinal,
                     "visibility" to visibility.ordinal,
-                    "thresholdMode" to thresholdMode.ordinal,
+                    "challengeType" to challengeType.ordinal,
                     "title" to title,
                     "description" to description,
                     "imageURI" to imageURI,
@@ -329,7 +328,7 @@ class B3trChallengesServiceTest {
             challengeId = 1L,
             kind = ChallengeKind.Stake,
             visibility = ChallengeVisibility.Private,
-            thresholdMode = ThresholdMode.None,
+            challengeType = ChallengeType.MaxActions,
             status = ChallengeStatus.Pending,
             settlementMode = SettlementMode.None,
             creator = "0x0000000000000000000000000000000000000abc",
@@ -342,23 +341,28 @@ class B3trChallengesServiceTest {
             endRound = 6,
             duration = 2,
             threshold = BigInteger.ZERO,
+            numWinners = 0,
+            winnersClaimed = 0,
+            prizePerWinner = BigInteger.ZERO,
             allApps = false,
             totalPrize = totalPrize,
             participantCount = participants.size,
             invitedCount = invited.size,
             declinedCount = declined.size,
             selectedAppsCount = 1,
+            winnersCount = 0,
             bestScore = BigInteger.ZERO,
             bestCount = 0,
-            qualifiedCount = 0,
             payoutsClaimed = 0,
             participants = participants,
             invited = invited,
             declined = declined,
             selectedApps = listOf("0xapp1"),
+            winners = emptyList(),
             eligibleInvitees = eligibleInvitees,
             claimedBy = emptyList(),
             refundedBy = emptyList(),
+            creatorRefunded = false,
             createdAtBlockNumber = 80L,
             createdAtBlockTimestamp = 800L,
             createdTxId = "0xcreated",

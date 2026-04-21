@@ -142,7 +142,7 @@ class ChallengesServiceTest {
     }
 
     @Test
-    fun `getChallenge returns anonymous detail for finalized winner`() {
+    fun `getChallenge returns anonymous detail for completed Max Actions winner`() {
         stubUiRuntime(currentRound = 7, maxParticipants = 100, participantActions = 6)
         every { repository.findById(B3trChallenge.documentId(1L)) } returns
             Optional.of(
@@ -150,12 +150,14 @@ class ChallengesServiceTest {
                     participantCount = 2,
                     startRound = 5,
                     kind = ChallengeKind.Sponsored,
-                    status = ChallengeStatus.Finalized,
-                    settlementMode = SettlementMode.QualifiedSplit,
-                    threshold = BigInteger.valueOf(5),
+                    status = ChallengeStatus.Completed,
+                    settlementMode = SettlementMode.TopWinners,
+                    threshold = BigInteger.ZERO,
                     creator = wallet("abc"),
                     participants = listOf(viewerWallet, wallet("123")),
                     totalPrize = BigInteger.valueOf(500),
+                    bestScore = BigInteger.valueOf(6),
+                    bestCount = 1,
                 )
             )
 
@@ -186,7 +188,7 @@ class ChallengesServiceTest {
     }
 
     @Test
-    fun `getChallenge returns anonymous detail for challenge awaiting finalization`() {
+    fun `getChallenge returns anonymous detail for challenge awaiting completion`() {
         stubUiRuntime(currentRound = 7, maxParticipants = 100)
         every { repository.findById(B3trChallenge.documentId(1L)) } returns
             Optional.of(
@@ -202,7 +204,7 @@ class ChallengesServiceTest {
         val result = service.getChallenge(1L)
 
         assertEquals(ChallengeStatus.Active, result.status)
-        assertFalse(result.canFinalize)
+        assertFalse(result.canComplete)
     }
 
     @Test
@@ -280,7 +282,7 @@ class ChallengesServiceTest {
         val active = service.getActiveChallenges(viewer, pageable)
 
         assertEquals(1, neededActions.data.size)
-        assertTrue(neededActions.data.single().canFinalize)
+        assertTrue(neededActions.data.single().canComplete)
         assertTrue(active.data.isEmpty())
     }
 
@@ -464,7 +466,7 @@ class ChallengesServiceTest {
     }
 
     @Test
-    fun `getNeededActionChallenges respects qualified split claim actions`() {
+    fun `getNeededActionChallenges surfaces top-score winner ready to claim`() {
         stubUiRuntime(currentRound = 7, maxParticipants = 100, participantActions = 6)
         every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
             listOf(
@@ -472,12 +474,13 @@ class ChallengesServiceTest {
                     participantCount = 2,
                     startRound = 5,
                     kind = ChallengeKind.Sponsored,
-                    status = ChallengeStatus.Finalized,
-                    settlementMode = SettlementMode.QualifiedSplit,
-                    threshold = BigInteger.valueOf(5),
+                    status = ChallengeStatus.Completed,
+                    settlementMode = SettlementMode.TopWinners,
                     creator = wallet("abc"),
                     participants = listOf(viewerWallet, wallet("123")),
                     totalPrize = BigInteger.valueOf(500),
+                    bestScore = BigInteger.valueOf(6),
+                    bestCount = 1,
                 )
             )
 
@@ -488,7 +491,7 @@ class ChallengesServiceTest {
     }
 
     @Test
-    fun `claimed finalized challenge moves to history`() {
+    fun `claimed completed challenge moves to history`() {
         stubUiRuntime(currentRound = 7, maxParticipants = 100)
         every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returns
             listOf(
@@ -496,9 +499,8 @@ class ChallengesServiceTest {
                     participantCount = 2,
                     startRound = 5,
                     kind = ChallengeKind.Sponsored,
-                    status = ChallengeStatus.Finalized,
-                    settlementMode = SettlementMode.QualifiedSplit,
-                    threshold = BigInteger.valueOf(5),
+                    status = ChallengeStatus.Completed,
+                    settlementMode = SettlementMode.TopWinners,
                     creator = wallet("abc"),
                     participants = listOf(viewerWallet, wallet("123")),
                     claimedBy = listOf(viewerWallet),
@@ -586,14 +588,17 @@ class ChallengesServiceTest {
         endRound: Int = startRound + 1,
         kind: ChallengeKind = ChallengeKind.Stake,
         visibility: ChallengeVisibility = ChallengeVisibility.Public,
+        challengeType: ChallengeType = ChallengeType.MaxActions,
         status: ChallengeStatus = ChallengeStatus.Pending,
         settlementMode: SettlementMode = SettlementMode.None,
         creator: String = wallet("abc"),
         threshold: BigInteger = BigInteger.ZERO,
+        numWinners: Int = 0,
+        winnersClaimed: Int = 0,
+        prizePerWinner: BigInteger = BigInteger.ZERO,
         totalPrize: BigInteger = BigInteger.TEN,
         bestScore: BigInteger = BigInteger.ZERO,
         bestCount: Int = 0,
-        qualifiedCount: Int = 0,
         payoutsClaimed: Int = 0,
         participants: List<String>? = null,
         invited: List<String> = emptyList(),
@@ -602,6 +607,8 @@ class ChallengesServiceTest {
         claimedBy: List<String> = emptyList(),
         refundedBy: List<String> = emptyList(),
         selectedApps: List<String> = emptyList(),
+        winners: List<String> = emptyList(),
+        creatorRefunded: Boolean = false,
         allApps: Boolean = selectedApps.isEmpty(),
     ) =
         B3trChallenge(
@@ -612,7 +619,7 @@ class ChallengesServiceTest {
             challengeId = challengeId,
             kind = kind,
             visibility = visibility,
-            thresholdMode = ThresholdMode.None,
+            challengeType = challengeType,
             status = status,
             settlementMode = settlementMode,
             creator = creator,
@@ -625,15 +632,18 @@ class ChallengesServiceTest {
             endRound = endRound,
             duration = endRound - startRound + 1,
             threshold = threshold,
+            numWinners = numWinners,
+            winnersClaimed = winnersClaimed,
+            prizePerWinner = prizePerWinner,
             allApps = allApps,
             totalPrize = totalPrize,
             participantCount = participants?.size ?: participantCount,
             invitedCount = invited.size,
             declinedCount = declined.size,
             selectedAppsCount = selectedApps.size,
+            winnersCount = winners.size,
             bestScore = bestScore,
             bestCount = bestCount,
-            qualifiedCount = qualifiedCount,
             payoutsClaimed = payoutsClaimed,
             participants =
                 participants
@@ -641,9 +651,11 @@ class ChallengesServiceTest {
             invited = invited,
             declined = declined,
             selectedApps = selectedApps,
+            winners = winners,
             eligibleInvitees = eligibleInvitees ?: (invited + declined).distinct(),
             claimedBy = claimedBy,
             refundedBy = refundedBy,
+            creatorRefunded = creatorRefunded,
             createdAtBlockNumber = 10L,
             createdAtBlockTimestamp = 1_000L,
             createdTxId = "0xtx",
