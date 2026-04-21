@@ -314,10 +314,16 @@
           "canClaim": {
             "type": "boolean"
           },
-          "canDecline": {
+          "canClaimCreatorSplitWinRefund": {
             "type": "boolean"
           },
-          "canFinalize": {
+          "canClaimSplitWin": {
+            "type": "boolean"
+          },
+          "canComplete": {
+            "type": "boolean"
+          },
+          "canDecline": {
             "type": "boolean"
           },
           "canJoin": {
@@ -332,6 +338,13 @@
           "challengeId": {
             "format": "int64",
             "type": "integer"
+          },
+          "challengeType": {
+            "enum": [
+              "MaxActions",
+              "SplitWin"
+            ],
+            "type": "string"
           },
           "createdAt": {
             "format": "int64",
@@ -383,6 +396,9 @@
           "isJoined": {
             "type": "boolean"
           },
+          "isSplitWinWinner": {
+            "type": "boolean"
+          },
           "kind": {
             "enum": [
               "Stake",
@@ -397,6 +413,10 @@
           "metadataURI": {
             "type": "string"
           },
+          "numWinners": {
+            "format": "int32",
+            "type": "integer"
+          },
           "participantCount": {
             "format": "int32",
             "type": "integer"
@@ -406,6 +426,9 @@
               "type": "string"
             },
             "type": "array"
+          },
+          "prizePerWinner": {
+            "type": "string"
           },
           "selectedApps": {
             "items": {
@@ -421,8 +444,8 @@
             "enum": [
               "None",
               "TopWinners",
-              "QualifiedSplit",
-              "CreatorRefund"
+              "CreatorRefund",
+              "SplitWinCompleted"
             ],
             "type": "string"
           },
@@ -437,21 +460,13 @@
             "enum": [
               "Pending",
               "Active",
-              "Finalized",
+              "Completed",
               "Cancelled",
               "Invalid"
             ],
             "type": "string"
           },
           "threshold": {
-            "type": "string"
-          },
-          "thresholdMode": {
-            "enum": [
-              "None",
-              "SplitAboveThreshold",
-              "TopAboveThreshold"
-            ],
             "type": "string"
           },
           "title": {
@@ -475,6 +490,20 @@
               "Private"
             ],
             "type": "string"
+          },
+          "winners": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "winnersClaimed": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "winnersCount": {
+            "format": "int32",
+            "type": "integer"
           }
         },
         "required": [
@@ -483,12 +512,15 @@
           "canAddInvites",
           "canCancel",
           "canClaim",
+          "canClaimCreatorSplitWinRefund",
+          "canClaimSplitWin",
+          "canComplete",
           "canDecline",
-          "canFinalize",
           "canJoin",
           "canLeave",
           "canRefund",
           "challengeId",
+          "challengeType",
           "createdAt",
           "creator",
           "declined",
@@ -502,11 +534,14 @@
           "isCreator",
           "isInvitationPending",
           "isJoined",
+          "isSplitWinWinner",
           "kind",
           "maxParticipants",
           "metadataURI",
+          "numWinners",
           "participantCount",
           "participants",
+          "prizePerWinner",
           "selectedApps",
           "selectedAppsCount",
           "settlementMode",
@@ -514,11 +549,13 @@
           "startRound",
           "status",
           "threshold",
-          "thresholdMode",
           "title",
           "totalPrize",
           "viewerStatus",
-          "visibility"
+          "visibility",
+          "winners",
+          "winnersClaimed",
+          "winnersCount"
         ],
         "type": "object"
       },
@@ -539,10 +576,16 @@
           "canClaim": {
             "type": "boolean"
           },
-          "canDecline": {
+          "canClaimCreatorSplitWinRefund": {
             "type": "boolean"
           },
-          "canFinalize": {
+          "canClaimSplitWin": {
+            "type": "boolean"
+          },
+          "canComplete": {
+            "type": "boolean"
+          },
+          "canDecline": {
             "type": "boolean"
           },
           "canJoin": {
@@ -557,6 +600,13 @@
           "challengeId": {
             "format": "int64",
             "type": "integer"
+          },
+          "challengeType": {
+            "enum": [
+              "MaxActions",
+              "SplitWin"
+            ],
+            "type": "string"
           },
           "createdAt": {
             "format": "int64",
@@ -596,6 +646,9 @@
           "isJoined": {
             "type": "boolean"
           },
+          "isSplitWinWinner": {
+            "type": "boolean"
+          },
           "kind": {
             "enum": [
               "Stake",
@@ -610,9 +663,16 @@
           "metadataURI": {
             "type": "string"
           },
+          "numWinners": {
+            "format": "int32",
+            "type": "integer"
+          },
           "participantCount": {
             "format": "int32",
             "type": "integer"
+          },
+          "prizePerWinner": {
+            "type": "string"
           },
           "selectedAppsCount": {
             "format": "int32",
@@ -622,8 +682,8 @@
             "enum": [
               "None",
               "TopWinners",
-              "QualifiedSplit",
-              "CreatorRefund"
+              "CreatorRefund",
+              "SplitWinCompleted"
             ],
             "type": "string"
           },
@@ -638,21 +698,13 @@
             "enum": [
               "Pending",
               "Active",
-              "Finalized",
+              "Completed",
               "Cancelled",
               "Invalid"
             ],
             "type": "string"
           },
           "threshold": {
-            "type": "string"
-          },
-          "thresholdMode": {
-            "enum": [
-              "None",
-              "SplitAboveThreshold",
-              "TopAboveThreshold"
-            ],
             "type": "string"
           },
           "title": {
@@ -676,6 +728,14 @@
               "Private"
             ],
             "type": "string"
+          },
+          "winnersClaimed": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "winnersCount": {
+            "format": "int32",
+            "type": "integer"
           }
         },
         "required": [
@@ -684,12 +744,15 @@
           "canAddInvites",
           "canCancel",
           "canClaim",
+          "canClaimCreatorSplitWinRefund",
+          "canClaimSplitWin",
+          "canComplete",
           "canDecline",
-          "canFinalize",
           "canJoin",
           "canLeave",
           "canRefund",
           "challengeId",
+          "challengeType",
           "createdAt",
           "creator",
           "declinedCount",
@@ -701,21 +764,25 @@
           "isCreator",
           "isInvitationPending",
           "isJoined",
+          "isSplitWinWinner",
           "kind",
           "maxParticipants",
           "metadataURI",
+          "numWinners",
           "participantCount",
+          "prizePerWinner",
           "selectedAppsCount",
           "settlementMode",
           "stakeAmount",
           "startRound",
           "status",
           "threshold",
-          "thresholdMode",
           "title",
           "totalPrize",
           "viewerStatus",
-          "visibility"
+          "visibility",
+          "winnersClaimed",
+          "winnersCount"
         ],
         "type": "object"
       },
