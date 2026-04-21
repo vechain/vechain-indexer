@@ -36,11 +36,12 @@ class ChallengesServiceTest {
         )
 
     @Test
-    fun `getChallenges queries public challenges by phase`() {
+    fun `getChallenges Live filters by Active lifecycle status`() {
         every {
-            challengeRepository.findByVisibilityAndPhase(
+            challengeRepository.findByVisibilityAndPhaseAndLifecycleStatusIn(
                 ChallengeVisibility.Public,
                 ChallengePhase.Live,
+                setOf(ChallengeStatus.Active),
                 pageable,
             )
         } returns SliceImpl(listOf(challenge()))
@@ -49,6 +50,52 @@ class ChallengesServiceTest {
 
         assertEquals(1, result.data.size)
         assertEquals(ChallengePhase.Live, result.data.single().phase)
+    }
+
+    @Test
+    fun `getChallenges Upcoming filters by Pending lifecycle status`() {
+        every {
+            challengeRepository.findByVisibilityAndPhaseAndLifecycleStatusIn(
+                ChallengeVisibility.Public,
+                ChallengePhase.Upcoming,
+                setOf(ChallengeStatus.Pending),
+                pageable,
+            )
+        } returns SliceImpl(emptyList())
+
+        val result = service.getChallenges(ChallengePhase.Upcoming, pageable)
+
+        assertEquals(0, result.data.size)
+    }
+
+    @Test
+    fun `getChallenges Ended filters by terminal lifecycle statuses`() {
+        every {
+            challengeRepository.findByVisibilityAndPhaseAndLifecycleStatusIn(
+                ChallengeVisibility.Public,
+                ChallengePhase.Ended,
+                setOf(
+                    ChallengeStatus.Completed,
+                    ChallengeStatus.Cancelled,
+                    ChallengeStatus.Invalid,
+                ),
+                pageable,
+            )
+        } returns SliceImpl(emptyList())
+
+        val result = service.getChallenges(ChallengePhase.Ended, pageable)
+
+        assertEquals(0, result.data.size)
+    }
+
+    @Test
+    fun `getChallenges without phase returns all public challenges`() {
+        every { challengeRepository.findByVisibility(ChallengeVisibility.Public, pageable) } returns
+            SliceImpl(listOf(challenge()))
+
+        val result = service.getChallenges(null, pageable)
+
+        assertEquals(1, result.data.size)
     }
 
     @Test

@@ -6,6 +6,20 @@ enum class ChallengePhase {
     Ended,
 }
 
+/**
+ * Lifecycle statuses that are semantically consistent with each phase.
+ * - Upcoming: only Pending challenges (Cancelled-before-start are not discoverable).
+ * - Live: only Active challenges (Invalid/Cancelled/Completed in window are not discoverable).
+ * - Ended: terminal states.
+ */
+fun ChallengePhase.acceptedLifecycleStatuses(): Set<ChallengeStatus> =
+    when (this) {
+        ChallengePhase.Upcoming -> setOf(ChallengeStatus.Pending)
+        ChallengePhase.Live -> setOf(ChallengeStatus.Active)
+        ChallengePhase.Ended ->
+            setOf(ChallengeStatus.Completed, ChallengeStatus.Cancelled, ChallengeStatus.Invalid)
+    }
+
 data class ChallengeRuntimeState(val currentRound: Int = 0, val maxParticipants: Int = 0)
 
 fun computeChallengeLifecycleStatus(

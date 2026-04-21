@@ -27,9 +27,10 @@ open class ChallengesService(
             if (phase == null) {
                 challengeRepository.findByVisibility(ChallengeVisibility.Public, pageable)
             } else {
-                challengeRepository.findByVisibilityAndPhase(
+                challengeRepository.findByVisibilityAndPhaseAndLifecycleStatusIn(
                     ChallengeVisibility.Public,
                     phase,
+                    phase.acceptedLifecycleStatuses(),
                     pageable,
                 )
             }
