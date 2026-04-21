@@ -21,7 +21,7 @@ open class B3trChallengesCollectionConfig(
 ) : CollectionConfig(mongoTemplate, appCoroutineScope, B3trChallenge::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Value("\${indexer.version.b3tr-challenges}") private val version: Int = 2
+    @Value("\${indexer.version.b3tr-challenges}") private val version: Int = 1
 
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
@@ -38,8 +38,16 @@ open class B3trChallengesCollectionConfig(
                     Index()
                         .on(B3trChallenge::createdAtBlockTimestamp.name, Sort.Direction.DESC)
                         .on(B3trChallenge::challengeId.name, Sort.Direction.DESC),
+                "visibility_1_phase_1_createdAtBlockTimestamp_-1_challengeId_-1" to
+                    Index()
+                        .on(B3trChallenge::visibility.name, Sort.Direction.ASC)
+                        .on(B3trChallenge::phase.name, Sort.Direction.ASC)
+                        .on(B3trChallenge::createdAtBlockTimestamp.name, Sort.Direction.DESC)
+                        .on(B3trChallenge::challengeId.name, Sort.Direction.DESC),
                 "creator_1" to Index().on(B3trChallenge::creator.name, Sort.Direction.ASC),
                 "status_1" to Index().on(B3trChallenge::status.name, Sort.Direction.ASC),
+                "lifecycleStatus_1" to
+                    Index().on(B3trChallenge::lifecycleStatus.name, Sort.Direction.ASC),
                 "kind_1" to Index().on(B3trChallenge::kind.name, Sort.Direction.ASC),
                 "visibility_1" to Index().on(B3trChallenge::visibility.name, Sort.Direction.ASC),
                 "startRound_-1" to Index().on(B3trChallenge::startRound.name, Sort.Direction.DESC),

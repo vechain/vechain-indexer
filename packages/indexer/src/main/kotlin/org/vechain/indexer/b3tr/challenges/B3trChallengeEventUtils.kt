@@ -204,6 +204,7 @@ internal fun MutableChallengeState.toDocument(
     challengeId: Long,
     version: Int,
     latestEvent: IndexedEvent,
+    runtimeState: ChallengeRuntimeState,
 ) =
     B3trChallenge(
         version = version,
@@ -215,6 +216,20 @@ internal fun MutableChallengeState.toDocument(
         visibility = visibility,
         challengeType = challengeType,
         status = status,
+        lifecycleStatus =
+            computeChallengeLifecycleStatus(
+                rawStatus = status,
+                currentRound = runtimeState.currentRound,
+                startRound = startRound,
+                kind = kind,
+                participantCount = participants.size,
+            ),
+        phase =
+            computeChallengePhase(
+                currentRound = runtimeState.currentRound,
+                startRound = startRound,
+                endRound = endRound,
+            ),
         settlementMode = settlementMode,
         creator = creator,
         title = title,
@@ -251,6 +266,8 @@ internal fun MutableChallengeState.toDocument(
         createdAtBlockNumber = createdAtBlockNumber,
         createdAtBlockTimestamp = createdAtBlockTimestamp,
         createdTxId = createdTxId,
+        currentRound = runtimeState.currentRound,
+        maxParticipants = runtimeState.maxParticipants,
     )
 
 private fun eventValue(event: IndexedEvent, key: String): Any? = event.params.getReturnValues()[key]

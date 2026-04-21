@@ -297,495 +297,6 @@
         ],
         "type": "object"
       },
-      "B3trChallengeDetailResponse": {
-        "properties": {
-          "allApps": {
-            "type": "boolean"
-          },
-          "canAccept": {
-            "type": "boolean"
-          },
-          "canAddInvites": {
-            "type": "boolean"
-          },
-          "canCancel": {
-            "type": "boolean"
-          },
-          "canClaim": {
-            "type": "boolean"
-          },
-          "canClaimCreatorSplitWinRefund": {
-            "type": "boolean"
-          },
-          "canClaimSplitWin": {
-            "type": "boolean"
-          },
-          "canComplete": {
-            "type": "boolean"
-          },
-          "canDecline": {
-            "type": "boolean"
-          },
-          "canJoin": {
-            "type": "boolean"
-          },
-          "canLeave": {
-            "type": "boolean"
-          },
-          "canRefund": {
-            "type": "boolean"
-          },
-          "challengeId": {
-            "format": "int64",
-            "type": "integer"
-          },
-          "challengeType": {
-            "enum": [
-              "MaxActions",
-              "SplitWin"
-            ],
-            "type": "string"
-          },
-          "createdAt": {
-            "format": "int64",
-            "type": "integer"
-          },
-          "creator": {
-            "type": "string"
-          },
-          "declined": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "declinedCount": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "description": {
-            "type": "string"
-          },
-          "duration": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "endRound": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "imageURI": {
-            "type": "string"
-          },
-          "invited": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "invitedCount": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "isCreator": {
-            "type": "boolean"
-          },
-          "isInvitationPending": {
-            "type": "boolean"
-          },
-          "isJoined": {
-            "type": "boolean"
-          },
-          "isSplitWinWinner": {
-            "type": "boolean"
-          },
-          "kind": {
-            "enum": [
-              "Stake",
-              "Sponsored"
-            ],
-            "type": "string"
-          },
-          "maxParticipants": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "metadataURI": {
-            "type": "string"
-          },
-          "numWinners": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "participantCount": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "participants": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "prizePerWinner": {
-            "type": "string"
-          },
-          "selectedApps": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "selectedAppsCount": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "settlementMode": {
-            "enum": [
-              "None",
-              "TopWinners",
-              "CreatorRefund",
-              "SplitWinCompleted"
-            ],
-            "type": "string"
-          },
-          "stakeAmount": {
-            "type": "string"
-          },
-          "startRound": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "status": {
-            "enum": [
-              "Pending",
-              "Active",
-              "Completed",
-              "Cancelled",
-              "Invalid"
-            ],
-            "type": "string"
-          },
-          "threshold": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "totalPrize": {
-            "type": "string"
-          },
-          "viewerStatus": {
-            "enum": [
-              "None",
-              "Invited",
-              "Declined",
-              "Joined"
-            ],
-            "type": "string"
-          },
-          "visibility": {
-            "enum": [
-              "Public",
-              "Private"
-            ],
-            "type": "string"
-          },
-          "winners": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "winnersClaimed": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "winnersCount": {
-            "format": "int32",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "allApps",
-          "canAccept",
-          "canAddInvites",
-          "canCancel",
-          "canClaim",
-          "canClaimCreatorSplitWinRefund",
-          "canClaimSplitWin",
-          "canComplete",
-          "canDecline",
-          "canJoin",
-          "canLeave",
-          "canRefund",
-          "challengeId",
-          "challengeType",
-          "createdAt",
-          "creator",
-          "declined",
-          "declinedCount",
-          "description",
-          "duration",
-          "endRound",
-          "imageURI",
-          "invited",
-          "invitedCount",
-          "isCreator",
-          "isInvitationPending",
-          "isJoined",
-          "isSplitWinWinner",
-          "kind",
-          "maxParticipants",
-          "metadataURI",
-          "numWinners",
-          "participantCount",
-          "participants",
-          "prizePerWinner",
-          "selectedApps",
-          "selectedAppsCount",
-          "settlementMode",
-          "stakeAmount",
-          "startRound",
-          "status",
-          "threshold",
-          "title",
-          "totalPrize",
-          "viewerStatus",
-          "visibility",
-          "winners",
-          "winnersClaimed",
-          "winnersCount"
-        ],
-        "type": "object"
-      },
-      "B3trChallengeUiResponse": {
-        "properties": {
-          "allApps": {
-            "type": "boolean"
-          },
-          "canAccept": {
-            "type": "boolean"
-          },
-          "canAddInvites": {
-            "type": "boolean"
-          },
-          "canCancel": {
-            "type": "boolean"
-          },
-          "canClaim": {
-            "type": "boolean"
-          },
-          "canClaimCreatorSplitWinRefund": {
-            "type": "boolean"
-          },
-          "canClaimSplitWin": {
-            "type": "boolean"
-          },
-          "canComplete": {
-            "type": "boolean"
-          },
-          "canDecline": {
-            "type": "boolean"
-          },
-          "canJoin": {
-            "type": "boolean"
-          },
-          "canLeave": {
-            "type": "boolean"
-          },
-          "canRefund": {
-            "type": "boolean"
-          },
-          "challengeId": {
-            "format": "int64",
-            "type": "integer"
-          },
-          "challengeType": {
-            "enum": [
-              "MaxActions",
-              "SplitWin"
-            ],
-            "type": "string"
-          },
-          "createdAt": {
-            "format": "int64",
-            "type": "integer"
-          },
-          "creator": {
-            "type": "string"
-          },
-          "declinedCount": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "description": {
-            "type": "string"
-          },
-          "duration": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "endRound": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "imageURI": {
-            "type": "string"
-          },
-          "invitedCount": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "isCreator": {
-            "type": "boolean"
-          },
-          "isInvitationPending": {
-            "type": "boolean"
-          },
-          "isJoined": {
-            "type": "boolean"
-          },
-          "isSplitWinWinner": {
-            "type": "boolean"
-          },
-          "kind": {
-            "enum": [
-              "Stake",
-              "Sponsored"
-            ],
-            "type": "string"
-          },
-          "maxParticipants": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "metadataURI": {
-            "type": "string"
-          },
-          "numWinners": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "participantCount": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "prizePerWinner": {
-            "type": "string"
-          },
-          "selectedAppsCount": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "settlementMode": {
-            "enum": [
-              "None",
-              "TopWinners",
-              "CreatorRefund",
-              "SplitWinCompleted"
-            ],
-            "type": "string"
-          },
-          "stakeAmount": {
-            "type": "string"
-          },
-          "startRound": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "status": {
-            "enum": [
-              "Pending",
-              "Active",
-              "Completed",
-              "Cancelled",
-              "Invalid"
-            ],
-            "type": "string"
-          },
-          "threshold": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "totalPrize": {
-            "type": "string"
-          },
-          "viewerStatus": {
-            "enum": [
-              "None",
-              "Invited",
-              "Declined",
-              "Joined"
-            ],
-            "type": "string"
-          },
-          "visibility": {
-            "enum": [
-              "Public",
-              "Private"
-            ],
-            "type": "string"
-          },
-          "winnersClaimed": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "winnersCount": {
-            "format": "int32",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "allApps",
-          "canAccept",
-          "canAddInvites",
-          "canCancel",
-          "canClaim",
-          "canClaimCreatorSplitWinRefund",
-          "canClaimSplitWin",
-          "canComplete",
-          "canDecline",
-          "canJoin",
-          "canLeave",
-          "canRefund",
-          "challengeId",
-          "challengeType",
-          "createdAt",
-          "creator",
-          "declinedCount",
-          "description",
-          "duration",
-          "endRound",
-          "imageURI",
-          "invitedCount",
-          "isCreator",
-          "isInvitationPending",
-          "isJoined",
-          "isSplitWinWinner",
-          "kind",
-          "maxParticipants",
-          "metadataURI",
-          "numWinners",
-          "participantCount",
-          "prizePerWinner",
-          "selectedAppsCount",
-          "settlementMode",
-          "stakeAmount",
-          "startRound",
-          "status",
-          "threshold",
-          "title",
-          "totalPrize",
-          "viewerStatus",
-          "visibility",
-          "winnersClaimed",
-          "winnersCount"
-        ],
-        "type": "object"
-      },
       "B3trRankResponse": {
         "properties": {
           "address": {
@@ -873,6 +384,373 @@
           "cumulativeGasUsed",
           "cumulativeNumClauses",
           "cumulativeNumTransactions"
+        ],
+        "type": "object"
+      },
+      "ChallengeDetailResponse": {
+        "properties": {
+          "allApps": {
+            "type": "boolean"
+          },
+          "challengeId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "challengeType": {
+            "enum": [
+              "MaxActions",
+              "SplitWin"
+            ],
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "creator": {
+            "type": "string"
+          },
+          "declined": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "declinedCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "description": {
+            "type": "string"
+          },
+          "duration": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "endRound": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "imageURI": {
+            "type": "string"
+          },
+          "invited": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "invitedCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "Stake",
+              "Sponsored"
+            ],
+            "type": "string"
+          },
+          "lifecycleStatus": {
+            "enum": [
+              "Pending",
+              "Active",
+              "Completed",
+              "Cancelled",
+              "Invalid"
+            ],
+            "type": "string"
+          },
+          "maxParticipants": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "metadataURI": {
+            "type": "string"
+          },
+          "numWinners": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "participantCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "participants": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "phase": {
+            "enum": [
+              "Upcoming",
+              "Live",
+              "Ended"
+            ],
+            "type": "string"
+          },
+          "prizePerWinner": {
+            "type": "string"
+          },
+          "selectedApps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "selectedAppsCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "settlementMode": {
+            "enum": [
+              "None",
+              "TopWinners",
+              "CreatorRefund",
+              "SplitWinCompleted"
+            ],
+            "type": "string"
+          },
+          "stakeAmount": {
+            "type": "string"
+          },
+          "startRound": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "threshold": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "totalPrize": {
+            "type": "string"
+          },
+          "visibility": {
+            "enum": [
+              "Public",
+              "Private"
+            ],
+            "type": "string"
+          },
+          "winners": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "winnersClaimed": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "winnersCount": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "allApps",
+          "challengeId",
+          "challengeType",
+          "createdAt",
+          "creator",
+          "declined",
+          "declinedCount",
+          "description",
+          "duration",
+          "endRound",
+          "imageURI",
+          "invited",
+          "invitedCount",
+          "kind",
+          "lifecycleStatus",
+          "maxParticipants",
+          "metadataURI",
+          "numWinners",
+          "participantCount",
+          "participants",
+          "phase",
+          "prizePerWinner",
+          "selectedApps",
+          "selectedAppsCount",
+          "settlementMode",
+          "stakeAmount",
+          "startRound",
+          "threshold",
+          "title",
+          "totalPrize",
+          "visibility",
+          "winners",
+          "winnersClaimed",
+          "winnersCount"
+        ],
+        "type": "object"
+      },
+      "ChallengeSummaryResponse": {
+        "properties": {
+          "allApps": {
+            "type": "boolean"
+          },
+          "challengeId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "challengeType": {
+            "enum": [
+              "MaxActions",
+              "SplitWin"
+            ],
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "creator": {
+            "type": "string"
+          },
+          "declinedCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "description": {
+            "type": "string"
+          },
+          "duration": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "endRound": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "imageURI": {
+            "type": "string"
+          },
+          "invitedCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "Stake",
+              "Sponsored"
+            ],
+            "type": "string"
+          },
+          "lifecycleStatus": {
+            "enum": [
+              "Pending",
+              "Active",
+              "Completed",
+              "Cancelled",
+              "Invalid"
+            ],
+            "type": "string"
+          },
+          "maxParticipants": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "metadataURI": {
+            "type": "string"
+          },
+          "numWinners": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "participantCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "phase": {
+            "enum": [
+              "Upcoming",
+              "Live",
+              "Ended"
+            ],
+            "type": "string"
+          },
+          "prizePerWinner": {
+            "type": "string"
+          },
+          "selectedAppsCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "settlementMode": {
+            "enum": [
+              "None",
+              "TopWinners",
+              "CreatorRefund",
+              "SplitWinCompleted"
+            ],
+            "type": "string"
+          },
+          "stakeAmount": {
+            "type": "string"
+          },
+          "startRound": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "threshold": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "totalPrize": {
+            "type": "string"
+          },
+          "visibility": {
+            "enum": [
+              "Public",
+              "Private"
+            ],
+            "type": "string"
+          },
+          "winnersClaimed": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "winnersCount": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "allApps",
+          "challengeId",
+          "challengeType",
+          "createdAt",
+          "creator",
+          "declinedCount",
+          "description",
+          "duration",
+          "endRound",
+          "imageURI",
+          "invitedCount",
+          "kind",
+          "lifecycleStatus",
+          "maxParticipants",
+          "metadataURI",
+          "numWinners",
+          "participantCount",
+          "phase",
+          "prizePerWinner",
+          "selectedAppsCount",
+          "settlementMode",
+          "stakeAmount",
+          "startRound",
+          "threshold",
+          "title",
+          "totalPrize",
+          "visibility",
+          "winnersClaimed",
+          "winnersCount"
         ],
         "type": "object"
       },
@@ -1984,11 +1862,11 @@
         ],
         "type": "object"
       },
-      "PaginatedResponseB3trChallengeUiResponse": {
+      "PaginatedResponseB3trRichlistItem": {
         "properties": {
           "data": {
             "items": {
-              "$ref": "#/components/schemas/B3trChallengeUiResponse"
+              "$ref": "#/components/schemas/B3trRichlistItem"
             },
             "type": "array"
           },
@@ -2002,11 +1880,11 @@
         ],
         "type": "object"
       },
-      "PaginatedResponseB3trRichlistItem": {
+      "PaginatedResponseChallengeSummaryResponse": {
         "properties": {
           "data": {
             "items": {
-              "$ref": "#/components/schemas/B3trRichlistItem"
+              "$ref": "#/components/schemas/ChallengeSummaryResponse"
             },
             "type": "array"
           },
@@ -2295,6 +2173,24 @@
           "data": {
             "items": {
               "$ref": "#/components/schemas/UserAppLeaderboardItem"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationDetail"
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ],
+        "type": "object"
+      },
+      "PaginatedResponseUserChallengeStateResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/UserChallengeStateResponse"
             },
             "type": "array"
           },
@@ -3078,6 +2974,70 @@
           "appId",
           "totalRewardAmount",
           "wallet"
+        ],
+        "type": "object"
+      },
+      "UserChallengeStateResponse": {
+        "properties": {
+          "availableActions": {
+            "items": {
+              "enum": [
+                "Join",
+                "Leave",
+                "AcceptInvite",
+                "DeclineInvite",
+                "Cancel",
+                "AddInvites",
+                "Claim",
+                "Refund",
+                "Complete",
+                "ClaimSplitWin",
+                "ClaimCreatorSplitWinRefund"
+              ],
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "challengeId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "createdAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "isActionable": {
+            "type": "boolean"
+          },
+          "isHistorical": {
+            "type": "boolean"
+          },
+          "isParticipating": {
+            "type": "boolean"
+          },
+          "participantActions": {
+            "type": "string"
+          },
+          "viewerRelation": {
+            "enum": [
+              "Creator",
+              "Joined",
+              "Invited",
+              "Declined",
+              "None"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "availableActions",
+          "challengeId",
+          "createdAt",
+          "isActionable",
+          "isHistorical",
+          "isParticipating",
+          "participantActions",
+          "viewerRelation"
         ],
         "type": "object"
       },
@@ -5266,18 +5226,20 @@
         ]
       }
     },
-    "/api/v1/b3tr/challenges/active": {
+    "/api/v1/b3tr/challenges": {
       "get": {
-        "operationId": "getActiveChallenges",
+        "operationId": "getChallenges",
         "parameters": [
           {
-            "description": "A valid address",
-            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             "in": "query",
-            "name": "wallet",
-            "required": true,
+            "name": "phase",
+            "required": false,
             "schema": {
-              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
+              "enum": [
+                "Upcoming",
+                "Live",
+                "Ended"
+              ],
               "type": "string"
             }
           },
@@ -5330,7 +5292,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponseB3trChallengeUiResponse"
+                  "$ref": "#/components/schemas/PaginatedResponseChallengeSummaryResponse"
                 }
               }
             },
@@ -5397,555 +5359,7 @@
             "description": "Service not available"
           }
         },
-        "summary": "Get viewer active challenges.",
-        "tags": [
-          "B3TR - Challenges"
-        ]
-      }
-    },
-    "/api/v1/b3tr/challenges/explore": {
-      "get": {
-        "operationId": "getExploreChallenges",
-        "parameters": [
-          {
-            "description": "A valid address",
-            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
-            "in": "query",
-            "name": "wallet",
-            "required": true,
-            "schema": {
-              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
-              "type": "string"
-            }
-          },
-          {
-            "description": "The zero-based results page number",
-            "example": 0,
-            "in": "query",
-            "name": "page",
-            "required": false,
-            "schema": {
-              "format": "int32",
-              "maximum": 2147483647,
-              "minimum": 0,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "The results page size",
-            "example": 20,
-            "in": "query",
-            "name": "size",
-            "required": false,
-            "schema": {
-              "format": "int32",
-              "maximum": 150,
-              "minimum": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "The sort direction",
-            "in": "query",
-            "name": "direction",
-            "required": false,
-            "schema": {
-              "default": "DESC",
-              "enum": [
-                "ASC",
-                "DESC"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "$ref": "#/components/parameters/XProjectIdHeader"
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponseB3trChallengeUiResponse"
-                }
-              }
-            },
-            "description": "Success"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              },
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              }
-            },
-            "description": "Validation errors occurred, eg: invalid input"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/problem+json": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Access to the requested resource is forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              },
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              }
-            },
-            "description": "Requested resource was not found"
-          },
-          "500": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              },
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              }
-            },
-            "description": "Service not available"
-          }
-        },
-        "summary": "Get public active challenges created by others.",
-        "tags": [
-          "B3TR - Challenges"
-        ]
-      }
-    },
-    "/api/v1/b3tr/challenges/history": {
-      "get": {
-        "operationId": "getChallengeHistory",
-        "parameters": [
-          {
-            "description": "A valid address",
-            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
-            "in": "query",
-            "name": "wallet",
-            "required": true,
-            "schema": {
-              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
-              "type": "string"
-            }
-          },
-          {
-            "description": "The zero-based results page number",
-            "example": 0,
-            "in": "query",
-            "name": "page",
-            "required": false,
-            "schema": {
-              "format": "int32",
-              "maximum": 2147483647,
-              "minimum": 0,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "The results page size",
-            "example": 20,
-            "in": "query",
-            "name": "size",
-            "required": false,
-            "schema": {
-              "format": "int32",
-              "maximum": 150,
-              "minimum": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "The sort direction",
-            "in": "query",
-            "name": "direction",
-            "required": false,
-            "schema": {
-              "default": "DESC",
-              "enum": [
-                "ASC",
-                "DESC"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "$ref": "#/components/parameters/XProjectIdHeader"
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponseB3trChallengeUiResponse"
-                }
-              }
-            },
-            "description": "Success"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              },
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              }
-            },
-            "description": "Validation errors occurred, eg: invalid input"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/problem+json": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Access to the requested resource is forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              },
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              }
-            },
-            "description": "Requested resource was not found"
-          },
-          "500": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              },
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              }
-            },
-            "description": "Service not available"
-          }
-        },
-        "summary": "Get viewer challenge history.",
-        "tags": [
-          "B3TR - Challenges"
-        ]
-      }
-    },
-    "/api/v1/b3tr/challenges/needed-actions": {
-      "get": {
-        "operationId": "getNeededActionChallenges",
-        "parameters": [
-          {
-            "description": "A valid address",
-            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
-            "in": "query",
-            "name": "wallet",
-            "required": true,
-            "schema": {
-              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
-              "type": "string"
-            }
-          },
-          {
-            "description": "The zero-based results page number",
-            "example": 0,
-            "in": "query",
-            "name": "page",
-            "required": false,
-            "schema": {
-              "format": "int32",
-              "maximum": 2147483647,
-              "minimum": 0,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "The results page size",
-            "example": 20,
-            "in": "query",
-            "name": "size",
-            "required": false,
-            "schema": {
-              "format": "int32",
-              "maximum": 150,
-              "minimum": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "The sort direction",
-            "in": "query",
-            "name": "direction",
-            "required": false,
-            "schema": {
-              "default": "DESC",
-              "enum": [
-                "ASC",
-                "DESC"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "$ref": "#/components/parameters/XProjectIdHeader"
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponseB3trChallengeUiResponse"
-                }
-              }
-            },
-            "description": "Success"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              },
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              }
-            },
-            "description": "Validation errors occurred, eg: invalid input"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/problem+json": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Access to the requested resource is forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              },
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              }
-            },
-            "description": "Requested resource was not found"
-          },
-          "500": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              },
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              }
-            },
-            "description": "Service not available"
-          }
-        },
-        "summary": "Get challenges that require viewer action.",
-        "tags": [
-          "B3TR - Challenges"
-        ]
-      }
-    },
-    "/api/v1/b3tr/challenges/open": {
-      "get": {
-        "operationId": "getOpenChallenges",
-        "parameters": [
-          {
-            "description": "A valid address",
-            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
-            "in": "query",
-            "name": "wallet",
-            "required": true,
-            "schema": {
-              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
-              "type": "string"
-            }
-          },
-          {
-            "description": "The zero-based results page number",
-            "example": 0,
-            "in": "query",
-            "name": "page",
-            "required": false,
-            "schema": {
-              "format": "int32",
-              "maximum": 2147483647,
-              "minimum": 0,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "The results page size",
-            "example": 20,
-            "in": "query",
-            "name": "size",
-            "required": false,
-            "schema": {
-              "format": "int32",
-              "maximum": 150,
-              "minimum": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "The sort direction",
-            "in": "query",
-            "name": "direction",
-            "required": false,
-            "schema": {
-              "default": "DESC",
-              "enum": [
-                "ASC",
-                "DESC"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "$ref": "#/components/parameters/XProjectIdHeader"
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponseB3trChallengeUiResponse"
-                }
-              }
-            },
-            "description": "Success"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              },
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              }
-            },
-            "description": "Validation errors occurred, eg: invalid input"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/problem+json": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Access to the requested resource is forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              },
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              }
-            },
-            "description": "Requested resource was not found"
-          },
-          "500": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              },
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExceptionResponse"
-                }
-              }
-            },
-            "description": "Service not available"
-          }
-        },
-        "summary": "Get public pending challenges the viewer can join.",
+        "summary": "Get public indexed B3TR challenges.",
         "tags": [
           "B3TR - Challenges"
         ]
@@ -5973,7 +5387,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/B3trChallengeDetailResponse"
+                  "$ref": "#/components/schemas/ChallengeDetailResponse"
                 }
               }
             },
@@ -6040,7 +5454,7 @@
             "description": "Service not available"
           }
         },
-        "summary": "Get a single indexed B3TR challenge.",
+        "summary": "Get a single public indexed B3TR challenge.",
         "tags": [
           "B3TR - Challenges"
         ]
@@ -6826,6 +6240,263 @@
         "summary": "Get treasury B3TR transfers",
         "tags": [
           "B3TR Treasury"
+        ]
+      }
+    },
+    "/api/v1/b3tr/users/{wallet}/challenges": {
+      "get": {
+        "operationId": "getUserChallenges",
+        "parameters": [
+          {
+            "description": "A valid address",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            "in": "path",
+            "name": "wallet",
+            "required": true,
+            "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Optional wallet challenge list type: actionable, participating, history.",
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "enum": [
+                "actionable",
+                "participating",
+                "history"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "The zero-based results page number",
+            "example": 0,
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The results page size",
+            "example": 20,
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 150,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The sort direction",
+            "in": "query",
+            "name": "direction",
+            "required": false,
+            "schema": {
+              "default": "DESC",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/XProjectIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponseUserChallengeStateResponse"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get wallet-scoped indexed B3TR challenge states.",
+        "tags": [
+          "B3TR - Challenges"
+        ]
+      }
+    },
+    "/api/v1/b3tr/users/{wallet}/challenges/{challengeId}": {
+      "get": {
+        "operationId": "getUserChallenge",
+        "parameters": [
+          {
+            "description": "A valid address",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            "in": "path",
+            "name": "wallet",
+            "required": true,
+            "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "challengeId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/XProjectIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserChallengeStateResponse"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get a single wallet-scoped indexed B3TR challenge state.",
+        "tags": [
+          "B3TR - Challenges"
         ]
       }
     },

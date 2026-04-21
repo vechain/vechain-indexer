@@ -22,6 +22,8 @@ constructor(
     val visibility: ChallengeVisibility,
     val challengeType: ChallengeType,
     val status: ChallengeStatus,
+    val lifecycleStatus: ChallengeStatus,
+    val phase: ChallengePhase,
     val settlementMode: SettlementMode,
     val creator: String,
     val title: String,
@@ -58,6 +60,8 @@ constructor(
     val createdAtBlockNumber: Long,
     val createdAtBlockTimestamp: Long,
     val createdTxId: String,
+    @JsonIgnore val currentRound: Int,
+    val maxParticipants: Int,
 ) : VersionedDocument {
     constructor(
         version: Int,
@@ -69,6 +73,8 @@ constructor(
         visibility: ChallengeVisibility,
         challengeType: ChallengeType,
         status: ChallengeStatus,
+        lifecycleStatus: ChallengeStatus,
+        phase: ChallengePhase,
         settlementMode: SettlementMode,
         creator: String,
         title: String,
@@ -105,6 +111,8 @@ constructor(
         createdAtBlockNumber: Long,
         createdAtBlockTimestamp: Long,
         createdTxId: String,
+        currentRound: Int,
+        maxParticipants: Int,
     ) : this(
         id = documentId(challengeId),
         version = version,
@@ -116,6 +124,8 @@ constructor(
         visibility = visibility,
         challengeType = challengeType,
         status = status,
+        lifecycleStatus = lifecycleStatus,
+        phase = phase,
         settlementMode = settlementMode,
         creator = creator,
         title = title,
@@ -152,6 +162,8 @@ constructor(
         createdAtBlockNumber = createdAtBlockNumber,
         createdAtBlockTimestamp = createdAtBlockTimestamp,
         createdTxId = createdTxId,
+        currentRound = currentRound,
+        maxParticipants = maxParticipants,
     )
 
     @JsonIgnore override fun getDocumentId(): String = id

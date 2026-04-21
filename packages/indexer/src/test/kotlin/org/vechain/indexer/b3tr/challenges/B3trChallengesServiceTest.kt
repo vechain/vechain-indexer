@@ -28,6 +28,7 @@ class B3trChallengesServiceTest {
         every { inlineVersioningProperties.blockWindow } returns 10_000L
         every { inlineVersioningProperties.maxVersions } returns 100
         every { repository.findById(any()) } returns java.util.Optional.empty()
+        every { repository.getLatestRecord() } returns null
         service =
             B3trChallengesService(
                 repository = repository,
@@ -330,6 +331,8 @@ class B3trChallengesServiceTest {
             visibility = ChallengeVisibility.Private,
             challengeType = ChallengeType.MaxActions,
             status = ChallengeStatus.Pending,
+            lifecycleStatus = ChallengeStatus.Pending,
+            phase = ChallengePhase.Upcoming,
             settlementMode = SettlementMode.None,
             creator = "0x0000000000000000000000000000000000000abc",
             title = "Spring Sprint",
@@ -358,13 +361,15 @@ class B3trChallengesServiceTest {
             invited = invited,
             declined = declined,
             selectedApps = listOf("0xapp1"),
-            winners = emptyList(),
+            winners = emptyList<String>(),
             eligibleInvitees = eligibleInvitees,
-            claimedBy = emptyList(),
-            refundedBy = emptyList(),
+            claimedBy = emptyList<String>(),
+            refundedBy = emptyList<String>(),
             creatorRefunded = false,
             createdAtBlockNumber = 80L,
             createdAtBlockTimestamp = 800L,
             createdTxId = "0xcreated",
+            currentRound = 0,
+            maxParticipants = 100,
         )
 }

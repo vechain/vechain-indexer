@@ -21,7 +21,7 @@ open class TransactionCountCollectionConfig(
     appCoroutineScope: CoroutineScope,
 ) : CollectionConfig(mongoTemplate, appCoroutineScope, TransactionCountSummary::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    @Value("\${indexer.version.transaction-count:3}") private val version: Int = 3
+    @Value("\${indexer.version.transaction-count:3}") private val version: Int = 1
 
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
