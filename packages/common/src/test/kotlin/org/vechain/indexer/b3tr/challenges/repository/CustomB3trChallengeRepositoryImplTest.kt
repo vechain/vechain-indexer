@@ -14,6 +14,7 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.aggregation.AggregationResults
 import org.springframework.data.mongodb.core.aggregation.TypedAggregation
 import org.vechain.indexer.b3tr.challenges.B3trChallenge
+import org.vechain.indexer.b3tr.challenges.ChallengeFilter
 import org.vechain.indexer.b3tr.challenges.ChallengeKind
 import org.vechain.indexer.b3tr.challenges.ChallengeStatus
 import org.vechain.indexer.b3tr.challenges.ChallengeType
@@ -25,79 +26,134 @@ class CustomB3trChallengeRepositoryImplTest {
     private val repository = CustomB3trChallengeRepositoryImpl(mongoTemplate)
 
     @Test
-    fun `findByWalletAndStatus builds aggregation and paginates via extra record`() {
-        val aggregation = slot<TypedAggregation<*>>()
-        every { mongoTemplate.aggregate(capture(aggregation), B3trChallenge::class.java) } returns
-            AggregationResults(listOf(challenge(1L), challenge(2L), challenge(3L)), Document())
-
-        val pageable =
-            PageRequest.of(
-                1,
-                2,
-                Sort.by(
-                    Sort.Direction.DESC,
-                    "challengeCreatedAtBlockTimestamp",
-                    B3trChallenge::challengeId.name,
-                ),
-            )
-
-        val result =
-            repository.findByWalletAndStatus(
-                wallet = "0x0000000000000000000000000000000000000abc",
-                status = ChallengeStatus.Active,
-                pageable = pageable,
-            )
-
-        val pipeline = aggregation.captured.toPipeline(Aggregation.DEFAULT_CONTEXT)
-
-        assertEquals(2, result.content.size)
-        assertEquals(true, result.hasNext())
-        assertEquals(1L, result.content.first().challengeId)
-        assertEquals(
-            listOf(
-                "Document{{\$match=Document{{wallet=0x0000000000000000000000000000000000000abc}}}}",
-                "Document{{\$lookup=Document{{from=b3tr_challenges, localField=challengeId, foreignField=challengeId, as=challenge}}}}",
-                "Document{{\$unwind=\$challenge}}",
-                "Document{{\$match=Document{{challenge.status=Active}}}}",
-                "Document{{\$sort=Document{{challengeCreatedAtBlockTimestamp=-1, challengeId=-1}}}}",
-                "Document{{\$skip=2}}",
-                "Document{{\$limit=3}}",
-                "Document{{\$replaceRoot=Document{{newRoot=\$challenge}}}}",
-            ),
-            pipeline.map(Document::toString),
-        )
-    }
-
-    @Test
-    fun `findByWalletAndStatus omits status match when absent`() {
+    fun `findByFilter MyChallenges matches creator-or-joined and in-progress status`() {
         val aggregation = slot<TypedAggregation<*>>()
         every { mongoTemplate.aggregate(capture(aggregation), B3trChallenge::class.java) } returns
             AggregationResults(listOf(challenge(1L)), Document())
 
-        repository.findByWalletAndStatus(
+        repository.findByFilter(
             wallet = "0x0000000000000000000000000000000000000abc",
-            status = null,
-            pageable =
-                PageRequest.of(
-                    0,
-                    2,
-                    Sort.by(
-                        Sort.Direction.ASC,
-                        "challengeCreatedAtBlockTimestamp",
-                        B3trChallenge::challengeId.name,
-                    ),
-                ),
+            filter = ChallengeFilter.MyChallenges,
+            pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "challengeId")),
         )
 
         val pipeline = aggregation.captured.toPipeline(Aggregation.DEFAULT_CONTEXT)
-
+        val firstMatch = pipeline.first()["\$match"] as Map<*, *>
+        val firstMatchSerialized = firstMatch.toString()
         assertEquals(
-            false,
-            pipeline.any {
-                val match = it["\$match"] as? Map<*, *> ?: return@any false
-                "challenge.status" in match.keys
-            },
+            true,
+            firstMatchSerialized.contains("0x0000000000000000000000000000000000000abc"),
         )
+        assertEquals(true, firstMatchSerialized.contains("isCreator"))
+        assertEquals(true, firstMatchSerialized.contains("participantStatus"))
+        val statusMatches =
+            pipeline.filter {
+                val m = it["\$match"] as? Map<*, *> ?: return@filter false
+                "challenge.status" in m.keys
+            }
+        assertEquals(1, statusMatches.size)
+        val allowed =
+            ((statusMatches.single()["\$match"] as Map<*, *>)["challenge.status"] as Map<*, *>)[
+                "\$in"]
+                as List<*>
+        assertEquals(setOf(ChallengeStatus.Pending, ChallengeStatus.Active), allowed.toSet())
+    }
+
+    @Test
+    fun `findByFilter History matches wallet and terminal statuses`() {
+        val aggregation = slot<TypedAggregation<*>>()
+        every { mongoTemplate.aggregate(capture(aggregation), B3trChallenge::class.java) } returns
+            AggregationResults(emptyList(), Document())
+
+        repository.findByFilter(
+            wallet = "0x0000000000000000000000000000000000000abc",
+            filter = ChallengeFilter.History,
+            pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "challengeId")),
+        )
+
+        val pipeline = aggregation.captured.toPipeline(Aggregation.DEFAULT_CONTEXT)
+        val firstMatch = pipeline.first()["\$match"] as Map<*, *>
+        assertEquals("0x0000000000000000000000000000000000000abc", firstMatch["wallet"])
+        val statusMatch =
+            pipeline
+                .first { (it["\$match"] as? Map<*, *>)?.containsKey("challenge.status") == true }[
+                    "\$match"]
+                as Map<*, *>
+        val allowed = (statusMatch["challenge.status"] as Map<*, *>)["\$in"] as List<*>
+        assertEquals(
+            setOf(ChallengeStatus.Completed, ChallengeStatus.Cancelled, ChallengeStatus.Invalid),
+            allowed.toSet(),
+        )
+    }
+
+    @Test
+    fun `findByFilter NeededAction builds an OR across sub-buckets`() {
+        val aggregation = slot<TypedAggregation<*>>()
+        every { mongoTemplate.aggregate(capture(aggregation), B3trChallenge::class.java) } returns
+            AggregationResults(emptyList(), Document())
+
+        repository.findByFilter(
+            wallet = "0x0000000000000000000000000000000000000abc",
+            filter = ChallengeFilter.NeededAction,
+            pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "challengeId")),
+        )
+
+        val pipeline = aggregation.captured.toPipeline(Aggregation.DEFAULT_CONTEXT)
+        val matches = pipeline.mapNotNull { it["\$match"] as? Map<*, *> }
+        val orMatch = matches.single { it.containsKey("\$or") }
+        val branches = orMatch["\$or"] as List<*>
+        assertEquals(true, branches.size >= 4)
+    }
+
+    @Test
+    fun `findByFilter OpenToJoin throws — served by findByVisibilityAndStatusExcludingIds`() {
+        try {
+            repository.findByFilter(
+                wallet = "0x0000000000000000000000000000000000000abc",
+                filter = ChallengeFilter.OpenToJoin,
+                pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "challengeId")),
+            )
+            error("expected IllegalArgumentException")
+        } catch (_: IllegalArgumentException) {
+            // expected
+        }
+    }
+
+    @Test
+    fun `findByVisibilityAndStatusExcludingIds adds nin when ids provided`() {
+        val query = slot<org.springframework.data.mongodb.core.query.Query>()
+        every { mongoTemplate.find(capture(query), B3trChallenge::class.java) } returns
+            listOf(challenge(1L))
+
+        repository.findByVisibilityAndStatusExcludingIds(
+            visibility = ChallengeVisibility.Public,
+            status = ChallengeStatus.Pending,
+            excludeChallengeIds = listOf(7L, 8L),
+            pageable = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "createdAtBlockTimestamp")),
+        )
+
+        val queryDoc = query.captured.queryObject
+        assertEquals(true, queryDoc.containsKey("\$and"))
+        val andClauses = queryDoc["\$and"] as List<*>
+        val serialized = andClauses.joinToString(separator = " ") { it.toString() }
+        assertEquals(true, serialized.contains("challengeId"))
+        assertEquals(true, serialized.contains("\$nin"))
+    }
+
+    @Test
+    fun `findByVisibilityAndStatusExcludingIds skips nin when ids empty`() {
+        val query = slot<org.springframework.data.mongodb.core.query.Query>()
+        every { mongoTemplate.find(capture(query), B3trChallenge::class.java) } returns emptyList()
+
+        repository.findByVisibilityAndStatusExcludingIds(
+            visibility = ChallengeVisibility.Public,
+            status = ChallengeStatus.Active,
+            excludeChallengeIds = emptyList(),
+            pageable = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "challengeId")),
+        )
+
+        val queryDoc = query.captured.queryObject
+        assertEquals(false, queryDoc.toString().contains("\$nin"))
     }
 
     private fun challenge(challengeId: Long) =
@@ -145,6 +201,7 @@ class CustomB3trChallengeRepositoryImplTest {
             claimedBy = emptyList(),
             refundedBy = emptyList(),
             creatorRefunded = false,
+            endRoundPassed = false,
             createdAtBlockNumber = 1L,
             createdAtBlockTimestamp = challengeId,
             createdTxId = "0xtx",

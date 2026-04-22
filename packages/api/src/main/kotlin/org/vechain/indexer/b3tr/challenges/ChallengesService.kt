@@ -19,30 +19,56 @@ open class ChallengesService(
     private val challengeRepository: B3trChallengeRepository,
     private val userChallengeRepository: B3trUserChallengeRepository,
 ) : IndexerService {
-    open fun getChallenges(
+    /** Public challenges, optionally narrowed by [status]. No wallet scoping. */
+    open fun getPublicChallenges(
         status: ChallengeStatus?,
-        wallet: Address?,
         pageable: Pageable,
     ): PaginatedResponse<ChallengeSummaryResponse> {
         val results =
-            if (wallet == null) {
-                if (status == null) {
-                    challengeRepository.findByVisibility(ChallengeVisibility.Public, pageable)
-                } else {
-                    challengeRepository.findByVisibilityAndStatus(
-                        ChallengeVisibility.Public,
-                        status,
-                        pageable,
-                    )
-                }
+            if (status == null) {
+                challengeRepository.findByVisibility(ChallengeVisibility.Public, pageable)
             } else {
-                challengeRepository.findByWalletAndStatus(
-                    HexUtils.normalise(wallet.value),
+                challengeRepository.findByVisibilityAndStatus(
+                    ChallengeVisibility.Public,
                     status,
                     pageable,
                 )
             }
+        return paginatedResponse(results.map(ChallengeSummaryResponse::from))
+    }
 
+    /**
+     * Wallet-scoped challenges bucketed by [filter]. OpenToJoin / OthersActive start from
+     * `b3tr_challenges` (excluding challenges the wallet already participates in); the rest start
+     * from `b3tr_user_challenges` and join the parent challenge document.
+     */
+    open fun getWalletChallenges(
+        wallet: Address,
+        filter: ChallengeFilter,
+        pageable: Pageable,
+    ): PaginatedResponse<ChallengeSummaryResponse> {
+        val normalisedWallet = HexUtils.normalise(wallet.value)
+        val results =
+            when (filter) {
+                ChallengeFilter.OpenToJoin ->
+                    challengeRepository.findByVisibilityAndStatusExcludingIds(
+                        ChallengeVisibility.Public,
+                        ChallengeStatus.Pending,
+                        challengeRepository.findUserChallengeIdsByWallet(normalisedWallet),
+                        pageable,
+                    )
+                ChallengeFilter.OthersActive ->
+                    challengeRepository.findByVisibilityAndStatusExcludingIds(
+                        ChallengeVisibility.Public,
+                        ChallengeStatus.Active,
+                        challengeRepository.findUserChallengeIdsByWallet(normalisedWallet),
+                        pageable,
+                    )
+                ChallengeFilter.NeededAction,
+                ChallengeFilter.MyChallenges,
+                ChallengeFilter.History ->
+                    challengeRepository.findByFilter(normalisedWallet, filter, pageable)
+            }
         return paginatedResponse(results.map(ChallengeSummaryResponse::from))
     }
 

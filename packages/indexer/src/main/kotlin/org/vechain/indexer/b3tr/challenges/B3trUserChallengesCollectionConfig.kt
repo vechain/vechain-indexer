@@ -48,6 +48,27 @@ open class B3trUserChallengesCollectionConfig(
                         .on(B3trUserChallenge::challengeId.name, Sort.Direction.ASC),
                 "challengeId_1" to
                     Index().on(B3trUserChallenge::challengeId.name, Sort.Direction.ASC),
+                "wallet_1_participantStatus_1_challengeCreatedAtBlockTimestamp_-1" to
+                    Index()
+                        .on(B3trUserChallenge::wallet.name, Sort.Direction.ASC)
+                        .on(B3trUserChallenge::participantStatus.name, Sort.Direction.ASC)
+                        .on(
+                            B3trUserChallenge::challengeCreatedAtBlockTimestamp.name,
+                            Sort.Direction.DESC,
+                        ),
+                "wallet_1_isCreator_1_challengeCreatedAtBlockTimestamp_-1" to
+                    Index()
+                        .on(B3trUserChallenge::wallet.name, Sort.Direction.ASC)
+                        .on(B3trUserChallenge::isCreator.name, Sort.Direction.ASC)
+                        .on(
+                            B3trUserChallenge::challengeCreatedAtBlockTimestamp.name,
+                            Sort.Direction.DESC,
+                        ),
+                "wallet_1_isWinner_1_hasClaimedPrize_1" to
+                    Index()
+                        .on(B3trUserChallenge::wallet.name, Sort.Direction.ASC)
+                        .on(B3trUserChallenge::isWinner.name, Sort.Direction.ASC)
+                        .on(B3trUserChallenge::hasClaimedPrize.name, Sort.Direction.ASC),
             )
         )
     }

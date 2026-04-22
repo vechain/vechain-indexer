@@ -35,8 +35,10 @@ class ChallengesServiceTest {
             ),
         )
 
+    // --- /api/v1/b3tr/challenges ---
+
     @Test
-    fun `getChallenges filters by Active status`() {
+    fun `getPublicChallenges filters by Active status`() {
         every {
             challengeRepository.findByVisibilityAndStatus(
                 ChallengeVisibility.Public,
@@ -45,93 +47,151 @@ class ChallengesServiceTest {
             )
         } returns SliceImpl(listOf(challenge()))
 
-        val result = service.getChallenges(ChallengeStatus.Active, null, pageable)
+        val result = service.getPublicChallenges(ChallengeStatus.Active, pageable)
 
         assertEquals(1, result.data.size)
         assertEquals(ChallengeStatus.Active, result.data.single().status)
     }
 
     @Test
-    fun `getChallenges filters by Pending status`() {
-        every {
-            challengeRepository.findByVisibilityAndStatus(
-                ChallengeVisibility.Public,
-                ChallengeStatus.Pending,
-                pageable,
-            )
-        } returns SliceImpl(emptyList())
-
-        val result = service.getChallenges(ChallengeStatus.Pending, null, pageable)
-
-        assertEquals(0, result.data.size)
-    }
-
-    @Test
-    fun `getChallenges filters by Completed status`() {
-        every {
-            challengeRepository.findByVisibilityAndStatus(
-                ChallengeVisibility.Public,
-                ChallengeStatus.Completed,
-                pageable,
-            )
-        } returns SliceImpl(emptyList())
-
-        val result = service.getChallenges(ChallengeStatus.Completed, null, pageable)
-
-        assertEquals(0, result.data.size)
-    }
-
-    @Test
-    fun `getChallenges without status returns all public challenges`() {
+    fun `getPublicChallenges without status returns all public`() {
         every { challengeRepository.findByVisibility(ChallengeVisibility.Public, pageable) } returns
             SliceImpl(listOf(challenge()))
 
-        val result = service.getChallenges(null, null, pageable)
+        val result = service.getPublicChallenges(null, pageable)
 
         assertEquals(1, result.data.size)
     }
 
-    @Test
-    fun `getChallenges with wallet queries hydrated challenges`() {
-        every {
-            challengeRepository.findByWalletAndStatus(
-                "0x0000000000000000000000000000000000000abc",
-                null,
-                pageable,
-            )
-        } returns SliceImpl(listOf(challenge(visibility = ChallengeVisibility.Private)))
-
-        val result =
-            service.getChallenges(
-                status = null,
-                wallet = Address("0x0000000000000000000000000000000000000abc"),
-                pageable = pageable,
-            )
-
-        assertEquals(1, result.data.size)
-        assertEquals(1L, result.data.single().challengeId)
-        assertEquals(ChallengeVisibility.Private, result.data.single().visibility)
-    }
+    // --- /api/v1/b3tr/users/{wallet}/challenges ---
 
     @Test
-    fun `getChallenges with wallet and status filters hydrated challenges`() {
+    fun `getWalletChallenges MyChallenges delegates to findByFilter`() {
         every {
-            challengeRepository.findByWalletAndStatus(
+            challengeRepository.findByFilter(
                 "0x0000000000000000000000000000000000000abc",
-                ChallengeStatus.Active,
+                ChallengeFilter.MyChallenges,
                 pageable,
             )
         } returns SliceImpl(listOf(challenge()))
 
         val result =
-            service.getChallenges(
-                status = ChallengeStatus.Active,
+            service.getWalletChallenges(
                 wallet = Address("0x0000000000000000000000000000000000000abc"),
+                filter = ChallengeFilter.MyChallenges,
                 pageable = pageable,
             )
 
         assertEquals(1, result.data.size)
-        assertEquals(ChallengeStatus.Active, result.data.single().status)
+    }
+
+    @Test
+    fun `getWalletChallenges History delegates to findByFilter`() {
+        every {
+            challengeRepository.findByFilter(
+                "0x0000000000000000000000000000000000000abc",
+                ChallengeFilter.History,
+                pageable,
+            )
+        } returns SliceImpl(listOf(challenge()))
+
+        service.getWalletChallenges(
+            wallet = Address("0x0000000000000000000000000000000000000abc"),
+            filter = ChallengeFilter.History,
+            pageable = pageable,
+        )
+    }
+
+    @Test
+    fun `getWalletChallenges NeededAction delegates to findByFilter`() {
+        every {
+            challengeRepository.findByFilter(
+                "0x0000000000000000000000000000000000000abc",
+                ChallengeFilter.NeededAction,
+                pageable,
+            )
+        } returns SliceImpl(listOf(challenge()))
+
+        service.getWalletChallenges(
+            wallet = Address("0x0000000000000000000000000000000000000abc"),
+            filter = ChallengeFilter.NeededAction,
+            pageable = pageable,
+        )
+    }
+
+    @Test
+    fun `getWalletChallenges OpenToJoin excludes wallet's existing challengeIds`() {
+        every {
+            challengeRepository.findUserChallengeIdsByWallet(
+                "0x0000000000000000000000000000000000000abc"
+            )
+        } returns listOf(10L, 20L)
+        every {
+            challengeRepository.findByVisibilityAndStatusExcludingIds(
+                ChallengeVisibility.Public,
+                ChallengeStatus.Pending,
+                listOf(10L, 20L),
+                pageable,
+            )
+        } returns SliceImpl(listOf(challenge()))
+
+        val result =
+            service.getWalletChallenges(
+                wallet = Address("0x0000000000000000000000000000000000000abc"),
+                filter = ChallengeFilter.OpenToJoin,
+                pageable = pageable,
+            )
+
+        assertEquals(1, result.data.size)
+    }
+
+    @Test
+    fun `getWalletChallenges OthersActive targets Active Public not-involved`() {
+        every {
+            challengeRepository.findUserChallengeIdsByWallet(
+                "0x0000000000000000000000000000000000000abc"
+            )
+        } returns emptyList()
+        every {
+            challengeRepository.findByVisibilityAndStatusExcludingIds(
+                ChallengeVisibility.Public,
+                ChallengeStatus.Active,
+                emptyList(),
+                pageable,
+            )
+        } returns SliceImpl(listOf(challenge()))
+
+        service.getWalletChallenges(
+            wallet = Address("0x0000000000000000000000000000000000000abc"),
+            filter = ChallengeFilter.OthersActive,
+            pageable = pageable,
+        )
+    }
+
+    // --- getChallenge(id) ---
+
+    @Test
+    fun `getChallenge throws when challenge does not exist`() {
+        every { challengeRepository.findById(B3trChallenge.documentId(99L)) } returns
+            java.util.Optional.empty()
+
+        assertThrows(ResourceNotFoundException::class.java) { service.getChallenge(99L) }
+    }
+
+    @Test
+    fun `getChallenge exposes raw challenge detail facts`() {
+        every { challengeRepository.findById(B3trChallenge.documentId(1L)) } returns
+            java.util.Optional.of(challenge())
+
+        val result = service.getChallenge(1L)
+
+        assertEquals("7", result.bestScore)
+        assertEquals(2, result.bestCount)
+        assertEquals(1, result.payoutsClaimed)
+        assertEquals(listOf("0x0000000000000000000000000000000000000def"), result.eligibleInvitees)
+        assertEquals(listOf("0x0000000000000000000000000000000000000abc"), result.claimedBy)
+        assertEquals(listOf("0x0000000000000000000000000000000000000def"), result.refundedBy)
+        assertEquals(true, result.creatorRefunded)
     }
 
     private fun challenge(visibility: ChallengeVisibility = ChallengeVisibility.Public) =
@@ -179,32 +239,9 @@ class ChallengesServiceTest {
             claimedBy = listOf("0x0000000000000000000000000000000000000abc"),
             refundedBy = listOf("0x0000000000000000000000000000000000000def"),
             creatorRefunded = true,
+            endRoundPassed = false,
             createdAtBlockNumber = 1L,
             createdAtBlockTimestamp = 1L,
             createdTxId = "0xtx",
         )
-
-    @Test
-    fun `getChallenge throws when challenge does not exist`() {
-        every { challengeRepository.findById(B3trChallenge.documentId(99L)) } returns
-            java.util.Optional.empty()
-
-        assertThrows(ResourceNotFoundException::class.java) { service.getChallenge(99L) }
-    }
-
-    @Test
-    fun `getChallenge exposes raw challenge detail facts`() {
-        every { challengeRepository.findById(B3trChallenge.documentId(1L)) } returns
-            java.util.Optional.of(challenge())
-
-        val result = service.getChallenge(1L)
-
-        assertEquals("7", result.bestScore)
-        assertEquals(2, result.bestCount)
-        assertEquals(1, result.payoutsClaimed)
-        assertEquals(listOf("0x0000000000000000000000000000000000000def"), result.eligibleInvitees)
-        assertEquals(listOf("0x0000000000000000000000000000000000000abc"), result.claimedBy)
-        assertEquals(listOf("0x0000000000000000000000000000000000000def"), result.refundedBy)
-        assertEquals(true, result.creatorRefunded)
-    }
 }

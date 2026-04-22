@@ -257,6 +257,7 @@ internal fun MutableChallengeState.toDocument(
         claimedBy = claimedBy.toList(),
         refundedBy = refundedBy.toList(),
         creatorRefunded = creatorRefunded,
+        endRoundPassed = runtimeState.currentRound > endRound,
         createdAtBlockNumber = createdAtBlockNumber,
         createdAtBlockTimestamp = createdAtBlockTimestamp,
         createdTxId = createdTxId,

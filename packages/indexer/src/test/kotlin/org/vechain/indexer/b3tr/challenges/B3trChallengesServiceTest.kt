@@ -443,6 +443,7 @@ class B3trChallengesServiceTest {
             claimedBy = emptyList<String>(),
             refundedBy = emptyList<String>(),
             creatorRefunded = false,
+            endRoundPassed = false,
             createdAtBlockNumber = 80L,
             createdAtBlockTimestamp = 800L,
             createdTxId = "0xcreated",

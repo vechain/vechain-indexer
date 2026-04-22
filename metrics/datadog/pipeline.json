@@ -441,6 +441,12 @@
         },
         {
           "filter": {
+            "query": "@http.url_details.path:/api/v1/b3tr/users/*/challenges"
+          },
+          "name": "/api/v1/b3tr/users/{wallet}/challenges"
+        },
+        {
+          "filter": {
             "query": "@http.url_details.path:/api/v1/b3tr/xallocations/*/results"
           },
           "name": "/api/v1/b3tr/xallocations/{roundId}/results"

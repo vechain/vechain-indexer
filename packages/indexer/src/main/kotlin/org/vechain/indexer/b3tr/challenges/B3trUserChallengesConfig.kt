@@ -35,7 +35,13 @@ open class B3trUserChallengesConfig {
                     "ChallengeCreated",
                     "ChallengeInviteAdded",
                     "ChallengeJoined",
+                    "ChallengeLeft",
                     "ChallengeDeclined",
+                    "ChallengeCompleted",
+                    "ChallengePayoutClaimed",
+                    "SplitWinPrizeClaimed",
+                    "SplitWinCreatorRefunded",
+                    "ChallengeRefundClaimed",
                 )
             )
             .abiContracts(listOf(challengesContractAddress))

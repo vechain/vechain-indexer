@@ -20,6 +20,11 @@ constructor(
     val wallet: String,
     val challengeId: Long,
     val challengeCreatedAtBlockTimestamp: Long,
+    val participantStatus: ParticipantStatus = ParticipantStatus.None,
+    val isCreator: Boolean = false,
+    val isWinner: Boolean = false,
+    val hasClaimedPrize: Boolean = false,
+    val hasClaimedRefund: Boolean = false,
 ) : VersionedDocument {
     constructor(
         version: Int,
@@ -29,6 +34,11 @@ constructor(
         wallet: String,
         challengeId: Long,
         challengeCreatedAtBlockTimestamp: Long,
+        participantStatus: ParticipantStatus = ParticipantStatus.None,
+        isCreator: Boolean = false,
+        isWinner: Boolean = false,
+        hasClaimedPrize: Boolean = false,
+        hasClaimedRefund: Boolean = false,
     ) : this(
         id = documentId(wallet, challengeId),
         version = version,
@@ -38,6 +48,11 @@ constructor(
         wallet = wallet,
         challengeId = challengeId,
         challengeCreatedAtBlockTimestamp = challengeCreatedAtBlockTimestamp,
+        participantStatus = participantStatus,
+        isCreator = isCreator,
+        isWinner = isWinner,
+        hasClaimedPrize = hasClaimedPrize,
+        hasClaimedRefund = hasClaimedRefund,
     )
 
     @JsonIgnore override fun getDocumentId(): String = id

@@ -5157,6 +5157,7 @@
     },
     "/api/v1/b3tr/challenges": {
       "get": {
+        "description": "Returns public challenges across the network. Use `/api/v1/b3tr/users/{wallet}/challenges` for wallet-scoped views.",
         "operationId": "getChallenges",
         "parameters": [
           {
@@ -5171,17 +5172,6 @@
                 "Cancelled",
                 "Invalid"
               ],
-              "type": "string"
-            }
-          },
-          {
-            "description": "Optional wallet address to filter by.",
-            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
-            "in": "query",
-            "name": "wallet",
-            "required": false,
-            "schema": {
-              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
               "type": "string"
             }
           },
@@ -5301,7 +5291,7 @@
             "description": "Service not available"
           }
         },
-        "summary": "Get indexed B3TR challenges.",
+        "summary": "Get public indexed B3TR challenges.",
         "tags": [
           "B3TR - Challenges"
         ]
@@ -6182,6 +6172,157 @@
         "summary": "Get treasury B3TR transfers",
         "tags": [
           "B3TR Treasury"
+        ]
+      }
+    },
+    "/api/v1/b3tr/users/{wallet}/challenges": {
+      "get": {
+        "description": "Returns challenges bucketed by a semantic `filter` that encodes both a challenge status set and the wallet's relationship to the challenge. See the `filter` parameter for the full list of buckets.",
+        "operationId": "getWalletChallenges",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "wallet",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Semantic filter bucket for wallet-scoped challenges. Each value maps 1:1 to a UI tab and fully defines its own status set; no additional status narrowing is applied.\n\n- `NeededAction`: challenges that require a wallet-level action — outstanding invites you have not accepted or declined, claimable prizes on Completed MaxActions challenges you won, finalizable MaxActions challenges past their endRound, or reclaimable stake on Cancelled or Invalid challenges you were a participant in.\n- `MyChallenges`: Pending or Active challenges you created or have joined.\n- `OpenToJoin`: public Pending challenges you are not yet involved in.\n- `OthersActive`: public Active challenges you are not involved in (observation only).\n- `History`: terminal-state (Completed, Cancelled, Invalid) challenges you have been involved in.",
+            "in": "query",
+            "name": "filter",
+            "required": true,
+            "schema": {
+              "enum": [
+                "NeededAction",
+                "MyChallenges",
+                "OpenToJoin",
+                "OthersActive",
+                "History"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "The zero-based results page number",
+            "example": 0,
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The results page size",
+            "example": 20,
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 150,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The sort direction",
+            "in": "query",
+            "name": "direction",
+            "required": false,
+            "schema": {
+              "default": "DESC",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/XProjectIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponseChallengeSummaryResponse"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get indexed B3TR challenges bucketed for a wallet.",
+        "tags": [
+          "B3TR - Challenges"
         ]
       }
     },

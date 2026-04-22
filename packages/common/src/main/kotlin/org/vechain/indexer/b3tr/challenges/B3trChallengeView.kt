@@ -36,10 +36,11 @@ fun B3trChallenge.withRuntimeState(runtimeState: ChallengeRuntimeState): B3trCha
             kind = kind,
             participantCount = participantCount,
         )
+    val endRoundPassed = runtimeState.currentRound > endRound
 
-    return if (this.status == status) {
+    return if (this.status == status && this.endRoundPassed == endRoundPassed) {
         this
     } else {
-        copy(status = status)
+        copy(status = status, endRoundPassed = endRoundPassed)
     }
 }
