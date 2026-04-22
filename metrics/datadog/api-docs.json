@@ -6189,7 +6189,7 @@
             }
           },
           {
-            "description": "Semantic filter bucket for wallet-scoped challenges. Each value maps 1:1 to a UI tab and fully defines its own status set; no additional status narrowing is applied.\n\n- `NeededAction`: challenges that require a wallet-level action — outstanding invites you have not accepted or declined, claimable prizes on Completed MaxActions challenges you won, finalizable MaxActions challenges past their endRound, or reclaimable stake on Cancelled or Invalid challenges you were a participant in.\n- `MyChallenges`: Pending or Active challenges you created or have joined.\n- `OpenToJoin`: public Pending challenges you are not yet involved in.\n- `OthersActive`: public Active challenges you are not involved in (observation only).\n- `History`: terminal-state (Completed, Cancelled, Invalid) challenges you have been involved in.",
+            "description": "- `NeededAction`: challenges that require a wallet-level action — outstanding invites you have not accepted or declined, claimable prizes on Completed MaxActions challenges you won, finalizable MaxActions challenges past their endRound, or reclaimable stake on Cancelled or Invalid challenges you were a participant in.\n- `MyChallenges`: Pending or Active challenges you created or have joined.\n- `OpenToJoin`: public Pending challenges you are not yet involved in.\n- `OthersActive`: public Active challenges you are not involved in (observation only).\n- `History`: terminal-state (Completed, Cancelled, Invalid) challenges you have been involved in.",
             "in": "query",
             "name": "filter",
             "required": true,
