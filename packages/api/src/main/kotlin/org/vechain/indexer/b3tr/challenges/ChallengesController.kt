@@ -30,13 +30,13 @@ open class ChallengesController(private val challengesService: ChallengesService
     @CommonApiResponses
     @PaginationParameters
     open fun getChallenges(
-        @RequestParam(required = false) phase: ChallengePhase?,
+        @RequestParam(required = false) status: ChallengeStatus?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<ChallengeSummaryResponse> =
         challengesService.getChallenges(
-            phase = phase,
+            status = status,
             pageable =
                 toPageable(
                     page,

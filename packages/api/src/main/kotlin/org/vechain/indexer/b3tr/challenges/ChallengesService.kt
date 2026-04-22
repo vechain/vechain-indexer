@@ -20,17 +20,16 @@ open class ChallengesService(
     private val userChallengeRepository: B3trUserChallengeRepository,
 ) : IndexerService {
     open fun getChallenges(
-        phase: ChallengePhase?,
+        status: ChallengeStatus?,
         pageable: Pageable,
     ): PaginatedResponse<ChallengeSummaryResponse> {
         val results =
-            if (phase == null) {
+            if (status == null) {
                 challengeRepository.findByVisibility(ChallengeVisibility.Public, pageable)
             } else {
-                challengeRepository.findByVisibilityAndPhaseAndLifecycleStatusIn(
+                challengeRepository.findByVisibilityAndStatus(
                     ChallengeVisibility.Public,
-                    phase,
-                    phase.acceptedLifecycleStatuses(),
+                    status,
                     pageable,
                 )
             }

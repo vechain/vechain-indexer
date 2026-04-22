@@ -36,60 +36,53 @@ class ChallengesServiceTest {
         )
 
     @Test
-    fun `getChallenges Live filters by Active lifecycle status`() {
+    fun `getChallenges filters by Active status`() {
         every {
-            challengeRepository.findByVisibilityAndPhaseAndLifecycleStatusIn(
+            challengeRepository.findByVisibilityAndStatus(
                 ChallengeVisibility.Public,
-                ChallengePhase.Live,
-                setOf(ChallengeStatus.Active),
+                ChallengeStatus.Active,
                 pageable,
             )
         } returns SliceImpl(listOf(challenge()))
 
-        val result = service.getChallenges(ChallengePhase.Live, pageable)
+        val result = service.getChallenges(ChallengeStatus.Active, pageable)
 
         assertEquals(1, result.data.size)
-        assertEquals(ChallengePhase.Live, result.data.single().phase)
+        assertEquals(ChallengeStatus.Active, result.data.single().status)
     }
 
     @Test
-    fun `getChallenges Upcoming filters by Pending lifecycle status`() {
+    fun `getChallenges filters by Pending status`() {
         every {
-            challengeRepository.findByVisibilityAndPhaseAndLifecycleStatusIn(
+            challengeRepository.findByVisibilityAndStatus(
                 ChallengeVisibility.Public,
-                ChallengePhase.Upcoming,
-                setOf(ChallengeStatus.Pending),
+                ChallengeStatus.Pending,
                 pageable,
             )
         } returns SliceImpl(emptyList())
 
-        val result = service.getChallenges(ChallengePhase.Upcoming, pageable)
+        val result = service.getChallenges(ChallengeStatus.Pending, pageable)
 
         assertEquals(0, result.data.size)
     }
 
     @Test
-    fun `getChallenges Ended filters by terminal lifecycle statuses`() {
+    fun `getChallenges filters by Completed status`() {
         every {
-            challengeRepository.findByVisibilityAndPhaseAndLifecycleStatusIn(
+            challengeRepository.findByVisibilityAndStatus(
                 ChallengeVisibility.Public,
-                ChallengePhase.Ended,
-                setOf(
-                    ChallengeStatus.Completed,
-                    ChallengeStatus.Cancelled,
-                    ChallengeStatus.Invalid,
-                ),
+                ChallengeStatus.Completed,
                 pageable,
             )
         } returns SliceImpl(emptyList())
 
-        val result = service.getChallenges(ChallengePhase.Ended, pageable)
+        val result = service.getChallenges(ChallengeStatus.Completed, pageable)
 
         assertEquals(0, result.data.size)
     }
 
     @Test
-    fun `getChallenges without phase returns all public challenges`() {
+    fun `getChallenges without status returns all public challenges`() {
         every { challengeRepository.findByVisibility(ChallengeVisibility.Public, pageable) } returns
             SliceImpl(listOf(challenge()))
 
@@ -128,9 +121,8 @@ class ChallengesServiceTest {
             kind = ChallengeKind.Stake,
             visibility = ChallengeVisibility.Public,
             challengeType = ChallengeType.MaxActions,
-            status = ChallengeStatus.Pending,
-            lifecycleStatus = ChallengeStatus.Active,
-            phase = ChallengePhase.Live,
+            onChainStatus = ChallengeStatus.Pending,
+            status = ChallengeStatus.Active,
             settlementMode = SettlementMode.None,
             creator = "0x0000000000000000000000000000000000000abc",
             title = "Challenge",

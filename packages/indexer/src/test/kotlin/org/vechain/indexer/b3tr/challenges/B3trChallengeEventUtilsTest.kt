@@ -13,7 +13,7 @@ class B3trChallengeEventUtilsTest {
         val state = createState()
 
         assertEquals(ChallengeKind.Stake, state.kind)
-        assertEquals(ChallengeStatus.Pending, state.status)
+        assertEquals(ChallengeStatus.Pending, state.onChainStatus)
         assertEquals(SettlementMode.None, state.settlementMode)
         assertEquals(BigInteger.TEN, state.stakeAmount)
         assertEquals(BigInteger.TEN, state.totalPrize)
@@ -136,7 +136,7 @@ class B3trChallengeEventUtilsTest {
             ),
         )
 
-        assertEquals(ChallengeStatus.Completed, state.status)
+        assertEquals(ChallengeStatus.Completed, state.onChainStatus)
         assertEquals(SettlementMode.TopWinners, state.settlementMode)
         assertEquals(BigInteger.valueOf(42), state.bestScore)
         assertEquals(3, state.bestCount)
@@ -170,7 +170,7 @@ class B3trChallengeEventUtilsTest {
     @Test
     fun `applyEvent SplitWinCreatorRefunded marks refunded and completes Active challenge`() {
         val state = createState()
-        state.status = ChallengeStatus.Active
+        state.onChainStatus = ChallengeStatus.Active
 
         B3trChallengeEventUtils.applyEvent(
             1L,
@@ -183,7 +183,7 @@ class B3trChallengeEventUtilsTest {
         )
 
         assertEquals(true, state.creatorRefunded)
-        assertEquals(ChallengeStatus.Completed, state.status)
+        assertEquals(ChallengeStatus.Completed, state.onChainStatus)
         assertEquals(SettlementMode.SplitWinCompleted, state.settlementMode)
     }
 

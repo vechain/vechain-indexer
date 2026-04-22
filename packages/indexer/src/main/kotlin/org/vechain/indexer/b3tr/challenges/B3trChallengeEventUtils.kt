@@ -16,7 +16,7 @@ internal object B3trChallengeEventUtils {
                 ChallengeVisibility.fromOrdinal(toIntValue(eventValue(createEvent, "visibility"))),
             challengeType =
                 ChallengeType.fromOrdinal(toIntValue(eventValue(createEvent, "challengeType"))),
-            status = ChallengeStatus.Pending,
+            onChainStatus = ChallengeStatus.Pending,
             settlementMode = SettlementMode.None,
             creator = creator,
             title = stringValue(eventValue(createEvent, "title")),
@@ -116,12 +116,12 @@ internal object B3trChallengeEventUtils {
         addDistinct(state.eligibleInvitees, participant)
     }
 
-    private fun setStatus(state: MutableChallengeState, status: ChallengeStatus) {
-        state.status = status
+    private fun setStatus(state: MutableChallengeState, onChainStatus: ChallengeStatus) {
+        state.onChainStatus = onChainStatus
     }
 
     private fun handleCompleted(state: MutableChallengeState, event: IndexedEvent) {
-        state.status = ChallengeStatus.Completed
+        state.onChainStatus = ChallengeStatus.Completed
         state.settlementMode =
             SettlementMode.fromOrdinal(toIntValue(eventValue(event, "settlementMode")))
         state.bestScore = toBigIntegerValue(eventValue(event, "bestScore"))
@@ -145,8 +145,8 @@ internal object B3trChallengeEventUtils {
         state.creatorRefunded = true
         // Mark Completed if not already (post-endRound creator refund finalises a Split Win
         // challenge).
-        if (state.status == ChallengeStatus.Active) {
-            state.status = ChallengeStatus.Completed
+        if (state.onChainStatus == ChallengeStatus.Active) {
+            state.onChainStatus = ChallengeStatus.Completed
             state.settlementMode = SettlementMode.SplitWinCompleted
         }
     }
@@ -167,7 +167,7 @@ internal fun B3trChallenge.toMutableState() =
         kind = kind,
         visibility = visibility,
         challengeType = challengeType,
-        status = status,
+        onChainStatus = onChainStatus,
         settlementMode = settlementMode,
         creator = creator,
         title = title,
@@ -215,20 +215,14 @@ internal fun MutableChallengeState.toDocument(
         kind = kind,
         visibility = visibility,
         challengeType = challengeType,
-        status = status,
-        lifecycleStatus =
-            computeChallengeLifecycleStatus(
-                rawStatus = status,
+        onChainStatus = onChainStatus,
+        status =
+            computeChallengeStatus(
+                onChainStatus = onChainStatus,
                 currentRound = runtimeState.currentRound,
                 startRound = startRound,
                 kind = kind,
                 participantCount = participants.size,
-            ),
-        phase =
-            computeChallengePhase(
-                currentRound = runtimeState.currentRound,
-                startRound = startRound,
-                endRound = endRound,
             ),
         settlementMode = settlementMode,
         creator = creator,
@@ -318,7 +312,7 @@ internal data class MutableChallengeState(
     var kind: ChallengeKind,
     var visibility: ChallengeVisibility,
     var challengeType: ChallengeType,
-    var status: ChallengeStatus,
+    var onChainStatus: ChallengeStatus,
     var settlementMode: SettlementMode,
     var creator: String,
     var title: String,

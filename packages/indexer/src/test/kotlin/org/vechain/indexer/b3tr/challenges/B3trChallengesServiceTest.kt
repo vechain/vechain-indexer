@@ -107,7 +107,7 @@ class B3trChallengesServiceTest {
         assertEquals(1, challenge.version)
         assertEquals("0xcreate", challenge.createdTxId)
         assertEquals(100L, challenge.createdAtBlockNumber)
-        assertEquals(ChallengeStatus.Completed, challenge.status)
+        assertEquals(ChallengeStatus.Completed, challenge.onChainStatus)
         assertEquals(SettlementMode.TopWinners, challenge.settlementMode)
         assertEquals("Spring Sprint", challenge.title)
         assertEquals("", challenge.description)
@@ -232,7 +232,7 @@ class B3trChallengesServiceTest {
         assertEquals(1, archived.size)
         val challenge = updated.single()
         assertEquals(3, challenge.version)
-        assertEquals(ChallengeStatus.Cancelled, challenge.status)
+        assertEquals(ChallengeStatus.Cancelled, challenge.onChainStatus)
         assertEquals(BigInteger.valueOf(20), challenge.totalPrize)
         assertIterableEquals(
             listOf(
@@ -280,7 +280,7 @@ class B3trChallengesServiceTest {
 
         assertEquals(1, updated.size)
         assertEquals(0, archived.size)
-        assertEquals(ChallengePhase.Live, updated.single().phase)
+        assertEquals(ChallengeStatus.Invalid, updated.single().status)
     }
 
     @Test
@@ -296,8 +296,7 @@ class B3trChallengesServiceTest {
                 declined = emptyList(),
                 eligibleInvitees = emptyList(),
                 totalPrize = BigInteger.TEN,
-                lifecycleStatus = ChallengeStatus.Pending,
-                phase = ChallengePhase.Upcoming,
+                status = ChallengeStatus.Pending,
             )
         every { repository.findById(B3trChallenge.documentId(1L)) } returns
             java.util.Optional.of(existing)
@@ -309,8 +308,7 @@ class B3trChallengesServiceTest {
 
         assertEquals(1, updated.size)
         assertEquals(1, archived.size)
-        assertEquals(ChallengePhase.Live, updated.single().phase)
-        assertEquals(ChallengeStatus.Active, updated.single().lifecycleStatus)
+        assertEquals(ChallengeStatus.Active, updated.single().status)
     }
 
     private fun challengeEvent(
@@ -399,8 +397,7 @@ class B3trChallengesServiceTest {
         declined: List<String>,
         eligibleInvitees: List<String>,
         totalPrize: BigInteger,
-        lifecycleStatus: ChallengeStatus = ChallengeStatus.Pending,
-        phase: ChallengePhase = ChallengePhase.Upcoming,
+        status: ChallengeStatus = ChallengeStatus.Pending,
     ) =
         B3trChallenge(
             version = version,
@@ -411,9 +408,8 @@ class B3trChallengesServiceTest {
             kind = kind,
             visibility = ChallengeVisibility.Private,
             challengeType = challengeType,
-            status = ChallengeStatus.Pending,
-            lifecycleStatus = lifecycleStatus,
-            phase = phase,
+            onChainStatus = ChallengeStatus.Pending,
+            status = status,
             settlementMode = SettlementMode.None,
             creator = "0x0000000000000000000000000000000000000abc",
             title = "Spring Sprint",
