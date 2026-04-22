@@ -164,6 +164,43 @@ class CustomB3trChallengeRepositoryImplTest {
     }
 
     @Test
+    fun `findByFilter NeededAction Split Win creator refund branch requires unclaimed slots`() {
+        val aggregation = slot<TypedAggregation<*>>()
+        every { mongoTemplate.aggregate(capture(aggregation), B3trChallenge::class.java) } returns
+            AggregationResults(emptyList(), Document())
+
+        repository.findByFilter(
+            wallet = "0x0000000000000000000000000000000000000abc",
+            filter = ChallengeFilter.NeededAction,
+            pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "challengeId")),
+        )
+
+        val pipeline = aggregation.captured.toPipeline(Aggregation.DEFAULT_CONTEXT)
+        val branches =
+            pipeline
+                .mapNotNull { it["\$match"] as? Map<*, *> }
+                .single { it.containsKey("\$or") }["\$or"]
+                as List<*>
+
+        // Find the SplitWin-creator refund branch (it's the one carrying the SplitWin type).
+        val splitWinCreatorBranch =
+            branches
+                .map { it as Map<*, *> }
+                .single { branch ->
+                    val andClauses = branch["\$and"] as? List<*> ?: return@single false
+                    andClauses.any { clause ->
+                        (clause as? Map<*, *>)?.get("challenge.challengeType") ==
+                            ChallengeType.SplitWin
+                    }
+                }
+
+        val andClauses = (splitWinCreatorBranch["\$and"] as List<*>).map { it as Map<*, *> }
+        val expr = andClauses.firstNotNullOfOrNull { it["\$expr"] as? Map<*, *> }
+        val lt = expr?.get("\$lt") as? List<*>
+        assertEquals(listOf("\$challenge.winnersClaimed", "\$challenge.numWinners"), lt)
+    }
+
+    @Test
     fun `findByFilter OpenToJoin throws — served by findByVisibilityAndStatusExcludingIds`() {
         try {
             repository.findByFilter(

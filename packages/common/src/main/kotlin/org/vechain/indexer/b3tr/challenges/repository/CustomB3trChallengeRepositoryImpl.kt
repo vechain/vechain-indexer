@@ -1,5 +1,6 @@
 package org.vechain.indexer.b3tr.challenges.repository
 
+import org.bson.Document
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
@@ -199,6 +200,15 @@ constructor(private val mongoTemplate: MongoTemplate) : CustomB3trChallengeRepos
                     Criteria.where(kindField).`is`(ChallengeKind.Sponsored),
                     Criteria.where(B3trUserChallenge::isCreator.name).`is`(true),
                 )
+        // Mirrors the on-chain `claimCreatorSplitWinRefund` precondition: the creator can only
+        // refund when there are still unclaimed slots (`winnersClaimed < numWinners`). Without
+        // this, fully-settled Split Win challenges would surface as actionable for the creator
+        // even though calling the contract would revert with `NothingToRefund`.
+        val winnersClaimedField = "challenge.${B3trChallenge::winnersClaimed.name}"
+        val numWinnersField = "challenge.${B3trChallenge::numWinners.name}"
+        val hasUnclaimedSplitWinSlots =
+            Criteria.where("\$expr")
+                .`is`(Document("\$lt", listOf("\$$winnersClaimedField", "\$$numWinnersField")))
         val splitWinCreatorRefund =
             Criteria()
                 .andOperator(
@@ -208,6 +218,7 @@ constructor(private val mongoTemplate: MongoTemplate) : CustomB3trChallengeRepos
                         .`in`(ChallengeStatus.Active, ChallengeStatus.Completed),
                     Criteria.where(endRoundPassedField).`is`(true),
                     Criteria.where(B3trUserChallenge::hasClaimedRefund.name).`is`(false),
+                    hasUnclaimedSplitWinSlots,
                 )
 
         return Criteria()
