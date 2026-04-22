@@ -45,7 +45,7 @@ class ChallengesServiceTest {
             )
         } returns SliceImpl(listOf(challenge()))
 
-        val result = service.getChallenges(ChallengeStatus.Active, pageable)
+        val result = service.getChallenges(ChallengeStatus.Active, null, pageable)
 
         assertEquals(1, result.data.size)
         assertEquals(ChallengeStatus.Active, result.data.single().status)
@@ -61,7 +61,7 @@ class ChallengesServiceTest {
             )
         } returns SliceImpl(emptyList())
 
-        val result = service.getChallenges(ChallengeStatus.Pending, pageable)
+        val result = service.getChallenges(ChallengeStatus.Pending, null, pageable)
 
         assertEquals(0, result.data.size)
     }
@@ -76,7 +76,7 @@ class ChallengesServiceTest {
             )
         } returns SliceImpl(emptyList())
 
-        val result = service.getChallenges(ChallengeStatus.Completed, pageable)
+        val result = service.getChallenges(ChallengeStatus.Completed, null, pageable)
 
         assertEquals(0, result.data.size)
     }
@@ -86,32 +86,55 @@ class ChallengesServiceTest {
         every { challengeRepository.findByVisibility(ChallengeVisibility.Public, pageable) } returns
             SliceImpl(listOf(challenge()))
 
-        val result = service.getChallenges(null, pageable)
+        val result = service.getChallenges(null, null, pageable)
 
         assertEquals(1, result.data.size)
     }
 
     @Test
-    fun `getUserChallenges queries wallet list without stitching`() {
+    fun `getChallenges with wallet queries hydrated challenges`() {
         every {
-            userChallengeRepository.findByWallet(
+            challengeRepository.findByWalletAndStatus(
                 "0x0000000000000000000000000000000000000abc",
+                null,
                 pageable,
             )
-        } returns SliceImpl(listOf(userChallenge()))
+        } returns SliceImpl(listOf(challenge(visibility = ChallengeVisibility.Private)))
 
         val result =
-            service.getUserChallenges(
+            service.getChallenges(
+                status = null,
                 wallet = Address("0x0000000000000000000000000000000000000abc"),
                 pageable = pageable,
             )
 
         assertEquals(1, result.data.size)
         assertEquals(1L, result.data.single().challengeId)
-        assertEquals(1L, result.data.single().createdAt)
+        assertEquals(ChallengeVisibility.Private, result.data.single().visibility)
     }
 
-    private fun challenge() =
+    @Test
+    fun `getChallenges with wallet and status filters hydrated challenges`() {
+        every {
+            challengeRepository.findByWalletAndStatus(
+                "0x0000000000000000000000000000000000000abc",
+                ChallengeStatus.Active,
+                pageable,
+            )
+        } returns SliceImpl(listOf(challenge()))
+
+        val result =
+            service.getChallenges(
+                status = ChallengeStatus.Active,
+                wallet = Address("0x0000000000000000000000000000000000000abc"),
+                pageable = pageable,
+            )
+
+        assertEquals(1, result.data.size)
+        assertEquals(ChallengeStatus.Active, result.data.single().status)
+    }
+
+    private fun challenge(visibility: ChallengeVisibility = ChallengeVisibility.Public) =
         B3trChallenge(
             version = 1,
             blockId = "0x1",
@@ -119,7 +142,7 @@ class ChallengesServiceTest {
             blockTimestamp = 1L,
             challengeId = 1L,
             kind = ChallengeKind.Stake,
-            visibility = ChallengeVisibility.Public,
+            visibility = visibility,
             challengeType = ChallengeType.MaxActions,
             onChainStatus = ChallengeStatus.Pending,
             status = ChallengeStatus.Active,
@@ -184,15 +207,4 @@ class ChallengesServiceTest {
         assertEquals(listOf("0x0000000000000000000000000000000000000def"), result.refundedBy)
         assertEquals(true, result.creatorRefunded)
     }
-
-    private fun userChallenge() =
-        B3trUserChallenge(
-            version = 1,
-            blockId = "0x1",
-            blockNumber = 1L,
-            blockTimestamp = 1L,
-            wallet = "0x0000000000000000000000000000000000000abc",
-            challengeId = 1L,
-            challengeCreatedAtBlockTimestamp = 1L,
-        )
 }

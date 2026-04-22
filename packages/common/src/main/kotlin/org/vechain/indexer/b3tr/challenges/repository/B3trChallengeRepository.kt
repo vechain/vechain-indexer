@@ -12,7 +12,8 @@ import org.vechain.indexer.b3tr.challenges.ChallengeVisibility
 
 @Profile("b3tr", "b3tr-challenges")
 @Repository
-interface B3trChallengeRepository : BaseIndexedRepository<B3trChallenge, String> {
+interface B3trChallengeRepository :
+    BaseIndexedRepository<B3trChallenge, String>, CustomB3trChallengeRepository {
     @Query("{ 'visibility': ?0 }")
     fun findByVisibility(visibility: ChallengeVisibility, pageable: Pageable): Slice<B3trChallenge>
 

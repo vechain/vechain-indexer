@@ -21,14 +21,23 @@ open class ChallengesService(
 ) : IndexerService {
     open fun getChallenges(
         status: ChallengeStatus?,
+        wallet: Address?,
         pageable: Pageable,
     ): PaginatedResponse<ChallengeSummaryResponse> {
         val results =
-            if (status == null) {
-                challengeRepository.findByVisibility(ChallengeVisibility.Public, pageable)
+            if (wallet == null) {
+                if (status == null) {
+                    challengeRepository.findByVisibility(ChallengeVisibility.Public, pageable)
+                } else {
+                    challengeRepository.findByVisibilityAndStatus(
+                        ChallengeVisibility.Public,
+                        status,
+                        pageable,
+                    )
+                }
             } else {
-                challengeRepository.findByVisibilityAndStatus(
-                    ChallengeVisibility.Public,
+                challengeRepository.findByWalletAndStatus(
+                    HexUtils.normalise(wallet.value),
                     status,
                     pageable,
                 )
@@ -41,18 +50,6 @@ open class ChallengesService(
         challengeRepository.findByIdOrNull(B3trChallenge.documentId(challengeId))?.let {
             ChallengeDetailResponse.from(it)
         } ?: throw ResourceNotFoundException("Challenge not found for id $challengeId")
-
-    open fun getUserChallenges(
-        wallet: Address,
-        pageable: Pageable,
-    ): PaginatedResponse<UserChallengeRefResponse> {
-        val normalizedWallet = HexUtils.normalise(wallet.value)
-        return paginatedResponse(
-            userChallengeRepository
-                .findByWallet(normalizedWallet, pageable)
-                .map(UserChallengeRefResponse::from)
-        )
-    }
 
     override fun getLatestIndexedBlocks(): Map<String, Long> =
         mapOf(
