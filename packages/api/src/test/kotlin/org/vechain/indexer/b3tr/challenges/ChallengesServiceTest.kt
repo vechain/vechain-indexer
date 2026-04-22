@@ -167,8 +167,6 @@ class ChallengesServiceTest {
             createdAtBlockNumber = 1L,
             createdAtBlockTimestamp = 1L,
             createdTxId = "0xtx",
-            currentRound = 1,
-            maxParticipants = 100,
         )
 
     @Test

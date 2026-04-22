@@ -266,8 +266,6 @@ internal fun MutableChallengeState.toDocument(
         createdAtBlockNumber = createdAtBlockNumber,
         createdAtBlockTimestamp = createdAtBlockTimestamp,
         createdTxId = createdTxId,
-        currentRound = runtimeState.currentRound,
-        maxParticipants = runtimeState.maxParticipants,
     )
 
 private fun eventValue(event: IndexedEvent, key: String): Any? = event.params.getReturnValues()[key]

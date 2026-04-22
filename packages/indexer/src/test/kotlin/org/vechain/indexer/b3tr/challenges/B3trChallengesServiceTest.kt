@@ -1,6 +1,7 @@
 package org.vechain.indexer.b3tr.challenges
 
 import io.mockk.MockKAnnotations
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import java.math.BigInteger
@@ -10,15 +11,25 @@ import org.junit.jupiter.api.Assertions.assertIterableEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.query.Query
 import org.vechain.indexer.b3tr.challenges.repository.B3trChallengeRepository
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
+import org.vechain.indexer.thor.HexUtils
+import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.thor.model.BlockRevision
+import org.vechain.indexer.thor.model.EventLog
+import org.vechain.indexer.thor.model.EventLogsRequest
+import org.vechain.indexer.thor.model.EventMeta
+import org.vechain.indexer.utils.ContractUtils
 
 class B3trChallengesServiceTest {
     private val repository: B3trChallengeRepository = mockk()
     private val mongoTemplate: MongoTemplate = mockk()
     private val inlineVersioningProperties: InlineVersioningProperties = mockk()
+    private val thorClient: ThorClient = mockk()
 
     private lateinit var service: B3trChallengesService
 
@@ -28,12 +39,14 @@ class B3trChallengesServiceTest {
         every { inlineVersioningProperties.blockWindow } returns 10_000L
         every { inlineVersioningProperties.maxVersions } returns 100
         every { repository.findById(any()) } returns java.util.Optional.empty()
-        every { repository.getLatestRecord() } returns null
+        stubCurrentRound()
         service =
             B3trChallengesService(
                 repository = repository,
                 mongoTemplate = mongoTemplate,
                 inlineVersioningProperties = inlineVersioningProperties,
+                thorClient = thorClient,
+                emissionsContractAddress = "0x0000000000000000000000000000000000000def",
             )
     }
 
@@ -250,6 +263,56 @@ class B3trChallengesServiceTest {
         )
     }
 
+    @Test
+    fun `processEvents bootstraps current round from latest emission log`() {
+        stubCurrentRound(5)
+        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
+
+        val createEvent =
+            challengeCreatedEvent(
+                id = "create",
+                txId = "0xcreate",
+                challengeId = 2L,
+                kind = ChallengeKind.Sponsored,
+            )
+
+        val (updated, archived) = runBlocking { service.processEvents(listOf(createEvent)) }
+
+        assertEquals(1, updated.size)
+        assertEquals(0, archived.size)
+        assertEquals(ChallengePhase.Live, updated.single().phase)
+    }
+
+    @Test
+    fun `processEvents refreshes only challenges affected by a round change`() {
+        stubCurrentRound(4)
+        val existing =
+            challenge(
+                version = 2,
+                kind = ChallengeKind.Sponsored,
+                challengeType = ChallengeType.SplitWin,
+                participants = listOf("0x0000000000000000000000000000000000000abc"),
+                invited = emptyList(),
+                declined = emptyList(),
+                eligibleInvitees = emptyList(),
+                totalPrize = BigInteger.TEN,
+                lifecycleStatus = ChallengeStatus.Pending,
+                phase = ChallengePhase.Upcoming,
+            )
+        every { repository.findById(B3trChallenge.documentId(1L)) } returns
+            java.util.Optional.of(existing)
+        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returnsMany
+            listOf(listOf(existing), emptyList())
+
+        val (updated, archived) =
+            runBlocking { service.processEvents(listOf(emissionEvent(id = "emission", cycle = 5))) }
+
+        assertEquals(1, updated.size)
+        assertEquals(1, archived.size)
+        assertEquals(ChallengePhase.Live, updated.single().phase)
+        assertEquals(ChallengeStatus.Active, updated.single().lifecycleStatus)
+    }
+
     private fun challengeEvent(
         eventType: String,
         id: String,
@@ -267,6 +330,20 @@ class B3trChallengesServiceTest {
             params =
                 AbiEventParameters(
                     returnValues = returnValues + ("challengeId" to BigInteger.valueOf(challengeId))
+                ),
+        )
+
+    private fun emissionEvent(id: String, cycle: Int, eventType: String = "EmissionDistributed") =
+        buildIndexedEvent(
+            id = id,
+            blockId = "0xblock",
+            blockNumber = 101L,
+            blockTimestamp = 1_100L,
+            txId = "0xemission",
+            eventType = eventType,
+            params =
+                AbiEventParameters(
+                    returnValues = mapOf("cycle" to BigInteger.valueOf(cycle.toLong()))
                 ),
         )
 
@@ -315,11 +392,15 @@ class B3trChallengesServiceTest {
 
     private fun challenge(
         version: Int,
+        kind: ChallengeKind = ChallengeKind.Stake,
+        challengeType: ChallengeType = ChallengeType.MaxActions,
         participants: List<String>,
         invited: List<String>,
         declined: List<String>,
         eligibleInvitees: List<String>,
         totalPrize: BigInteger,
+        lifecycleStatus: ChallengeStatus = ChallengeStatus.Pending,
+        phase: ChallengePhase = ChallengePhase.Upcoming,
     ) =
         B3trChallenge(
             version = version,
@@ -327,12 +408,12 @@ class B3trChallengesServiceTest {
             blockNumber = 90L,
             blockTimestamp = 900L,
             challengeId = 1L,
-            kind = ChallengeKind.Stake,
+            kind = kind,
             visibility = ChallengeVisibility.Private,
-            challengeType = ChallengeType.MaxActions,
+            challengeType = challengeType,
             status = ChallengeStatus.Pending,
-            lifecycleStatus = ChallengeStatus.Pending,
-            phase = ChallengePhase.Upcoming,
+            lifecycleStatus = lifecycleStatus,
+            phase = phase,
             settlementMode = SettlementMode.None,
             creator = "0x0000000000000000000000000000000000000abc",
             title = "Spring Sprint",
@@ -369,7 +450,52 @@ class B3trChallengesServiceTest {
             createdAtBlockNumber = 80L,
             createdAtBlockTimestamp = 800L,
             createdTxId = "0xcreated",
-            currentRound = 0,
-            maxParticipants = 100,
+        )
+
+    private fun stubCurrentRound(cycle: Int? = null) {
+        coEvery { thorClient.getBlock(any<BlockRevision>()) } returns bestBlock()
+        coEvery { thorClient.getEventLogs(any<EventLogsRequest>()) } returns
+            (cycle?.let { listOf(emissionLog(it)) } ?: emptyList())
+    }
+
+    private fun emissionLog(cycle: Int) =
+        EventLog(
+            address = "0x0000000000000000000000000000000000000def",
+            topics =
+                listOf(
+                    "0x${ContractUtils.getEventSignature("EmissionDistributed(uint256,uint256,uint256,uint256)")}",
+                    HexUtils.toHex(cycle.toLong(), 64),
+                ),
+            data = "0x",
+            meta =
+                EventMeta(
+                    blockID = "0xblock",
+                    blockNumber = 99L,
+                    blockTimestamp = 999L,
+                    txID = "0xtx",
+                    txOrigin = "0xorigin",
+                    clauseIndex = 0,
+                ),
+        )
+
+    private fun bestBlock() =
+        Block(
+            number = 100L,
+            id = "0xblock",
+            size = 1L,
+            parentID = "0xparent",
+            timestamp = 1_000L,
+            gasLimit = 1L,
+            beneficiary = "0xbeneficiary",
+            gasUsed = 1L,
+            totalScore = 1L,
+            txsRoot = "0xtxs",
+            txsFeatures = 0,
+            stateRoot = "0xstate",
+            receiptsRoot = "0xreceipts",
+            com = true,
+            signer = "0xsigner",
+            isTrunk = true,
+            isFinalized = true,
         )
 }

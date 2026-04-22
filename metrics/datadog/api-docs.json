@@ -483,10 +483,6 @@
             ],
             "type": "string"
           },
-          "maxParticipants": {
-            "format": "int32",
-            "type": "integer"
-          },
           "metadataURI": {
             "type": "string"
           },
@@ -603,7 +599,6 @@
           "invitedCount",
           "kind",
           "lifecycleStatus",
-          "maxParticipants",
           "metadataURI",
           "numWinners",
           "participantCount",
@@ -689,10 +684,6 @@
             ],
             "type": "string"
           },
-          "maxParticipants": {
-            "format": "int32",
-            "type": "integer"
-          },
           "metadataURI": {
             "type": "string"
           },
@@ -774,7 +765,6 @@
           "invitedCount",
           "kind",
           "lifecycleStatus",
-          "maxParticipants",
           "metadataURI",
           "numWinners",
           "participantCount",

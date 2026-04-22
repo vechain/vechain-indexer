@@ -20,7 +20,7 @@ fun ChallengePhase.acceptedLifecycleStatuses(): Set<ChallengeStatus> =
             setOf(ChallengeStatus.Completed, ChallengeStatus.Cancelled, ChallengeStatus.Invalid)
     }
 
-data class ChallengeRuntimeState(val currentRound: Int = 0, val maxParticipants: Int = 0)
+data class ChallengeRuntimeState(val currentRound: Int = 0)
 
 fun computeChallengeLifecycleStatus(
     rawStatus: ChallengeStatus,
@@ -68,19 +68,9 @@ fun B3trChallenge.withRuntimeState(runtimeState: ChallengeRuntimeState): B3trCha
             endRound = endRound,
         )
 
-    return if (
-        this.lifecycleStatus == lifecycleStatus &&
-            this.phase == phase &&
-            this.currentRound == runtimeState.currentRound &&
-            this.maxParticipants == runtimeState.maxParticipants
-    ) {
+    return if (this.lifecycleStatus == lifecycleStatus && this.phase == phase) {
         this
     } else {
-        copy(
-            lifecycleStatus = lifecycleStatus,
-            phase = phase,
-            currentRound = runtimeState.currentRound,
-            maxParticipants = runtimeState.maxParticipants,
-        )
+        copy(lifecycleStatus = lifecycleStatus, phase = phase)
     }
 }

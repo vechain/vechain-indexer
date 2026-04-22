@@ -47,7 +47,6 @@ open class B3trChallengesConfig {
                     "SplitWinPrizeClaimed",
                     "SplitWinCreatorRefunded",
                     "ChallengeRefundClaimed",
-                    "MaxParticipantsUpdated",
                     "EmissionDistributed",
                     "EmissionDistributedV2",
                 )
