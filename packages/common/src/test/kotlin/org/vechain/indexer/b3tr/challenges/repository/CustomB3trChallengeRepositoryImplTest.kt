@@ -14,11 +14,13 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.aggregation.AggregationResults
 import org.springframework.data.mongodb.core.aggregation.TypedAggregation
 import org.vechain.indexer.b3tr.challenges.B3trChallenge
+import org.vechain.indexer.b3tr.challenges.B3trUserChallenge
 import org.vechain.indexer.b3tr.challenges.ChallengeFilter
 import org.vechain.indexer.b3tr.challenges.ChallengeKind
 import org.vechain.indexer.b3tr.challenges.ChallengeStatus
 import org.vechain.indexer.b3tr.challenges.ChallengeType
 import org.vechain.indexer.b3tr.challenges.ChallengeVisibility
+import org.vechain.indexer.b3tr.challenges.ParticipantStatus
 import org.vechain.indexer.b3tr.challenges.SettlementMode
 
 class CustomB3trChallengeRepositoryImplTest {
@@ -154,6 +156,31 @@ class CustomB3trChallengeRepositoryImplTest {
 
         val queryDoc = query.captured.queryObject
         assertEquals(false, queryDoc.toString().contains("\$nin"))
+    }
+
+    @Test
+    fun `findUserChallengeIdsByWallet filters out phantom None non-creator records`() {
+        val query = slot<org.springframework.data.mongodb.core.query.Query>()
+        every {
+            mongoTemplate.findDistinct(
+                capture(query),
+                B3trUserChallenge::challengeId.name,
+                B3trUserChallenge::class.java,
+                Long::class.javaObjectType,
+            )
+        } returns listOf(1L, 2L)
+
+        repository.findUserChallengeIdsByWallet("0x0000000000000000000000000000000000000abc")
+
+        val queryDoc = query.captured.queryObject
+        assertEquals(true, queryDoc.containsKey("\$and"))
+        val andClauses = queryDoc["\$and"] as List<*>
+        val serialized = andClauses.joinToString(separator = " ") { it.toString() }
+        assertEquals(true, serialized.contains("0x0000000000000000000000000000000000000abc"))
+        assertEquals(true, serialized.contains("isCreator"))
+        assertEquals(true, serialized.contains("participantStatus"))
+        assertEquals(true, serialized.contains("\$ne"))
+        assertEquals(true, serialized.contains(ParticipantStatus.None.toString()))
     }
 
     private fun challenge(challengeId: Long) =

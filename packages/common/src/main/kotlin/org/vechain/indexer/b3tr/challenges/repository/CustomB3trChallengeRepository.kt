@@ -30,6 +30,12 @@ interface CustomB3trChallengeRepository {
         pageable: Pageable,
     ): Slice<B3trChallenge>
 
-    /** Distinct `challengeId`s that the given wallet has any b3tr_user_challenges record for. */
+    /**
+     * Distinct `challengeId`s where the given wallet currently has a meaningful relationship to the
+     * challenge — i.e. `isCreator` is true or `participantStatus` is not `None`. Phantom records
+     * left over from past interactions (e.g. invite-then-leave that cleared the on-chain state)
+     * must not count as "involved" so the wallet can still see those challenges in OpenToJoin /
+     * OthersActive.
+     */
     fun findUserChallengeIdsByWallet(wallet: String): List<Long>
 }

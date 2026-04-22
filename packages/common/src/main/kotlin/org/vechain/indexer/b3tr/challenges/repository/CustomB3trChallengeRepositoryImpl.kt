@@ -68,10 +68,23 @@ constructor(private val mongoTemplate: MongoTemplate) : CustomB3trChallengeRepos
     }
 
     override fun findUserChallengeIdsByWallet(wallet: String): List<Long> {
-        val query =
-            org.springframework.data.mongodb.core.query.Query(
-                Criteria.where(B3trUserChallenge::wallet.name).`is`(wallet)
-            )
+        // Only consider the wallet "involved" when it is the creator or currently holds a
+        // non-None participant status. A `None + !isCreator` record can survive a past
+        // invite-then-leave (or any contract interaction that later cleared the on-chain
+        // relationship), and if treated as "involved" would wrongly exclude the challenge
+        // from OpenToJoin / OthersActive buckets.
+        val criteria =
+            Criteria()
+                .andOperator(
+                    Criteria.where(B3trUserChallenge::wallet.name).`is`(wallet),
+                    Criteria()
+                        .orOperator(
+                            Criteria.where(B3trUserChallenge::isCreator.name).`is`(true),
+                            Criteria.where(B3trUserChallenge::participantStatus.name)
+                                .ne(ParticipantStatus.None),
+                        ),
+                )
+        val query = org.springframework.data.mongodb.core.query.Query(criteria)
         return mongoTemplate.findDistinct(
             query,
             B3trUserChallenge::challengeId.name,
