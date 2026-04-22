@@ -108,6 +108,62 @@ class CustomB3trChallengeRepositoryImplTest {
     }
 
     @Test
+    fun `findByFilter NeededAction gates refund branches by challenge kind`() {
+        val aggregation = slot<TypedAggregation<*>>()
+        every { mongoTemplate.aggregate(capture(aggregation), B3trChallenge::class.java) } returns
+            AggregationResults(emptyList(), Document())
+
+        repository.findByFilter(
+            wallet = "0x0000000000000000000000000000000000000abc",
+            filter = ChallengeFilter.NeededAction,
+            pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "challengeId")),
+        )
+
+        val pipeline = aggregation.captured.toPipeline(Aggregation.DEFAULT_CONTEXT)
+        val branches =
+            pipeline
+                .mapNotNull { it["\$match"] as? Map<*, *> }
+                .single { it.containsKey("\$or") }["\$or"]
+                as List<*>
+
+        // Find the two refund branches (Cancelled/Invalid + not-yet-refunded) and
+        // assert each is gated by the correct (kind, role) pair.
+        val refundBranches =
+            branches
+                .map { it as Map<*, *> }
+                .filter { branch ->
+                    val andClauses = branch["\$and"] as? List<*> ?: return@filter false
+                    andClauses.any { clause ->
+                        val map = clause as? Map<*, *> ?: return@any false
+                        val status = map["challenge.status"] as? Map<*, *>
+                        val inList = status?.get("\$in") as? List<*>
+                        inList?.toSet() == setOf(ChallengeStatus.Cancelled, ChallengeStatus.Invalid)
+                    }
+                }
+        assertEquals(2, refundBranches.size)
+
+        val refundSignatures =
+            refundBranches
+                .map { branch ->
+                    val andClauses = branch["\$and"] as List<*>
+                    val clauses = andClauses.map { it as Map<*, *> }
+                    val kind =
+                        clauses.firstNotNullOfOrNull { it["challenge.kind"] as? ChallengeKind }
+                    val joined = clauses.any { it["participantStatus"] == ParticipantStatus.Joined }
+                    val creator = clauses.any { it["isCreator"] == true }
+                    Triple(kind, joined, creator)
+                }
+                .toSet()
+        assertEquals(
+            setOf(
+                Triple(ChallengeKind.Stake, true, false),
+                Triple(ChallengeKind.Sponsored, false, true),
+            ),
+            refundSignatures,
+        )
+    }
+
+    @Test
     fun `findByFilter OpenToJoin throws — served by findByVisibilityAndStatusExcludingIds`() {
         try {
             repository.findByFilter(
