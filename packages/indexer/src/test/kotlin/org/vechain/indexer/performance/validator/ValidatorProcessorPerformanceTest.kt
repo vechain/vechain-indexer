@@ -3,6 +3,7 @@ package org.vechain.indexer.performance.validator
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.test.context.ActiveProfiles
@@ -14,6 +15,7 @@ import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
+import org.vechain.indexer.validator.DelegationRepository
 import org.vechain.indexer.validator.ValidatorConfig
 import org.vechain.indexer.validator.ValidatorProcessor
 import org.vechain.indexer.validator.ValidatorRepository
@@ -24,6 +26,8 @@ import org.vechain.indexer.validator.ValidatorService
 class ValidatorProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var validatorRepository: ValidatorRepository
+    @Autowired lateinit var delegationRepository: DelegationRepository
+    @Autowired @Qualifier("delegationIndexer") lateinit var delegationIndexer: Indexer
     @Autowired lateinit var validatorService: ValidatorService
     @Autowired lateinit var inlineVersioningProperties: InlineVersioningProperties
     @Autowired lateinit var mongoTemplate: MongoTemplate
@@ -82,6 +86,7 @@ class ValidatorProcessorPerformanceTest : BasePerformanceTest() {
             if (profiler != null) {
                 ProfiledValidatorService(
                     repository = validatorRepository,
+                    delegationRepository = delegationRepository,
                     mongoTemplate = mongoTemplate,
                     inlineVersioningProperties = inlineVersioningProperties,
                     profiler = profiler,
@@ -114,6 +119,7 @@ class ValidatorProcessorPerformanceTest : BasePerformanceTest() {
             .validatorIndexer(
                 thorClient = thorClient,
                 processor = processor,
+                delegationIndexer = delegationIndexer,
                 startBlock = startBlock,
                 syncLogInterval = 100L,
                 builtinStakerAddress = builtinStakerAddress,

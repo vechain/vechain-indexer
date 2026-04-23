@@ -55,7 +55,7 @@ open class ValidatorController(
 
             You can also sort the results by one of the supported fields and paginate.
 
-            - `sortBy`: Choose between `validatorTvl`, `totalTvl`, `blockProbability`, `delegatorTvl`, or `nft:<Level>` (e.g. `nft:Strength`)
+            - `sortBy`: Choose between `validatorTvl`, `totalTvl`, `blockProbability`, `delegatorTvl`, or `nft:<Level>` (projected next-cycle yield if that NFT were delegated, e.g. `nft:Strength`)
             - `page` and `size`: Controls pagination
             - `direction`: Either `asc` or `desc`
             """,

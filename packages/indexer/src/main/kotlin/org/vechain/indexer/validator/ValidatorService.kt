@@ -13,6 +13,7 @@ import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.saveVersionedDocuments
+import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.NumberUtils
@@ -26,6 +27,7 @@ import org.vechain.indexer.validator.logic.ValidatorCalculator
 @Service
 open class ValidatorService(
     private val repository: ValidatorRepository,
+    private val delegationRepository: DelegationRepository,
     private val mongoTemplate: MongoTemplate,
     private val inlineVersioningProperties: InlineVersioningProperties,
 ) {
@@ -86,6 +88,7 @@ open class ValidatorService(
                 rows = ValidatorDecoder.decodeRows(decodedInfo.decodedValidators),
                 persistedDocs = existingDocs,
                 carriedDocs = carriedDocs,
+                currentDelegatedLevelsByValidator = loadCurrentDelegatedLevelsByValidator(),
                 totalWeight = decodedInfo.totalWeight,
                 vetPriceUsd = decodedInfo.vetPriceUsd,
                 vthoPriceUsd = decodedInfo.vthoPriceUsd,
@@ -116,6 +119,16 @@ open class ValidatorService(
 
     private fun loadExistingDocs(): Map<String, Validator> =
         repository.findByStatusNot(Status.EXITED).associateBy { it.id }
+
+    private fun loadCurrentDelegatedLevelsByValidator(): Map<String, Map<TokenLevel, Long>> =
+        delegationRepository
+            .aggregateActiveDelegationsByValidatorAndLevel()
+            .groupBy { it.validator }
+            .mapValues { (_, aggregates) ->
+                aggregates.associate { aggregate ->
+                    TokenLevel.valueOf(aggregate.level) to aggregate.nftCount
+                }
+            }
 
     private fun canUseEventOnlyFallback(existingDocs: Map<String, Validator>): Boolean =
         existingDocs.isEmpty() || existingDocs.values.none(::hasSnapshotBackedState)

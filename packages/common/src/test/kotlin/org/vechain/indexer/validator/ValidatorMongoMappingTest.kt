@@ -33,18 +33,25 @@ internal class ValidatorMongoMappingTest {
     }
 
     @Test
-    fun `validator nftYieldsNextCycle values are stored as Decimal128`() {
+    fun `validator nft yield maps are stored as Decimal128`() {
         val validator =
             Validator(
                 id = "0xvalidator",
                 blockId = "0xblock",
                 blockNumber = 1L,
                 blockTimestamp = 1_000L,
-                nftYieldsNextCycle =
+                nftYieldsIfDelegatedNextCycle =
                     TokenLevelDecimalValues.fromMap(
                         mapOf(
                             TokenLevel.Dawn to BigDecimal("1.25"),
                             TokenLevel.Strength to BigDecimal("2.50"),
+                        )
+                    ),
+                nftYields =
+                    TokenLevelDecimalValues.fromMap(
+                        mapOf(
+                            TokenLevel.Lightning to BigDecimal("1.75"),
+                            TokenLevel.VeThorX to BigDecimal("3.50"),
                         )
                     ),
                 version = 1,
@@ -60,16 +67,23 @@ internal class ValidatorMongoMappingTest {
 
         expectThat(stored).isNotNull()
 
-        val storedYields = stored!!.get("nftYieldsNextCycle", Document::class.java)
-        expectThat(storedYields).isNotNull()
-        expectThat(storedYields!!.get("Dawn")).isA<Decimal128>()
-        expectThat(storedYields.get("Strength")).isA<Decimal128>()
+        val projectedYields = stored!!.get("nftYieldsIfDelegatedNextCycle", Document::class.java)
+        expectThat(projectedYields).isNotNull()
+        expectThat(projectedYields!!.get("Dawn")).isA<Decimal128>()
+        expectThat(projectedYields.get("Strength")).isA<Decimal128>()
+
+        val currentYields = stored.get("nftYields", Document::class.java)
+        expectThat(currentYields).isNotNull()
+        expectThat(currentYields!!.get("Lightning")).isA<Decimal128>()
+        expectThat(currentYields.get("VeThorX")).isA<Decimal128>()
 
         val reloaded = template.findById(validator.id, Validator::class.java)
         expectThat(reloaded).isNotNull()
-        expectThat(reloaded!!.nftYieldsNextCycle?.get(TokenLevel.Dawn))
+        expectThat(reloaded!!.nftYieldsIfDelegatedNextCycle?.get(TokenLevel.Dawn))
             .isEqualTo(BigDecimal("1.25"))
-        expectThat(reloaded.nftYieldsNextCycle?.get(TokenLevel.Strength))
+        expectThat(reloaded.nftYieldsIfDelegatedNextCycle?.get(TokenLevel.Strength))
             .isEqualTo(BigDecimal("2.50"))
+        expectThat(reloaded.nftYields?.get(TokenLevel.Lightning)).isEqualTo(BigDecimal("1.75"))
+        expectThat(reloaded.nftYields?.get(TokenLevel.VeThorX)).isEqualTo(BigDecimal("3.50"))
     }
 }
