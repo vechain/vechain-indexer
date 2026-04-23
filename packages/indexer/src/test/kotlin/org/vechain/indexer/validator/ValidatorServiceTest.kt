@@ -21,6 +21,7 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.domain.ValidatorDecoder
@@ -29,6 +30,7 @@ import org.vechain.indexer.validator.models.DecodedValidatorInfo
 
 class ValidatorServiceTest {
     private val repository = mockk<ValidatorRepository>()
+    private val delegationRepository = mockk<DelegationRepository>()
     private val mongoTemplate = mockk<MongoTemplate>(relaxed = true)
     private val inlineVersioningProperties = mockk<InlineVersioningProperties>()
 
@@ -38,7 +40,15 @@ class ValidatorServiceTest {
     fun setup() {
         every { inlineVersioningProperties.blockWindow } returns 10000L
         every { inlineVersioningProperties.maxVersions } returns 100
-        service = ValidatorService(repository, mongoTemplate, inlineVersioningProperties)
+        every { delegationRepository.aggregateActiveDelegationsByValidatorAndLevel() } returns
+            emptyList()
+        service =
+            ValidatorService(
+                repository,
+                delegationRepository,
+                mongoTemplate,
+                inlineVersioningProperties,
+            )
     }
 
     @AfterEach
@@ -273,14 +283,24 @@ class ValidatorServiceTest {
 
         mockkObject(ValidatorDecoder, ValidatorAssembler)
         every { ValidatorDecoder.decodeResponseInfo(any(), any()) } returns decodedInfo()
+        every { delegationRepository.aggregateActiveDelegationsByValidatorAndLevel() } returns
+            listOf(
+                ValidatorDelegationLevelAggregateResult(
+                    validator = validatorId,
+                    level = TokenLevel.Dawn.name,
+                    nftCount = 2L,
+                )
+            )
 
         val persistedDocsSlot = slot<Map<String, Validator>>()
         val carriedDocsSlot = slot<Map<String, Validator>>()
+        val currentLevelsSlot = slot<Map<String, Map<TokenLevel, Long>>>()
         every {
             ValidatorAssembler.unpackValidators(
                 any(),
                 capture(persistedDocsSlot),
                 capture(carriedDocsSlot),
+                capture(currentLevelsSlot),
                 any(),
                 any(),
                 any(),
@@ -313,6 +333,7 @@ class ValidatorServiceTest {
         assertThat(carriedDocsSlot.captured[validatorId]!!.beneficiary).isEqualTo("0xBEN")
         assertThat(carriedDocsSlot.captured[validatorId]!!.exitingValidatorVetStaked)
             .isEqualByComparingTo(BigDecimal("25000000"))
+        assertThat(currentLevelsSlot.captured[validatorId]).isEqualTo(mapOf(TokenLevel.Dawn to 2L))
     }
 
     @Test
@@ -340,6 +361,7 @@ class ValidatorServiceTest {
                 any(),
                 any(),
                 capture(carriedDocsSlot),
+                any(),
                 any(),
                 any(),
                 any(),
@@ -391,6 +413,7 @@ class ValidatorServiceTest {
                 any(),
                 any(),
                 any(),
+                any(),
             )
         } returns emptyList()
 
@@ -427,6 +450,7 @@ class ValidatorServiceTest {
                 any(),
                 any(),
                 capture(carriedDocsSlot),
+                any(),
                 any(),
                 any(),
                 any(),

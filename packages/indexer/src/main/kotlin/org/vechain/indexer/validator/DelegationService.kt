@@ -32,7 +32,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
  *
  * Returns updated delegations and those that must be archived.
  */
-@Profile("validator", "delegation")
+@Profile("validator", "validator-stats", "delegation")
 @Service
 open class DelegationService(
     private val repository: DelegationRepository,

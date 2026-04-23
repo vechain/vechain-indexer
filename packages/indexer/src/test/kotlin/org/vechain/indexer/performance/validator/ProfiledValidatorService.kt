@@ -6,6 +6,7 @@ import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
+import org.vechain.indexer.validator.DelegationRepository
 import org.vechain.indexer.validator.Validator
 import org.vechain.indexer.validator.ValidatorRepository
 import org.vechain.indexer.validator.ValidatorService
@@ -13,10 +14,11 @@ import org.vechain.indexer.validator.ValidatorService
 /** Extended ValidatorService that profiles the main processing and save steps. */
 class ProfiledValidatorService(
     repository: ValidatorRepository,
+    delegationRepository: DelegationRepository,
     mongoTemplate: MongoTemplate,
     inlineVersioningProperties: InlineVersioningProperties,
     private val profiler: DetailedProfiler,
-) : ValidatorService(repository, mongoTemplate, inlineVersioningProperties) {
+) : ValidatorService(repository, delegationRepository, mongoTemplate, inlineVersioningProperties) {
 
     override fun processBlock(
         block: Block,

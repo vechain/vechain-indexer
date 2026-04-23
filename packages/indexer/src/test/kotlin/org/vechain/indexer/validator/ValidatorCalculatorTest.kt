@@ -59,12 +59,12 @@ class ValidatorCalculatorTest {
         assertThat(avgDelegatorYield.setScale(0, RoundingMode.HALF_UP)).isEqualTo(BigDecimal("700"))
     }
 
-    // --- calculateNftLevelYields tests ---
+    // --- calculateNftLevelYieldsIfDelegatedNextCycle tests ---
 
     private val allNftLevels = TokenLevel.entries.filter { it != TokenLevel.All }
 
-    private fun callNftYields(nextCycleStake: BigDecimal, status: Status = Status.ACTIVE) =
-        ValidatorCalculator.calculateNftLevelYields(
+    private fun callProjectedNftYields(nextCycleStake: BigDecimal, status: Status = Status.ACTIVE) =
+        ValidatorCalculator.calculateNftLevelYieldsIfDelegatedNextCycle(
             nextPeriodWeight = BigDecimal("1000000"),
             nextPeriodVET = BigDecimal("100000000"),
             nextCycleEffectiveDelegationStake = BigDecimal("10000000"),
@@ -76,14 +76,14 @@ class ValidatorCalculatorTest {
         )
 
     @Test
-    fun `nftYieldsNextCycle is empty when validator is at max capacity 600M`() {
-        val result = callNftYields(nextCycleStake = BigDecimal("600000000"))
+    fun `nftYieldsIfDelegatedNextCycle is empty when validator is at max capacity 600M`() {
+        val result = callProjectedNftYields(nextCycleStake = BigDecimal("600000000"))
         assertThat(result).isEmpty()
     }
 
     @Test
-    fun `nftYieldsNextCycle near capacity includes small NFTs but excludes large ones`() {
-        val result = callNftYields(nextCycleStake = BigDecimal("599000000"))
+    fun `nftYieldsIfDelegatedNextCycle near capacity includes small NFTs but excludes large ones`() {
+        val result = callProjectedNftYields(nextCycleStake = BigDecimal("599000000"))
 
         // Small NFTs (staked <= 1M) should be included
         assertThat(result).containsKey(TokenLevel.Dawn) // 10K
@@ -101,22 +101,55 @@ class ValidatorCalculatorTest {
     }
 
     @Test
-    fun `nftYieldsNextCycle with plenty of capacity includes all levels`() {
-        val result = callNftYields(nextCycleStake = BigDecimal("100000000"))
+    fun `nftYieldsIfDelegatedNextCycle with plenty of capacity includes all levels`() {
+        val result = callProjectedNftYields(nextCycleStake = BigDecimal("100000000"))
         assertThat(result.keys).containsExactlyInAnyOrderElementsOf(allNftLevels)
     }
 
     @Test
-    fun `nftYieldsNextCycle is empty for exiting validator`() {
+    fun `nftYieldsIfDelegatedNextCycle is empty for exiting validator`() {
         val result =
-            callNftYields(nextCycleStake = BigDecimal("100000000"), status = Status.EXITING)
+            callProjectedNftYields(
+                nextCycleStake = BigDecimal("100000000"),
+                status = Status.EXITING,
+            )
         assertThat(result).isEmpty()
     }
 
     @Test
-    fun `nftYieldsNextCycle exact boundary - Dawn included when stake plus Dawn equals 600M`() {
+    fun `nftYieldsIfDelegatedNextCycle exact boundary includes Dawn at 600M`() {
         // 599,990,000 + 10,000 (Dawn) = 600,000,000 exactly — should be included (strict >)
-        val result = callNftYields(nextCycleStake = BigDecimal("599990000"))
+        val result = callProjectedNftYields(nextCycleStake = BigDecimal("599990000"))
         assertThat(result).containsKey(TokenLevel.Dawn)
+    }
+
+    @Test
+    fun `nftYields is empty when validator has no delegated levels`() {
+        val result =
+            ValidatorCalculator.calculateDelegatedNftLevelYieldsCurrentCycle(
+                currentDelegatedLevels = emptyMap(),
+                blocksPerYear = BigDecimal("100"),
+                vthoIssued = BigDecimal("100"),
+                vthoPriceUsd = BigDecimal.ONE,
+                vetPriceUsd = BigDecimal.ONE,
+            )
+
+        assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `nftYields only includes delegated levels`() {
+        val result =
+            ValidatorCalculator.calculateDelegatedNftLevelYieldsCurrentCycle(
+                currentDelegatedLevels = mapOf(TokenLevel.Dawn to 2L, TokenLevel.VeThorX to 1L),
+                blocksPerYear = BigDecimal("100"),
+                vthoIssued = BigDecimal("100"),
+                vthoPriceUsd = BigDecimal.ONE,
+                vetPriceUsd = BigDecimal.ONE,
+            )
+
+        assertThat(result).containsKeys(TokenLevel.Dawn, TokenLevel.VeThorX)
+        assertThat(result).doesNotContainKeys(TokenLevel.Strength, TokenLevel.Mjolnir)
+        assertThat(result[TokenLevel.VeThorX]).isGreaterThan(result[TokenLevel.Dawn])
     }
 }

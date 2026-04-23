@@ -21,7 +21,7 @@ object SortFieldUtils {
                         "Invalid nft level: $level. Allowed values: ${VALID_NFT_LEVELS.joinToString(", ")}."
                     )
                 }
-                "nftYieldsNextCycle.$level"
+                "nftYieldsIfDelegatedNextCycle.$level"
             }
             else ->
                 throw BadRequestException(

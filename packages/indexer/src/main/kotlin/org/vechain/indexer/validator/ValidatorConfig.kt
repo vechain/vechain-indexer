@@ -1,5 +1,6 @@
 package org.vechain.indexer.validator
 
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -18,6 +19,7 @@ open class ValidatorConfig {
     open fun validatorIndexer(
         thorClient: ThorClient,
         processor: ValidatorProcessor,
+        @Qualifier("delegationIndexer") delegationIndexer: Indexer,
         @Value("\${indexer.start-block.validator}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLogInterval: Long,
         @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
@@ -38,6 +40,7 @@ open class ValidatorConfig {
                 listOf("BeneficiarySet", "StakeDecreased", "StakeIncreased", "ValidationWithdrawn")
             )
             .callDataClauses(buildClauses(getAllValidatorsAddress))
+            .dependsOn(delegationIndexer)
             .excludeVetTransfers()
             .build()
 }
