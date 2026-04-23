@@ -2,8 +2,10 @@ package org.vechain.indexer.b3tr.challenges
 
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import java.math.BigInteger
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -17,6 +19,8 @@ import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.thor.model.BlockRevision
+import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.thor.model.InspectionResult
 
 class B3trUserChallengesServiceTest {
@@ -254,18 +258,19 @@ class B3trUserChallengesServiceTest {
         every { repository.findAllByChallengeId(1L) } returns listOf(winner, nonWinner)
 
         val bestScore = BigInteger.valueOf(7)
-        coEvery { thorClient.inspectClauses(any()) } answers
+        val clausesSlot = slot<List<Clause>>()
+        val revisionSlot = slot<BlockRevision>()
+        coEvery { thorClient.inspectClauses(capture(clausesSlot), capture(revisionSlot)) } answers
             {
-                val clauseDataArg = firstArg<List<Any>>().first().toString()
-                // The winner's address ends in ...a; non-winner ends in ...b. Inspect the
-                // encoded participant address to determine which response to return.
-                val returns =
-                    if (clauseDataArg.contains(ADDR_A.removePrefix("0x"))) {
-                        bestScore
-                    } else {
-                        BigInteger.valueOf(3)
-                    }
-                listOf(inspectionResult(encodeUint256(returns)))
+                firstArg<List<Clause>>().map { clause ->
+                    val returns =
+                        if (clause.toString().contains(ADDR_A.removePrefix("0x"))) {
+                            bestScore
+                        } else {
+                            BigInteger.valueOf(3)
+                        }
+                    inspectionResult(encodeUint256(returns))
+                }
             }
 
         val event =
@@ -288,6 +293,9 @@ class B3trUserChallengesServiceTest {
         val nonWinnerPresent = updated.any { it.wallet == ADDR_B }
         assertFalse(nonWinnerPresent) // non-winner's record didn't change; not in updated set
         assertEquals(1, archived.size) // winner's prior version archived
+        assertEquals(2, clausesSlot.captured.size)
+        assertEquals(BlockRevision.Id(BLOCK_ID), revisionSlot.captured)
+        coVerify(exactly = 1) { thorClient.inspectClauses(any<List<Clause>>(), any()) }
     }
 
     @Test
@@ -329,7 +337,7 @@ class B3trUserChallengesServiceTest {
         val event =
             buildIndexedEvent(
                 id = "reward",
-                blockId = "0xblock",
+                blockId = BLOCK_ID,
                 blockNumber = 100L,
                 blockTimestamp = 1_000L,
                 txId = "0xtx",
@@ -351,7 +359,7 @@ class B3trUserChallengesServiceTest {
     ) =
         buildIndexedEvent(
             id = id,
-            blockId = "0xblock",
+            blockId = BLOCK_ID,
             blockNumber = 100L,
             blockTimestamp = 1L,
             txId = "0xtx-$id",
@@ -376,6 +384,7 @@ class B3trUserChallengesServiceTest {
         )
 
     private companion object {
+        const val BLOCK_ID = "0x1111111111111111111111111111111111111111111111111111111111111111"
         const val ADDR_A = "0x0000000000000000000000000000000000000aaa"
         const val ADDR_B = "0x0000000000000000000000000000000000000bbb"
         const val ADDR_C = "0x0000000000000000000000000000000000000ccc"

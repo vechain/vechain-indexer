@@ -19,6 +19,7 @@ import org.vechain.indexer.event.utils.FunctionReturnDecoder
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.AddressUtils
 import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.utils.EventUtils.groupByBlock
 
@@ -152,6 +153,15 @@ open class B3trUserChallengesService(
                 }
             }
 
+        val completionActionsByChallenge =
+            completionsByChallenge.mapValues { (challengeId, completionEvent) ->
+                fetchParticipantActionsForCompletion(
+                    completionEvent = completionEvent,
+                    challengeId = challengeId,
+                    wallets = walletsByChallenge[challengeId].orEmpty(),
+                )
+            }
+
         val pairsToProcess = linkedSetOf<Pair<String, Long>>()
         pairsToProcess.addAll(directEventsByPair.keys)
         completionsByChallenge.keys.forEach { challengeId ->
@@ -169,6 +179,7 @@ open class B3trUserChallengesService(
                 createdAtByChallengeId = createdAtByChallengeId,
                 accumulator = accumulator,
                 walletsForCompletion = walletsByChallenge[challengeId].orEmpty(),
+                actionsByWalletForCompletion = completionActionsByChallenge[challengeId].orEmpty(),
             )
         }
     }
@@ -181,6 +192,7 @@ open class B3trUserChallengesService(
         createdAtByChallengeId: MutableMap<Long, Long>,
         accumulator: VersionedDocumentAccumulator<B3trUserChallenge>,
         walletsForCompletion: Set<String>,
+        actionsByWalletForCompletion: Map<String, BigInteger>,
     ) {
         val recordId = B3trUserChallenge.documentId(wallet, challengeId)
         val (existing, nextVersion) = accumulator.resolve(recordId)
@@ -225,7 +237,7 @@ open class B3trUserChallengesService(
                 shouldFanoutCompletion(completionEvent, walletsForCompletion.size, challengeId)
         ) {
             val bestScore = parseBestScore(completionEvent)
-            val actions = fetchParticipantActions(challengeId, wallet)
+            val actions = actionsByWalletForCompletion[wallet] ?: BigInteger.ZERO
             if (actions == bestScore) {
                 state.isWinner = true
             }
@@ -271,7 +283,7 @@ open class B3trUserChallengesService(
 
         if (candidateCount > WINNER_FANOUT_WARN_THRESHOLD) {
             logger.warn(
-                "Challenge {} completion fanning out {} view calls; consider batching",
+                "Challenge {} completion requires {} participant action lookups at completion block",
                 challengeId,
                 candidateCount,
             )
@@ -287,17 +299,46 @@ open class B3trUserChallengesService(
             else -> BigInteger.ZERO
         }
 
-    private suspend fun fetchParticipantActions(challengeId: Long, wallet: String): BigInteger {
+    private suspend fun fetchParticipantActionsForCompletion(
+        completionEvent: IndexedEvent,
+        challengeId: Long,
+        wallets: Set<String>,
+    ): Map<String, BigInteger> {
+        if (!shouldFanoutCompletion(completionEvent, wallets.size, challengeId)) {
+            return emptyMap()
+        }
+
         val abi = loadChallengesAbiFunction("getParticipantActions")
-        val clause =
-            ContractUtils.createClause(
-                challengesContractAddress,
-                abi,
-                BigInteger.valueOf(challengeId),
-                AddressUtils.toBigInt(wallet),
-            )
-        val response = thorClient.inspectClauses(listOf(clause))
-        val decoded = FunctionReturnDecoder.decode(response[0].data, abi.outputs)
+        val revision = BlockRevision.Id(completionEvent.blockId)
+        val candidateWallets = wallets.sorted()
+        val actionsByWallet = linkedMapOf<String, BigInteger>()
+
+        candidateWallets.chunked(PARTICIPANT_ACTIONS_BATCH_SIZE).forEach { batch ->
+            val clauses =
+                batch.map { wallet ->
+                    ContractUtils.createClause(
+                        challengesContractAddress,
+                        abi,
+                        BigInteger.valueOf(challengeId),
+                        AddressUtils.toBigInt(wallet),
+                    )
+                }
+            val responses = thorClient.inspectClauses(clauses, revision)
+            batch.forEachIndexed { index, wallet ->
+                val response =
+                    responses.getOrNull(index)
+                        ?: error(
+                            "Missing getParticipantActions response for challengeId=$challengeId wallet=$wallet"
+                        )
+                actionsByWallet[wallet] = parseParticipantActions(response.data, abi)
+            }
+        }
+
+        return actionsByWallet
+    }
+
+    private fun parseParticipantActions(data: String, abi: AbiElement): BigInteger {
+        val decoded = FunctionReturnDecoder.decode(data, abi.outputs)
         return when (val raw = decoded[""]) {
             is BigInteger -> raw
             is Number -> BigInteger.valueOf(raw.toLong())
@@ -315,5 +356,6 @@ open class B3trUserChallengesService(
 
     private companion object {
         const val WINNER_FANOUT_WARN_THRESHOLD = 200
+        const val PARTICIPANT_ACTIONS_BATCH_SIZE = 200
     }
 }
