@@ -1,5 +1,6 @@
 package org.vechain.indexer.b3tr.challenges.repository
 
+import org.bson.Document
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
@@ -14,6 +15,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.b3tr.challenges.B3trChallenge
 import org.vechain.indexer.b3tr.challenges.B3trUserChallenge
 import org.vechain.indexer.b3tr.challenges.ChallengeFilter
+import org.vechain.indexer.b3tr.challenges.ChallengeKind
 import org.vechain.indexer.b3tr.challenges.ChallengeStatus
 import org.vechain.indexer.b3tr.challenges.ChallengeType
 import org.vechain.indexer.b3tr.challenges.ChallengeVisibility
@@ -68,10 +70,23 @@ constructor(private val mongoTemplate: MongoTemplate) : CustomB3trChallengeRepos
     }
 
     override fun findUserChallengeIdsByWallet(wallet: String): List<Long> {
-        val query =
-            org.springframework.data.mongodb.core.query.Query(
-                Criteria.where(B3trUserChallenge::wallet.name).`is`(wallet)
-            )
+        // Only consider the wallet "involved" when it is the creator or currently holds a
+        // non-None participant status. A `None + !isCreator` record can survive a past
+        // invite-then-leave (or any contract interaction that later cleared the on-chain
+        // relationship), and if treated as "involved" would wrongly exclude the challenge
+        // from OpenToJoin / OthersActive buckets.
+        val criteria =
+            Criteria()
+                .andOperator(
+                    Criteria.where(B3trUserChallenge::wallet.name).`is`(wallet),
+                    Criteria()
+                        .orOperator(
+                            Criteria.where(B3trUserChallenge::isCreator.name).`is`(true),
+                            Criteria.where(B3trUserChallenge::participantStatus.name)
+                                .ne(ParticipantStatus.None),
+                        ),
+                )
+        val query = org.springframework.data.mongodb.core.query.Query(criteria)
         return mongoTemplate.findDistinct(
             query,
             B3trUserChallenge::challengeId.name,
@@ -128,6 +143,7 @@ constructor(private val mongoTemplate: MongoTemplate) : CustomB3trChallengeRepos
     private fun neededActionCriteria(): Criteria {
         val statusField = "challenge.${B3trChallenge::status.name}"
         val typeField = "challenge.${B3trChallenge::challengeType.name}"
+        val kindField = "challenge.${B3trChallenge::kind.name}"
         val endRoundPassedField = "challenge.${B3trChallenge::endRoundPassed.name}"
 
         val invitedNotResponded =
@@ -159,19 +175,40 @@ constructor(private val mongoTemplate: MongoTemplate) : CustomB3trChallengeRepos
                             Criteria.where(B3trUserChallenge::isCreator.name).`is`(true),
                         ),
                 )
-        val canReclaimStake =
+        // Refund eligibility mirrors the on-chain contract:
+        //   - Stake     : only Joined participants can reclaim their stake.
+        //   - Sponsored : only the creator can reclaim the unused sponsorship pool.
+        // Applying a single Joined-OR-creator predicate would wrongly flag Joined
+        // participants of Sponsored Cancelled/Invalid challenges (they never staked
+        // anything, so they have no refund to claim).
+        val canRefundStakeParticipant =
             Criteria()
                 .andOperator(
                     Criteria.where(B3trUserChallenge::hasClaimedRefund.name).`is`(false),
                     Criteria.where(statusField)
                         .`in`(ChallengeStatus.Cancelled, ChallengeStatus.Invalid),
-                    Criteria()
-                        .orOperator(
-                            Criteria.where(B3trUserChallenge::participantStatus.name)
-                                .`is`(ParticipantStatus.Joined),
-                            Criteria.where(B3trUserChallenge::isCreator.name).`is`(true),
-                        ),
+                    Criteria.where(kindField).`is`(ChallengeKind.Stake),
+                    Criteria.where(B3trUserChallenge::participantStatus.name)
+                        .`is`(ParticipantStatus.Joined),
                 )
+        val canRefundSponsoredCreator =
+            Criteria()
+                .andOperator(
+                    Criteria.where(B3trUserChallenge::hasClaimedRefund.name).`is`(false),
+                    Criteria.where(statusField)
+                        .`in`(ChallengeStatus.Cancelled, ChallengeStatus.Invalid),
+                    Criteria.where(kindField).`is`(ChallengeKind.Sponsored),
+                    Criteria.where(B3trUserChallenge::isCreator.name).`is`(true),
+                )
+        // Mirrors the on-chain `claimCreatorSplitWinRefund` precondition: the creator can only
+        // refund when there are still unclaimed slots (`winnersClaimed < numWinners`). Without
+        // this, fully-settled Split Win challenges would surface as actionable for the creator
+        // even though calling the contract would revert with `NothingToRefund`.
+        val winnersClaimedField = "challenge.${B3trChallenge::winnersClaimed.name}"
+        val numWinnersField = "challenge.${B3trChallenge::numWinners.name}"
+        val hasUnclaimedSplitWinSlots =
+            Criteria.where("\$expr")
+                .`is`(Document("\$lt", listOf("\$$winnersClaimedField", "\$$numWinnersField")))
         val splitWinCreatorRefund =
             Criteria()
                 .andOperator(
@@ -181,6 +218,7 @@ constructor(private val mongoTemplate: MongoTemplate) : CustomB3trChallengeRepos
                         .`in`(ChallengeStatus.Active, ChallengeStatus.Completed),
                     Criteria.where(endRoundPassedField).`is`(true),
                     Criteria.where(B3trUserChallenge::hasClaimedRefund.name).`is`(false),
+                    hasUnclaimedSplitWinSlots,
                 )
 
         return Criteria()
@@ -188,7 +226,8 @@ constructor(private val mongoTemplate: MongoTemplate) : CustomB3trChallengeRepos
                 invitedNotResponded,
                 canClaimPrize,
                 canFinalize,
-                canReclaimStake,
+                canRefundStakeParticipant,
+                canRefundSponsoredCreator,
                 splitWinCreatorRefund,
             )
     }
