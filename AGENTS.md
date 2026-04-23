@@ -60,6 +60,9 @@ More detailed templates and copy/paste snippets live in `notes/indexer-api-playb
 
 ### CRITICAL: 1 Indexer = 1 Collection
 Each indexer MUST map to exactly one MongoDB collection. Never create multiple collections for a single indexer. The backup, restore, and rollback mechanisms all operate at the collection level and assume a 1:1 relationship between an indexer and its collection. Creating multiple collections for one indexer breaks rollback consistency (partial rollbacks), backup integrity (collections can drift out of sync), and restore correctness. If your data model seems to require multiple collections, split it into separate indexers instead. This is a hard rule with no exceptions.
+Indexers must not read from a collection that is not their own. If one indexer is dependent on another then it may be possible to read from the collection of the dependency in some cases, but it is still not desireable. 
+Processor classes should separate processing and persisting. This is generally in the form of a `processEvents` or `processBlock` method that returns a list of documents to be saved, and a `save` method that handles the actual persistence. This keeps the processing logic decoupled from the database and allows for better testing and flexibility.
+Save functions should be covered by a Transactional annotation to ensure that all writes succeed or fail together.
 
 ### On-Chain Events Are the Only Preferred Data Source
 Indexers should consume on-chain events (logs) as their data source. The following alternative data sources carry significant performance implications and should only be used as a last resort:

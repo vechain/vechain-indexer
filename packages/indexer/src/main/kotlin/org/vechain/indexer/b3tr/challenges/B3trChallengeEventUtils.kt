@@ -14,9 +14,9 @@ internal object B3trChallengeEventUtils {
             kind = kind,
             visibility =
                 ChallengeVisibility.fromOrdinal(toIntValue(eventValue(createEvent, "visibility"))),
-            thresholdMode =
-                ThresholdMode.fromOrdinal(toIntValue(eventValue(createEvent, "thresholdMode"))),
-            status = ChallengeStatus.Pending,
+            challengeType =
+                ChallengeType.fromOrdinal(toIntValue(eventValue(createEvent, "challengeType"))),
+            onChainStatus = ChallengeStatus.Pending,
             settlementMode = SettlementMode.None,
             creator = creator,
             title = stringValue(eventValue(createEvent, "title")),
@@ -27,11 +27,13 @@ internal object B3trChallengeEventUtils {
             startRound = toIntValue(eventValue(createEvent, "startRound")),
             endRound = toIntValue(eventValue(createEvent, "endRound")),
             threshold = toBigIntegerValue(eventValue(createEvent, "threshold")),
+            numWinners = 0,
+            winnersClaimed = 0,
+            prizePerWinner = BigInteger.ZERO,
             allApps = toBooleanValue(eventValue(createEvent, "allApps")),
             totalPrize = stakeAmount,
             bestScore = BigInteger.ZERO,
             bestCount = 0,
-            qualifiedCount = 0,
             payoutsClaimed = 0,
             participants =
                 if (kind == ChallengeKind.Stake) {
@@ -42,9 +44,11 @@ internal object B3trChallengeEventUtils {
             invited = mutableListOf(),
             declined = mutableListOf(),
             selectedApps = stringList(eventValue(createEvent, "selectedApps")),
+            winners = mutableListOf(),
             eligibleInvitees = mutableListOf(),
             claimedBy = mutableListOf(),
             refundedBy = mutableListOf(),
+            creatorRefunded = false,
             createdAtBlockNumber = createEvent.blockNumber,
             createdAtBlockTimestamp = createEvent.blockTimestamp,
             createdTxId = createEvent.txId,
@@ -53,6 +57,7 @@ internal object B3trChallengeEventUtils {
 
     fun applyEvent(challengeId: Long, state: MutableChallengeState, event: IndexedEvent) {
         when (event.eventType) {
+            "SplitWinConfigured" -> handleSplitWinConfigured(state, event)
             "ChallengeInviteAdded" -> handleInviteAdded(state, event)
             "ChallengeJoined" -> handleJoined(state, event)
             "ChallengeLeft" -> handleLeft(state, event)
@@ -60,11 +65,18 @@ internal object B3trChallengeEventUtils {
             "ChallengeCancelled" -> setStatus(state, ChallengeStatus.Cancelled)
             "ChallengeActivated" -> setStatus(state, ChallengeStatus.Active)
             "ChallengeInvalidated" -> setStatus(state, ChallengeStatus.Invalid)
-            "ChallengeFinalized" -> handleFinalized(state, event)
+            "ChallengeCompleted" -> handleCompleted(state, event)
             "ChallengePayoutClaimed" -> handlePayoutClaimed(state, event)
+            "SplitWinPrizeClaimed" -> handleSplitWinPrizeClaimed(state, event)
+            "SplitWinCreatorRefunded" -> handleSplitWinCreatorRefunded(state)
             "ChallengeRefundClaimed" -> handleRefundClaimed(state, event)
             else -> error("Unsupported challenge event ${event.eventType} for $challengeId")
         }
+    }
+
+    private fun handleSplitWinConfigured(state: MutableChallengeState, event: IndexedEvent) {
+        state.numWinners = toIntValue(eventValue(event, "numWinners"))
+        state.prizePerWinner = toBigIntegerValue(eventValue(event, "prizePerWinner"))
     }
 
     private fun handleInviteAdded(state: MutableChallengeState, event: IndexedEvent) {
@@ -104,22 +116,39 @@ internal object B3trChallengeEventUtils {
         addDistinct(state.eligibleInvitees, participant)
     }
 
-    private fun setStatus(state: MutableChallengeState, status: ChallengeStatus) {
-        state.status = status
+    private fun setStatus(state: MutableChallengeState, onChainStatus: ChallengeStatus) {
+        state.onChainStatus = onChainStatus
     }
 
-    private fun handleFinalized(state: MutableChallengeState, event: IndexedEvent) {
-        state.status = ChallengeStatus.Finalized
+    private fun handleCompleted(state: MutableChallengeState, event: IndexedEvent) {
+        state.onChainStatus = ChallengeStatus.Completed
         state.settlementMode =
             SettlementMode.fromOrdinal(toIntValue(eventValue(event, "settlementMode")))
         state.bestScore = toBigIntegerValue(eventValue(event, "bestScore"))
         state.bestCount = toIntValue(eventValue(event, "bestCount"))
-        state.qualifiedCount = toIntValue(eventValue(event, "qualifiedCount"))
     }
 
     private fun handlePayoutClaimed(state: MutableChallengeState, event: IndexedEvent) {
         addDistinct(state.claimedBy, getAddress(event, "account"))
         state.payoutsClaimed++
+    }
+
+    private fun handleSplitWinPrizeClaimed(state: MutableChallengeState, event: IndexedEvent) {
+        val winner = getAddress(event, "winner")
+        if (addDistinct(state.winners, winner)) {
+            state.winnersClaimed++
+        }
+        addDistinct(state.claimedBy, winner)
+    }
+
+    private fun handleSplitWinCreatorRefunded(state: MutableChallengeState) {
+        state.creatorRefunded = true
+        // Mark Completed if not already (post-endRound creator refund finalises a Split Win
+        // challenge).
+        if (state.onChainStatus == ChallengeStatus.Active) {
+            state.onChainStatus = ChallengeStatus.Completed
+            state.settlementMode = SettlementMode.SplitWinCompleted
+        }
     }
 
     private fun handleRefundClaimed(state: MutableChallengeState, event: IndexedEvent) {
@@ -137,8 +166,8 @@ internal fun B3trChallenge.toMutableState() =
     MutableChallengeState(
         kind = kind,
         visibility = visibility,
-        thresholdMode = thresholdMode,
-        status = status,
+        challengeType = challengeType,
+        onChainStatus = onChainStatus,
         settlementMode = settlementMode,
         creator = creator,
         title = title,
@@ -149,19 +178,23 @@ internal fun B3trChallenge.toMutableState() =
         startRound = startRound,
         endRound = endRound,
         threshold = threshold,
+        numWinners = numWinners,
+        winnersClaimed = winnersClaimed,
+        prizePerWinner = prizePerWinner,
         allApps = allApps,
         totalPrize = totalPrize,
         bestScore = bestScore,
         bestCount = bestCount,
-        qualifiedCount = qualifiedCount,
         payoutsClaimed = payoutsClaimed,
         participants = participants.toMutableList(),
         invited = invited.toMutableList(),
         declined = declined.toMutableList(),
         selectedApps = selectedApps,
+        winners = winners.toMutableList(),
         eligibleInvitees = eligibleInvitees.toMutableList(),
         claimedBy = claimedBy.toMutableList(),
         refundedBy = refundedBy.toMutableList(),
+        creatorRefunded = creatorRefunded,
         createdAtBlockNumber = createdAtBlockNumber,
         createdAtBlockTimestamp = createdAtBlockTimestamp,
         createdTxId = createdTxId,
@@ -171,6 +204,7 @@ internal fun MutableChallengeState.toDocument(
     challengeId: Long,
     version: Int,
     latestEvent: IndexedEvent,
+    runtimeState: ChallengeRuntimeState,
 ) =
     B3trChallenge(
         version = version,
@@ -180,8 +214,16 @@ internal fun MutableChallengeState.toDocument(
         challengeId = challengeId,
         kind = kind,
         visibility = visibility,
-        thresholdMode = thresholdMode,
-        status = status,
+        challengeType = challengeType,
+        onChainStatus = onChainStatus,
+        status =
+            computeChallengeStatus(
+                onChainStatus = onChainStatus,
+                currentRound = runtimeState.currentRound,
+                startRound = startRound,
+                kind = kind,
+                participantCount = participants.size,
+            ),
         settlementMode = settlementMode,
         creator = creator,
         title = title,
@@ -193,23 +235,29 @@ internal fun MutableChallengeState.toDocument(
         endRound = endRound,
         duration = endRound - startRound + 1,
         threshold = threshold,
+        numWinners = numWinners,
+        winnersClaimed = winnersClaimed,
+        prizePerWinner = prizePerWinner,
         allApps = allApps,
         totalPrize = totalPrize,
         participantCount = participants.size,
         invitedCount = invited.size,
         declinedCount = declined.size,
         selectedAppsCount = selectedApps.size,
+        winnersCount = winners.size,
         bestScore = bestScore,
         bestCount = bestCount,
-        qualifiedCount = qualifiedCount,
         payoutsClaimed = payoutsClaimed,
         participants = participants.toList(),
         invited = invited.toList(),
         declined = declined.toList(),
         selectedApps = selectedApps,
+        winners = winners.toList(),
         eligibleInvitees = eligibleInvitees.toList(),
         claimedBy = claimedBy.toList(),
         refundedBy = refundedBy.toList(),
+        creatorRefunded = creatorRefunded,
+        endRoundPassed = runtimeState.currentRound > endRound,
         createdAtBlockNumber = createdAtBlockNumber,
         createdAtBlockTimestamp = createdAtBlockTimestamp,
         createdTxId = createdTxId,
@@ -264,8 +312,8 @@ private fun toIntValue(value: Any?): Int = toBigIntegerValue(value).toInt()
 internal data class MutableChallengeState(
     var kind: ChallengeKind,
     var visibility: ChallengeVisibility,
-    var thresholdMode: ThresholdMode,
-    var status: ChallengeStatus,
+    var challengeType: ChallengeType,
+    var onChainStatus: ChallengeStatus,
     var settlementMode: SettlementMode,
     var creator: String,
     var title: String,
@@ -276,19 +324,23 @@ internal data class MutableChallengeState(
     var startRound: Int,
     var endRound: Int,
     var threshold: BigInteger,
+    var numWinners: Int,
+    var winnersClaimed: Int,
+    var prizePerWinner: BigInteger,
     var allApps: Boolean,
     var totalPrize: BigInteger,
     var bestScore: BigInteger,
     var bestCount: Int,
-    var qualifiedCount: Int,
     var payoutsClaimed: Int,
     val participants: MutableList<String>,
     val invited: MutableList<String>,
     val declined: MutableList<String>,
     val selectedApps: List<String>,
+    val winners: MutableList<String>,
     val eligibleInvitees: MutableList<String>,
     val claimedBy: MutableList<String>,
     val refundedBy: MutableList<String>,
+    var creatorRefunded: Boolean,
     val createdAtBlockNumber: Long,
     val createdAtBlockTimestamp: Long,
     val createdTxId: String,

@@ -153,36 +153,6 @@
         },
         {
           "filter": {
-            "query": "@http.url_details.path:\"/api/v1/b3tr/challenges/active\""
-          },
-          "name": "/api/v1/b3tr/challenges/active"
-        },
-        {
-          "filter": {
-            "query": "@http.url_details.path:\"/api/v1/b3tr/challenges/explore\""
-          },
-          "name": "/api/v1/b3tr/challenges/explore"
-        },
-        {
-          "filter": {
-            "query": "@http.url_details.path:\"/api/v1/b3tr/challenges/history\""
-          },
-          "name": "/api/v1/b3tr/challenges/history"
-        },
-        {
-          "filter": {
-            "query": "@http.url_details.path:\"/api/v1/b3tr/challenges/needed-actions\""
-          },
-          "name": "/api/v1/b3tr/challenges/needed-actions"
-        },
-        {
-          "filter": {
-            "query": "@http.url_details.path:\"/api/v1/b3tr/challenges/open\""
-          },
-          "name": "/api/v1/b3tr/challenges/open"
-        },
-        {
-          "filter": {
             "query": "@http.url_details.path:\"/api/v1/b3tr/galaxy-members/level-overview\""
           },
           "name": "/api/v1/b3tr/galaxy-members/level-overview"
@@ -228,6 +198,12 @@
             "query": "@http.url_details.path:\"/api/v2/b3tr/proposals/results\""
           },
           "name": "/api/v2/b3tr/proposals/results"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:\"/api/v1/b3tr/challenges\""
+          },
+          "name": "/api/v1/b3tr/challenges"
         },
         {
           "filter": {
@@ -462,6 +438,12 @@
             "query": "@http.url_details.path:/api/v1/b3tr/proposals/*/results"
           },
           "name": "/api/v1/b3tr/proposals/{proposalId}/results"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:/api/v1/b3tr/users/*/challenges"
+          },
+          "name": "/api/v1/b3tr/users/{wallet}/challenges"
         },
         {
           "filter": {
