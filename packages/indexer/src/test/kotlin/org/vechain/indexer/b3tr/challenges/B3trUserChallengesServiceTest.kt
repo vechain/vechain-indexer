@@ -10,6 +10,7 @@ import java.math.BigInteger
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -330,6 +331,55 @@ class B3trUserChallengesServiceTest {
 
         assertEquals(emptyList<B3trUserChallenge>(), updated)
         assertEquals(emptyList<B3trUserChallenge>(), archived)
+    }
+
+    @Test
+    fun `ChallengeCompleted MaxActions fails when participant action lookup reverts`() {
+        val participant =
+            B3trUserChallenge(
+                version = 1,
+                blockId = "0xexisting",
+                blockNumber = 10L,
+                blockTimestamp = 10L,
+                wallet = ADDR_A,
+                challengeId = 1L,
+                challengeCreatedAtBlockTimestamp = 1L,
+                participantStatus = ParticipantStatus.Joined,
+            )
+        every { repository.findAllByChallengeId(1L) } returns listOf(participant)
+        coEvery { thorClient.inspectClauses(any<List<Clause>>(), any()) } returns
+            listOf(
+                InspectionResult(
+                    data = "0x",
+                    events = emptyList(),
+                    transfers = emptyList(),
+                    gasUsed = 0L,
+                    reverted = true,
+                    vmError = "execution reverted",
+                )
+            )
+
+        val event =
+            challengeEvent(
+                eventType = "ChallengeCompleted",
+                id = "complete-reverted",
+                challengeId = 1L,
+                returnValues =
+                    mapOf(
+                        "settlementMode" to 1, // TopWinners
+                        "bestScore" to BigInteger.ONE,
+                        "bestCount" to 1,
+                    ),
+            )
+
+        val error =
+            assertThrows(IllegalStateException::class.java) {
+                runBlocking { service.processEvents(listOf(event)) }
+            }
+
+        assertTrue(error.message!!.contains("getParticipantActions reverted"))
+        assertTrue(error.message!!.contains("challengeId=1"))
+        assertTrue(error.message!!.contains(ADDR_A))
     }
 
     @Test

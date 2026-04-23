@@ -20,6 +20,7 @@ import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.AddressUtils
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockRevision
+import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.utils.EventUtils.groupByBlock
 
@@ -330,15 +331,27 @@ open class B3trUserChallengesService(
                         ?: error(
                             "Missing getParticipantActions response for challengeId=$challengeId wallet=$wallet"
                         )
-                actionsByWallet[wallet] = parseParticipantActions(response.data, abi)
+                actionsByWallet[wallet] =
+                    parseParticipantActions(response, abi, challengeId, wallet)
             }
         }
 
         return actionsByWallet
     }
 
-    private fun parseParticipantActions(data: String, abi: AbiElement): BigInteger {
-        val decoded = FunctionReturnDecoder.decode(data, abi.outputs)
+    private fun parseParticipantActions(
+        response: InspectionResult,
+        abi: AbiElement,
+        challengeId: Long,
+        wallet: String,
+    ): BigInteger {
+        if (response.reverted) {
+            error(
+                "getParticipantActions reverted for challengeId=$challengeId wallet=$wallet vmError=${response.vmError}"
+            )
+        }
+
+        val decoded = FunctionReturnDecoder.decode(response.data, abi.outputs)
         return when (val raw = decoded[""]) {
             is BigInteger -> raw
             is Number -> BigInteger.valueOf(raw.toLong())
