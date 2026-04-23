@@ -1,6 +1,5 @@
 package org.vechain.indexer.b3tr.challenges
 
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
@@ -12,18 +11,10 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils
 import org.vechain.indexer.b3tr.challenges.repository.B3trChallengeRepository
+import org.vechain.indexer.b3tr.round.B3trRoundService
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.saveVersionedDocuments
-import org.vechain.indexer.thor.HexUtils
-import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.thor.model.BlockRevision
-import org.vechain.indexer.thor.model.EventCriteria
-import org.vechain.indexer.thor.model.EventLog
-import org.vechain.indexer.thor.model.EventLogsRequest
-import org.vechain.indexer.thor.model.LogsOptions
-import org.vechain.indexer.thor.model.LogsRange
-import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.utils.EventUtils.groupByBlock
 
 @Profile("b3tr", "b3tr-challenges")
@@ -32,24 +23,11 @@ open class B3trChallengesService(
     private val repository: B3trChallengeRepository,
     private val mongoTemplate: MongoTemplate,
     private val inlineVersioningProperties: InlineVersioningProperties,
-    private val thorClient: ThorClient,
-    @Value("\${business-event.substitutions.EMISSIONS}") emissionsContractAddress: String,
+    private val b3trRoundService: B3trRoundService,
 ) {
     private var runtimeState: ChallengeRuntimeState? = null
 
-    private val normalizedEmissionsContractAddress = HexUtils.normalise(emissionsContractAddress)
     private val challengeQueryBatchSize = 500
-
-    private val emissionDistributedSignature =
-        HexUtils.addPrefix(
-            ContractUtils.getEventSignature("EmissionDistributed(uint256,uint256,uint256,uint256)")
-        )
-    private val emissionDistributedV2Signature =
-        HexUtils.addPrefix(
-            ContractUtils.getEventSignature(
-                "EmissionDistributedV2(uint256,uint256,uint256,uint256,uint256)"
-            )
-        )
 
     private val trackedEventTypes =
         setOf(
@@ -79,8 +57,9 @@ open class B3trChallengesService(
     ): Pair<List<B3trChallenge>, List<B3trChallenge>> {
         val relevantEvents = events.filter { it.eventType in trackedEventTypes }
         if (relevantEvents.isEmpty()) return emptyList<B3trChallenge>() to emptyList()
+        val groupedEvents = groupByBlock(relevantEvents)
 
-        var currentRuntimeState = getRuntimeState()
+        var currentRuntimeState = getRuntimeState(groupedEvents.keys.first().blockId)
 
         val allRecordIds =
             relevantEvents
@@ -100,7 +79,7 @@ open class B3trChallengesService(
                 findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) }
             )
 
-        groupByBlock(relevantEvents).forEach { (_, blockEvents) ->
+        groupedEvents.forEach { (_, blockEvents) ->
             accumulator.startBlock()
 
             val previousRuntimeState = currentRuntimeState
@@ -206,44 +185,17 @@ open class B3trChallengesService(
         )
     }
 
-    private suspend fun getRuntimeState(): ChallengeRuntimeState {
+    private suspend fun getRuntimeState(blockId: String): ChallengeRuntimeState {
         runtimeState?.let {
             return it
         }
 
-        runtimeState = ChallengeRuntimeState(currentRound = restoreCurrentRound())
+        runtimeState = ChallengeRuntimeState(currentRound = restoreCurrentRound(blockId))
         return runtimeState!!
     }
 
-    private suspend fun restoreCurrentRound(): Int {
-        val bestBlock = thorClient.getBlock(BlockRevision.Keyword.BEST)
-        val latestEmission =
-            thorClient.getEventLogs(
-                EventLogsRequest(
-                    range = LogsRange(unit = "block", from = 0, to = bestBlock.number),
-                    options = LogsOptions(offset = 0, limit = 1),
-                    criteriaSet =
-                        listOf(
-                            EventCriteria(
-                                address = normalizedEmissionsContractAddress,
-                                topic0 = emissionDistributedSignature,
-                            ),
-                            EventCriteria(
-                                address = normalizedEmissionsContractAddress,
-                                topic0 = emissionDistributedV2Signature,
-                            ),
-                        ),
-                    order = "desc",
-                )
-            )
-
-        return latestEmission.firstOrNull()?.let(::decodeEmissionCycle) ?: 0
-    }
-
-    private fun decodeEmissionCycle(eventLog: EventLog): Int {
-        val cycleTopic = eventLog.topics.getOrNull(1) ?: error("Missing cycle topic in emission")
-        return HexUtils.toBigInteger(cycleTopic).toInt()
-    }
+    private suspend fun restoreCurrentRound(blockId: String): Int =
+        b3trRoundService.getCurrentRound(blockId) ?: 0
 
     private fun refreshAffectedChallenges(
         accumulator: VersionedDocumentAccumulator<B3trChallenge>,
