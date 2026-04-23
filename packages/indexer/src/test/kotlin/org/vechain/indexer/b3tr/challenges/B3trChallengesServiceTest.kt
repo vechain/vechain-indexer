@@ -1,6 +1,8 @@
 package org.vechain.indexer.b3tr.challenges
 
 import io.mockk.MockKAnnotations
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import java.math.BigInteger
@@ -10,7 +12,9 @@ import org.junit.jupiter.api.Assertions.assertIterableEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.query.Query
 import org.vechain.indexer.b3tr.challenges.repository.B3trChallengeRepository
+import org.vechain.indexer.b3tr.round.B3trRoundService
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
@@ -19,6 +23,7 @@ class B3trChallengesServiceTest {
     private val repository: B3trChallengeRepository = mockk()
     private val mongoTemplate: MongoTemplate = mockk()
     private val inlineVersioningProperties: InlineVersioningProperties = mockk()
+    private val b3trRoundService: B3trRoundService = mockk()
 
     private lateinit var service: B3trChallengesService
 
@@ -28,11 +33,13 @@ class B3trChallengesServiceTest {
         every { inlineVersioningProperties.blockWindow } returns 10_000L
         every { inlineVersioningProperties.maxVersions } returns 100
         every { repository.findById(any()) } returns java.util.Optional.empty()
+        stubCurrentRound()
         service =
             B3trChallengesService(
                 repository = repository,
                 mongoTemplate = mongoTemplate,
                 inlineVersioningProperties = inlineVersioningProperties,
+                b3trRoundService = b3trRoundService,
             )
     }
 
@@ -56,18 +63,17 @@ class B3trChallengesServiceTest {
                 challengeId = 1L,
                 returnValues = mapOf("invitee" to "0x0000000000000000000000000000000000000def"),
             )
-        val finalizedEvent =
+        val completedEvent =
             challengeEvent(
-                eventType = "ChallengeFinalized",
-                id = "finalize",
-                txId = "0xfinalize",
+                eventType = "ChallengeCompleted",
+                id = "complete",
+                txId = "0xcomplete",
                 challengeId = 1L,
                 returnValues =
                     mapOf(
                         "settlementMode" to SettlementMode.TopWinners.ordinal,
                         "bestScore" to BigInteger.valueOf(10),
                         "bestCount" to 1,
-                        "qualifiedCount" to 0,
                     ),
             )
         val payoutEvent =
@@ -85,7 +91,7 @@ class B3trChallengesServiceTest {
 
         val (updated, archived) =
             runBlocking {
-                service.processEvents(listOf(createEvent, inviteEvent, finalizedEvent, payoutEvent))
+                service.processEvents(listOf(createEvent, inviteEvent, completedEvent, payoutEvent))
             }
 
         assertEquals(1, updated.size)
@@ -94,7 +100,7 @@ class B3trChallengesServiceTest {
         assertEquals(1, challenge.version)
         assertEquals("0xcreate", challenge.createdTxId)
         assertEquals(100L, challenge.createdAtBlockNumber)
-        assertEquals(ChallengeStatus.Finalized, challenge.status)
+        assertEquals(ChallengeStatus.Completed, challenge.onChainStatus)
         assertEquals(SettlementMode.TopWinners, challenge.settlementMode)
         assertEquals("Spring Sprint", challenge.title)
         assertEquals("", challenge.description)
@@ -219,7 +225,7 @@ class B3trChallengesServiceTest {
         assertEquals(1, archived.size)
         val challenge = updated.single()
         assertEquals(3, challenge.version)
-        assertEquals(ChallengeStatus.Cancelled, challenge.status)
+        assertEquals(ChallengeStatus.Cancelled, challenge.onChainStatus)
         assertEquals(BigInteger.valueOf(20), challenge.totalPrize)
         assertIterableEquals(
             listOf(
@@ -250,23 +256,141 @@ class B3trChallengesServiceTest {
         )
     }
 
+    @Test
+    fun `processEvents bootstraps current round from contract read`() {
+        stubCurrentRound(5)
+        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
+
+        val createEvent =
+            challengeCreatedEvent(
+                id = "create",
+                txId = "0xcreate",
+                challengeId = 2L,
+                kind = ChallengeKind.Sponsored,
+            )
+
+        val (updated, archived) = runBlocking { service.processEvents(listOf(createEvent)) }
+
+        assertEquals(1, updated.size)
+        assertEquals(0, archived.size)
+        assertEquals(ChallengeStatus.Invalid, updated.single().status)
+    }
+
+    @Test
+    fun `processEvents restores current round from first block in batch`() {
+        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
+        coEvery { b3trRoundService.getCurrentRound("0xblock-50") } returns 5
+
+        val createEvent =
+            challengeCreatedEvent(
+                id = "create",
+                txId = "0xcreate",
+                challengeId = 3L,
+                kind = ChallengeKind.Sponsored,
+                blockId = "0xblock-50",
+                blockNumber = 50L,
+            )
+        val laterEmission =
+            emissionEvent(id = "emission", cycle = 5, blockId = "0xblock-51", blockNumber = 51L)
+
+        val (updated, archived) =
+            runBlocking { service.processEvents(listOf(laterEmission, createEvent)) }
+
+        assertEquals(1, updated.size)
+        assertEquals(0, archived.size)
+        assertEquals(ChallengeStatus.Invalid, updated.single().status)
+        coVerify(exactly = 1) { b3trRoundService.getCurrentRound("0xblock-50") }
+    }
+
+    @Test
+    fun `processEvents falls back to zero when contract read reverts`() {
+        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
+        coEvery { b3trRoundService.getCurrentRound("0xblock-50") } returns null
+
+        val createEvent =
+            challengeCreatedEvent(
+                id = "create",
+                txId = "0xcreate",
+                challengeId = 4L,
+                kind = ChallengeKind.Sponsored,
+                blockId = "0xblock-50",
+                blockNumber = 50L,
+            )
+
+        val (updated, archived) = runBlocking { service.processEvents(listOf(createEvent)) }
+
+        assertEquals(1, updated.size)
+        assertEquals(0, archived.size)
+        assertEquals(ChallengeStatus.Pending, updated.single().status)
+    }
+
+    @Test
+    fun `processEvents refreshes only challenges affected by a round change`() {
+        stubCurrentRound(4)
+        val existing =
+            challenge(
+                version = 2,
+                kind = ChallengeKind.Sponsored,
+                challengeType = ChallengeType.SplitWin,
+                participants = listOf("0x0000000000000000000000000000000000000abc"),
+                invited = emptyList(),
+                declined = emptyList(),
+                eligibleInvitees = emptyList(),
+                totalPrize = BigInteger.TEN,
+                status = ChallengeStatus.Pending,
+            )
+        every { repository.findById(B3trChallenge.documentId(1L)) } returns
+            java.util.Optional.of(existing)
+        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returnsMany
+            listOf(listOf(existing), emptyList())
+
+        val (updated, archived) =
+            runBlocking { service.processEvents(listOf(emissionEvent(id = "emission", cycle = 5))) }
+
+        assertEquals(1, updated.size)
+        assertEquals(1, archived.size)
+        assertEquals(ChallengeStatus.Active, updated.single().status)
+    }
+
     private fun challengeEvent(
         eventType: String,
         id: String,
         txId: String,
         challengeId: Long,
         returnValues: Map<String, Any>,
+        blockId: String = "0xblock",
+        blockNumber: Long = 100L,
     ) =
         buildIndexedEvent(
             id = id,
-            blockId = "0xblock",
-            blockNumber = 100L,
+            blockId = blockId,
+            blockNumber = blockNumber,
             blockTimestamp = 1_000L,
             txId = txId,
             eventType = eventType,
             params =
                 AbiEventParameters(
                     returnValues = returnValues + ("challengeId" to BigInteger.valueOf(challengeId))
+                ),
+        )
+
+    private fun emissionEvent(
+        id: String,
+        cycle: Int,
+        eventType: String = "EmissionDistributed",
+        blockId: String = "0xblock",
+        blockNumber: Long = 101L,
+    ) =
+        buildIndexedEvent(
+            id = id,
+            blockId = blockId,
+            blockNumber = blockNumber,
+            blockTimestamp = 1_100L,
+            txId = "0xemission",
+            eventType = eventType,
+            params =
+                AbiEventParameters(
+                    returnValues = mapOf("cycle" to BigInteger.valueOf(cycle.toLong()))
                 ),
         )
 
@@ -277,7 +401,7 @@ class B3trChallengesServiceTest {
         creator: String = "0x0000000000000000000000000000000000000abc",
         kind: ChallengeKind = ChallengeKind.Stake,
         visibility: ChallengeVisibility = ChallengeVisibility.Private,
-        thresholdMode: ThresholdMode = ThresholdMode.None,
+        challengeType: ChallengeType = ChallengeType.MaxActions,
         title: String = "Spring Sprint",
         description: String = "",
         imageURI: String = "",
@@ -288,19 +412,23 @@ class B3trChallengesServiceTest {
         threshold: BigInteger = BigInteger.ZERO,
         allApps: Boolean = false,
         selectedApps: List<String> = listOf("0xapp1"),
+        blockId: String = "0xblock",
+        blockNumber: Long = 100L,
     ) =
         challengeEvent(
             eventType = "ChallengeCreated",
             id = id,
             txId = txId,
             challengeId = challengeId,
+            blockId = blockId,
+            blockNumber = blockNumber,
             returnValues =
                 mapOf(
                     "creator" to creator,
                     "endRound" to endRound,
                     "kind" to kind.ordinal,
                     "visibility" to visibility.ordinal,
-                    "thresholdMode" to thresholdMode.ordinal,
+                    "challengeType" to challengeType.ordinal,
                     "title" to title,
                     "description" to description,
                     "imageURI" to imageURI,
@@ -315,11 +443,14 @@ class B3trChallengesServiceTest {
 
     private fun challenge(
         version: Int,
+        kind: ChallengeKind = ChallengeKind.Stake,
+        challengeType: ChallengeType = ChallengeType.MaxActions,
         participants: List<String>,
         invited: List<String>,
         declined: List<String>,
         eligibleInvitees: List<String>,
         totalPrize: BigInteger,
+        status: ChallengeStatus = ChallengeStatus.Pending,
     ) =
         B3trChallenge(
             version = version,
@@ -327,10 +458,11 @@ class B3trChallengesServiceTest {
             blockNumber = 90L,
             blockTimestamp = 900L,
             challengeId = 1L,
-            kind = ChallengeKind.Stake,
+            kind = kind,
             visibility = ChallengeVisibility.Private,
-            thresholdMode = ThresholdMode.None,
-            status = ChallengeStatus.Pending,
+            challengeType = challengeType,
+            onChainStatus = ChallengeStatus.Pending,
+            status = status,
             settlementMode = SettlementMode.None,
             creator = "0x0000000000000000000000000000000000000abc",
             title = "Spring Sprint",
@@ -342,25 +474,35 @@ class B3trChallengesServiceTest {
             endRound = 6,
             duration = 2,
             threshold = BigInteger.ZERO,
+            numWinners = 0,
+            winnersClaimed = 0,
+            prizePerWinner = BigInteger.ZERO,
             allApps = false,
             totalPrize = totalPrize,
             participantCount = participants.size,
             invitedCount = invited.size,
             declinedCount = declined.size,
             selectedAppsCount = 1,
+            winnersCount = 0,
             bestScore = BigInteger.ZERO,
             bestCount = 0,
-            qualifiedCount = 0,
             payoutsClaimed = 0,
             participants = participants,
             invited = invited,
             declined = declined,
             selectedApps = listOf("0xapp1"),
+            winners = emptyList<String>(),
             eligibleInvitees = eligibleInvitees,
-            claimedBy = emptyList(),
-            refundedBy = emptyList(),
+            claimedBy = emptyList<String>(),
+            refundedBy = emptyList<String>(),
+            creatorRefunded = false,
+            endRoundPassed = false,
             createdAtBlockNumber = 80L,
             createdAtBlockTimestamp = 800L,
             createdTxId = "0xcreated",
         )
+
+    private fun stubCurrentRound(cycle: Int? = null) {
+        coEvery { b3trRoundService.getCurrentRound(any<String>()) } returns cycle
+    }
 }
