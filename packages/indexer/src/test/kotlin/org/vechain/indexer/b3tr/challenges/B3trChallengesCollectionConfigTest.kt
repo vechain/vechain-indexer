@@ -47,6 +47,12 @@ class B3trChallengesCollectionConfigTest {
         )
         assertTrue(
             capturedIndexes.any {
+                it.indexOptions["name"] ==
+                    "visibility_1_status_1_createdAtBlockTimestamp_-1_challengeId_-1"
+            }
+        )
+        assertTrue(
+            capturedIndexes.any {
                 it.indexKeys["blockNumber"] == -1 && it.indexOptions["name"] == "blockNumber_-1"
             }
         )

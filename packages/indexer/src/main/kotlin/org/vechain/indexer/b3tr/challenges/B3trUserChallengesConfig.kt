@@ -11,20 +11,19 @@ import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
 @Profile("b3tr", "b3tr-challenges")
-open class B3trChallengesConfig {
+open class B3trUserChallengesConfig {
     @Bean
-    open fun b3trChallengesIndexer(
+    open fun b3trUserChallengesIndexer(
         thorClient: ThorClient,
-        processor: B3trChallengesProcessor,
-        @Value("\${indexer.start-block.b3tr-challenges}") startBlock: Long,
+        processor: B3trUserChallengesProcessor,
+        @Value("\${indexer.start-block.b3tr-user-challenges}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.b3tr-challenges}") syncBlockBatchSize: Long,
+        @Value("\${indexer.sync-block-batch-size.b3tr-user-challenges}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.CHALLENGES_CONTRACT}")
         challengesContractAddress: String,
-        @Value("\${business-event.substitutions.EMISSIONS}") emissionsContractAddress: String,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.B3TR_CHALLENGES.NAME)
+            .name(IndexerNames.B3TR_USER_CHALLENGES.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)
@@ -34,23 +33,18 @@ open class B3trChallengesConfig {
             .abiEventNames(
                 listOf(
                     "ChallengeCreated",
-                    "SplitWinConfigured",
                     "ChallengeInviteAdded",
                     "ChallengeJoined",
                     "ChallengeLeft",
                     "ChallengeDeclined",
-                    "ChallengeCancelled",
-                    "ChallengeActivated",
-                    "ChallengeInvalidated",
                     "ChallengeCompleted",
                     "ChallengePayoutClaimed",
                     "SplitWinPrizeClaimed",
                     "SplitWinCreatorRefunded",
                     "ChallengeRefundClaimed",
-                    "EmissionDistributed",
-                    "EmissionDistributedV2",
                 )
             )
-            .abiContracts(listOf(challengesContractAddress, emissionsContractAddress))
+            .abiContracts(listOf(challengesContractAddress))
+            .excludeVetTransfers()
             .build()
 }

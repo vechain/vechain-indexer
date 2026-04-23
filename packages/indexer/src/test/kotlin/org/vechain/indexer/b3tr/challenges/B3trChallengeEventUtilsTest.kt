@@ -13,7 +13,7 @@ class B3trChallengeEventUtilsTest {
         val state = createState()
 
         assertEquals(ChallengeKind.Stake, state.kind)
-        assertEquals(ChallengeStatus.Pending, state.status)
+        assertEquals(ChallengeStatus.Pending, state.onChainStatus)
         assertEquals(SettlementMode.None, state.settlementMode)
         assertEquals(BigInteger.TEN, state.stakeAmount)
         assertEquals(BigInteger.TEN, state.totalPrize)
@@ -118,30 +118,95 @@ class B3trChallengeEventUtilsTest {
     }
 
     @Test
-    fun `applyEvent finalized updates settlement fields`() {
+    fun `applyEvent completed updates settlement fields`() {
         val state = createState()
 
         B3trChallengeEventUtils.applyEvent(
             1L,
             state,
             challengeEvent(
-                eventType = "ChallengeFinalized",
-                id = "finalize",
+                eventType = "ChallengeCompleted",
+                id = "complete",
                 returnValues =
                     mapOf(
                         "settlementMode" to SettlementMode.TopWinners.ordinal,
                         "bestScore" to BigInteger.valueOf(42),
                         "bestCount" to 3,
-                        "qualifiedCount" to 5,
                     ),
             ),
         )
 
-        assertEquals(ChallengeStatus.Finalized, state.status)
+        assertEquals(ChallengeStatus.Completed, state.onChainStatus)
         assertEquals(SettlementMode.TopWinners, state.settlementMode)
         assertEquals(BigInteger.valueOf(42), state.bestScore)
         assertEquals(3, state.bestCount)
-        assertEquals(5, state.qualifiedCount)
+    }
+
+    @Test
+    fun `applyEvent SplitWinPrizeClaimed appends winner and increments counter`() {
+        val state = createState()
+
+        B3trChallengeEventUtils.applyEvent(
+            1L,
+            state,
+            challengeEvent(
+                eventType = "SplitWinPrizeClaimed",
+                id = "split",
+                returnValues =
+                    mapOf(
+                        "winner" to PARTICIPANT,
+                        "prize" to BigInteger.valueOf(100),
+                        "actions" to BigInteger.valueOf(5),
+                        "winnersClaimed" to BigInteger.ONE,
+                    ),
+            ),
+        )
+
+        assertIterableEquals(listOf(PARTICIPANT), state.winners)
+        assertEquals(1, state.winnersClaimed)
+        assertIterableEquals(listOf(PARTICIPANT), state.claimedBy)
+    }
+
+    @Test
+    fun `applyEvent SplitWinCreatorRefunded marks refunded and completes Active challenge`() {
+        val state = createState()
+        state.onChainStatus = ChallengeStatus.Active
+
+        B3trChallengeEventUtils.applyEvent(
+            1L,
+            state,
+            challengeEvent(
+                eventType = "SplitWinCreatorRefunded",
+                id = "creator-refund",
+                returnValues = mapOf("creator" to CREATOR, "amount" to BigInteger.valueOf(100)),
+            ),
+        )
+
+        assertEquals(true, state.creatorRefunded)
+        assertEquals(ChallengeStatus.Completed, state.onChainStatus)
+        assertEquals(SettlementMode.SplitWinCompleted, state.settlementMode)
+    }
+
+    @Test
+    fun `applyEvent SplitWinConfigured stores numWinners and prizePerWinner`() {
+        val state = createState()
+
+        B3trChallengeEventUtils.applyEvent(
+            1L,
+            state,
+            challengeEvent(
+                eventType = "SplitWinConfigured",
+                id = "configure",
+                returnValues =
+                    mapOf(
+                        "numWinners" to BigInteger.valueOf(3),
+                        "prizePerWinner" to BigInteger.valueOf(33),
+                    ),
+            ),
+        )
+
+        assertEquals(3, state.numWinners)
+        assertEquals(BigInteger.valueOf(33), state.prizePerWinner)
     }
 
     @Test
@@ -212,7 +277,7 @@ class B3trChallengeEventUtilsTest {
                     "endRound" to 6,
                     "kind" to kind.ordinal,
                     "visibility" to ChallengeVisibility.Private.ordinal,
-                    "thresholdMode" to ThresholdMode.None.ordinal,
+                    "challengeType" to ChallengeType.MaxActions.ordinal,
                     "stakeAmount" to BigInteger.TEN,
                     "startRound" to 5,
                     "threshold" to BigInteger.ZERO,

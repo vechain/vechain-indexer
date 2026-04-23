@@ -20,7 +20,8 @@ constructor(
     val challengeId: Long,
     val kind: ChallengeKind,
     val visibility: ChallengeVisibility,
-    val thresholdMode: ThresholdMode,
+    val challengeType: ChallengeType,
+    @JsonIgnore val onChainStatus: ChallengeStatus,
     val status: ChallengeStatus,
     val settlementMode: SettlementMode,
     val creator: String,
@@ -33,23 +34,29 @@ constructor(
     val endRound: Int,
     val duration: Int,
     val threshold: BigInteger,
+    val numWinners: Int,
+    val winnersClaimed: Int,
+    val prizePerWinner: BigInteger,
     val allApps: Boolean,
     val totalPrize: BigInteger,
     val participantCount: Int,
     val invitedCount: Int,
     val declinedCount: Int,
     val selectedAppsCount: Int,
+    val winnersCount: Int,
     val bestScore: BigInteger,
     val bestCount: Int,
-    val qualifiedCount: Int,
     val payoutsClaimed: Int,
     val participants: List<String>,
     val invited: List<String>,
     val declined: List<String>,
     val selectedApps: List<String>,
+    val winners: List<String>,
     val eligibleInvitees: List<String>,
     val claimedBy: List<String>,
     val refundedBy: List<String>,
+    val creatorRefunded: Boolean,
+    val endRoundPassed: Boolean,
     val createdAtBlockNumber: Long,
     val createdAtBlockTimestamp: Long,
     val createdTxId: String,
@@ -62,7 +69,8 @@ constructor(
         challengeId: Long,
         kind: ChallengeKind,
         visibility: ChallengeVisibility,
-        thresholdMode: ThresholdMode,
+        challengeType: ChallengeType,
+        onChainStatus: ChallengeStatus,
         status: ChallengeStatus,
         settlementMode: SettlementMode,
         creator: String,
@@ -75,23 +83,29 @@ constructor(
         endRound: Int,
         duration: Int,
         threshold: BigInteger,
+        numWinners: Int,
+        winnersClaimed: Int,
+        prizePerWinner: BigInteger,
         allApps: Boolean,
         totalPrize: BigInteger,
         participantCount: Int,
         invitedCount: Int,
         declinedCount: Int,
         selectedAppsCount: Int,
+        winnersCount: Int,
         bestScore: BigInteger,
         bestCount: Int,
-        qualifiedCount: Int,
         payoutsClaimed: Int,
         participants: List<String>,
         invited: List<String>,
         declined: List<String>,
         selectedApps: List<String>,
+        winners: List<String>,
         eligibleInvitees: List<String>,
         claimedBy: List<String>,
         refundedBy: List<String>,
+        creatorRefunded: Boolean,
+        endRoundPassed: Boolean,
         createdAtBlockNumber: Long,
         createdAtBlockTimestamp: Long,
         createdTxId: String,
@@ -104,7 +118,8 @@ constructor(
         challengeId = challengeId,
         kind = kind,
         visibility = visibility,
-        thresholdMode = thresholdMode,
+        challengeType = challengeType,
+        onChainStatus = onChainStatus,
         status = status,
         settlementMode = settlementMode,
         creator = creator,
@@ -117,23 +132,29 @@ constructor(
         endRound = endRound,
         duration = duration,
         threshold = threshold,
+        numWinners = numWinners,
+        winnersClaimed = winnersClaimed,
+        prizePerWinner = prizePerWinner,
         allApps = allApps,
         totalPrize = totalPrize,
         participantCount = participantCount,
         invitedCount = invitedCount,
         declinedCount = declinedCount,
         selectedAppsCount = selectedAppsCount,
+        winnersCount = winnersCount,
         bestScore = bestScore,
         bestCount = bestCount,
-        qualifiedCount = qualifiedCount,
         payoutsClaimed = payoutsClaimed,
         participants = participants,
         invited = invited,
         declined = declined,
         selectedApps = selectedApps,
+        winners = winners,
         eligibleInvitees = eligibleInvitees,
         claimedBy = claimedBy,
         refundedBy = refundedBy,
+        creatorRefunded = creatorRefunded,
+        endRoundPassed = endRoundPassed,
         createdAtBlockNumber = createdAtBlockNumber,
         createdAtBlockTimestamp = createdAtBlockTimestamp,
         createdTxId = createdTxId,
@@ -168,22 +189,27 @@ enum class ChallengeVisibility {
     }
 }
 
-enum class ThresholdMode {
-    None,
-    SplitAboveThreshold,
-    TopAboveThreshold;
+/**
+ * Discriminates the two challenge mechanics.
+ * - `MaxActions`: capped participant pool, top scorer wins after completion.
+ * - `SplitWin`: uncapped participants, sponsored only, first-to-claim wins one of `numWinners`
+ *   slots.
+ */
+enum class ChallengeType {
+    MaxActions,
+    SplitWin;
 
     companion object {
-        fun fromOrdinal(ordinal: Int): ThresholdMode =
+        fun fromOrdinal(ordinal: Int): ChallengeType =
             entries.getOrNull(ordinal)
-                ?: throw IllegalArgumentException("Unknown ThresholdMode ordinal: $ordinal")
+                ?: throw IllegalArgumentException("Unknown ChallengeType ordinal: $ordinal")
     }
 }
 
 enum class ChallengeStatus {
     Pending,
     Active,
-    Finalized,
+    Completed,
     Cancelled,
     Invalid;
 
@@ -197,8 +223,8 @@ enum class ChallengeStatus {
 enum class SettlementMode {
     None,
     TopWinners,
-    QualifiedSplit,
-    CreatorRefund;
+    CreatorRefund,
+    SplitWinCompleted;
 
     companion object {
         fun fromOrdinal(ordinal: Int): SettlementMode =

@@ -60,11 +60,6 @@ spring.data:
 thor:
   url: ${THOR_URL:https://testnet.vechain.org}
 
-business-event:
-  substitutions:
-    X_ALLOC_VOTING_CONTRACT: ${X_ALLOC_VOTING_CONTRACT:0x89a00bb0947a30ff95beef77a66aede3842fe5b7}
-    CHALLENGES_CONTRACT: ${CHALLENGES_CONTRACT:0x0000000000000000000000000000000000000000}
-
 vechain:
   forks:
     galactica:
