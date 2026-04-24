@@ -23,7 +23,7 @@ annotation class ChallengeFilterParameter(
             "- `MyChallenges`: Pending or Active challenges you created or have joined.\n" +
             "- `OpenToJoin`: public Pending challenges you are not yet involved in.\n" +
             "- `OthersActive`: public Active challenges you are not involved in (observation only).\n" +
-            "- `History`: terminal-state (Completed, Cancelled, Invalid) challenges you have been involved in.",
+            "- `History`: challenges you consider 'no longer current' — terminal-state (Completed, Cancelled, Invalid) challenges you have been involved in, plus still-live (Pending, Active) challenges you have actively bowed out of (declined invitations or joined-then-left participants), so they remain visible for a possible re-accept or re-join.",
     @get:AliasFor(annotation = Parameter::class, attribute = "in")
     val `in`: ParameterIn = ParameterIn.QUERY,
     @get:AliasFor(annotation = Parameter::class, attribute = "required")
