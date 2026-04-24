@@ -3421,7 +3421,10 @@
           "nextCycleValidatorYield": {
             "type": "number"
           },
-          "nftYieldsNextCycle": {
+          "nftYields": {
+            "$ref": "#/components/schemas/TokenLevelDecimalValues"
+          },
+          "nftYieldsIfDelegatedNextCycle": {
             "$ref": "#/components/schemas/TokenLevelDecimalValues"
           },
           "offlineBlocks": {
@@ -13209,7 +13212,7 @@
     },
     "/api/v1/validators": {
       "get": {
-        "description": "\n            This endpoint retrieves validator stats.\n\n            You can filter the results by:\n            - `validatorId`: (deprecated - use GET /api/v1/validators/{validatorId} instead)\n            - `status`: validator status\n            - `endorser`: endorser address\n\n            You can also sort the results by one of the supported fields and paginate.\n\n            - `sortBy`: Choose between `validatorTvl`, `totalTvl`, `blockProbability`, `delegatorTvl`, or `nft:<Level>` (e.g. `nft:Strength`)\n            - `page` and `size`: Controls pagination\n            - `direction`: Either `asc` or `desc`\n            ",
+        "description": "\n            This endpoint retrieves validator stats.\n\n            You can filter the results by:\n            - `validatorId`: (deprecated - use GET /api/v1/validators/{validatorId} instead)\n            - `status`: validator status\n            - `endorser`: endorser address\n\n            You can also sort the results by one of the supported fields and paginate.\n\n            - `sortBy`: Choose between `validatorTvl`, `totalTvl`, `blockProbability`, `delegatorTvl`, or `nft:<Level>` (projected next-cycle yield if that NFT were delegated, e.g. `nft:Strength`)\n            - `page` and `size`: Controls pagination\n            - `direction`: Either `asc` or `desc`\n            ",
         "operationId": "getValidators",
         "parameters": [
           {

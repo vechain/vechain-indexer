@@ -325,7 +325,7 @@ object ValidatorCalculator {
      *   whose staked VET would push this above [MAX_VALIDATOR_STAKE] (600M) are excluded.
      * @return map of TokenLevel → yield
      */
-    fun calculateNftLevelYields(
+    fun calculateNftLevelYieldsIfDelegatedNextCycle(
         nextPeriodWeight: BigDecimal,
         nextPeriodVET: BigDecimal,
         nextCycleEffectiveDelegationStake: BigDecimal,
@@ -388,6 +388,57 @@ object ValidatorCalculator {
                 level to NumberUtils.toScaledDecimal(yieldPct)
             }
             .toMap()
+    }
+
+    /**
+     * Calculates current-cycle NFT-level APYs for token levels already delegated to a validator.
+     *
+     * @param currentDelegatedLevels count of ACTIVE/EXITING delegations by token level
+     * @param blocksPerYear expected current-cycle blocks produced per year
+     * @param vthoIssued current VTHO issued per block for this validator's total stake
+     * @param vthoPriceUsd VTHO price in USD
+     * @param vetPriceUsd VET price in USD
+     * @return map of delegated TokenLevel → current-cycle yield
+     */
+    fun calculateDelegatedNftLevelYieldsCurrentCycle(
+        currentDelegatedLevels: Map<TokenLevel, Long>,
+        blocksPerYear: BigDecimal,
+        vthoIssued: BigDecimal,
+        vthoPriceUsd: BigDecimal,
+        vetPriceUsd: BigDecimal,
+    ): Map<TokenLevel, BigDecimal> {
+        if (currentDelegatedLevels.isEmpty()) {
+            return emptyMap()
+        }
+
+        val totalEffectiveDelegations =
+            currentDelegatedLevels.entries.fold(BigDecimal.ZERO) { acc, (level, count) ->
+                acc.add(level.effectiveStake.multiply(BigDecimal.valueOf(count)))
+            }
+
+        if (totalEffectiveDelegations.compareTo(BigDecimal.ZERO) == 0) {
+            return emptyMap()
+        }
+
+        val issuanceUsd = vthoIssued.multiply(vthoPriceUsd)
+        val annualIssuanceUsd = blocksPerYear.multiply(issuanceUsd)
+
+        return currentDelegatedLevels.keys.associateWith { level ->
+            val requiredUSD = level.staked.multiply(vetPriceUsd)
+            if (requiredUSD.compareTo(BigDecimal.ZERO) == 0) {
+                BigDecimal.ZERO
+            } else {
+                val share =
+                    level.effectiveStake.divide(totalEffectiveDelegations, 12, RoundingMode.HALF_UP)
+                val yieldPct =
+                    annualIssuanceUsd
+                        .multiply(share)
+                        .multiply(BigDecimal("0.7"))
+                        .divide(requiredUSD, 12, RoundingMode.HALF_UP)
+                        .multiply(BigDecimal(100))
+                NumberUtils.toScaledDecimal(yieldPct)
+            }
+        }
     }
 
     /**

@@ -2,14 +2,16 @@ package org.vechain.indexer.validator.logic
 
 import java.math.BigDecimal
 import java.math.BigInteger
+import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.stargate.token.TokenLevelDecimalValues
 import org.vechain.indexer.utils.NumberUtils
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator
 import org.vechain.indexer.validator.logic.ValidatorCalculator.MAX_UINT32
 import org.vechain.indexer.validator.logic.ValidatorCalculator.blocksPerYear
+import org.vechain.indexer.validator.logic.ValidatorCalculator.calculateDelegatedNftLevelYieldsCurrentCycle
 import org.vechain.indexer.validator.logic.ValidatorCalculator.calculateNextCycleBlock
-import org.vechain.indexer.validator.logic.ValidatorCalculator.calculateNftLevelYields
+import org.vechain.indexer.validator.logic.ValidatorCalculator.calculateNftLevelYieldsIfDelegatedNextCycle
 import org.vechain.indexer.validator.logic.ValidatorCalculator.calculateValidatorYield
 import org.vechain.indexer.validator.logic.ValidatorCalculator.computeOffline
 import org.vechain.indexer.validator.logic.ValidatorCalculator.computeProbabilities
@@ -27,6 +29,7 @@ object ValidatorAssembler {
         rows: List<DecodedValidatorRow>,
         persistedDocs: Map<String, Validator>,
         carriedDocs: Map<String, Validator> = persistedDocs,
+        currentDelegatedLevelsByValidator: Map<String, Map<TokenLevel, Long>> = emptyMap(),
         totalWeight: BigInteger,
         vetPriceUsd: BigInteger,
         vthoPriceUsd: BigInteger,
@@ -70,6 +73,7 @@ object ValidatorAssembler {
                         nextPeriodTotalWeight,
                         totalNextPeriodVET,
                         vthoIssuedNextCycle,
+                        currentDelegatedLevelsByValidator[row.id].orEmpty(),
                         queueInfo[row.id],
                     )
 
@@ -88,7 +92,8 @@ object ValidatorAssembler {
                         validatorYield = BigDecimal.ZERO,
                         tvlBasedYield = BigDecimal.ZERO,
                         avgDelegatorYield = BigDecimal.ZERO,
-                        nftYieldsNextCycle = TokenLevelDecimalValues.empty(),
+                        nftYieldsIfDelegatedNextCycle = TokenLevelDecimalValues.empty(),
+                        nftYields = TokenLevelDecimalValues.empty(),
                         nextCycleValidatorYield = BigDecimal.ZERO,
                         nextCycleTvlBasedYield = BigDecimal.ZERO,
                         nextCycleAvgDelegatorYield = BigDecimal.ZERO,
@@ -129,6 +134,7 @@ object ValidatorAssembler {
         nextPeriodTotalWeight: BigInteger,
         totalNextPeriodVET: BigInteger,
         vthoIssuedNextCycle: BigDecimal,
+        currentDelegatedLevels: Map<TokenLevel, Long>,
         queueInfo: QueueInfo?,
     ): Validator {
         val vetPrice = NumberUtils.toUSD(vetPriceUsd)
@@ -206,9 +212,9 @@ object ValidatorAssembler {
             nextCycleValidatorYield = NumberUtils.toScaledDecimal(nextCycleValidatorYield),
             nextCycleTvlBasedYield = NumberUtils.toScaledDecimal(nextCycleTvlBasedYield),
             nextCycleAvgDelegatorYield = NumberUtils.toScaledDecimal(nextCycleAvgDelegatorYield),
-            nftYieldsNextCycle =
+            nftYieldsIfDelegatedNextCycle =
                 TokenLevelDecimalValues.fromMap(
-                    calculateNftLevelYields(
+                    calculateNftLevelYieldsIfDelegatedNextCycle(
                         NumberUtils.toVET(row.totalNextPeriodWeight),
                         NumberUtils.toVET(totalNextPeriodVET),
                         NumberUtils.toVET(row.nextPeriodDelegationStake),
@@ -217,6 +223,16 @@ object ValidatorAssembler {
                         vetPrice,
                         status,
                         stakes.nextCycleStake,
+                    )
+                ),
+            nftYields =
+                TokenLevelDecimalValues.fromMap(
+                    calculateDelegatedNftLevelYieldsCurrentCycle(
+                        currentDelegatedLevels = currentDelegatedLevels,
+                        blocksPerYear = probabilities.blocksPerYear,
+                        vthoIssued = vthoIssued,
+                        vthoPriceUsd = vthoPrice,
+                        vetPriceUsd = vetPrice,
                     )
                 ),
             percentageOffline = NumberUtils.toScaledDecimal(offline.percentageOffline),

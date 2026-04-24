@@ -60,7 +60,11 @@ More detailed templates and copy/paste snippets live in `notes/indexer-api-playb
 
 ### CRITICAL: 1 Indexer = 1 Collection
 Each indexer MUST map to exactly one MongoDB collection. Never create multiple collections for a single indexer. The backup, restore, and rollback mechanisms all operate at the collection level and assume a 1:1 relationship between an indexer and its collection. Creating multiple collections for one indexer breaks rollback consistency (partial rollbacks), backup integrity (collections can drift out of sync), and restore correctness. If your data model seems to require multiple collections, split it into separate indexers instead. This is a hard rule with no exceptions.
-Indexers must not read from a collection that is not their own. If one indexer is dependent on another then it may be possible to read from the collection of the dependency in some cases, but it is still not desireable. 
+Indexer code must only access its own collection. Do not inject, call, or query another indexer's repository, collection, Mongo template query, or service from inside an indexer. Cross-indexer dependencies are a huge no-no and should be treated as an architectural violation, not a trade-off to make casually.
+If data seems to require reading another indexer's collection, stop and redesign the flow. Prefer deriving it from on-chain events, reshaping the owning indexer's document, or introducing a separate dedicated indexer with its own collection. Do not solve it by wiring one indexer to another indexer's repository.
+The only allowed exception is a narrow downstream-derived pattern with an explicit `.dependsOn(...)` relationship. In that case, the downstream indexer may read the upstream collection only when the dependency is one-way, the downstream document is clearly derived from upstream data, and rollout/versioning/resync are coordinated across both indexers.
+This exception still carries coupling and rollback risk. It is not a normal implementation option, not a shortcut for convenience, and not permission to build chains of indexers reading each other freely.
+This applies even to read-only aggregations, helper lookups, "just one query", or cases where the dependency feels obvious. Those shortcuts create coupling, ordering constraints, rollout risk, and rollback inconsistency between indexers unless they follow the explicit downstream exception above.
 Processor classes should separate processing and persisting. This is generally in the form of a `processEvents` or `processBlock` method that returns a list of documents to be saved, and a `save` method that handles the actual persistence. This keeps the processing logic decoupled from the database and allows for better testing and flexibility.
 Save functions should be covered by a Transactional annotation to ensure that all writes succeed or fail together.
 
@@ -68,7 +72,7 @@ Save functions should be covered by a Transactional annotation to ensure that al
 Indexers should consume on-chain events (logs) as their data source. The following alternative data sources carry significant performance implications and should only be used as a last resort:
 - **External API calls** — introduce latency, rate limits, and external failure modes into the indexing pipeline.
 - **Smart contract calls** — require RPC calls for each block, adding load and slowing sync.
-- **Dependent indexers** — one indexer reading from another indexer's collection creates coupling and ordering dependencies.
+- **Dependent indexers** — one indexer reading from another indexer's collection, repository, or service creates coupling and ordering dependencies and is strongly discouraged. Only explicit downstream `.dependsOn(...)` exceptions should be considered, and they must be justified and coordinated operationally.
 - **`callDataClauses`** — add complexity and performance overhead to block processing.
 
 There are existing examples of these patterns in this repository and they are not always incorrect — some are justified for specific use cases. However, do not treat them as templates to copy freely. If any of these patterns seem necessary, the contributor should be challenged to confirm there is no viable on-chain events alternative and should understand the performance trade-offs before proceeding.
