@@ -97,7 +97,11 @@ open class NavigatorFeeService(
         val roundId = ev.requireIntParam("roundId")
         val id = NavigatorFee.buildId(navigator, roundId)
         val (existing, nextVersion) = accumulator.resolve(id)
-        val current = existing ?: return
+        val current =
+            existing
+                ?: throw IllegalStateException(
+                    "Missing navigator fee deposit for claimed fee id=$id navigator=$navigator roundId=$roundId"
+                )
         val updated =
             current.copy(
                 version = nextVersion,

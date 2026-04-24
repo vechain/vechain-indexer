@@ -103,4 +103,40 @@ internal class NavigatorFeeServiceTest {
             )
         }
     }
+
+    @Test
+    fun `fee claimed without prior deposit fails fast`() {
+        val accumulator = newAccumulator()
+        accumulator.startBlock()
+
+        val exception =
+            assertThrows(IllegalStateException::class.java) {
+                service.processBlockEvents(
+                    listOf(
+                        buildIndexedEvent(
+                            eventType = "B3TR_FeeClaimed",
+                            blockId = block.blockId,
+                            blockNumber = block.blockNumber,
+                            blockTimestamp = block.blockTimestamp,
+                            params =
+                                AbiEventParameters(
+                                    mapOf(
+                                        "navigator" to "0xnav1",
+                                        "roundId" to "10",
+                                        "amount" to "100",
+                                    ),
+                                    "B3TR_FeeClaimed",
+                                ),
+                        )
+                    ),
+                    block,
+                    accumulator,
+                )
+            }
+
+        assertEquals(
+            "Missing navigator fee deposit for claimed fee id=0xnav1_10 navigator=0xnav1 roundId=10",
+            exception.message,
+        )
+    }
 }
