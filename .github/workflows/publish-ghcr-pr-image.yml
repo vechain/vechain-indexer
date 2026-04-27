@@ -50,6 +50,8 @@ jobs:
 
   build:
     needs: validate
+    # Fork PRs must not run on self-hosted runners (untrusted code execution).
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     strategy:
       matrix:
         packageName: ["api", "indexer"]
