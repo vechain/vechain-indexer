@@ -4,6 +4,8 @@ on:
     types: [opened, reopened, labeled, unlabeled, synchronize]
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
   validate:
     uses: vechain/github-actions/.github/workflows/validate-pr-label.yaml@4a207b1fe556cd46cbae1ea430365c7371498a7e # v.1.1.6

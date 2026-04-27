@@ -27,6 +27,10 @@ permissions:
   contents: read # This is required for actions/checkout
   packages: read # This is required for pulling images from GHCR
 
+concurrency:
+  group: deploy-prod-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   identify-live-color:
     name: Identify Live and Dead Colors

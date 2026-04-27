@@ -2,9 +2,11 @@ name: Codebase Versioning
 
 on:
   pull_request:
-    branches: 
+    branches:
       - main
     types: [closed]
+
+permissions: {}
 
 jobs:
   semantic-versioning:
