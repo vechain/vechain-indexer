@@ -198,19 +198,43 @@ jobs:
 
       - name: Scan mainnet image in ECR
         if: inputs.network == 'mainnet' || inputs.network == 'both'
-        uses: alexjurkiewicz/ecr-scan-image@a17ece3facc44123372a2521011a557c18624d5a # v3.0.0
-        with:
-          repository: ${{ env.ECR_PROJECT }}/${{ matrix.packageName }}
-          tag: ${{ steps.tags.outputs.MAINNET_ECR_TAG }}
-          fail_threshold: medium
+        env:
+          REPO: ${{ env.ECR_PROJECT }}/${{ matrix.packageName }}
+          TAG: ${{ steps.tags.outputs.MAINNET_ECR_TAG }}
+        run: |
+          set -euo pipefail
+          aws ecr start-image-scan --repository-name "$REPO" --image-id imageTag="$TAG" || true
+          aws ecr wait image-scan-complete --repository-name "$REPO" --image-id imageTag="$TAG"
+          read CRIT HIGH MED <<< "$(aws ecr describe-image-scan-findings \
+            --repository-name "$REPO" --image-id imageTag="$TAG" \
+            --query 'imageScanFindings.findingSeverityCounts.[CRITICAL, HIGH, MEDIUM]' \
+            --output text)"
+          CRIT=${CRIT/None/0}; HIGH=${HIGH/None/0}; MED=${MED/None/0}
+          echo "Findings for $REPO:$TAG — CRITICAL=$CRIT HIGH=$HIGH MEDIUM=$MED"
+          if [ $((CRIT + HIGH + MED)) -gt 0 ]; then
+            echo "::error::Vulnerabilities at MEDIUM or higher: CRITICAL=$CRIT HIGH=$HIGH MEDIUM=$MED"
+            exit 1
+          fi
 
       - name: Scan testnet image in ECR
         if: (inputs.network == 'testnet' || inputs.network == 'both') && steps.tags.outputs.SKIP_TESTNET != 'true'
-        uses: alexjurkiewicz/ecr-scan-image@a17ece3facc44123372a2521011a557c18624d5a # v3.0.0
-        with:
-          repository: ${{ env.ECR_PROJECT }}/${{ matrix.packageName }}
-          tag: ${{ steps.tags.outputs.TESTNET_ECR_TAG }}
-          fail_threshold: medium
+        env:
+          REPO: ${{ env.ECR_PROJECT }}/${{ matrix.packageName }}
+          TAG: ${{ steps.tags.outputs.TESTNET_ECR_TAG }}
+        run: |
+          set -euo pipefail
+          aws ecr start-image-scan --repository-name "$REPO" --image-id imageTag="$TAG" || true
+          aws ecr wait image-scan-complete --repository-name "$REPO" --image-id imageTag="$TAG"
+          read CRIT HIGH MED <<< "$(aws ecr describe-image-scan-findings \
+            --repository-name "$REPO" --image-id imageTag="$TAG" \
+            --query 'imageScanFindings.findingSeverityCounts.[CRITICAL, HIGH, MEDIUM]' \
+            --output text)"
+          CRIT=${CRIT/None/0}; HIGH=${HIGH/None/0}; MED=${MED/None/0}
+          echo "Findings for $REPO:$TAG — CRITICAL=$CRIT HIGH=$HIGH MEDIUM=$MED"
+          if [ $((CRIT + HIGH + MED)) -gt 0 ]; then
+            echo "::error::Vulnerabilities at MEDIUM or higher: CRITICAL=$CRIT HIGH=$HIGH MEDIUM=$MED"
+            exit 1
+          fi
 
   check-existing-release:
     name: Check Existing Releases
