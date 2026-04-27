@@ -16,6 +16,10 @@ permissions:
   id-token: write  # This is required for requesting the JWT
   contents: read   # This is required for actions/checkout
 
+concurrency:
+  group: switch-live-dns
+  cancel-in-progress: false
+
 jobs:
 
   identify-live-color:
@@ -28,7 +32,8 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    secrets: inherit
+    secrets:
+      AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
 
   fetch-lb-dns-names:
     name: Fetch load balancer DNS names
@@ -38,7 +43,7 @@ jobs:
 
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
         with:
           aws-region: eu-west-1
           role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
@@ -77,7 +82,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       # The live_color_mainnet and live_color_testnet variables define the desired colour of each network (ie after worklfow completion), not necessarily the current colour.
       - name: Determine and log colours to pass to Terraform
@@ -117,7 +122,7 @@ jobs:
           esac
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
         with:
             aws-region: eu-west-1
             role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
@@ -172,4 +177,6 @@ jobs:
       environment: prod
       live_color_mainnet: ${{ needs.deploy-vpc-stack.outputs.live_color_mainnet }}
       live_color_testnet: ${{ needs.deploy-vpc-stack.outputs.live_color_testnet }}
-    secrets: inherit
+    secrets:
+      AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
+      VECHAINCI_SSH_PRIVATE_KEYS: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
