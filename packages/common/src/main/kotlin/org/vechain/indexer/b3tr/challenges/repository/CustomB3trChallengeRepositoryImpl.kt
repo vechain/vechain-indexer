@@ -124,20 +124,42 @@ constructor(private val mongoTemplate: MongoTemplate) : CustomB3trChallengeRepos
             ChallengeFilter.MyChallenges ->
                 Criteria.where(statusField)
                     .`in`(listOf(ChallengeStatus.Pending, ChallengeStatus.Active))
-            ChallengeFilter.History ->
-                Criteria.where(statusField)
-                    .`in`(
-                        listOf(
-                            ChallengeStatus.Completed,
-                            ChallengeStatus.Cancelled,
-                            ChallengeStatus.Invalid,
-                        )
-                    )
+            ChallengeFilter.History -> historyCriteria(statusField)
             ChallengeFilter.NeededAction -> neededActionCriteria()
             ChallengeFilter.OpenToJoin,
             ChallengeFilter.OthersActive ->
                 throw IllegalArgumentException("Filter $filter is not served by findByFilter")
         }
+    }
+
+    /**
+     * History covers two cases that the user perceives as "no longer current":
+     * 1. Terminal-state challenges (Completed/Cancelled/Invalid) the wallet was involved in.
+     * 2. Still-live challenges (Pending/Active) the wallet has actively bowed out of — `Declined`
+     *    invitations and `Joined → Left` participants. The latter is detected via
+     *    `participantStatus = None` on a non-creator record (the only way a non-creator record
+     *    reaches `None` is by leaving after joining; no other event lifecycle ends in `None` for a
+     *    non-creator). Surfacing these here lets the user re-accept / re-join from the History tab
+     *    without losing the challenge from view.
+     */
+    private fun historyCriteria(statusField: String): Criteria {
+        val terminalStatus =
+            Criteria.where(statusField)
+                .`in`(
+                    listOf(
+                        ChallengeStatus.Completed,
+                        ChallengeStatus.Cancelled,
+                        ChallengeStatus.Invalid,
+                    )
+                )
+        val abandonedByWallet =
+            Criteria()
+                .andOperator(
+                    Criteria.where(B3trUserChallenge::isCreator.name).`is`(false),
+                    Criteria.where(B3trUserChallenge::participantStatus.name)
+                        .`in`(listOf(ParticipantStatus.None, ParticipantStatus.Declined)),
+                )
+        return Criteria().orOperator(terminalStatus, abandonedByWallet)
     }
 
     private fun neededActionCriteria(): Criteria {

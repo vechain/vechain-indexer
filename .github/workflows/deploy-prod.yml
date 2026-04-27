@@ -146,7 +146,7 @@ jobs:
         uses: aws-actions/amazon-ecr-login@19d944daaa35f0fa1d3f7f8af1d3f2e5de25c5b7 # v2.1.4
 
       - name: Login to GHCR
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: ${{ env.GHCR_REGISTRY }}
           username: ${{ github.actor }}
@@ -198,7 +198,7 @@ jobs:
 
       - name: Scan mainnet image in ECR
         if: inputs.network == 'mainnet' || inputs.network == 'both'
-        uses: alexjurkiewicz/ecr-scan-image@23adad502f48a23cf2acf8a6dda2c34e194df8e0 # v1.7.1
+        uses: alexjurkiewicz/ecr-scan-image@a17ece3facc44123372a2521011a557c18624d5a # v3.0.0
         with:
           repository: ${{ env.ECR_PROJECT }}/${{ matrix.packageName }}
           tag: ${{ steps.tags.outputs.MAINNET_ECR_TAG }}
@@ -206,7 +206,7 @@ jobs:
 
       - name: Scan testnet image in ECR
         if: (inputs.network == 'testnet' || inputs.network == 'both') && steps.tags.outputs.SKIP_TESTNET != 'true'
-        uses: alexjurkiewicz/ecr-scan-image@23adad502f48a23cf2acf8a6dda2c34e194df8e0 # v1.7.1
+        uses: alexjurkiewicz/ecr-scan-image@a17ece3facc44123372a2521011a557c18624d5a # v3.0.0
         with:
           repository: ${{ env.ECR_PROJECT }}/${{ matrix.packageName }}
           tag: ${{ steps.tags.outputs.TESTNET_ECR_TAG }}
