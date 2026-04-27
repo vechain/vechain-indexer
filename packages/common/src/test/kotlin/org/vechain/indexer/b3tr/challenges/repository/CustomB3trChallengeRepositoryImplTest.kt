@@ -62,7 +62,7 @@ class CustomB3trChallengeRepositoryImplTest {
     }
 
     @Test
-    fun `findByFilter History matches wallet and terminal statuses`() {
+    fun `findByFilter History matches terminal challenges OR abandoned-by-wallet records`() {
         val aggregation = slot<TypedAggregation<*>>()
         every { mongoTemplate.aggregate(capture(aggregation), B3trChallenge::class.java) } returns
             AggregationResults(emptyList(), Document())
@@ -76,15 +76,35 @@ class CustomB3trChallengeRepositoryImplTest {
         val pipeline = aggregation.captured.toPipeline(Aggregation.DEFAULT_CONTEXT)
         val firstMatch = pipeline.first()["\$match"] as Map<*, *>
         assertEquals("0x0000000000000000000000000000000000000abc", firstMatch["wallet"])
-        val statusMatch =
-            pipeline
-                .first { (it["\$match"] as? Map<*, *>)?.containsKey("challenge.status") == true }[
-                    "\$match"]
-                as Map<*, *>
-        val allowed = (statusMatch["challenge.status"] as Map<*, *>)["\$in"] as List<*>
+
+        val orMatch =
+            pipeline.mapNotNull { it["\$match"] as? Map<*, *> }.single { it.containsKey("\$or") }
+        val branches = orMatch["\$or"] as List<*>
+        assertEquals(2, branches.size)
+
+        val terminalBranch =
+            branches
+                .map { it as Map<*, *> }
+                .single { (it["challenge.status"] as? Map<*, *>)?.containsKey("\$in") == true }
+        val terminalAllowed = (terminalBranch["challenge.status"] as Map<*, *>)["\$in"] as List<*>
         assertEquals(
             setOf(ChallengeStatus.Completed, ChallengeStatus.Cancelled, ChallengeStatus.Invalid),
-            allowed.toSet(),
+            terminalAllowed.toSet(),
+        )
+
+        val abandonedBranch = branches.map { it as Map<*, *> }.single { it.containsKey("\$and") }
+        val abandonedClauses = (abandonedBranch["\$and"] as List<*>).map { it as Map<*, *> }
+        val isCreatorClause =
+            abandonedClauses.single { it.containsKey(B3trUserChallenge::isCreator.name) }
+        assertEquals(false, isCreatorClause[B3trUserChallenge::isCreator.name])
+        val statusClause =
+            abandonedClauses.single { it.containsKey(B3trUserChallenge::participantStatus.name) }
+        val statusValues =
+            (statusClause[B3trUserChallenge::participantStatus.name] as Map<*, *>)["\$in"]
+                as List<*>
+        assertEquals(
+            setOf(ParticipantStatus.None, ParticipantStatus.Declined),
+            statusValues.toSet(),
         )
     }
 
