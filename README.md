@@ -1,6 +1,5 @@
 # VeWorld Indexer
 
-![Scorecard badge](https://github.com/vechain/veworld-indexer/blob/feature/scorecard-action/.assets/scorecard-badge.svg)
 ![Security Checks Badge](https://github.com/vechain/veworld-indexer/actions/workflows/security-checks.yml/badge.svg)
 
 [![Test, Publish & Deploy](https://github.com/vechain/veworld-indexer/actions/workflows/on-main.yml/badge.svg)](https://github.com/vechainfoundation/veworld-indexer/actions/workflows/on-main.yml)
