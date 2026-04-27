@@ -50,7 +50,7 @@ jobs:
       DEPLOYMENT_COLOR: ${{ steps.set-environment.outputs.DEPLOYMENT_COLOR }}
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         with:
           aws-region: eu-west-1
           role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
@@ -119,17 +119,17 @@ jobs:
       ECR_PROJECT: veworld
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         with:
           aws-region: eu-west-1
           role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@19d944daaa35f0fa1d3f7f8af1d3f2e5de25c5b7 # v2.1.4
 
       - name: Login to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ${{ env.GHCR_REGISTRY }}
           username: ${{ github.actor }}
@@ -180,7 +180,7 @@ jobs:
 
       - name: Scan mainnet image in ECR
         if: inputs.network == 'mainnet' || inputs.network == 'both'
-        uses: alexjurkiewicz/ecr-scan-image@v1.7.1
+        uses: alexjurkiewicz/ecr-scan-image@23adad502f48a23cf2acf8a6dda2c34e194df8e0 # v1.7.1
         with:
           repository: ${{ env.ECR_PROJECT }}/${{ matrix.packageName }}
           tag: ${{ steps.tags.outputs.MAINNET_ECR_TAG }}
@@ -188,7 +188,7 @@ jobs:
 
       - name: Scan testnet image in ECR
         if: (inputs.network == 'testnet' || inputs.network == 'both') && steps.tags.outputs.SKIP_TESTNET != 'true'
-        uses: alexjurkiewicz/ecr-scan-image@v1.7.1
+        uses: alexjurkiewicz/ecr-scan-image@23adad502f48a23cf2acf8a6dda2c34e194df8e0 # v1.7.1
         with:
           repository: ${{ env.ECR_PROJECT }}/${{ matrix.packageName }}
           tag: ${{ steps.tags.outputs.TESTNET_ECR_TAG }}
