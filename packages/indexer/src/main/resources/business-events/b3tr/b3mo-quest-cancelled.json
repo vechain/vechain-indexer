@@ -1,0 +1,27 @@
+{
+  "name": "B3MO_QUEST_CANCELLED",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "ChallengeCancelled",
+      "alias": "questCancelled",
+      "conditions": [
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${CHALLENGES_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": [
+    {
+      "name": "origin",
+      "eventName": "questCancelled",
+      "businessEventName": "from"
+    }
+  ]
+}
