@@ -51,3 +51,7 @@ tasks.register<Test>("generateOpenApiSpec") {
         .orNull
         ?.let { profiles -> systemProperty("openapi.profiles", profiles) }
 }
+
+dependencyLocking {
+    lockAllConfigurations()
+}
