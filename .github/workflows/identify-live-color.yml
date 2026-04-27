@@ -77,9 +77,13 @@ jobs:
 
       - name: Get DNS record value
         id: get_dns_value
+        env:
+          HOSTED_ZONE_ID: ${{ inputs.hosted_zone_id }}
+          DNS_MAINNET_NAME: ${{ inputs.dns_record_mainnet_name }}
+          DNS_TESTNET_NAME: ${{ inputs.dns_record_testnet_name }}
         run: |
-          dns_mainnet_value=$(aws route53 list-resource-record-sets --hosted-zone-id ${{ inputs.hosted_zone_id }} --query "ResourceRecordSets[?Name == '${{ inputs.dns_record_mainnet_name }}'].ResourceRecords[].Value" --output text)
-          dns_testnet_value=$(aws route53 list-resource-record-sets --hosted-zone-id ${{ inputs.hosted_zone_id }} --query "ResourceRecordSets[?Name == '${{ inputs.dns_record_testnet_name }}'].ResourceRecords[].Value" --output text)
+          dns_mainnet_value=$(aws route53 list-resource-record-sets --hosted-zone-id "$HOSTED_ZONE_ID" --query "ResourceRecordSets[?Name == '$DNS_MAINNET_NAME'].ResourceRecords[].Value" --output text)
+          dns_testnet_value=$(aws route53 list-resource-record-sets --hosted-zone-id "$HOSTED_ZONE_ID" --query "ResourceRecordSets[?Name == '$DNS_TESTNET_NAME'].ResourceRecords[].Value" --output text)
           echo "dns_mainnet_value=$dns_mainnet_value" >> $GITHUB_OUTPUT
           echo "dns_testnet_value=$dns_testnet_value" >> $GITHUB_OUTPUT
       - name: Define output variables

@@ -65,10 +65,14 @@ jobs:
       - name: Resolve base URL
         id: resolve
         shell: bash
+        env:
+          CUSTOM_URL: ${{ inputs.custom_url }}
+          INPUT_ENVIRONMENT: ${{ inputs.environment || 'dead' }}
+          NETWORK: ${{ matrix.network }}
         run: |
-          custom_url="${{ inputs.custom_url }}"
-          environment="${{ inputs.environment || 'dead' }}"
-          network="${{ matrix.network }}"
+          custom_url="$CUSTOM_URL"
+          environment="$INPUT_ENVIRONMENT"
+          network="$NETWORK"
 
           if [[ -n "$custom_url" ]]; then
             base_url="${custom_url%/}"

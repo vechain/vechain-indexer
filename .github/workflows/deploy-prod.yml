@@ -78,31 +78,43 @@ jobs:
           fi
       - name: Distinguish versions
         id: distinguish-versions
+        env:
+          INPUT_NETWORK: ${{ inputs.network }}
+          SET_VERSION: ${{ steps.set-version.outputs.VERSION }}
+          CURRENT_MAINNET: ${{ steps.get-current-version.outputs.CURRENT_MAINNET_VERSION }}
+          CURRENT_TESTNET: ${{ steps.get-current-version.outputs.CURRENT_TESTNET_VERSION }}
         run: |
-          if [[ "${{ inputs.network }}" == "mainnet" || "${{ inputs.network }}" == "both" ]]; then
-            echo "MAINNET_VERSION=${{ steps.set-version.outputs.VERSION }}" >> $GITHUB_OUTPUT
+          if [[ "$INPUT_NETWORK" == "mainnet" || "$INPUT_NETWORK" == "both" ]]; then
+            echo "MAINNET_VERSION=$SET_VERSION" >> $GITHUB_OUTPUT
           else
-            echo "MAINNET_VERSION=${{ steps.get-current-version.outputs.CURRENT_MAINNET_VERSION }}" >> $GITHUB_OUTPUT
+            echo "MAINNET_VERSION=$CURRENT_MAINNET" >> $GITHUB_OUTPUT
           fi
-          if [[ "${{ inputs.network }}" == "testnet" || "${{ inputs.network }}" == "both" ]]; then
-            echo "TESTNET_VERSION=${{ steps.set-version.outputs.VERSION }}" >> $GITHUB_OUTPUT
+          if [[ "$INPUT_NETWORK" == "testnet" || "$INPUT_NETWORK" == "both" ]]; then
+            echo "TESTNET_VERSION=$SET_VERSION" >> $GITHUB_OUTPUT
           else
-            echo "TESTNET_VERSION=${{ steps.get-current-version.outputs.CURRENT_TESTNET_VERSION }}" >> $GITHUB_OUTPUT
+            echo "TESTNET_VERSION=$CURRENT_TESTNET" >> $GITHUB_OUTPUT
           fi
       - name: Set environment
         id: set-environment
+        env:
+          INPUT_NETWORK: ${{ inputs.network }}
+          INPUT_ENV: ${{ inputs.environment }}
+          MAINNET_LIVE: ${{ needs.identify-live-color.outputs.mainnet_live_color }}
+          MAINNET_DEAD: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}
+          TESTNET_LIVE: ${{ needs.identify-live-color.outputs.testnet_live_color }}
+          TESTNET_DEAD: ${{ needs.identify-live-color.outputs.testnet_dead_color }}
         run: |
-          if [[ '${{ inputs.network }}' == 'mainnet' || '${{ inputs.network }}' == 'both' ]]; then
-            if [[ '${{ inputs.environment }}' == 'live' ]]; then
-              echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.mainnet_live_color }}" >> $GITHUB_OUTPUT
-            elif [[ '${{ inputs.environment }}' == 'dead' ]]; then
-              echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.mainnet_dead_color }}" >> $GITHUB_OUTPUT
+          if [[ "$INPUT_NETWORK" == 'mainnet' || "$INPUT_NETWORK" == 'both' ]]; then
+            if [[ "$INPUT_ENV" == 'live' ]]; then
+              echo "DEPLOYMENT_COLOR=$MAINNET_LIVE" >> $GITHUB_OUTPUT
+            elif [[ "$INPUT_ENV" == 'dead' ]]; then
+              echo "DEPLOYMENT_COLOR=$MAINNET_DEAD" >> $GITHUB_OUTPUT
             fi
-          elif [[ '${{ inputs.network }}' == 'testnet' ]]; then
-            if [[ '${{ inputs.environment }}' == 'live' ]]; then
-              echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.testnet_live_color }}" >> $GITHUB_OUTPUT
-            elif [[ '${{ inputs.environment }}' == 'dead' ]]; then
-              echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.testnet_dead_color }}" >> $GITHUB_OUTPUT
+          elif [[ "$INPUT_NETWORK" == 'testnet' ]]; then
+            if [[ "$INPUT_ENV" == 'live' ]]; then
+              echo "DEPLOYMENT_COLOR=$TESTNET_LIVE" >> $GITHUB_OUTPUT
+            elif [[ "$INPUT_ENV" == 'dead' ]]; then
+              echo "DEPLOYMENT_COLOR=$TESTNET_DEAD" >> $GITHUB_OUTPUT
             fi
           fi
 
@@ -140,6 +152,7 @@ jobs:
         env:
           MAINNET_VERSION: ${{ needs.define-env-vars.outputs.MAINNET_VERSION }}
           TESTNET_VERSION: ${{ needs.define-env-vars.outputs.TESTNET_VERSION }}
+          INPUT_NETWORK: ${{ inputs.network }}
         run: |
           # GHCR tags have the v. prefix stripped (v.1.0.0 -> 1.0.0)
           echo "MAINNET_GHCR_TAG=$(echo "$MAINNET_VERSION" | sed 's/^v\.//')" >> "$GITHUB_OUTPUT"
@@ -148,7 +161,7 @@ jobs:
           echo "MAINNET_ECR_TAG=$MAINNET_VERSION" >> "$GITHUB_OUTPUT"
           echo "TESTNET_ECR_TAG=$TESTNET_VERSION" >> "$GITHUB_OUTPUT"
           # When deploying both, check if versions differ to avoid redundant copy
-          if [ "${{ inputs.network }}" = "both" ] && [ "$MAINNET_VERSION" = "$TESTNET_VERSION" ]; then
+          if [ "$INPUT_NETWORK" = "both" ] && [ "$MAINNET_VERSION" = "$TESTNET_VERSION" ]; then
             echo "SKIP_TESTNET=true" >> "$GITHUB_OUTPUT"
           else
             echo "SKIP_TESTNET=false" >> "$GITHUB_OUTPUT"
@@ -259,12 +272,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           tag: ${{ needs.define-env-vars.outputs.MAINNET_VERSION }}
+          INPUT_ENV: ${{ inputs.environment }}
         run: |
-          latest_release=$(curl -s -H "Authorization: token ${{ github.token }}" \
-            https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r '.tag_name')
+          latest_release=$(curl -s -H "Authorization: token $GH_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r '.tag_name')
           echo "Latest release: ${latest_release}"
           prerelease_flag=""
-          if [ "${{ inputs.environment }}" == "dead" ]; then
+          if [ "$INPUT_ENV" == "dead" ]; then
             prerelease_flag="--prerelease"
           fi
           gh release create "${tag}" \
