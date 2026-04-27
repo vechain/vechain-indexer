@@ -106,3 +106,7 @@ tasks.named<Test>("test") {
     dependsOn(preE2e)
 //    finalizedBy(postE2e)
 }
+
+dependencyLocking {
+    lockAllConfigurations()
+}
