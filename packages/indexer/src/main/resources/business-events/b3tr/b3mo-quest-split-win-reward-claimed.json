@@ -1,0 +1,79 @@
+{
+  "name": "B3MO_QUEST_SPLIT_WIN_REWARD_CLAIMED",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "Transfer",
+      "alias": "transferB3TR",
+      "conditions": [
+        {
+          "firstOperand": "from",
+          "isFirstStatic": false,
+          "secondOperand": "${CHALLENGES_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        },
+        {
+          "firstOperand": "to",
+          "isFirstStatic": false,
+          "secondOperand": "origin",
+          "isSecondStatic": false,
+          "operator": "EQ"
+        },
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${B3TR_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    },
+    {
+      "name": "SplitWinPrizeClaimed",
+      "alias": "questRewardClaimed",
+      "conditions": [
+        {
+          "firstOperand": "winner",
+          "isFirstStatic": false,
+          "secondOperand": "origin",
+          "isSecondStatic": false,
+          "operator": "EQ"
+        },
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${CHALLENGES_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "firstEventName": "transferB3TR",
+      "firstEventProperty": "value",
+      "secondEventName": "questRewardClaimed",
+      "secondEventProperty": "prize",
+      "operator": "EQ"
+    }
+  ],
+  "paramsDefinition": [
+    {
+      "name": "to",
+      "eventName": "transferB3TR",
+      "businessEventName": "to"
+    },
+    {
+      "name": "from",
+      "eventName": "transferB3TR",
+      "businessEventName": "from"
+    },
+    {
+      "name": "value",
+      "eventName": "transferB3TR",
+      "businessEventName": "value"
+    }
+  ]
+}

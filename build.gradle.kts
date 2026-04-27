@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id("org.springframework.boot") version "3.4.5"
+    id("org.springframework.boot") version "3.5.12"
     id("io.spring.dependency-management") version "1.1.7"
     id("maven-publish")
     kotlin("jvm") version "2.1.21"
@@ -222,15 +222,15 @@ allprojects {
     dependencies {
 
         // Common dependencies
-        implementation("org.springframework.boot:spring-boot-starter:3.4.5")
-        implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.4.5")
-        implementation("org.springframework.boot:spring-boot-starter-webflux:3.4.5")
-        implementation("org.springframework.boot:spring-boot-starter-jetty:3.4.5")
+        implementation("org.springframework.boot:spring-boot-starter:3.5.12")
+        implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.5.12")
+        implementation("org.springframework.boot:spring-boot-starter-webflux:3.5.12")
+        implementation("org.springframework.boot:spring-boot-starter-jetty:3.5.12")
         implementation("org.springframework:spring-webflux")
         implementation("org.springframework:spring-core")
         implementation("org.springframework:spring-web")
 
-        implementation("org.springframework.boot:spring-boot-starter-actuator:3.4.5")
+        implementation("org.springframework.boot:spring-boot-starter-actuator:3.5.12")
 
         implementation("org.jetbrains.kotlin:kotlin-reflect:1.8.21")
 
@@ -248,7 +248,7 @@ allprojects {
         implementation("org.vechain:indexer-core:8.0.2")
 
         // Test dependencies
-        testImplementation("org.springframework.boot:spring-boot-starter-test:3.4.5")
+        testImplementation("org.springframework.boot:spring-boot-starter-test:3.5.12")
         testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.4")
         testImplementation("io.mockk:mockk:1.13.14")
         testImplementation("io.strikt:strikt-core:0.35.1")
