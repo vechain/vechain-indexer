@@ -26,12 +26,12 @@ jobs:
     outputs:
       run-tests: ${{ steps.filter.outputs.code_changed }}
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
 
       - id: filter
-        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.3
+        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
         with:
           filters: |
             code_changed:
@@ -56,7 +56,7 @@ jobs:
         if: needs.detect-code-changes.outputs.run-tests != 'true'
         run: echo "No code changes detected; skipping formatting checks."
 
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         if: needs.detect-code-changes.outputs.run-tests == 'true'
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -87,7 +87,7 @@ jobs:
         if: needs.detect-code-changes.outputs.run-tests != 'true'
         run: echo "No code changes detected; skipping unit tests."
 
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         if: needs.detect-code-changes.outputs.run-tests == 'true'
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -124,7 +124,7 @@ jobs:
           fi
 
       - name: Upload Test Results
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: github.ref == 'refs/heads/main' && needs.detect-code-changes.outputs.run-tests == 'true'
         with:
           name: test-results-${{ matrix.package }}-${{ github.head_ref || github.ref_name }}
@@ -163,7 +163,7 @@ jobs:
         if: needs.detect-code-changes.outputs.run-tests != 'true'
         run: echo "No code changes detected; skipping E2E tests."
 
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         if: needs.detect-code-changes.outputs.run-tests == 'true'
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -223,7 +223,7 @@ jobs:
           fi
 
       - name: Upload Test Results
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: github.ref == 'refs/heads/main' && needs.detect-code-changes.outputs.run-tests == 'true'
         with:
           name: test-results-e2e-${{ github.head_ref || github.ref_name }}
