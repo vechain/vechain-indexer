@@ -230,7 +230,7 @@ allprojects {
         implementation("org.springframework:spring-core")
         implementation("org.springframework:spring-web")
 
-        implementation("org.springframework.boot:spring-boot-starter-actuator:3.4.5")
+        implementation("org.springframework.boot:spring-boot-starter-actuator:3.5.12")
 
         implementation("org.jetbrains.kotlin:kotlin-reflect:1.8.21")
 
