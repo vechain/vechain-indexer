@@ -32,7 +32,8 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    secrets: inherit
+    secrets:
+      AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
 
   fetch-lb-dns-names:
     name: Fetch load balancer DNS names
@@ -176,4 +177,6 @@ jobs:
       environment: prod
       live_color_mainnet: ${{ needs.deploy-vpc-stack.outputs.live_color_mainnet }}
       live_color_testnet: ${{ needs.deploy-vpc-stack.outputs.live_color_testnet }}
-    secrets: inherit
+    secrets:
+      AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
+      VECHAINCI_SSH_PRIVATE_KEYS: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}

@@ -22,7 +22,8 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    secrets: inherit
+    secrets:
+      AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
 
   destroy-lingering-resources:
     name: Destroy Lingering Resources

@@ -20,6 +20,13 @@ on:
         required: false
         type: boolean
         default: false
+    secrets:
+      AWS_ACC_ROLE:
+        description: "AWS IAM role ARN for OIDC authentication"
+        required: true
+      VECHAINCI_SSH_PRIVATE_KEYS:
+        description: "SSH key for accessing vechain Terraform modules"
+        required: true
 
 permissions:
   id-token: write

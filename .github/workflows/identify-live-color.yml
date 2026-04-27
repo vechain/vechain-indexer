@@ -15,6 +15,10 @@ on:
         description: "The hosted zone ID of the DNS record"
         required: true
         type: string
+    secrets:
+      AWS_ACC_ROLE:
+        description: "AWS IAM role ARN for OIDC authentication"
+        required: true
     # Map the job outputs to workflow outputs
     outputs:
       mainnet_live_color:

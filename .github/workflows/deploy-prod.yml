@@ -42,7 +42,8 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    secrets: inherit
+    secrets:
+      AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
 
   define-env-vars:
     name: Set Up Environment Variables
@@ -244,7 +245,9 @@ jobs:
       packages: read
       contents: read
       id-token: write
-    secrets: inherit
+    secrets:
+      AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
+      VECHAINCI_SSH_PRIVATE_KEYS: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
 
   refresh-dead-dns:
     name: Refresh dead Route53 records
@@ -256,7 +259,9 @@ jobs:
       dead_records_only: true # Only target dead Route53 records in teraform apply
       live_color_mainnet: ${{ needs.identify-live-color.outputs.mainnet_live_color }}
       live_color_testnet: ${{ needs.identify-live-color.outputs.testnet_live_color }}
-    secrets: inherit
+    secrets:
+      AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
+      VECHAINCI_SSH_PRIVATE_KEYS: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
 
   log-live-environment:
     name: Log Live Environment

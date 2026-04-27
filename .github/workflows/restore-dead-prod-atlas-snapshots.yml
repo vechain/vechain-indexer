@@ -28,7 +28,8 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    secrets: inherit
+    secrets:
+      AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
 
   resolve-context:
     name: Resolve Restore Context
