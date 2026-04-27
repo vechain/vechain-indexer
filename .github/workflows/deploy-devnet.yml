@@ -14,6 +14,10 @@ permissions:
   id-token: write
   contents: read
 
+concurrency:
+  group: deploy-devnet
+  cancel-in-progress: false
+
 env:
   ENVIRONMENT: devnet
 
@@ -27,29 +31,31 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Validate version input
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
         run: |
-          if [[ ! "${{ inputs.version }}" =~ ^v\.[0-9]+\.[0-9]+\.[0-9]+-dev$ ]]; then
+          if [[ ! "$VERSION_INPUT" =~ ^v\.[0-9]+\.[0-9]+\.[0-9]+-dev$ ]]; then
             echo "Version must match v.X.Y.Z-dev"
             exit 1
           fi
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
         with:
           aws-region: eu-west-1
           role-to-assume: ${{ secrets.DEV_AWS_ACC_ROLE }}
 
       # Required for Terraform to source modules from other vechain repositories
       - name: Set up SSH agent
-        uses: webfactory/ssh-agent@v0.8.0
+        uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:
           ssh-private-key: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
         with:
           terraform_version: 1.9.8
           terraform_wrapper: true
@@ -64,8 +70,10 @@ jobs:
         run: terraform validate
 
       - name: Update image_version
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
         run: |
-          sed -i '/dev:/,/image_version:/s/image_version:.*/image_version: ${{ inputs.version }}/' environments/${{ env.ENVIRONMENT }}.yml
+          sed -i "/dev:/,/image_version:/s/image_version:.*/image_version: $VERSION_INPUT/" environments/${{ env.ENVIRONMENT }}.yml
           cat environments/${{ env.ENVIRONMENT }}.yml
 
       - name: Terraform Plan

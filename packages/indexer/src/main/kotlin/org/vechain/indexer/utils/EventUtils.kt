@@ -38,6 +38,17 @@ object EventUtils {
 
     fun determineEventType(params: AbiEventParameters): HistoryEventName? =
         when (params.getEventType()) {
+            "B3MO_QUEST_CREATED" -> HistoryEventName.B3MO_QUEST_CREATED
+            "B3MO_QUEST_JOINED" -> HistoryEventName.B3MO_QUEST_JOINED
+            "B3MO_QUEST_JOINED_STAKE" -> HistoryEventName.B3MO_QUEST_JOINED
+            "B3MO_QUEST_REWARD_CLAIMED" -> HistoryEventName.B3MO_QUEST_REWARD_CLAIMED
+            "B3MO_QUEST_SPLIT_WIN_REWARD_CLAIMED" -> HistoryEventName.B3MO_QUEST_REWARD_CLAIMED
+            "B3MO_QUEST_REFUND_CLAIMED" -> HistoryEventName.B3MO_QUEST_REFUND_CLAIMED
+            "B3MO_QUEST_CREATOR_REFUNDED" -> HistoryEventName.B3MO_QUEST_CREATOR_REFUNDED
+            "B3MO_QUEST_LEFT" -> HistoryEventName.B3MO_QUEST_LEFT
+            "B3MO_QUEST_CANCELLED" -> HistoryEventName.B3MO_QUEST_CANCELLED
+            "B3MO_QUEST_DECLINED" -> HistoryEventName.B3MO_QUEST_DECLINED
+            "B3MO_QUEST_COMPLETED" -> HistoryEventName.B3MO_QUEST_COMPLETED
             "B3TR_Vot3ToB3trSwap" -> HistoryEventName.B3TR_SWAP_VOT3_TO_B3TR
             "B3TR_B3trToVot3Swap" -> HistoryEventName.B3TR_SWAP_B3TR_TO_VOT3
             "B3TR_ProposalDeposit" -> HistoryEventName.B3TR_PROPOSAL_SUPPORT

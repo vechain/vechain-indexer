@@ -26,12 +26,12 @@ jobs:
     outputs:
       run-tests: ${{ steps.filter.outputs.code_changed }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
 
       - id: filter
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
         with:
           filters: |
             code_changed:
@@ -56,18 +56,18 @@ jobs:
         if: needs.detect-code-changes.outputs.run-tests != 'true'
         run: echo "No code changes detected; skipping formatting checks."
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         if: needs.detect-code-changes.outputs.run-tests == 'true'
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4.8.0
         if: needs.detect-code-changes.outputs.run-tests == 'true'
         with:
           distribution: "oracle"
           java-version: "21"
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
         if: needs.detect-code-changes.outputs.run-tests == 'true'
 
       - name: Gradle Spotless
@@ -87,18 +87,18 @@ jobs:
         if: needs.detect-code-changes.outputs.run-tests != 'true'
         run: echo "No code changes detected; skipping unit tests."
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         if: needs.detect-code-changes.outputs.run-tests == 'true'
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4.8.0
         if: needs.detect-code-changes.outputs.run-tests == 'true'
         with:
           distribution: 'oracle'
           java-version: '21'
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
         if: needs.detect-code-changes.outputs.run-tests == 'true'
 
       - name: Unit Test (${{ matrix.package }})
@@ -106,7 +106,7 @@ jobs:
         run: ./gradlew :packages:${{ matrix.package }}:test
 
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v3
+        uses: mikepenz/action-junit-report@bccf2e31636835cf0874589931c4116687171386 # v6.4.0
         if: (success() || failure()) && needs.detect-code-changes.outputs.run-tests == 'true'
         with:
           report_paths: packages/${{ matrix.package }}/build/test-results/test/TEST-*.xml
@@ -124,7 +124,7 @@ jobs:
           fi
 
       - name: Upload Test Results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: github.ref == 'refs/heads/main' && needs.detect-code-changes.outputs.run-tests == 'true'
         with:
           name: test-results-${{ matrix.package }}-${{ github.head_ref || github.ref_name }}
@@ -163,18 +163,18 @@ jobs:
         if: needs.detect-code-changes.outputs.run-tests != 'true'
         run: echo "No code changes detected; skipping E2E tests."
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         if: needs.detect-code-changes.outputs.run-tests == 'true'
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4.8.0
         if: needs.detect-code-changes.outputs.run-tests == 'true'
         with:
           distribution: 'oracle'
           java-version: '21'
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
         if: needs.detect-code-changes.outputs.run-tests == 'true'
 
       - name: Create gradle properties for Docker secrets
@@ -205,7 +205,7 @@ jobs:
           docker logs vechain-indexer
 
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v3
+        uses: mikepenz/action-junit-report@bccf2e31636835cf0874589931c4116687171386 # v6.4.0
         if: (success() || failure()) && needs.detect-code-changes.outputs.run-tests == 'true'
         with:
           report_paths: packages/e2e/build/test-results/test/TEST-*.xml
@@ -223,7 +223,7 @@ jobs:
           fi
 
       - name: Upload Test Results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: github.ref == 'refs/heads/main' && needs.detect-code-changes.outputs.run-tests == 'true'
         with:
           name: test-results-e2e-${{ github.head_ref || github.ref_name }}
