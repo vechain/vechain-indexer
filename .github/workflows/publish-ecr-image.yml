@@ -92,7 +92,7 @@ jobs:
 
       - name: Scan Docker image
         id: docker-scan
-        uses: alexjurkiewicz/ecr-scan-image@23adad502f48a23cf2acf8a6dda2c34e194df8e0 # v1.7.1
+        uses: alexjurkiewicz/ecr-scan-image@a17ece3facc44123372a2521011a557c18624d5a # v3.0.0
         with:
           repository: ${{env.projectName}}/${{ matrix.packageName }}
           tag: ${{ env.versionTag }}
