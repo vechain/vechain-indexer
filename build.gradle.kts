@@ -280,3 +280,7 @@ dependencies {
     testImplementation(project(":packages:indexer"))
     testImplementation(project(":packages:api"))
 }
+
+dependencyLocking {
+    lockAllConfigurations()
+}
