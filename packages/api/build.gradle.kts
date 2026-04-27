@@ -19,6 +19,9 @@ dependencies {
     implementation("com.github.ben-manes.caffeine:caffeine:3.1.7")
 
     testImplementation("de.flapdoodle.embed:de.flapdoodle.embed.mongo.spring3x:4.23.0")
+
+    // Direct dependency to ensure specific version
+    implementation("org.springframework.boot:spring-boot-starter-actuator:3.5.12")
 }
 
 tasks.getByName<BootJar>("bootJar") {
