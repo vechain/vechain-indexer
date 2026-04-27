@@ -1,0 +1,34 @@
+{
+  "name": "B3MO_QUEST_JOINED",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "ChallengeJoined",
+      "alias": "questJoined",
+      "conditions": [
+        {
+          "firstOperand": "participant",
+          "isFirstStatic": false,
+          "secondOperand": "origin",
+          "isSecondStatic": false,
+          "operator": "EQ"
+        },
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${CHALLENGES_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": [
+    {
+      "name": "participant",
+      "eventName": "questJoined",
+      "businessEventName": "from"
+    }
+  ]
+}
