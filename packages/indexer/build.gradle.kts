@@ -8,6 +8,7 @@ dependencies {
     implementation("com.github.vechain:thor-devkit.java:v1.0.0")
     implementation("com.github.kittinunf.fuel:fuel:2.3.1")
     implementation("com.github.kittinunf.fuel:fuel-coroutines:2.3.1")
+    implementation("org.springframework.boot:spring-boot-starter-actuator:3.5.12")
 }
 
 tasks.getByName<BootJar>("bootJar") { enabled = true }
