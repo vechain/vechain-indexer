@@ -21,6 +21,7 @@ open class B3trChallengesConfig {
         @Value("\${indexer.sync-block-batch-size.b3tr-challenges}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.CHALLENGES_CONTRACT}")
         challengesContractAddress: String,
+        @Value("\${business-event.substitutions.EMISSIONS}") emissionsContractAddress: String,
     ): Indexer =
         IndexerFactory()
             .name(IndexerNames.B3TR_CHALLENGES.NAME)
@@ -33,6 +34,7 @@ open class B3trChallengesConfig {
             .abiEventNames(
                 listOf(
                     "ChallengeCreated",
+                    "SplitWinConfigured",
                     "ChallengeInviteAdded",
                     "ChallengeJoined",
                     "ChallengeLeft",
@@ -40,11 +42,15 @@ open class B3trChallengesConfig {
                     "ChallengeCancelled",
                     "ChallengeActivated",
                     "ChallengeInvalidated",
-                    "ChallengeFinalized",
+                    "ChallengeCompleted",
                     "ChallengePayoutClaimed",
+                    "SplitWinPrizeClaimed",
+                    "SplitWinCreatorRefunded",
                     "ChallengeRefundClaimed",
+                    "EmissionDistributed",
+                    "EmissionDistributedV2",
                 )
             )
-            .abiContracts(listOf(challengesContractAddress))
+            .abiContracts(listOf(challengesContractAddress, emissionsContractAddress))
             .build()
 }

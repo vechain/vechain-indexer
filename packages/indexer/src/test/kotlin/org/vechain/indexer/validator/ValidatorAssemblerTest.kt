@@ -64,6 +64,8 @@ class ValidatorAssemblerTest {
             ValidatorAssembler.unpackValidators(
                 rows = decodeRows(buildDecoded()),
                 persistedDocs = emptyMap(),
+                currentDelegatedLevelsByValidator =
+                    mapOf("0xVAL1" to mapOf(TokenLevel.Dawn to 1L, TokenLevel.StrengthX to 2L)),
                 totalWeight = BigInteger.valueOf(100),
                 vetPriceUsd = BigInteger("1000000000000"),
                 vthoPriceUsd = BigInteger("1000000000000"),
@@ -78,7 +80,9 @@ class ValidatorAssemblerTest {
         assertThat(validator.endorser).isEqualTo("0xEND1")
         assertThat(validator.status).isEqualTo(Status.ACTIVE)
         assertThat(validator.vetStaked!!.setScale(6)).isEqualTo(BigDecimal("1.500000"))
-        assertThat(validator.nftYieldsNextCycle?.get(TokenLevel.Dawn)).isNotNull()
+        assertThat(validator.nftYieldsIfDelegatedNextCycle?.get(TokenLevel.Dawn)).isNotNull()
+        assertThat(validator.nftYields?.get(TokenLevel.Dawn)).isNotNull()
+        assertThat(validator.nftYields?.get(TokenLevel.StrengthX)).isNotNull()
     }
 
     @Test
@@ -148,7 +152,9 @@ class ValidatorAssemblerTest {
         val disappeared = validators.firstOrNull { it.id == "0xOLD" }
         assertThat(disappeared).isNotNull()
         assertThat(disappeared!!.status).isEqualTo(Status.EXITED)
-        assertThat(disappeared.nftYieldsNextCycle).isEqualTo(TokenLevelDecimalValues.empty())
+        assertThat(disappeared.nftYieldsIfDelegatedNextCycle)
+            .isEqualTo(TokenLevelDecimalValues.empty())
+        assertThat(disappeared.nftYields).isEqualTo(TokenLevelDecimalValues.empty())
         assertThat(disappeared.queuePosition).isNull()
         assertThat(disappeared.availableStartBlock).isNull()
     }

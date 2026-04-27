@@ -2,12 +2,14 @@ name: Codebase Versioning
 
 on:
   pull_request:
-    branches: 
+    branches:
       - main
     types: [closed]
 
+permissions: {}
+
 jobs:
   semantic-versioning:
-    uses: vechain/github-actions/.github/workflows/semantic-versioning.yaml@v.1.6.1
+    uses: vechain/github-actions/.github/workflows/semantic-versioning.yaml@28957c24b0bcf289d0b132a963e8086db8252e5c # v.1.6.1
     secrets:
       DEPLOY_KEY: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}

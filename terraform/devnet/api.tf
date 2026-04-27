@@ -516,6 +516,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.b3tr-challenges
     },
     {
+      name  = "INDEXER_START_BLOCK_B3TR_USER_CHALLENGES"
+      value = each.value.indexer.start-block.b3tr-user-challenges
+    },
+    {
       name  = "INDEXER_START_BLOCK_HISTORIC_PROPOSALS"
       value = each.value.indexer.start-block.historic-proposals
     },
@@ -688,6 +692,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.b3tr-challenges
     },
     {
+      name  = "VERSION_B3TR_USER_CHALLENGES"
+      value = each.value.indexer.version.b3tr-user-challenges
+    },
+    {
       name  = "VERSION_BLOCK_USAGE"
       value = each.value.indexer.version.block-usage
     },
@@ -850,6 +858,10 @@ module "ecs-backend-service" {
     {
       name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_B3TR_CHALLENGES"
       value = each.value.indexer.sync-block-batch-size.b3tr-challenges
+    },
+    {
+      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_B3TR_USER_CHALLENGES"
+      value = each.value.indexer.sync-block-batch-size.b3tr-user-challenges
     },
     {
       name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_CONTRACTS"

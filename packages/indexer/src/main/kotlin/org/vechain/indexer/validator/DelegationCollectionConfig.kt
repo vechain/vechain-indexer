@@ -12,7 +12,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("validator", "delegation")
+@Profile("validator", "validator-stats", "delegation")
 @Configuration
 open class DelegationCollectionConfig(
     mongoTemplate: MongoTemplate,
@@ -47,6 +47,11 @@ open class DelegationCollectionConfig(
                         .on(Delegation::status.name, Sort.Direction.ASC)
                         .on(Delegation::tokenLevel.name, Sort.Direction.ASC)
                         .on(Delegation::stakedAmount.name, Sort.Direction.ASC),
+                "status_1_validator_1_tokenLevel_1" to
+                    Index()
+                        .on(Delegation::status.name, Sort.Direction.ASC)
+                        .on(Delegation::validator.name, Sort.Direction.ASC)
+                        .on(Delegation::tokenLevel.name, Sort.Direction.ASC),
             )
         )
     }
