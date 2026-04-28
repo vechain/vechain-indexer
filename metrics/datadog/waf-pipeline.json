@@ -235,6 +235,12 @@
         },
         {
           "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/transactions/latest\""
+          },
+          "name": "/api/v1/transactions/latest"
+        },
+        {
+          "filter": {
             "query": "@httpRequest.uri:\"/api/v1/transfers/forBlock\""
           },
           "name": "/api/v1/transfers/forBlock"

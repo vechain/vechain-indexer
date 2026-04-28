@@ -136,6 +136,7 @@ class OpenApiDocumentationContractTest {
     fun `profile gated public routes are present in generated spec`() {
         val spec = fetchSpec()
 
+        expectThat(spec.at("/paths/~1api~1v1~1transactions~1latest/get").isMissingNode).isFalse()
         expectThat(spec.at("/paths/~1api~1v1~1validators").isMissingNode).isFalse()
         expectThat(spec.at("/paths/~1api~1v1~1validators~1blocks~1missed").isMissingNode).isFalse()
         expectThat(spec.at("/paths/~1api~1v1~1validators~1delegations~1count").isMissingNode)
@@ -156,6 +157,25 @@ class OpenApiDocumentationContractTest {
             }
 
         expectThat(projectIdHeader != null).isTrue()
+    }
+
+    @Test
+    fun `latest transactions route documents cursor pagination and hides transaction index`() {
+        val spec = fetchSpec()
+        val operation = spec.at("/paths/~1api~1v1~1transactions~1latest/get")
+        val parameters = operation.at("/parameters")
+
+        expectThat(operation.isMissingNode).isFalse()
+        expectThat(findParameter(parameters, "size", "query").isMissingNode).isFalse()
+        expectThat(findParameter(parameters, "cursor", "query").isMissingNode).isFalse()
+        expectThat(parameters.firstOrNull { it.path("name").asText() == "direction" } == null)
+            .isTrue()
+        expectThat(
+                spec
+                    .at("/components/schemas/IndexedTransaction/properties/transactionIndex")
+                    .isMissingNode
+            )
+            .isTrue()
     }
 
     private fun specParameters(pointer: String): JsonNode = fetchSpec().at(pointer)

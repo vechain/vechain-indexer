@@ -12,9 +12,11 @@ import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
 import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.docs.Cursor
 import org.vechain.indexer.docs.ExpandedParameter
 import org.vechain.indexer.docs.IncludeDelegatedParameter
 import org.vechain.indexer.docs.PaginationParameters
+import org.vechain.indexer.docs.PaginationSize
 import org.vechain.indexer.docs.TransactionIdParameter
 import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.rest.PaginatedResponse
@@ -23,6 +25,7 @@ import org.vechain.indexer.thor.Address
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.TransactionId
 import org.vechain.indexer.validation.ValidAddress
+import org.vechain.indexer.validation.ValidCursor
 import org.vechain.indexer.validation.ValidPageSize
 
 @Profile("transactions", "transaction")
@@ -31,6 +34,27 @@ import org.vechain.indexer.validation.ValidPageSize
 @RestController
 @RequestMapping(TRANSACTIONS_PATH)
 open class TransactionController(private val transactionService: TransactionService) {
+
+    @GetMapping("/latest")
+    @Operation(
+        summary = "Get latest transactions",
+        description =
+            """
+            Returns latest transactions by block number descending and canonical transaction order
+            within each block.
+            """,
+    )
+    @CommonApiResponses
+    @ExpandedParameter
+    @PaginationSize
+    @Cursor
+    open fun getLatestTransactions(
+        @RequestParam(required = false) expanded: Boolean = false,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @ValidCursor @RequestParam(required = false) cursor: String?,
+    ): PaginatedResponse<IndexedTransaction> {
+        return transactionService.findLatest(size, cursor)
+    }
 
     @GetMapping("{txId}")
     @Operation(summary = "Get transaction by ID")

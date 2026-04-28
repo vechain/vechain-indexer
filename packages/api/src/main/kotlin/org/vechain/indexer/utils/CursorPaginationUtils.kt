@@ -87,6 +87,7 @@ object CursorPaginationUtils {
      * @param sortByField The field to sort by
      * @param sortDirection The sort direction
      * @param cursorField The field to use for tie-breaking
+     * @param parseCursorFieldValue Whether to parse the cursor field value as a number
      */
     fun applyCursorFilter(
         query: Query,
@@ -94,10 +95,14 @@ object CursorPaginationUtils {
         sortByField: String,
         sortDirection: Sort.Direction,
         cursorField: String,
+        parseCursorFieldValue: Boolean = false,
     ) {
         val cursorInfo = parseCursor(cursor) ?: return
 
         val parsedSortValue = parseSortValue(cursorInfo.sortValue)
+        val parsedCursorValue =
+            if (parseCursorFieldValue) parseSortValue(cursorInfo.cursorValue)
+            else cursorInfo.cursorValue
 
         if (sortDirection == Sort.Direction.DESC) {
             // For DESC: (sortField < value) OR (sortField == value AND cursorField > cursorValue)
@@ -107,7 +112,7 @@ object CursorPaginationUtils {
                 Criteria.where(sortByField)
                     .`is`(parsedSortValue)
                     .and(cursorField)
-                    .gt(cursorInfo.cursorValue)
+                    .gt(parsedCursorValue)
             val orCriteria = Criteria().orOperator(cond1, cond2)
             query.addCriteria(orCriteria)
         } else {
@@ -118,7 +123,7 @@ object CursorPaginationUtils {
                 Criteria.where(sortByField)
                     .`is`(parsedSortValue)
                     .and(cursorField)
-                    .lt(cursorInfo.cursorValue)
+                    .lt(parsedCursorValue)
             val orCriteria = Criteria().orOperator(cond1, cond2)
             query.addCriteria(orCriteria)
         }
@@ -133,6 +138,7 @@ object CursorPaginationUtils {
      * @param sortByField The field to sort by
      * @param cursor The cursor from the previous page (optional)
      * @param cursorField The field to use for tie-breaking (default: "entity")
+     * @param parseCursorFieldValue Whether to parse the cursor field value as a number
      * @return A pair of (pageSize, Query)
      */
     fun buildCursorQuery(
@@ -142,6 +148,7 @@ object CursorPaginationUtils {
         sortByField: String,
         cursor: String? = null,
         cursorField: String,
+        parseCursorFieldValue: Boolean = false,
     ): Pair<Int, Query> {
         val pageSize = size ?: 20
         val sortDir =
@@ -150,7 +157,7 @@ object CursorPaginationUtils {
         val query = Query(baseCriteria)
 
         // Apply cursor filtering
-        applyCursorFilter(query, cursor, sortByField, sortDir, cursorField)
+        applyCursorFilter(query, cursor, sortByField, sortDir, cursorField, parseCursorFieldValue)
 
         // Apply sort and limit
         query.with(Sort.by(sortDir, sortByField).and(Sort.by(Sort.Direction.ASC, cursorField)))

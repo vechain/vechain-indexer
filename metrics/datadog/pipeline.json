@@ -291,6 +291,12 @@
         },
         {
           "filter": {
+            "query": "@http.url_details.path:\"/api/v1/transactions/latest\""
+          },
+          "name": "/api/v1/transactions/latest"
+        },
+        {
+          "filter": {
             "query": "@http.url_details.path:\"/api/v1/transfers/forBlock\""
           },
           "name": "/api/v1/transfers/forBlock"
