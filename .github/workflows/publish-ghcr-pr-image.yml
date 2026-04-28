@@ -1,8 +1,9 @@
 name: Publish PR Image
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  workflow_run:
+    workflows: ["Tests"]
+    types: [completed]
   workflow_dispatch:
     inputs:
       pr_number:
@@ -11,13 +12,10 @@ on:
         type: string
 
 concurrency:
-  group: pr-${{ github.event.pull_request.number || inputs.pr_number }}-ghcr-pr-publish
+  group: pr-${{ github.event.workflow_run.pull_requests[0].number || inputs.pr_number || github.run_id }}-ghcr-pr-publish
   cancel-in-progress: true
 
-permissions:
-  packages: write
-  contents: read
-  pull-requests: write
+permissions: {}
 
 env:
   registry: ghcr.io
@@ -25,33 +23,55 @@ env:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    # Only run for successful PR test runs (not push-to-main), or manual dispatch.
+    # pull_requests array is empty for fork PRs, so forks are excluded automatically.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'pull_request' &&
+       github.event.workflow_run.pull_requests[0].number > 0)
     outputs:
       pr_number: ${{ steps.meta.outputs.pr_number }}
       head_sha: ${{ steps.meta.outputs.head_sha }}
+      short_sha: ${{ steps.meta.outputs.short_sha }}
+      pr_tag: ${{ steps.meta.outputs.pr_tag }}
+      pr_version: ${{ steps.meta.outputs.pr_version }}
     steps:
       - name: Resolve PR metadata
         id: meta
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           EVENT_NAME: ${{ github.event_name }}
-          PR_NUMBER_EVENT: ${{ github.event.pull_request.number }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PR_NUMBER_INPUT: ${{ inputs.pr_number }}
           REPO: ${{ github.repository }}
+          WR_PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          WR_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          if [ "$EVENT_NAME" = "pull_request" ]; then
-            echo "pr_number=$PR_NUMBER_EVENT" >> "$GITHUB_OUTPUT"
-            echo "head_sha=$PR_HEAD_SHA" >> "$GITHUB_OUTPUT"
-          else
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             PR_JSON=$(gh pr view "$PR_NUMBER_INPUT" --repo "$REPO" --json headRefOid)
-            echo "pr_number=${PR_NUMBER_INPUT}" >> "$GITHUB_OUTPUT"
-            echo "head_sha=$(echo "$PR_JSON" | jq -r .headRefOid)" >> "$GITHUB_OUTPUT"
+            PR_NUM="$PR_NUMBER_INPUT"
+            HEAD_SHA=$(echo "$PR_JSON" | jq -r .headRefOid)
+          else
+            PR_NUM="$WR_PR_NUMBER"
+            HEAD_SHA="$WR_HEAD_SHA"
           fi
+
+          SHORT_SHA="${HEAD_SHA:0:7}"
+
+          echo "pr_number=${PR_NUM}" >> "$GITHUB_OUTPUT"
+          echo "head_sha=${HEAD_SHA}" >> "$GITHUB_OUTPUT"
+          echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "pr_tag=pr.${PR_NUM}.${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "pr_version=v.0.0.0-pr.${PR_NUM}.${SHORT_SHA}" >> "$GITHUB_OUTPUT"
 
   build:
     needs: validate
-    # Fork PRs must not run on self-hosted runners (untrusted code execution).
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      packages: write
+      contents: read
     strategy:
       matrix:
         packageName: ["api", "indexer"]
@@ -69,11 +89,7 @@ jobs:
         with:
           ref: ${{ needs.validate.outputs.head_sha }}
           fetch-depth: 1
-
-      - name: Set PR version
-        run: |
-          SHORT_SHA=$(echo "${{ needs.validate.outputs.head_sha }}" | cut -c1-7)
-          echo "PR_VERSION=v.0.0.0-pr.${{ needs.validate.outputs.pr_number }}.${SHORT_SHA}" >> $GITHUB_ENV
+          persist-credentials: false
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
@@ -93,7 +109,7 @@ jobs:
           platforms: ${{ matrix.platform }}
           build-args: |
             PACKAGE_NAME=${{ matrix.packageName }}
-            APP_VERSION=${{ env.PR_VERSION }}
+            APP_VERSION=${{ needs.validate.outputs.pr_version }}
           context: ./
           provenance: false
           sbom: false
@@ -105,10 +121,11 @@ jobs:
           outputs: type=image,name=${{ env.registry }}/${{ github.repository }}/${{ matrix.packageName }},push-by-digest=true,name-canonical=true,push=true
 
       - name: Export digest
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           mkdir -p /tmp/digests
-          digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests/${digest#sha256:}"
+          touch "/tmp/digests/${DIGEST#sha256:}"
 
       - name: Upload digest
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -121,16 +138,14 @@ jobs:
   merge:
     runs-on: ubuntu-latest
     needs: [validate, build]
+    permissions:
+      packages: write
+      contents: read
     strategy:
       matrix:
         packageName: ["api", "indexer"]
 
     steps:
-      - name: Set PR version
-        run: |
-          SHORT_SHA=$(echo "${{ needs.validate.outputs.head_sha }}" | cut -c1-7)
-          echo "PR_TAG=pr.${{ needs.validate.outputs.pr_number }}.${SHORT_SHA}" >> $GITHUB_ENV
-
       - name: Download digests
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -152,21 +167,19 @@ jobs:
         working-directory: /tmp/digests
         env:
           IMAGE: ${{ env.registry }}/${{ github.repository }}/${{ matrix.packageName }}
+          PR_TAG: ${{ needs.validate.outputs.pr_tag }}
         run: |
           docker buildx imagetools create \
-            -t ${{ env.IMAGE }}:${{ env.PR_TAG }} \
-            $(printf '${{ env.IMAGE }}@sha256:%s ' *)
+            -t "${IMAGE}:${PR_TAG}" \
+            $(printf "${IMAGE}@sha256:%s " *)
 
   comment:
     runs-on: ubuntu-latest
     needs: [validate, merge]
+    permissions:
+      pull-requests: write
 
     steps:
-      - name: Set PR version
-        run: |
-          SHORT_SHA=$(echo "${{ needs.validate.outputs.head_sha }}" | cut -c1-7)
-          echo "PR_TAG=pr.${{ needs.validate.outputs.pr_number }}.${SHORT_SHA}" >> $GITHUB_ENV
-
       - name: Comment on PR with usage instructions
         uses: marocchino/sticky-pull-request-comment@773744901bac0e8cbb5a0dc842800d45e9b2b405 # v2.9.4
         with:
@@ -177,12 +190,12 @@ jobs:
 
             **API:**
             ```
-            docker pull ghcr.io/${{ github.repository }}/api:${{ env.PR_TAG }}
+            docker pull ghcr.io/${{ github.repository }}/api:${{ needs.validate.outputs.pr_tag }}
             ```
 
             **Indexer:**
             ```
-            docker pull ghcr.io/${{ github.repository }}/indexer:${{ env.PR_TAG }}
+            docker pull ghcr.io/${{ github.repository }}/indexer:${{ needs.validate.outputs.pr_tag }}
             ```
 
             <details>
@@ -193,8 +206,8 @@ jobs:
             ```yaml
             services:
               api:
-                image: ghcr.io/${{ github.repository }}/api:${{ env.PR_TAG }}
+                image: ghcr.io/${{ github.repository }}/api:${{ needs.validate.outputs.pr_tag }}
               indexer:
-                image: ghcr.io/${{ github.repository }}/indexer:${{ env.PR_TAG }}
+                image: ghcr.io/${{ github.repository }}/indexer:${{ needs.validate.outputs.pr_tag }}
             ```
             </details>
