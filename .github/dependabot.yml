@@ -8,12 +8,3 @@ updates:
     - "increment:patch"
   cooldown:
     default-days: 7
-
-- package-ecosystem: npm
-  directory: /load-testing
-  schedule:
-    interval: monthly
-  labels:
-    - "increment:patch"
-  cooldown:
-    default-days: 14
