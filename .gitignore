@@ -46,11 +46,6 @@ thor/.output/
 packages/e2e/src/test/resources/results.json
 keyfile
 
-load-testing/node_modules
-load-testing/dist
-load-testing/.output
-load-testing/grafana-config/plugins
-load-testing/grafana-config/grafana.db
 mongo-data
 app-logs
 
@@ -74,3 +69,6 @@ __pycache__/
 gradle/docker.gradle.properties
 
 temp/
+
+.kotlin
+.claude
