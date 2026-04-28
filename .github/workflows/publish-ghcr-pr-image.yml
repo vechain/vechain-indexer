@@ -12,7 +12,7 @@ on:
         type: string
 
 concurrency:
-  group: pr-${{ github.event.workflow_run.pull_requests[0].number || inputs.pr_number || github.run_id }}-ghcr-pr-publish
+  group: pr-${{ github.event.workflow_run.pull_requests[0].number || github.event.workflow_run.head_branch || inputs.pr_number || github.run_id }}-ghcr-pr-publish
   cancel-in-progress: true
 
 permissions: {}
@@ -26,14 +26,14 @@ jobs:
     permissions:
       actions: read
       contents: read
+      pull-requests: read
     # Only run for successful PR test runs (not push-to-main), or manual dispatch.
-    # pull_requests array is empty for fork PRs, so forks are excluded automatically.
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.event == 'pull_request' &&
-       github.event.workflow_run.pull_requests[0].number > 0)
+       github.event.workflow_run.event == 'pull_request')
     outputs:
+      publish: ${{ steps.meta.outputs.publish }}
       pr_number: ${{ steps.meta.outputs.pr_number }}
       head_sha: ${{ steps.meta.outputs.head_sha }}
       short_sha: ${{ steps.meta.outputs.short_sha }}
@@ -48,27 +48,90 @@ jobs:
           PR_NUMBER_INPUT: ${{ inputs.pr_number }}
           REPO: ${{ github.repository }}
           WR_PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          WR_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
           WR_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
+          set -euo pipefail
+          workflow_pr_number="${WR_PR_NUMBER:-}"
+          workflow_head_branch="${WR_HEAD_BRANCH:-}"
+          workflow_head_sha="${WR_HEAD_SHA:-}"
+
+          skip_publish() {
+            echo "::notice::$1"
+            {
+              echo "publish=false"
+              echo "pr_number="
+              echo "head_sha="
+              echo "short_sha="
+              echo "pr_tag="
+              echo "pr_version="
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          }
+
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
-            PR_JSON=$(gh pr view "$PR_NUMBER_INPUT" --repo "$REPO" --json headRefOid)
             PR_NUM="$PR_NUMBER_INPUT"
-            HEAD_SHA=$(echo "$PR_JSON" | jq -r .headRefOid)
+            HEAD_SHA=""
           else
-            PR_NUM="$WR_PR_NUMBER"
-            HEAD_SHA="$WR_HEAD_SHA"
+            PR_NUM="$workflow_pr_number"
+            HEAD_SHA="$workflow_head_sha"
+
+            if { [ -z "$PR_NUM" ] || [ "$PR_NUM" = "null" ]; } && [ -n "$HEAD_SHA" ]; then
+              PR_NUM=$(gh api \
+                -H "Accept: application/vnd.github+json" \
+                "/repos/$REPO/commits/$HEAD_SHA/pulls" \
+                --jq '.[0].number // empty' \
+                2>/dev/null || true)
+            fi
+
+            if { [ -z "$PR_NUM" ] || [ "$PR_NUM" = "null" ]; } && [ -n "$workflow_head_branch" ]; then
+              REPO_OWNER="${REPO%%/*}"
+              PR_NUM=$(gh api \
+                --method GET \
+                -H "Accept: application/vnd.github+json" \
+                "/repos/$REPO/pulls" \
+                -f "head=$REPO_OWNER:$workflow_head_branch" \
+                -f "state=open" \
+                --jq '.[0].number // empty')
+            fi
+          fi
+
+          if [ -z "$PR_NUM" ] || [ "$PR_NUM" = "null" ]; then
+            skip_publish "No pull request is associated with this workflow run; skipping PR image publish."
+          fi
+
+          PR_JSON=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/$REPO/pulls/$PR_NUM")
+          HEAD_REPO=$(echo "$PR_JSON" | jq -r '.head.repo.full_name // empty')
+          PR_HEAD_SHA=$(echo "$PR_JSON" | jq -r '.head.sha // empty')
+
+          if [ "$HEAD_REPO" != "$REPO" ]; then
+            skip_publish "PR #$PR_NUM is from $HEAD_REPO; skipping PR image publish for forked pull requests."
+          fi
+
+          if [ -z "$HEAD_SHA" ] || [ "$HEAD_SHA" = "null" ]; then
+            HEAD_SHA="$PR_HEAD_SHA"
+          fi
+
+          if [ -z "$HEAD_SHA" ] || [ "$HEAD_SHA" = "null" ]; then
+            skip_publish "Could not resolve a head SHA for PR #$PR_NUM; skipping PR image publish."
           fi
 
           SHORT_SHA="${HEAD_SHA:0:7}"
 
-          echo "pr_number=${PR_NUM}" >> "$GITHUB_OUTPUT"
-          echo "head_sha=${HEAD_SHA}" >> "$GITHUB_OUTPUT"
-          echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
-          echo "pr_tag=pr.${PR_NUM}.${SHORT_SHA}" >> "$GITHUB_OUTPUT"
-          echo "pr_version=v.0.0.0-pr.${PR_NUM}.${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          {
+            echo "publish=true"
+            echo "pr_number=${PR_NUM}"
+            echo "head_sha=${HEAD_SHA}"
+            echo "short_sha=${SHORT_SHA}"
+            echo "pr_tag=pr.${PR_NUM}.${SHORT_SHA}"
+            echo "pr_version=v.0.0.0-pr.${PR_NUM}.${SHORT_SHA}"
+          } >> "$GITHUB_OUTPUT"
 
   build:
     needs: validate
+    if: needs.validate.outputs.publish == 'true'
     permissions:
       packages: write
       contents: read
@@ -138,7 +201,9 @@ jobs:
   merge:
     runs-on: ubuntu-latest
     needs: [validate, build]
+    if: needs.validate.outputs.publish == 'true'
     permissions:
+      actions: read
       packages: write
       contents: read
     strategy:
@@ -169,14 +234,21 @@ jobs:
           IMAGE: ${{ env.registry }}/${{ github.repository }}/${{ matrix.packageName }}
           PR_TAG: ${{ needs.validate.outputs.pr_tag }}
         run: |
+          sources=()
+          for digest in *; do
+            sources+=("${IMAGE}@sha256:${digest}")
+          done
+
           docker buildx imagetools create \
             -t "${IMAGE}:${PR_TAG}" \
-            $(printf "${IMAGE}@sha256:%s " *)
+            "${sources[@]}"
 
   comment:
     runs-on: ubuntu-latest
     needs: [validate, merge]
+    if: needs.validate.outputs.publish == 'true'
     permissions:
+      issues: write
       pull-requests: write
 
     steps:
