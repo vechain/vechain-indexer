@@ -18,6 +18,15 @@ import org.springframework.core.annotation.AliasFor
                     type = "string",
                     allowableValues =
                         [
+                            "B3MO_QUEST_CREATED",
+                            "B3MO_QUEST_JOINED",
+                            "B3MO_QUEST_REWARD_CLAIMED",
+                            "B3MO_QUEST_REFUND_CLAIMED",
+                            "B3MO_QUEST_CREATOR_REFUNDED",
+                            "B3MO_QUEST_LEFT",
+                            "B3MO_QUEST_CANCELLED",
+                            "B3MO_QUEST_DECLINED",
+                            "B3MO_QUEST_COMPLETED",
                             "B3TR_SWAP_VOT3_TO_B3TR",
                             "B3TR_SWAP_B3TR_TO_VOT3",
                             "B3TR_PROPOSAL_SUPPORT",
