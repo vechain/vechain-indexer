@@ -92,11 +92,23 @@ jobs:
 
       - name: Scan Docker image
         id: docker-scan
-        uses: alexjurkiewicz/ecr-scan-image@23adad502f48a23cf2acf8a6dda2c34e194df8e0 # v1.7.1
-        with:
-          repository: ${{env.projectName}}/${{ matrix.packageName }}
-          tag: ${{ env.versionTag }}
-          fail_threshold: medium
+        env:
+          REPO: ${{ env.projectName }}/${{ matrix.packageName }}
+          TAG: ${{ env.versionTag }}
+        run: |
+          set -euo pipefail
+          aws ecr start-image-scan --repository-name "$REPO" --image-id imageTag="$TAG" || true
+          aws ecr wait image-scan-complete --repository-name "$REPO" --image-id imageTag="$TAG"
+          read CRIT HIGH MED <<< "$(aws ecr describe-image-scan-findings \
+            --repository-name "$REPO" --image-id imageTag="$TAG" \
+            --query 'imageScanFindings.findingSeverityCounts.[CRITICAL, HIGH, MEDIUM]' \
+            --output text)"
+          CRIT=${CRIT/None/0}; HIGH=${HIGH/None/0}; MED=${MED/None/0}
+          echo "Findings for $REPO:$TAG — CRITICAL=$CRIT HIGH=$HIGH MEDIUM=$MED"
+          if [ $((CRIT + HIGH + MED)) -gt 0 ]; then
+            echo "::error::Vulnerabilities at MEDIUM or higher: CRITICAL=$CRIT HIGH=$HIGH MEDIUM=$MED"
+            exit 1
+          fi
 
       - name: On Scan Failure
         if: failure() && steps.docker-scan.outcome == 'failure'

@@ -71,12 +71,15 @@ jobs:
           echo "CURRENT_TESTNET_VERSION=${TESTNET_IMAGE_VERSION}" >> $GITHUB_OUTPUT
       - name: Set version
         id: set-version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.ref_name }}" == "main" ]]; then
+          if [[ "$EVENT_NAME" == "workflow_dispatch" && "$REF_NAME" == "main" ]]; then
             LATEST_TAG=$(git tag | sort -V | tail -n1)
-            echo "VERSION=${LATEST_TAG}" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.ref_name }}" == v.* ]]; then
-            echo "VERSION=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            echo "VERSION=${LATEST_TAG}" >> "$GITHUB_OUTPUT"
+          elif [[ "$EVENT_NAME" == "workflow_dispatch" && "$REF_NAME" == v.* ]]; then
+            echo "VERSION=$REF_NAME" >> "$GITHUB_OUTPUT"
           else
             echo "Unrecognised version. Please select an existing version tag to deploy."
             exit 1
@@ -146,7 +149,7 @@ jobs:
         uses: aws-actions/amazon-ecr-login@19d944daaa35f0fa1d3f7f8af1d3f2e5de25c5b7 # v2.1.4
 
       - name: Login to GHCR
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: ${{ env.GHCR_REGISTRY }}
           username: ${{ github.actor }}
@@ -198,19 +201,43 @@ jobs:
 
       - name: Scan mainnet image in ECR
         if: inputs.network == 'mainnet' || inputs.network == 'both'
-        uses: alexjurkiewicz/ecr-scan-image@23adad502f48a23cf2acf8a6dda2c34e194df8e0 # v1.7.1
-        with:
-          repository: ${{ env.ECR_PROJECT }}/${{ matrix.packageName }}
-          tag: ${{ steps.tags.outputs.MAINNET_ECR_TAG }}
-          fail_threshold: medium
+        env:
+          REPO: ${{ env.ECR_PROJECT }}/${{ matrix.packageName }}
+          TAG: ${{ steps.tags.outputs.MAINNET_ECR_TAG }}
+        run: |
+          set -euo pipefail
+          aws ecr start-image-scan --repository-name "$REPO" --image-id imageTag="$TAG" || true
+          aws ecr wait image-scan-complete --repository-name "$REPO" --image-id imageTag="$TAG"
+          read CRIT HIGH MED <<< "$(aws ecr describe-image-scan-findings \
+            --repository-name "$REPO" --image-id imageTag="$TAG" \
+            --query 'imageScanFindings.findingSeverityCounts.[CRITICAL, HIGH, MEDIUM]' \
+            --output text)"
+          CRIT=${CRIT/None/0}; HIGH=${HIGH/None/0}; MED=${MED/None/0}
+          echo "Findings for $REPO:$TAG — CRITICAL=$CRIT HIGH=$HIGH MEDIUM=$MED"
+          if [ $((CRIT + HIGH + MED)) -gt 0 ]; then
+            echo "::error::Vulnerabilities at MEDIUM or higher: CRITICAL=$CRIT HIGH=$HIGH MEDIUM=$MED"
+            exit 1
+          fi
 
       - name: Scan testnet image in ECR
         if: (inputs.network == 'testnet' || inputs.network == 'both') && steps.tags.outputs.SKIP_TESTNET != 'true'
-        uses: alexjurkiewicz/ecr-scan-image@23adad502f48a23cf2acf8a6dda2c34e194df8e0 # v1.7.1
-        with:
-          repository: ${{ env.ECR_PROJECT }}/${{ matrix.packageName }}
-          tag: ${{ steps.tags.outputs.TESTNET_ECR_TAG }}
-          fail_threshold: medium
+        env:
+          REPO: ${{ env.ECR_PROJECT }}/${{ matrix.packageName }}
+          TAG: ${{ steps.tags.outputs.TESTNET_ECR_TAG }}
+        run: |
+          set -euo pipefail
+          aws ecr start-image-scan --repository-name "$REPO" --image-id imageTag="$TAG" || true
+          aws ecr wait image-scan-complete --repository-name "$REPO" --image-id imageTag="$TAG"
+          read CRIT HIGH MED <<< "$(aws ecr describe-image-scan-findings \
+            --repository-name "$REPO" --image-id imageTag="$TAG" \
+            --query 'imageScanFindings.findingSeverityCounts.[CRITICAL, HIGH, MEDIUM]' \
+            --output text)"
+          CRIT=${CRIT/None/0}; HIGH=${HIGH/None/0}; MED=${MED/None/0}
+          echo "Findings for $REPO:$TAG — CRITICAL=$CRIT HIGH=$HIGH MEDIUM=$MED"
+          if [ $((CRIT + HIGH + MED)) -gt 0 ]; then
+            echo "::error::Vulnerabilities at MEDIUM or higher: CRITICAL=$CRIT HIGH=$HIGH MEDIUM=$MED"
+            exit 1
+          fi
 
   check-existing-release:
     name: Check Existing Releases

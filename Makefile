@@ -32,8 +32,6 @@ build-image-indexer: #@ Build the application with Docker.
 	docker build $(GRADLE_SECRET) --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=indexer -t veworld-indexer .
 build-image-api: #@ Build the application with Docker.
 	docker build $(GRADLE_SECRET) --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=api -t veworld-api .
-build-k6: #@ Build the K6 docker image.
-	docker build --build-arg APP_VERSION=v.1.0.0 -t veworld-k6 load-testing
 
 test: #@ Run all the tests (excluding e2e).
 	./gradlew cleanTest test -x :packages:e2e:test
@@ -70,27 +68,6 @@ test-api-schema: #@ Run API schema tests via Docker against a running API (defau
 		--workers=$(SCHEMA_TEST_WORKERS) \
 		$(if $(RATE_LIMIT_BYPASS_TOKEN),-H "$(RATE_LIMIT_BYPASS_HEADER): $(RATE_LIMIT_BYPASS_TOKEN)")
 
-# Load Testing
-LOAD_TEST_COMMAND=docker compose -f load-testing/docker-compose.yaml
-
-load-test: #@ Run the load tests (all tests).
-	$(LOAD_TEST_COMMAND) up --build -d --wait
-	open http://localhost:3000/d/GlqvWKLVk/k6-load-testing-results\?orgId\=1\&refresh\=5s\&from\=now-5m\&to\=now
-load-test-nfts: #@ Run only the NFTs test.
-	$(LOAD_TEST_COMMAND) up --build -d --wait influxdb grafana k6-app-nfts k6-app-nfts-by-owner-contract k6-app-nft-contracts
-	open http://localhost:3000/d/GlqvWKLVk/k6-load-testing-results\?orgId\=1\&refresh\=5s\&from\=now-5m\&to\=now
-load-test-transactions: #@ Run only the Transactions test.
-	$(LOAD_TEST_COMMAND) up --build -d --wait influxdb grafana k6-app-transactions-origin k6-app-transactions-delegator
-	open http://localhost:3000/d/GlqvWKLVk/k6-load-testing-results\?orgId\=1\&refresh\=5s\&from\=now-5m\&to\=now
-load-test-transfer-events: #@ Run only the Transfer Events test.
-	$(LOAD_TEST_COMMAND) up --build -d --wait influxdb grafana k6-app-transfer-events-address k6-app-transfer-events-destination k6-app-transfer-events-origin k6-app-transfer-events-token-address k6-app-fungible-tokens-contracts-by-address
-	open http://localhost:3000/d/GlqvWKLVk/k6-load-testing-results\?orgId\=1\&refresh\=5s\&from\=now-5m\&to\=now
-load-test-history: #@ Run only the History test.
-	$(LOAD_TEST_COMMAND) up --build -d --wait influxdb grafana k6-app-history
-	open http://localhost:3000/d/GlqvWKLVk/k6-load-testing-results\?orgId\=1\&refresh\=5s\&from\=now-5m\&to\=now
-load-test-clean: #@ Clean the load tests data.
-	$(LOAD_TEST_COMMAND) down -v --remove-orphans
-
 # Application Run (local)
 run-indexer: build-indexer #@ Run the indexer locally.
 	@set -a; \
@@ -107,7 +84,7 @@ run-api: build-api #@ Run the api locally.
 start: #@ Remove, clean and start all the infrastructure and the application.
 	make db-up db-setup app-up
 clean: #@ Clean all the infrastructure and the application data.
-	make load-test-clean app-down db-clean load-test-clean
+	make app-down db-clean
 down: #@ Stop all the infrastructure and the application.
 	make app-down db-down
 

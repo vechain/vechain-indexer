@@ -1,6 +1,5 @@
 # VeWorld Indexer
 
-![Scorecard badge](https://github.com/vechain/veworld-indexer/blob/feature/scorecard-action/.assets/scorecard-badge.svg)
 ![Security Checks Badge](https://github.com/vechain/veworld-indexer/actions/workflows/security-checks.yml/badge.svg)
 
 [![Test, Publish & Deploy](https://github.com/vechain/veworld-indexer/actions/workflows/on-main.yml/badge.svg)](https://github.com/vechainfoundation/veworld-indexer/actions/workflows/on-main.yml)
@@ -160,33 +159,6 @@ make test-e2e
   spin up
   the network manually using `make clean start` and remove the tasks `preE2e` and `postE2e` tasks
   in `./packages/e2e/build.gradle.kts` ([here](./packages/e2e/build.gradle.kts))
-
-### Load Testing
-
-Update the `BASE_URL` variable in `load-testing/docker-compose.yml` to point to your target environment. Individual tests can
-be tailored by modifying the env variables for each service.
- - `RAMP_UP_DURATION` - The time taken to ramp up to the maximum number of users
- - `STAY_DURATION` - The time to stay at the maximum number of users
- - `WIND_DOWN_DURATION` - The time taken to ramp down to 0 users
- - `TARGET_VUS` - The target number of virtual users to simulate
-
-Run the load tests:
-
-```bash
-make load-test
-```
-
-The containers will not be destroyed after the test completes. This is to allow access to the grafana dashboard and container logs. To clean up the load testing environment:
-
-```bash
-make load-test-clean
-```
-
-You can also choose to run specific tests only. We have included some commands in the Makefile to make this more convenient. For example, to run the history load tests:
-
-```bash
-make load-test-history
-```
 
 ### API Schema Tests
 

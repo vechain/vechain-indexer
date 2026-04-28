@@ -22,6 +22,12 @@ enum class ChallengeFilter {
     /** Public Active challenges the wallet is not involved in. */
     OthersActive,
 
-    /** Terminal (Completed, Cancelled, Invalid) challenges the wallet has been involved in. */
+    /**
+     * Challenges the wallet considers "no longer current":
+     * - Terminal-state (Completed, Cancelled, Invalid) challenges the wallet has been involved in.
+     * - Pending or Active challenges the wallet has actively bowed out of: declined invitations and
+     *   joined-then-left participants. Surfacing these here lets the wallet re-accept / re-join
+     *   from the History view without losing the challenge from sight.
+     */
     History,
 }
