@@ -151,7 +151,7 @@ dd-push: dd-push-pipeline dd-push-app-pipeline dd-push-waf-pipeline dd-push-dash
 DB_COMMAND=docker compose -f database/docker-compose-mongo.yaml
 DB_MAKE_KEY=mkdir -p database/keys && [ -f database/keys/keyfile ] || openssl rand -base64 756 > database/keys/keyfile
 DB_REMOVE_KEY=rm -f -R database/keys
-DB_SETUP_COMMAND=docker compose -f database/docker-compose-mongo-setup.yaml
+DB_SETUP_COMMAND=docker compose -p database-setup -f database/docker-compose-mongo-setup.yaml
 MONGO_URL=mongodb://indexer:password@localhost:27017/vechain?authSource=admin
 BACKUP_DIR ?= $(PWD)/database/backups
 
@@ -159,8 +159,17 @@ db-all: #@ Remove, clean and start the database (Docker).
 	make db-clean db-up db-setup
 db-up: db-keyfile-create #@ Start all the database (Docker)
 	$(DB_COMMAND) up -d --wait
-db-setup: #@ Setup all the database (Docker)
-	$(DB_SETUP_COMMAND) up --build; $(DB_SETUP_COMMAND) rm --force
+db-setup: db-up #@ Setup all the database (Docker)
+	@status=0; \
+	$(DB_SETUP_COMMAND) up --build --abort-on-container-exit --exit-code-from mongo-setup || status=$$?; \
+	if [ $$status -ne 0 ]; then \
+		echo "Mongo setup failed. Database container status:" >&2; \
+		$(DB_COMMAND) ps || true; \
+		echo "Recent mongo-node1 logs:" >&2; \
+		$(DB_COMMAND) logs --tail=200 mongo-node1 || true; \
+	fi; \
+	$(DB_SETUP_COMMAND) rm --force; \
+	exit $$status
 db-clean: #@ Clean all the database data (Docker)
 	$(DB_COMMAND) down -v --remove-orphans;
 db-down: #@ Stop all the database (Docker)

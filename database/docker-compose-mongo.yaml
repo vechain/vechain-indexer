@@ -34,7 +34,9 @@ services:
 #        reservations:
 #          memory: 1024m
     networks:
-      - vechain-database
+      vechain-database:
+        aliases:
+          - mongo-node1
 
 networks:
   vechain-database:
