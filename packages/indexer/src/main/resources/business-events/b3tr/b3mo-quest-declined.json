@@ -1,0 +1,34 @@
+{
+  "name": "B3MO_QUEST_DECLINED",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "ChallengeDeclined",
+      "alias": "questDeclined",
+      "conditions": [
+        {
+          "firstOperand": "participant",
+          "isFirstStatic": false,
+          "secondOperand": "origin",
+          "isSecondStatic": false,
+          "operator": "EQ"
+        },
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${CHALLENGES_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": [
+    {
+      "name": "participant",
+      "eventName": "questDeclined",
+      "businessEventName": "from"
+    }
+  ]
+}
