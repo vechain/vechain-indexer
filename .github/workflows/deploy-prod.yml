@@ -71,12 +71,15 @@ jobs:
           echo "CURRENT_TESTNET_VERSION=${TESTNET_IMAGE_VERSION}" >> $GITHUB_OUTPUT
       - name: Set version
         id: set-version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.ref_name }}" == "main" ]]; then
+          if [[ "$EVENT_NAME" == "workflow_dispatch" && "$REF_NAME" == "main" ]]; then
             LATEST_TAG=$(git tag | sort -V | tail -n1)
-            echo "VERSION=${LATEST_TAG}" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.ref_name }}" == v.* ]]; then
-            echo "VERSION=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            echo "VERSION=${LATEST_TAG}" >> "$GITHUB_OUTPUT"
+          elif [[ "$EVENT_NAME" == "workflow_dispatch" && "$REF_NAME" == v.* ]]; then
+            echo "VERSION=$REF_NAME" >> "$GITHUB_OUTPUT"
           else
             echo "Unrecognised version. Please select an existing version tag to deploy."
             exit 1
