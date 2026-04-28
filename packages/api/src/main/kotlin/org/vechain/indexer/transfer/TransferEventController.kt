@@ -18,7 +18,9 @@ import org.vechain.indexer.docs.AfterParameter
 import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.docs.Cursor
 import org.vechain.indexer.docs.PaginationParameters
+import org.vechain.indexer.docs.PaginationSize
 import org.vechain.indexer.docs.TransferEventTypeParameter
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.PaginatedResponse
@@ -28,6 +30,7 @@ import org.vechain.indexer.utils.PaginationUtils
 import org.vechain.indexer.utils.TimeValidationUtils
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidAddressList
+import org.vechain.indexer.validation.ValidCursor
 import org.vechain.indexer.validation.ValidNonNegativeLong
 import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validation.ValidTransferEventType
@@ -38,6 +41,44 @@ import org.vechain.indexer.validation.ValidTransferEventType
 @RestController
 @RequestMapping(TRANSFER_EVENTS_PATH)
 open class TransferEventController(private val transferEventService: TransferEventService) {
+
+    @GetMapping("/latest/nfts")
+    @Operation(
+        summary = "Get latest NFT transfers",
+        description =
+            """
+            Returns latest NFT transfer events by block number descending and canonical transfer
+            order within each block.
+            """,
+    )
+    @CommonApiResponses
+    @PaginationSize
+    @Cursor
+    open fun getLatestNftTransfers(
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @ValidCursor @RequestParam(required = false) cursor: String?,
+    ): PaginatedResponse<IndexedTransferEvent> {
+        return transferEventService.findLatestByType(TransferEventType.NFT, size, cursor)
+    }
+
+    @GetMapping("/latest/fungible-tokens")
+    @Operation(
+        summary = "Get latest fungible token transfers",
+        description =
+            """
+            Returns latest fungible token transfer events by block number descending and canonical
+            transfer order within each block.
+            """,
+    )
+    @CommonApiResponses
+    @PaginationSize
+    @Cursor
+    open fun getLatestFungibleTokenTransfers(
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @ValidCursor @RequestParam(required = false) cursor: String?,
+    ): PaginatedResponse<IndexedTransferEvent> {
+        return transferEventService.findLatestByType(TransferEventType.FUNGIBLE_TOKEN, size, cursor)
+    }
 
     @GetMapping
     @Operation(summary = "Get transfer events by address or token address")

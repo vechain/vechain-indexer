@@ -51,6 +51,11 @@ open class TransferCollectionConfig(
                         .on(IndexedTransferEvent::blockTimestamp.name, Sort.Direction.DESC)
                         .on(IndexedTransferEvent::txId.name, Sort.Direction.DESC)
                         .on("_id", Sort.Direction.DESC),
+                "transfer_eventType_1_blockNumber_-1_transferIndex_1" to
+                    Index()
+                        .on(IndexedTransferEvent::eventType.name, Sort.Direction.ASC)
+                        .on(IndexedTransferEvent::blockNumber.name, Sort.Direction.DESC)
+                        .on(IndexedTransferEvent::transferIndex.name, Sort.Direction.ASC),
             )
         )
     }

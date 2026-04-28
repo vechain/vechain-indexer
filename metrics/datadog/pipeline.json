@@ -171,6 +171,18 @@
         },
         {
           "filter": {
+            "query": "@http.url_details.path:\"/api/v1/transfers/latest/fungible-tokens\""
+          },
+          "name": "/api/v1/transfers/latest/fungible-tokens"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:\"/api/v1/transfers/latest/nfts\""
+          },
+          "name": "/api/v1/transfers/latest/nfts"
+        },
+        {
+          "filter": {
             "query": "@http.url_details.path:\"/api/v1/validators/blocks/missed\""
           },
           "name": "/api/v1/validators/blocks/missed"

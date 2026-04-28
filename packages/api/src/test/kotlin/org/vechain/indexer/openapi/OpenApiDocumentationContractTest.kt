@@ -137,6 +137,11 @@ class OpenApiDocumentationContractTest {
         val spec = fetchSpec()
 
         expectThat(spec.at("/paths/~1api~1v1~1transactions~1latest/get").isMissingNode).isFalse()
+        expectThat(spec.at("/paths/~1api~1v1~1transfers~1latest~1nfts/get").isMissingNode).isFalse()
+        expectThat(
+                spec.at("/paths/~1api~1v1~1transfers~1latest~1fungible-tokens/get").isMissingNode
+            )
+            .isFalse()
         expectThat(spec.at("/paths/~1api~1v1~1validators").isMissingNode).isFalse()
         expectThat(spec.at("/paths/~1api~1v1~1validators~1blocks~1missed").isMissingNode).isFalse()
         expectThat(spec.at("/paths/~1api~1v1~1validators~1delegations~1count").isMissingNode)
@@ -173,6 +178,29 @@ class OpenApiDocumentationContractTest {
         expectThat(
                 spec
                     .at("/components/schemas/IndexedTransaction/properties/transactionIndex")
+                    .isMissingNode
+            )
+            .isTrue()
+    }
+
+    @Test
+    fun `latest transfer routes document cursor pagination and hide transfer index`() {
+        val spec = fetchSpec()
+        val nftOperation = spec.at("/paths/~1api~1v1~1transfers~1latest~1nfts/get")
+        val fungibleOperation = spec.at("/paths/~1api~1v1~1transfers~1latest~1fungible-tokens/get")
+
+        listOf(nftOperation, fungibleOperation).forEach { operation ->
+            val parameters = operation.at("/parameters")
+
+            expectThat(operation.isMissingNode).isFalse()
+            expectThat(findParameter(parameters, "size", "query").isMissingNode).isFalse()
+            expectThat(findParameter(parameters, "cursor", "query").isMissingNode).isFalse()
+            expectThat(parameters.firstOrNull { it.path("name").asText() == "direction" } == null)
+                .isTrue()
+        }
+        expectThat(
+                spec
+                    .at("/components/schemas/IndexedTransferEvent/properties/transferIndex")
                     .isMissingNode
             )
             .isTrue()
