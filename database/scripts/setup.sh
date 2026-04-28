@@ -16,9 +16,7 @@ log() {
   printf '[mongo-setup] %s\n' "$*"
 }
 
-print_diagnostics() {
-  log "Diagnostics for ${MONGO_HOST}:${MONGO_PORT}"
-
+print_network_probe() {
   if command -v getent >/dev/null 2>&1; then
     log "DNS lookup:"
     getent hosts "$MONGO_HOST" || true
@@ -30,6 +28,11 @@ print_diagnostics() {
   else
     log "TCP connection to ${MONGO_HOST}:${MONGO_PORT} failed."
   fi
+}
+
+print_diagnostics() {
+  log "Diagnostics for ${MONGO_HOST}:${MONGO_PORT}"
+  print_network_probe
 
   if [ -s "$LAST_MONGO_OUTPUT" ]; then
     log "Last mongosh output:"
@@ -52,6 +55,8 @@ wait_for_mongo() {
 
     log "MongoDB is not reachable yet (attempt ${attempt}/${MONGO_SETUP_ATTEMPTS})."
     if [ "$attempt" -eq 1 ] || [ $((attempt % 5)) -eq 0 ]; then
+      print_network_probe
+      log "Latest mongosh output:"
       cat "$LAST_MONGO_OUTPUT"
     fi
 

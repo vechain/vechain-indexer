@@ -159,7 +159,7 @@ db-all: #@ Remove, clean and start the database (Docker).
 	make db-clean db-up db-setup
 db-up: db-keyfile-create #@ Start all the database (Docker)
 	$(DB_COMMAND) up -d --wait
-db-setup: #@ Setup all the database (Docker)
+db-setup: db-up #@ Setup all the database (Docker)
 	@status=0; \
 	$(DB_SETUP_COMMAND) up --build --abort-on-container-exit --exit-code-from mongo-setup || status=$$?; \
 	if [ $$status -ne 0 ]; then \
