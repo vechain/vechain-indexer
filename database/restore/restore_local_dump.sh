@@ -233,7 +233,7 @@ count_documents() {
 
   raw="$(docker_mongo "${mounted_run_dir}" \
     mongosh "${normalized_uri}" --quiet \
-    --eval "const database = db.getSiblingDB('${db_name}'); print(database.getCollection('${collection}').countDocuments({}));" \
+    --eval "const database = db.getSiblingDB('${db_name}'); print(database.getCollection('${collection}').estimatedDocumentCount());" \
     2>/dev/null | tr -d '[:space:]')"
   count="$(printf '%s' "${raw}" | grep -oE '[0-9]+$' || true)"
   [[ -n "${count}" ]] || die "Could not parse document count for '${collection}' (raw output: ${raw})"
@@ -525,7 +525,7 @@ stream_restore_command() {
   write_manifest_header
 
   local source_db destination_db collection
-  local source_count destination_before_count destination_after_count
+  local source_count destination_after_count
   source_db="$(extract_database_name "${SOURCE_MONGO_URI}")"
   destination_db="$(extract_database_name "${DESTINATION_MONGO_URI}")"
   require_supported_database "${source_db}"
@@ -541,10 +541,6 @@ stream_restore_command() {
     source_count="$(count_documents "${RUN_DIR}" "${SOURCE_MONGO_URI}" "${source_db}" "${collection}")"
     append_manifest "source_count" "${collection}" "${source_count}"
     log "Source count for '${collection}': ${source_count}"
-
-    destination_before_count="$(count_documents "${RUN_DIR}" "${DESTINATION_MONGO_URI}" "${destination_db}" "${collection}")"
-    append_manifest "destination_before_count" "${collection}" "${destination_before_count}"
-    log "Destination count before stream for '${collection}': ${destination_before_count}"
 
     log "Streaming '${collection}' from source to destination"
     run_with_log "${RUN_DIR}/logs/stream-${collection}.log" \

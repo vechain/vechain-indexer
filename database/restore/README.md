@@ -93,7 +93,7 @@ Per run, under the run directory (default: `database/restore/runs/restore-<times
 - Both URIs must point to a database literally named `vechain`. The script refuses any other name.
 - Restore (and backup-destination) require the destination host to exactly match a `--confirm-target` string. The wrapper supplies this from the chosen URI.
 - The `--drop` flag is used during restore. The destination collection is dropped before the dump is loaded — pass `--with-backup` if you need a rollback path.
-- Restore counts are compared against source counts; a mismatch fails the run.
+- Restore counts are compared against source counts; a mismatch fails the run. Counts use MongoDB's `estimatedDocumentCount()` (collection metadata, O(1)) rather than a full scan, which assumes both source and destination are static during the run. If documents are being inserted into either side mid-run, the comparison can fire false-fails.
 
 ## Direct script use
 
