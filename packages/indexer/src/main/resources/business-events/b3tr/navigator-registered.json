@@ -1,0 +1,37 @@
+{
+  "name": "B3TR_NavigatorRegistered",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "NavigatorRegistered",
+      "alias": "navigatorRegisteredEvent",
+      "conditions": [
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${NAVIGATOR_REGISTRY_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": [
+    {
+      "name": "navigator",
+      "eventName": "navigatorRegisteredEvent",
+      "businessEventName": "navigator"
+    },
+    {
+      "name": "stakeAmount",
+      "eventName": "navigatorRegisteredEvent",
+      "businessEventName": "stakeAmount"
+    },
+    {
+      "name": "metadataURI",
+      "eventName": "navigatorRegisteredEvent",
+      "businessEventName": "metadataURI"
+    }
+  ]
+}

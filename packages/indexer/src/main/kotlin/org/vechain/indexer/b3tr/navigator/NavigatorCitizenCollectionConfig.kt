@@ -1,0 +1,58 @@
+package org.vechain.indexer.b3tr.navigator
+
+import kotlinx.coroutines.CoroutineScope
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Profile
+import org.springframework.data.domain.Sort
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.index.Index
+import org.vechain.indexer.IndexerNames
+import org.vechain.indexer.config.mongo.CollectionConfig
+import org.vechain.indexer.version.IndexerVersionService
+
+@Profile("b3tr", "b3tr-navigator", "b3tr-navigator-citizen")
+@Configuration
+open class NavigatorCitizenCollectionConfig(
+    mongoTemplate: MongoTemplate,
+    appCoroutineScope: CoroutineScope,
+    private val indexerVersionService: IndexerVersionService,
+) : CollectionConfig(mongoTemplate, appCoroutineScope, NavigatorCitizen::class.java) {
+    private val logger = LoggerFactory.getLogger(this::class.java)
+    @Value("\${indexer.version.b3tr-navigator}") private val version: Int = 1
+
+    override fun initCollection() {
+        logger.info("Check collection version for ${modelObj.simpleName}")
+        indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            indexerName = IndexerNames.NAVIGATOR_CITIZEN.NAME,
+            NavigatorCitizen::class.java,
+            version,
+        )
+        ensureCollection()
+        logger.info("Initializing indexes for ${modelObj.simpleName}")
+        ensureIndexes(
+            listOf(
+                "blockNumber_-1" to
+                    Index().on(NavigatorCitizen::blockNumber.name, Sort.Direction.DESC),
+                "citizen_navigator_1_active_1" to
+                    Index()
+                        .on(NavigatorCitizen::navigator.name, Sort.Direction.ASC)
+                        .on(NavigatorCitizen::active.name, Sort.Direction.ASC),
+                "citizen_navigator_1_active_1_delegatedAt_-1__id_-1" to
+                    Index()
+                        .on(NavigatorCitizen::navigator.name, Sort.Direction.ASC)
+                        .on(NavigatorCitizen::active.name, Sort.Direction.ASC)
+                        .on(NavigatorCitizen::delegatedAt.name, Sort.Direction.DESC)
+                        .on("_id", Sort.Direction.DESC),
+                "citizen_active_1_navigatorExitEffectiveDeadlineBlock_1" to
+                    Index()
+                        .on(NavigatorCitizen::active.name, Sort.Direction.ASC)
+                        .on(
+                            NavigatorCitizen::navigatorExitEffectiveDeadlineBlock.name,
+                            Sort.Direction.ASC,
+                        ),
+            )
+        )
+    }
+}

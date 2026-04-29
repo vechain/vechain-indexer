@@ -59,6 +59,17 @@ object EventUtils {
             "B3TR_ActionReward" -> HistoryEventName.B3TR_ACTION
             "B3TR_ProposalVote" -> HistoryEventName.B3TR_PROPOSAL_VOTE
             "B3TR_XAllocationVote" -> HistoryEventName.B3TR_XALLOCATION_VOTE
+            "B3TR_NavigatorRegistered" -> HistoryEventName.B3TR_NAVIGATOR_REGISTERED
+            "B3TR_StakeAdded" -> HistoryEventName.B3TR_NAVIGATOR_STAKE_ADDED
+            "B3TR_StakeWithdrawn" -> HistoryEventName.B3TR_NAVIGATOR_STAKE_WITHDRAWN
+            "B3TR_FeeClaimed" -> HistoryEventName.B3TR_NAVIGATOR_FEE_CLAIMED
+            "B3TR_FeeDeposited" -> HistoryEventName.B3TR_NAVIGATOR_FEE_DEPOSITED
+            "B3TR_DelegationCreated" -> HistoryEventName.B3TR_NAVIGATOR_DELEGATION_CREATED
+            "B3TR_DelegationIncreased" -> HistoryEventName.B3TR_NAVIGATOR_DELEGATION_INCREASED
+            "B3TR_DelegationDecreased" -> HistoryEventName.B3TR_NAVIGATOR_DELEGATION_DECREASED
+            "B3TR_DelegationRemoved" -> HistoryEventName.B3TR_NAVIGATOR_DELEGATION_REMOVED
+            "B3TR_NavigatorSlashed" -> HistoryEventName.B3TR_NAVIGATOR_SLASHED
+            "B3TR_NavigatorMinorSlashed" -> HistoryEventName.B3TR_NAVIGATOR_MINOR_SLASHED
             "Transfer" -> {
                 when {
                     params.params["value"] != null -> HistoryEventName.TRANSFER_FT

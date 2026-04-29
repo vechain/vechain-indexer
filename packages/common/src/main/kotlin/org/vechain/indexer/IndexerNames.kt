@@ -206,6 +206,36 @@ object IndexerNames {
         const val COLLECTION = "b3tr_balances"
     }
 
+    object NAVIGATOR {
+        const val NAME = "NavigatorIndexer"
+        const val COLLECTION = "b3tr_navigators"
+    }
+
+    object NAVIGATOR_CITIZEN {
+        const val NAME = "NavigatorCitizenIndexer"
+        const val COLLECTION = "b3tr_navigator_citizens"
+    }
+
+    object NAVIGATOR_DELEGATION_EVENT {
+        const val NAME = "NavigatorDelegationEventIndexer"
+        const val COLLECTION = "b3tr_navigator_delegation_events"
+    }
+
+    object NAVIGATOR_FEE {
+        const val NAME = "NavigatorFeeIndexer"
+        const val COLLECTION = "b3tr_navigator_fees"
+    }
+
+    object NAVIGATOR_OVERVIEW_SUMMARY {
+        const val NAME = "NavigatorOverviewSummaryIndexer"
+        const val COLLECTION = "b3tr_navigator_overview_summaries"
+    }
+
+    object NAVIGATOR_FEE_SUMMARY {
+        const val NAME = "NavigatorFeeSummaryIndexer"
+        const val COLLECTION = "b3tr_navigator_fee_summaries"
+    }
+
     object B3TR_CHALLENGES {
         const val NAME = "B3trChallengesIndexer"
         const val COLLECTION = "b3tr_challenges"

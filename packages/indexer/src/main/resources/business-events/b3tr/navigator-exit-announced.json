@@ -1,0 +1,37 @@
+{
+  "name": "B3TR_ExitAnnounced",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "ExitAnnounced",
+      "alias": "exitAnnouncedEvent",
+      "conditions": [
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${NAVIGATOR_REGISTRY_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": [
+    {
+      "name": "navigator",
+      "eventName": "exitAnnouncedEvent",
+      "businessEventName": "navigator"
+    },
+    {
+      "name": "announcedAtRound",
+      "eventName": "exitAnnouncedEvent",
+      "businessEventName": "announcedAtRound"
+    },
+    {
+      "name": "effectiveDeadline",
+      "eventName": "exitAnnouncedEvent",
+      "businessEventName": "effectiveDeadline"
+    }
+  ]
+}

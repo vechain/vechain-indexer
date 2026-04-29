@@ -4,6 +4,7 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
+.kotlin
 
 ### Terraform ###
 .terraform/
@@ -69,6 +70,7 @@ __pycache__/
 gradle/docker.gradle.properties
 
 temp/
+.roro/
 
 .kotlin
 .claude
