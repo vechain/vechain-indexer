@@ -50,7 +50,7 @@ Keep local defaults at `1`: do not bump `indexer.version.<key>` fallback values 
 ### Validation (local)
 - Compile/build: `make build`
 - Targeted tests: `make test-indexer`, `make test-api`
-- Schema tests (deployed env): `scripts/run_api_schema_tests.sh` (Schemathesis runner; see `README.md`)
+- Schema tests (deployed env): `packages/api/scripts/run_api_schema_tests.sh` (Schemathesis runner; see `README.md`)
 
 More detailed templates and copy/paste snippets live in `notes/indexer-api-playbook.md`.
 

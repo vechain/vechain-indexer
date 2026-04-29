@@ -164,7 +164,7 @@ make test-e2e
 
 Use the schema-driven harness when you need to validate the public API in a deployed environment. It fetches the OpenAPI document from `/api-docs`, runs Schemathesis-based checks across every documented operation, and fails if any response exceeds 2 000 ms (override by setting `MAX_RESPONSE_MILLISECONDS`).
 
-- Local run: `scripts/run_api_schema_tests.sh [dead|live|<base-url>] [--base-url <base-url>]` (defaults to the dead environment). Install `schemathesis` locally first, for example `pip install "schemathesis>=3.19,<4"`.
+- Local run: `packages/api/scripts/run_api_schema_tests.sh [dead|live|<base-url>] [--base-url <base-url>]` (defaults to the dead environment). Install `schemathesis` locally first, for example `pip install "schemathesis>=3.19,<4"`.
 - GitHub Action: trigger **API Tests** from the Actions tab and choose the target environment, or provide a full base URL override. The workflow uses the same script and publishes Schemathesis logs and JUnit XML as artifacts.
 
 ## Disaster Recovery

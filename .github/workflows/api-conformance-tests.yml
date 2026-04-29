@@ -123,7 +123,7 @@ jobs:
         run: |
           mkdir -p schemathesis-output
           set +e
-          scripts/run_api_schema_tests.sh dead \
+          packages/api/scripts/run_api_schema_tests.sh dead \
             --base-url "${{ steps.resolve.outputs.base_url }}" \
             --store-network-log=./schemathesis-output/network.log \
             --junit-xml=./schemathesis-output/results.xml \
@@ -145,7 +145,7 @@ jobs:
       - name: Generate conformance report
         if: always()
         run: |
-          python3 scripts/generate_api_conformance_report.py \
+          python3 packages/api/scripts/generate_api_conformance_report.py \
             --results-xml ./schemathesis-output/results.xml \
             --log ./schemathesis-output/run.log \
             --output-json ./schemathesis-output/report.json \
