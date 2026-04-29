@@ -66,18 +66,18 @@ Other flags:
 
 - `--source-uri URI` / `--destination-uri URI` — bypass presets.
 - `--with-backup` — dump the destination collections before restoring (creates rollback material).
-- `--run-dir DIR` — override the run directory (default: `temp/mongo-transfer/restore-<timestamp>`).
+- `--run-dir DIR` — override the run directory (default: `database/restore/runs/restore-<timestamp>`).
 
 ## What gets written to disk
 
-Per run, under the run directory:
+Per run, under the run directory (default: `database/restore/runs/restore-<timestamp>/`):
 
 - `manifest.txt` — masked URIs, doc counts before/after, collection list.
 - `source-dump/vechain/<collection>.bson` — BSON dump from the source.
 - `destination-backup/vechain/<collection>.bson` — only if `--with-backup`.
 - `logs/*.log` — stdout/stderr of each Mongo subprocess.
 
-The default run-dir root (`temp/mongo-transfer/`) is gitignored. Move the run directory elsewhere if you want to keep it.
+`database/restore/runs/` is gitignored. Delete old runs you don't need; move ones you want to keep elsewhere.
 
 ## Safety
 

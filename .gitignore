@@ -70,5 +70,7 @@ gradle/docker.gradle.properties
 
 temp/
 
+database/restore/runs/
+
 .kotlin
 .claude

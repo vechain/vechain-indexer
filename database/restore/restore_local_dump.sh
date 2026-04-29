@@ -3,7 +3,8 @@ set -euo pipefail
 
 readonly SCRIPT_NAME="$(basename "$0")"
 readonly SCRIPT_PATH="$0"
-readonly DEFAULT_RUN_ROOT="temp/mongo-transfer"
+readonly SCRIPT_DIR_LOCAL_DUMP="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly DEFAULT_RUN_ROOT="${SCRIPT_DIR_LOCAL_DUMP}/runs"
 readonly REQUIRED_DATABASE="vechain"
 readonly MANIFEST_NAME="manifest.txt"
 

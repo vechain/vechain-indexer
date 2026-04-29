@@ -161,7 +161,7 @@ resolve_collections() {
 }
 
 default_run_dir() {
-  printf 'temp/mongo-transfer/restore-%s' "$(date +%Y%m%d%H%M%S)"
+  printf '%s/runs/restore-%s' "${SCRIPT_DIR}" "$(date +%Y%m%d%H%M%S)"
 }
 
 resolve_uri() {
