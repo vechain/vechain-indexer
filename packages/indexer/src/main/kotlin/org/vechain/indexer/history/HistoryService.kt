@@ -192,6 +192,23 @@ open class HistoryService(
                 HistoryEventName.TRANSFER_VET -> event.params.getAsString("amount")!!
                 HistoryEventName.STARGATE_DELEGATE_REQUEST ->
                     event.params.getAsString("vetAmountStaked") ?: event.params.getAsString("value")
+                HistoryEventName.B3TR_NAVIGATOR_DELEGATION_CREATED ->
+                    event.params.getAsString("amount")
+                HistoryEventName.B3TR_NAVIGATOR_DELEGATION_INCREASED ->
+                    event.params.getAsString("addedAmount")
+                HistoryEventName.B3TR_NAVIGATOR_DELEGATION_DECREASED ->
+                    event.params.getAsString("removedAmount")
+                HistoryEventName.B3TR_NAVIGATOR_DELEGATION_REMOVED ->
+                    event.params.getAsString("amount")
+                HistoryEventName.B3TR_NAVIGATOR_SLASHED,
+                HistoryEventName.B3TR_NAVIGATOR_MINOR_SLASHED -> event.params.getAsString("amount")
+                HistoryEventName.B3TR_NAVIGATOR_REGISTERED ->
+                    event.params.getAsString("stakeAmount")
+                HistoryEventName.B3TR_NAVIGATOR_STAKE_ADDED -> event.params.getAsString("amount")
+                HistoryEventName.B3TR_NAVIGATOR_STAKE_WITHDRAWN ->
+                    event.params.getAsString("amount")
+                HistoryEventName.B3TR_NAVIGATOR_FEE_CLAIMED,
+                HistoryEventName.B3TR_NAVIGATOR_FEE_DEPOSITED -> event.params.getAsString("amount")
                 else -> event.params.getAsString("value")
             }
 
@@ -209,6 +226,41 @@ open class HistoryService(
                 else -> null
             }
 
+        val isNavigatorDelegation =
+            eventName in
+                listOf(
+                    HistoryEventName.B3TR_NAVIGATOR_DELEGATION_CREATED,
+                    HistoryEventName.B3TR_NAVIGATOR_DELEGATION_INCREASED,
+                    HistoryEventName.B3TR_NAVIGATOR_DELEGATION_DECREASED,
+                    HistoryEventName.B3TR_NAVIGATOR_DELEGATION_REMOVED,
+                )
+
+        val isNavigatorEvent =
+            eventName in
+                listOf(
+                    HistoryEventName.B3TR_NAVIGATOR_SLASHED,
+                    HistoryEventName.B3TR_NAVIGATOR_MINOR_SLASHED,
+                    HistoryEventName.B3TR_NAVIGATOR_REGISTERED,
+                    HistoryEventName.B3TR_NAVIGATOR_STAKE_ADDED,
+                    HistoryEventName.B3TR_NAVIGATOR_STAKE_WITHDRAWN,
+                    HistoryEventName.B3TR_NAVIGATOR_FEE_CLAIMED,
+                    HistoryEventName.B3TR_NAVIGATOR_FEE_DEPOSITED,
+                )
+
+        val from =
+            when {
+                isNavigatorDelegation -> event.params.getAsString("citizen")
+                isNavigatorEvent -> event.params.getAsString("navigator")
+                else -> event.params.getAsString("from")
+            }
+
+        val to =
+            when {
+                isNavigatorDelegation -> null
+                isNavigatorEvent -> null
+                else -> event.params.getAsString("to")
+            }
+
         return IndexedHistoryEvent(
             id = DigestUtils.sha1Hex(event.id),
             blockId = event.blockId,
@@ -224,8 +276,8 @@ open class HistoryService(
             origin = event.origin,
             eventName = eventName,
             gasPayer = event.gasPayer,
-            from = event.params.getAsString("from"),
-            to = event.params.getAsString("to"),
+            from = from,
+            to = to,
             value = value,
             tokenId = tokenId,
             appId = event.params.getAsString("appId"),

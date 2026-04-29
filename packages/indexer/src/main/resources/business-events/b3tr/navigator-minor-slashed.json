@@ -1,0 +1,47 @@
+{
+  "name": "B3TR_NavigatorMinorSlashed",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "NavigatorMinorSlashed",
+      "alias": "navigatorMinorSlashedEvent",
+      "conditions": [
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${NAVIGATOR_REGISTRY_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": [
+    {
+      "name": "navigator",
+      "eventName": "navigatorMinorSlashedEvent",
+      "businessEventName": "navigator"
+    },
+    {
+      "name": "amount",
+      "eventName": "navigatorMinorSlashedEvent",
+      "businessEventName": "amount"
+    },
+    {
+      "name": "remainingStake",
+      "eventName": "navigatorMinorSlashedEvent",
+      "businessEventName": "remainingStake"
+    },
+    {
+      "name": "roundId",
+      "eventName": "navigatorMinorSlashedEvent",
+      "businessEventName": "roundId"
+    },
+    {
+      "name": "infractionFlags",
+      "eventName": "navigatorMinorSlashedEvent",
+      "businessEventName": "infractionFlags"
+    }
+  ]
+}

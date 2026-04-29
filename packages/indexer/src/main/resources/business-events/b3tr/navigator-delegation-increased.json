@@ -1,0 +1,42 @@
+{
+  "name": "B3TR_DelegationIncreased",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "DelegationIncreased",
+      "alias": "delegationIncreasedEvent",
+      "conditions": [
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${NAVIGATOR_REGISTRY_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": [
+    {
+      "name": "citizen",
+      "eventName": "delegationIncreasedEvent",
+      "businessEventName": "citizen"
+    },
+    {
+      "name": "navigator",
+      "eventName": "delegationIncreasedEvent",
+      "businessEventName": "navigator"
+    },
+    {
+      "name": "addedAmount",
+      "eventName": "delegationIncreasedEvent",
+      "businessEventName": "addedAmount"
+    },
+    {
+      "name": "newTotal",
+      "eventName": "delegationIncreasedEvent",
+      "businessEventName": "newTotal"
+    }
+  ]
+}

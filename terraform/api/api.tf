@@ -503,6 +503,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.b3tr-treasury
     },
     {
+      name  = "INDEXER_START_BLOCK_B3TR_NAVIGATOR"
+      value = each.value.indexer.start-block.b3tr-navigator
+    },
+    {
       name  = "INDEXER_START_BLOCK_B3TR_BALANCE"
       value = each.value.indexer.start-block.b3tr-balance
     },
@@ -997,6 +1001,10 @@ module "ecs-backend-service" {
     {
       name  = "RELAYER_REWARDS_POOL_CONTRACT"
       value = each.value.indexer.business-event.substitutions.RELAYER_REWARDS_POOL_CONTRACT
+    },
+    {
+      name  = "NAVIGATOR_REGISTRY_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.NAVIGATOR_REGISTRY_CONTRACT
     },
     {
       name  = "VEVOTE_CONTRACT"

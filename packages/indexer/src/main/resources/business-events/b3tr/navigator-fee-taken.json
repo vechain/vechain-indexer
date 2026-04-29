@@ -1,0 +1,42 @@
+{
+  "name": "B3TR_NavigatorFeeTaken",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "NavigatorFeeTaken",
+      "alias": "navigatorFeeTakenEvent",
+      "conditions": [
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${VOTER_REWARDS_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": [
+    {
+      "name": "navigator",
+      "eventName": "navigatorFeeTakenEvent",
+      "businessEventName": "navigator"
+    },
+    {
+      "name": "citizen",
+      "eventName": "navigatorFeeTakenEvent",
+      "businessEventName": "citizen"
+    },
+    {
+      "name": "fee",
+      "eventName": "navigatorFeeTakenEvent",
+      "businessEventName": "fee"
+    },
+    {
+      "name": "cycle",
+      "eventName": "navigatorFeeTakenEvent",
+      "businessEventName": "cycle"
+    }
+  ]
+}

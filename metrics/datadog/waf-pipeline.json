@@ -97,9 +97,39 @@
         },
         {
           "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/navigators/fees/history\""
+          },
+          "name": "/api/v1/b3tr/navigators/fees/history"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/navigators/fees/summary\""
+          },
+          "name": "/api/v1/b3tr/navigators/fees/summary"
+        },
+        {
+          "filter": {
             "query": "@httpRequest.uri:\"/api/v1/b3tr/galaxy-members/level-overview\""
           },
           "name": "/api/v1/b3tr/galaxy-members/level-overview"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/navigators/citizens\""
+          },
+          "name": "/api/v1/b3tr/navigators/citizens"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/navigators/delegations\""
+          },
+          "name": "/api/v1/b3tr/navigators/delegations"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/navigators/overview\""
+          },
+          "name": "/api/v1/b3tr/navigators/overview"
         },
         {
           "filter": {
@@ -160,6 +190,12 @@
             "query": "@httpRequest.uri:\"/api/v1/b3tr/challenges\""
           },
           "name": "/api/v1/b3tr/challenges"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/b3tr/navigators\""
+          },
+          "name": "/api/v1/b3tr/navigators"
         },
         {
           "filter": {
@@ -466,6 +502,12 @@
             "query": "@httpRequest.uri:/api/v1/b3tr/challenges/*"
           },
           "name": "/api/v1/b3tr/challenges/{challengeId}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/b3tr/navigators/*"
+          },
+          "name": "/api/v1/b3tr/navigators/{navigatorId}"
         },
         {
           "filter": {

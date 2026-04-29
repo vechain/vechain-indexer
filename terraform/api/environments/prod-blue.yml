@@ -159,6 +159,7 @@ enabled_nets:
         b3tr-challenges: "24565096"
         b3tr-user-challenges: "24565096"
         b3tr-treasury: "18868500"
+        b3tr-navigator: "24693587"
         b3tr-balance: "18868500"
         b3tr-x-alloc-result: "18926115"
         b3tr-sustainable-actions: "19122233"
@@ -266,6 +267,7 @@ enabled_nets:
           BUILTIN_STAKER_CONTRACT: "0x00000000000000000000000000005374616B6572"
           GET_ALL_VALIDATORS_CONTRACT: "0xcf9daaa9e3c0385b4c55846501ac3545f58d68ad"
           RELAYER_REWARDS_POOL_CONTRACT: "0x34b56f892c9e977b9ba2e43ba64c27d368ab3c86"
+          NAVIGATOR_REGISTRY_CONTRACT: "0xef238e33fc78ecc79beaf8386254a0fc67d048e0"
           BLACKLIST_CONTRACT_ADDRESS: "0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5"
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -406,6 +408,7 @@ enabled_nets:
         b3tr-challenges: "24614309"
         b3tr-user-challenges: "24614309"
         b3tr-treasury: "22126050"
+        b3tr-navigator: "24742758"
         b3tr-balance: "22126050"
         b3tr-x-alloc-result: "22126050"
         b3tr-sustainable-actions: "22126050"
@@ -514,6 +517,7 @@ enabled_nets:
           BUILTIN_STAKER_CONTRACT: "0x00000000000000000000000000005374616B6572"
           GET_ALL_VALIDATORS_CONTRACT: "0x168fc982338b399598c10f8467bc66fb1b49aae7"
           RELAYER_REWARDS_POOL_CONTRACT: "0x92b5a7484970d9b2ad981e8135ff14e6f996dc04"
+          NAVIGATOR_REGISTRY_CONTRACT: "0x15a38b65f26bdbca50addf3865732613a45bbc00"
           BLACKLIST_CONTRACT_ADDRESS: "0x9405c18c384dd448f82c11136e188a147186ea3a"
       log_metric_filters:
         - name: "AppUnhealthy"
