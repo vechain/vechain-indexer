@@ -230,8 +230,11 @@ main() {
   echo
   if [[ "${NON_INTERACTIVE}" -eq 0 ]]; then
     local confirm
-    read -rp "Proceed? [y/N]: " confirm
-    [[ "${confirm}" == "y" || "${confirm}" == "Y" ]] || die "Aborted"
+    read -rp "Proceed? [Y/n] (default: yes): " confirm
+    case "${confirm}" in
+      ""|y|Y|yes|Yes|YES) ;;
+      *) die "Aborted" ;;
+    esac
   fi
 
   export SOURCE_MONGO_URI="${SOURCE_URI}"
