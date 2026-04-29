@@ -68,21 +68,23 @@ waitForPrimary()
  * @param roles - the roles, see https://docs.mongodb.com/manual/reference/built-in-roles/
  */
 function createUser(db, username, password, roles) {
-    if (db.system.users.findOne({user: username}) == null) {
+    const usernameValue = String(username)
+
+    if (db.system.users.findOne({user: String(username)}) == null) {
         console.log(
-            "Creating user (" + username + ") with roles: " + JSON.stringify(roles)
+            "Creating user (" + usernameValue + ") with roles: " + JSON.stringify(roles)
         );
         db.createUser({
-            user: username,
+            user: usernameValue,
             pwd: password,
             roles: roles,
         });
     } else {
         console.log(
-            "User (" + username + ") already exists, Updating password / roles"
+            "User (" + usernameValue + ") already exists, Updating password / roles"
         );
         //modify the user password / roles
-        db.updateUser(username, {
+        db.updateUser(usernameValue, {
             pwd: password,
             roles: roles,
         });

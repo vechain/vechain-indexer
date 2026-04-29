@@ -197,3 +197,5 @@ db-restore: #@ Restore MongoDB database from a backup file. Usage: make db-resto
 	echo "Use the command 'docker log --tail 100 -f mongo-restore' to see the progress"
 	docker rm -f mongo-restore 2>/dev/null || true
 	docker run --name mongo-restore -d --network=host -v "$(FILE):/backup/backup.gz" -u $(shell id -u):$(shell id -g) mongo:8 mongorestore --uri="$(MONGO_URL)" --drop --gzip --archive="/backup/backup.gz" --numInsertionWorkersPerCollection 16
+db-copy-collections: #@ Copy specific MongoDB collections between two clusters. Interactive. See database/restore/README.md.
+	database/restore/restore.sh

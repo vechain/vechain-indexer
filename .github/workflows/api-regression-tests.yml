@@ -50,7 +50,7 @@ jobs:
           REGRESSION_SEED_METADATA_FILE: regression-output/seed-metadata.json
         run: |
           mkdir -p regression-output
-          scripts/run_regression_tests.sh \
+          packages/api/scripts/run_regression_tests.sh \
             --output regression-output/report.json
 
       - name: Generate summary
