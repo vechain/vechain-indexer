@@ -110,6 +110,16 @@ To restore to a different DB:
 make db-restore MONGO_HOST=myserver.com
 ```
 
+## Copy collections between databases
+
+To copy specific collections from one MongoDB cluster to another (e.g. from a local indexer into an Atlas cluster) without doing a full backup/restore round-trip:
+
+```bash
+make db-copy-collections
+```
+
+This launches the interactive wrapper at `database/restore/restore.sh`, which prompts for source/destination URIs (with `MONGO_PRESET_*` env-var presets) and the collection list, then drives the underlying `restore_local_dump.sh` end-to-end. See `database/restore/README.md` for full options including non-interactive use.
+
 ## Features
 
 There are 6 indexers and 6 corresponding APIs. Each indexer can be run in isolation or all together. There is no
