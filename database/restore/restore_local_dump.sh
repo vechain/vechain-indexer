@@ -214,6 +214,7 @@ docker_mongo() {
   shift
   docker run --rm \
     --add-host=host.docker.internal:host-gateway \
+    -u "$(id -u):$(id -g)" \
     -v "${mounted_run_dir}:/work" \
     -w /work \
     mongo:8 \
