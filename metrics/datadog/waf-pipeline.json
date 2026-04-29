@@ -145,18 +145,6 @@
         },
         {
           "filter": {
-            "query": "@httpRequest.uri:\"/api/v1/transfers/latest/fungible-tokens\""
-          },
-          "name": "/api/v1/transfers/latest/fungible-tokens"
-        },
-        {
-          "filter": {
-            "query": "@httpRequest.uri:\"/api/v1/transfers/latest/nfts\""
-          },
-          "name": "/api/v1/transfers/latest/nfts"
-        },
-        {
-          "filter": {
             "query": "@httpRequest.uri:\"/api/v1/validators/blocks/missed\""
           },
           "name": "/api/v1/validators/blocks/missed"
@@ -304,6 +292,12 @@
             "query": "@httpRequest.uri:\"/api/v1/transfers/fungible-tokens-contracts\""
           },
           "name": "/api/v1/transfers/fungible-tokens-contracts"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v1/transfers/latest\""
+          },
+          "name": "/api/v1/transfers/latest"
         },
         {
           "filter": {

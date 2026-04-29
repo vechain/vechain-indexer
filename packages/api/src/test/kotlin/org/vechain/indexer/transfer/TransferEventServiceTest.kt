@@ -35,7 +35,7 @@ class TransferEventServiceTest {
 
         val response =
             service.findLatestByType(
-                eventType = TransferEventType.FUNGIBLE_TOKEN,
+                eventTypes = listOf(TransferEventType.FUNGIBLE_TOKEN),
                 size = 2,
                 cursor = null,
             )
@@ -51,13 +51,36 @@ class TransferEventServiceTest {
         every { mongoTemplate.find(capture(querySlot), IndexedTransferEvent::class.java) } returns
             emptyList()
 
-        service.findLatestByType(eventType = TransferEventType.NFT, size = 20, cursor = "101|1")
+        service.findLatestByType(
+            eventTypes = listOf(TransferEventType.NFT),
+            size = 20,
+            cursor = "101|1",
+        )
 
         val query = querySlot.captured.toString()
         assertTrue(query.contains("eventType"))
         assertTrue(query.contains("NFT"))
         assertTrue(query.contains("blockNumber"))
         assertTrue(query.contains("transferIndex"))
+    }
+
+    @Test
+    fun `findLatestByType filters by multiple event types via in operator`() {
+        val querySlot = slot<Query>()
+        every { mongoTemplate.find(capture(querySlot), IndexedTransferEvent::class.java) } returns
+            emptyList()
+
+        service.findLatestByType(
+            eventTypes = listOf(TransferEventType.VET, TransferEventType.FUNGIBLE_TOKEN),
+            size = 20,
+            cursor = null,
+        )
+
+        val query = querySlot.captured.toString()
+        assertTrue(query.contains("eventType"))
+        assertTrue(query.contains("\$in"))
+        assertTrue(query.contains("VET"))
+        assertTrue(query.contains("FUNGIBLE_TOKEN"))
     }
 
     private fun transfer(

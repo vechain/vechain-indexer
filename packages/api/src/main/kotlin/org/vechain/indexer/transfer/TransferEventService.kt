@@ -76,13 +76,15 @@ open class TransferEventService(
     }
 
     fun findLatestByType(
-        eventType: TransferEventType,
+        eventTypes: Collection<TransferEventType>,
         size: Int?,
         cursor: String? = null,
     ): PaginatedResponse<IndexedTransferEvent> {
+        require(eventTypes.isNotEmpty()) { "eventTypes must not be empty" }
         val (pageSize, query) =
             CursorPaginationUtils.buildCursorQuery(
-                baseCriteria = Criteria.where(IndexedTransferEvent::eventType.name).`is`(eventType),
+                baseCriteria =
+                    Criteria.where(IndexedTransferEvent::eventType.name).`in`(eventTypes),
                 size = size,
                 direction = "DESC",
                 sortByField = IndexedTransferEvent::blockNumber.name,

@@ -42,42 +42,29 @@ import org.vechain.indexer.validation.ValidTransferEventType
 @RequestMapping(TRANSFER_EVENTS_PATH)
 open class TransferEventController(private val transferEventService: TransferEventService) {
 
-    @GetMapping("/latest/nfts")
+    @GetMapping("/latest")
     @Operation(
-        summary = "Get latest NFT transfers",
+        summary = "Get latest transfer events",
         description =
             """
-            Returns latest NFT transfer events by block number descending and canonical transfer
-            order within each block.
+            Returns latest transfer events by block number descending and canonical transfer order
+            within each block. Defaults to all transfer event types; use the eventType query
+            parameter to filter to one or more types.
             """,
     )
+    @TransferEventTypeParameter
     @CommonApiResponses
     @PaginationSize
     @Cursor
-    open fun getLatestNftTransfers(
+    open fun getLatestTransfers(
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @ValidCursor @RequestParam(required = false) cursor: String?,
+        @ValidTransferEventType @RequestParam(required = false) eventType: List<String>?,
     ): PaginatedResponse<IndexedTransferEvent> {
-        return transferEventService.findLatestByType(TransferEventType.NFT, size, cursor)
-    }
-
-    @GetMapping("/latest/fungible-tokens")
-    @Operation(
-        summary = "Get latest fungible token transfers",
-        description =
-            """
-            Returns latest fungible token transfer events by block number descending and canonical
-            transfer order within each block.
-            """,
-    )
-    @CommonApiResponses
-    @PaginationSize
-    @Cursor
-    open fun getLatestFungibleTokenTransfers(
-        @ValidPageSize @RequestParam(required = false) size: Int?,
-        @ValidCursor @RequestParam(required = false) cursor: String?,
-    ): PaginatedResponse<IndexedTransferEvent> {
-        return transferEventService.findLatestByType(TransferEventType.FUNGIBLE_TOKEN, size, cursor)
+        val eventTypes =
+            eventType?.map { TransferEventType.valueOf(it) }?.takeIf { it.isNotEmpty() }
+                ?: TransferEventType.entries
+        return transferEventService.findLatestByType(eventTypes, size, cursor)
     }
 
     @GetMapping
