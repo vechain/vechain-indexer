@@ -26,10 +26,18 @@ The wrapper will:
 3. Hidden-prompt for any password missing from a chosen URI.
 4. Prompt for the comma-separated **collection** list.
 5. Show a summary and ask you to confirm.
-6. Run `plan`, `dump-source`, then `restore`.
+6. Stream each collection from source to destination via `mongodump --archive | mongorestore --archive` (no on-disk dump).
 7. Print the run directory.
 
 The destination backup step is **off by default**. Pass `--with-backup` to enable it (recommended for irreversible targets).
+
+### Stream vs disk mode
+
+By default the wrapper streams the BSON archive directly from `mongodump` to `mongorestore` without writing the source data to disk. For each collection, document counts are queried before and after, recorded in the manifest, and verified at the end.
+
+If you'd rather have an on-disk recovery artifact (e.g. so you can re-run the destination restore without re-reading the source), pass `--no-stream` to use the original dump-then-restore path. That mode writes `source-dump/vechain/<collection>.bson` under the run directory.
+
+Either way, if the operation fails partway through, the destination collection has already been dropped before the new data was written, so a re-run is required to fully repopulate it. Use `--with-backup` if you need a rollback path.
 
 ## Presets
 
@@ -66,6 +74,7 @@ Other flags:
 
 - `--source-uri URI` / `--destination-uri URI` — bypass presets.
 - `--with-backup` — dump the destination collections before restoring (creates rollback material).
+- `--no-stream` — fall back to the dump-then-restore disk path.
 - `--run-dir DIR` — override the run directory (default: `database/restore/runs/restore-<timestamp>`).
 
 ## What gets written to disk
@@ -73,9 +82,9 @@ Other flags:
 Per run, under the run directory (default: `database/restore/runs/restore-<timestamp>/`):
 
 - `manifest.txt` — masked URIs, doc counts before/after, collection list.
-- `source-dump/vechain/<collection>.bson` — BSON dump from the source.
+- `source-dump/vechain/<collection>.bson` — BSON dump from the source. **Only in `--no-stream` mode.**
 - `destination-backup/vechain/<collection>.bson` — only if `--with-backup`.
-- `logs/*.log` — stdout/stderr of each Mongo subprocess.
+- `logs/*.log` — stdout/stderr of each Mongo subprocess (named `stream-<collection>.log` or `dump-<collection>.log` / `restore-<collection>.log` depending on mode).
 
 `database/restore/runs/` is gitignored. Delete old runs you don't need; move ones you want to keep elsewhere.
 

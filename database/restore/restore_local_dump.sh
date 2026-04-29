@@ -26,6 +26,7 @@ Usage:
   ${SCRIPT_NAME} dump-source --source-uri URI --collections name1,name2 [--run-dir DIR] [--prompt-source-password]
   ${SCRIPT_NAME} backup-destination --destination-uri URI --collections name1,name2 [--run-dir DIR] [--prompt-destination-password] --yes --confirm-target EXPECTED_DESTINATION_HOST
   ${SCRIPT_NAME} restore --destination-uri URI --run-dir DIR --collections name1,name2 [--prompt-destination-password] [--no-index-restore] --yes --confirm-target EXPECTED_DESTINATION_HOST
+  ${SCRIPT_NAME} stream-restore --source-uri URI --destination-uri URI --collections name1,name2 [--run-dir DIR] [--prompt-source-password] [--prompt-destination-password] [--no-index-restore] --yes --confirm-target EXPECTED_DESTINATION_HOST
 
 Environment fallback:
   SOURCE_MONGO_URI
@@ -281,6 +282,33 @@ required_dump_path() {
   printf '%s/source-dump/%s/%s.bson' "${RUN_DIR}" "${REQUIRED_DATABASE}" "${collection}"
 }
 
+stream_collection() {
+  local mounted_run_dir="$1"
+  local source_uri="$2"
+  local destination_uri="$3"
+  local db_name="$4"
+  local collection="$5"
+  local source_normalized destination_normalized index_flag
+
+  source_normalized="$(normalize_uri_for_docker "${source_uri}")"
+  destination_normalized="$(normalize_uri_for_docker "${destination_uri}")"
+
+  index_flag=""
+  if [[ "${NO_INDEX_RESTORE}" -eq 1 ]]; then
+    index_flag="--noIndexRestore"
+  fi
+
+  docker run --rm \
+    --add-host=host.docker.internal:host-gateway \
+    -u "$(id -u):$(id -g)" \
+    -v "${mounted_run_dir}:/work" \
+    -w /work \
+    -e SRC_URI="${source_normalized}" \
+    -e DST_URI="${destination_normalized}" \
+    mongo:8 \
+    bash -c "set -euo pipefail; mongodump --uri=\"\$SRC_URI\" --db='${db_name}' --collection='${collection}' --archive | mongorestore --uri=\"\$DST_URI\" --archive --nsInclude='${db_name}.${collection}' --drop ${index_flag}"
+}
+
 parse_args() {
   shift || true
   while [[ $# -gt 0 ]]; do
@@ -483,6 +511,50 @@ restore_command() {
   log "Restore completed successfully"
 }
 
+stream_restore_command() {
+  [[ -n "${SOURCE_MONGO_URI}" ]] || die "--source-uri or SOURCE_MONGO_URI is required"
+  [[ -n "${DESTINATION_MONGO_URI}" ]] || die "--destination-uri or DESTINATION_MONGO_URI is required"
+  require_confirmation "$(extract_host_label "${DESTINATION_MONGO_URI}")"
+
+  prepare_run_dir
+  write_manifest_header
+
+  local source_db destination_db collection
+  local source_count destination_before_count destination_after_count
+  source_db="$(extract_database_name "${SOURCE_MONGO_URI}")"
+  destination_db="$(extract_database_name "${DESTINATION_MONGO_URI}")"
+  require_supported_database "${source_db}"
+  require_supported_database "${destination_db}"
+
+  append_manifest "source_uri" "run" "$(mask_uri "${SOURCE_MONGO_URI}")"
+  append_manifest "destination_uri" "run" "$(mask_uri "${DESTINATION_MONGO_URI}")"
+
+  log_target_summary "Source" "${SOURCE_MONGO_URI}"
+  log_target_summary "Destination stream target" "${DESTINATION_MONGO_URI}"
+
+  for collection in "${SELECTED_COLLECTIONS[@]}"; do
+    source_count="$(count_documents "${RUN_DIR}" "${SOURCE_MONGO_URI}" "${source_db}" "${collection}")"
+    append_manifest "source_count" "${collection}" "${source_count}"
+    log "Source count for '${collection}': ${source_count}"
+
+    destination_before_count="$(count_documents "${RUN_DIR}" "${DESTINATION_MONGO_URI}" "${destination_db}" "${collection}")"
+    append_manifest "destination_before_count" "${collection}" "${destination_before_count}"
+    log "Destination count before stream for '${collection}': ${destination_before_count}"
+
+    log "Streaming '${collection}' from source to destination"
+    run_with_log "${RUN_DIR}/logs/stream-${collection}.log" \
+      stream_collection "${RUN_DIR}" "${SOURCE_MONGO_URI}" "${DESTINATION_MONGO_URI}" "${source_db}" "${collection}"
+
+    destination_after_count="$(count_documents "${RUN_DIR}" "${DESTINATION_MONGO_URI}" "${destination_db}" "${collection}")"
+    append_manifest "destination_after_count" "${collection}" "${destination_after_count}"
+    log "Destination count after stream for '${collection}': ${destination_after_count}"
+    [[ "${destination_after_count}" == "${source_count}" ]] || \
+      die "Count mismatch for '${collection}': expected ${source_count}, got ${destination_after_count}"
+  done
+
+  log "Stream restore completed successfully"
+}
+
 main() {
   [[ -n "${SUBCOMMAND}" ]] || {
     usage
@@ -493,7 +565,7 @@ main() {
   require_command python3
 
   case "${SUBCOMMAND}" in
-    plan|dump-source|backup-destination|restore)
+    plan|dump-source|backup-destination|restore|stream-restore)
       parse_args "$@"
       resolve_prompted_passwords
       resolve_selected_collections
@@ -519,6 +591,9 @@ main() {
       ;;
     restore)
       restore_command
+      ;;
+    stream-restore)
+      stream_restore_command
       ;;
   esac
 }

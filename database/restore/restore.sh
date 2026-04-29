@@ -21,6 +21,7 @@ COLLECTIONS=""
 WITH_BACKUP=0
 RUN_DIR=""
 NON_INTERACTIVE=0
+USE_STREAM=1
 
 usage() {
   cat <<EOF
@@ -42,7 +43,8 @@ Options:
   --destination-preset NAME    Use the ${PRESET_PREFIX}<NAME> URI as destination.
   --destination-uri URI        Use a custom destination URI.
   --collections name1,name2    Collections to copy (comma-separated).
-  --with-backup                Run backup-destination before restore (off by default).
+  --with-backup                Dump destination collections before restore (off by default).
+  --no-stream                  Use the dump-then-restore disk path instead of streaming.
   --run-dir DIR                Override the run directory.
   --non-interactive            Fail instead of prompting for missing inputs.
   -h, --help                   Show this help.
@@ -190,6 +192,7 @@ parse_args() {
       --destination-uri)    DESTINATION_URI="${2:-}"; shift 2 ;;
       --collections)        COLLECTIONS="${2:-}"; shift 2 ;;
       --with-backup)        WITH_BACKUP=1; shift ;;
+      --no-stream)          USE_STREAM=0; shift ;;
       --run-dir)            RUN_DIR="${2:-}"; shift 2 ;;
       --non-interactive)    NON_INTERACTIVE=1; shift ;;
       -h|--help)            usage; exit 0 ;;
@@ -220,11 +223,19 @@ main() {
   local destination_host
   destination_host="$(extract_host_label "${DESTINATION_URI}")"
 
+  local mode
+  if [[ "${USE_STREAM}" -eq 1 ]]; then
+    mode="stream (no on-disk dump)"
+  else
+    mode="dump-then-restore (on-disk dump under run dir)"
+  fi
+
   echo
   echo "Restore plan"
   echo "  Source:       $(mask_uri "${SOURCE_URI}")"
   echo "  Destination:  $(mask_uri "${DESTINATION_URI}")"
   echo "  Collections:  ${COLLECTIONS}"
+  echo "  Mode:         ${mode}"
   echo "  Backup:       $([[ ${WITH_BACKUP} -eq 1 ]] && echo yes || echo "no (pass --with-backup to enable)")"
   echo "  Run dir:      ${RUN_DIR}"
   echo
@@ -240,14 +251,6 @@ main() {
   export SOURCE_MONGO_URI="${SOURCE_URI}"
   export DESTINATION_MONGO_URI="${DESTINATION_URI}"
 
-  echo
-  echo "→ plan"
-  "${DUMP_SCRIPT}" plan --collections "${COLLECTIONS}" --run-dir "${RUN_DIR}"
-
-  echo
-  echo "→ dump-source"
-  "${DUMP_SCRIPT}" dump-source --collections "${COLLECTIONS}" --run-dir "${RUN_DIR}"
-
   if [[ "${WITH_BACKUP}" -eq 1 ]]; then
     echo
     echo "→ backup-destination"
@@ -258,13 +261,27 @@ main() {
       --confirm-target "${destination_host}"
   fi
 
-  echo
-  echo "→ restore"
-  "${DUMP_SCRIPT}" restore \
-    --collections "${COLLECTIONS}" \
-    --run-dir "${RUN_DIR}" \
-    --yes \
-    --confirm-target "${destination_host}"
+  if [[ "${USE_STREAM}" -eq 1 ]]; then
+    echo
+    echo "→ stream-restore"
+    "${DUMP_SCRIPT}" stream-restore \
+      --collections "${COLLECTIONS}" \
+      --run-dir "${RUN_DIR}" \
+      --yes \
+      --confirm-target "${destination_host}"
+  else
+    echo
+    echo "→ dump-source"
+    "${DUMP_SCRIPT}" dump-source --collections "${COLLECTIONS}" --run-dir "${RUN_DIR}"
+
+    echo
+    echo "→ restore"
+    "${DUMP_SCRIPT}" restore \
+      --collections "${COLLECTIONS}" \
+      --run-dir "${RUN_DIR}" \
+      --yes \
+      --confirm-target "${destination_host}"
+  fi
 
   echo
   echo "Done. Run dir: ${RUN_DIR}"
