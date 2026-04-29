@@ -216,6 +216,7 @@ docker_mongo() {
   docker run --rm \
     --add-host=host.docker.internal:host-gateway \
     -u "$(id -u):$(id -g)" \
+    -e HOME=/tmp \
     -v "${mounted_run_dir}:/work" \
     -w /work \
     mongo:8 \
@@ -227,13 +228,16 @@ count_documents() {
   local uri="$2"
   local db_name="$3"
   local collection="$4"
-  local normalized_uri
+  local normalized_uri raw count
   normalized_uri="$(normalize_uri_for_docker "${uri}")"
 
-  docker_mongo "${mounted_run_dir}" \
+  raw="$(docker_mongo "${mounted_run_dir}" \
     mongosh "${normalized_uri}" --quiet \
     --eval "const database = db.getSiblingDB('${db_name}'); print(database.getCollection('${collection}').countDocuments({}));" \
-    | tr -d '[:space:]'
+    2>/dev/null | tr -d '[:space:]')"
+  count="$(printf '%s' "${raw}" | grep -oE '[0-9]+$' || true)"
+  [[ -n "${count}" ]] || die "Could not parse document count for '${collection}' (raw output: ${raw})"
+  printf '%s' "${count}"
 }
 
 dump_collection() {
@@ -301,6 +305,7 @@ stream_collection() {
   docker run --rm \
     --add-host=host.docker.internal:host-gateway \
     -u "$(id -u):$(id -g)" \
+    -e HOME=/tmp \
     -v "${mounted_run_dir}:/work" \
     -w /work \
     -e SRC_URI="${source_normalized}" \
