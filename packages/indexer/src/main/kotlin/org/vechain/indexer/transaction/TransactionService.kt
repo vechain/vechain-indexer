@@ -16,7 +16,7 @@ class TransactionService(private val mongoTemplate: MongoTemplate) {
         val eventsByTx = events.groupBy { it.txId }
 
         val txs =
-            block.transactions.map { tx ->
+            block.transactions.mapIndexed { transactionIndex, tx ->
                 val eventsByClause: Map<Int, List<IndexedEvent>> =
                     eventsByTx[tx.id]?.groupBy { it.clauseIndex.toInt() } ?: emptyMap()
 
@@ -56,7 +56,12 @@ class TransactionService(private val mongoTemplate: MongoTemplate) {
                         )
                     }
 
-                IndexedTransaction(block = block, tx = tx, decodedOutputs = decodedOutputs)
+                IndexedTransaction(
+                    block = block,
+                    tx = tx,
+                    transactionIndex = transactionIndex.toLong(),
+                    decodedOutputs = decodedOutputs,
+                )
             }
 
         mongoTemplate.insert(txs, IndexedTransaction::class.java)

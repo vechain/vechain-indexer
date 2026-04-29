@@ -155,7 +155,7 @@ refresh-token-registry: #@ Refresh bundled token registry files from vechain.git
 DB_COMMAND=docker compose -f database/docker-compose-mongo.yaml
 DB_MAKE_KEY=mkdir -p database/keys && [ -f database/keys/keyfile ] || openssl rand -base64 756 > database/keys/keyfile
 DB_REMOVE_KEY=rm -f -R database/keys
-DB_SETUP_COMMAND=docker compose -f database/docker-compose-mongo-setup.yaml
+DB_SETUP_COMMAND=docker compose -p database-setup -f database/docker-compose-mongo-setup.yaml
 MONGO_URL=mongodb://indexer:password@localhost:27017/vechain?authSource=admin
 BACKUP_DIR ?= $(PWD)/database/backups
 
@@ -163,8 +163,17 @@ db-all: #@ Remove, clean and start the database (Docker).
 	make db-clean db-up db-setup
 db-up: db-keyfile-create #@ Start all the database (Docker)
 	$(DB_COMMAND) up -d --wait
-db-setup: #@ Setup all the database (Docker)
-	$(DB_SETUP_COMMAND) up --build; $(DB_SETUP_COMMAND) rm --force
+db-setup: db-up #@ Setup all the database (Docker)
+	@status=0; \
+	$(DB_SETUP_COMMAND) up --build --abort-on-container-exit --exit-code-from mongo-setup || status=$$?; \
+	if [ $$status -ne 0 ]; then \
+		echo "Mongo setup failed. Database container status:" >&2; \
+		$(DB_COMMAND) ps || true; \
+		echo "Recent mongo-node1 logs:" >&2; \
+		$(DB_COMMAND) logs --tail=200 mongo-node1 || true; \
+	fi; \
+	$(DB_SETUP_COMMAND) rm --force; \
+	exit $$status
 db-clean: #@ Clean all the database data (Docker)
 	$(DB_COMMAND) down -v --remove-orphans;
 db-down: #@ Stop all the database (Docker)
@@ -192,3 +201,5 @@ db-restore: #@ Restore MongoDB database from a backup file. Usage: make db-resto
 	echo "Use the command 'docker log --tail 100 -f mongo-restore' to see the progress"
 	docker rm -f mongo-restore 2>/dev/null || true
 	docker run --name mongo-restore -d --network=host -v "$(FILE):/backup/backup.gz" -u $(shell id -u):$(shell id -g) mongo:8 mongorestore --uri="$(MONGO_URL)" --drop --gzip --archive="/backup/backup.gz" --numInsertionWorkersPerCollection 16
+db-copy-collections: #@ Copy specific MongoDB collections between two clusters. Interactive. See database/restore/README.md.
+	database/restore/restore.sh

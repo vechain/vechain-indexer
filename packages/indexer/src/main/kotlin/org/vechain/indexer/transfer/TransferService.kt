@@ -17,13 +17,29 @@ open class TransferService(
 ) {
     open fun processEvents(events: List<IndexedEvent>): List<IndexedTransferEvent> {
         val transferEvents = mutableListOf<IndexedTransferEvent>()
+        val nextTransferIndexByBlock = mutableMapOf<Long, Long>()
+
+        fun nextTransferIndex(blockNumber: Long): Long {
+            val index = nextTransferIndexByBlock.getOrDefault(blockNumber, 0L)
+            nextTransferIndexByBlock[blockNumber] = index + 1
+            return index
+        }
+
         events.forEach { event ->
             val eventName = EventUtils.determineTransferType(event.params) ?: return@forEach
 
             if (event.params.getEventType() == "TransferBatch") {
-                transferEvents.addAll(processBatchTransferEvents(event))
+                transferEvents.addAll(
+                    processBatchTransferEvents(event) { nextTransferIndex(event.blockNumber) }
+                )
             } else {
-                transferEvents.add(createIndexedTransferEvent(event, eventName))
+                transferEvents.add(
+                    createIndexedTransferEvent(
+                        event,
+                        eventName,
+                        nextTransferIndex(event.blockNumber),
+                    )
+                )
             }
         }
         return transferEvents
@@ -35,7 +51,10 @@ open class TransferService(
         mongoTemplate.insert<IndexedTransferEvent>(records)
     }
 
-    private fun processBatchTransferEvents(event: IndexedEvent): List<IndexedTransferEvent> {
+    private fun processBatchTransferEvents(
+        event: IndexedEvent,
+        nextTransferIndex: () -> Long,
+    ): List<IndexedTransferEvent> {
         val transferEvents = mutableListOf<IndexedTransferEvent>()
 
         val tokenIds = event.params.getReturnValues()["ids"] as? List<*> ?: emptyList<Any>()
@@ -48,6 +67,7 @@ open class TransferService(
                     blockId = event.blockId,
                     blockNumber = event.blockNumber,
                     blockTimestamp = event.blockTimestamp,
+                    transferIndex = nextTransferIndex(),
                     txId = event.txId,
                     from = event.params.getAsString("from")!!,
                     to = event.params.getAsString("to")!!,
@@ -65,6 +85,7 @@ open class TransferService(
     private fun createIndexedTransferEvent(
         event: IndexedEvent,
         transferEventType: TransferEventType,
+        transferIndex: Long,
     ): IndexedTransferEvent {
         val params = event.params
 
@@ -85,6 +106,7 @@ open class TransferService(
             blockId = event.blockId,
             blockNumber = event.blockNumber,
             blockTimestamp = event.blockTimestamp,
+            transferIndex = transferIndex,
             txId = event.txId,
             from = params.getAsString("from")!!,
             to = params.getAsString("to")!!,

@@ -8,7 +8,10 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
+import org.vechain.indexer.rest.PaginatedResponse
+import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
+import org.vechain.indexer.utils.CursorPaginationUtils
 
 @Profile("transfers")
 @Service
@@ -70,6 +73,41 @@ open class TransferEventService(
                 fungibleTokenInteractionsRepository.findByWalletAddress(address.value, pageable)
             }
         return interactions.map { it.contractAddress }
+    }
+
+    fun findLatestByType(
+        eventTypes: Collection<TransferEventType>,
+        size: Int?,
+        cursor: String? = null,
+    ): PaginatedResponse<IndexedTransferEvent> {
+        require(eventTypes.isNotEmpty()) { "eventTypes must not be empty" }
+        val (pageSize, query) =
+            CursorPaginationUtils.buildCursorQuery(
+                baseCriteria =
+                    Criteria.where(IndexedTransferEvent::eventType.name).`in`(eventTypes),
+                size = size,
+                direction = "DESC",
+                sortByField = IndexedTransferEvent::blockNumber.name,
+                cursor = cursor,
+                cursorField = IndexedTransferEvent::transferIndex.name,
+                parseCursorFieldValue = true,
+            )
+
+        val results = mongoTemplate.find(query, IndexedTransferEvent::class.java)
+        val page = results.take(pageSize)
+        val nextCursor =
+            CursorPaginationUtils.calculateNextCursor(
+                results = results,
+                pageSize = pageSize,
+                sortByField = IndexedTransferEvent::blockNumber.name,
+                cursorField = IndexedTransferEvent::transferIndex.name,
+            )
+
+        return paginatedResponse(
+            data = page,
+            hasNext = results.size > pageSize,
+            cursor = nextCursor,
+        )
     }
 
     private fun buildCriteria(

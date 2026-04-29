@@ -1,5 +1,6 @@
 package org.vechain.indexer.transfer
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
@@ -21,6 +22,7 @@ constructor(
     override val blockId: String,
     override val blockNumber: Long,
     override val blockTimestamp: Long,
+    @get:JsonIgnore val transferIndex: Long = 0L,
     val txId: String,
     val from: String,
     val to: String,

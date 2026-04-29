@@ -1,7 +1,7 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-Keep application code inside `packages/`: `indexer` holds the Spring Boot indexers, `api` exposes REST endpoints, `common` shares Kotlin utilities, `e2e` houses Gatling-style system tests, and `build` stores shared Gradle and Spotless configs. Infrastructure lives under `database/` (MongoDB compose files and backups) and `terraform/` for deployment templates. Docker assets and helper scripts reside in `images/` and `git-scripts/` respectively.
+Keep application code inside `packages/`: `indexer` holds the Spring Boot indexers, `api` exposes REST endpoints, `common` shares Kotlin utilities, `e2e` houses Gatling-style system tests, and `build` stores shared Gradle and Spotless configs. Infrastructure lives under `database/` (MongoDB compose files, backups, and the `restore/` collection-copy tooling) and `terraform/` for deployment templates. Docker assets and helper scripts reside in `images/` and `git-scripts/` respectively.
 
 ## Build, Test, and Development Commands
 Run `make build` for a Spotless format pass plus Gradle builds of API and indexer jars. Use `make start` to stand up MongoDB and both services via Docker Compose, or `make db-all` when you only need the database locally. Primary tests run with `make test`; targeted suites use `make test-api`, `make test-indexer`, `make test-common`, or `make test-e2e`. To explore available shortcuts, execute `make help`.
@@ -42,17 +42,15 @@ When adding a new feature indexer and endpoint, prefer copying an existing imple
   - Add the new keys and Spring profiles in `terraform/api/environments/*.yml` and `terraform/devnet/environments/devnet.yml`.
 
 ### Triggering an Indexer Resync
-To force an indexer to drop its collection and re-index from the start block, increment its version number in all of these locations:
-- **Local**: `packages/indexer/.env` (e.g. `VERSION_STARGATE_TOKEN=5`)
+To force an indexer to drop its collection and re-index from the start block, increment its deployed version number only in:
 - **Deployed (prod)**: `terraform/api/environments/prod-blue.yml` and `terraform/api/environments/prod-green.yml` under `indexer.version.<key>` for both `main` and `test` net sections.
-- **Deployed (devnet)**: `terraform/devnet/environments/devnet.yml` if applicable.
 
-Each environment file has separate version entries for mainnet and testnet — bump both. The version value must be higher than the currently deployed value; the indexer compares its stored version against the configured one and resyncs when they differ.
+Keep local defaults at `1`: do not bump `indexer.version.<key>` fallback values in `packages/indexer/src/main/resources/application.yaml`, and do not bump `VERSION_*` values in `packages/indexer/.env.example`. Each prod environment file has separate version entries for mainnet and testnet — bump both. The version value must be higher than the currently deployed value; the indexer compares its stored version against the configured one and resyncs when they differ.
 
 ### Validation (local)
 - Compile/build: `make build`
 - Targeted tests: `make test-indexer`, `make test-api`
-- Schema tests (deployed env): `scripts/run_api_schema_tests.sh` (Schemathesis runner; see `README.md`)
+- Schema tests (deployed env): `packages/api/scripts/run_api_schema_tests.sh` (Schemathesis runner; see `README.md`)
 
 More detailed templates and copy/paste snippets live in `notes/indexer-api-playbook.md`.
 
@@ -106,4 +104,4 @@ When making API changes or changes that could affect performance, run the API co
 Follow the existing history: concise, imperative titles with optional type prefixes (e.g., `refactor: migrate to new indexer-core interface`) and reference the PR number in parentheses when applicable. Describe problem, solution, and verification in the PR body, link tracking issues, and attach screenshots or logs when they clarify API or UI changes. Ensure formatters and tests pass locally before requesting review.
 
 ## Environment & Operations Tips
-Copy `.env.example` files inside each package when running outside IntelliJ; the defaults target Dockerized services on localhost. Use `make db-backup` and `make db-restore` to manage Mongo snapshots stored in `database/backups/`.
+Copy `.env.example` files inside each package when running outside IntelliJ; the defaults target Dockerized services on localhost. Use `make db-backup` and `make db-restore` to manage whole-database Mongo snapshots stored in `database/backups/`. For targeted collection-level copy between two live clusters, run `make db-copy-collections` (see `database/restore/README.md`).

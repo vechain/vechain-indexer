@@ -28,7 +28,7 @@ class ProfiledTransactionService(
 
             val txs =
                 profiler.time("        - map transactions") {
-                    block.transactions.map { tx ->
+                    block.transactions.mapIndexed { transactionIndex, tx ->
                         val eventsByClause: Map<Int, List<IndexedEvent>> =
                             profiler.time("          - groupBy clauseIndex") {
                                 eventsByTx[tx.id]?.groupBy { it.clauseIndex.toInt() } ?: emptyMap()
@@ -82,7 +82,12 @@ class ProfiledTransactionService(
                                 }
                             }
 
-                        IndexedTransaction(block = block, tx = tx, decodedOutputs = decodedOutputs)
+                        IndexedTransaction(
+                            block = block,
+                            tx = tx,
+                            transactionIndex = transactionIndex.toLong(),
+                            decodedOutputs = decodedOutputs,
+                        )
                     }
                 }
 

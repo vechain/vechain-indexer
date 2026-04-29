@@ -187,7 +187,7 @@ enabled_nets:
         nfts:                       '8'
         transfers:                  '6'
         fungible-token-interactions: '4'
-        transactions:               '6'
+        transactions:               '7'
         transaction-count:          '3'
         history:                    '10'
         nft-blacklist:              '6'

@@ -1,6 +1,7 @@
 package org.vechain.indexer.transaction
 
 import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonView
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
@@ -23,6 +24,7 @@ constructor(
     override val blockId: String,
     override val blockNumber: Long,
     override val blockTimestamp: Long,
+    @get:JsonIgnore val transactionIndex: Long = 0L,
     val type: Long?,
     val size: Long,
     val chainTag: Long,
@@ -46,12 +48,14 @@ constructor(
     constructor(
         block: Block,
         tx: Transaction,
+        transactionIndex: Long,
         decodedOutputs: List<DecodedOutputs>,
     ) : this(
         id = tx.id,
         blockId = block.id,
         blockNumber = block.number,
         blockTimestamp = block.timestamp,
+        transactionIndex = transactionIndex,
         type = tx.type,
         size = tx.size,
         chainTag = tx.chainTag,

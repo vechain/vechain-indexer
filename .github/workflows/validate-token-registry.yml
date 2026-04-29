@@ -20,7 +20,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
 
       - name: Refresh bundled token registry
-        run: bash scripts/refresh_token_registry.sh
+        run: bash packages/api/scripts/refresh_token_registry.sh
 
       - name: Verify token registry parsing tests
         run: ./gradlew :packages:api:test --tests "org.vechain.indexer.transfer.OfficialTokenServiceTest"
@@ -33,6 +33,6 @@ jobs:
 
           echo "::error::Bundled token registry files are out of date."
           echo "Run the following command locally and commit the results:"
-          echo "  bash scripts/refresh_token_registry.sh"
+          echo "  bash packages/api/scripts/refresh_token_registry.sh"
           git diff -- packages/api/src/main/resources/token-registry/main.json packages/api/src/main/resources/token-registry/test.json
           exit 1

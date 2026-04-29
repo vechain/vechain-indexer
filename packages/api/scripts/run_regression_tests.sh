@@ -13,11 +13,11 @@ set -euo pipefail
 #   TIMEOUT       - Request timeout in seconds (default: 30)
 #
 # Usage:
-#   scripts/run_regression_tests.sh
-#   scripts/run_regression_tests.sh --output report.json
-#   scripts/run_regression_tests.sh --dry-run
-#   scripts/run_regression_tests.sh --path-filter "/api/v1/stargate.*"
-#   BASELINE_URL=https://custom.example.com scripts/run_regression_tests.sh
+#   packages/api/scripts/run_regression_tests.sh
+#   packages/api/scripts/run_regression_tests.sh --output report.json
+#   packages/api/scripts/run_regression_tests.sh --dry-run
+#   packages/api/scripts/run_regression_tests.sh --path-filter "/api/v1/stargate.*"
+#   BASELINE_URL=https://custom.example.com packages/api/scripts/run_regression_tests.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 

@@ -1,15 +1,64 @@
-// Initiate replica set
-printjson(rs.initiate())
+const replicaSetName = process.env.MONGO_REPLICA_SET || "rs0"
+const replicaSetHost = `${process.env.MONGO_REPLICA_HOST || process.env.MONGO_HOST}:27017`
+const maxPrimaryWaitAttempts = Number(process.env.MONGO_PRIMARY_WAIT_ATTEMPTS || 60)
 
-// Wait for the replica set to finish initialization
-while (true) {
-    var status = rs.isMaster()
-    if (status && status.ismaster) {
-        break
-    }
-    sleep(1000) // Wait for 1 second before checking again
+function replicaSetIsNotInitialized(error) {
+    return (
+        error.codeName === "NotYetInitialized" ||
+        error.codeName === "NoReplicationEnabled" ||
+        error.message.includes("no replset config has been received")
+    )
 }
 
+function ensureReplicaSet() {
+    try {
+        const config = rs.conf()
+        const currentHost = config.members[0].host
+
+        if (currentHost !== replicaSetHost) {
+            console.log(
+                `Updating replica set host from ${currentHost} to ${replicaSetHost}`
+            )
+            config.members[0].host = replicaSetHost
+            config.version = config.version + 1
+            printjson(rs.reconfig(config, {force: true}))
+        } else {
+            console.log(`Replica set already configured for ${replicaSetHost}`)
+        }
+    } catch (error) {
+        if (!replicaSetIsNotInitialized(error)) {
+            throw error
+        }
+
+        console.log(`Initiating replica set ${replicaSetName} at ${replicaSetHost}`)
+        printjson(
+            rs.initiate({
+                _id: replicaSetName,
+                members: [{_id: 0, host: replicaSetHost}],
+            })
+        )
+    }
+}
+
+function waitForPrimary() {
+    for (let attempt = 1; attempt <= maxPrimaryWaitAttempts; attempt++) {
+        const hello = db.adminCommand({hello: 1})
+        if (hello && hello.isWritablePrimary) {
+            console.log("Replica set primary is ready")
+            return
+        }
+
+        console.log(
+            `Waiting for replica set primary (${attempt}/${maxPrimaryWaitAttempts})`
+        )
+        sleep(1000)
+    }
+
+    throw new Error("Timed out waiting for replica set primary")
+}
+
+ensureReplicaSet()
+waitForPrimary()
 
 /**
  * Create a user if it doesn't exist, otherwise update the password / roles
@@ -19,21 +68,23 @@ while (true) {
  * @param roles - the roles, see https://docs.mongodb.com/manual/reference/built-in-roles/
  */
 function createUser(db, username, password, roles) {
-    if (db.system.users.find({user: username}).count() <= 0) {
+    const usernameValue = String(username)
+
+    if (db.system.users.findOne({user: String(username)}) == null) {
         console.log(
-            "Creating user (" + username + ") with roles: " + JSON.stringify(roles)
+            "Creating user (" + usernameValue + ") with roles: " + JSON.stringify(roles)
         );
         db.createUser({
-            user: username,
+            user: usernameValue,
             pwd: password,
             roles: roles,
         });
     } else {
         console.log(
-            "User (" + username + ") already exists, Updating password / roles"
+            "User (" + usernameValue + ") already exists, Updating password / roles"
         );
         //modify the user password / roles
-        db.updateUser(username, {
+        db.updateUser(usernameValue, {
             pwd: password,
             roles: roles,
         });

@@ -327,6 +327,12 @@
         },
         {
           "filter": {
+            "query": "@http.url_details.path:\"/api/v1/transactions/latest\""
+          },
+          "name": "/api/v1/transactions/latest"
+        },
+        {
+          "filter": {
             "query": "@http.url_details.path:\"/api/v1/transfers/forBlock\""
           },
           "name": "/api/v1/transfers/forBlock"
@@ -342,6 +348,12 @@
             "query": "@http.url_details.path:\"/api/v1/transfers/fungible-tokens-contracts\""
           },
           "name": "/api/v1/transfers/fungible-tokens-contracts"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:\"/api/v1/transfers/latest\""
+          },
+          "name": "/api/v1/transfers/latest"
         },
         {
           "filter": {

@@ -34,6 +34,12 @@ open class TransactionCollectionConfig(
         ensureIndexes(
             listOf(
                 Pair(
+                    "tx_blockNumber_-1_transactionIndex_1",
+                    Index()
+                        .on(IndexedTransaction::blockNumber.name, Sort.Direction.DESC)
+                        .on(IndexedTransaction::transactionIndex.name, Sort.Direction.ASC),
+                ),
+                Pair(
                     "tx_origin_1_blockNumber_-1__id_-1",
                     Index()
                         .on(IndexedTransaction::origin.name, Sort.Direction.ASC)

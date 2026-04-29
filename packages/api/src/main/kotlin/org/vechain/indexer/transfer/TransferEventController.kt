@@ -18,7 +18,9 @@ import org.vechain.indexer.docs.AfterParameter
 import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.docs.Cursor
 import org.vechain.indexer.docs.PaginationParameters
+import org.vechain.indexer.docs.PaginationSize
 import org.vechain.indexer.docs.TransferEventTypeParameter
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.PaginatedResponse
@@ -28,6 +30,7 @@ import org.vechain.indexer.utils.PaginationUtils
 import org.vechain.indexer.utils.TimeValidationUtils
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidAddressList
+import org.vechain.indexer.validation.ValidCursor
 import org.vechain.indexer.validation.ValidNonNegativeLong
 import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validation.ValidTransferEventType
@@ -38,6 +41,31 @@ import org.vechain.indexer.validation.ValidTransferEventType
 @RestController
 @RequestMapping(TRANSFER_EVENTS_PATH)
 open class TransferEventController(private val transferEventService: TransferEventService) {
+
+    @GetMapping("/latest")
+    @Operation(
+        summary = "Get latest transfer events",
+        description =
+            """
+            Returns latest transfer events by block number descending and canonical transfer order
+            within each block. Defaults to all transfer event types; use the eventType query
+            parameter to filter to one or more types.
+            """,
+    )
+    @TransferEventTypeParameter
+    @CommonApiResponses
+    @PaginationSize
+    @Cursor
+    open fun getLatestTransfers(
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @ValidCursor @RequestParam(required = false) cursor: String?,
+        @ValidTransferEventType @RequestParam(required = false) eventType: List<String>?,
+    ): PaginatedResponse<IndexedTransferEvent> {
+        val eventTypes =
+            eventType?.map { TransferEventType.valueOf(it) }?.takeIf { it.isNotEmpty() }
+                ?: TransferEventType.entries
+        return transferEventService.findLatestByType(eventTypes, size, cursor)
+    }
 
     @GetMapping
     @Operation(summary = "Get transfer events by address or token address")

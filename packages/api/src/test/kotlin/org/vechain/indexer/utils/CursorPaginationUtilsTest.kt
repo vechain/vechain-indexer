@@ -177,6 +177,25 @@ class CursorPaginationUtilsTest {
     }
 
     @Test
+    @DisplayName("Should apply DESC filter with numeric cursor field tiebreaker")
+    fun testApplyCursorFilterDESCWithNumericCursorField() {
+        val query = org.springframework.data.mongodb.core.query.Query()
+
+        CursorPaginationUtils.applyCursorFilter(
+            query,
+            "101|1",
+            "blockNumber",
+            Sort.Direction.DESC,
+            "transactionIndex",
+            parseCursorFieldValue = true,
+        )
+
+        val queryString = query.toString()
+        assertTrue(queryString.contains("blockNumber"))
+        assertTrue(queryString.contains("transactionIndex"))
+    }
+
+    @Test
     @DisplayName("Should apply ASC filter with sort value comparison and cursor field tiebreaker")
     fun testApplyCursorFilterASC() {
         val query = org.springframework.data.mongodb.core.query.Query()
