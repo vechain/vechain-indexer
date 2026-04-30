@@ -1675,6 +1675,7 @@
             "type": "integer"
           },
           "clauses": {
+            "description": "Only returned when expanded=true.",
             "items": {
               "$ref": "#/components/schemas/Clause"
             },
@@ -1718,6 +1719,7 @@
             "type": "string"
           },
           "outputs": {
+            "description": "Only returned when expanded=true.",
             "items": {
               "$ref": "#/components/schemas/DecodedOutputs"
             },
@@ -1748,7 +1750,6 @@
           "blockTimestamp",
           "chainTag",
           "clauseCount",
-          "clauses",
           "expiration",
           "gas",
           "gasPayer",
@@ -1756,7 +1757,6 @@
           "id",
           "nonce",
           "origin",
-          "outputs",
           "paid",
           "reverted",
           "reward",
