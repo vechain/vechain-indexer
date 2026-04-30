@@ -1670,6 +1670,10 @@
             "format": "int64",
             "type": "integer"
           },
+          "clauseCount": {
+            "format": "int32",
+            "type": "integer"
+          },
           "clauses": {
             "items": {
               "$ref": "#/components/schemas/Clause"
@@ -1743,6 +1747,7 @@
           "blockRef",
           "blockTimestamp",
           "chainTag",
+          "clauseCount",
           "clauses",
           "expiration",
           "gas",
