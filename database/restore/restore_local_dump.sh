@@ -492,33 +492,6 @@ else:
 '
 }
 
-delete_range_on_destination() {
-  local mounted_run_dir="$1"
-  local destination_uri="$2"
-  local db_name="$3"
-  local collection="$4"
-  local query_json="$5"
-  local slice_index="$6"
-  local normalized_uri
-  normalized_uri="$(harden_uri_for_long_writes "$(normalize_uri_for_docker "${destination_uri}")")"
-
-  docker run --rm \
-    --name "restore-${collection}-prune-${slice_index}-${RUN_ID}" \
-    --add-host=host.docker.internal:host-gateway \
-    -u "$(id -u):$(id -g)" \
-    -e HOME=/tmp \
-    -v "${mounted_run_dir}:/work" \
-    -w /work \
-    -e QUERY_JSON="${query_json}" \
-    "${MONGO_IMAGE}" \
-    mongosh "${normalized_uri}" --quiet \
-    --eval "const c = db.getSiblingDB('${db_name}').getCollection('${collection}');
-            const q = EJSON.parse(process.env.QUERY_JSON);
-            const r = c.deleteMany(q);
-            print(r.deletedCount);" \
-    >/dev/null
-}
-
 stream_slice() {
   local mounted_run_dir="$1"
   local source_uri="$2"
@@ -845,11 +818,9 @@ process_one_slice() {
   local query_json="$5"
   local slice_log="$6"
 
-  if ! { delete_range_on_destination "${RUN_DIR}" "${DESTINATION_MONGO_URI}" "${destination_db}" "${collection}" "${query_json}" "${k}"; } >>"${slice_log}" 2>&1; then
-    echo "Slice ${k} delete-range failed; see ${slice_log}" >&2
-    return 1
-  fi
-
+  # mongorestore continues past DuplicateKey errors by default — partial docs
+  # from a prior failed attempt are skipped (reported as "failures" but harmless),
+  # so no separate prune pass is needed.
   if ! { stream_slice "${RUN_DIR}" "${SOURCE_MONGO_URI}" "${DESTINATION_MONGO_URI}" "${source_db}" "${collection}" "${query_json}" "${k}"; } >>"${slice_log}" 2>&1; then
     echo "Slice ${k} stream failed; see ${slice_log}" >&2
     return 1
