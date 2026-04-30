@@ -18,6 +18,7 @@ readonly MONGO_IMAGE="${MONGO_IMAGE:-mongo:8.0}"
 # Track in-flight slice worker PIDs so an unexpected exit kills them rather
 # than leaving orphan docker / mongorestore containers running against Atlas.
 SLICE_WORKER_PIDS=()
+LAST_FINISHED_SLICE_PID=""
 cleanup_slice_workers() {
   if (( ${#SLICE_WORKER_PIDS[@]} > 0 )); then
     local pid
@@ -29,6 +30,30 @@ cleanup_slice_workers() {
   fi
 }
 trap cleanup_slice_workers EXIT
+
+# Block until any worker in SLICE_WORKER_PIDS finishes. Removes that pid from
+# the array, stores it in LAST_FINISHED_SLICE_PID, and returns its exit status.
+# Polls via `kill -0` because `wait -n` is bash 4.3+ (macOS default is 3.2).
+wait_any_slice_worker() {
+  local pid found_pid="" rc new_pids=() p
+  while [[ -z "${found_pid}" ]]; do
+    for pid in "${SLICE_WORKER_PIDS[@]}"; do
+      if ! kill -0 "${pid}" 2>/dev/null; then
+        found_pid="${pid}"
+        break
+      fi
+    done
+    [[ -z "${found_pid}" ]] && sleep 0.2
+  done
+  wait "${found_pid}"
+  rc=$?
+  for p in "${SLICE_WORKER_PIDS[@]}"; do
+    [[ "${p}" != "${found_pid}" ]] && new_pids+=("${p}")
+  done
+  SLICE_WORKER_PIDS=("${new_pids[@]}")
+  LAST_FINISHED_SLICE_PID="${found_pid}"
+  return ${rc}
+}
 
 SELECTED_COLLECTIONS=()
 SOURCE_MONGO_URI="${SOURCE_MONGO_URI:-}"
@@ -844,7 +869,7 @@ chunked_stream_collection() {
     append_manifest "drop_done" "${collection}" "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
   fi
 
-  local completed=0 batch_pid query_json slice_log
+  local completed=0 query_json slice_log
   chunk_progress 0 "${slice_count}" "${collection}"
   for (( k = 0; k < slice_count; k++ )); do
     if manifest_has_value "slice_${k}_done" "${collection}"; then
@@ -853,34 +878,31 @@ chunked_stream_collection() {
       continue
     fi
 
+    # Pool full — wait for any worker to finish before launching a new one.
+    while (( ${#SLICE_WORKER_PIDS[@]} >= PARALLEL_SLICES )); do
+      if ! wait_any_slice_worker; then
+        printf '\n' >&2
+        die "Slice failed (worker pid ${LAST_FINISHED_SLICE_PID}); inspect ${RUN_DIR}/logs/ for the matching slice log"
+      fi
+      completed=$(( completed + 1 ))
+      chunk_progress "${completed}" "${slice_count}" "${collection}"
+    done
+
     query_json="$(slice_query_for "${boundaries_json}" "${k}" "${slice_count}" "${CHUNK_FIELD}")"
     slice_log="${RUN_DIR}/logs/stream-${collection}-slice-${k}.log"
 
     process_one_slice "${k}" "${collection}" "${source_db}" "${destination_db}" "${query_json}" "${slice_log}" &
     SLICE_WORKER_PIDS+=($!)
-
-    if (( ${#SLICE_WORKER_PIDS[@]} >= PARALLEL_SLICES )); then
-      for batch_pid in "${SLICE_WORKER_PIDS[@]}"; do
-        if ! wait "${batch_pid}"; then
-          printf '\n' >&2
-          die "Slice failed (worker pid ${batch_pid}); inspect ${RUN_DIR}/logs/ for the matching slice log"
-        fi
-        completed=$(( completed + 1 ))
-        chunk_progress "${completed}" "${slice_count}" "${collection}"
-      done
-      SLICE_WORKER_PIDS=()
-    fi
   done
 
-  for batch_pid in "${SLICE_WORKER_PIDS[@]}"; do
-    if ! wait "${batch_pid}"; then
+  while (( ${#SLICE_WORKER_PIDS[@]} > 0 )); do
+    if ! wait_any_slice_worker; then
       printf '\n' >&2
-      die "Slice failed (worker pid ${batch_pid}); inspect ${RUN_DIR}/logs/ for the matching slice log"
+      die "Slice failed (worker pid ${LAST_FINISHED_SLICE_PID}); inspect ${RUN_DIR}/logs/ for the matching slice log"
     fi
     completed=$(( completed + 1 ))
     chunk_progress "${completed}" "${slice_count}" "${collection}"
   done
-  SLICE_WORKER_PIDS=()
   printf '\n' >&2
 
   if [[ "${NO_INDEX_RESTORE}" -eq 1 ]]; then
