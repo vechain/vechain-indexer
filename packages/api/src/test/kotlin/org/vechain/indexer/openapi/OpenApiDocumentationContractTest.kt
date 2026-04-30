@@ -165,6 +165,8 @@ class OpenApiDocumentationContractTest {
         val spec = fetchSpec()
         val operation = spec.at("/paths/~1api~1v1~1transactions~1latest/get")
         val parameters = operation.at("/parameters")
+        val transactionSchema = spec.at("/components/schemas/IndexedTransaction")
+        val requiredFields = transactionSchema.at("/required").map { it.asText() }
 
         expectThat(operation.isMissingNode).isFalse()
         expectThat(findParameter(parameters, "size", "query").isMissingNode).isFalse()
@@ -177,6 +179,13 @@ class OpenApiDocumentationContractTest {
                     .isMissingNode
             )
             .isTrue()
+        expectThat(requiredFields.contains("clauseCount")).isTrue()
+        expectThat(requiredFields.contains("clauses")).isFalse()
+        expectThat(requiredFields.contains("outputs")).isFalse()
+        expectThat(transactionSchema.at("/properties/clauses/description").asText())
+            .isEqualTo("Only returned when expanded=true.")
+        expectThat(transactionSchema.at("/properties/outputs/description").asText())
+            .isEqualTo("Only returned when expanded=true.")
     }
 
     @Test

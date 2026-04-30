@@ -18,6 +18,8 @@ open class SwaggerConfig {
         private const val PROJECT_ID_PARAMETER_COMPONENT_NAME = "XProjectIdHeader"
         private const val PROJECT_ID_PARAMETER_REF =
             "#/components/parameters/$PROJECT_ID_PARAMETER_COMPONENT_NAME"
+        private const val INDEXED_TRANSACTION_SCHEMA_NAME = "IndexedTransaction"
+        private val TRANSACTION_EXPANDED_ONLY_FIELDS = setOf("clauses", "outputs")
     }
 
     @Value("\${app.version:UNKNOWN}") lateinit var rawVersion: String
@@ -71,4 +73,22 @@ open class SwaggerConfig {
             }
         }
     }
+
+    @Bean
+    open fun transactionExpandedOnlyFieldsCustomizer(): OpenApiCustomizer =
+        OpenApiCustomizer { openApi ->
+            val transactionSchema =
+                openApi.components?.schemas?.get(INDEXED_TRANSACTION_SCHEMA_NAME)
+                    ?: return@OpenApiCustomizer
+
+            transactionSchema.required =
+                transactionSchema.required
+                    ?.filterNot { it in TRANSACTION_EXPANDED_ONLY_FIELDS }
+                    ?.toMutableList()
+
+            TRANSACTION_EXPANDED_ONLY_FIELDS.forEach { field ->
+                transactionSchema.properties?.get(field)?.description =
+                    "Only returned when expanded=true."
+            }
+        }
 }

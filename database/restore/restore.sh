@@ -21,6 +21,9 @@ COLLECTIONS=""
 WITH_BACKUP=0
 RUN_DIR=""
 NON_INTERACTIVE=0
+USE_STREAM=1
+PARALLEL_SLICES="${MONGO_PARALLEL_SLICES:-1}"
+PARALLEL_SLICES_FROM_FLAG=0
 
 usage() {
   cat <<EOF
@@ -42,7 +45,9 @@ Options:
   --destination-preset NAME    Use the ${PRESET_PREFIX}<NAME> URI as destination.
   --destination-uri URI        Use a custom destination URI.
   --collections name1,name2    Collections to copy (comma-separated).
-  --with-backup                Run backup-destination before restore (off by default).
+  --with-backup                Dump destination collections before restore (off by default).
+  --no-stream                  Use the dump-then-restore disk path instead of streaming.
+  --parallel-slices N          Process N chunked slices concurrently (default: \${MONGO_PARALLEL_SLICES:-1}).
   --run-dir DIR                Override the run directory.
   --non-interactive            Fail instead of prompting for missing inputs.
   -h, --help                   Show this help.
@@ -160,6 +165,22 @@ resolve_collections() {
   COLLECTIONS="${input}"
 }
 
+resolve_parallel_slices() {
+  # Skip prompt when value came from a flag, env var override, or non-interactive mode.
+  if [[ "${PARALLEL_SLICES_FROM_FLAG}" -eq 1 ]] || [[ "${NON_INTERACTIVE}" -eq 1 ]]; then
+    return
+  fi
+  if [[ -n "${MONGO_PARALLEL_SLICES:-}" ]]; then
+    return
+  fi
+  local input
+  read -rp "Parallel slices for chunked collections (default: ${PARALLEL_SLICES}): " input
+  if [[ -n "${input}" ]]; then
+    [[ "${input}" =~ ^[1-9][0-9]*$ ]] || die "Parallel slices must be a positive integer (got '${input}')"
+    PARALLEL_SLICES="${input}"
+  fi
+}
+
 default_run_dir() {
   printf '%s/runs/restore-%s' "${SCRIPT_DIR}" "$(date +%Y%m%d%H%M%S)"
 }
@@ -190,12 +211,18 @@ parse_args() {
       --destination-uri)    DESTINATION_URI="${2:-}"; shift 2 ;;
       --collections)        COLLECTIONS="${2:-}"; shift 2 ;;
       --with-backup)        WITH_BACKUP=1; shift ;;
+      --no-stream)          USE_STREAM=0; shift ;;
       --run-dir)            RUN_DIR="${2:-}"; shift 2 ;;
+      --parallel-slices)    PARALLEL_SLICES="${2:-}"; PARALLEL_SLICES_FROM_FLAG=1; shift 2 ;;
       --non-interactive)    NON_INTERACTIVE=1; shift ;;
       -h|--help)            usage; exit 0 ;;
       *)                    die "Unknown argument: $1" ;;
     esac
   done
+
+  if ! [[ "${PARALLEL_SLICES}" =~ ^[1-9][0-9]*$ ]]; then
+    die "--parallel-slices / MONGO_PARALLEL_SLICES must be a positive integer (got '${PARALLEL_SLICES}')"
+  fi
 
   [[ -z "${SOURCE_PRESET}" || -z "${SOURCE_URI}" ]] || \
     die "--source-preset and --source-uri are mutually exclusive"
@@ -215,17 +242,28 @@ main() {
   SOURCE_URI="$(ensure_uri_has_password "source" "${SOURCE_URI}")"
   DESTINATION_URI="$(ensure_uri_has_password "destination" "${DESTINATION_URI}")"
 
+  resolve_parallel_slices
+
   [[ -n "${RUN_DIR}" ]] || RUN_DIR="$(default_run_dir)"
 
   local destination_host
   destination_host="$(extract_host_label "${DESTINATION_URI}")"
+
+  local mode
+  if [[ "${USE_STREAM}" -eq 1 ]]; then
+    mode="stream (no on-disk dump)"
+  else
+    mode="dump-then-restore (on-disk dump under run dir)"
+  fi
 
   echo
   echo "Restore plan"
   echo "  Source:       $(mask_uri "${SOURCE_URI}")"
   echo "  Destination:  $(mask_uri "${DESTINATION_URI}")"
   echo "  Collections:  ${COLLECTIONS}"
+  echo "  Mode:         ${mode}"
   echo "  Backup:       $([[ ${WITH_BACKUP} -eq 1 ]] && echo yes || echo "no (pass --with-backup to enable)")"
+  echo "  Parallel:     ${PARALLEL_SLICES} slice(s) (chunked collections only)"
   echo "  Run dir:      ${RUN_DIR}"
   echo
   if [[ "${NON_INTERACTIVE}" -eq 0 ]]; then
@@ -239,14 +277,7 @@ main() {
 
   export SOURCE_MONGO_URI="${SOURCE_URI}"
   export DESTINATION_MONGO_URI="${DESTINATION_URI}"
-
-  echo
-  echo "→ plan"
-  "${DUMP_SCRIPT}" plan --collections "${COLLECTIONS}" --run-dir "${RUN_DIR}"
-
-  echo
-  echo "→ dump-source"
-  "${DUMP_SCRIPT}" dump-source --collections "${COLLECTIONS}" --run-dir "${RUN_DIR}"
+  export MONGO_PARALLEL_SLICES="${PARALLEL_SLICES}"
 
   if [[ "${WITH_BACKUP}" -eq 1 ]]; then
     echo
@@ -258,13 +289,27 @@ main() {
       --confirm-target "${destination_host}"
   fi
 
-  echo
-  echo "→ restore"
-  "${DUMP_SCRIPT}" restore \
-    --collections "${COLLECTIONS}" \
-    --run-dir "${RUN_DIR}" \
-    --yes \
-    --confirm-target "${destination_host}"
+  if [[ "${USE_STREAM}" -eq 1 ]]; then
+    echo
+    echo "→ stream-restore"
+    "${DUMP_SCRIPT}" stream-restore \
+      --collections "${COLLECTIONS}" \
+      --run-dir "${RUN_DIR}" \
+      --yes \
+      --confirm-target "${destination_host}"
+  else
+    echo
+    echo "→ dump-source"
+    "${DUMP_SCRIPT}" dump-source --collections "${COLLECTIONS}" --run-dir "${RUN_DIR}"
+
+    echo
+    echo "→ restore"
+    "${DUMP_SCRIPT}" restore \
+      --collections "${COLLECTIONS}" \
+      --run-dir "${RUN_DIR}" \
+      --yes \
+      --confirm-target "${destination_host}"
+  fi
 
   echo
   echo "Done. Run dir: ${RUN_DIR}"
