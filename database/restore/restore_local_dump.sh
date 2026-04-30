@@ -26,6 +26,7 @@ readonly CHUNK_FIELD="${MONGO_CHUNK_FIELD:-blockNumber}"
 readonly CHUNK_WIDTH="${MONGO_CHUNK_WIDTH:-10000}"
 readonly PARALLEL_SLICES="${MONGO_PARALLEL_SLICES:-1}"
 readonly MONGO_IMAGE="${MONGO_IMAGE:-mongo:8.0}"
+readonly RUN_ID="$$"
 
 require_positive_int "MONGO_CHUNK_THRESHOLD" "${CHUNK_THRESHOLD}"
 require_positive_int "MONGO_CHUNK_WIDTH" "${CHUNK_WIDTH}"
@@ -497,10 +498,12 @@ delete_range_on_destination() {
   local db_name="$3"
   local collection="$4"
   local query_json="$5"
+  local slice_index="$6"
   local normalized_uri
   normalized_uri="$(harden_uri_for_long_writes "$(normalize_uri_for_docker "${destination_uri}")")"
 
   docker run --rm \
+    --name "restore-${collection}-prune-${slice_index}-${RUN_ID}" \
     --add-host=host.docker.internal:host-gateway \
     -u "$(id -u):$(id -g)" \
     -e HOME=/tmp \
@@ -523,6 +526,7 @@ stream_slice() {
   local db_name="$4"
   local collection="$5"
   local query_json="$6"
+  local slice_index="$7"
   local source_normalized destination_normalized
 
   source_normalized="$(normalize_uri_for_docker "${source_uri}")"
@@ -533,6 +537,7 @@ stream_slice() {
   # skips majority-ack overhead during the load; the count verification at the
   # end of stream_restore_command is the integrity gate.
   docker run --rm \
+    --name "restore-${collection}-slice-${slice_index}-${RUN_ID}" \
     --add-host=host.docker.internal:host-gateway \
     -u "$(id -u):$(id -g)" \
     -e HOME=/tmp \
@@ -570,6 +575,7 @@ restore_indexes_at_end() {
 
   log "Restoring secondary indexes for '${collection}' on destination"
   docker run --rm \
+    --name "restore-${collection}-indexes-${RUN_ID}" \
     --add-host=host.docker.internal:host-gateway \
     -u "$(id -u):$(id -g)" \
     -e HOME=/tmp \
@@ -839,12 +845,12 @@ process_one_slice() {
   local query_json="$5"
   local slice_log="$6"
 
-  if ! { delete_range_on_destination "${RUN_DIR}" "${DESTINATION_MONGO_URI}" "${destination_db}" "${collection}" "${query_json}"; } >>"${slice_log}" 2>&1; then
+  if ! { delete_range_on_destination "${RUN_DIR}" "${DESTINATION_MONGO_URI}" "${destination_db}" "${collection}" "${query_json}" "${k}"; } >>"${slice_log}" 2>&1; then
     echo "Slice ${k} delete-range failed; see ${slice_log}" >&2
     return 1
   fi
 
-  if ! { stream_slice "${RUN_DIR}" "${SOURCE_MONGO_URI}" "${DESTINATION_MONGO_URI}" "${source_db}" "${collection}" "${query_json}"; } >>"${slice_log}" 2>&1; then
+  if ! { stream_slice "${RUN_DIR}" "${SOURCE_MONGO_URI}" "${DESTINATION_MONGO_URI}" "${source_db}" "${collection}" "${query_json}" "${k}"; } >>"${slice_log}" 2>&1; then
     echo "Slice ${k} stream failed; see ${slice_log}" >&2
     return 1
   fi
