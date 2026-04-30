@@ -22,6 +22,8 @@ WITH_BACKUP=0
 RUN_DIR=""
 NON_INTERACTIVE=0
 USE_STREAM=1
+PARALLEL_SLICES="${MONGO_PARALLEL_SLICES:-1}"
+PARALLEL_SLICES_FROM_FLAG=0
 
 usage() {
   cat <<EOF
@@ -45,6 +47,7 @@ Options:
   --collections name1,name2    Collections to copy (comma-separated).
   --with-backup                Dump destination collections before restore (off by default).
   --no-stream                  Use the dump-then-restore disk path instead of streaming.
+  --parallel-slices N          Process N chunked slices concurrently (default: \${MONGO_PARALLEL_SLICES:-1}).
   --run-dir DIR                Override the run directory.
   --non-interactive            Fail instead of prompting for missing inputs.
   -h, --help                   Show this help.
@@ -162,6 +165,22 @@ resolve_collections() {
   COLLECTIONS="${input}"
 }
 
+resolve_parallel_slices() {
+  # Skip prompt when value came from a flag, env var override, or non-interactive mode.
+  if [[ "${PARALLEL_SLICES_FROM_FLAG}" -eq 1 ]] || [[ "${NON_INTERACTIVE}" -eq 1 ]]; then
+    return
+  fi
+  if [[ -n "${MONGO_PARALLEL_SLICES:-}" ]]; then
+    return
+  fi
+  local input
+  read -rp "Parallel slices for chunked collections (default: ${PARALLEL_SLICES}): " input
+  if [[ -n "${input}" ]]; then
+    [[ "${input}" =~ ^[1-9][0-9]*$ ]] || die "Parallel slices must be a positive integer (got '${input}')"
+    PARALLEL_SLICES="${input}"
+  fi
+}
+
 default_run_dir() {
   printf '%s/runs/restore-%s' "${SCRIPT_DIR}" "$(date +%Y%m%d%H%M%S)"
 }
@@ -194,11 +213,16 @@ parse_args() {
       --with-backup)        WITH_BACKUP=1; shift ;;
       --no-stream)          USE_STREAM=0; shift ;;
       --run-dir)            RUN_DIR="${2:-}"; shift 2 ;;
+      --parallel-slices)    PARALLEL_SLICES="${2:-}"; PARALLEL_SLICES_FROM_FLAG=1; shift 2 ;;
       --non-interactive)    NON_INTERACTIVE=1; shift ;;
       -h|--help)            usage; exit 0 ;;
       *)                    die "Unknown argument: $1" ;;
     esac
   done
+
+  if ! [[ "${PARALLEL_SLICES}" =~ ^[1-9][0-9]*$ ]]; then
+    die "--parallel-slices / MONGO_PARALLEL_SLICES must be a positive integer (got '${PARALLEL_SLICES}')"
+  fi
 
   [[ -z "${SOURCE_PRESET}" || -z "${SOURCE_URI}" ]] || \
     die "--source-preset and --source-uri are mutually exclusive"
@@ -217,6 +241,8 @@ main() {
 
   SOURCE_URI="$(ensure_uri_has_password "source" "${SOURCE_URI}")"
   DESTINATION_URI="$(ensure_uri_has_password "destination" "${DESTINATION_URI}")"
+
+  resolve_parallel_slices
 
   [[ -n "${RUN_DIR}" ]] || RUN_DIR="$(default_run_dir)"
 
@@ -237,6 +263,7 @@ main() {
   echo "  Collections:  ${COLLECTIONS}"
   echo "  Mode:         ${mode}"
   echo "  Backup:       $([[ ${WITH_BACKUP} -eq 1 ]] && echo yes || echo "no (pass --with-backup to enable)")"
+  echo "  Parallel:     ${PARALLEL_SLICES} slice(s) (chunked collections only)"
   echo "  Run dir:      ${RUN_DIR}"
   echo
   if [[ "${NON_INTERACTIVE}" -eq 0 ]]; then
@@ -250,6 +277,7 @@ main() {
 
   export SOURCE_MONGO_URI="${SOURCE_URI}"
   export DESTINATION_MONGO_URI="${DESTINATION_URI}"
+  export MONGO_PARALLEL_SLICES="${PARALLEL_SLICES}"
 
   if [[ "${WITH_BACKUP}" -eq 1 ]]; then
     echo

@@ -12,7 +12,23 @@ readonly CHUNK_WORKERS="${MONGO_CHUNK_WORKERS:-16}"
 readonly CHUNK_THRESHOLD="${MONGO_CHUNK_THRESHOLD:-5000000}"
 readonly CHUNK_FIELD="${MONGO_CHUNK_FIELD:-blockNumber}"
 readonly CHUNK_WIDTH="${MONGO_CHUNK_WIDTH:-10000}"
+readonly PARALLEL_SLICES="${MONGO_PARALLEL_SLICES:-1}"
 readonly MONGO_IMAGE="${MONGO_IMAGE:-mongo:8.0}"
+
+# Track in-flight slice worker PIDs so an unexpected exit kills them rather
+# than leaving orphan docker / mongorestore containers running against Atlas.
+SLICE_WORKER_PIDS=()
+cleanup_slice_workers() {
+  if (( ${#SLICE_WORKER_PIDS[@]} > 0 )); then
+    local pid
+    for pid in "${SLICE_WORKER_PIDS[@]}"; do
+      kill "${pid}" 2>/dev/null || true
+    done
+    wait 2>/dev/null || true
+    SLICE_WORKER_PIDS=()
+  fi
+}
+trap cleanup_slice_workers EXIT
 
 SELECTED_COLLECTIONS=()
 SOURCE_MONGO_URI="${SOURCE_MONGO_URI:-}"
@@ -774,6 +790,27 @@ stream_restore_command() {
   log "Stream restore completed successfully"
 }
 
+process_one_slice() {
+  local k="$1"
+  local collection="$2"
+  local source_db="$3"
+  local destination_db="$4"
+  local query_json="$5"
+  local slice_log="$6"
+
+  if ! { delete_range_on_destination "${RUN_DIR}" "${DESTINATION_MONGO_URI}" "${destination_db}" "${collection}" "${query_json}"; } >>"${slice_log}" 2>&1; then
+    echo "Slice ${k} delete-range failed; see ${slice_log}" >&2
+    return 1
+  fi
+
+  if ! { stream_slice "${RUN_DIR}" "${SOURCE_MONGO_URI}" "${DESTINATION_MONGO_URI}" "${source_db}" "${collection}" "${query_json}"; } >>"${slice_log}" 2>&1; then
+    echo "Slice ${k} stream failed; see ${slice_log}" >&2
+    return 1
+  fi
+
+  append_manifest "slice_${k}_done" "${collection}" "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+}
+
 chunked_stream_collection() {
   local source_count="$1"
   local source_db="$2"
@@ -807,30 +844,43 @@ chunked_stream_collection() {
     append_manifest "drop_done" "${collection}" "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
   fi
 
-  local slice_log
+  local completed=0 batch_pid query_json slice_log
   chunk_progress 0 "${slice_count}" "${collection}"
   for (( k = 0; k < slice_count; k++ )); do
     if manifest_has_value "slice_${k}_done" "${collection}"; then
-      chunk_progress $(( k + 1 )) "${slice_count}" "${collection}"
+      completed=$(( completed + 1 ))
+      chunk_progress "${completed}" "${slice_count}" "${collection}"
       continue
     fi
 
     query_json="$(slice_query_for "${boundaries_json}" "${k}" "${slice_count}" "${CHUNK_FIELD}")"
     slice_log="${RUN_DIR}/logs/stream-${collection}-slice-${k}.log"
 
-    if ! { delete_range_on_destination "${RUN_DIR}" "${DESTINATION_MONGO_URI}" "${destination_db}" "${collection}" "${query_json}"; } >>"${slice_log}" 2>&1; then
-      printf '\n' >&2
-      die "Slice ${k}/${slice_count} for '${collection}' failed during delete-range; see ${slice_log}"
-    fi
+    process_one_slice "${k}" "${collection}" "${source_db}" "${destination_db}" "${query_json}" "${slice_log}" &
+    SLICE_WORKER_PIDS+=($!)
 
-    if ! { stream_slice "${RUN_DIR}" "${SOURCE_MONGO_URI}" "${DESTINATION_MONGO_URI}" "${source_db}" "${collection}" "${query_json}"; } >>"${slice_log}" 2>&1; then
-      printf '\n' >&2
-      die "Slice ${k}/${slice_count} for '${collection}' failed; see ${slice_log}"
+    if (( ${#SLICE_WORKER_PIDS[@]} >= PARALLEL_SLICES )); then
+      for batch_pid in "${SLICE_WORKER_PIDS[@]}"; do
+        if ! wait "${batch_pid}"; then
+          printf '\n' >&2
+          die "Slice failed (worker pid ${batch_pid}); inspect ${RUN_DIR}/logs/ for the matching slice log"
+        fi
+        completed=$(( completed + 1 ))
+        chunk_progress "${completed}" "${slice_count}" "${collection}"
+      done
+      SLICE_WORKER_PIDS=()
     fi
-
-    append_manifest "slice_${k}_done" "${collection}" "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-    chunk_progress $(( k + 1 )) "${slice_count}" "${collection}"
   done
+
+  for batch_pid in "${SLICE_WORKER_PIDS[@]}"; do
+    if ! wait "${batch_pid}"; then
+      printf '\n' >&2
+      die "Slice failed (worker pid ${batch_pid}); inspect ${RUN_DIR}/logs/ for the matching slice log"
+    fi
+    completed=$(( completed + 1 ))
+    chunk_progress "${completed}" "${slice_count}" "${collection}"
+  done
+  SLICE_WORKER_PIDS=()
   printf '\n' >&2
 
   if [[ "${NO_INDEX_RESTORE}" -eq 1 ]]; then

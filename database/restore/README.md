@@ -57,6 +57,7 @@ Tunable env vars:
 | `MONGO_CHUNK_WIDTH` | `10000` | Fixed slice width on `MONGO_CHUNK_FIELD`. Larger = fewer, bigger slices. |
 | `MONGO_RESTORE_WORKERS` | `4` | `--numInsertionWorkersPerCollection` for non-chunked `mongorestore` (long single operations). |
 | `MONGO_CHUNK_WORKERS` | `16` | `--numInsertionWorkersPerCollection` for chunked slice `mongorestore`. Higher than the non-chunked default since each slice is bounded. |
+| `MONGO_PARALLEL_SLICES` | `1` | Number of slices to process concurrently in chunked mode. `1` = sequential (current behaviour). `4`–`8` typically gives a meaningful speedup; raise it if Atlas tier and source IO have headroom. Each parallel slice opens its own connection pool to source and destination. |
 | `MONGO_IMAGE` | `mongo:8.0` | Docker image used for `mongodump` / `mongorestore` / `mongosh`. Pinned to the 8.0 rolling tag (matches Atlas major.minor; tracks 8.0.x patches). MongoDB does not publish exact-patch Docker tags. Bump to `mongo:8.1` / `mongo:8.2` if your destination cluster is upgraded across minor versions. |
 
 ## Presets
