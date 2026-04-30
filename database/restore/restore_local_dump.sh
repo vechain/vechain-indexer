@@ -1,6 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Validate env-var-driven integer settings whose bad values would either hang
+# (PARALLEL_SLICES=0) or silently misbehave (CHUNK_THRESHOLD, CHUNK_WIDTH non-numeric).
+# Called after assignment so `exit 1` runs in the main shell, not a subshell.
+require_positive_int() {
+  local name="$1"
+  local value="$2"
+  if [[ ! "${value}" =~ ^[1-9][0-9]*$ ]]; then
+    echo "Error: ${name} must be a positive integer, got '${value}'" >&2
+    exit 1
+  fi
+}
+
 readonly SCRIPT_NAME="$(basename "$0")"
 readonly SCRIPT_PATH="$0"
 readonly SCRIPT_DIR_LOCAL_DUMP="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -14,6 +26,10 @@ readonly CHUNK_FIELD="${MONGO_CHUNK_FIELD:-blockNumber}"
 readonly CHUNK_WIDTH="${MONGO_CHUNK_WIDTH:-10000}"
 readonly PARALLEL_SLICES="${MONGO_PARALLEL_SLICES:-1}"
 readonly MONGO_IMAGE="${MONGO_IMAGE:-mongo:8.0}"
+
+require_positive_int "MONGO_CHUNK_THRESHOLD" "${CHUNK_THRESHOLD}"
+require_positive_int "MONGO_CHUNK_WIDTH" "${CHUNK_WIDTH}"
+require_positive_int "MONGO_PARALLEL_SLICES" "${PARALLEL_SLICES}"
 
 # Track in-flight slice worker PIDs so an unexpected exit kills them rather
 # than leaving orphan docker / mongorestore containers running against Atlas.
