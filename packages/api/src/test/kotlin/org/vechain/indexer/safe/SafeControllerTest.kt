@@ -12,9 +12,6 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.SliceImpl
 import org.springframework.data.domain.Sort
-import org.vechain.indexer.safe.response.SafeMembershipResponse
-import org.vechain.indexer.safe.response.SafeProposalResponse
-import org.vechain.indexer.safe.response.SafeTxStateResponse
 import org.vechain.indexer.thor.Address
 
 @ExtendWith(MockKExtension::class)
@@ -37,7 +34,7 @@ internal class SafeControllerTest {
     fun `getSafesForOwner uses ALL scope by default and orders by addedBlock desc`() {
         val pageableSlot = slot<Pageable>()
         every { safeService.getSafesForOwner(any(), any(), capture(pageableSlot)) } returns
-            SliceImpl(emptyList<SafeMembershipResponse>())
+            SliceImpl(emptyList<SafeMembership>())
 
         controller.getSafesForOwner(Address(owner), SafeMembershipScope.ALL, null, null, null)
 
@@ -52,7 +49,7 @@ internal class SafeControllerTest {
     fun `getTransactionsForSafe orders by blockNumber desc by default`() {
         val pageableSlot = slot<Pageable>()
         every { safeService.listProposals(any(), capture(pageableSlot)) } returns
-            SliceImpl(emptyList<SafeProposalResponse>())
+            SliceImpl(emptyList<SafeTxProposal>())
 
         controller.getTransactionsForSafe(Address(safe), null, null, null)
 
@@ -67,7 +64,7 @@ internal class SafeControllerTest {
     fun `getTransactionsForSafe forwards pagination params`() {
         val pageableSlot = slot<Pageable>()
         every { safeService.listProposals(any(), capture(pageableSlot)) } returns
-            SliceImpl(emptyList<SafeProposalResponse>())
+            SliceImpl(emptyList<SafeTxProposal>())
 
         controller.getTransactionsForSafe(Address(safe), 2, 50, "ASC")
 
@@ -79,11 +76,20 @@ internal class SafeControllerTest {
 
     @Test
     fun `getTxState delegates to the service`() {
-        val response = SafeTxStateResponse.empty(safe, txHash)
-        every { safeService.getTxState(safe, txHash) } returns response
+        val doc =
+            SafeTxState(
+                id = SafeTxState.buildId(safe, txHash),
+                safe = safe.lowercase(),
+                txHash = txHash.lowercase(),
+                blockId = "",
+                blockNumber = 0L,
+                blockTimestamp = 0L,
+                version = 0,
+            )
+        every { safeService.getTxState(safe, txHash) } returns doc
 
         val result = controller.getTxState(Address(safe), txHash)
 
-        assertEquals(response, result)
+        assertEquals(doc, result)
     }
 }

@@ -17,9 +17,6 @@ import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
-import org.vechain.indexer.safe.response.SafeMembershipResponse
-import org.vechain.indexer.safe.response.SafeProposalResponse
-import org.vechain.indexer.safe.response.SafeTxStateResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.utils.PaginationUtils
 import org.vechain.indexer.validation.TransactionId
@@ -57,10 +54,9 @@ open class SafeController(private val safeService: SafeService) {
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
-    ): PaginatedResponse<SafeMembershipResponse> {
+    ): PaginatedResponse<SafeMembership> {
         val pageable = PaginationUtils.toPageable(page, size, direction, "addedBlock", "_id")
-        val slice = safeService.getSafesForOwner(address.value, membership, pageable)
-        return paginatedResponse(slice)
+        return paginatedResponse(safeService.getSafesForOwner(address.value, membership, pageable))
     }
 
     @GetMapping("$API_VERSION/safes/{safe}/transactions")
@@ -86,10 +82,9 @@ open class SafeController(private val safeService: SafeService) {
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
-    ): PaginatedResponse<SafeProposalResponse> {
+    ): PaginatedResponse<SafeTxProposal> {
         val pageable = PaginationUtils.toPageable(page, size, direction, "blockNumber", "_id")
-        val slice = safeService.listProposals(safe.value, pageable)
-        return paginatedResponse(slice)
+        return paginatedResponse(safeService.listProposals(safe.value, pageable))
     }
 
     @GetMapping("$API_VERSION/safes/{safe}/transactions/{txHash}/state")
@@ -98,7 +93,7 @@ open class SafeController(private val safeService: SafeService) {
         description =
             """
             Returns the aggregated state for a single Safe transaction (approvers, executor, and
-            execution status). Returns an empty response with no approvers when the Safe has not
+            execution status). Returns an empty document with no approvers when the Safe has not
             seen the txHash yet, so the dapp does not need to fall back to RPC for unknown hashes.
             """,
     )
@@ -112,5 +107,5 @@ open class SafeController(private val safeService: SafeService) {
     open fun getTxState(
         @ValidAddress @PathVariable safe: Address,
         @TransactionId @PathVariable txHash: String,
-    ): SafeTxStateResponse = safeService.getTxState(safe.value, txHash)
+    ): SafeTxState = safeService.getTxState(safe.value, txHash)
 }

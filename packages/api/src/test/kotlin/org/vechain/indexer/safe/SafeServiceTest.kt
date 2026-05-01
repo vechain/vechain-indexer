@@ -98,13 +98,6 @@ internal class SafeServiceTest {
             nonce = BigInteger.ONE,
             description = "test",
             envelopeRecorded = true,
-            safeTxGas = BigInteger.ZERO,
-            baseGas = BigInteger.ZERO,
-            gasPrice = BigInteger.ZERO,
-            gasToken = "0x0000000000000000000000000000000000000000",
-            refundReceiver = "0x0000000000000000000000000000000000000000",
-            hashFieldsRecorded = true,
-            subcalls = null,
             blockId = "0xblock",
             blockNumber = 8L,
             blockTimestamp = 800L,
@@ -151,7 +144,7 @@ internal class SafeServiceTest {
     }
 
     @Test
-    fun `getTxState returns mapped doc when present`() {
+    fun `getTxState returns the doc when present`() {
         val id = SafeTxState.buildId(safe, txHash)
         every { txStateRepository.findById(id) } returns Optional.of(txState(executed = true))
 
@@ -164,7 +157,7 @@ internal class SafeServiceTest {
     }
 
     @Test
-    fun `getTxState returns empty placeholder when missing`() {
+    fun `getTxState returns an empty placeholder doc when missing`() {
         val id = SafeTxState.buildId(safe, txHash)
         every { txStateRepository.findById(id) } returns Optional.empty()
 
@@ -173,7 +166,10 @@ internal class SafeServiceTest {
         assertFalse(result.executed)
         assertEquals(0, result.approvers.size)
         assertNull(result.executor)
-        assertEquals(0L, result.lastEventBlock)
+        assertEquals(0L, result.blockNumber)
+        assertEquals(0, result.version)
+        assertEquals(safe.lowercase(), result.safe)
+        assertEquals(txHash.lowercase(), result.txHash)
     }
 
     @Test

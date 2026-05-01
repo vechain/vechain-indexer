@@ -2383,11 +2383,11 @@
         ],
         "type": "object"
       },
-      "PaginatedResponseSafeMembershipResponse": {
+      "PaginatedResponseSafeMembership": {
         "properties": {
           "data": {
             "items": {
-              "$ref": "#/components/schemas/SafeMembershipResponse"
+              "$ref": "#/components/schemas/SafeMembership"
             },
             "type": "array"
           },
@@ -2401,11 +2401,11 @@
         ],
         "type": "object"
       },
-      "PaginatedResponseSafeProposalResponse": {
+      "PaginatedResponseSafeTxProposal": {
         "properties": {
           "data": {
             "items": {
-              "$ref": "#/components/schemas/SafeProposalResponse"
+              "$ref": "#/components/schemas/SafeTxProposal"
             },
             "type": "array"
           },
@@ -2823,7 +2823,7 @@
         ],
         "type": "object"
       },
-      "SafeMembershipResponse": {
+      "SafeMembership": {
         "properties": {
           "addedBlock": {
             "format": "int64",
@@ -2833,9 +2833,8 @@
             "format": "int64",
             "type": "integer"
           },
-          "lastEventBlock": {
-            "format": "int64",
-            "type": "integer"
+          "id": {
+            "type": "string"
           },
           "owner": {
             "type": "string"
@@ -2855,16 +2854,69 @@
         "required": [
           "addedBlock",
           "addedTimestamp",
-          "lastEventBlock",
+          "id",
           "owner",
           "safe"
         ],
         "type": "object"
       },
-      "SafeProposalResponse": {
+      "SafeSubcall": {
+        "properties": {
+          "data": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "operation": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "target": {
+            "type": "string"
+          },
+          "value": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "data",
+          "label",
+          "operation",
+          "target",
+          "value"
+        ],
+        "type": "object"
+      },
+      "SafeTxApproval": {
+        "properties": {
+          "block": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "blockTimestamp": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "vechainTxId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "block",
+          "blockTimestamp",
+          "owner",
+          "vechainTxId"
+        ],
+        "type": "object"
+      },
+      "SafeTxProposal": {
         "properties": {
           "baseGas": {
-            "type": "string"
+            "type": "integer"
           },
           "data": {
             "type": "string"
@@ -2873,17 +2925,16 @@
             "type": "string"
           },
           "gasPrice": {
-            "type": "string"
+            "type": "integer"
           },
           "gasToken": {
             "type": "string"
           },
-          "lastEventBlock": {
-            "format": "int64",
-            "type": "integer"
+          "id": {
+            "type": "string"
           },
           "nonce": {
-            "type": "string"
+            "type": "integer"
           },
           "operation": {
             "format": "int32",
@@ -2910,11 +2961,11 @@
             "type": "string"
           },
           "safeTxGas": {
-            "type": "string"
+            "type": "integer"
           },
           "subcalls": {
             "items": {
-              "$ref": "#/components/schemas/SafeSubcallResponse"
+              "$ref": "#/components/schemas/SafeSubcall"
             },
             "type": "array"
           },
@@ -2925,74 +2976,21 @@
             "type": "string"
           },
           "value": {
-            "type": "string"
+            "type": "integer"
           }
         },
         "required": [
-          "lastEventBlock",
+          "id",
           "safe",
           "txHash"
         ],
         "type": "object"
       },
-      "SafeSubcallResponse": {
-        "properties": {
-          "data": {
-            "type": "string"
-          },
-          "label": {
-            "type": "string"
-          },
-          "operation": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "target": {
-            "type": "string"
-          },
-          "value": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "data",
-          "label",
-          "operation",
-          "target",
-          "value"
-        ],
-        "type": "object"
-      },
-      "SafeTxApprovalResponse": {
-        "properties": {
-          "block": {
-            "format": "int64",
-            "type": "integer"
-          },
-          "blockTimestamp": {
-            "format": "int64",
-            "type": "integer"
-          },
-          "owner": {
-            "type": "string"
-          },
-          "vechainTxId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "block",
-          "blockTimestamp",
-          "owner",
-          "vechainTxId"
-        ],
-        "type": "object"
-      },
-      "SafeTxStateResponse": {
+      "SafeTxState": {
         "properties": {
           "approvers": {
             "items": {
-              "$ref": "#/components/schemas/SafeTxApprovalResponse"
+              "$ref": "#/components/schemas/SafeTxApproval"
             },
             "type": "array"
           },
@@ -3013,9 +3011,8 @@
           "failed": {
             "type": "boolean"
           },
-          "lastEventBlock": {
-            "format": "int64",
-            "type": "integer"
+          "id": {
+            "type": "string"
           },
           "safe": {
             "type": "string"
@@ -3031,7 +3028,7 @@
           "approvers",
           "executed",
           "failed",
-          "lastEventBlock",
+          "id",
           "safe",
           "txHash"
         ],
@@ -9441,7 +9438,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponseSafeMembershipResponse"
+                  "$ref": "#/components/schemas/PaginatedResponseSafeMembership"
                 }
               }
             },
@@ -9579,7 +9576,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponseSafeProposalResponse"
+                  "$ref": "#/components/schemas/PaginatedResponseSafeTxProposal"
                 }
               }
             },
@@ -9654,7 +9651,7 @@
     },
     "/api/v1/safes/{safe}/transactions/{txHash}/state": {
       "get": {
-        "description": "\n            Returns the aggregated state for a single Safe transaction (approvers, executor, and\n            execution status). Returns an empty response with no approvers when the Safe has not\n            seen the txHash yet, so the dapp does not need to fall back to RPC for unknown hashes.\n            ",
+        "description": "\n            Returns the aggregated state for a single Safe transaction (approvers, executor, and\n            execution status). Returns an empty document with no approvers when the Safe has not\n            seen the txHash yet, so the dapp does not need to fall back to RPC for unknown hashes.\n            ",
         "operationId": "getTxState",
         "parameters": [
           {
@@ -9685,7 +9682,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/SafeTxStateResponse"
+                  "$ref": "#/components/schemas/SafeTxState"
                 }
               }
             },
