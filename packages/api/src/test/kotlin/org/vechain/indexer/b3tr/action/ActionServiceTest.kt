@@ -320,7 +320,7 @@ internal class ActionServiceTest {
 
     @Test
     fun `getAppRoundOverview returns correct overview when data exists`() {
-        val appId = AppId("app-3")
+        val appId = AppId("app-4")
         val roundId = 7
         val impact = mockk<Impact>(relaxed = true)
         val overview = mockk<UserRoundActionSummary>(relaxed = true)
