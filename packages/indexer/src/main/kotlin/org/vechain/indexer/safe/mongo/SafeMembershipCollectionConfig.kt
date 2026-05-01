@@ -34,16 +34,18 @@ open class SafeMembershipCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                // Supports listing memberships for an owner with optional removed/active filter.
-                "owner_1_removedBlock_1" to
+                // Serves CURRENT scope (removedBlock IS NULL is equality) with the API's
+                // addedBlock-desc sort: equality-equality-sort.
+                "owner_1_removedBlock_1_addedBlock_-1" to
                     Index()
                         .on(SafeMembership::owner.name, Sort.Direction.ASC)
-                        .on(SafeMembership::removedBlock.name, Sort.Direction.ASC),
-                // Supports listing all memberships for a Safe.
-                "safe_1_removedBlock_1" to
+                        .on(SafeMembership::removedBlock.name, Sort.Direction.ASC)
+                        .on(SafeMembership::addedBlock.name, Sort.Direction.DESC),
+                // Serves ALL and PAST scopes: equality on owner, then the addedBlock-desc sort.
+                "owner_1_addedBlock_-1" to
                     Index()
-                        .on(SafeMembership::safe.name, Sort.Direction.ASC)
-                        .on(SafeMembership::removedBlock.name, Sort.Direction.ASC),
+                        .on(SafeMembership::owner.name, Sort.Direction.ASC)
+                        .on(SafeMembership::addedBlock.name, Sort.Direction.DESC),
             )
         )
     }

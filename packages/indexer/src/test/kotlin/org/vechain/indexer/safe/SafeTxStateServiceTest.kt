@@ -166,13 +166,13 @@ internal class SafeTxStateServiceTest {
         every { repository.findAllById(any<Iterable<String>>()) } returns listOf(firstState)
         every { repository.findById(firstState.id) } returns Optional.of(firstState)
 
-        val (secondUpdated, _) =
+        val (secondUpdated, secondArchived) =
             service.processBlock(
                 listOf(approveHashEvent(ownerA, blockNumber = 11L, txId = "0xtxdup"))
             )
 
-        assertEquals(1, secondUpdated.size)
-        assertEquals(1, secondUpdated.single().approvers.size)
+        assertEquals(0, secondUpdated.size)
+        assertEquals(0, secondArchived.size)
     }
 
     @Test

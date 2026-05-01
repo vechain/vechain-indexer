@@ -120,17 +120,15 @@ open class SafeTxStateService(
             APPROVE_HASH -> {
                 val owner =
                     event.params.getAsString("owner")?.let { HexUtils.normalise(it) } ?: return
-                val alreadyApproved = base.approvers.any { it.owner == owner }
-                if (!alreadyApproved) {
-                    base.approvers.add(
-                        SafeTxApproval(
-                            owner = owner,
-                            block = blockDetails.blockNumber,
-                            blockTimestamp = blockDetails.blockTimestamp,
-                            vechainTxId = event.txId,
-                        )
+                if (base.approvers.any { it.owner == owner }) return
+                base.approvers.add(
+                    SafeTxApproval(
+                        owner = owner,
+                        block = blockDetails.blockNumber,
+                        blockTimestamp = blockDetails.blockTimestamp,
+                        vechainTxId = event.txId,
                     )
-                }
+                )
             }
             EXECUTION_SUCCESS -> {
                 base.executed = true
