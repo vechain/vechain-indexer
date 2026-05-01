@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.safe.repository.SafeProxyRepository
 import org.vechain.indexer.safe.repository.SafeTxStateRepository
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.HexUtils
@@ -24,6 +25,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 @Service
 open class SafeTxStateService(
     private val repository: SafeTxStateRepository,
+    private val safeProxyRepository: SafeProxyRepository,
     private val mongoTemplate: MongoTemplate,
     private val inlineVersioningProperties: InlineVersioningProperties,
 ) {
@@ -42,9 +44,15 @@ open class SafeTxStateService(
             return emptyList<SafeTxState>() to emptyList()
         }
 
+        // Drop events from addresses that are not registered Safes (see safe-proxy indexer).
+        val verifiedEvents = filterByKnownSafes(safeEvents)
+        if (verifiedEvents.isEmpty()) {
+            return emptyList<SafeTxState>() to emptyList()
+        }
+
         // Pre-collect all candidate ids for batch loading.
         val candidateIds = mutableSetOf<String>()
-        safeEvents.forEach { event ->
+        verifiedEvents.forEach { event ->
             val safe = event.address?.let { HexUtils.normalise(it) } ?: return@forEach
             val txHash = extractTxHash(event) ?: return@forEach
             candidateIds.add(SafeTxState.buildId(safe, txHash))
@@ -62,12 +70,22 @@ open class SafeTxStateService(
                 initialVersion = 1,
             )
 
-        groupByBlock(safeEvents).forEach { (blockDetails, blockEvents) ->
+        groupByBlock(verifiedEvents).forEach { (blockDetails, blockEvents) ->
             accumulator.startBlock()
             blockEvents.forEach { event -> applyEvent(event, blockDetails, accumulator) }
         }
 
         return accumulator.results()
+    }
+
+    private fun filterByKnownSafes(events: List<IndexedEvent>): List<IndexedEvent> {
+        val candidateSafes =
+            events.mapNotNull { it.address?.let { addr -> HexUtils.normalise(addr) } }.toSet()
+        if (candidateSafes.isEmpty()) return emptyList()
+        val knownSafes = safeProxyRepository.findAllById(candidateSafes).map { it.id }.toSet()
+        return events.filter {
+            it.address?.let { addr -> HexUtils.normalise(addr) in knownSafes } == true
+        }
     }
 
     private fun applyEvent(

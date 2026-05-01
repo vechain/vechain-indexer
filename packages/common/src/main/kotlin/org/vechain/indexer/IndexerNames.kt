@@ -246,6 +246,11 @@ object IndexerNames {
         const val COLLECTION = "b3tr_user_challenges"
     }
 
+    object SAFE_PROXY {
+        const val NAME = "SafeProxyIndexer"
+        const val COLLECTION = "safe_proxies"
+    }
+
     object SAFE_MEMBERSHIP {
         const val NAME = "SafeMembershipIndexer"
         const val COLLECTION = "safe_memberships"

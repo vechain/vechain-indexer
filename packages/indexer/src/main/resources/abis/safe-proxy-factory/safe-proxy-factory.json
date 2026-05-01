@@ -1,0 +1,19 @@
+[
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "name": "proxy",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "name": "singleton",
+                "type": "address"
+            }
+        ],
+        "name": "ProxyCreation",
+        "type": "event"
+    }
+]

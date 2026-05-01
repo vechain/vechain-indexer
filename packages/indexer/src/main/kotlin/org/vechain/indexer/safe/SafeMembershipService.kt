@@ -9,6 +9,7 @@ import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.safe.repository.SafeMembershipRepository
+import org.vechain.indexer.safe.repository.SafeProxyRepository
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.utils.BlockDetails
@@ -25,10 +26,11 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
  *
  * The Safe contract address is the log's `address` field; that's the safe identity.
  */
-@Profile("safe", "safe-membership")
+@Profile("safe")
 @Service
 open class SafeMembershipService(
     private val repository: SafeMembershipRepository,
+    private val safeProxyRepository: SafeProxyRepository,
     private val mongoTemplate: MongoTemplate,
     private val inlineVersioningProperties: InlineVersioningProperties,
 ) {
@@ -49,9 +51,17 @@ open class SafeMembershipService(
             return emptyList<SafeMembership>() to emptyList()
         }
 
+        // Drop events from addresses that are not registered Safes. The safe-proxy indexer is the
+        // trust root: an address only enters here after `SafeProxyFactory.ProxyCreation`. Topic
+        // signatures alone are not enough — anyone could emit a colliding signature.
+        val verifiedEvents = filterByKnownSafes(membershipEvents)
+        if (verifiedEvents.isEmpty()) {
+            return emptyList<SafeMembership>() to emptyList()
+        }
+
         // Pre-collect record ids and batch load existing docs for the impacted (safe, owner) pairs.
         val candidateIds = mutableSetOf<String>()
-        membershipEvents.forEach { event ->
+        verifiedEvents.forEach { event ->
             val safe = event.address?.let { HexUtils.normalise(it) } ?: return@forEach
             extractOwners(event).forEach { owner ->
                 candidateIds.add(SafeMembership.buildId(safe, owner))
@@ -70,12 +80,22 @@ open class SafeMembershipService(
                 initialVersion = 1,
             )
 
-        groupByBlock(membershipEvents).forEach { (blockDetails, blockEvents) ->
+        groupByBlock(verifiedEvents).forEach { (blockDetails, blockEvents) ->
             accumulator.startBlock()
             blockEvents.forEach { event -> applyEvent(event, blockDetails, accumulator) }
         }
 
         return accumulator.results()
+    }
+
+    private fun filterByKnownSafes(events: List<IndexedEvent>): List<IndexedEvent> {
+        val candidateSafes =
+            events.mapNotNull { it.address?.let { addr -> HexUtils.normalise(addr) } }.toSet()
+        if (candidateSafes.isEmpty()) return emptyList()
+        val knownSafes = safeProxyRepository.findAllById(candidateSafes).map { it.id }.toSet()
+        return events.filter {
+            it.address?.let { addr -> HexUtils.normalise(addr) in knownSafes } == true
+        }
     }
 
     private fun applyEvent(

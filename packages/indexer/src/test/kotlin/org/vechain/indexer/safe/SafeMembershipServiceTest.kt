@@ -15,11 +15,13 @@ import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 import org.vechain.indexer.safe.repository.SafeMembershipRepository
+import org.vechain.indexer.safe.repository.SafeProxyRepository
 
 @ExtendWith(MockKExtension::class)
 internal class SafeMembershipServiceTest {
 
     @MockK lateinit var repository: SafeMembershipRepository
+    @MockK lateinit var safeProxyRepository: SafeProxyRepository
     @MockK lateinit var mongoTemplate: MongoTemplate
     @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
 
@@ -31,9 +33,32 @@ internal class SafeMembershipServiceTest {
 
     @BeforeEach
     fun setUp() {
-        service = SafeMembershipService(repository, mongoTemplate, inlineVersioningProperties)
+        service =
+            SafeMembershipService(
+                repository,
+                safeProxyRepository,
+                mongoTemplate,
+                inlineVersioningProperties,
+            )
         every { repository.findById(any<String>()) } returns Optional.empty()
         every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
+        every { safeProxyRepository.findAllById(any<Iterable<String>>()) } answers
+            {
+                @Suppress("UNCHECKED_CAST")
+                (firstArg<Iterable<String>>()).map { id ->
+                    SafeProxy(
+                        id = id,
+                        singleton = "0xsingleton",
+                        createdBlock = 1L,
+                        createdTimestamp = 100L,
+                        vechainTxId = "0xtx",
+                        blockId = "0xblock",
+                        blockNumber = 1L,
+                        blockTimestamp = 100L,
+                        version = 1,
+                    )
+                }
+            }
     }
 
     private fun safeSetupEvent(
@@ -228,5 +253,45 @@ internal class SafeMembershipServiceTest {
         val (updated, _) = service.processBlock(listOf(event))
         assertEquals(1, updated.size)
         assertEquals("0xanothersafe2222222222222222222222222222", updated.single().safe)
+    }
+
+    @Test
+    fun `Events from addresses not registered in the SafeProxy collection are dropped`() {
+        // Override the default lenient mock to return only `safe` as a known proxy.
+        every { safeProxyRepository.findAllById(any<Iterable<String>>()) } answers
+            {
+                @Suppress("UNCHECKED_CAST")
+                (firstArg<Iterable<String>>())
+                    .filter { it.equals(safe.lowercase(), ignoreCase = true) }
+                    .map { id ->
+                        SafeProxy(
+                            id = id,
+                            singleton = "0xsingleton",
+                            createdBlock = 1L,
+                            createdTimestamp = 100L,
+                            vechainTxId = "0xtx",
+                            blockId = "0xblock",
+                            blockNumber = 1L,
+                            blockTimestamp = 100L,
+                            version = 1,
+                        )
+                    }
+            }
+
+        val realSafeEvent = addedOwnerEvent(ownerA)
+        val nonSafeEvent =
+            buildIndexedEvent(
+                blockId = "0xblock",
+                blockNumber = 11L,
+                blockTimestamp = 1100L,
+                eventType = SafeMembershipService.ADDED_OWNER,
+                address = "0xC0FFEE0000000000000000000000000000000000",
+                params = AbiEventParameters(returnValues = mapOf("owner" to ownerB)),
+            )
+
+        val (updated, _) = service.processBlock(listOf(realSafeEvent, nonSafeEvent))
+
+        assertEquals(1, updated.size)
+        assertEquals(safe.lowercase(), updated.single().safe)
     }
 }

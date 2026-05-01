@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.safe.repository.SafeProxyRepository
 import org.vechain.indexer.safe.repository.SafeTxProposalRepository
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.HexUtils
@@ -26,6 +27,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 @Service
 open class SafeTxProposalService(
     private val repository: SafeTxProposalRepository,
+    private val safeProxyRepository: SafeProxyRepository,
     private val mongoTemplate: MongoTemplate,
     private val inlineVersioningProperties: InlineVersioningProperties,
 ) {
@@ -47,8 +49,16 @@ open class SafeTxProposalService(
             return emptyList<SafeTxProposal>() to emptyList()
         }
 
+        // Defence-in-depth: SafeEmitter validates the caller is a Safe owner via `isOwner`, but
+        // `isOwner` is just an arbitrary view function — a non-Safe contract could fake it. Drop
+        // proposals whose indexed `safe` param isn't a registered Safe.
+        val verifiedEvents = filterByKnownSafes(proposalEvents)
+        if (verifiedEvents.isEmpty()) {
+            return emptyList<SafeTxProposal>() to emptyList()
+        }
+
         val candidateIds = mutableSetOf<String>()
-        proposalEvents.forEach { event ->
+        verifiedEvents.forEach { event ->
             val id = buildIdOrNull(event) ?: return@forEach
             candidateIds.add(id)
         }
@@ -65,12 +75,26 @@ open class SafeTxProposalService(
                 initialVersion = 1,
             )
 
-        groupByBlock(proposalEvents).forEach { (blockDetails, blockEvents) ->
+        groupByBlock(verifiedEvents).forEach { (blockDetails, blockEvents) ->
             accumulator.startBlock()
             blockEvents.forEach { event -> applyEvent(event, blockDetails, accumulator) }
         }
 
         return accumulator.results()
+    }
+
+    private fun filterByKnownSafes(events: List<IndexedEvent>): List<IndexedEvent> {
+        val candidateSafes =
+            events
+                .mapNotNull { event ->
+                    event.params.getAsString("safe")?.let { HexUtils.normalise(it) }
+                }
+                .toSet()
+        if (candidateSafes.isEmpty()) return emptyList()
+        val knownSafes = safeProxyRepository.findAllById(candidateSafes).map { it.id }.toSet()
+        return events.filter { event ->
+            event.params.getAsString("safe")?.let { HexUtils.normalise(it) in knownSafes } == true
+        }
     }
 
     private fun applyEvent(

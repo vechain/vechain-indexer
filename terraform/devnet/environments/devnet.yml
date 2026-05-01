@@ -154,6 +154,7 @@ enabled_nets:
         account-totals-series:      '0'
         average-fees-per-user:      '0'
         validator:                  '1000'
+        safe-proxies:               '0'
         safe-membership:            '0'
         safe-tx-state:              '0'
         safe-tx-proposals:          '0'
@@ -171,6 +172,7 @@ enabled_nets:
         b3tr:                       '100'
         b3tr-challenges:            '100'
         b3tr-user-challenges:       '100'
+        safe-proxies:               '100'
         safe-tx-proposals:          '100'
       channel-batch-size: '15'
       checkpoint-save-interval-seconds: '60'
@@ -233,6 +235,7 @@ enabled_nets:
         account-totals-series: '1'
         account-overview: '2'
         b3tr-balance: '4'
+        safe-proxies: '1'
         safe-membership: '1'
         safe-tx-state: '1'
         safe-tx-proposals: '1'
@@ -258,8 +261,9 @@ enabled_nets:
           BUILTIN_STAKER_CONTRACT: '0x00000000000000000000000000005374616B6572'
           GET_ALL_VALIDATORS_CONTRACT: '0xef73a32f5f432cfe6482f877374c70d582469642'
           RELAYER_REWARDS_POOL_CONTRACT: '0x34b56f892c9e977b9ba2e43ba64c27d368ab3c86'
-          # Set when SafeTxEmitter is deployed on devnet, then add `safe` to spring_profile.
+          # Set when SafeTxEmitter and SafeProxyFactory are deployed on devnet, then add `safe` to spring_profile.
           SAFE_EMITTER_CONTRACT: ''
+          SAFE_PROXY_FACTORY_CONTRACT: ''
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"

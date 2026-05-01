@@ -15,12 +15,14 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
+import org.vechain.indexer.safe.repository.SafeProxyRepository
 import org.vechain.indexer.safe.repository.SafeTxStateRepository
 
 @ExtendWith(MockKExtension::class)
 internal class SafeTxStateServiceTest {
 
     @MockK lateinit var repository: SafeTxStateRepository
+    @MockK lateinit var safeProxyRepository: SafeProxyRepository
     @MockK lateinit var mongoTemplate: MongoTemplate
     @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
 
@@ -33,9 +35,32 @@ internal class SafeTxStateServiceTest {
 
     @BeforeEach
     fun setUp() {
-        service = SafeTxStateService(repository, mongoTemplate, inlineVersioningProperties)
+        service =
+            SafeTxStateService(
+                repository,
+                safeProxyRepository,
+                mongoTemplate,
+                inlineVersioningProperties,
+            )
         every { repository.findById(any<String>()) } returns Optional.empty()
         every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
+        every { safeProxyRepository.findAllById(any<Iterable<String>>()) } answers
+            {
+                @Suppress("UNCHECKED_CAST")
+                (firstArg<Iterable<String>>()).map { id ->
+                    SafeProxy(
+                        id = id,
+                        singleton = "0xsingleton",
+                        createdBlock = 1L,
+                        createdTimestamp = 100L,
+                        vechainTxId = "0xtx",
+                        blockId = "0xblock",
+                        blockNumber = 1L,
+                        blockTimestamp = 100L,
+                        version = 1,
+                    )
+                }
+            }
     }
 
     private fun approveHashEvent(
@@ -219,5 +244,47 @@ internal class SafeTxStateServiceTest {
             )
         val (updated, _) = service.processBlock(listOf(event))
         assertEquals(0, updated.size)
+    }
+
+    @Test
+    fun `Events from addresses not registered in the SafeProxy collection are dropped`() {
+        every { safeProxyRepository.findAllById(any<Iterable<String>>()) } answers
+            {
+                @Suppress("UNCHECKED_CAST")
+                (firstArg<Iterable<String>>())
+                    .filter { it.equals(safe.lowercase(), ignoreCase = true) }
+                    .map { id ->
+                        SafeProxy(
+                            id = id,
+                            singleton = "0xsingleton",
+                            createdBlock = 1L,
+                            createdTimestamp = 100L,
+                            vechainTxId = "0xtx",
+                            blockId = "0xblock",
+                            blockNumber = 1L,
+                            blockTimestamp = 100L,
+                            version = 1,
+                        )
+                    }
+            }
+
+        val realSafeEvent = approveHashEvent(ownerA)
+        val nonSafeEvent =
+            buildIndexedEvent(
+                blockId = "0xblock",
+                blockNumber = 11L,
+                blockTimestamp = 1100L,
+                eventType = SafeTxStateService.APPROVE_HASH,
+                address = "0xC0FFEE0000000000000000000000000000000000",
+                params =
+                    AbiEventParameters(
+                        returnValues = mapOf("approvedHash" to txHash, "owner" to ownerA)
+                    ),
+            )
+
+        val (updated, _) = service.processBlock(listOf(realSafeEvent, nonSafeEvent))
+
+        assertEquals(1, updated.size)
+        assertEquals(safe.lowercase(), updated.single().safe)
     }
 }
