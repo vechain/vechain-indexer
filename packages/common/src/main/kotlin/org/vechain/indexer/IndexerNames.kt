@@ -246,6 +246,21 @@ object IndexerNames {
         const val COLLECTION = "b3tr_user_challenges"
     }
 
+    object SAFE_MEMBERSHIP {
+        const val NAME = "SafeMembershipIndexer"
+        const val COLLECTION = "safe_memberships"
+    }
+
+    object SAFE_TX_STATE {
+        const val NAME = "SafeTxStateIndexer"
+        const val COLLECTION = "safe_tx_states"
+    }
+
+    object SAFE_TX_PROPOSAL {
+        const val NAME = "SafeTxProposalIndexer"
+        const val COLLECTION = "safe_tx_proposals"
+    }
+
     /** Returns a map of indexer NAME → COLLECTION for every nested object that defines both. */
     fun nameToCollection(): Map<String, String> =
         IndexerNames::class

@@ -20,6 +20,7 @@ class OpenApiActiveProfilesResolverTest {
                     "explorer",
                     "history",
                     "nfts",
+                    "safe",
                     "stargate",
                     "transactions",
                     "transfers",

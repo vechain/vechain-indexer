@@ -28,8 +28,8 @@ open class WebMvcConfig : WebMvcConfigurer {
     override fun addCorsMappings(registry: CorsRegistry) {
         registry
             .addMapping("/**")
-            .allowedOrigins("*") // Allow any origin
-            .allowedMethods("GET", "OPTIONS") // Allow specified HTTP methods
-            .allowedHeaders("*") // Allow any header
+            .allowedOrigins("*")
+            .allowedMethods("GET", "OPTIONS")
+            .allowedHeaders("*")
     }
 }

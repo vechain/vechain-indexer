@@ -18,6 +18,7 @@ class OpenApiActiveProfilesResolver : ActiveProfilesResolver {
                     "explorer",
                     "history",
                     "nfts",
+                    "safe",
                     "stargate",
                     "transactions",
                     "transfers",

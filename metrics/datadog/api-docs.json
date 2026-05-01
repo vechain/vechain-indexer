@@ -2383,6 +2383,42 @@
         ],
         "type": "object"
       },
+      "PaginatedResponseSafeMembershipResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/SafeMembershipResponse"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationDetail"
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ],
+        "type": "object"
+      },
+      "PaginatedResponseSafeProposalResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/SafeProposalResponse"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationDetail"
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ],
+        "type": "object"
+      },
       "PaginatedResponseStargateToken": {
         "properties": {
           "data": {
@@ -2784,6 +2820,220 @@
           "totalPower",
           "totalWeight",
           "voters"
+        ],
+        "type": "object"
+      },
+      "SafeMembershipResponse": {
+        "properties": {
+          "addedBlock": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "addedTimestamp": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "lastEventBlock": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "removedBlock": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "removedTimestamp": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "safe": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "addedBlock",
+          "addedTimestamp",
+          "lastEventBlock",
+          "owner",
+          "safe"
+        ],
+        "type": "object"
+      },
+      "SafeProposalResponse": {
+        "properties": {
+          "baseGas": {
+            "type": "string"
+          },
+          "data": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "gasPrice": {
+            "type": "string"
+          },
+          "gasToken": {
+            "type": "string"
+          },
+          "lastEventBlock": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "nonce": {
+            "type": "string"
+          },
+          "operation": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "proposedBlock": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "proposedTimestamp": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "proposedVechainTxId": {
+            "type": "string"
+          },
+          "proposer": {
+            "type": "string"
+          },
+          "refundReceiver": {
+            "type": "string"
+          },
+          "safe": {
+            "type": "string"
+          },
+          "safeTxGas": {
+            "type": "string"
+          },
+          "subcalls": {
+            "items": {
+              "$ref": "#/components/schemas/SafeSubcallResponse"
+            },
+            "type": "array"
+          },
+          "to": {
+            "type": "string"
+          },
+          "txHash": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lastEventBlock",
+          "safe",
+          "txHash"
+        ],
+        "type": "object"
+      },
+      "SafeSubcallResponse": {
+        "properties": {
+          "data": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "operation": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "target": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "label",
+          "operation",
+          "target",
+          "value"
+        ],
+        "type": "object"
+      },
+      "SafeTxApprovalResponse": {
+        "properties": {
+          "block": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "blockTimestamp": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "vechainTxId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "block",
+          "blockTimestamp",
+          "owner",
+          "vechainTxId"
+        ],
+        "type": "object"
+      },
+      "SafeTxStateResponse": {
+        "properties": {
+          "approvers": {
+            "items": {
+              "$ref": "#/components/schemas/SafeTxApprovalResponse"
+            },
+            "type": "array"
+          },
+          "executed": {
+            "type": "boolean"
+          },
+          "executedBlock": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "executedTimestamp": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "executor": {
+            "type": "string"
+          },
+          "failed": {
+            "type": "boolean"
+          },
+          "lastEventBlock": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "safe": {
+            "type": "string"
+          },
+          "txHash": {
+            "type": "string"
+          },
+          "vechainTxId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "approvers",
+          "executed",
+          "failed",
+          "lastEventBlock",
+          "safe",
+          "txHash"
         ],
         "type": "object"
       },
@@ -9109,6 +9359,402 @@
         "summary": "Get NFT token history",
         "tags": [
           "NFT"
+        ]
+      }
+    },
+    "/api/v1/safes/owner/{address}": {
+      "get": {
+        "description": "\n            Returns the Safes that the supplied address is — or has been — an owner of.\n            Use `membership=ALL` (default) for both current and past, `CURRENT` for only active\n            ownerships, and `PAST` for ownerships that have been revoked.\n            ",
+        "operationId": "getSafesForOwner",
+        "parameters": [
+          {
+            "description": "The address whose Safe memberships should be returned.",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            "in": "path",
+            "name": "address",
+            "required": true,
+            "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "membership",
+            "required": false,
+            "schema": {
+              "default": "ALL",
+              "enum": [
+                "ALL",
+                "CURRENT",
+                "PAST"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "The zero-based results page number",
+            "example": 0,
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The results page size",
+            "example": 20,
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 150,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The sort direction",
+            "in": "query",
+            "name": "direction",
+            "required": false,
+            "schema": {
+              "default": "DESC",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/XProjectIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponseSafeMembershipResponse"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "List Safes for an owner",
+        "tags": [
+          "Safe"
+        ]
+      }
+    },
+    "/api/v1/safes/{safe}/transactions": {
+      "get": {
+        "description": "\n            Returns Safe transactions proposed via the SafeEmitter contract, paginated and sorted\n            newest-first by default. Per-transaction approval / execution status is available from\n            `/safes/{safe}/transactions/{txHash}/state`.\n            ",
+        "operationId": "getTransactionsForSafe",
+        "parameters": [
+          {
+            "description": "The Safe contract address.",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            "in": "path",
+            "name": "safe",
+            "required": true,
+            "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "The zero-based results page number",
+            "example": 0,
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The results page size",
+            "example": 20,
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 150,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The sort direction",
+            "in": "query",
+            "name": "direction",
+            "required": false,
+            "schema": {
+              "default": "DESC",
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/XProjectIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponseSafeProposalResponse"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "List proposed transactions for a Safe",
+        "tags": [
+          "Safe"
+        ]
+      }
+    },
+    "/api/v1/safes/{safe}/transactions/{txHash}/state": {
+      "get": {
+        "description": "\n            Returns the aggregated state for a single Safe transaction (approvers, executor, and\n            execution status). Returns an empty response with no approvers when the Safe has not\n            seen the txHash yet, so the dapp does not need to fall back to RPC for unknown hashes.\n            ",
+        "operationId": "getTxState",
+        "parameters": [
+          {
+            "description": "The Safe contract address.",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            "in": "path",
+            "name": "safe",
+            "required": true,
+            "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "txHash",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/XProjectIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SafeTxStateResponse"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get Safe transaction state",
+        "tags": [
+          "Safe"
         ]
       }
     },
@@ -16111,6 +16757,10 @@
     {
       "description": "Combined VOT3 and B3TR balance richlist and holder rank.",
       "name": "B3TR - Richlist"
+    },
+    {
+      "description": "Safe multisig membership, proposals, and transaction state",
+      "name": "Safe"
     },
     {
       "description": "Query validator documents",

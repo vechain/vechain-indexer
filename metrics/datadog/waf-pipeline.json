@@ -517,6 +517,18 @@
         },
         {
           "filter": {
+            "query": "@httpRequest.uri:/api/v1/safes/owner/*"
+          },
+          "name": "/api/v1/safes/owner/{address}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/safes/*/transactions"
+          },
+          "name": "/api/v1/safes/{safe}/transactions"
+        },
+        {
+          "filter": {
             "query": "@httpRequest.uri:/api/v1/stargate/nft-holders/*"
           },
           "name": "/api/v1/stargate/nft-holders/{period}"
@@ -604,6 +616,12 @@
             "query": "@httpRequest.uri:/api/v1/b3tr/actions/users/*/app/*/overview"
           },
           "name": "/api/v1/b3tr/actions/users/{wallet}/app/{appId}/overview"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v1/safes/*/transactions/*/state"
+          },
+          "name": "/api/v1/safes/{safe}/transactions/{txHash}/state"
         },
         {
           "filter": {

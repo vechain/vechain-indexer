@@ -174,6 +174,9 @@ enabled_nets:
         nft-owner-balance: "22083535"
         account-totals-series: "0"
         average-fees-per-user: "0"
+        safe-membership: "0"
+        safe-tx-state: "0"
+        safe-tx-proposals: "0"
       start-round:
         b3tr-sustainable-actions: "4"
       sync-log-interval: "100"
@@ -188,6 +191,7 @@ enabled_nets:
         b3tr-challenges: "100"
         b3tr-user-challenges: "100"
         historic-proposals: "125"
+        safe-tx-proposals: "100"
       channel-batch-size: "15"
       checkpoint-save-interval-seconds: "60"
       pruner:
@@ -245,6 +249,9 @@ enabled_nets:
         account-totals-series: "2"
         account-overview: "6"
         b3tr-balance: "4"
+        safe-membership: "1"
+        safe-tx-state: "1"
+        safe-tx-proposals: "1"
       business-event:
         substitutions:
           B3TR_CONTRACT: "0x5ef79995fe8a89e0812330e4378eb2660cede699"
@@ -269,6 +276,8 @@ enabled_nets:
           RELAYER_REWARDS_POOL_CONTRACT: "0x34b56f892c9e977b9ba2e43ba64c27d368ab3c86"
           NAVIGATOR_REGISTRY_CONTRACT: "0xef238e33fc78ecc79beaf8386254a0fc67d048e0"
           BLACKLIST_CONTRACT_ADDRESS: "0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5"
+          # Set when SafeTxEmitter is deployed on mainnet, then add `safe` to spring_profile.
+          SAFE_EMITTER_CONTRACT: ""
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -424,6 +433,9 @@ enabled_nets:
         nft-owner-balance: "23188723"
         account-totals-series: "0"
         average-fees-per-user: "0"
+        safe-membership: "0"
+        safe-tx-state: "0"
+        safe-tx-proposals: "0"
       start-round:
         b3tr-sustainable-actions: "4"
       sync-log-interval: "100"
@@ -438,6 +450,7 @@ enabled_nets:
         b3tr-challenges: "100"
         b3tr-user-challenges: "100"
         historic-proposals: "125"
+        safe-tx-proposals: "100"
       channel-batch-size: "15"
       checkpoint-save-interval-seconds: "60"
       pruner:
@@ -495,6 +508,9 @@ enabled_nets:
         account-totals-series: "2"
         account-overview: "6"
         b3tr-balance: "4"
+        safe-membership: "1"
+        safe-tx-state: "1"
+        safe-tx-proposals: "1"
       business-event:
         substitutions:
           B3TR_CONTRACT: "0x95761346d18244bb91664181bf91193376197088"
@@ -519,6 +535,8 @@ enabled_nets:
           RELAYER_REWARDS_POOL_CONTRACT: "0x92b5a7484970d9b2ad981e8135ff14e6f996dc04"
           NAVIGATOR_REGISTRY_CONTRACT: "0x15a38b65f26bdbca50addf3865732613a45bbc00"
           BLACKLIST_CONTRACT_ADDRESS: "0x9405c18c384dd448f82c11136e188a147186ea3a"
+          # Set when SafeTxEmitter is deployed on testnet, then add `safe` to spring_profile.
+          SAFE_EMITTER_CONTRACT: ""
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"

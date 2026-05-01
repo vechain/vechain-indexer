@@ -1,0 +1,109 @@
+[
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "name": "initiator",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "name": "owners",
+                "type": "address[]"
+            },
+            {
+                "indexed": false,
+                "name": "threshold",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "name": "initializer",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "name": "fallbackHandler",
+                "type": "address"
+            }
+        ],
+        "name": "SafeSetup",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "name": "owner",
+                "type": "address"
+            }
+        ],
+        "name": "AddedOwner",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "name": "owner",
+                "type": "address"
+            }
+        ],
+        "name": "RemovedOwner",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "name": "approvedHash",
+                "type": "bytes32"
+            },
+            {
+                "indexed": true,
+                "name": "owner",
+                "type": "address"
+            }
+        ],
+        "name": "ApproveHash",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "name": "txHash",
+                "type": "bytes32"
+            },
+            {
+                "indexed": false,
+                "name": "payment",
+                "type": "uint256"
+            }
+        ],
+        "name": "ExecutionSuccess",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "name": "txHash",
+                "type": "bytes32"
+            },
+            {
+                "indexed": false,
+                "name": "payment",
+                "type": "uint256"
+            }
+        ],
+        "name": "ExecutionFailure",
+        "type": "event"
+    }
+]
