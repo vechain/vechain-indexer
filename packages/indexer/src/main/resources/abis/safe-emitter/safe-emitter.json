@@ -1,0 +1,138 @@
+[
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "name": "safe",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "name": "proposer",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "name": "txHash",
+                "type": "bytes32"
+            },
+            {
+                "indexed": false,
+                "name": "to",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "name": "value",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "name": "data",
+                "type": "bytes"
+            },
+            {
+                "indexed": false,
+                "name": "operation",
+                "type": "uint8"
+            },
+            {
+                "indexed": false,
+                "name": "nonce",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "name": "description",
+                "type": "string"
+            }
+        ],
+        "name": "SafeTxProposed",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "name": "safe",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "name": "txHash",
+                "type": "bytes32"
+            },
+            {
+                "indexed": false,
+                "name": "safeTxGas",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "name": "baseGas",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "name": "gasPrice",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "name": "gasToken",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "name": "refundReceiver",
+                "type": "address"
+            }
+        ],
+        "name": "SafeTxHashFields",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "name": "safe",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "name": "txHash",
+                "type": "bytes32"
+            },
+            {
+                "indexed": false,
+                "name": "targets",
+                "type": "address[]"
+            },
+            {
+                "indexed": false,
+                "name": "values",
+                "type": "uint256[]"
+            },
+            {
+                "indexed": false,
+                "name": "datas",
+                "type": "bytes[]"
+            },
+            {
+                "indexed": false,
+                "name": "operations",
+                "type": "uint8[]"
+            },
+            {
+                "indexed": false,
+                "name": "labels",
+                "type": "bytes32[]"
+            }
+        ],
+        "name": "SafeBatchTxProposed",
+        "type": "event"
+    }
+]
