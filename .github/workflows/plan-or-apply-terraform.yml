@@ -167,7 +167,7 @@ jobs:
           ECR_REPO_URI_INDEXER=$(aws ecr describe-repositories --repository-names "veworld/indexer" --query 'repositories[0].repositoryUri' --output text 2>/dev/null || echo "")
 
           if [ -z "$ECR_REPO_URI_API" ] || [ -z "$ECR_REPO_URI_INDEXER" ]; then
-            echo "Skipping image tagging - one or more ECR repositories not found"
+            echo "ERROR: cannot tag images - one or more ECR repositories not found (api='$ECR_REPO_URI_API' indexer='$ECR_REPO_URI_INDEXER')"
             exit 1
           fi
 
