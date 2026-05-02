@@ -159,32 +159,58 @@ jobs:
           MAINNET_VERSION: ${{ inputs.mainnet_version }}
           TESTNET_VERSION: ${{ inputs.testnet_version }}
         run: |
+          set -euo pipefail
           PROTECTION_TAG="${{ env.ENVIRONMENT }}"
 
           # Get ECR repository URI
           ECR_REPO_URI_API=$(aws ecr describe-repositories --repository-names "veworld/api" --query 'repositories[0].repositoryUri' --output text 2>/dev/null || echo "")
           ECR_REPO_URI_INDEXER=$(aws ecr describe-repositories --repository-names "veworld/indexer" --query 'repositories[0].repositoryUri' --output text 2>/dev/null || echo "")
 
-          if [ -n "$ECR_REPO_URI_API" ] && [ -n "$ECR_REPO_URI_INDEXER" ]; then
-            echo "Tagging api image $MAINNET_VERSION with protection tag: ${PROTECTION_TAG}-mainnet"
-            MANIFEST=$(aws ecr batch-get-image --repository-name "veworld/api" --image-ids imageTag="$MAINNET_VERSION" --query 'images[0].imageManifest' --output text)
-            aws ecr put-image --repository-name "veworld/api" --image-tag "${PROTECTION_TAG}-mainnet" --image-manifest "$MANIFEST"
-            echo "Tagging api image $TESTNET_VERSION with protection tag: ${PROTECTION_TAG}-testnet"
-            MANIFEST=$(aws ecr batch-get-image --repository-name "veworld/api" --image-ids imageTag="$TESTNET_VERSION" --query 'images[0].imageManifest' --output text)
-            aws ecr put-image --repository-name "veworld/api" --image-tag "${PROTECTION_TAG}-testnet" --image-manifest "$MANIFEST"
-
-            echo "Tagging indexer image $MAINNET_VERSION with protection tag: ${PROTECTION_TAG}-mainnet"
-            MANIFEST=$(aws ecr batch-get-image --repository-name "veworld/indexer" --image-ids imageTag="$MAINNET_VERSION" --query 'images[0].imageManifest' --output text)
-            aws ecr put-image --repository-name "veworld/indexer" --image-tag "${PROTECTION_TAG}-mainnet" --image-manifest "$MANIFEST"
-            echo "Tagging indexer image $TESTNET_VERSION with protection tag: ${PROTECTION_TAG}-testnet"
-            MANIFEST=$(aws ecr batch-get-image --repository-name "veworld/indexer" --image-ids imageTag="$TESTNET_VERSION" --query 'images[0].imageManifest' --output text)
-            aws ecr put-image --repository-name "veworld/indexer" --image-tag "${PROTECTION_TAG}-testnet" --image-manifest "$MANIFEST"
-
-            echo "Successfully tagged images with protection tag: ${PROTECTION_TAG}"
-          else
+          if [ -z "$ECR_REPO_URI_API" ] || [ -z "$ECR_REPO_URI_INDEXER" ]; then
             echo "Skipping image tagging - one or more ECR repositories not found"
             exit 1
           fi
+
+          # Idempotently tag $SOURCE_TAG in $REPO with $TARGET_TAG.
+          # Skips if $TARGET_TAG already points at the same digest as $SOURCE_TAG.
+          # Re-points $TARGET_TAG if it exists on a different digest.
+          tag_image() {
+            local repo="$1" source_tag="$2" target_tag="$3"
+
+            local source_digest
+            source_digest=$(aws ecr describe-images --repository-name "$repo" \
+              --image-ids imageTag="$source_tag" \
+              --query 'imageDetails[0].imageDigest' --output text 2>/dev/null || echo "")
+            if [ -z "$source_digest" ] || [ "$source_digest" = "None" ]; then
+              echo "ERROR: source image $repo:$source_tag not found in ECR"
+              return 1
+            fi
+
+            local target_digest
+            target_digest=$(aws ecr describe-images --repository-name "$repo" \
+              --image-ids imageTag="$target_tag" \
+              --query 'imageDetails[0].imageDigest' --output text 2>/dev/null || echo "")
+
+            if [ "$source_digest" = "$target_digest" ]; then
+              echo "Skipping $repo:$target_tag - already points at $source_digest"
+              return 0
+            fi
+
+            echo "Tagging $repo:$source_tag ($source_digest) as $target_tag"
+            local manifest
+            manifest=$(aws ecr batch-get-image --repository-name "$repo" \
+              --image-ids imageTag="$source_tag" \
+              --query 'images[0].imageManifest' --output text)
+            aws ecr put-image --repository-name "$repo" \
+              --image-tag "$target_tag" --image-manifest "$manifest" >/dev/null
+          }
+
+          tag_image "veworld/api"     "$MAINNET_VERSION" "${PROTECTION_TAG}-mainnet"
+          tag_image "veworld/api"     "$TESTNET_VERSION" "${PROTECTION_TAG}-testnet"
+          tag_image "veworld/indexer" "$MAINNET_VERSION" "${PROTECTION_TAG}-mainnet"
+          tag_image "veworld/indexer" "$TESTNET_VERSION" "${PROTECTION_TAG}-testnet"
+
+          echo "Successfully tagged images with protection tag: ${PROTECTION_TAG}"
 
       # - name: Slack Notification
       #   if: steps.apply.outcome == 'success'
