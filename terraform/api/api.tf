@@ -567,6 +567,22 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.average-fees-per-user
     },
     {
+      name  = "INDEXER_START_BLOCK_SAFE_PROXIES"
+      value = each.value.indexer.start-block.safe-proxies
+    },
+    {
+      name  = "INDEXER_START_BLOCK_SAFE_MEMBERSHIP"
+      value = each.value.indexer.start-block.safe-membership
+    },
+    {
+      name  = "INDEXER_START_BLOCK_SAFE_TX_STATE"
+      value = each.value.indexer.start-block.safe-tx-state
+    },
+    {
+      name  = "INDEXER_START_BLOCK_SAFE_TX_PROPOSALS"
+      value = each.value.indexer.start-block.safe-tx-proposals
+    },
+    {
       name  = "START_ROUND_B3TR_SUSTAINABLE_ACTIONS"
       value = each.value.indexer.start-round.b3tr-sustainable-actions
     },
@@ -1065,6 +1081,14 @@ module "ecs-backend-service" {
     {
       name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_VET_BALANCE"
       value = each.value.indexer.sync-block-batch-size.vet-balance
+    },
+    {
+      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_SAFE_PROXIES"
+      value = each.value.indexer.sync-block-batch-size.safe-proxies
+    },
+    {
+      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_SAFE_TX_PROPOSALS"
+      value = each.value.indexer.sync-block-batch-size.safe-tx-proposals
     },
     {
       name  = "INDEXER_CHANNEL_BATCH_SIZE"
