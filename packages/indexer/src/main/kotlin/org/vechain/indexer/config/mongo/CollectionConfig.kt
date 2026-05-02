@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
+import org.springframework.data.mongodb.core.index.IndexInfo
 import org.springframework.data.mongodb.core.index.PartialIndexFilter
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
@@ -133,16 +134,31 @@ abstract class CollectionConfig(
     }
 
     /**
-     * Removes indexes from MongoDB that are not tracked by [ensureIndexes] calls during
-     * [initCollection]. Must run after [initCollection] (so all expected names are registered) and
-     * before [createPendingIndexes] (so renamed indexes don't collide on `IndexOptionsConflict`).
+     * Drops indexes from MongoDB that are not tracked by [ensureIndexes] calls during
+     * [initCollection], plus any tracked index whose stored options no longer match the pending
+     * spec (e.g. partial filter or unique flag changed). Must run after [initCollection] (so all
+     * expected names are registered) and before [createPendingIndexes] (so legacy and drifted
+     * indexes don't collide on `IndexOptionsConflict` / `IndexKeySpecsConflict`).
      */
     fun removeStaleIndexes() {
+        val pendingByCollection =
+            pendingIndexes.groupBy { mongoTemplate.getCollectionName(it.entityClass) }
+
         ensuredIndexNamesByCollection.forEach { (collectionName, expectedNames) ->
-            val existingIndexes = mongoTemplate.indexOps(collectionName).indexInfo
-            existingIndexes.forEach { indexInfo ->
-                val name = indexInfo.name
-                if (name != "_id_" && name !in expectedNames) {
+            val pendingByName =
+                pendingByCollection[collectionName].orEmpty().associateBy { it.name }
+            mongoTemplate.indexOps(collectionName).indexInfo.forEach { info ->
+                val name = info.name
+                if (name == "_id_") return@forEach
+
+                val drop =
+                    if (name !in expectedNames) {
+                        true
+                    } else {
+                        pendingByName[name]?.let { !specMatches(it, info) } ?: false
+                    }
+
+                if (drop) {
                     try {
                         logger.info("Removing stale index: {} from {}", name, collectionName)
                         mongoTemplate.indexOps(collectionName).dropIndex(name)
@@ -157,6 +173,17 @@ abstract class CollectionConfig(
                 }
             }
         }
+    }
+
+    private fun specMatches(pending: PendingIndex, existing: IndexInfo): Boolean {
+        val expectedFilter = pending.partialFilter
+        val actualFilter = existing.partialFilterExpression?.let { Document.parse(it) }
+        if (expectedFilter != actualFilter) return false
+
+        val expectedUnique = pending.index.indexOptions.getBoolean("unique", false)
+        if (expectedUnique != existing.isUnique) return false
+
+        return true
     }
 
     /** Creates the indexes registered via [ensureIndexes]. */
