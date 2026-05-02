@@ -67,6 +67,7 @@ internal class AppDailyActionSummaryServiceTest {
         MockKAnnotations.init(this)
         every { inlineVersioningProperties.blockWindow } returns 10000L
         every { inlineVersioningProperties.maxVersions } returns 100
+        every { inlineVersioningProperties.minVersions } returns 20
         every { mongoTemplate.getCollectionName(any<Class<*>>()) } returns "test_collection"
         every { mongoTemplate.getCollection(any()) } returns mongoCollection
         every { mongoTemplate.converter } returns converter

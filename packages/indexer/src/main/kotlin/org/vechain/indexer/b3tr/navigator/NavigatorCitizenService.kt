@@ -72,6 +72,7 @@ open class NavigatorCitizenService(
             mongoTemplate,
             inlineVersioningProperties.blockWindow,
             inlineVersioningProperties.maxVersions,
+            inlineVersioningProperties.minVersions,
         )
     }
 

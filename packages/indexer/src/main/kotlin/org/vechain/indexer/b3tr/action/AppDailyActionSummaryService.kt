@@ -99,6 +99,7 @@ open class AppDailyActionSummaryService(
             mongoTemplate,
             inlineVersioningProperties.blockWindow,
             inlineVersioningProperties.maxVersions,
+            inlineVersioningProperties.minVersions,
         )
     }
 

@@ -43,6 +43,7 @@ internal class NftServiceTest {
         coEvery { blacklistClient.isBlacklisted(any(), any()) } returns false
         every { inlineVersioningProperties.blockWindow } returns 10000L
         every { inlineVersioningProperties.maxVersions } returns 100
+        every { inlineVersioningProperties.minVersions } returns 20
         every { mongoTemplate.getCollectionName(IndexedNft::class.java) } returns "indexed_nfts"
         every { mongoTemplate.getCollection("indexed_nfts") } returns mongoCollection
         every { mongoTemplate.converter } returns converter

@@ -63,6 +63,7 @@ internal class ProposalResultServiceTest {
         MockKAnnotations.init(this)
         every { inlineVersioningProperties.blockWindow } returns 10000L
         every { inlineVersioningProperties.maxVersions } returns 100
+        every { inlineVersioningProperties.minVersions } returns 20
         service =
             TestableProposalResultService(
                 repository,

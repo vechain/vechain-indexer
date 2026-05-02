@@ -30,6 +30,7 @@ internal class NavigatorFeeServiceTest {
         MockKAnnotations.init(this)
         every { inlineVersioningProperties.blockWindow } returns 10000L
         every { inlineVersioningProperties.maxVersions } returns 100
+        every { inlineVersioningProperties.minVersions } returns 20
         every { repository.findById(any()) } returns java.util.Optional.empty()
         service = NavigatorFeeService(repository, mongoTemplate, inlineVersioningProperties)
     }

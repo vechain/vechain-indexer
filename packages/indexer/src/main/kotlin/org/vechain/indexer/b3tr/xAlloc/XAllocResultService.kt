@@ -284,6 +284,7 @@ open class XAllocResultService(
             mongoTemplate,
             inlineVersioningProperties.blockWindow,
             inlineVersioningProperties.maxVersions,
+            inlineVersioningProperties.minVersions,
         )
     }
 

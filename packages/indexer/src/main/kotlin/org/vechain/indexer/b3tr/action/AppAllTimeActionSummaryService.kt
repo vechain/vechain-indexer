@@ -91,6 +91,7 @@ open class AppAllTimeActionSummaryService(
             mongoTemplate,
             inlineVersioningProperties.blockWindow,
             inlineVersioningProperties.maxVersions,
+            inlineVersioningProperties.minVersions,
         )
     }
 

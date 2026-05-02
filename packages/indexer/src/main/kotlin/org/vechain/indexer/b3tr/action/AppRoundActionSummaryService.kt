@@ -130,6 +130,7 @@ open class AppRoundActionSummaryService(
             mongoTemplate,
             inlineVersioningProperties.blockWindow,
             inlineVersioningProperties.maxVersions,
+            inlineVersioningProperties.minVersions,
         )
     }
 

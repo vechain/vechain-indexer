@@ -31,6 +31,7 @@ object InlineVersionService {
         mongoTemplate: MongoTemplate,
         blockWindow: Long,
         maxVersions: Int,
+        minVersions: Int,
         initialVersion: Int,
         collectionName: String,
     ) {
@@ -91,8 +92,8 @@ object InlineVersionService {
                         .takeIf { it.isNotEmpty() }
                         ?.let { Document("\$unset", it.toList()) }
 
-                // Stage 3: Trim _previousVersions by block window with guaranteed minimum of 1,
-                // then apply hard cap
+                // Stage 3: Trim _previousVersions by block window with a floor of minVersions
+                // entries (rollback safety horizon), then apply the maxVersions hard cap.
                 val currentBlock = doc.blockNumber
                 val filterExpr =
                     Document(
@@ -107,15 +108,28 @@ object InlineVersionService {
                             ),
                     )
 
-                // If filter result is empty, keep at least the first (most recent) entry
+                // If the block-window filter retains fewer than minVersions entries, fall back
+                // to the most recent minVersions slice instead. This preserves at least
+                // minVersions entries when that many prior versions exist; otherwise it keeps
+                // all available prior versions, including for infrequently updated documents
+                // whose older history has aged out of the window.
                 val trimmedWithMinimum =
                     Document(
                         "\$cond",
-                        Document("if", Document("\$gt", listOf(Document("\$size", filterExpr), 0)))
+                        Document(
+                                "if",
+                                Document(
+                                    "\$gte",
+                                    listOf(Document("\$size", filterExpr), minVersions),
+                                ),
+                            )
                             .append("then", filterExpr)
                             .append(
                                 "else",
-                                Document("\$slice", listOf("\$$PREVIOUS_VERSIONS_FIELD", 1)),
+                                Document(
+                                    "\$slice",
+                                    listOf("\$$PREVIOUS_VERSIONS_FIELD", minVersions),
+                                ),
                             ),
                     )
 

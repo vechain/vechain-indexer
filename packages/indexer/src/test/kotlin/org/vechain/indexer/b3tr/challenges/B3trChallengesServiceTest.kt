@@ -32,6 +32,7 @@ class B3trChallengesServiceTest {
         MockKAnnotations.init(this)
         every { inlineVersioningProperties.blockWindow } returns 10_000L
         every { inlineVersioningProperties.maxVersions } returns 100
+        every { inlineVersioningProperties.minVersions } returns 20
         every { repository.findById(any()) } returns java.util.Optional.empty()
         stubCurrentRound()
         service =

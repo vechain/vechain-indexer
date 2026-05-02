@@ -37,6 +37,7 @@ class B3trUserChallengesServiceTest {
         MockKAnnotations.init(this)
         every { inlineVersioningProperties.blockWindow } returns 10_000L
         every { inlineVersioningProperties.maxVersions } returns 100
+        every { inlineVersioningProperties.minVersions } returns 20
         every { repository.findAllByChallengeId(any()) } returns emptyList()
         every { repository.findByWalletAndChallengeId(any(), any()) } returns null
         every { repository.findById(any<String>()) } returns java.util.Optional.empty()

@@ -19,6 +19,7 @@ inline fun <reified T : VersionedDocument> saveVersionedDocuments(
     mongoTemplate: MongoTemplate,
     blockWindow: Long,
     maxVersions: Int,
+    minVersions: Int,
 ) {
     if (updated.isEmpty()) return
     val collectionName = mongoTemplate.getCollectionName(T::class.java)
@@ -28,6 +29,7 @@ inline fun <reified T : VersionedDocument> saveVersionedDocuments(
         mongoTemplate,
         blockWindow,
         maxVersions,
+        minVersions,
         initialVersion = VersionedDocumentInitialVersions.forCollection(collectionName),
         collectionName = collectionName,
     )
