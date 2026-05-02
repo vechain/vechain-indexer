@@ -59,13 +59,66 @@ jobs:
         with:
           aws-region: eu-west-1
           role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+      - name: Set environment
+        id: set-environment
+        env:
+          INPUT_NETWORK: ${{ inputs.network }}
+          INPUT_ENV: ${{ inputs.environment }}
+          MAINNET_LIVE: ${{ needs.identify-live-color.outputs.mainnet_live_color }}
+          MAINNET_DEAD: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}
+          TESTNET_LIVE: ${{ needs.identify-live-color.outputs.testnet_live_color }}
+          TESTNET_DEAD: ${{ needs.identify-live-color.outputs.testnet_dead_color }}
+        run: |
+          if [[ "$INPUT_NETWORK" == 'mainnet' || "$INPUT_NETWORK" == 'both' ]]; then
+            if [[ "$INPUT_ENV" == 'live' ]]; then
+              echo "DEPLOYMENT_COLOR=$MAINNET_LIVE" >> $GITHUB_OUTPUT
+            elif [[ "$INPUT_ENV" == 'dead' ]]; then
+              echo "DEPLOYMENT_COLOR=$MAINNET_DEAD" >> $GITHUB_OUTPUT
+            fi
+          elif [[ "$INPUT_NETWORK" == 'testnet' ]]; then
+            if [[ "$INPUT_ENV" == 'live' ]]; then
+              echo "DEPLOYMENT_COLOR=$TESTNET_LIVE" >> $GITHUB_OUTPUT
+            elif [[ "$INPUT_ENV" == 'dead' ]]; then
+              echo "DEPLOYMENT_COLOR=$TESTNET_DEAD" >> $GITHUB_OUTPUT
+            fi
+          fi
       - name: Get current version
         id: get-current-version
+        # Read the currently-deployed image version from the *target* color, not the live
+        # color. plan-or-apply-terraform.yml rewrites both main:image_version and
+        # test:image_version on every apply, so when only one network is being deployed,
+        # the un-deployed network's CURRENT_* must reflect what is actually running on
+        # the target color. Reading from the live color caused inadvertent downgrades on
+        # the dead environment when colors diverged across networks (e.g. live mainnet on
+        # blue, live testnet on green).
+        # Falls back to the live color when the target color has no task definition yet
+        # (fresh dead environment); INPUT_NETWORK=both will overwrite both versions
+        # explicitly anyway.
+        env:
+          TARGET_COLOR: ${{ steps.set-environment.outputs.DEPLOYMENT_COLOR }}
+          MAINNET_LIVE: ${{ needs.identify-live-color.outputs.mainnet_live_color }}
+          TESTNET_LIVE: ${{ needs.identify-live-color.outputs.testnet_live_color }}
         run: |
-          MAINNET_IMAGE_URI=$(aws ecs describe-task-definition --task-definition ${{ needs.identify-live-color.outputs.mainnet_live_color }}-veworld-main-api --query "taskDefinition.containerDefinitions[0].image" --output text)
-          MAINNET_IMAGE_VERSION=$(echo $MAINNET_IMAGE_URI | cut -d: -f2)
-          TESTNET_IMAGE_URI=$(aws ecs describe-task-definition --task-definition ${{ needs.identify-live-color.outputs.testnet_live_color }}-veworld-test-api --query "taskDefinition.containerDefinitions[0].image" --output text)
-          TESTNET_IMAGE_VERSION=$(echo $TESTNET_IMAGE_URI | cut -d: -f2)
+          read_image_tag() {
+            local task_def="$1"
+            aws ecs describe-task-definition \
+              --task-definition "$task_def" \
+              --query "taskDefinition.containerDefinitions[0].image" \
+              --output text 2>/dev/null \
+            | awk -F: 'NF>1 {print $NF}'
+          }
+
+          MAINNET_IMAGE_VERSION=$(read_image_tag "${TARGET_COLOR}-veworld-main-api")
+          if [ -z "$MAINNET_IMAGE_VERSION" ]; then
+            echo "No task definition for ${TARGET_COLOR}-veworld-main-api; falling back to ${MAINNET_LIVE}"
+            MAINNET_IMAGE_VERSION=$(read_image_tag "${MAINNET_LIVE}-veworld-main-api")
+          fi
+
+          TESTNET_IMAGE_VERSION=$(read_image_tag "${TARGET_COLOR}-veworld-test-api")
+          if [ -z "$TESTNET_IMAGE_VERSION" ]; then
+            echo "No task definition for ${TARGET_COLOR}-veworld-test-api; falling back to ${TESTNET_LIVE}"
+            TESTNET_IMAGE_VERSION=$(read_image_tag "${TESTNET_LIVE}-veworld-test-api")
+          fi
 
           echo "CURRENT_MAINNET_VERSION=${MAINNET_IMAGE_VERSION}" >> $GITHUB_OUTPUT
           echo "CURRENT_TESTNET_VERSION=${TESTNET_IMAGE_VERSION}" >> $GITHUB_OUTPUT
@@ -101,29 +154,6 @@ jobs:
             echo "TESTNET_VERSION=$SET_VERSION" >> $GITHUB_OUTPUT
           else
             echo "TESTNET_VERSION=$CURRENT_TESTNET" >> $GITHUB_OUTPUT
-          fi
-      - name: Set environment
-        id: set-environment
-        env:
-          INPUT_NETWORK: ${{ inputs.network }}
-          INPUT_ENV: ${{ inputs.environment }}
-          MAINNET_LIVE: ${{ needs.identify-live-color.outputs.mainnet_live_color }}
-          MAINNET_DEAD: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}
-          TESTNET_LIVE: ${{ needs.identify-live-color.outputs.testnet_live_color }}
-          TESTNET_DEAD: ${{ needs.identify-live-color.outputs.testnet_dead_color }}
-        run: |
-          if [[ "$INPUT_NETWORK" == 'mainnet' || "$INPUT_NETWORK" == 'both' ]]; then
-            if [[ "$INPUT_ENV" == 'live' ]]; then
-              echo "DEPLOYMENT_COLOR=$MAINNET_LIVE" >> $GITHUB_OUTPUT
-            elif [[ "$INPUT_ENV" == 'dead' ]]; then
-              echo "DEPLOYMENT_COLOR=$MAINNET_DEAD" >> $GITHUB_OUTPUT
-            fi
-          elif [[ "$INPUT_NETWORK" == 'testnet' ]]; then
-            if [[ "$INPUT_ENV" == 'live' ]]; then
-              echo "DEPLOYMENT_COLOR=$TESTNET_LIVE" >> $GITHUB_OUTPUT
-            elif [[ "$INPUT_ENV" == 'dead' ]]; then
-              echo "DEPLOYMENT_COLOR=$TESTNET_DEAD" >> $GITHUB_OUTPUT
-            fi
           fi
 
   promote-to-ecr:
