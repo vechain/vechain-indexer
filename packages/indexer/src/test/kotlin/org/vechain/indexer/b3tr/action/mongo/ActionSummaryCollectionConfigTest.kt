@@ -35,7 +35,10 @@ class ActionSummaryCollectionConfigTest {
                 indexerVersionService = indexerVersionService,
                 version = 1,
             )
-            .initCollection()
+            .apply {
+                initCollection()
+                createPendingIndexes()
+            }
 
         assertTrue(
             capturedIndexes.any {
@@ -56,7 +59,10 @@ class ActionSummaryCollectionConfigTest {
                 indexerVersionService = indexerVersionService,
                 version = 1,
             )
-            .initCollection()
+            .apply {
+                initCollection()
+                createPendingIndexes()
+            }
 
         assertTrue(
             capturedIndexes.any {
@@ -78,7 +84,10 @@ class ActionSummaryCollectionConfigTest {
                 indexerVersionService = indexerVersionService,
                 version = 1,
             )
-            .initCollection()
+            .apply {
+                initCollection()
+                createPendingIndexes()
+            }
 
         assertTrue(
             capturedIndexes.any {
@@ -100,7 +109,10 @@ class ActionSummaryCollectionConfigTest {
                 indexerVersionService = indexerVersionService,
                 version = 1,
             )
-            .initCollection()
+            .apply {
+                initCollection()
+                createPendingIndexes()
+            }
 
         assertTrue(
             capturedIndexes.any {
@@ -121,7 +133,10 @@ class ActionSummaryCollectionConfigTest {
                 indexerVersionService = indexerVersionService,
                 version = 1,
             )
-            .initCollection()
+            .apply {
+                initCollection()
+                createPendingIndexes()
+            }
 
         assertTrue(
             capturedIndexes.any {

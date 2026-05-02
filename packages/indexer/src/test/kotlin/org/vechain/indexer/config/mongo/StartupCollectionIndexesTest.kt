@@ -1,16 +1,22 @@
 package org.vechain.indexer.config.mongo
 
+import io.mockk.Runs
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import io.mockk.just
 import io.mockk.verify
+import io.mockk.verifyOrder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.IndexDefinition
+import org.springframework.data.mongodb.core.index.IndexField
+import org.springframework.data.mongodb.core.index.IndexInfo
 import org.springframework.data.mongodb.core.index.IndexOperations
 import org.springframework.data.mongodb.core.query.Query
 import org.vechain.indexer.accounts.AccountOverview
@@ -56,7 +62,10 @@ class StartupCollectionIndexesTest {
                 indexerVersionService = indexerVersionService,
                 genesisVetBalanceLoader = genesisVetBalanceLoader,
             )
-            .initCollection()
+            .apply {
+                initCollection()
+                createPendingIndexes()
+            }
 
         assertTrue(
             capturedIndexes.any {
@@ -88,7 +97,10 @@ class StartupCollectionIndexesTest {
                 indexerVersionService = indexerVersionService,
                 genesisVetBalanceLoader = genesisVetBalanceLoader,
             )
-            .initCollection()
+            .apply {
+                initCollection()
+                createPendingIndexes()
+            }
 
         assertTrue(
             capturedIndexes.any {
@@ -117,7 +129,10 @@ class StartupCollectionIndexesTest {
                 appCoroutineScope = CoroutineScope(Dispatchers.Unconfined),
                 indexerVersionService = indexerVersionService,
             )
-            .initCollection()
+            .apply {
+                initCollection()
+                createPendingIndexes()
+            }
 
         assertTrue(
             capturedIndexes.any {
@@ -142,12 +157,61 @@ class StartupCollectionIndexesTest {
                 appCoroutineScope = CoroutineScope(Dispatchers.Unconfined),
                 indexerVersionService = indexerVersionService,
             )
-            .initCollection()
+            .apply {
+                initCollection()
+                createPendingIndexes()
+            }
 
         assertTrue(
             capturedIndexes.any {
                 it.indexKeys["blockNumber"] == -1 && it.indexOptions["name"] == "blockNumber_-1"
             }
+        )
+    }
+
+    @Test
+    fun `removeStaleIndexes drops legacy renamed index before createPendingIndexes runs`() {
+        // Simulates the upgrade scenario from PR #1323: the collection still has a legacy index
+        // (different name, same key spec). MongoDB would otherwise reject createIndex with
+        // IndexOptionsConflict (error 85). Stale removal must happen before create.
+        val createdIndexes = mutableListOf<IndexDefinition>()
+        val legacyIndex =
+            IndexInfo(
+                listOf(IndexField.create("blockNumber", Sort.Direction.DESC)),
+                "blockNumber_-1_legacy",
+                false,
+                false,
+                "",
+            )
+        every {
+            indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
+        } returns false
+        every { mongoTemplate.collectionExists(Contract::class.java) } returns true
+        every { mongoTemplate.getCollectionName(Contract::class.java) } returns "contracts"
+        every { mongoTemplate.indexOps(Contract::class.java) } returns indexOperations
+        every { mongoTemplate.indexOps("contracts") } returns indexOperations
+        every { indexOperations.indexInfo } returns listOf(legacyIndex)
+        every { indexOperations.dropIndex("blockNumber_-1_legacy") } just Runs
+        every { indexOperations.createIndex(capture(createdIndexes)) } returns "created"
+
+        ContractCollectionConfig(
+                mongoTemplate = mongoTemplate,
+                appCoroutineScope = CoroutineScope(Dispatchers.Unconfined),
+                indexerVersionService = indexerVersionService,
+            )
+            .apply {
+                initCollection()
+                removeStaleIndexes()
+                createPendingIndexes()
+            }
+
+        verifyOrder {
+            indexOperations.dropIndex("blockNumber_-1_legacy")
+            indexOperations.createIndex(any())
+        }
+        assertTrue(
+            createdIndexes.any { it.indexOptions["name"] == "blockNumber_-1" },
+            "expected new blockNumber_-1 index to be created after legacy is dropped",
         )
     }
 }
