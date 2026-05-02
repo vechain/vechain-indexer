@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
+import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
@@ -33,19 +33,20 @@ open class StargateTokenCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "manager_1" to Index().on(StargateToken::manager.name, Sort.Direction.ASC),
-                "owner_1_manager_1" to
-                    Index()
-                        .on(StargateToken::owner.name, Sort.Direction.ASC)
-                        .on(StargateToken::manager.name, Sort.Direction.ASC),
-                "delegationNextPeriod_1_delegationStatus_1" to
-                    Index()
-                        .on(StargateToken::delegationNextPeriod.name, Sort.Direction.ASC)
-                        .on(StargateToken::delegationStatus.name, Sort.Direction.ASC),
-                "validatorId_1_blockNumber_1" to
-                    Index()
-                        .on(StargateToken::validatorId.name, Sort.Direction.ASC)
-                        .on(StargateToken::blockNumber.name, Sort.Direction.ASC),
+                buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),
+                buildIndex(StargateToken::manager.name to Sort.Direction.ASC),
+                buildIndex(
+                    StargateToken::owner.name to Sort.Direction.ASC,
+                    StargateToken::manager.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    StargateToken::delegationNextPeriod.name to Sort.Direction.ASC,
+                    StargateToken::delegationStatus.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    StargateToken::validatorId.name to Sort.Direction.ASC,
+                    StargateToken::blockNumber.name to Sort.Direction.ASC,
+                ),
             )
         )
     }

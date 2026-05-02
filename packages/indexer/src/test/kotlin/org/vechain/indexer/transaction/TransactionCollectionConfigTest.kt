@@ -32,7 +32,7 @@ class TransactionCollectionConfigTest {
         every { mongoTemplate.getCollectionName(IndexedTransaction::class.java) } returns
             "transactions"
         every { mongoTemplate.indexOps(IndexedTransaction::class.java) } returns indexOperations
-        every { indexOperations.ensureIndex(capture(capturedIndexes)) } returns "created"
+        every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
         TransactionCollectionConfig(
                 mongoTemplate = mongoTemplate,
@@ -43,7 +43,7 @@ class TransactionCollectionConfigTest {
 
         assertTrue(
             capturedIndexes.any {
-                it.indexOptions["name"] == "tx_blockNumber_-1_transactionIndex_1" &&
+                it.indexOptions["name"] == "blockNumber_-1_transactionIndex_1" &&
                     it.indexKeys["blockNumber"] == -1 &&
                     it.indexKeys["transactionIndex"] == 1
             }

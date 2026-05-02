@@ -24,8 +24,6 @@ abstract class CollectionConfig(
          */
         val INDEXED_DOCUMENT_PARTIAL_FILTER: Document =
             Document("blockNumber", Document("\$exists", true))
-
-        const val BLOCK_NUMBER_INDEX_NAME = "blockNumber_-1"
     }
 
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -99,7 +97,7 @@ abstract class CollectionConfig(
             if (partialFilter != null) {
                 indexDef.partial(PartialIndexFilter.of(partialFilter))
             }
-            mongoTemplate.indexOps(entityClass).ensureIndex(indexDef)
+            mongoTemplate.indexOps(entityClass).createIndex(indexDef)
             logger.info("Creation Success: $indexName for ${entityClass.simpleName}.")
         } catch (e: Exception) {
             logger.error("Creation Failed:  $indexName for ${entityClass.simpleName}", e)
@@ -116,16 +114,6 @@ abstract class CollectionConfig(
         partialFilter: Document? = INDEXED_DOCUMENT_PARTIAL_FILTER,
     ) {
         val start = TimeSource.Monotonic.markNow()
-
-        val blockNumberCovered =
-            indexes.any { (_, index) ->
-                index.indexKeys.entries.firstOrNull()?.let {
-                    it.key == "blockNumber" && it.value == -1
-                } ?: false
-            }
-        if (!blockNumberCovered) {
-            ensureBlockNumberIndex(entityClass)
-        }
 
         if (indexes.isEmpty()) {
             logger.info("No additional indexes configured for ${entityClass.simpleName}.")
@@ -147,18 +135,25 @@ abstract class CollectionConfig(
     }
 
     /**
-     * Ensures a blockNumber_-1 index exists for all IndexedDocument collections. Always uses
-     * [INDEXED_DOCUMENT_PARTIAL_FILTER] so the index is consistent regardless of which partial
-     * filter the caller passes to [ensureIndexes].
+     * Builds a `(name, Index)` pair where the name is derived from the field/direction sequence,
+     * e.g. `("blockNumber" to DESC, "txId" to ASC)` -> `"blockNumber_-1_txId_1"`. Use this in
+     * [ensureIndexes] to keep index names consistent with their key shape.
      */
-    private fun ensureBlockNumberIndex(entityClass: Class<*>) {
-        if (!IndexedDocument::class.java.isAssignableFrom(entityClass)) return
-        ensureIndex(
-            BLOCK_NUMBER_INDEX_NAME,
-            Index().on("blockNumber", Sort.Direction.DESC),
-            entityClass,
-            INDEXED_DOCUMENT_PARTIAL_FILTER,
-        )
+    protected fun buildIndex(vararg fields: Pair<String, Sort.Direction>): Pair<String, Index> {
+        require(fields.isNotEmpty()) { "Index must have at least one field" }
+        val name =
+            fields.joinToString("_") { (field, dir) ->
+                "${field}_${if (dir == Sort.Direction.ASC) 1 else -1}"
+            }
+        val index = fields.fold(Index()) { acc, (field, dir) -> acc.on(field, dir) }
+        return name to index
+    }
+
+    protected fun buildUniqueIndex(
+        vararg fields: Pair<String, Sort.Direction>
+    ): Pair<String, Index> {
+        val (name, index) = buildIndex(*fields)
+        return name to index.unique()
     }
 
     /**

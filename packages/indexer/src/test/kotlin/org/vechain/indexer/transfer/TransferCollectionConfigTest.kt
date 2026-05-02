@@ -32,7 +32,7 @@ class TransferCollectionConfigTest {
         every { mongoTemplate.getCollectionName(IndexedTransferEvent::class.java) } returns
             "transfer_events"
         every { mongoTemplate.indexOps(IndexedTransferEvent::class.java) } returns indexOperations
-        every { indexOperations.ensureIndex(capture(capturedIndexes)) } returns "created"
+        every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
         TransferCollectionConfig(
                 mongoTemplate = mongoTemplate,
@@ -43,7 +43,7 @@ class TransferCollectionConfigTest {
 
         assertTrue(
             capturedIndexes.any {
-                it.indexOptions["name"] == "transfer_eventType_1_blockNumber_-1_transferIndex_1" &&
+                it.indexOptions["name"] == "eventType_1_blockNumber_-1_transferIndex_1" &&
                     it.indexKeys["eventType"] == 1 &&
                     it.indexKeys["blockNumber"] == -1 &&
                     it.indexKeys["transferIndex"] == 1

@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
+import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
@@ -34,12 +34,13 @@ open class GmNftCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "attachedNodeId_1" to Index().on(GmNft::attachedNodeId.name, Sort.Direction.ASC),
-                "blockNumber_1" to Index().on("blockNumber", Sort.Direction.ASC),
-                "level_1_owner_1" to
-                    Index()
-                        .on(GmNft::level.name, Sort.Direction.ASC)
-                        .on(GmNft::owner.name, Sort.Direction.ASC),
+                buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),
+                buildIndex(GmNft::attachedNodeId.name to Sort.Direction.ASC),
+                buildIndex("blockNumber" to Sort.Direction.ASC),
+                buildIndex(
+                    GmNft::level.name to Sort.Direction.ASC,
+                    GmNft::owner.name to Sort.Direction.ASC,
+                ),
             )
         )
     }

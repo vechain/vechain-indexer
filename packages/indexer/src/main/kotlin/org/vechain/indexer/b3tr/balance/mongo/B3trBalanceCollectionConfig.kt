@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
+import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.b3tr.balance.B3trBalance
 import org.vechain.indexer.config.mongo.CollectionConfig
@@ -34,18 +34,19 @@ open class B3trBalanceCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "totalBalance_-1_id_1" to
-                    Index()
-                        .on(B3trBalance::totalBalance.name, Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.ASC),
-                "vot3Balance_-1_id_1" to
-                    Index()
-                        .on(B3trBalance::vot3Balance.name, Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.ASC),
-                "b3trBalance_-1_id_1" to
-                    Index()
-                        .on(B3trBalance::b3trBalance.name, Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.ASC),
+                buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),
+                buildIndex(
+                    B3trBalance::totalBalance.name to Sort.Direction.DESC,
+                    "_id" to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    B3trBalance::vot3Balance.name to Sort.Direction.DESC,
+                    "_id" to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    B3trBalance::b3trBalance.name to Sort.Direction.DESC,
+                    "_id" to Sort.Direction.ASC,
+                ),
             )
         )
     }

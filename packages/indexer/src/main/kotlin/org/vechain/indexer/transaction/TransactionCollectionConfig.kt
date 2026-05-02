@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
@@ -33,32 +32,24 @@ open class TransactionCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                Pair(
-                    "tx_blockNumber_-1_transactionIndex_1",
-                    Index()
-                        .on(IndexedTransaction::blockNumber.name, Sort.Direction.DESC)
-                        .on(IndexedTransaction::transactionIndex.name, Sort.Direction.ASC),
+                buildIndex(
+                    IndexedTransaction::blockNumber.name to Sort.Direction.DESC,
+                    IndexedTransaction::transactionIndex.name to Sort.Direction.ASC,
                 ),
-                Pair(
-                    "tx_origin_1_blockNumber_-1__id_-1",
-                    Index()
-                        .on(IndexedTransaction::origin.name, Sort.Direction.ASC)
-                        .on(IndexedTransaction::blockNumber.name, Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.DESC),
+                buildIndex(
+                    IndexedTransaction::origin.name to Sort.Direction.ASC,
+                    IndexedTransaction::blockNumber.name to Sort.Direction.DESC,
+                    "_id" to Sort.Direction.DESC,
                 ),
-                Pair(
-                    "tx_gasPayer_1_blockNumber_-1__id_-1",
-                    Index()
-                        .on(IndexedTransaction::gasPayer.name, Sort.Direction.ASC)
-                        .on(IndexedTransaction::blockNumber.name, Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.DESC),
+                buildIndex(
+                    IndexedTransaction::gasPayer.name to Sort.Direction.ASC,
+                    IndexedTransaction::blockNumber.name to Sort.Direction.DESC,
+                    "_id" to Sort.Direction.DESC,
                 ),
-                Pair(
-                    "tx_clauses.to_1_blockNumber_-1__id_-1",
-                    Index()
-                        .on("clauses.to", Sort.Direction.ASC)
-                        .on(IndexedTransaction::blockNumber.name, Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.DESC),
+                buildIndex(
+                    "clauses.to" to Sort.Direction.ASC,
+                    IndexedTransaction::blockNumber.name to Sort.Direction.DESC,
+                    "_id" to Sort.Direction.DESC,
                 ),
             )
         )

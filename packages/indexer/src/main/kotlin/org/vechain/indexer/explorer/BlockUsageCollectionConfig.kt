@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
+import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
@@ -33,33 +33,33 @@ open class BlockUsageCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
+                buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),
                 // Index for findAllInTimestampRange - range queries on blockTimestamp
-                "blockTimestamp_1" to
-                    Index().on(BlockUsage::blockTimestamp.name, Sort.Direction.ASC),
+                buildIndex(BlockUsage::blockTimestamp.name to Sort.Direction.ASC),
                 // Index for findHourlyInTimestampRange - filter by isHourly, then range by
                 // blockTimestamp
-                "isHourly_1_blockTimestamp_1" to
-                    Index()
-                        .on(BlockUsage::isHourly.name, Sort.Direction.ASC)
-                        .on(BlockUsage::blockTimestamp.name, Sort.Direction.ASC),
+                buildIndex(
+                    BlockUsage::isHourly.name to Sort.Direction.ASC,
+                    BlockUsage::blockTimestamp.name to Sort.Direction.ASC,
+                ),
                 // Index for findDailyInTimestampRange - filter by isDaily, then range by
                 // blockTimestamp
-                "isDaily_1_blockTimestamp_1" to
-                    Index()
-                        .on(BlockUsage::isDaily.name, Sort.Direction.ASC)
-                        .on(BlockUsage::blockTimestamp.name, Sort.Direction.ASC),
+                buildIndex(
+                    BlockUsage::isDaily.name to Sort.Direction.ASC,
+                    BlockUsage::blockTimestamp.name to Sort.Direction.ASC,
+                ),
                 // Index for findWeeklyInTimestampRange - filter by isWeekly, then range by
                 // blockTimestamp
-                "isWeekly_1_blockTimestamp_1" to
-                    Index()
-                        .on(BlockUsage::isWeekly.name, Sort.Direction.ASC)
-                        .on(BlockUsage::blockTimestamp.name, Sort.Direction.ASC),
+                buildIndex(
+                    BlockUsage::isWeekly.name to Sort.Direction.ASC,
+                    BlockUsage::blockTimestamp.name to Sort.Direction.ASC,
+                ),
                 // Index for findMonthlyInTimestampRange - filter by isMonthly, then range by
                 // blockTimestamp
-                "isMonthly_1_blockTimestamp_1" to
-                    Index()
-                        .on(BlockUsage::isMonthly.name, Sort.Direction.ASC)
-                        .on(BlockUsage::blockTimestamp.name, Sort.Direction.ASC),
+                buildIndex(
+                    BlockUsage::isMonthly.name to Sort.Direction.ASC,
+                    BlockUsage::blockTimestamp.name to Sort.Direction.ASC,
+                ),
             )
         )
     }

@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
@@ -34,12 +33,12 @@ open class NftOwnerBalanceCollectionConfig(
         ensureCollection()
         ensureIndexes(
             listOf(
-                "blockNumber_1" to
-                    Index().on(IndexedDocument::blockNumber.name, Sort.Direction.ASC),
-                "owner_1_blockNumber_-1" to
-                    Index()
-                        .on(NftOwnerBalance::owner.name, Sort.Direction.ASC)
-                        .on(IndexedDocument::blockNumber.name, Sort.Direction.DESC),
+                buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),
+                buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.ASC),
+                buildIndex(
+                    NftOwnerBalance::owner.name to Sort.Direction.ASC,
+                    IndexedDocument::blockNumber.name to Sort.Direction.DESC,
+                ),
             )
         )
     }

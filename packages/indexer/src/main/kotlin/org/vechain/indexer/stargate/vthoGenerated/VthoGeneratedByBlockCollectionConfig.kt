@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
@@ -35,19 +34,17 @@ open class VthoGeneratedByBlockCollectionConfig(
         // Ensure indexes
         ensureIndexes(
             listOf(
-                "blockNumber_-1_txId_-1__id_-1" to
-                    Index()
-                        .on("blockNumber", Sort.Direction.DESC)
-                        .on("txId", Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.DESC),
-                "blockNumber_1_unique" to
-                    Index().on(IndexedDocument::blockNumber.name, Sort.Direction.ASC).unique(),
-                "blockTimestamp_1" to
-                    Index().on(IndexedDocument::blockTimestamp.name, Sort.Direction.ASC),
-                "timeFrames_1_blockTimestamp_1" to
-                    Index()
-                        .on(TimeFrameDocument::timeFrames.name, Sort.Direction.ASC)
-                        .on(IndexedDocument::blockTimestamp.name, Sort.Direction.ASC),
+                buildIndex(
+                    "blockNumber" to Sort.Direction.DESC,
+                    "txId" to Sort.Direction.DESC,
+                    "_id" to Sort.Direction.DESC,
+                ),
+                buildUniqueIndex(IndexedDocument::blockNumber.name to Sort.Direction.ASC),
+                buildIndex(IndexedDocument::blockTimestamp.name to Sort.Direction.ASC),
+                buildIndex(
+                    TimeFrameDocument::timeFrames.name to Sort.Direction.ASC,
+                    IndexedDocument::blockTimestamp.name to Sort.Direction.ASC,
+                ),
             )
         )
     }

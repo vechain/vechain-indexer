@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
@@ -33,11 +32,11 @@ open class NavigatorFeeCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "blockNumber_-1" to Index().on(NavigatorFee::blockNumber.name, Sort.Direction.DESC),
-                "fee_navigator_1_roundId_-1" to
-                    Index()
-                        .on(NavigatorFee::navigator.name, Sort.Direction.ASC)
-                        .on(NavigatorFee::roundId.name, Sort.Direction.DESC),
+                buildIndex(NavigatorFee::blockNumber.name to Sort.Direction.DESC),
+                buildIndex(
+                    NavigatorFee::navigator.name to Sort.Direction.ASC,
+                    NavigatorFee::roundId.name to Sort.Direction.DESC,
+                ),
             )
         )
     }

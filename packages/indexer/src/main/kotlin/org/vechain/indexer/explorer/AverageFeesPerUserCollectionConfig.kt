@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
+import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
@@ -37,14 +37,15 @@ open class AverageFeesPerUserCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "recordType_1_blockNumber_-1" to
-                    Index()
-                        .on(AverageFeesPerUser::recordType.name, Sort.Direction.ASC)
-                        .on(AverageFeesPerUser::blockNumber.name, Sort.Direction.DESC),
-                "recordType_1_date_1" to
-                    Index()
-                        .on(AverageFeesPerUser::recordType.name, Sort.Direction.ASC)
-                        .on(AverageFeesPerUser::date.name, Sort.Direction.ASC),
+                buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),
+                buildIndex(
+                    AverageFeesPerUser::recordType.name to Sort.Direction.ASC,
+                    AverageFeesPerUser::blockNumber.name to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    AverageFeesPerUser::recordType.name to Sort.Direction.ASC,
+                    AverageFeesPerUser::date.name to Sort.Direction.ASC,
+                ),
             )
         )
         // This endpoint only reads SUMMARY rows by UTC day range, so give it a dedicated partial
@@ -52,10 +53,10 @@ open class AverageFeesPerUserCollectionConfig(
         // usable.
         ensureIndexes(
             listOf(
-                "recordType_1_dayStartTimestamp_1_summary_only" to
-                    Index()
-                        .on(AverageFeesPerUser::recordType.name, Sort.Direction.ASC)
-                        .on(AverageFeesPerUser::dayStartTimestamp.name, Sort.Direction.ASC)
+                buildIndex(
+                    AverageFeesPerUser::recordType.name to Sort.Direction.ASC,
+                    AverageFeesPerUser::dayStartTimestamp.name to Sort.Direction.ASC,
+                )
             ),
             partialFilter = summaryRangeIndexFilter,
         )

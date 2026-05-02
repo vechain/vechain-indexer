@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
+import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
@@ -33,16 +33,14 @@ open class NavigatorOverviewSummaryCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "recordType_1_status_1_exitEffectiveDeadlineBlock_1" to
-                    Index()
-                        .on(NavigatorOverviewSummary::recordType.name, Sort.Direction.ASC)
-                        .on(NavigatorOverviewSummary::status.name, Sort.Direction.ASC)
-                        .on(
-                            NavigatorOverviewSummary::exitEffectiveDeadlineBlock.name,
-                            Sort.Direction.ASC,
-                        )
+                buildIndex(
+                    NavigatorOverviewSummary::recordType.name to Sort.Direction.ASC,
+                    NavigatorOverviewSummary::status.name to Sort.Direction.ASC,
+                    NavigatorOverviewSummary::exitEffectiveDeadlineBlock.name to Sort.Direction.ASC,
+                )
             ),
             partialFilter = null,
         )
+        ensureIndexes(listOf(buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC)))
     }
 }

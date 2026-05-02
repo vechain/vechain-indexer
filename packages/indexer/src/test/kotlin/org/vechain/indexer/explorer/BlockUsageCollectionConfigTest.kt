@@ -31,7 +31,7 @@ class BlockUsageCollectionConfigTest {
         every { mongoTemplate.collectionExists(BlockUsage::class.java) } returns true
         every { mongoTemplate.getCollectionName(BlockUsage::class.java) } returns "block_usage"
         every { mongoTemplate.indexOps(BlockUsage::class.java) } returns indexOperations
-        every { indexOperations.ensureIndex(capture(capturedIndexes)) } returns "created"
+        every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
         BlockUsageCollectionConfig(
                 mongoTemplate = mongoTemplate,

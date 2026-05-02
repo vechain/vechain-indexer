@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
+import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.b3tr.action.AppDailyActionSummary
 import org.vechain.indexer.config.mongo.CollectionConfig
@@ -34,39 +34,40 @@ open class AppDailyActionSummaryCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "user_-1_date_-1" to
-                    Index()
-                        .on(AppDailyActionSummary::user.name, Sort.Direction.DESC)
-                        .on(AppDailyActionSummary::date.name, Sort.Direction.DESC),
-                "appId_1_date_1_user_1" to
-                    Index()
-                        .on(AppDailyActionSummary::appId.name, Sort.Direction.ASC)
-                        .on(AppDailyActionSummary::date.name, Sort.Direction.ASC)
-                        .on(AppDailyActionSummary::user.name, Sort.Direction.ASC),
-                "appId_1_date_1_totalRewardAmount_-1_user_1" to
-                    Index()
-                        .on(AppDailyActionSummary::appId.name, Sort.Direction.ASC)
-                        .on(AppDailyActionSummary::date.name, Sort.Direction.ASC)
-                        .on(AppDailyActionSummary::totalRewardAmount.name, Sort.Direction.DESC)
-                        .on(AppDailyActionSummary::user.name, Sort.Direction.ASC),
-                "appId_1_date_1_totalRewardAmount_1_user_1" to
-                    Index()
-                        .on(AppDailyActionSummary::appId.name, Sort.Direction.ASC)
-                        .on(AppDailyActionSummary::date.name, Sort.Direction.ASC)
-                        .on(AppDailyActionSummary::totalRewardAmount.name, Sort.Direction.ASC)
-                        .on(AppDailyActionSummary::user.name, Sort.Direction.ASC),
-                "appId_1_date_1_actionsRewarded_-1_user_1" to
-                    Index()
-                        .on(AppDailyActionSummary::appId.name, Sort.Direction.ASC)
-                        .on(AppDailyActionSummary::date.name, Sort.Direction.ASC)
-                        .on(AppDailyActionSummary::actionsRewarded.name, Sort.Direction.DESC)
-                        .on(AppDailyActionSummary::user.name, Sort.Direction.ASC),
-                "appId_1_date_1_actionsRewarded_1_user_1" to
-                    Index()
-                        .on(AppDailyActionSummary::appId.name, Sort.Direction.ASC)
-                        .on(AppDailyActionSummary::date.name, Sort.Direction.ASC)
-                        .on(AppDailyActionSummary::actionsRewarded.name, Sort.Direction.ASC)
-                        .on(AppDailyActionSummary::user.name, Sort.Direction.ASC),
+                buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),
+                buildIndex(
+                    AppDailyActionSummary::user.name to Sort.Direction.DESC,
+                    AppDailyActionSummary::date.name to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    AppDailyActionSummary::appId.name to Sort.Direction.ASC,
+                    AppDailyActionSummary::date.name to Sort.Direction.ASC,
+                    AppDailyActionSummary::user.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    AppDailyActionSummary::appId.name to Sort.Direction.ASC,
+                    AppDailyActionSummary::date.name to Sort.Direction.ASC,
+                    AppDailyActionSummary::totalRewardAmount.name to Sort.Direction.DESC,
+                    AppDailyActionSummary::user.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    AppDailyActionSummary::appId.name to Sort.Direction.ASC,
+                    AppDailyActionSummary::date.name to Sort.Direction.ASC,
+                    AppDailyActionSummary::totalRewardAmount.name to Sort.Direction.ASC,
+                    AppDailyActionSummary::user.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    AppDailyActionSummary::appId.name to Sort.Direction.ASC,
+                    AppDailyActionSummary::date.name to Sort.Direction.ASC,
+                    AppDailyActionSummary::actionsRewarded.name to Sort.Direction.DESC,
+                    AppDailyActionSummary::user.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    AppDailyActionSummary::appId.name to Sort.Direction.ASC,
+                    AppDailyActionSummary::date.name to Sort.Direction.ASC,
+                    AppDailyActionSummary::actionsRewarded.name to Sort.Direction.ASC,
+                    AppDailyActionSummary::user.name to Sort.Direction.ASC,
+                ),
             )
         )
     }

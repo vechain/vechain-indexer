@@ -8,8 +8,8 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
 import org.springframework.data.mongodb.core.insert
+import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.accounts.AccountOverview
 import org.vechain.indexer.config.genesis.GenesisVetBalanceLoader
@@ -40,8 +40,8 @@ open class AccountOverviewCollectionConfig(
         // Ensure indexes
         ensureIndexes(
             listOf(
-                "lastVthoSettlement_1" to
-                    Index().on(AccountOverview::lastVthoSettlement.name, Sort.Direction.ASC)
+                buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),
+                buildIndex(AccountOverview::lastVthoSettlement.name to Sort.Direction.ASC),
             )
         )
     }

@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
+import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.b3tr.action.AppRoundActionSummary
 import org.vechain.indexer.config.mongo.CollectionConfig
@@ -34,39 +34,40 @@ open class AppRoundActionSummaryCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "appId_1_roundId_1_user_1" to
-                    Index()
-                        .on(AppRoundActionSummary::appId.name, Sort.Direction.ASC)
-                        .on(AppRoundActionSummary::roundId.name, Sort.Direction.ASC)
-                        .on(AppRoundActionSummary::user.name, Sort.Direction.ASC),
-                "appId_1_roundId_1_totalRewardAmount_-1_user_1" to
-                    Index()
-                        .on(AppRoundActionSummary::appId.name, Sort.Direction.ASC)
-                        .on(AppRoundActionSummary::roundId.name, Sort.Direction.ASC)
-                        .on(AppRoundActionSummary::totalRewardAmount.name, Sort.Direction.DESC)
-                        .on(AppRoundActionSummary::user.name, Sort.Direction.ASC),
-                "appId_1_roundId_1_totalRewardAmount_1_user_1" to
-                    Index()
-                        .on(AppRoundActionSummary::appId.name, Sort.Direction.ASC)
-                        .on(AppRoundActionSummary::roundId.name, Sort.Direction.ASC)
-                        .on(AppRoundActionSummary::totalRewardAmount.name, Sort.Direction.ASC)
-                        .on(AppRoundActionSummary::user.name, Sort.Direction.ASC),
-                "appId_1_roundId_1_actionsRewarded_-1_user_1" to
-                    Index()
-                        .on(AppRoundActionSummary::appId.name, Sort.Direction.ASC)
-                        .on(AppRoundActionSummary::roundId.name, Sort.Direction.ASC)
-                        .on(AppRoundActionSummary::actionsRewarded.name, Sort.Direction.DESC)
-                        .on(AppRoundActionSummary::user.name, Sort.Direction.ASC),
-                "appId_1_roundId_1_actionsRewarded_1_user_1" to
-                    Index()
-                        .on(AppRoundActionSummary::appId.name, Sort.Direction.ASC)
-                        .on(AppRoundActionSummary::roundId.name, Sort.Direction.ASC)
-                        .on(AppRoundActionSummary::actionsRewarded.name, Sort.Direction.ASC)
-                        .on(AppRoundActionSummary::user.name, Sort.Direction.ASC),
-                "roundId_1_user_1" to
-                    Index()
-                        .on(AppRoundActionSummary::roundId.name, Sort.Direction.ASC)
-                        .on(AppRoundActionSummary::user.name, Sort.Direction.ASC),
+                buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),
+                buildIndex(
+                    AppRoundActionSummary::appId.name to Sort.Direction.ASC,
+                    AppRoundActionSummary::roundId.name to Sort.Direction.ASC,
+                    AppRoundActionSummary::user.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    AppRoundActionSummary::appId.name to Sort.Direction.ASC,
+                    AppRoundActionSummary::roundId.name to Sort.Direction.ASC,
+                    AppRoundActionSummary::totalRewardAmount.name to Sort.Direction.DESC,
+                    AppRoundActionSummary::user.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    AppRoundActionSummary::appId.name to Sort.Direction.ASC,
+                    AppRoundActionSummary::roundId.name to Sort.Direction.ASC,
+                    AppRoundActionSummary::totalRewardAmount.name to Sort.Direction.ASC,
+                    AppRoundActionSummary::user.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    AppRoundActionSummary::appId.name to Sort.Direction.ASC,
+                    AppRoundActionSummary::roundId.name to Sort.Direction.ASC,
+                    AppRoundActionSummary::actionsRewarded.name to Sort.Direction.DESC,
+                    AppRoundActionSummary::user.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    AppRoundActionSummary::appId.name to Sort.Direction.ASC,
+                    AppRoundActionSummary::roundId.name to Sort.Direction.ASC,
+                    AppRoundActionSummary::actionsRewarded.name to Sort.Direction.ASC,
+                    AppRoundActionSummary::user.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    AppRoundActionSummary::roundId.name to Sort.Direction.ASC,
+                    AppRoundActionSummary::user.name to Sort.Direction.ASC,
+                ),
             )
         )
     }

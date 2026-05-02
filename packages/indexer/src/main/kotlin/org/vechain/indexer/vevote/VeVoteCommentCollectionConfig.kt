@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
+import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
@@ -33,14 +33,9 @@ open class VeVoteCommentCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                Pair(
-                    "voter_-1",
-                    Index().on(VeVoteProposalComment::voter.name, Sort.Direction.DESC),
-                ),
-                Pair(
-                    "proposalId_-1",
-                    Index().on(VeVoteProposalComment::proposalId.name, Sort.Direction.DESC),
-                ),
+                buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),
+                buildIndex(VeVoteProposalComment::voter.name to Sort.Direction.DESC),
+                buildIndex(VeVoteProposalComment::proposalId.name to Sort.Direction.DESC),
             )
         )
     }

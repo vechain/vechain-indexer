@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
+import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.contracts.Contract
@@ -34,11 +34,12 @@ open class ContractCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
+                buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),
                 // Supports query: master == address, sorted by createdOn desc
-                "master_1_createdOn_-1" to
-                    Index()
-                        .on(Contract::master.name, Sort.Direction.ASC)
-                        .on(Contract::createdOn.name, Sort.Direction.DESC)
+                buildIndex(
+                    Contract::master.name to Sort.Direction.ASC,
+                    Contract::createdOn.name to Sort.Direction.DESC,
+                ),
             )
         )
     }
