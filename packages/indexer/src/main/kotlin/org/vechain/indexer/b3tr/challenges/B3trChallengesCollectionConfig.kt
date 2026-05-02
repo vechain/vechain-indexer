@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
@@ -34,27 +33,26 @@ open class B3trChallengesCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "createdAtBlockTimestamp_-1_challengeId_-1" to
-                    Index()
-                        .on(B3trChallenge::createdAtBlockTimestamp.name, Sort.Direction.DESC)
-                        .on(B3trChallenge::challengeId.name, Sort.Direction.DESC),
-                "visibility_1_status_1_createdAtBlockTimestamp_-1_challengeId_-1" to
-                    Index()
-                        .on(B3trChallenge::visibility.name, Sort.Direction.ASC)
-                        .on(B3trChallenge::status.name, Sort.Direction.ASC)
-                        .on(B3trChallenge::createdAtBlockTimestamp.name, Sort.Direction.DESC)
-                        .on(B3trChallenge::challengeId.name, Sort.Direction.DESC),
-                "creator_1" to Index().on(B3trChallenge::creator.name, Sort.Direction.ASC),
-                "status_1" to Index().on(B3trChallenge::status.name, Sort.Direction.ASC),
-                "kind_1" to Index().on(B3trChallenge::kind.name, Sort.Direction.ASC),
-                "visibility_1" to Index().on(B3trChallenge::visibility.name, Sort.Direction.ASC),
-                "startRound_-1" to Index().on(B3trChallenge::startRound.name, Sort.Direction.DESC),
-                "endRound_-1" to Index().on(B3trChallenge::endRound.name, Sort.Direction.DESC),
-                "participants_1" to
-                    Index().on(B3trChallenge::participants.name, Sort.Direction.ASC),
-                "invited_1" to Index().on(B3trChallenge::invited.name, Sort.Direction.ASC),
-                "declined_1" to Index().on(B3trChallenge::declined.name, Sort.Direction.ASC),
-                "selectedApps_1" to Index().on(B3trChallenge::selectedApps.name, Sort.Direction.ASC),
+                buildIndex(
+                    B3trChallenge::createdAtBlockTimestamp.name to Sort.Direction.DESC,
+                    B3trChallenge::challengeId.name to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    B3trChallenge::visibility.name to Sort.Direction.ASC,
+                    B3trChallenge::status.name to Sort.Direction.ASC,
+                    B3trChallenge::createdAtBlockTimestamp.name to Sort.Direction.DESC,
+                    B3trChallenge::challengeId.name to Sort.Direction.DESC,
+                ),
+                buildIndex(B3trChallenge::creator.name to Sort.Direction.ASC),
+                buildIndex(B3trChallenge::status.name to Sort.Direction.ASC),
+                buildIndex(B3trChallenge::kind.name to Sort.Direction.ASC),
+                buildIndex(B3trChallenge::visibility.name to Sort.Direction.ASC),
+                buildIndex(B3trChallenge::startRound.name to Sort.Direction.DESC),
+                buildIndex(B3trChallenge::endRound.name to Sort.Direction.DESC),
+                buildIndex(B3trChallenge::participants.name to Sort.Direction.ASC),
+                buildIndex(B3trChallenge::invited.name to Sort.Direction.ASC),
+                buildIndex(B3trChallenge::declined.name to Sort.Direction.ASC),
+                buildIndex(B3trChallenge::selectedApps.name to Sort.Direction.ASC),
             )
         )
     }

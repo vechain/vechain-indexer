@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
@@ -33,12 +32,11 @@ open class ValidatorCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "endorser_1" to Index().on(Validator::endorser.name, Sort.Direction.ASC),
-                "validatorTvl_-1" to Index().on(Validator::validatorTvl.name, Sort.Direction.DESC),
-                "delegatorTvl_-1" to Index().on(Validator::delegatorTvl.name, Sort.Direction.DESC),
-                "totalTvl_-1" to Index().on(Validator::totalTvl.name, Sort.Direction.DESC),
-                "blockProbability" to
-                    Index().on(Validator::blockProbability.name, Sort.Direction.DESC),
+                buildIndex(Validator::endorser.name to Sort.Direction.ASC),
+                buildIndex(Validator::validatorTvl.name to Sort.Direction.DESC),
+                buildIndex(Validator::delegatorTvl.name to Sort.Direction.DESC),
+                buildIndex(Validator::totalTvl.name to Sort.Direction.DESC),
+                buildIndex(Validator::blockProbability.name to Sort.Direction.DESC),
             )
         )
     }

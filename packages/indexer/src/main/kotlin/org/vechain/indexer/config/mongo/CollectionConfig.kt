@@ -162,6 +162,28 @@ abstract class CollectionConfig(
     }
 
     /**
+     * Builds a `(name, Index)` pair where the name is derived from the field/direction sequence,
+     * e.g. `("blockNumber" to DESC, "txId" to ASC)` -> `"blockNumber_-1_txId_1"`. Use this in
+     * [ensureIndexes] to keep index names consistent with their key shape.
+     */
+    protected fun buildIndex(vararg fields: Pair<String, Sort.Direction>): Pair<String, Index> {
+        require(fields.isNotEmpty()) { "Index must have at least one field" }
+        val name =
+            fields.joinToString("_") { (field, dir) ->
+                "${field}_${if (dir == Sort.Direction.ASC) 1 else -1}"
+            }
+        val index = fields.fold(Index()) { acc, (field, dir) -> acc.on(field, dir) }
+        return name to index
+    }
+
+    protected fun buildUniqueIndex(
+        vararg fields: Pair<String, Sort.Direction>
+    ): Pair<String, Index> {
+        val (name, index) = buildIndex(*fields)
+        return name to index.unique()
+    }
+
+    /**
      * Removes indexes from MongoDB that are not tracked by [ensureIndexes] calls during
      * [initCollection]. Call this after all [ensureIndexes] calls have completed.
      */

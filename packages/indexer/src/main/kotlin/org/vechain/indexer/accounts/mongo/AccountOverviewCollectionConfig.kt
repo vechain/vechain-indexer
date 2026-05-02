@@ -8,7 +8,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
 import org.springframework.data.mongodb.core.insert
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.accounts.AccountOverview
@@ -39,10 +38,7 @@ open class AccountOverviewCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         // Ensure indexes
         ensureIndexes(
-            listOf(
-                "lastVthoSettlement_1" to
-                    Index().on(AccountOverview::lastVthoSettlement.name, Sort.Direction.ASC)
-            )
+            listOf(buildIndex(AccountOverview::lastVthoSettlement.name to Sort.Direction.ASC))
         )
     }
 

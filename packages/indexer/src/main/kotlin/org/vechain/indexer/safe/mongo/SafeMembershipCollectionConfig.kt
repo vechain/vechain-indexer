@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.safe.SafeMembership
@@ -36,16 +35,16 @@ open class SafeMembershipCollectionConfig(
             listOf(
                 // Serves CURRENT scope (removedBlock IS NULL is equality) with the API's
                 // addedBlock-desc sort: equality-equality-sort.
-                "owner_1_removedBlock_1_addedBlock_-1" to
-                    Index()
-                        .on(SafeMembership::owner.name, Sort.Direction.ASC)
-                        .on(SafeMembership::removedBlock.name, Sort.Direction.ASC)
-                        .on(SafeMembership::addedBlock.name, Sort.Direction.DESC),
+                buildIndex(
+                    SafeMembership::owner.name to Sort.Direction.ASC,
+                    SafeMembership::removedBlock.name to Sort.Direction.ASC,
+                    SafeMembership::addedBlock.name to Sort.Direction.DESC,
+                ),
                 // Serves ALL and PAST scopes: equality on owner, then the addedBlock-desc sort.
-                "owner_1_addedBlock_-1" to
-                    Index()
-                        .on(SafeMembership::owner.name, Sort.Direction.ASC)
-                        .on(SafeMembership::addedBlock.name, Sort.Direction.DESC),
+                buildIndex(
+                    SafeMembership::owner.name to Sort.Direction.ASC,
+                    SafeMembership::addedBlock.name to Sort.Direction.DESC,
+                ),
             )
         )
     }

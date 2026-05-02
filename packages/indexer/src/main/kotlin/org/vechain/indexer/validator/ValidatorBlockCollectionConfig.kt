@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
@@ -35,56 +34,55 @@ open class ValidatorBlockCollectionConfig(
         ensureIndexes(
             listOf(
                 // For global queries (all validators, sorted by timestamp)
-                "blockTimestamp_-1" to
-                    Index().on(IndexedDocument::blockTimestamp.name, Sort.Direction.DESC),
+                buildIndex(IndexedDocument::blockTimestamp.name to Sort.Direction.DESC),
                 // For per-validator queries sorted by timestamp
-                "validator_1_blockTimestamp_-1" to
-                    Index()
-                        .on(ValidatorBlock::validator.name, Sort.Direction.ASC)
-                        .on(IndexedDocument::blockTimestamp.name, Sort.Direction.DESC),
+                buildIndex(
+                    ValidatorBlock::validator.name to Sort.Direction.ASC,
+                    IndexedDocument::blockTimestamp.name to Sort.Direction.DESC,
+                ),
                 // For per-validator queries sorted by blockNumber
-                "validator_1_blockNumber_-1" to
-                    Index()
-                        .on(ValidatorBlock::validator.name, Sort.Direction.ASC)
-                        .on(IndexedDocument::blockNumber.name, Sort.Direction.DESC),
-                "isMonthly_1_status_1_validator_1_blockTimestamp_1" to
-                    Index()
-                        .on(ValidatorBlock::isMonthly.name, Sort.Direction.ASC)
-                        .on(ValidatorBlock::status.name, Sort.Direction.ASC)
-                        .on(ValidatorBlock::validator.name, Sort.Direction.ASC)
-                        .on(IndexedDocument::blockTimestamp.name, Sort.Direction.ASC),
-                "isWeekly_1_status_1_validator_1_blockTimestamp_1" to
-                    Index()
-                        .on(ValidatorBlock::isWeekly.name, Sort.Direction.ASC)
-                        .on(ValidatorBlock::status.name, Sort.Direction.ASC)
-                        .on(ValidatorBlock::validator.name, Sort.Direction.ASC)
-                        .on(IndexedDocument::blockTimestamp.name, Sort.Direction.ASC),
-                "status_1_validator_1_blockTimestamp_1" to
-                    Index()
-                        .on(ValidatorBlock::status.name, Sort.Direction.ASC)
-                        .on(ValidatorBlock::validator.name, Sort.Direction.ASC)
-                        .on(IndexedDocument::blockTimestamp.name, Sort.Direction.ASC),
-                "status_1_blockNumber_-1" to
-                    Index()
-                        .on(ValidatorBlock::status.name, Sort.Direction.ASC)
-                        .on(IndexedDocument::blockNumber.name, Sort.Direction.DESC),
-                "isDaily_1_status_1_validator_1_blockTimestamp_1" to
-                    Index()
-                        .on(ValidatorBlock::isDaily.name, Sort.Direction.ASC)
-                        .on(ValidatorBlock::status.name, Sort.Direction.ASC)
-                        .on(ValidatorBlock::validator.name, Sort.Direction.ASC)
-                        .on(IndexedDocument::blockTimestamp.name, Sort.Direction.ASC),
+                buildIndex(
+                    ValidatorBlock::validator.name to Sort.Direction.ASC,
+                    IndexedDocument::blockNumber.name to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    ValidatorBlock::isMonthly.name to Sort.Direction.ASC,
+                    ValidatorBlock::status.name to Sort.Direction.ASC,
+                    ValidatorBlock::validator.name to Sort.Direction.ASC,
+                    IndexedDocument::blockTimestamp.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    ValidatorBlock::isWeekly.name to Sort.Direction.ASC,
+                    ValidatorBlock::status.name to Sort.Direction.ASC,
+                    ValidatorBlock::validator.name to Sort.Direction.ASC,
+                    IndexedDocument::blockTimestamp.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    ValidatorBlock::status.name to Sort.Direction.ASC,
+                    ValidatorBlock::validator.name to Sort.Direction.ASC,
+                    IndexedDocument::blockTimestamp.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    ValidatorBlock::status.name to Sort.Direction.ASC,
+                    IndexedDocument::blockNumber.name to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    ValidatorBlock::isDaily.name to Sort.Direction.ASC,
+                    ValidatorBlock::status.name to Sort.Direction.ASC,
+                    ValidatorBlock::validator.name to Sort.Direction.ASC,
+                    IndexedDocument::blockTimestamp.name to Sort.Direction.ASC,
+                ),
                 // For block-rewards queries filtered by validator + status, sorted by blockNumber
-                "validator_1_status_1_blockNumber_-1" to
-                    Index()
-                        .on(ValidatorBlock::validator.name, Sort.Direction.ASC)
-                        .on(ValidatorBlock::status.name, Sort.Direction.ASC)
-                        .on(IndexedDocument::blockNumber.name, Sort.Direction.DESC),
-                "validator_1_status_1_blockNumber_1" to
-                    Index()
-                        .on(ValidatorBlock::validator.name, Sort.Direction.ASC)
-                        .on(ValidatorBlock::status.name, Sort.Direction.ASC)
-                        .on(IndexedDocument::blockNumber.name, Sort.Direction.ASC),
+                buildIndex(
+                    ValidatorBlock::validator.name to Sort.Direction.ASC,
+                    ValidatorBlock::status.name to Sort.Direction.ASC,
+                    IndexedDocument::blockNumber.name to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    ValidatorBlock::validator.name to Sort.Direction.ASC,
+                    ValidatorBlock::status.name to Sort.Direction.ASC,
+                    IndexedDocument::blockNumber.name to Sort.Direction.ASC,
+                ),
             )
         )
     }

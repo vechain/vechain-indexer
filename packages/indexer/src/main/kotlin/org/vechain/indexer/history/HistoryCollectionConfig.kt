@@ -8,7 +8,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
@@ -36,66 +35,58 @@ open class HistoryCollectionConfig(
             listOf(
                 // Core account history queries fan out across these fields with blockTimestamp
                 // sort.
-                "origin_1_blockTimestamp_-1" to
-                    Index()
-                        .on(IndexedHistoryEvent::origin.name, Sort.Direction.ASC)
-                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
-                "from_1_blockTimestamp_-1" to
-                    Index()
-                        .on(IndexedHistoryEvent::from.name, Sort.Direction.ASC)
-                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
-                "to_1_blockTimestamp_-1" to
-                    Index()
-                        .on(IndexedHistoryEvent::to.name, Sort.Direction.ASC)
-                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
-                "gasPayer_1_blockTimestamp_-1" to
-                    Index()
-                        .on(IndexedHistoryEvent::gasPayer.name, Sort.Direction.ASC)
-                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
-                "owner_1_blockTimestamp_-1" to
-                    Index()
-                        .on(IndexedHistoryEvent::owner.name, Sort.Direction.ASC)
-                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
-                "tokenId_1_blockTimestamp_-1" to
-                    Index()
-                        .on(IndexedHistoryEvent::tokenId.name, Sort.Direction.ASC)
-                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
-                "tokenId_1_eventName_1_blockTimestamp_-1" to
-                    Index()
-                        .on(IndexedHistoryEvent::tokenId.name, Sort.Direction.ASC)
-                        .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
-                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
-                "contractAddress_1_tokenId_1_eventName_1_blockTimestamp_-1" to
-                    Index()
-                        .on(IndexedHistoryEvent::contractAddress.name, Sort.Direction.ASC)
-                        .on(IndexedHistoryEvent::tokenId.name, Sort.Direction.ASC)
-                        .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
-                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
-                "delegationId_1_blockNumber_-1_delegationLifecycleOrder_-1" to
-                    Index()
-                        .on(IndexedHistoryEvent::delegationId.name, Sort.Direction.ASC)
-                        .on(IndexedHistoryEvent::blockNumber.name, Sort.Direction.DESC)
-                        .on(
-                            IndexedHistoryEvent.DELEGATION_LIFECYCLE_ORDER_FIELD,
-                            Sort.Direction.DESC,
-                        ),
+                buildIndex(
+                    IndexedHistoryEvent::origin.name to Sort.Direction.ASC,
+                    IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    IndexedHistoryEvent::from.name to Sort.Direction.ASC,
+                    IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    IndexedHistoryEvent::to.name to Sort.Direction.ASC,
+                    IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    IndexedHistoryEvent::gasPayer.name to Sort.Direction.ASC,
+                    IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    IndexedHistoryEvent::owner.name to Sort.Direction.ASC,
+                    IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    IndexedHistoryEvent::tokenId.name to Sort.Direction.ASC,
+                    IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    IndexedHistoryEvent::tokenId.name to Sort.Direction.ASC,
+                    IndexedHistoryEvent::eventName.name to Sort.Direction.ASC,
+                    IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    IndexedHistoryEvent::contractAddress.name to Sort.Direction.ASC,
+                    IndexedHistoryEvent::tokenId.name to Sort.Direction.ASC,
+                    IndexedHistoryEvent::eventName.name to Sort.Direction.ASC,
+                    IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
+                ),
                 // Action endpoints query narrower shapes and benefit from dedicated compounds.
-                "to_1_eventName_1_blockTimestamp_-1" to
-                    Index()
-                        .on(IndexedHistoryEvent::to.name, Sort.Direction.ASC)
-                        .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
-                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
-                "to_1_appId_1_eventName_1_blockTimestamp_-1" to
-                    Index()
-                        .on(IndexedHistoryEvent::to.name, Sort.Direction.ASC)
-                        .on(IndexedHistoryEvent::appId.name, Sort.Direction.ASC)
-                        .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
-                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
-                "appId_1_eventName_1_blockTimestamp_-1" to
-                    Index()
-                        .on(IndexedHistoryEvent::appId.name, Sort.Direction.ASC)
-                        .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
-                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
+                buildIndex(
+                    IndexedHistoryEvent::to.name to Sort.Direction.ASC,
+                    IndexedHistoryEvent::eventName.name to Sort.Direction.ASC,
+                    IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    IndexedHistoryEvent::to.name to Sort.Direction.ASC,
+                    IndexedHistoryEvent::appId.name to Sort.Direction.ASC,
+                    IndexedHistoryEvent::eventName.name to Sort.Direction.ASC,
+                    IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    IndexedHistoryEvent::appId.name to Sort.Direction.ASC,
+                    IndexedHistoryEvent::eventName.name to Sort.Direction.ASC,
+                    IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
+                ),
             )
         )
 
@@ -106,14 +97,11 @@ open class HistoryCollectionConfig(
         // sort(delegationId asc, blockNumber desc, delegationLifecycleOrder desc).
         ensureIndexes(
             listOf(
-                "dlc_delegationId_1_blockNumber_-1_dlcOrder_-1" to
-                    Index()
-                        .on(IndexedHistoryEvent::delegationId.name, Sort.Direction.ASC)
-                        .on(IndexedHistoryEvent::blockNumber.name, Sort.Direction.DESC)
-                        .on(
-                            IndexedHistoryEvent.DELEGATION_LIFECYCLE_ORDER_FIELD,
-                            Sort.Direction.DESC,
-                        )
+                buildIndex(
+                    IndexedHistoryEvent::delegationId.name to Sort.Direction.ASC,
+                    IndexedHistoryEvent::blockNumber.name to Sort.Direction.DESC,
+                    IndexedHistoryEvent.DELEGATION_LIFECYCLE_ORDER_FIELD to Sort.Direction.DESC,
+                )
             ),
             partialFilter =
                 Document(

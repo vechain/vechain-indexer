@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.b3tr.action.UserRoundActionSummary
 import org.vechain.indexer.config.mongo.CollectionConfig
@@ -34,39 +33,39 @@ open class UserRoundActionSummaryCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "entity_-1" to Index().on(UserRoundActionSummary::entity.name, Sort.Direction.DESC),
-                "entity_1_roundId_1" to
-                    Index()
-                        .on(UserRoundActionSummary::entity.name, Sort.Direction.ASC)
-                        .on(UserRoundActionSummary::roundId.name, Sort.Direction.ASC),
-                "entityType_1_roundId_1" to
-                    Index()
-                        .on(UserRoundActionSummary::entityType.name, Sort.Direction.ASC)
-                        .on(UserRoundActionSummary::roundId.name, Sort.Direction.ASC),
-                "entityType_1_roundId_1_actionsRewarded_-1_entity_1" to
-                    Index()
-                        .on(UserRoundActionSummary::entityType.name, Sort.Direction.ASC)
-                        .on(UserRoundActionSummary::roundId.name, Sort.Direction.ASC)
-                        .on(UserRoundActionSummary::actionsRewarded.name, Sort.Direction.DESC)
-                        .on(UserRoundActionSummary::entity.name, Sort.Direction.ASC),
-                "entityType_1_roundId_1_actionsRewarded_1_entity_1" to
-                    Index()
-                        .on(UserRoundActionSummary::entityType.name, Sort.Direction.ASC)
-                        .on(UserRoundActionSummary::roundId.name, Sort.Direction.ASC)
-                        .on(UserRoundActionSummary::actionsRewarded.name, Sort.Direction.ASC)
-                        .on(UserRoundActionSummary::entity.name, Sort.Direction.ASC),
-                "entityType_1_roundId_1_totalRewardAmount_-1_entity_1" to
-                    Index()
-                        .on(UserRoundActionSummary::entityType.name, Sort.Direction.ASC)
-                        .on(UserRoundActionSummary::roundId.name, Sort.Direction.ASC)
-                        .on(UserRoundActionSummary::totalRewardAmount.name, Sort.Direction.DESC)
-                        .on(UserRoundActionSummary::entity.name, Sort.Direction.ASC),
-                "entityType_1_roundId_1_totalRewardAmount_1_entity_1" to
-                    Index()
-                        .on(UserRoundActionSummary::entityType.name, Sort.Direction.ASC)
-                        .on(UserRoundActionSummary::roundId.name, Sort.Direction.ASC)
-                        .on(UserRoundActionSummary::totalRewardAmount.name, Sort.Direction.ASC)
-                        .on(UserRoundActionSummary::entity.name, Sort.Direction.ASC),
+                buildIndex(UserRoundActionSummary::entity.name to Sort.Direction.DESC),
+                buildIndex(
+                    UserRoundActionSummary::entity.name to Sort.Direction.ASC,
+                    UserRoundActionSummary::roundId.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    UserRoundActionSummary::entityType.name to Sort.Direction.ASC,
+                    UserRoundActionSummary::roundId.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    UserRoundActionSummary::entityType.name to Sort.Direction.ASC,
+                    UserRoundActionSummary::roundId.name to Sort.Direction.ASC,
+                    UserRoundActionSummary::actionsRewarded.name to Sort.Direction.DESC,
+                    UserRoundActionSummary::entity.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    UserRoundActionSummary::entityType.name to Sort.Direction.ASC,
+                    UserRoundActionSummary::roundId.name to Sort.Direction.ASC,
+                    UserRoundActionSummary::actionsRewarded.name to Sort.Direction.ASC,
+                    UserRoundActionSummary::entity.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    UserRoundActionSummary::entityType.name to Sort.Direction.ASC,
+                    UserRoundActionSummary::roundId.name to Sort.Direction.ASC,
+                    UserRoundActionSummary::totalRewardAmount.name to Sort.Direction.DESC,
+                    UserRoundActionSummary::entity.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    UserRoundActionSummary::entityType.name to Sort.Direction.ASC,
+                    UserRoundActionSummary::roundId.name to Sort.Direction.ASC,
+                    UserRoundActionSummary::totalRewardAmount.name to Sort.Direction.ASC,
+                    UserRoundActionSummary::entity.name to Sort.Direction.ASC,
+                ),
             )
         )
     }

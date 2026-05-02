@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.safe.SafeTxProposal
@@ -35,10 +34,10 @@ open class SafeTxProposalCollectionConfig(
         ensureIndexes(
             listOf(
                 // Supports listing proposals for a Safe sorted newest-first.
-                "safe_1_blockNumber_-1" to
-                    Index()
-                        .on(SafeTxProposal::safe.name, Sort.Direction.ASC)
-                        .on(SafeTxProposal::blockNumber.name, Sort.Direction.DESC)
+                buildIndex(
+                    SafeTxProposal::safe.name to Sort.Direction.ASC,
+                    SafeTxProposal::blockNumber.name to Sort.Direction.DESC,
+                )
             )
         )
     }

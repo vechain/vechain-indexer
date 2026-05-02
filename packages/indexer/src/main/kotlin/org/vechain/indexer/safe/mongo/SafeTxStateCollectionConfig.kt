@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.safe.SafeTxState
@@ -36,10 +35,10 @@ open class SafeTxStateCollectionConfig(
             listOf(
                 // Supports point lookup by (safe, txHash) and the batch endpoint that filters by
                 // safe and the supplied set of txHashes.
-                "safe_1_txHash_1" to
-                    Index()
-                        .on(SafeTxState::safe.name, Sort.Direction.ASC)
-                        .on(SafeTxState::txHash.name, Sort.Direction.ASC)
+                buildIndex(
+                    SafeTxState::safe.name to Sort.Direction.ASC,
+                    SafeTxState::txHash.name to Sort.Direction.ASC,
+                )
             )
         )
     }

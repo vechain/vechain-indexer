@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
@@ -33,29 +32,29 @@ open class TransferCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "transfer_to_1_blockTimestamp_-1_txId_-1__id_-1" to
-                    Index()
-                        .on(IndexedTransferEvent::to.name, Sort.Direction.ASC)
-                        .on(IndexedTransferEvent::blockTimestamp.name, Sort.Direction.DESC)
-                        .on(IndexedTransferEvent::txId.name, Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.DESC),
-                "transfer_from_1_blockTimestamp_-1_txId_-1__id_-1" to
-                    Index()
-                        .on(IndexedTransferEvent::from.name, Sort.Direction.ASC)
-                        .on(IndexedTransferEvent::blockTimestamp.name, Sort.Direction.DESC)
-                        .on(IndexedTransferEvent::txId.name, Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.DESC),
-                "transfer_tokenAddress_1_blockTimestamp_-1_txId_-1__id_-1" to
-                    Index()
-                        .on(IndexedTransferEvent::tokenAddress.name, Sort.Direction.ASC)
-                        .on(IndexedTransferEvent::blockTimestamp.name, Sort.Direction.DESC)
-                        .on(IndexedTransferEvent::txId.name, Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.DESC),
-                "transfer_eventType_1_blockNumber_-1_transferIndex_1" to
-                    Index()
-                        .on(IndexedTransferEvent::eventType.name, Sort.Direction.ASC)
-                        .on(IndexedTransferEvent::blockNumber.name, Sort.Direction.DESC)
-                        .on(IndexedTransferEvent::transferIndex.name, Sort.Direction.ASC),
+                buildIndex(
+                    IndexedTransferEvent::to.name to Sort.Direction.ASC,
+                    IndexedTransferEvent::blockTimestamp.name to Sort.Direction.DESC,
+                    IndexedTransferEvent::txId.name to Sort.Direction.DESC,
+                    "_id" to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    IndexedTransferEvent::from.name to Sort.Direction.ASC,
+                    IndexedTransferEvent::blockTimestamp.name to Sort.Direction.DESC,
+                    IndexedTransferEvent::txId.name to Sort.Direction.DESC,
+                    "_id" to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    IndexedTransferEvent::tokenAddress.name to Sort.Direction.ASC,
+                    IndexedTransferEvent::blockTimestamp.name to Sort.Direction.DESC,
+                    IndexedTransferEvent::txId.name to Sort.Direction.DESC,
+                    "_id" to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    IndexedTransferEvent::eventType.name to Sort.Direction.ASC,
+                    IndexedTransferEvent::blockNumber.name to Sort.Direction.DESC,
+                    IndexedTransferEvent::transferIndex.name to Sort.Direction.ASC,
+                ),
             )
         )
     }

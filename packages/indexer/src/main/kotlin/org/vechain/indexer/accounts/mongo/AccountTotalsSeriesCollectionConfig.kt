@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.accounts.AccountTotalsSeries
 import org.vechain.indexer.config.mongo.CollectionConfig
@@ -34,38 +33,38 @@ open class AccountTotalsSeriesCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "recordType_1_blockNumber_-1" to
-                    Index()
-                        .on(AccountTotalsSeries::recordType.name, Sort.Direction.ASC)
-                        .on(AccountTotalsSeries::blockNumber.name, Sort.Direction.DESC),
-                "recordType_1_blockTimestamp_1" to
-                    Index()
-                        .on(AccountTotalsSeries::recordType.name, Sort.Direction.ASC)
-                        .on(AccountTotalsSeries::blockTimestamp.name, Sort.Direction.ASC),
-                "recordType_1_isHourly_1_blockTimestamp_1" to
-                    Index()
-                        .on(AccountTotalsSeries::recordType.name, Sort.Direction.ASC)
-                        .on(AccountTotalsSeries::isHourly.name, Sort.Direction.ASC)
-                        .on(AccountTotalsSeries::blockTimestamp.name, Sort.Direction.ASC),
-                "recordType_1_isDaily_1_blockTimestamp_1" to
-                    Index()
-                        .on(AccountTotalsSeries::recordType.name, Sort.Direction.ASC)
-                        .on(AccountTotalsSeries::isDaily.name, Sort.Direction.ASC)
-                        .on(AccountTotalsSeries::blockTimestamp.name, Sort.Direction.ASC),
-                "recordType_1_isWeekly_1_blockTimestamp_1" to
-                    Index()
-                        .on(AccountTotalsSeries::recordType.name, Sort.Direction.ASC)
-                        .on(AccountTotalsSeries::isWeekly.name, Sort.Direction.ASC)
-                        .on(AccountTotalsSeries::blockTimestamp.name, Sort.Direction.ASC),
-                "recordType_1_isMonthly_1_blockTimestamp_1" to
-                    Index()
-                        .on(AccountTotalsSeries::recordType.name, Sort.Direction.ASC)
-                        .on(AccountTotalsSeries::isMonthly.name, Sort.Direction.ASC)
-                        .on(AccountTotalsSeries::blockTimestamp.name, Sort.Direction.ASC),
-                "recordType_1_address_1" to
-                    Index()
-                        .on(AccountTotalsSeries::recordType.name, Sort.Direction.ASC)
-                        .on(AccountTotalsSeries::address.name, Sort.Direction.ASC),
+                buildIndex(
+                    AccountTotalsSeries::recordType.name to Sort.Direction.ASC,
+                    AccountTotalsSeries::blockNumber.name to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    AccountTotalsSeries::recordType.name to Sort.Direction.ASC,
+                    AccountTotalsSeries::blockTimestamp.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    AccountTotalsSeries::recordType.name to Sort.Direction.ASC,
+                    AccountTotalsSeries::isHourly.name to Sort.Direction.ASC,
+                    AccountTotalsSeries::blockTimestamp.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    AccountTotalsSeries::recordType.name to Sort.Direction.ASC,
+                    AccountTotalsSeries::isDaily.name to Sort.Direction.ASC,
+                    AccountTotalsSeries::blockTimestamp.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    AccountTotalsSeries::recordType.name to Sort.Direction.ASC,
+                    AccountTotalsSeries::isWeekly.name to Sort.Direction.ASC,
+                    AccountTotalsSeries::blockTimestamp.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    AccountTotalsSeries::recordType.name to Sort.Direction.ASC,
+                    AccountTotalsSeries::isMonthly.name to Sort.Direction.ASC,
+                    AccountTotalsSeries::blockTimestamp.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    AccountTotalsSeries::recordType.name to Sort.Direction.ASC,
+                    AccountTotalsSeries::address.name to Sort.Direction.ASC,
+                ),
             )
         )
     }

@@ -8,7 +8,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
 import org.springframework.data.mongodb.core.insert
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
@@ -41,10 +40,10 @@ open class VetBalanceCollectionConfig(
         ensureIndexes(
             listOf(
                 // Supports API query by address + timestamp range with default sort by newest.
-                "address_1_blockTimestamp_-1" to
-                    Index()
-                        .on(VetBalance::address.name, Sort.Direction.ASC)
-                        .on(IndexedDocument::blockTimestamp.name, Sort.Direction.DESC)
+                buildIndex(
+                    VetBalance::address.name to Sort.Direction.ASC,
+                    IndexedDocument::blockTimestamp.name to Sort.Direction.DESC,
+                )
             )
         )
     }

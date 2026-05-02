@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
@@ -34,41 +33,31 @@ open class B3trUserChallengesCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "wallet_1_challengeCreatedAtBlockTimestamp_-1_challengeId_-1" to
-                    Index()
-                        .on(B3trUserChallenge::wallet.name, Sort.Direction.ASC)
-                        .on(
-                            B3trUserChallenge::challengeCreatedAtBlockTimestamp.name,
-                            Sort.Direction.DESC,
-                        )
-                        .on(B3trUserChallenge::challengeId.name, Sort.Direction.DESC),
-                "wallet_1_challengeId_1" to
-                    Index()
-                        .on(B3trUserChallenge::wallet.name, Sort.Direction.ASC)
-                        .on(B3trUserChallenge::challengeId.name, Sort.Direction.ASC),
-                "challengeId_1" to
-                    Index().on(B3trUserChallenge::challengeId.name, Sort.Direction.ASC),
-                "wallet_1_participantStatus_1_challengeCreatedAtBlockTimestamp_-1" to
-                    Index()
-                        .on(B3trUserChallenge::wallet.name, Sort.Direction.ASC)
-                        .on(B3trUserChallenge::participantStatus.name, Sort.Direction.ASC)
-                        .on(
-                            B3trUserChallenge::challengeCreatedAtBlockTimestamp.name,
-                            Sort.Direction.DESC,
-                        ),
-                "wallet_1_isCreator_1_challengeCreatedAtBlockTimestamp_-1" to
-                    Index()
-                        .on(B3trUserChallenge::wallet.name, Sort.Direction.ASC)
-                        .on(B3trUserChallenge::isCreator.name, Sort.Direction.ASC)
-                        .on(
-                            B3trUserChallenge::challengeCreatedAtBlockTimestamp.name,
-                            Sort.Direction.DESC,
-                        ),
-                "wallet_1_isWinner_1_hasClaimedPrize_1" to
-                    Index()
-                        .on(B3trUserChallenge::wallet.name, Sort.Direction.ASC)
-                        .on(B3trUserChallenge::isWinner.name, Sort.Direction.ASC)
-                        .on(B3trUserChallenge::hasClaimedPrize.name, Sort.Direction.ASC),
+                buildIndex(
+                    B3trUserChallenge::wallet.name to Sort.Direction.ASC,
+                    B3trUserChallenge::challengeCreatedAtBlockTimestamp.name to Sort.Direction.DESC,
+                    B3trUserChallenge::challengeId.name to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    B3trUserChallenge::wallet.name to Sort.Direction.ASC,
+                    B3trUserChallenge::challengeId.name to Sort.Direction.ASC,
+                ),
+                buildIndex(B3trUserChallenge::challengeId.name to Sort.Direction.ASC),
+                buildIndex(
+                    B3trUserChallenge::wallet.name to Sort.Direction.ASC,
+                    B3trUserChallenge::participantStatus.name to Sort.Direction.ASC,
+                    B3trUserChallenge::challengeCreatedAtBlockTimestamp.name to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    B3trUserChallenge::wallet.name to Sort.Direction.ASC,
+                    B3trUserChallenge::isCreator.name to Sort.Direction.ASC,
+                    B3trUserChallenge::challengeCreatedAtBlockTimestamp.name to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    B3trUserChallenge::wallet.name to Sort.Direction.ASC,
+                    B3trUserChallenge::isWinner.name to Sort.Direction.ASC,
+                    B3trUserChallenge::hasClaimedPrize.name to Sort.Direction.ASC,
+                ),
             )
         )
     }

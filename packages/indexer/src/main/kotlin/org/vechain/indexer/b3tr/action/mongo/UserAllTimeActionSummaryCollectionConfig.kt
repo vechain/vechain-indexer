@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummary
 import org.vechain.indexer.config.mongo.CollectionConfig
@@ -34,31 +33,29 @@ open class UserAllTimeActionSummaryCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "entity_-1" to
-                    Index().on(UserAllTimeActionSummary::entity.name, Sort.Direction.DESC),
-                "entityType_1_actionsRewarded_-1_entity_1" to
-                    Index()
-                        .on(UserAllTimeActionSummary::entityType.name, Sort.Direction.ASC)
-                        .on(UserAllTimeActionSummary::actionsRewarded.name, Sort.Direction.DESC)
-                        .on(UserAllTimeActionSummary::entity.name, Sort.Direction.ASC),
-                "entityType_1_actionsRewarded_1_entity_1" to
-                    Index()
-                        .on(UserAllTimeActionSummary::entityType.name, Sort.Direction.ASC)
-                        .on(UserAllTimeActionSummary::actionsRewarded.name, Sort.Direction.ASC)
-                        .on(UserAllTimeActionSummary::entity.name, Sort.Direction.ASC),
-                "entityType_1_totalRewardAmount_-1_entity_1" to
-                    Index()
-                        .on(UserAllTimeActionSummary::entityType.name, Sort.Direction.ASC)
-                        .on(UserAllTimeActionSummary::totalRewardAmount.name, Sort.Direction.DESC)
-                        .on(UserAllTimeActionSummary::entity.name, Sort.Direction.ASC),
-                "entityType_1_totalRewardAmount_1_entity_1" to
-                    Index()
-                        .on(UserAllTimeActionSummary::entityType.name, Sort.Direction.ASC)
-                        .on(UserAllTimeActionSummary::totalRewardAmount.name, Sort.Direction.ASC)
-                        .on(UserAllTimeActionSummary::entity.name, Sort.Direction.ASC),
-                "entityType_1" to
-                    Index().on(UserAllTimeActionSummary::entityType.name, Sort.Direction.ASC),
-                "blockNumber_1" to Index().on("blockNumber", Sort.Direction.ASC),
+                buildIndex(UserAllTimeActionSummary::entity.name to Sort.Direction.DESC),
+                buildIndex(
+                    UserAllTimeActionSummary::entityType.name to Sort.Direction.ASC,
+                    UserAllTimeActionSummary::actionsRewarded.name to Sort.Direction.DESC,
+                    UserAllTimeActionSummary::entity.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    UserAllTimeActionSummary::entityType.name to Sort.Direction.ASC,
+                    UserAllTimeActionSummary::actionsRewarded.name to Sort.Direction.ASC,
+                    UserAllTimeActionSummary::entity.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    UserAllTimeActionSummary::entityType.name to Sort.Direction.ASC,
+                    UserAllTimeActionSummary::totalRewardAmount.name to Sort.Direction.DESC,
+                    UserAllTimeActionSummary::entity.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    UserAllTimeActionSummary::entityType.name to Sort.Direction.ASC,
+                    UserAllTimeActionSummary::totalRewardAmount.name to Sort.Direction.ASC,
+                    UserAllTimeActionSummary::entity.name to Sort.Direction.ASC,
+                ),
+                buildIndex(UserAllTimeActionSummary::entityType.name to Sort.Direction.ASC),
+                buildIndex("blockNumber" to Sort.Direction.ASC),
             )
         )
     }

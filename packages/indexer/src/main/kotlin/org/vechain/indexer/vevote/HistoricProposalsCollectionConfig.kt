@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
@@ -31,11 +30,6 @@ open class HistoricProposalsCollectionConfig(
         )
         this.ensureCollection()
         logger.info("Initializing indexes for ${modelObj.simpleName}")
-        ensureIndexes(
-            listOf(
-                "proposalId_-1" to
-                    Index().on(HistoricProposals::proposalId.name, Sort.Direction.DESC)
-            )
-        )
+        ensureIndexes(listOf(buildIndex(HistoricProposals::proposalId.name to Sort.Direction.DESC)))
     }
 }

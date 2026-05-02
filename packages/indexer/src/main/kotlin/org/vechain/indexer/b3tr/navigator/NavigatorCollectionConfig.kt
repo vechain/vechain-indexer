@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
@@ -33,23 +32,20 @@ open class NavigatorCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "blockNumber_-1" to Index().on(Navigator::blockNumber.name, Sort.Direction.DESC),
-                "navigator_status_1" to Index().on(Navigator::status.name, Sort.Direction.ASC),
-                "navigator_status_1_exitEffectiveDeadlineBlock_1" to
-                    Index()
-                        .on(Navigator::status.name, Sort.Direction.ASC)
-                        .on(Navigator::exitEffectiveDeadlineBlock.name, Sort.Direction.ASC),
-                "navigator_status_1_blockTimestamp_-1" to
-                    Index()
-                        .on(Navigator::status.name, Sort.Direction.ASC)
-                        .on(Navigator::blockTimestamp.name, Sort.Direction.DESC),
-                "navigator_stake_-1" to Index().on(Navigator::stake.name, Sort.Direction.DESC),
-                "navigator_totalDelegated_-1" to
-                    Index().on(Navigator::totalDelegated.name, Sort.Direction.DESC),
-                "navigator_citizenCount_-1" to
-                    Index().on(Navigator::citizenCount.name, Sort.Direction.DESC),
-                "navigator_registeredAt_-1" to
-                    Index().on(Navigator::registeredAt.name, Sort.Direction.DESC),
+                buildIndex(Navigator::blockNumber.name to Sort.Direction.DESC),
+                buildIndex(Navigator::status.name to Sort.Direction.ASC),
+                buildIndex(
+                    Navigator::status.name to Sort.Direction.ASC,
+                    Navigator::exitEffectiveDeadlineBlock.name to Sort.Direction.ASC,
+                ),
+                buildIndex(
+                    Navigator::status.name to Sort.Direction.ASC,
+                    Navigator::blockTimestamp.name to Sort.Direction.DESC,
+                ),
+                buildIndex(Navigator::stake.name to Sort.Direction.DESC),
+                buildIndex(Navigator::totalDelegated.name to Sort.Direction.DESC),
+                buildIndex(Navigator::citizenCount.name to Sort.Direction.DESC),
+                buildIndex(Navigator::registeredAt.name to Sort.Direction.DESC),
             )
         )
     }

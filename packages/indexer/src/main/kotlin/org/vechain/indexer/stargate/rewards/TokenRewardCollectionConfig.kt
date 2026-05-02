@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.stargate.tokenReward.TokenReward
@@ -35,16 +34,16 @@ open class TokenRewardCollectionConfig(
         // Ensure indexes
         ensureIndexes(
             listOf(
-                "validator_1_rewardPeriod_1_cycle_-1" to
-                    Index()
-                        .on(TokenReward::validator.name, Sort.Direction.ASC)
-                        .on(TokenReward::rewardPeriod.name, Sort.Direction.ASC)
-                        .on(TokenReward::cycle.name, Sort.Direction.DESC),
-                "tokenId_1_rewardPeriod_1_validator_1" to
-                    Index()
-                        .on(TokenReward::tokenId.name, Sort.Direction.ASC)
-                        .on(TokenReward::rewardPeriod.name, Sort.Direction.ASC)
-                        .on(TokenReward::validator.name, Sort.Direction.ASC),
+                buildIndex(
+                    TokenReward::validator.name to Sort.Direction.ASC,
+                    TokenReward::rewardPeriod.name to Sort.Direction.ASC,
+                    TokenReward::cycle.name to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    TokenReward::tokenId.name to Sort.Direction.ASC,
+                    TokenReward::rewardPeriod.name to Sort.Direction.ASC,
+                    TokenReward::validator.name to Sort.Direction.ASC,
+                ),
             )
         )
     }

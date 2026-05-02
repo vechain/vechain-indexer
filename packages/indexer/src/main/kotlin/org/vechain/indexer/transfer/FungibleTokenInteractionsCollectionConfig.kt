@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
@@ -33,12 +32,11 @@ open class FungibleTokenInteractionsCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "walletAddress_1" to
-                    Index().on(FungibleTokenInteraction::walletAddress.name, Sort.Direction.ASC),
-                "contractAddress_1_walletAddress_1" to
-                    Index()
-                        .on(FungibleTokenInteraction::contractAddress.name, Sort.Direction.ASC)
-                        .on(FungibleTokenInteraction::walletAddress.name, Sort.Direction.ASC),
+                buildIndex(FungibleTokenInteraction::walletAddress.name to Sort.Direction.ASC),
+                buildIndex(
+                    FungibleTokenInteraction::contractAddress.name to Sort.Direction.ASC,
+                    FungibleTokenInteraction::walletAddress.name to Sort.Direction.ASC,
+                ),
             )
         )
     }

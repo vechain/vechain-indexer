@@ -43,7 +43,7 @@ class AverageFeesPerUserCollectionConfigTest {
             capturedIndexes.any {
                 it.indexKeys["recordType"] == 1 &&
                     it.indexKeys["dayStartTimestamp"] == 1 &&
-                    it.indexOptions["name"] == "recordType_1_dayStartTimestamp_1_summary_only" &&
+                    it.indexOptions["name"] == "recordType_1_dayStartTimestamp_1" &&
                     it.indexOptions["partialFilterExpression"] ==
                         Document("recordType", AverageFeesPerUserRecordType.SUMMARY.name)
                             .append("dayStartTimestamp", Document("\$exists", true))

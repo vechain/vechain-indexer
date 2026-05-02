@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
@@ -33,27 +32,26 @@ open class NavigatorDelegationEventCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "blockNumber_-1" to
-                    Index().on(NavigatorDelegationEvent::blockNumber.name, Sort.Direction.DESC),
-                "deleg_event_navigator_1_blockTimestamp_-1_txId_-1__id_-1" to
-                    Index()
-                        .on(NavigatorDelegationEvent::navigator.name, Sort.Direction.ASC)
-                        .on(NavigatorDelegationEvent::blockTimestamp.name, Sort.Direction.DESC)
-                        .on(NavigatorDelegationEvent::txId.name, Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.DESC),
-                "deleg_event_citizen_1_blockTimestamp_-1_txId_-1__id_-1" to
-                    Index()
-                        .on(NavigatorDelegationEvent::citizen.name, Sort.Direction.ASC)
-                        .on(NavigatorDelegationEvent::blockTimestamp.name, Sort.Direction.DESC)
-                        .on(NavigatorDelegationEvent::txId.name, Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.DESC),
-                "deleg_event_navigator_1_citizen_1_blockTimestamp_-1_txId_-1__id_-1" to
-                    Index()
-                        .on(NavigatorDelegationEvent::navigator.name, Sort.Direction.ASC)
-                        .on(NavigatorDelegationEvent::citizen.name, Sort.Direction.ASC)
-                        .on(NavigatorDelegationEvent::blockTimestamp.name, Sort.Direction.DESC)
-                        .on(NavigatorDelegationEvent::txId.name, Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.DESC),
+                buildIndex(NavigatorDelegationEvent::blockNumber.name to Sort.Direction.DESC),
+                buildIndex(
+                    NavigatorDelegationEvent::navigator.name to Sort.Direction.ASC,
+                    NavigatorDelegationEvent::blockTimestamp.name to Sort.Direction.DESC,
+                    NavigatorDelegationEvent::txId.name to Sort.Direction.DESC,
+                    "_id" to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    NavigatorDelegationEvent::citizen.name to Sort.Direction.ASC,
+                    NavigatorDelegationEvent::blockTimestamp.name to Sort.Direction.DESC,
+                    NavigatorDelegationEvent::txId.name to Sort.Direction.DESC,
+                    "_id" to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    NavigatorDelegationEvent::navigator.name to Sort.Direction.ASC,
+                    NavigatorDelegationEvent::citizen.name to Sort.Direction.ASC,
+                    NavigatorDelegationEvent::blockTimestamp.name to Sort.Direction.DESC,
+                    NavigatorDelegationEvent::txId.name to Sort.Direction.DESC,
+                    "_id" to Sort.Direction.DESC,
+                ),
             )
         )
     }
