@@ -262,8 +262,12 @@ class StartupCollectionIndexesTest {
             indexOperations.createIndex(any())
         }
         assertTrue(
-            createdIndexes.any { it.indexOptions["name"] == "blockNumber_-1" },
-            "expected blockNumber_-1 index to be recreated with the new partial filter",
+            createdIndexes.any {
+                it.indexOptions["name"] == "blockNumber_-1" &&
+                    it.indexOptions["partialFilterExpression"] ==
+                        Document("status", Document("\$exists", true))
+            },
+            "expected blockNumber_-1 to be recreated with the new {status: {\$exists: true}} partial filter",
         )
     }
 
