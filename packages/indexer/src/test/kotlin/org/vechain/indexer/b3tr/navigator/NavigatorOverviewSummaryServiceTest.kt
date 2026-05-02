@@ -33,6 +33,7 @@ internal class NavigatorOverviewSummaryServiceTest {
         MockKAnnotations.init(this)
         every { inlineVersioningProperties.blockWindow } returns 10000L
         every { inlineVersioningProperties.maxVersions } returns 100
+        every { inlineVersioningProperties.minVersions } returns 20
         every { repository.findById(any()) } returns java.util.Optional.empty()
         service =
             NavigatorOverviewSummaryService(repository, mongoTemplate, inlineVersioningProperties)

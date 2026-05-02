@@ -123,6 +123,7 @@ open class B3trUserChallengesService(
             mongoTemplate = mongoTemplate,
             blockWindow = inlineVersioningProperties.blockWindow,
             maxVersions = inlineVersioningProperties.maxVersions,
+            minVersions = inlineVersioningProperties.minVersions,
         )
     }
 

@@ -166,6 +166,7 @@ open class SafeTxStateService(
             mongoTemplate = mongoTemplate,
             blockWindow = inlineVersioningProperties.blockWindow,
             maxVersions = inlineVersioningProperties.maxVersions,
+            minVersions = inlineVersioningProperties.minVersions,
         )
     }
 }

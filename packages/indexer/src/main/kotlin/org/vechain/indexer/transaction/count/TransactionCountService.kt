@@ -100,6 +100,7 @@ open class TransactionCountService(
             mongoTemplate = mongoTemplate,
             blockWindow = inlineVersioningProperties.blockWindow,
             maxVersions = inlineVersioningProperties.maxVersions,
+            minVersions = inlineVersioningProperties.minVersions,
         )
         recordPersistedSummary(summary)
     }

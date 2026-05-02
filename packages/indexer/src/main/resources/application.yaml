@@ -182,6 +182,7 @@ indexer:
   inline-versioning:
     block-window: ${INLINE_VERSIONING_BLOCK_WINDOW:10000}
     max-versions: ${INLINE_VERSIONING_MAX_VERSIONS:100}
+    min-versions: ${INLINE_VERSIONING_MIN_VERSIONS:20}
   blacklist:
     contract-address: ${BLACKLIST_CONTRACT_ADDRESS:0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5}
   version:

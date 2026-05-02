@@ -28,6 +28,7 @@ internal class VersionedDocumentPersistenceTest {
     companion object {
         private const val BLOCK_WINDOW = 10000L
         private const val MAX_VERSIONS = 100
+        private const val MIN_VERSIONS = 20
     }
 
     @Test
@@ -172,6 +173,74 @@ internal class VersionedDocumentPersistenceTest {
                 pipelineText.indexOf("\"state\": \"old\"")
         )
         assertEquals(1, writes.captured.size)
+    }
+
+    @Test
+    fun `trim pipeline uses minVersions as the retention floor`() {
+        // Block-window-trimmed history must never drop below minVersions, so the rollback
+        // safety horizon is preserved even when prior versions age out of the window.
+        val writes = slot<List<WriteModel<Document>>>()
+        val updated =
+            listOf(
+                TestDocument(
+                    id = "doc-1",
+                    version = 2,
+                    blockNumber = 20,
+                    blockId = "b2",
+                    blockTimestamp = 2000,
+                )
+            )
+        val existing =
+            listOf(
+                TestDocument(
+                    id = "doc-1",
+                    version = 1,
+                    blockNumber = 10,
+                    blockId = "b1",
+                    blockTimestamp = 1000,
+                )
+            )
+
+        every { mongoTemplate.getCollection("test_documents") } returns collection
+        every { mongoTemplate.converter } returns converter
+        every { converter.write(any<TestDocument>(), any<Document>()) } answers
+            {
+                val source = firstArg<TestDocument>()
+                val target = secondArg<Document>()
+                target["_id"] = source.getDocumentId()
+                target["version"] = source.version
+                target["blockNumber"] = source.blockNumber
+                target["blockId"] = source.blockId
+                target["blockTimestamp"] = source.blockTimestamp
+                target["state"] = source.state
+            }
+        every {
+            collection.bulkWrite(capture(writes), any<com.mongodb.client.model.BulkWriteOptions>())
+        } returns mockk(relaxed = true)
+
+        persist(updated, existing, "test_documents")
+
+        val updateModel = writes.captured.single() as UpdateOneModel<Document>
+        val pipelineText =
+            updateModel.updatePipeline!!
+                .map {
+                    it.toBsonDocument(
+                            Document::class.java,
+                            MongoClientSettings.getDefaultCodecRegistry(),
+                        )
+                        .toJson()
+                }
+                .joinToString("\n")
+
+        // The fallback slice and the size comparison must both reference MIN_VERSIONS.
+        assertTrue(
+            pipelineText.contains("\"\$slice\": [\"\$_previousVersions\", $MIN_VERSIONS]"),
+            "Expected \$slice fallback to use MIN_VERSIONS, pipeline was:\n$pipelineText",
+        )
+        assertTrue(
+            pipelineText.contains("\"\$gte\": [{\"\$size\""),
+            "Expected \$gte size comparison in trim pipeline, pipeline was:\n$pipelineText",
+        )
     }
 
     @Test
@@ -372,6 +441,7 @@ internal class VersionedDocumentPersistenceTest {
             mongoTemplate = mongoTemplate,
             blockWindow = BLOCK_WINDOW,
             maxVersions = MAX_VERSIONS,
+            minVersions = MIN_VERSIONS,
             initialVersion = VersionedDocumentInitialVersions.forCollection(collectionName),
             collectionName = collectionName,
         )

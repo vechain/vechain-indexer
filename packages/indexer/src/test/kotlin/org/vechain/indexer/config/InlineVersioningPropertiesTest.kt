@@ -25,7 +25,11 @@ class InlineVersioningPropertiesTest {
 
     @Test
     fun `maxVersions of 1 is valid`() {
-        val props = InlineVersioningProperties().apply { maxVersions = 1 }
+        val props =
+            InlineVersioningProperties().apply {
+                maxVersions = 1
+                minVersions = 1
+            }
         assertDoesNotThrow { props.validate() }
     }
 
@@ -39,5 +43,43 @@ class InlineVersioningPropertiesTest {
     fun `negative maxVersions is rejected`() {
         val props = InlineVersioningProperties().apply { maxVersions = -5 }
         assertThrows<IllegalArgumentException> { props.validate() }
+    }
+
+    @Test
+    fun `minVersions of 1 is valid`() {
+        val props = InlineVersioningProperties().apply { minVersions = 1 }
+        assertDoesNotThrow { props.validate() }
+    }
+
+    @Test
+    fun `minVersions of 0 is rejected`() {
+        val props = InlineVersioningProperties().apply { minVersions = 0 }
+        assertThrows<IllegalArgumentException> { props.validate() }
+    }
+
+    @Test
+    fun `negative minVersions is rejected`() {
+        val props = InlineVersioningProperties().apply { minVersions = -1 }
+        assertThrows<IllegalArgumentException> { props.validate() }
+    }
+
+    @Test
+    fun `minVersions greater than maxVersions is rejected`() {
+        val props =
+            InlineVersioningProperties().apply {
+                maxVersions = 10
+                minVersions = 11
+            }
+        assertThrows<IllegalArgumentException> { props.validate() }
+    }
+
+    @Test
+    fun `minVersions equal to maxVersions is valid`() {
+        val props =
+            InlineVersioningProperties().apply {
+                maxVersions = 5
+                minVersions = 5
+            }
+        assertDoesNotThrow { props.validate() }
     }
 }
