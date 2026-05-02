@@ -1039,6 +1039,14 @@ module "ecs-backend-service" {
       value = each.value.indexer.business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT
     },
     {
+      name  = "SAFE_PROXY_FACTORY_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.SAFE_PROXY_FACTORY_CONTRACT
+    },
+    {
+      name  = "SAFE_EMITTER_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.SAFE_EMITTER_CONTRACT
+    },
+    {
       name  = "INDEXER_SYNC_LOG_INTERVAL"
       value = each.value.indexer.sync-log-interval
     },
