@@ -42,7 +42,10 @@ class HistoryCollectionConfigTest {
                 indexerVersionService = indexerVersionService,
                 appCoroutineScope = CoroutineScope(Dispatchers.Unconfined),
             )
-            .initCollection()
+            .apply {
+                initCollection()
+                createPendingIndexes()
+            }
 
         assertTrue(
             capturedIndexes.any {
@@ -131,7 +134,10 @@ class HistoryCollectionConfigTest {
                         indexerVersionService = indexerVersionService,
                         appCoroutineScope = CoroutineScope(Dispatchers.Unconfined),
                     )
-                    .initCollection()
+                    .apply {
+                        initCollection()
+                        createPendingIndexes()
+                    }
             }
 
         assertEquals("Failed to create index blockNumber_-1 for IndexedHistoryEvent", error.message)

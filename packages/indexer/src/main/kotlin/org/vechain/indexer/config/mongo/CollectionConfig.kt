@@ -28,6 +28,14 @@ abstract class CollectionConfig(
 
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val ensuredIndexNamesByCollection = mutableMapOf<String, MutableSet<String>>()
+    private val pendingIndexes = mutableListOf<PendingIndex>()
+
+    private data class PendingIndex(
+        val name: String,
+        val index: Index,
+        val entityClass: Class<*>,
+        val partialFilter: Document?,
+    )
 
     abstract fun initCollection()
 
@@ -78,60 +86,28 @@ abstract class CollectionConfig(
     }
 
     /**
-     * Create an index on the collection
-     *
-     * @param indexName The name of the index
-     * @param index The index to create
+     * Registers indexes that should exist on [entityClass] after bootstrap. The indexes are
+     * buffered (not created yet); [removeStaleIndexes] runs against the registered names first to
+     * drop legacy indexes, then [createPendingIndexes] performs the actual `createIndex` calls.
+     * This split prevents `IndexOptionsConflict` (MongoDB error 85) when an index is renamed but
+     * the legacy index still exists with the same key spec.
      */
-    private fun ensureIndex(
-        indexName: String,
-        index: Index,
-        entityClass: Class<*> = modelObj,
-        partialFilter: Document? = null,
-    ) {
-        val collectionName = mongoTemplate.getCollectionName(entityClass)
-        ensuredIndexNamesByCollection.getOrPut(collectionName) { mutableSetOf() }.add(indexName)
-        try {
-            logger.info("Creating Index:    $indexName for ${entityClass.simpleName}")
-            val indexDef = index.named(indexName).background()
-            if (partialFilter != null) {
-                indexDef.partial(PartialIndexFilter.of(partialFilter))
-            }
-            mongoTemplate.indexOps(entityClass).createIndex(indexDef)
-            logger.info("Creation Success: $indexName for ${entityClass.simpleName}.")
-        } catch (e: Exception) {
-            logger.error("Creation Failed:  $indexName for ${entityClass.simpleName}", e)
-            throw IllegalStateException(
-                "Failed to create index $indexName for ${entityClass.simpleName}",
-                e,
-            )
-        }
-    }
-
     fun ensureIndexes(
         indexes: Collection<Pair<String, Index>>,
         entityClass: Class<*> = modelObj,
         partialFilter: Document? = INDEXED_DOCUMENT_PARTIAL_FILTER,
     ) {
-        val start = TimeSource.Monotonic.markNow()
-
         if (indexes.isEmpty()) {
             logger.info("No additional indexes configured for ${entityClass.simpleName}.")
             return
         }
 
-        logger.info(
-            "Ensuring ${indexes.size} indexes for ${entityClass.simpleName} before startup continues"
-        )
-
+        val collectionName = mongoTemplate.getCollectionName(entityClass)
+        val names = ensuredIndexNamesByCollection.getOrPut(collectionName) { mutableSetOf() }
         for ((indexName, index) in indexes) {
-            ensureIndex(indexName, index, entityClass, partialFilter)
+            names.add(indexName)
+            pendingIndexes.add(PendingIndex(indexName, index, entityClass, partialFilter))
         }
-
-        logger.info(
-            "Finished ensuring indexes for ${entityClass.simpleName} in {}.",
-            start.elapsedNow(),
-        )
     }
 
     /**
@@ -158,7 +134,8 @@ abstract class CollectionConfig(
 
     /**
      * Removes indexes from MongoDB that are not tracked by [ensureIndexes] calls during
-     * [initCollection]. Call this after all [ensureIndexes] calls have completed.
+     * [initCollection]. Must run after [initCollection] (so all expected names are registered) and
+     * before [createPendingIndexes] (so renamed indexes don't collide on `IndexOptionsConflict`).
      */
     fun removeStaleIndexes() {
         ensuredIndexNamesByCollection.forEach { (collectionName, expectedNames) ->
@@ -179,6 +156,46 @@ abstract class CollectionConfig(
                     }
                 }
             }
+        }
+    }
+
+    /** Creates the indexes registered via [ensureIndexes]. */
+    fun createPendingIndexes() {
+        if (pendingIndexes.isEmpty()) return
+
+        val start = TimeSource.Monotonic.markNow()
+        logger.info(
+            "Ensuring ${pendingIndexes.size} indexes for ${modelObj.simpleName} before startup continues"
+        )
+
+        for (pending in pendingIndexes) {
+            createIndex(pending)
+        }
+
+        logger.info(
+            "Finished ensuring indexes for ${modelObj.simpleName} in {}.",
+            start.elapsedNow(),
+        )
+    }
+
+    private fun createIndex(pending: PendingIndex) {
+        try {
+            logger.info("Creating Index:    ${pending.name} for ${pending.entityClass.simpleName}")
+            val indexDef = pending.index.named(pending.name).background()
+            if (pending.partialFilter != null) {
+                indexDef.partial(PartialIndexFilter.of(pending.partialFilter))
+            }
+            mongoTemplate.indexOps(pending.entityClass).createIndex(indexDef)
+            logger.info("Creation Success: ${pending.name} for ${pending.entityClass.simpleName}.")
+        } catch (e: Exception) {
+            logger.error(
+                "Creation Failed:  ${pending.name} for ${pending.entityClass.simpleName}",
+                e,
+            )
+            throw IllegalStateException(
+                "Failed to create index ${pending.name} for ${pending.entityClass.simpleName}",
+                e,
+            )
         }
     }
 }

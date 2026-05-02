@@ -38,7 +38,10 @@ class B3trChallengesCollectionConfigTest {
                 appCoroutineScope = CoroutineScope(Dispatchers.Unconfined),
                 indexerVersionService = indexerVersionService,
             )
-            .initCollection()
+            .apply {
+                initCollection()
+                createPendingIndexes()
+            }
 
         assertTrue(
             capturedIndexes.any {

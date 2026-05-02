@@ -38,7 +38,10 @@ class BlockUsageCollectionConfigTest {
                 indexerVersionService = indexerVersionService,
                 appCoroutineScope = CoroutineScope(Dispatchers.Unconfined),
             )
-            .initCollection()
+            .apply {
+                initCollection()
+                createPendingIndexes()
+            }
 
         assertTrue(
             capturedIndexes.any {
