@@ -1,11 +1,17 @@
 package org.vechain.indexer.config
 
+import io.mockk.Runs
 import io.mockk.clearAllMocks
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
 import io.mockk.verify
+import io.mockk.verifyOrder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import org.junit.jupiter.api.AfterEach
@@ -13,8 +19,11 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.context.ApplicationContext
 import org.vechain.indexer.BlockIndexer
+import org.vechain.indexer.Indexer
+import org.vechain.indexer.IndexerRunner
 import org.vechain.indexer.Status
 import org.vechain.indexer.config.metrics.IndexerHealthMetrics
+import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.version.IndexerVersionCollectionConfig
 
@@ -39,6 +48,7 @@ class IndexManagerTest {
     @AfterEach
     fun tearDown() {
         appCoroutineScope.coroutineContext.cancel()
+        unmockkObject(IndexerRunner.Companion)
     }
 
     @Test
@@ -70,5 +80,53 @@ class IndexManagerTest {
         verify { metrics.setIndexerSyncStatus("test-indexer", Status.SHUT_DOWN) }
         verify { metrics.setIndexerCurrentBlock("test-indexer", 1234L) }
         verify { metrics.setBlocksPerSecond("test-indexer", 0.0) }
+    }
+
+    @Test
+    fun `start runs initCollection then removeStaleIndexes then createPendingIndexes for each config`() {
+        // Locks the bootstrap order: stale removal must precede index creation, otherwise renamed
+        // indexes collide with the legacy ones (MongoDB IndexOptionsConflict, error 85).
+        mockkObject(IndexerRunner.Companion)
+        val runnerJob = mockk<Job>(relaxed = true)
+        every {
+            IndexerRunner.launch(any(), any(), any<List<Indexer>>(), any(), any(), any())
+        } returns runnerJob
+
+        val collectionConfig = mockk<CollectionConfig>(relaxed = true)
+        every { collectionConfig.modelObj } returns String::class.java
+        every { collectionConfig.initCollection() } just Runs
+        every { collectionConfig.removeStaleIndexes() } just Runs
+        every { collectionConfig.createPendingIndexes() } just Runs
+
+        val indexBootstrapState = mockk<IndexBootstrapState>(relaxed = true)
+        every { indexerVersionCollectionConfig.ensureIndexes() } just Runs
+
+        val indexer = mockk<Indexer>(relaxed = true)
+        every { indexer.name } returns "test-indexer"
+
+        val manager =
+            IndexManager(
+                indexers = listOf(indexer),
+                collectionConfigs = listOf(collectionConfig),
+                indexerVersionCollectionConfig = indexerVersionCollectionConfig,
+                indexBootstrapState = indexBootstrapState,
+                appCoroutineScope = appCoroutineScope,
+                thorClient = thorClient,
+                metrics = metrics,
+                applicationContext = applicationContext,
+                channelBatchSize = 10,
+            )
+
+        manager.start()
+
+        verifyOrder {
+            collectionConfig.initCollection()
+            collectionConfig.removeStaleIndexes()
+            collectionConfig.createPendingIndexes()
+        }
+        verify(exactly = 1) { indexBootstrapState.markReady(any()) }
+        verify(exactly = 1) {
+            IndexerRunner.launch(any(), any(), any<List<Indexer>>(), any(), any(), any())
+        }
     }
 }
