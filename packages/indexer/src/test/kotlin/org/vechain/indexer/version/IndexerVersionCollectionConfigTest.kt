@@ -18,7 +18,7 @@ class IndexerVersionCollectionConfigTest {
     @Test
     fun `ensureIndexes fails when unique index creation fails`() {
         every { mongoTemplate.indexOps(IndexerVersion::class.java) } returns indexOperations
-        every { indexOperations.ensureIndex(any()) } throws RuntimeException("boom")
+        every { indexOperations.createIndex(any()) } throws RuntimeException("boom")
 
         val error =
             assertThrows(IllegalStateException::class.java) {

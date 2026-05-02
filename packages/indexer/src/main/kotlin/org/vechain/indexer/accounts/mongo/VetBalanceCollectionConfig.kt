@@ -39,11 +39,12 @@ open class VetBalanceCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
+                buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),
                 // Supports API query by address + timestamp range with default sort by newest.
                 buildIndex(
                     VetBalance::address.name to Sort.Direction.ASC,
                     IndexedDocument::blockTimestamp.name to Sort.Direction.DESC,
-                )
+                ),
             )
         )
     }

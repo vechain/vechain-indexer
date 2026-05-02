@@ -33,6 +33,7 @@ open class ValidatorBlockCollectionConfig(
         // Ensure indexes
         ensureIndexes(
             listOf(
+                buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),
                 // For global queries (all validators, sorted by timestamp)
                 buildIndex(IndexedDocument::blockTimestamp.name to Sort.Direction.DESC),
                 // For per-validator queries sorted by timestamp

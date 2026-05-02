@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.safe.SafeMembership
@@ -33,6 +34,7 @@ open class SafeMembershipCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
+                buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),
                 // Serves CURRENT scope (removedBlock IS NULL is equality) with the API's
                 // addedBlock-desc sort: equality-equality-sort.
                 buildIndex(

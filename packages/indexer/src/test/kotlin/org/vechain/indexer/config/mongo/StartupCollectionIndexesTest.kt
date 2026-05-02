@@ -48,7 +48,7 @@ class StartupCollectionIndexesTest {
             mongoTemplate.exists(any<Query>(), AccountOverview::class.java, "account_overviews")
         } returns true
         every { mongoTemplate.indexOps(AccountOverview::class.java) } returns indexOperations
-        every { indexOperations.ensureIndex(capture(capturedIndexes)) } returns "created"
+        every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
         AccountOverviewCollectionConfig(
                 mongoTemplate = mongoTemplate,
@@ -80,7 +80,7 @@ class StartupCollectionIndexesTest {
         every { mongoTemplate.exists(any<Query>(), VetBalance::class.java, "vet_balances") } returns
             true
         every { mongoTemplate.indexOps(VetBalance::class.java) } returns indexOperations
-        every { indexOperations.ensureIndex(capture(capturedIndexes)) } returns "created"
+        every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
         VetBalanceCollectionConfig(
                 mongoTemplate = mongoTemplate,
@@ -110,7 +110,7 @@ class StartupCollectionIndexesTest {
         every { mongoTemplate.collectionExists(Contract::class.java) } returns true
         every { mongoTemplate.getCollectionName(Contract::class.java) } returns "contracts"
         every { mongoTemplate.indexOps(Contract::class.java) } returns indexOperations
-        every { indexOperations.ensureIndex(capture(capturedIndexes)) } returns "created"
+        every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
         ContractCollectionConfig(
                 mongoTemplate = mongoTemplate,
@@ -135,7 +135,7 @@ class StartupCollectionIndexesTest {
         every { mongoTemplate.collectionExists(Delegation::class.java) } returns true
         every { mongoTemplate.getCollectionName(Delegation::class.java) } returns "delegations"
         every { mongoTemplate.indexOps(Delegation::class.java) } returns indexOperations
-        every { indexOperations.ensureIndex(capture(capturedIndexes)) } returns "created"
+        every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
         DelegationCollectionConfig(
                 mongoTemplate = mongoTemplate,

@@ -35,7 +35,7 @@ class HistoryCollectionConfigTest {
         every { mongoTemplate.getCollectionName(IndexedHistoryEvent::class.java) } returns
             "history_events"
         every { mongoTemplate.indexOps(IndexedHistoryEvent::class.java) } returns indexOperations
-        every { indexOperations.ensureIndex(capture(capturedIndexes)) } returns "created"
+        every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
         HistoryCollectionConfig(
                 mongoTemplate = mongoTemplate,
@@ -122,7 +122,7 @@ class HistoryCollectionConfigTest {
         every { mongoTemplate.getCollectionName(IndexedHistoryEvent::class.java) } returns
             "history_events"
         every { mongoTemplate.indexOps(IndexedHistoryEvent::class.java) } returns indexOperations
-        every { indexOperations.ensureIndex(any()) } throws RuntimeException("boom")
+        every { indexOperations.createIndex(any()) } throws RuntimeException("boom")
 
         val error =
             assertThrows(IllegalStateException::class.java) {

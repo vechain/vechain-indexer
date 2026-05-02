@@ -15,7 +15,7 @@ open class IndexerVersionCollectionConfig(private val mongoTemplate: MongoTempla
             logger.info("⏱ Creating unique index on collectionName for IndexerVersion")
             mongoTemplate
                 .indexOps(IndexerVersion::class.java)
-                .ensureIndex(
+                .createIndex(
                     Index()
                         .on(IndexerVersion::collectionName.name, Sort.Direction.ASC)
                         .unique()

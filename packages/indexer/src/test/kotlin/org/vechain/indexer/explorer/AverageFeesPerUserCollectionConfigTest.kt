@@ -30,7 +30,7 @@ class AverageFeesPerUserCollectionConfigTest {
         every { mongoTemplate.getCollectionName(AverageFeesPerUser::class.java) } returns
             "average_fees_per_user"
         every { mongoTemplate.indexOps(AverageFeesPerUser::class.java) } returns indexOperations
-        every { indexOperations.ensureIndex(capture(capturedIndexes)) } returns "created"
+        every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
         AverageFeesPerUserCollectionConfig(
                 mongoTemplate = mongoTemplate,

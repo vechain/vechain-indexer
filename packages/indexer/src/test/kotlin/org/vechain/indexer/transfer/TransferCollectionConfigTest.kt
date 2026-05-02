@@ -32,7 +32,7 @@ class TransferCollectionConfigTest {
         every { mongoTemplate.getCollectionName(IndexedTransferEvent::class.java) } returns
             "transfer_events"
         every { mongoTemplate.indexOps(IndexedTransferEvent::class.java) } returns indexOperations
-        every { indexOperations.ensureIndex(capture(capturedIndexes)) } returns "created"
+        every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
         TransferCollectionConfig(
                 mongoTemplate = mongoTemplate,

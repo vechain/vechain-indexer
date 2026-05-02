@@ -24,8 +24,6 @@ abstract class CollectionConfig(
          */
         val INDEXED_DOCUMENT_PARTIAL_FILTER: Document =
             Document("blockNumber", Document("\$exists", true))
-
-        const val BLOCK_NUMBER_INDEX_NAME = "blockNumber_-1"
     }
 
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -99,7 +97,7 @@ abstract class CollectionConfig(
             if (partialFilter != null) {
                 indexDef.partial(PartialIndexFilter.of(partialFilter))
             }
-            mongoTemplate.indexOps(entityClass).ensureIndex(indexDef)
+            mongoTemplate.indexOps(entityClass).createIndex(indexDef)
             logger.info("Creation Success: $indexName for ${entityClass.simpleName}.")
         } catch (e: Exception) {
             logger.error("Creation Failed:  $indexName for ${entityClass.simpleName}", e)
@@ -117,16 +115,6 @@ abstract class CollectionConfig(
     ) {
         val start = TimeSource.Monotonic.markNow()
 
-        val blockNumberCovered =
-            indexes.any { (_, index) ->
-                index.indexKeys.entries.firstOrNull()?.let {
-                    it.key == "blockNumber" && it.value == -1
-                } ?: false
-            }
-        if (!blockNumberCovered) {
-            ensureBlockNumberIndex(entityClass)
-        }
-
         if (indexes.isEmpty()) {
             logger.info("No additional indexes configured for ${entityClass.simpleName}.")
             return
@@ -143,21 +131,6 @@ abstract class CollectionConfig(
         logger.info(
             "Finished ensuring indexes for ${entityClass.simpleName} in {}.",
             start.elapsedNow(),
-        )
-    }
-
-    /**
-     * Ensures a blockNumber_-1 index exists for all IndexedDocument collections. Always uses
-     * [INDEXED_DOCUMENT_PARTIAL_FILTER] so the index is consistent regardless of which partial
-     * filter the caller passes to [ensureIndexes].
-     */
-    private fun ensureBlockNumberIndex(entityClass: Class<*>) {
-        if (!IndexedDocument::class.java.isAssignableFrom(entityClass)) return
-        ensureIndex(
-            BLOCK_NUMBER_INDEX_NAME,
-            Index().on("blockNumber", Sort.Direction.DESC),
-            entityClass,
-            INDEXED_DOCUMENT_PARTIAL_FILTER,
         )
     }
 

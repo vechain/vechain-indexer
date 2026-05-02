@@ -33,6 +33,7 @@ open class NftOwnerBalanceCollectionConfig(
         ensureCollection()
         ensureIndexes(
             listOf(
+                buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),
                 buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.ASC),
                 buildIndex(
                     NftOwnerBalance::owner.name to Sort.Direction.ASC,

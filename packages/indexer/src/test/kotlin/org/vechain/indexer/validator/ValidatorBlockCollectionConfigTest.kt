@@ -32,7 +32,7 @@ class ValidatorBlockCollectionConfigTest {
         every { mongoTemplate.getCollectionName(ValidatorBlock::class.java) } returns
             "validator_block_rewards"
         every { mongoTemplate.indexOps(ValidatorBlock::class.java) } returns indexOperations
-        every { indexOperations.ensureIndex(capture(capturedIndexes)) } returns "created"
+        every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
         ValidatorBlockCollectionConfig(
                 mongoTemplate = mongoTemplate,
