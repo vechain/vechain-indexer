@@ -13,9 +13,11 @@ class InlineVersioningProperties {
     /** Hard cap on the _previousVersions array size (safety net). */
     var maxVersions: Int = 100
 
-    // Floor on retained _previousVersions entries. Must be >= the deepest chain reorg the
-    // indexer is expected to unwind, so rollbacks never hit an empty history when the
-    // block-window trim would otherwise drop the array below that depth.
+    /**
+     * Floor on retained _previousVersions entries. Must be >= the deepest chain reorg the indexer
+     * is expected to unwind, so rollbacks never hit an empty history when the block-window trim
+     * would otherwise drop the array below that depth.
+     */
     var minVersions: Int = 20
 
     @PostConstruct

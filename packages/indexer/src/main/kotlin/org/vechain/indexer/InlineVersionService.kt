@@ -109,9 +109,10 @@ object InlineVersionService {
                     )
 
                 // If the block-window filter retains fewer than minVersions entries, fall back
-                // to the most recent minVersions slice instead. This ensures the array never
-                // drops below the configured rollback safety horizon, even for documents that
-                // update infrequently and whose prior versions have aged out of the window.
+                // to the most recent minVersions slice instead. This preserves at least
+                // minVersions entries when that many prior versions exist; otherwise it keeps
+                // all available prior versions, including for infrequently updated documents
+                // whose older history has aged out of the window.
                 val trimmedWithMinimum =
                     Document(
                         "\$cond",
