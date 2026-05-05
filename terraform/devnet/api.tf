@@ -564,10 +564,6 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.average-fees-per-user
     },
     {
-      name  = "START_ROUND_B3TR_SUSTAINABLE_ACTIONS"
-      value = each.value.indexer.start-round.b3tr-sustainable-actions
-    },
-    {
       name  = "BLACKLIST_CONTRACT_ADDRESS"
       value = each.value.indexer.blacklist.contract-address
     },

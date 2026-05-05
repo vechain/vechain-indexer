@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.config.metrics.ProcessorMetricsRecorder
+import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.BlockIdentifier
 
 abstract class BaseProcessor(
@@ -29,11 +30,21 @@ abstract class BaseProcessor(
     override suspend fun process(entry: IndexingResult) {
         val start = TimeSource.Monotonic.markNow()
         try {
+            assertEventsInBlockOrder(entry.events())
             processEntry(entry)
             checkpointService.trySaveCheckpoint(collectionName, entry.latestBlockNumber())
             metricsRecorder.recordEvents(entry.events().size)
         } finally {
             metricsRecorder.record(entry, start.elapsedNow())
+        }
+    }
+
+    private fun assertEventsInBlockOrder(events: List<IndexedEvent>) {
+        for (i in 1 until events.size) {
+            check(events[i].blockNumber >= events[i - 1].blockNumber) {
+                "$indexerName received out-of-order events at index $i: " +
+                    "block ${events[i].blockNumber} follows block ${events[i - 1].blockNumber}"
+            }
         }
     }
 

@@ -155,8 +155,6 @@ indexer:
     safe-tx-proposals: ${INDEXER_START_BLOCK_SAFE_TX_PROPOSALS:0}
   stop-block:
     historic-proposals: ${INDEXER_STOP_BLOCK_HISTORIC_PROPOSALS:22948372}
-  start-round:
-    b3tr-sustainable-actions: ${START_ROUND_B3TR_SUSTAINABLE_ACTIONS:4}
   sync-log-interval: ${INDEXER_SYNC_LOG_INTERVAL:100}
   sync-block-batch-size:
     contracts: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_CONTRACTS:100}

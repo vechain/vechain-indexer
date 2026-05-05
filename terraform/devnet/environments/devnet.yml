@@ -158,8 +158,6 @@ enabled_nets:
         safe-membership:            '0'
         safe-tx-state:              '0'
         safe-tx-proposals:          '0'
-      start-round:
-        b3tr-sustainable-actions:   '0'
       sync-log-interval: '100'
       sync-block-batch-size:
         contracts:                 '100'

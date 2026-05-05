@@ -18,6 +18,8 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
+import org.vechain.indexer.event.model.generic.AbiEventParameters
+import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.BlockIdentifier
 
@@ -186,6 +188,59 @@ class BaseProcessorTest {
             }
 
             verify(exactly = 0) { checkpointService.trySaveCheckpoint(any(), any()) }
+        }
+    }
+
+    @Nested
+    inner class EventOrderingPrecondition {
+
+        @BeforeEach
+        fun setup() {
+            every { checkpointService.trySaveCheckpoint(any(), any()) } just Runs
+        }
+
+        private fun event(blockNumber: Long, id: String = "evt-$blockNumber") =
+            buildIndexedEvent(
+                id = id,
+                blockId = "block-$blockNumber",
+                blockNumber = blockNumber,
+                blockTimestamp = blockNumber * 10,
+                eventType = "Transfer",
+                params = AbiEventParameters(returnValues = emptyMap()),
+            )
+
+        @Test
+        fun `process accepts events in non-decreasing block order`() = runBlocking {
+            processor.process(
+                IndexingResult.LogResult(
+                    3L,
+                    listOf(event(1L), event(1L), event(2L), event(3L)),
+                    Status.SYNCING,
+                )
+            )
+
+            verify { checkpointService.trySaveCheckpoint(TEST_COLLECTION, 3L) }
+        }
+
+        @Test
+        fun `process throws when a later event has a lower block number`() {
+            val outOfOrder =
+                IndexingResult.LogResult(2L, listOf(event(2L), event(1L)), Status.SYNCING)
+
+            val ex =
+                assertThrows<IllegalStateException> {
+                    runBlocking { processor.process(outOfOrder) }
+                }
+
+            assertEquals(true, ex.message?.contains(TEST_INDEXER_NAME))
+            assertEquals(true, ex.message?.contains("out-of-order"))
+            verify(exactly = 0) { checkpointService.trySaveCheckpoint(any(), any()) }
+        }
+
+        @Test
+        fun `process accepts an empty event list`() = runBlocking {
+            processor.process(IndexingResult.LogResult(5L, emptyList(), Status.SYNCING))
+            verify { checkpointService.trySaveCheckpoint(TEST_COLLECTION, 5L) }
         }
     }
 
