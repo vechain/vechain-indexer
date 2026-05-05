@@ -18,7 +18,6 @@ import org.vechain.indexer.b3tr.action.ActionSummaryUtils.groupByAppId
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.groupByReceiver
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.validateAndFilterImpacts
 import org.vechain.indexer.b3tr.action.repository.AppRoundActionSummaryRepository
-import org.vechain.indexer.b3tr.round.RoundUtils.discoverRoundId
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.saveVersionedDocuments
@@ -38,30 +37,13 @@ open class AppRoundActionSummaryService(
     open fun processEvents(
         events: List<IndexedEvent>,
         roundId: Int,
-    ): Triple<List<AppRoundActionSummary>, List<AppRoundActionSummary>, Int> {
-        assertEventTypes(
-            events,
-            "B3TR_ActionReward",
-            "EmissionDistributed",
-            "EmissionDistributedV2",
-        )
+    ): Pair<List<AppRoundActionSummary>, List<AppRoundActionSummary>> {
+        assertEventTypes(events, "B3TR_ActionReward")
 
-        // Pre-collect all record IDs by simulating round discovery
         val allRecordIds = mutableSetOf<String>()
-        var preloadRoundId = roundId
-        groupByBlock(events).forEach { (_, blockEvents) ->
-            val roundChangeEvents =
-                blockEvents.filter {
-                    it.eventType == "EmissionDistributed" || it.eventType == "EmissionDistributedV2"
-                }
-            val rewardDistributedEvents = blockEvents.filter { it.eventType == "B3TR_ActionReward" }
-            preloadRoundId = discoverRoundId(roundChangeEvents, preloadRoundId)
-            if (rewardDistributedEvents.isNotEmpty()) {
-                groupByAppId(rewardDistributedEvents).forEach { (appId, appEvents) ->
-                    groupByReceiver(appEvents).forEach { (receiverId, _) ->
-                        allRecordIds.add(generateId(appId, receiverId, "$preloadRoundId"))
-                    }
-                }
+        groupByAppId(events).forEach { (appId, appEvents) ->
+            groupByReceiver(appEvents).forEach { (receiverId, _) ->
+                allRecordIds.add(generateId(appId, receiverId, "$roundId"))
             }
         }
         val preloaded =
@@ -75,38 +57,20 @@ open class AppRoundActionSummaryService(
             VersionedDocumentAccumulator<AppRoundActionSummary>(
                 findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) }
             )
-        var updatedRoundId = roundId
 
         groupByBlock(events).forEach { (blockDetails, blockEvents) ->
             accumulator.startBlock()
-            val roundChangeEvents =
-                blockEvents.filter {
-                    (it.eventType == "EmissionDistributed" ||
-                        it.eventType == "EmissionDistributedV2")
-                }
-            val rewardDistributedEvents = blockEvents.filter { it.eventType == "B3TR_ActionReward" }
 
-            // Ensure no unexpected events are present
-            require(roundChangeEvents.size + rewardDistributedEvents.size == blockEvents.size) {
-                "Unexpected event types found in block ${blockDetails.blockNumber}"
-            }
-            updatedRoundId = discoverRoundId(roundChangeEvents, updatedRoundId)
-
-            if (rewardDistributedEvents.isEmpty()) {
-                // No relevant events to process in this block
-                return@forEach
-            }
-
-            groupByAppId(rewardDistributedEvents).forEach { (appId, appEvents) ->
+            groupByAppId(blockEvents).forEach { (appId, appEvents) ->
                 groupByReceiver(appEvents).forEach { (receiverId, receiverEvents) ->
-                    val recordId = generateId(appId, receiverId, "$updatedRoundId")
+                    val recordId = generateId(appId, receiverId, "$roundId")
                     val (existing, nextVersion) = accumulator.resolve(recordId)
 
                     val updated =
                         createOrUpdateExisting(
                             appId,
                             receiverId,
-                            updatedRoundId,
+                            roundId,
                             receiverEvents,
                             blockDetails,
                             existing,
@@ -118,8 +82,7 @@ open class AppRoundActionSummaryService(
             }
         }
 
-        val (updated, archived) = accumulator.results()
-        return Triple(updated, archived, updatedRoundId)
+        return accumulator.results()
     }
 
     @Transactional(rollbackFor = [Exception::class])
