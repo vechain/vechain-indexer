@@ -1,11 +1,16 @@
 # syntax=docker/dockerfile:1
-FROM amazoncorretto:21-alpine3.21 AS builder
-
-RUN apk update && apk upgrade
-RUN apk add --no-cache curl
+FROM amazoncorretto:21-alpine3.22 AS builder
 
 ARG PACKAGE_NAME
 ARG APP_VERSION
+
+# Reference APP_VERSION so this layer's cache key changes per release,
+# forcing apk to re-run against the current Alpine repos on every new
+# version. Same-version rebuilds still hit cache. --no-cache keeps the
+# apk index out of the final image.
+RUN echo "Building $APP_VERSION" \
+    && apk --no-cache upgrade \
+    && apk add --no-cache curl
 
 WORKDIR /usr/app
 
@@ -35,13 +40,18 @@ RUN --mount=type=cache,target=/root/.gradle/caches \
     --mount=type=secret,id=gradle_props,target=/root/.gradle/gradle.properties,required=false \
     ./gradlew packages:$PACKAGE_NAME:build -x test
 
-FROM amazoncorretto:21-alpine3.21 AS prod
-
-RUN apk update && apk upgrade
-RUN apk add --no-cache curl
+FROM amazoncorretto:21-alpine3.22 AS prod
 
 ARG PACKAGE_NAME
 ARG APP_VERSION
+
+# Reference APP_VERSION so this layer's cache key changes per release,
+# forcing apk to re-run against the current Alpine repos on every new
+# version. Same-version rebuilds still hit cache. --no-cache keeps the
+# apk index out of the final image.
+RUN echo "Building $APP_VERSION" \
+    && apk --no-cache upgrade \
+    && apk add --no-cache curl
 
 ENV PACKAGE_NAME=$PACKAGE_NAME
 ENV APP_VERSION=$APP_VERSION
