@@ -8,6 +8,6 @@ permissions: {}
 
 jobs:
   validate:
-    uses: vechain/github-actions/.github/workflows/validate-pr-label.yaml@4a207b1fe556cd46cbae1ea430365c7371498a7e # v.1.1.6
+    uses: vechain/github-actions-public/.github/workflows/validate-pr-label.yaml@f54f69d33344b241b5ec901d3d5e1b02d44a1b96 # v2.3.0
     with:
       FAIL_IF_MISSING_LABEL: true
