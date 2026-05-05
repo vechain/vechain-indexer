@@ -15,9 +15,10 @@ import org.vechain.indexer.thor.model.BlockRevision
  * Base class for processors that maintain a current B3TR round id across blocks.
  *
  * Round id is resolved lazily on the first non-empty batch by querying
- * [B3trRoundService.getCurrentRound] at the block immediately preceding the first incoming event,
- * giving the authoritative round at the resume point regardless of whether the latest record's
- * round is stale. The processor fails fast if the contract call cannot resolve a round.
+ * [B3trRoundService.getCurrentRound] at the block immediately preceding the first incoming event.
+ * If the contract call reverts (e.g. the indexer started before the `Emissions` contract was
+ * deployed) the processor defaults to round 0 and waits for an `EmissionDistributed` event to
+ * advance it. Receiving a non-transition event while still at round 0 fails fast.
  *
  * Within each batch, events are sliced at `EmissionDistributed`/`EmissionDistributedV2` boundaries
  * so that each call to [processSlice] receives only events that belong to a single round.
@@ -53,6 +54,11 @@ abstract class BaseRoundAwareStatefulProcessor<T : VersionedDocument>(
         val updated = mutableListOf<T>()
         val existing = mutableListOf<T>()
         for (slice in sliced.slices) {
+            check(slice.roundId > 0) {
+                "$indexerName cannot attribute events at block ${slice.events.first().blockNumber} " +
+                    "to a round: roundId is still 0 (no EmissionDistributed event observed). " +
+                    "Check the indexer start-block aligns with the Emissions contract deployment."
+            }
             val (u, e) = processSlice(slice.events, slice.roundId)
             updated += u
             existing += e
@@ -83,10 +89,9 @@ abstract class BaseRoundAwareStatefulProcessor<T : VersionedDocument>(
 
     private suspend fun resolveInitialRound(firstEventBlockNumber: Long): Int {
         val priorBlock = (firstEventBlockNumber - 1).coerceAtLeast(0L)
-        return b3trRoundService.getCurrentRound(BlockRevision.Number(priorBlock))
-            ?: error(
-                "Unable to resolve current B3TR round at block $priorBlock via Emissions.getCurrentCycle()"
-            )
+        // Null indicates the contract reverted (e.g. Emissions not yet deployed at this block).
+        // Default to round 0 and rely on EmissionDistributed events to advance it.
+        return b3trRoundService.getCurrentRound(BlockRevision.Number(priorBlock)) ?: 0
     }
 
     private data class RoundSlice(val roundId: Int, val events: List<IndexedEvent>)
@@ -104,7 +109,13 @@ abstract class BaseRoundAwareStatefulProcessor<T : VersionedDocument>(
                     slices.add(RoundSlice(currentRoundId, current.toList()))
                     current.clear()
                 }
-                currentRoundId = ActionSummaryUtils.getCycle(event)
+                val nextCycle = ActionSummaryUtils.getCycle(event)
+                check(nextCycle == currentRoundId + 1) {
+                    "$indexerName received unexpected ${event.eventType} cycle $nextCycle " +
+                        "at block ${event.blockNumber} (expected ${currentRoundId + 1}). " +
+                        "Rounds must advance by exactly 1."
+                }
+                currentRoundId = nextCycle
             } else {
                 current.add(event)
             }

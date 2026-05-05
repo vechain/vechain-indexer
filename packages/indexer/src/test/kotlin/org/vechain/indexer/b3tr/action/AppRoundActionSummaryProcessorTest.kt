@@ -276,6 +276,23 @@ internal class AppRoundActionSummaryProcessorTest {
             verify(exactly = 0) { service.save(any(), any()) }
             assertEquals(2, processor.readRoundId())
         }
+
+        @Test
+        fun `unexpected EmissionDistributed cycle fails fast`() {
+            // Initial round resolves to 1 via the parent stub; next emission must be cycle=2.
+            val block = BlockDetails(blockId = "block-1", blockNumber = 1L, blockTimestamp = 10L)
+            val events = listOf(emission("skip", block, cycle = "5"))
+
+            org.junit.jupiter.api.assertThrows<IllegalStateException> {
+                runBlocking {
+                    processor.process(
+                        IndexingResult.LogResult(block.blockNumber, events, Status.SYNCING)
+                    )
+                }
+            }
+
+            verify(exactly = 0) { service.processEvents(any(), any()) }
+        }
     }
 
     @Nested
@@ -303,7 +320,7 @@ internal class AppRoundActionSummaryProcessorTest {
         }
 
         @Test
-        fun `process fails fast when contract cannot resolve current round`() {
+        fun `business events under round 0 fail fast`() {
             val block = BlockDetails(blockId = "block-1", blockNumber = 1L, blockTimestamp = 10L)
             val events = listOf(reward("e1", block))
 
@@ -318,7 +335,28 @@ internal class AppRoundActionSummaryProcessorTest {
             }
 
             verify(exactly = 0) { service.processEvents(any(), any()) }
-            assertEquals(null, processor.readRoundId())
+        }
+
+        @Test
+        fun `EmissionDistributed advances roundId from 0 even when contract reverts`() {
+            val block = BlockDetails(blockId = "block-1", blockNumber = 1L, blockTimestamp = 10L)
+            val transition = emission("transition", block, cycle = "1")
+            val rewardAfter = reward("after", block)
+            val events = listOf(transition, rewardAfter)
+
+            coEvery { b3trRoundService.getCurrentRound(any<BlockRevision>()) } returns null
+
+            every { service.processEvents(listOf(rewardAfter), 1) } returns
+                (emptyList<AppRoundActionSummary>() to emptyList())
+
+            runBlocking {
+                processor.process(
+                    IndexingResult.LogResult(block.blockNumber, events, Status.SYNCING)
+                )
+            }
+
+            verify(exactly = 1) { service.processEvents(listOf(rewardAfter), 1) }
+            assertEquals(1, processor.readRoundId())
         }
 
         @Test
