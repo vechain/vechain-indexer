@@ -77,11 +77,11 @@ class HistoryIndexerTest {
                 that(eventTypes)
                     .isEqualTo(
                         listOf(
+                            "B3TR_ActionReward",
+                            "B3TR_ActionReward",
+                            "VET_TRANSFER",
+                            "VET_TRANSFER",
                             "Transfer",
-                            "VET_TRANSFER",
-                            "VET_TRANSFER",
-                            "B3TR_ActionReward",
-                            "B3TR_ActionReward",
                         )
                     )
             }
@@ -224,9 +224,9 @@ class HistoryIndexerTest {
             that(eventTypes)
                 .isEqualTo(
                     listOf(
+                        "STARGATE_STAKE",
                         "STARGATE_BOOST",
                         "STARGATE_DELEGATE_REQUEST",
-                        "STARGATE_STAKE",
                         "Transfer",
                         "Transfer",
                         "Transfer",
@@ -285,8 +285,8 @@ class HistoryIndexerTest {
             that(eventTypes)
                 .isEqualTo(
                     listOf(
-                        "STARGATE_DELEGATE_LEGACY",
                         "STARGATE_STAKE",
+                        "STARGATE_DELEGATE_LEGACY",
                         "STARGATE_CLAIM_REWARDS_BASE_LEGACY",
                         "STARGATE_UNSTAKE",
                         "STARGATE_CLAIM_REWARDS_BASE_LEGACY",
@@ -294,8 +294,8 @@ class HistoryIndexerTest {
                         "STARGATE_CLAIM_REWARDS_BASE_LEGACY",
                         "STARGATE_CLAIM_REWARDS_BASE_LEGACY",
                         "STARGATE_CLAIM_REWARDS_DELEGATE_LEGACY",
-                        "STARGATE_DELEGATE_LEGACY",
                         "STARGATE_STAKE",
+                        "STARGATE_DELEGATE_LEGACY",
                         "STARGATE_UNDELEGATE_LEGACY",
                         "Transfer",
                     )
