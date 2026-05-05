@@ -5,9 +5,12 @@ ARG PACKAGE_NAME
 ARG APP_VERSION
 
 # Reference APP_VERSION so this layer's cache key changes per release,
-# guaranteeing security patches in the Alpine repos are picked up.
-RUN echo "Building $APP_VERSION" && apk update && apk upgrade
-RUN apk add --no-cache curl
+# forcing apk to re-run against the current Alpine repos on every new
+# version. Same-version rebuilds still hit cache. --no-cache keeps the
+# apk index out of the final image.
+RUN echo "Building $APP_VERSION" \
+    && apk --no-cache upgrade \
+    && apk add --no-cache curl
 
 WORKDIR /usr/app
 
@@ -43,9 +46,12 @@ ARG PACKAGE_NAME
 ARG APP_VERSION
 
 # Reference APP_VERSION so this layer's cache key changes per release,
-# guaranteeing security patches in the Alpine repos are picked up.
-RUN echo "Building $APP_VERSION" && apk update && apk upgrade
-RUN apk add --no-cache curl
+# forcing apk to re-run against the current Alpine repos on every new
+# version. Same-version rebuilds still hit cache. --no-cache keeps the
+# apk index out of the final image.
+RUN echo "Building $APP_VERSION" \
+    && apk --no-cache upgrade \
+    && apk add --no-cache curl
 
 ENV PACKAGE_NAME=$PACKAGE_NAME
 ENV APP_VERSION=$APP_VERSION
