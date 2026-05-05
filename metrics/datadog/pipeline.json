@@ -453,6 +453,12 @@
         },
         {
           "filter": {
+            "query": "@http.url_details.path:/api/v1/b3tr/relayer/auto-voting-users/at-round/*"
+          },
+          "name": "/api/v1/b3tr/relayer/auto-voting-users/at-round/{roundId}"
+        },
+        {
+          "filter": {
             "query": "@http.url_details.path:/api/v1/b3tr/users/*/proposals/comments"
           },
           "name": "/api/v1/b3tr/users/{wallet}/proposals/comments"

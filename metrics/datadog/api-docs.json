@@ -7163,6 +7163,108 @@
         ]
       }
     },
+    "/api/v1/b3tr/relayer/auto-voting-users/at-round/{roundId}": {
+      "get": {
+        "description": "\n            Returns the full set of addresses that had auto-voting enabled at the start of the\n            given round.\n\n            Toggles are checkpointed on-chain: a toggle emitted during round N is effective from\n            round N+1 onward, because round N's auto-voting state was already snapshotted at its\n            `voteStart` block before the event landed. This endpoint applies that semantic by\n            filtering `AutoVotingToggled` history to `roundId < requestedRoundId` and returning the\n            latest status per address.\n\n            Returned in a single response (no pagination) — the relayer consumes the whole queue\n            at once.\n        ",
+        "operationId": "getEnabledAtRound",
+        "parameters": [
+          {
+            "description": "Round ID to filter by.",
+            "in": "path",
+            "name": "roundId",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/XProjectIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "List addresses with auto-voting enabled for a given round",
+        "tags": [
+          "B3TR - Relayer"
+        ]
+      }
+    },
     "/api/v1/b3tr/richlist": {
       "get": {
         "description": "\n            Returns the list of holders by balance descending, with cursor pagination.\n            Use scope=ALL (default) for combined VOT3+B3TR, scope=VOT3 or scope=B3TR for a single token.\n            B3TR held by the VOT3 contract is excluded when scope is B3TR or ALL.\n            ",
@@ -16778,6 +16880,10 @@
     {
       "description": "Endpoints for Galaxy Member level statistics.",
       "name": "B3TR - Galaxy Member NFTs"
+    },
+    {
+      "description": "Endpoints for the VeBetterDAO relayer-node action queue.",
+      "name": "B3TR - Relayer"
     },
     {
       "description": "Query on chain transactions",

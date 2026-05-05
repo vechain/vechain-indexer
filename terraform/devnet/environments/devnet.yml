@@ -142,6 +142,7 @@ enabled_nets:
         b3tr-balance:               '0'
         b3tr-x-alloc-result:        '0'
         b3tr-sustainable-actions:   '0'
+        b3tr-auto-voting-toggles:   '0'
         b3tr-proposal:              '0'
         historic-proposals:         '0'
         delegation:                 '0'

@@ -7,6 +7,11 @@ object IndexerNames {
         const val COLLECTION = "b3tr_app_action_summaries_all_time"
     }
 
+    object AUTO_VOTING_TOGGLE {
+        const val NAME = "AutoVotingToggleIndexer"
+        const val COLLECTION = "b3tr_auto_voting_toggles"
+    }
+
     object APP_DAILY_ACTION_SUMMARY {
         const val NAME = "AppDailyActionSummaryIndexer"
         const val COLLECTION = "b3tr_app_action_summaries_daily"

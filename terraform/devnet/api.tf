@@ -512,6 +512,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.b3tr-sustainable-actions
     },
     {
+      name  = "INDEXER_START_BLOCK_B3TR_AUTO_VOTING_TOGGLES"
+      value = each.value.indexer.start-block.b3tr-auto-voting-toggles
+    },
+    {
       name  = "INDEXER_START_BLOCK_B3TR_CHALLENGES"
       value = each.value.indexer.start-block.b3tr-challenges
     },
