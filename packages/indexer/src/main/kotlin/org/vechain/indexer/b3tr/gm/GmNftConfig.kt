@@ -20,7 +20,6 @@ open class GmNftConfig {
         processor: GmNftProcessor,
         @Value("\${indexer.start-block.b3tr}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.b3tr}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.B3TR_CONTRACT}") b3trContractAddress: String,
         @Value("\${business-event.substitutions.VOTER_REWARDS_CONTRACT}")
         voterRewardsContractAddress: String,
@@ -33,7 +32,6 @@ open class GmNftConfig {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .businessEvents("business-events/b3tr", "abis/b3tr")
             .businessEventNames(
                 listOf(

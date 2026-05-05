@@ -18,7 +18,6 @@ open class TransferConfig {
         processor: TransferProcessor,
         @Value("\${indexer.start-block.transfers}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.transfers}") syncBlockBatchSize: Long,
     ): Indexer =
         IndexerFactory()
             .name(IndexerNames.TRANSFER.NAME)
@@ -28,7 +27,6 @@ open class TransferConfig {
             .abiEventNames(listOf("Transfer", "TransferSingle", "TransferBatch"))
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .includeVetTransfers()
             .build()
 }

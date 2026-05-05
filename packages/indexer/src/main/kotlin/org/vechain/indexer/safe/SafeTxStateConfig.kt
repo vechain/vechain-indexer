@@ -22,7 +22,6 @@ open class SafeTxStateConfig {
         @Qualifier("safeProxyIndexer") safeProxyIndexer: Indexer,
         @Value("\${indexer.start-block.safe-tx-state:0}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.safe-tx-state:100}") syncBlockBatchSize: Long,
     ): BlockIndexer =
         IndexerFactory()
             .name(IndexerNames.SAFE_TX_STATE.NAME)
@@ -30,7 +29,6 @@ open class SafeTxStateConfig {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .abis("abis/safe")
             .abiEventNames(listOf("ApproveHash", "ExecutionSuccess", "ExecutionFailure"))
             .dependsOn(safeProxyIndexer)

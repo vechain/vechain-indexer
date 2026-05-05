@@ -24,7 +24,6 @@ open class SafeProxyConfig {
         processor: SafeProxyProcessor,
         @Value("\${indexer.start-block.safe-proxies:0}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.safe-proxies:100}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.SAFE_PROXY_FACTORY_CONTRACT}")
         safeProxyFactoryAddress: String,
     ): BlockIndexer {
@@ -37,7 +36,6 @@ open class SafeProxyConfig {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .abis("abis/safe-proxy-factory")
             .abiContracts(listOf(safeProxyFactoryAddress))
             .abiEventNames(listOf("ProxyCreation"))

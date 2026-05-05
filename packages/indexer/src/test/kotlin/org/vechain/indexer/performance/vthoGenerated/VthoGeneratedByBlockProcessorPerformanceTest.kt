@@ -108,7 +108,6 @@ class VthoGeneratedByBlockProcessorPerformanceTest : BasePerformanceTest() {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(100L)
-            .blockBatchSize(1L)
             .callDataClauses(StargateUtils.buildIssuanceClause(stakerContract))
             .includeFullBlock()
             .build()

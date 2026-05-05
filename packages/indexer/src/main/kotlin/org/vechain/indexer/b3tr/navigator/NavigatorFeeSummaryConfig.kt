@@ -19,7 +19,6 @@ open class NavigatorFeeSummaryConfig {
         processor: NavigatorFeeSummaryProcessor,
         @Value("\${indexer.start-block.b3tr-navigator}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.b3tr-navigator}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.NAVIGATOR_REGISTRY_CONTRACT}")
         navigatorRegistryAddress: String,
         bEProperties: BusinessEventProperties,
@@ -30,7 +29,6 @@ open class NavigatorFeeSummaryConfig {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .businessEvents("business-events/b3tr", "abis/b3tr")
             .businessEventNames(listOf("B3TR_FeeDeposited", "B3TR_FeeClaimed"))
             .businessEventContracts(listOf(navigatorRegistryAddress))

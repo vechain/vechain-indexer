@@ -17,7 +17,6 @@ open class VetBalanceConfig {
         thorClient: ThorClient,
         processor: VetBalanceProcessor,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.vet-balance}") syncBlockBatchSize: Long,
     ): Indexer =
         IndexerFactory()
             .name(IndexerNames.VET_BALANCE.NAME)
@@ -25,7 +24,6 @@ open class VetBalanceConfig {
             .processor(processor)
             .startBlock(0L)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .includeVetTransfers()
             .build()
 }

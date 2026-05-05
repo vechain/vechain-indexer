@@ -22,7 +22,6 @@ open class SafeMembershipConfig {
         @Qualifier("safeProxyIndexer") safeProxyIndexer: Indexer,
         @Value("\${indexer.start-block.safe-membership:0}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.safe-membership:100}") syncBlockBatchSize: Long,
     ): BlockIndexer =
         IndexerFactory()
             .name(IndexerNames.SAFE_MEMBERSHIP.NAME)
@@ -30,7 +29,6 @@ open class SafeMembershipConfig {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .abis("abis/safe")
             .abiEventNames(listOf("SafeSetup", "AddedOwner", "RemovedOwner"))
             .dependsOn(safeProxyIndexer)
