@@ -20,7 +20,6 @@ open class XAllocResultConfig {
         processor: XAllocResultProcessor,
         @Value("\${indexer.start-block.b3tr-x-alloc-result}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.b3tr}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.X_ALLOC_VOTING_CONTRACT}")
         xAllocVotingContract: String,
         @Value("\${business-event.substitutions.X_ALLOC_POOL_CONTRACT}") xAllocPoolContract: String,
@@ -33,7 +32,6 @@ open class XAllocResultConfig {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .businessEvents("business-events/b3tr", "abis/b3tr")
             .businessEventNames(
                 listOf(

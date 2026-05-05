@@ -1047,54 +1047,6 @@ module "ecs-backend-service" {
       value = each.value.indexer.sync-log-interval
     },
     {
-      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_NFTS"
-      value = each.value.indexer.sync-block-batch-size.nfts
-    },
-    {
-      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_TRANSFERS"
-      value = each.value.indexer.sync-block-batch-size.transfers
-    },
-    {
-      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_VEVOTE"
-      value = each.value.indexer.sync-block-batch-size.vevote
-    },
-    {
-      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_HISTORIC_PROPOSALS"
-      value = each.value.indexer.sync-block-batch-size.historic-proposals
-    },
-    {
-      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_STARGATE"
-      value = each.value.indexer.sync-block-batch-size.stargate
-    },
-    {
-      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_B3TR"
-      value = each.value.indexer.sync-block-batch-size.b3tr
-    },
-    {
-      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_B3TR_CHALLENGES"
-      value = each.value.indexer.sync-block-batch-size.b3tr-challenges
-    },
-    {
-      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_B3TR_USER_CHALLENGES"
-      value = each.value.indexer.sync-block-batch-size.b3tr-user-challenges
-    },
-    {
-      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_CONTRACTS"
-      value = each.value.indexer.sync-block-batch-size.contracts
-    },
-    {
-      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_VET_BALANCE"
-      value = each.value.indexer.sync-block-batch-size.vet-balance
-    },
-    {
-      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_SAFE_PROXIES"
-      value = each.value.indexer.sync-block-batch-size.safe-proxies
-    },
-    {
-      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_SAFE_TX_PROPOSALS"
-      value = each.value.indexer.sync-block-batch-size.safe-tx-proposals
-    },
-    {
       name  = "INDEXER_CHANNEL_BATCH_SIZE"
       value = each.value.indexer.channel-batch-size
     },

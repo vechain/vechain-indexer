@@ -17,7 +17,6 @@ open class ContractConfig {
         thorClient: ThorClient,
         processor: ContractProcessor,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.contracts:500}") syncBlockBatchSize: Long,
     ): BlockIndexer =
         IndexerFactory()
             .name(IndexerNames.CONTRACTS.NAME)
@@ -27,6 +26,5 @@ open class ContractConfig {
             .abiEventNames(listOf("\$Master"))
             .startBlock(0L)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .build()
 }

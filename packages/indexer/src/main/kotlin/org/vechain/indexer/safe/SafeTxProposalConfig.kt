@@ -22,7 +22,6 @@ open class SafeTxProposalConfig {
         @Qualifier("safeProxyIndexer") safeProxyIndexer: Indexer,
         @Value("\${indexer.start-block.safe-tx-proposals:0}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.safe-tx-proposals:100}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.SAFE_EMITTER_CONTRACT}") safeEmitterAddress: String,
     ): BlockIndexer {
         require(safeEmitterAddress.isNotBlank()) {
@@ -34,7 +33,6 @@ open class SafeTxProposalConfig {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .abis("abis/safe-emitter")
             .abiContracts(listOf(safeEmitterAddress))
             .abiEventNames(listOf("SafeTxProposed", "SafeTxHashFields", "SafeBatchTxProposed"))

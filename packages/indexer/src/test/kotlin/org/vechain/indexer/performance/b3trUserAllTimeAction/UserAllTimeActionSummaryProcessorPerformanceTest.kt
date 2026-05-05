@@ -115,7 +115,6 @@ class UserAllTimeActionSummaryProcessorPerformanceTest : BasePerformanceTest() {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(100L)
-            .blockBatchSize(1L)
             .businessEvents("business-events/b3tr", "abis/b3tr")
             .businessEventNames(listOf("B3TR_ActionReward"))
             .businessEventContracts(listOf(b3trContract, x2earnRewardsPoolContract))

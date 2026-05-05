@@ -118,7 +118,6 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(100L)
-            .blockBatchSize(1L)
             .callDataClauses(ValidatorDecoder.buildClauses(getAllValidatorsContract))
             .includeFullBlock()
             .build()

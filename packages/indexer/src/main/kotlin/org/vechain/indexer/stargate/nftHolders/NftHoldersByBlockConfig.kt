@@ -22,7 +22,6 @@ open class NftHoldersByBlockConfig {
         @Qualifier("nftOwnerBalanceIndexer") nftOwnerBalanceIndexer: Indexer,
         @Value("\${indexer.start-block.nft-holders-by-block}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
         stargateNftContract: String,
         @Value("\${business-event.substitutions.STARGATE_DELEGATION_CONTRACT}")
@@ -35,7 +34,6 @@ open class NftHoldersByBlockConfig {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .businessEvents("business-events/stargate", "abis/stargate")
             .businessEventNames(listOf("STARGATE_STAKE", "STARGATE_UNSTAKE"))
             .businessEventContracts(listOf(stargateNftContract, stargateDelegationContract))
