@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.insert
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.utils.EventUtils
 import org.vechain.indexer.utils.ParamUtils.getAsString
@@ -45,8 +46,7 @@ open class TransferService(
         return transferEvents
     }
 
-    // No @Transactional needed: mongoTemplate.insert() sends a single bulk insert command,
-    // and duplicates are safely skipped via the unique _id index.
+    @Transactional(rollbackFor = [Exception::class])
     open fun save(records: List<IndexedTransferEvent>) {
         mongoTemplate.insert<IndexedTransferEvent>(records)
     }
