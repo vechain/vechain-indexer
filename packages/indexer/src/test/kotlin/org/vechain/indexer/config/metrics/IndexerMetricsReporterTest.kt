@@ -253,4 +253,28 @@ class IndexerMetricsReporterTest {
         verify(exactly = 0) { metrics.setIndexerCurrentBlock(any(), any()) }
         verify(exactly = 0) { metrics.setIndexerSyncGap(any(), any()) }
     }
+
+    @Test
+    fun `transition through NOT_INITIALISED resets rate baseline`() {
+        val indexer = createBlockIndexer("test-indexer", 100L)
+        stubBestBlock(1_000_000L)
+
+        val reporter =
+            IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
+        // First SYNCING tick — populates previousBlockNumbers/previousReportTimes.
+        reporter.reportMetrics()
+
+        // Indexer drops back to NOT_INITIALISED — should clear stale baseline.
+        every { indexer.getStatus() } returns Status.NOT_INITIALISED
+        every { indexer.getCurrentBlockNumber() } returns 0L
+        reporter.reportMetrics()
+
+        // Indexer comes back as SYNCING with a much higher block number. If baseline
+        // wasn't cleared, this would emit a large incrementBlocksProcessed delta.
+        every { indexer.getStatus() } returns Status.SYNCING
+        every { indexer.getCurrentBlockNumber() } returns 500_000L
+        reporter.reportMetrics()
+
+        verify(exactly = 0) { metrics.incrementBlocksProcessed(any(), any()) }
+    }
 }

@@ -97,6 +97,8 @@ class IndexerMetricsReporter(
     private fun reportBlockIndexerMetrics(indexer: BlockIndexer, bestBlockNumber: Long?) {
         val status = indexer.getStatus()
         if (status == Status.NOT_INITIALISED) {
+            previousBlockNumbers.remove(indexer.name)
+            previousReportTimes.remove(indexer.name)
             return
         }
         val currentBlockNumber = indexer.getCurrentBlockNumber()
