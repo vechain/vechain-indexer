@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.accounts.AccountTotalsSeriesProcessor
 import org.vechain.indexer.history.HistoryProcessor
+import org.vechain.indexer.transfer.TransferService
 
 class ProcessorTransactionalAnnotationsTest {
 
@@ -19,12 +20,20 @@ class ProcessorTransactionalAnnotationsTest {
         assertRollbackIsTransactional(AccountTotalsSeriesProcessor::class.java)
     }
 
+    @Test
+    fun `transfer service save keeps transactional semantics`() {
+        val saveMethod = TransferService::class.java.getDeclaredMethod("save", List::class.java)
+        assertTransactional(saveMethod.getAnnotation(Transactional::class.java))
+    }
+
     private fun assertRollbackIsTransactional(processorClass: Class<*>) {
         val rollbackMethod = processorClass.getDeclaredMethod("rollback", java.lang.Long.TYPE)
-        val transactional = rollbackMethod.getAnnotation(Transactional::class.java)
+        assertTransactional(rollbackMethod.getAnnotation(Transactional::class.java))
+    }
 
+    private fun assertTransactional(transactional: Transactional?) {
         assertNotNull(transactional)
-        assertEquals(1, transactional.rollbackFor.size)
+        assertEquals(1, transactional!!.rollbackFor.size)
         assertEquals(Exception::class, transactional.rollbackFor.single())
     }
 }

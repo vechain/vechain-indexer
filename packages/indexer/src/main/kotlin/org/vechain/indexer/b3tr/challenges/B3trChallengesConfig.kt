@@ -18,7 +18,6 @@ open class B3trChallengesConfig {
         processor: B3trChallengesProcessor,
         @Value("\${indexer.start-block.b3tr-challenges}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.b3tr-challenges}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.CHALLENGES_CONTRACT}")
         challengesContractAddress: String,
         @Value("\${business-event.substitutions.EMISSIONS}") emissionsContractAddress: String,
@@ -29,7 +28,6 @@ open class B3trChallengesConfig {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .abis("abis/b3tr")
             .abiEventNames(
                 listOf(

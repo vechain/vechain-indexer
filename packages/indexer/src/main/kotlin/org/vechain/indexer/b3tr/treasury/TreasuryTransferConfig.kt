@@ -20,7 +20,6 @@ open class TreasuryTransferConfig {
         processor: TreasuryTransferProcessor,
         @Value("\${indexer.start-block.b3tr-treasury}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.b3tr-treasury}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.B3TR_CONTRACT}") b3trContractAddress: String,
         @Value("\${business-event.substitutions.GM_NFT_CONTRACT}") gmNftContractAddress: String,
         @Value("\${business-event.substitutions.TREASURY_CONTRACT}")
@@ -39,7 +38,6 @@ open class TreasuryTransferConfig {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .businessEvents("business-events/b3tr", "abis/b3tr")
             .businessEventNames(
                 listOf(

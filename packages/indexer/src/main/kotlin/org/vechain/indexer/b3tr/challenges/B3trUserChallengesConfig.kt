@@ -18,7 +18,6 @@ open class B3trUserChallengesConfig {
         processor: B3trUserChallengesProcessor,
         @Value("\${indexer.start-block.b3tr-user-challenges}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.b3tr-user-challenges}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.CHALLENGES_CONTRACT}")
         challengesContractAddress: String,
     ): Indexer =
@@ -28,7 +27,6 @@ open class B3trUserChallengesConfig {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .abis("abis/b3tr")
             .abiEventNames(
                 listOf(

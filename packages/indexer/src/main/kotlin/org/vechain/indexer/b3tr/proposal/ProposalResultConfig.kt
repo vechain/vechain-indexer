@@ -20,7 +20,6 @@ open class ProposalResultConfig {
         processor: ProposalResultProcessor,
         @Value("\${indexer.start-block.b3tr-proposal}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.b3tr}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.B3TR_GOVERNOR_CONTRACT}")
         b3trGovernorContract: String,
         bEProperties: BusinessEventProperties,
@@ -31,7 +30,6 @@ open class ProposalResultConfig {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .businessEvents("business-events/b3tr", "abis/b3tr")
             .businessEventNames(listOf("B3TR_ProposalCreated", "B3TR_ProposalVote"))
             .businessEventContracts(listOf(b3trGovernorContract))

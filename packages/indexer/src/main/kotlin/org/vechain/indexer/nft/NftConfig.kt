@@ -19,7 +19,6 @@ open class NftConfig() {
         processor: NftProcessor,
         @Value("\${indexer.start-block.nfts}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.nfts}") syncBlockBatchSize: Long,
         @Value("\${indexer.blacklist.contract-address}") blacklistContract: String,
     ): Indexer =
         IndexerFactory()
@@ -28,7 +27,6 @@ open class NftConfig() {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .abis("abis/nft")
             .abiEventNames(listOf("Transfer"))
             .businessEvents("business-events/nft", "abis/nft")

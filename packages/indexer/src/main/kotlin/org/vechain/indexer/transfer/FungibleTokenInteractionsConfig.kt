@@ -18,7 +18,6 @@ open class FungibleTokenInteractionsConfig {
         processor: FungibleTokenInteractionsProcessor,
         @Value("\${indexer.start-block.transfers}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.transfers}") syncBlockBatchSize: Long,
     ): Indexer =
         IndexerFactory()
             .name(IndexerNames.FUNGIBLE_TOKEN_INTERACTIONS.NAME)
@@ -28,7 +27,6 @@ open class FungibleTokenInteractionsConfig {
             .abiEventNames(listOf("Transfer"))
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .excludeVetTransfers()
             .build()
 }

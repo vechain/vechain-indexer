@@ -18,7 +18,6 @@ open class HistoricProposalsConfig {
         processor: HistoricProposalsProcessor,
         @Value("\${indexer.start-block.historic-proposals}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.historic-proposals}") syncBlockBatchSize: Long,
         @Value("\${veworld.contract.historic-proposals.steering-committee}")
         steeringCommittee: String,
         @Value("\${veworld.contract.historic-proposals.all-stakeholders}") allStakeholders: String,
@@ -31,7 +30,6 @@ open class HistoricProposalsConfig {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .abis("abis/historic-proposals")
             .abiContracts(listOf(steeringCommittee, allStakeholders, legacyDescriptions))
             .abiEventNames(listOf("NewProposal", "LegacyVeVoteDescription"))

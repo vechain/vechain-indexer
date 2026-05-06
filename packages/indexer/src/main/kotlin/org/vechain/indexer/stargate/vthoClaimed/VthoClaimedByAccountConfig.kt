@@ -21,7 +21,6 @@ open class VthoClaimedByAccountConfig {
         processor: VthoClaimedByAccountProcessor,
         @Value("\${indexer.start-block.stargate}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
         stargateNftContract: String,
         @Value("\${business-event.substitutions.STARGATE_DELEGATION_CONTRACT}")
@@ -35,7 +34,6 @@ open class VthoClaimedByAccountConfig {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .businessEvents("business-events/stargate", "abis/stargate")
             .businessEventNames(
                 listOf(
