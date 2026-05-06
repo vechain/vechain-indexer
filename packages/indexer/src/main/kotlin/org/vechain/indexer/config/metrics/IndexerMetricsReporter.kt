@@ -54,7 +54,6 @@ class IndexerMetricsReporter(
     private fun initializeGauges() {
         indexers.forEach { indexer ->
             if (indexer is BlockIndexer) {
-                metrics.setIndexerSyncGap(indexer.name, 0L)
                 metrics.setBlocksPerSecond(indexer.name, 0.0)
             }
         }
@@ -96,8 +95,13 @@ class IndexerMetricsReporter(
     }
 
     private fun reportBlockIndexerMetrics(indexer: BlockIndexer, bestBlockNumber: Long?) {
-        val currentBlockNumber = indexer.getCurrentBlockNumber()
         val status = indexer.getStatus()
+        if (status == Status.NOT_INITIALISED) {
+            previousBlockNumbers.remove(indexer.name)
+            previousReportTimes.remove(indexer.name)
+            return
+        }
+        val currentBlockNumber = indexer.getCurrentBlockNumber()
         metrics.setIndexerCurrentBlock(indexer.name, currentBlockNumber)
 
         if (bestBlockNumber != null) {

@@ -1183,8 +1183,8 @@
           {
             "definition": {
               "background_color": "transparent",
-              "content": "**Status Legend:** 🟢 6 = Fully Synced · 🟠 2 = Syncing · 🟣 3 = Fast Syncing · 🟡 1 = Initialised · 🔴 0 = Not Initialised · 🔴 5 = Shut Down",
-              "font_size": "14",
+              "content": "**Status Legend:** 🟢 6 = Fully Synced · 🟠 2 = Syncing · 🟣 3 = Fast Syncing · 🟡 1 = Initialised · 🔴 5 = Shut Down",
+              "font_size": "10",
               "has_padding": true,
               "show_tick": false,
               "text_align": "left",
@@ -1240,7 +1240,7 @@
               "type": "timeseries",
               "yaxis": {
                 "include_zero": false,
-                "scale": "log"
+                "scale": "linear"
               }
             },
             "id": 2000000000000015,
@@ -1291,7 +1291,7 @@
               "type": "timeseries",
               "yaxis": {
                 "include_zero": false,
-                "scale": "log"
+                "scale": "linear"
               }
             },
             "id": 2000000000000007,
@@ -1342,7 +1342,7 @@
               "type": "timeseries",
               "yaxis": {
                 "include_zero": false,
-                "scale": "log"
+                "scale": "linear"
               }
             },
             "id": 2000000000000008,
