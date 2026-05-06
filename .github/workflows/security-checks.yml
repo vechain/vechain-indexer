@@ -12,10 +12,10 @@ permissions:
 
 jobs:
   checkov:
-    uses: vechain/github-actions-public/.github/workflows/checkov.yaml@f54f69d33344b241b5ec901d3d5e1b02d44a1b96 # v2.3.0
+    uses: vechain/github-actions-public/.github/workflows/checkov.yaml@c8645e5723b09ce657b865f78924b87a357df036 # v2.3.1
 
   infracost:
-    uses: vechain/github-actions-public/.github/workflows/infracost.yaml@f54f69d33344b241b5ec901d3d5e1b02d44a1b96 # v2.3.0
+    uses: vechain/github-actions-public/.github/workflows/infracost.yaml@c8645e5723b09ce657b865f78924b87a357df036 # v2.3.1
     secrets:
       INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
       TERRAFORM_SSH_KEY: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
