@@ -239,4 +239,18 @@ class IndexerMetricsReporterTest {
 
         verify { metrics.setIndexerCurrentBlock("test-indexer", 500L) }
     }
+
+    @Test
+    fun `NOT_INITIALISED indexer does not publish current block or sync gap`() {
+        val indexer = createBlockIndexer("test-indexer", 0L)
+        every { indexer.getStatus() } returns Status.NOT_INITIALISED
+        stubBestBlock(1000L)
+
+        val reporter =
+            IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
+        reporter.reportMetrics()
+
+        verify(exactly = 0) { metrics.setIndexerCurrentBlock(any(), any()) }
+        verify(exactly = 0) { metrics.setIndexerSyncGap(any(), any()) }
+    }
 }
