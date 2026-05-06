@@ -1240,7 +1240,7 @@
               "type": "timeseries",
               "yaxis": {
                 "include_zero": false,
-                "scale": "log"
+                "scale": "linear"
               }
             },
             "id": 2000000000000015,
@@ -1291,7 +1291,7 @@
               "type": "timeseries",
               "yaxis": {
                 "include_zero": false,
-                "scale": "log"
+                "scale": "linear"
               }
             },
             "id": 2000000000000007,
@@ -1342,7 +1342,7 @@
               "type": "timeseries",
               "yaxis": {
                 "include_zero": false,
-                "scale": "log"
+                "scale": "linear"
               }
             },
             "id": 2000000000000008,
