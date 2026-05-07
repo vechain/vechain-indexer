@@ -103,6 +103,8 @@ jobs:
 
       - name: Unit Test (${{ matrix.package }})
         if: needs.detect-code-changes.outputs.run-tests == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./gradlew :packages:${{ matrix.package }}:test
 
       - name: Publish Test Report
@@ -182,10 +184,20 @@ jobs:
 
       - name: Create gradle properties for Docker secrets
         if: needs.detect-code-changes.outputs.run-tests == 'true'
-        run: cp gradle/docker.gradle.properties.example gradle/docker.gradle.properties
+        env:
+          GH_USER: ${{ github.actor }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$HOME/.gradle"
+          {
+            echo "gpr.user=${GH_USER}"
+            echo "gpr.key=${GH_TOKEN}"
+          } >> "$HOME/.gradle/gradle.properties"
 
       - name: E2E Test
         if: needs.detect-code-changes.outputs.run-tests == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: make test-e2e
 
       - name: Debug E2E
