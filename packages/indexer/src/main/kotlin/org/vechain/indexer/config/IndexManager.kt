@@ -42,6 +42,10 @@ open class IndexManager(
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
+    init {
+        require(catchUpIntervalSeconds > 0) { "indexer.catch-up-interval-seconds must be > 0" }
+    }
+
     @EventListener(ApplicationReadyEvent::class)
     open fun start() {
         logger.info("Application ready. Starting collection and index bootstrap in background")
