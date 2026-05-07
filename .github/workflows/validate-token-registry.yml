@@ -23,6 +23,8 @@ jobs:
         run: bash packages/api/scripts/refresh_token_registry.sh
 
       - name: Verify token registry parsing tests
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./gradlew :packages:api:test --tests "org.vechain.indexer.transfer.OfficialTokenServiceTest"
 
       - name: Check for registry drift

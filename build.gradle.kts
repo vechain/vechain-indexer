@@ -59,16 +59,8 @@ allprojects {
             url = uri("${rootDir}/third_party/maven")
             content { includeGroup("com.github.vechain") }
         }
-        mavenCentral()
-        maven { url = uri("https://repo.spring.io/milestone") }
-        maven { url = uri("https://repo.spring.io/snapshot") }
-        maven {
-            url = uri("https://jitpack.io")
-            content { includeGroup("com.github.vechain") }
-        }
-        maven {
-            url = uri("https://central.sonatype.com/repository/maven-snapshots/")
-        }
+        // GitHub Packages publishes indexer-core immediately on release; Maven Central can lag
+        // by hours, so try GitHub Packages first.
         val gprUser =
             project.findProperty("gpr.user") as String?
                 ?: System.getenv("GITHUB_ACTOR")
@@ -79,11 +71,22 @@ allprojects {
             maven {
                 name = "GitHubPackages"
                 url = uri("https://maven.pkg.github.com/vechain/indexer-core")
+                content { includeGroup("org.vechain") }
                 credentials {
                     username = gprUser
                     password = gprKey
                 }
             }
+        }
+        mavenCentral()
+        maven { url = uri("https://repo.spring.io/milestone") }
+        maven { url = uri("https://repo.spring.io/snapshot") }
+        maven {
+            url = uri("https://jitpack.io")
+            content { includeGroup("com.github.vechain") }
+        }
+        maven {
+            url = uri("https://central.sonatype.com/repository/maven-snapshots/")
         }
     }
 
