@@ -11,24 +11,24 @@ open class IndexerVersionCollectionConfig(private val mongoTemplate: MongoTempla
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     fun ensureIndexes() {
+        val indexName = "collectionName_1_unique"
+        val indexOps = mongoTemplate.indexOps(IndexerVersion::class.java)
+        if (indexOps.indexInfo.any { it.name == indexName }) {
+            logger.debug("Index $indexName already exists for IndexerVersion")
+            return
+        }
         try {
-            logger.info("⏱ Creating unique index on collectionName for IndexerVersion")
-            mongoTemplate
-                .indexOps(IndexerVersion::class.java)
-                .createIndex(
-                    Index()
-                        .on(IndexerVersion::collectionName.name, Sort.Direction.ASC)
-                        .unique()
-                        .named("collectionName_1_unique")
-                        .background()
-                )
-            logger.info("✅ Creation Success: collectionName_1_unique for IndexerVersion")
-        } catch (e: Exception) {
-            logger.error("⛔ Creation Failed: collectionName_1_unique for IndexerVersion", e)
-            throw IllegalStateException(
-                "Failed to create index collectionName_1_unique for IndexerVersion",
-                e,
+            logger.info("Creating unique index $indexName for IndexerVersion")
+            indexOps.createIndex(
+                Index()
+                    .on(IndexerVersion::collectionName.name, Sort.Direction.ASC)
+                    .unique()
+                    .named(indexName)
+                    .background()
             )
+        } catch (e: Exception) {
+            logger.error("Failed to create index $indexName for IndexerVersion", e)
+            throw IllegalStateException("Failed to create index $indexName for IndexerVersion", e)
         }
     }
 }

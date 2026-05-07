@@ -24,7 +24,7 @@ open class NftOwnerBalanceCollectionConfig(
     @Value("\${indexer.version.stargate-nft-owner-balance}") private val version: Int = 1
 
     override fun initCollection() {
-        logger.info("Check collection version for ${modelObj.simpleName}")
+        logger.debug("Check collection version for ${modelObj.simpleName}")
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.NFT_OWNER_BALANCE.NAME,
             NftOwnerBalance::class.java,

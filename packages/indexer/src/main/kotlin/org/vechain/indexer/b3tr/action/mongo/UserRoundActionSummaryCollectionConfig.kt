@@ -24,14 +24,14 @@ open class UserRoundActionSummaryCollectionConfig(
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     override fun initCollection() {
-        logger.info("Check collection version for ${modelObj.simpleName}")
+        logger.debug("Check collection version for ${modelObj.simpleName}")
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.USER_ROUND_ACTION_SUMMARY.NAME,
             UserRoundActionSummary::class.java,
             version,
         )
         this.ensureCollection()
-        logger.info("Initializing indexes for ${modelObj.simpleName}")
+        logger.debug("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
                 buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),

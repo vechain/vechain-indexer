@@ -28,7 +28,7 @@ open class AccountOverviewCollectionConfig(
     @Value("\${indexer.version.account-overview}") private val version: Int = 1
 
     override fun initCollection() {
-        logger.info("Check collection version for ${modelObj.simpleName}")
+        logger.debug("Check collection version for ${modelObj.simpleName}")
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.ACCOUNT_OVERVIEW.NAME,
             AccountOverview::class.java,
@@ -36,7 +36,7 @@ open class AccountOverviewCollectionConfig(
         )
         ensureCollection()
         preloadGenesisIfCollectionEmpty()
-        logger.info("Initializing indexes for ${modelObj.simpleName}")
+        logger.debug("Initializing indexes for ${modelObj.simpleName}")
         // Ensure indexes
         ensureIndexes(
             listOf(

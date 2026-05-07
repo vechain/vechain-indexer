@@ -23,7 +23,7 @@ open class VthoClaimedByAccountCollectionConfig(
     @Value("\${indexer.version.stargate-vtho-claimed-by-account}") private val version: Int = 1
 
     override fun initCollection() {
-        logger.info("Check collection version for ${modelObj.simpleName}")
+        logger.debug("Check collection version for ${modelObj.simpleName}")
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.VTHO_CLAIMED_BY_ACCOUNT.NAME,
             VthoClaimedByAccount::class.java,

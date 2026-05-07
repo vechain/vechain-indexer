@@ -24,7 +24,7 @@ open class VthoGeneratedByBlockCollectionConfig(
     @Value("\${indexer.version.stargate-vtho-generated-by-block}") private val version: Int = 1
 
     override fun initCollection() {
-        logger.info("Check collection version for ${modelObj.simpleName}")
+        logger.debug("Check collection version for ${modelObj.simpleName}")
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.VTHO_GENERATED_BY_BLOCK.NAME,
             VthoGeneratedByBlock::class.java,

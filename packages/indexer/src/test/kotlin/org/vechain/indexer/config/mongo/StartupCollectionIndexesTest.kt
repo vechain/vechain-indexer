@@ -55,6 +55,7 @@ class StartupCollectionIndexesTest {
             mongoTemplate.exists(any<Query>(), AccountOverview::class.java, "account_overviews")
         } returns true
         every { mongoTemplate.indexOps(AccountOverview::class.java) } returns indexOperations
+        every { indexOperations.indexInfo } returns emptyList()
         every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
         AccountOverviewCollectionConfig(
@@ -90,6 +91,7 @@ class StartupCollectionIndexesTest {
         every { mongoTemplate.exists(any<Query>(), VetBalance::class.java, "vet_balances") } returns
             true
         every { mongoTemplate.indexOps(VetBalance::class.java) } returns indexOperations
+        every { indexOperations.indexInfo } returns emptyList()
         every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
         VetBalanceCollectionConfig(
@@ -123,6 +125,7 @@ class StartupCollectionIndexesTest {
         every { mongoTemplate.collectionExists(Contract::class.java) } returns true
         every { mongoTemplate.getCollectionName(Contract::class.java) } returns "contracts"
         every { mongoTemplate.indexOps(Contract::class.java) } returns indexOperations
+        every { indexOperations.indexInfo } returns emptyList()
         every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
         ContractCollectionConfig(
@@ -151,6 +154,7 @@ class StartupCollectionIndexesTest {
         every { mongoTemplate.collectionExists(Delegation::class.java) } returns true
         every { mongoTemplate.getCollectionName(Delegation::class.java) } returns "delegations"
         every { mongoTemplate.indexOps(Delegation::class.java) } returns indexOperations
+        every { indexOperations.indexInfo } returns emptyList()
         every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
         DelegationCollectionConfig(
@@ -191,7 +195,10 @@ class StartupCollectionIndexesTest {
         every { mongoTemplate.getCollectionName(Contract::class.java) } returns "contracts"
         every { mongoTemplate.indexOps(Contract::class.java) } returns indexOperations
         every { mongoTemplate.indexOps("contracts") } returns indexOperations
-        every { indexOperations.indexInfo } returns listOf(legacyIndex)
+        // First read happens during removeStaleIndexes (drop legacy);
+        // second read happens during createPendingIndexes after the drop,
+        // when the legacy entry is gone.
+        every { indexOperations.indexInfo } returnsMany listOf(listOf(legacyIndex), emptyList())
         every { indexOperations.dropIndex("blockNumber_-1_legacy") } just Runs
         every { indexOperations.createIndex(capture(createdIndexes)) } returns "created"
 
@@ -239,7 +246,10 @@ class StartupCollectionIndexesTest {
         every { mongoTemplate.getCollectionName(Contract::class.java) } returns "contracts"
         every { mongoTemplate.indexOps(Contract::class.java) } returns indexOperations
         every { mongoTemplate.indexOps("contracts") } returns indexOperations
-        every { indexOperations.indexInfo } returns listOf(driftedIndex)
+        // First read happens during removeStaleIndexes (drop drifted);
+        // second read happens during createPendingIndexes after the drop,
+        // when the drifted entry is gone.
+        every { indexOperations.indexInfo } returnsMany listOf(listOf(driftedIndex), emptyList())
         every { indexOperations.dropIndex("blockNumber_-1") } just Runs
         every { indexOperations.createIndex(capture(createdIndexes)) } returns "created"
 

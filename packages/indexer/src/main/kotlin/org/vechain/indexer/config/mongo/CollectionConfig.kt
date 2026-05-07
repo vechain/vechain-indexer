@@ -59,7 +59,7 @@ abstract class CollectionConfig(
                 result,
             )
         } else {
-            logger.info(
+            logger.debug(
                 "Indexed-document existence probe for {} completed in {} and found documents={}",
                 entityClass.simpleName,
                 elapsed,
@@ -71,18 +71,16 @@ abstract class CollectionConfig(
     }
 
     fun ensureCollection() {
-        // Create the collection if it does not exist
-        if (!mongoTemplate.collectionExists(modelObj)) {
-            try {
-                logger.info("Creating Collection: ${modelObj.simpleName}")
-                mongoTemplate.createCollection(modelObj)
-                logger.info("Creation Success:   ${modelObj.simpleName}.")
-            } catch (e: Exception) {
-                logger.error("Creation Failed:  ${modelObj.simpleName}", e)
-                throw e
-            }
-        } else {
+        if (mongoTemplate.collectionExists(modelObj)) {
             logger.debug("Collection ${modelObj.simpleName} already exists.")
+            return
+        }
+        try {
+            logger.info("Creating collection ${modelObj.simpleName}")
+            mongoTemplate.createCollection(modelObj)
+        } catch (e: Exception) {
+            logger.error("Failed to create collection ${modelObj.simpleName}", e)
+            throw e
         }
     }
 
@@ -99,7 +97,7 @@ abstract class CollectionConfig(
         partialFilter: Document? = INDEXED_DOCUMENT_PARTIAL_FILTER,
     ) {
         if (indexes.isEmpty()) {
-            logger.info("No additional indexes configured for ${entityClass.simpleName}.")
+            logger.debug("No additional indexes configured for ${entityClass.simpleName}.")
             return
         }
 
@@ -186,37 +184,59 @@ abstract class CollectionConfig(
         return true
     }
 
-    /** Creates the indexes registered via [ensureIndexes]. */
+    /**
+     * Creates the indexes registered via [ensureIndexes]. Indexes whose names already exist on the
+     * collection are skipped silently — [removeStaleIndexes] has already dropped any drifted
+     * same-named index, so a surviving match is guaranteed to be correct.
+     */
     fun createPendingIndexes() {
         if (pendingIndexes.isEmpty()) return
 
-        val start = TimeSource.Monotonic.markNow()
-        logger.info(
-            "Ensuring ${pendingIndexes.size} indexes for ${modelObj.simpleName} before startup continues"
-        )
+        val existingByEntity = mutableMapOf<Class<*>, Set<String>>()
+        val toCreate =
+            pendingIndexes.filter { pending ->
+                val existing =
+                    existingByEntity.getOrPut(pending.entityClass) {
+                        mongoTemplate.indexOps(pending.entityClass).indexInfo.mapTo(
+                            mutableSetOf()
+                        ) {
+                            it.name
+                        }
+                    }
+                pending.name !in existing
+            }
 
-        for (pending in pendingIndexes) {
+        if (toCreate.isEmpty()) {
+            logger.debug(
+                "All ${pendingIndexes.size} indexes already exist for ${modelObj.simpleName}"
+            )
+            return
+        }
+
+        val start = TimeSource.Monotonic.markNow()
+        logger.info("Creating ${toCreate.size} new indexes for ${modelObj.simpleName}")
+
+        for (pending in toCreate) {
             createIndex(pending)
         }
 
         logger.info(
-            "Finished ensuring indexes for ${modelObj.simpleName} in {}.",
+            "Created ${toCreate.size} indexes for ${modelObj.simpleName} in {}",
             start.elapsedNow(),
         )
     }
 
     private fun createIndex(pending: PendingIndex) {
         try {
-            logger.info("Creating Index:    ${pending.name} for ${pending.entityClass.simpleName}")
+            logger.info("Creating index {} for {}", pending.name, pending.entityClass.simpleName)
             val indexDef = pending.index.named(pending.name).background()
             if (pending.partialFilter != null) {
                 indexDef.partial(PartialIndexFilter.of(pending.partialFilter))
             }
             mongoTemplate.indexOps(pending.entityClass).createIndex(indexDef)
-            logger.info("Creation Success: ${pending.name} for ${pending.entityClass.simpleName}.")
         } catch (e: Exception) {
             logger.error(
-                "Creation Failed:  ${pending.name} for ${pending.entityClass.simpleName}",
+                "Failed to create index ${pending.name} for ${pending.entityClass.simpleName}",
                 e,
             )
             throw IllegalStateException(

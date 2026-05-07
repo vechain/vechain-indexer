@@ -35,6 +35,7 @@ class HistoryCollectionConfigTest {
         every { mongoTemplate.getCollectionName(IndexedHistoryEvent::class.java) } returns
             "history_events"
         every { mongoTemplate.indexOps(IndexedHistoryEvent::class.java) } returns indexOperations
+        every { indexOperations.indexInfo } returns emptyList()
         every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
         HistoryCollectionConfig(
@@ -125,6 +126,7 @@ class HistoryCollectionConfigTest {
         every { mongoTemplate.getCollectionName(IndexedHistoryEvent::class.java) } returns
             "history_events"
         every { mongoTemplate.indexOps(IndexedHistoryEvent::class.java) } returns indexOperations
+        every { indexOperations.indexInfo } returns emptyList()
         every { indexOperations.createIndex(any()) } throws RuntimeException("boom")
 
         val error =

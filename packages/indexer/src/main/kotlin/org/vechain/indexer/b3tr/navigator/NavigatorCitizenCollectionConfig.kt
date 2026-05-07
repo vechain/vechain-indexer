@@ -22,14 +22,14 @@ open class NavigatorCitizenCollectionConfig(
     @Value("\${indexer.version.b3tr-navigator}") private val version: Int = 1
 
     override fun initCollection() {
-        logger.info("Check collection version for ${modelObj.simpleName}")
+        logger.debug("Check collection version for ${modelObj.simpleName}")
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.NAVIGATOR_CITIZEN.NAME,
             NavigatorCitizen::class.java,
             version,
         )
         ensureCollection()
-        logger.info("Initializing indexes for ${modelObj.simpleName}")
+        logger.debug("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
                 buildIndex(NavigatorCitizen::blockNumber.name to Sort.Direction.DESC),

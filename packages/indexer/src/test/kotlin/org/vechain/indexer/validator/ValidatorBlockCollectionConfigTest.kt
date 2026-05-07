@@ -32,6 +32,7 @@ class ValidatorBlockCollectionConfigTest {
         every { mongoTemplate.getCollectionName(ValidatorBlock::class.java) } returns
             "validator_block_rewards"
         every { mongoTemplate.indexOps(ValidatorBlock::class.java) } returns indexOperations
+        every { indexOperations.indexInfo } returns emptyList()
         every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
         ValidatorBlockCollectionConfig(

@@ -24,14 +24,14 @@ open class TokenRewardCollectionConfig(
     @Value("\${indexer.version.token-rewards}") private val version: Int = 1
 
     override fun initCollection() {
-        logger.info("Check collection version for ${modelObj.simpleName}")
+        logger.debug("Check collection version for ${modelObj.simpleName}")
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.TOKEN_REWARD.NAME,
             TokenReward::class.java,
             version,
         )
         ensureCollection()
-        logger.info("Initializing indexes for ${modelObj.simpleName}")
+        logger.debug("Initializing indexes for ${modelObj.simpleName}")
         // Ensure indexes
         ensureIndexes(
             listOf(

@@ -55,6 +55,7 @@ open class IndexManager(
             indexBootstrapState.markRunning(initializerCount)
 
             try {
+                val bootstrapStart = TimeSource.Monotonic.markNow()
                 indexerVersionCollectionConfig.ensureIndexes()
                 collectionConfigs
                     .sortedBy { it.modelObj.simpleName }
@@ -63,12 +64,17 @@ open class IndexManager(
                         it.initCollection()
                         it.removeStaleIndexes()
                         it.createPendingIndexes()
-                        logger.info(
+                        logger.debug(
                             "Collection bootstrap for {} completed in {}",
                             it.modelObj.simpleName,
                             start.elapsedNow(),
                         )
                     }
+                logger.info(
+                    "Bootstrapped {} collections in {}",
+                    collectionConfigs.size,
+                    bootstrapStart.elapsedNow(),
+                )
                 indexBootstrapState.markReady(initializerCount)
 
                 delegationLifecycleHistoryService?.let {
