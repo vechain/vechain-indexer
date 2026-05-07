@@ -982,6 +982,12 @@
                       "conditional_formats": [
                         {
                           "comparator": "=",
+                          "custom_bg_color": "#ffdc18",
+                          "palette": "custom_bg",
+                          "value": 7
+                        },
+                        {
+                          "comparator": "=",
                           "custom_bg_color": "#40c464",
                           "palette": "custom_bg",
                           "value": 6
@@ -1183,7 +1189,7 @@
           {
             "definition": {
               "background_color": "transparent",
-              "content": "**Status Legend:** 🟢 6 = Fully Synced · 🟠 2 = Syncing · 🟣 3 = Fast Syncing · 🟡 1 = Initialised · 🔴 5 = Shut Down",
+              "content": "**Status Legend:** 🟢 6 = Fully Synced · 🟠 2 = Syncing · 🟣 3 = Fast Syncing · 🟡 1 = Ready to Fast Sync · 🟡 7 = Ready to Sync · 🔴 5 = Shut Down",
               "font_size": "10",
               "has_padding": true,
               "show_tick": false,

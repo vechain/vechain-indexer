@@ -14,6 +14,10 @@ format-json: #@ Format JSON dashboard files with jq.
 		fi; \
 	done
 
+# Dependency Locking
+update-locks: #@ Refresh Gradle lockfiles (root + all subprojects) after a dependency change.
+	./gradlew resolveAndLockAll --write-locks
+
 # Application Build (Gradle)
 build: format build-indexer build-api #@ Build the application with Gradle.
 	echo "Build completed."

@@ -16,8 +16,10 @@ import org.vechain.indexer.thor.model.Block
 @Profile("explorer", "block-usage")
 @Service
 open class BlockUsageService(private val repository: BlockUsageRepository) {
-    // Cache to store the last processed block usage to avoid DB lookups for sequential processing
-    @Volatile private var lastProcessedBlockUsage: BlockUsage? = null
+    // Cache to store the last processed block usage to avoid DB lookups for sequential processing.
+    // Not @Volatile: IndexerRunner serialises process() and rollback() per processor on a single
+    // coroutine, and coroutine suspension points provide the happens-before this field needs.
+    private var lastProcessedBlockUsage: BlockUsage? = null
 
     /**
      * Process a block and create a BlockUsage record with cumulative statistics.
@@ -64,6 +66,14 @@ open class BlockUsageService(private val repository: BlockUsageRepository) {
 
         // Cache miss - fall back to database lookup
         return repository.findByIdOrNull((blockNumber - 1).toString())
+    }
+
+    /**
+     * Invalidates the in-memory `lastProcessedBlockUsage` cache. Must be invoked from the
+     * processor's rollback path so the cache cannot drift ahead of the persisted state.
+     */
+    open fun resetCache() {
+        lastProcessedBlockUsage = null
     }
 
     /**

@@ -182,7 +182,7 @@
                 "1": {
                   "color": "yellow",
                   "index": 2,
-                  "text": "Initialised"
+                  "text": "Ready to Fast Sync"
                 },
                 "2": {
                   "color": "blue",
@@ -208,6 +208,11 @@
                   "color": "green",
                   "index": 7,
                   "text": "Fully Synced"
+                },
+                "7": {
+                  "color": "yellow",
+                  "index": 8,
+                  "text": "Ready to Sync"
                 }
               },
               "type": "value"
@@ -428,7 +433,7 @@
                       "1": {
                         "color": "yellow",
                         "index": 2,
-                        "text": "Initialised"
+                        "text": "Ready to Fast Sync"
                       },
                       "2": {
                         "color": "blue",
@@ -454,6 +459,11 @@
                         "color": "green",
                         "index": 7,
                         "text": "Fully Synced"
+                      },
+                      "7": {
+                        "color": "yellow",
+                        "index": 8,
+                        "text": "Ready to Sync"
                       }
                     },
                     "type": "value"

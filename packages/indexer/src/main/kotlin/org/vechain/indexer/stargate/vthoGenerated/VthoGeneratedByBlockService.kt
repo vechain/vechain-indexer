@@ -186,6 +186,14 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
     }
 
     /**
+     * Invalidates the in-memory `latestRecordCache`. Must be invoked from the processor's rollback
+     * path so the cache cannot drift ahead of the persisted state after a rollback.
+     */
+    open fun resetCache() {
+        latestRecordCache = null
+    }
+
+    /**
      * @notice Extract VTHO Issued from ABI call responses.
      * @dev Returns zero if ABI data is missing.
      */

@@ -13,9 +13,10 @@ fun String.toReadableEnumLabel(): String =
 fun Status.toStatusCode(): Double =
     when (this) {
         Status.NOT_INITIALISED -> 0.0
-        Status.INITIALISED -> 1.0
+        Status.READY_TO_FAST_SYNC -> 1.0
         Status.SYNCING -> 2.0
         Status.FAST_SYNCING -> 3.0
         Status.SHUT_DOWN -> 5.0
         Status.FULLY_SYNCED -> 6.0
+        Status.READY_TO_SYNC -> 7.0
     }

@@ -155,7 +155,7 @@ indexer:
     safe-tx-proposals: ${INDEXER_START_BLOCK_SAFE_TX_PROPOSALS:0}
   stop-block:
     historic-proposals: ${INDEXER_STOP_BLOCK_HISTORIC_PROPOSALS:22948372}
-  sync-log-interval: ${INDEXER_SYNC_LOG_INTERVAL:100}
+  sync-log-interval: ${INDEXER_SYNC_LOG_INTERVAL:10}
   checkpoint:
     save-interval-seconds: ${INDEXER_CHECKPOINT_SAVE_INTERVAL_SECONDS:60}
   channel-batch-size: ${INDEXER_CHANNEL_BATCH_SIZE:10}

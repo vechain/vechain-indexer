@@ -151,6 +151,14 @@ open class VthoClaimedByBlockService(private val repository: VthoClaimedByBlockR
             )
         }
     }
+
+    /**
+     * Invalidates the in-memory `latestRecordCache`. Must be invoked from the processor's rollback
+     * path so the cache cannot drift ahead of the persisted state after a rollback.
+     */
+    open fun resetCache() {
+        latestRecordCache = null
+    }
 }
 
 /**

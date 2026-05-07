@@ -23,7 +23,18 @@ abstract class BaseProcessor(
 
     abstract suspend fun processEntry(entry: IndexingResult)
 
-    protected fun resetProcessingState() {
+    /**
+     * Hook invoked from [rollback] to reset any per-processor state that depends on persisted data.
+     * Subclasses that hold service-level caches (e.g. a most-recent-record cache) MUST override
+     * this and clear those caches, otherwise the cache will desynchronise from the database after
+     * rollback and `processEvents` checks against stale state.
+     *
+     * Thread-safety: the indexer-core runner serialises [process] and [rollback] per processor on a
+     * single coroutine (see `IndexerRunner.processGroupBlocks` and `BlockIndexer.handleReorg`), so
+     * subclass caches written from [process] and cleared from [resetProcessingState] do not need
+     * `@Volatile` or locks — coroutine suspension provides the happens-before.
+     */
+    protected open fun resetProcessingState() {
         metricsRecorder.reset()
     }
 
@@ -76,7 +87,7 @@ abstract class BaseProcessor(
                 result?.number,
             )
         } else {
-            startupLogger.info(
+            startupLogger.debug(
                 "{}: getLastSyncedBlock for {} completed in {} and returned {}",
                 indexerName,
                 collectionName,

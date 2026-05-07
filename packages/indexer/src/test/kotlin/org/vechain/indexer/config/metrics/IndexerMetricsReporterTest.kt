@@ -125,9 +125,9 @@ class IndexerMetricsReporterTest {
     }
 
     @Test
-    fun `INITIALISED indexer reports zero blocks per second even when block number changes`() {
+    fun `READY_TO_SYNC indexer reports zero blocks per second even when block number changes`() {
         val indexer = createBlockIndexer("test-indexer", 0L)
-        every { indexer.getStatus() } returns Status.INITIALISED
+        every { indexer.getStatus() } returns Status.READY_TO_SYNC
         stubBestBlock(1000L)
 
         val reporter =
@@ -160,9 +160,9 @@ class IndexerMetricsReporterTest {
     }
 
     @Test
-    fun `transition from INITIALISED to SYNCING does not spike blocks per second`() {
+    fun `transition from READY_TO_SYNC to SYNCING does not spike blocks per second`() {
         val indexer = createBlockIndexer("test-indexer", 0L)
-        every { indexer.getStatus() } returns Status.INITIALISED
+        every { indexer.getStatus() } returns Status.READY_TO_SYNC
         stubBestBlock(1_000_000L)
 
         val reporter =
@@ -176,14 +176,14 @@ class IndexerMetricsReporterTest {
 
         // Should not spike: first processing tick has no previous processing-state data
         verify(exactly = 0) { metrics.incrementBlocksProcessed(any(), any()) }
-        // 3 calls: 1 from gauge init + 1 from INITIALISED tick + 1 from first SYNCING tick
+        // 3 calls: 1 from gauge init + 1 from READY_TO_SYNC tick + 1 from first SYNCING tick
         verify(exactly = 3) { metrics.setBlocksPerSecond("test-indexer", 0.0) }
     }
 
     @Test
-    fun `transition from INITIALISED to SYNCING reports BPS on second syncing tick`() {
+    fun `transition from READY_TO_SYNC to SYNCING reports BPS on second syncing tick`() {
         val indexer = createBlockIndexer("test-indexer", 0L)
-        every { indexer.getStatus() } returns Status.INITIALISED
+        every { indexer.getStatus() } returns Status.READY_TO_SYNC
         stubBestBlock(1_000_000L)
 
         val reporter =
