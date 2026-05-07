@@ -34,4 +34,9 @@ open class VthoGeneratedByBlockProcessor(
             service.save(newRecord)
         }
     }
+
+    override fun resetProcessingState() {
+        super.resetProcessingState()
+        service.resetCache()
+    }
 }

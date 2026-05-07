@@ -24,7 +24,8 @@ class IndexerHealthService(
     fun getIndexerHealth(indexer: Indexer): Pair<HealthStatus, String> {
         when (indexer.getStatus()) {
             Status.NOT_INITIALISED -> return HealthStatus.UP to "Indexer is not initialised"
-            Status.INITIALISED -> return HealthStatus.UP to "Indexer is initialised but not started"
+            Status.READY_TO_FAST_SYNC -> return HealthStatus.UP to "Indexer is ready to fast sync"
+            Status.READY_TO_SYNC -> return HealthStatus.UP to "Indexer is ready to sync"
             Status.SHUT_DOWN -> return HealthStatus.DOWN to "Indexer is shut down"
             else -> {
                 // continue to check last processed time

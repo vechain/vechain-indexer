@@ -35,4 +35,9 @@ open class BlockUsageProcessor(
 
         service.save(blockUsageRecord)
     }
+
+    override fun resetProcessingState() {
+        super.resetProcessingState()
+        service.resetCache()
+    }
 }

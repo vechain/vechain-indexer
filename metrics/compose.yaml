@@ -13,6 +13,7 @@ services:
       - '--web.enable-lifecycle'
     restart: unless-stopped
     networks:
+      - vechain-metrics
       - vechain
 
   grafana:
@@ -33,9 +34,11 @@ services:
       - prometheus
     restart: unless-stopped
     networks:
-      - vechain
+      - vechain-metrics
 
 networks:
+  vechain-metrics:
+    name: vechain-metrics
   vechain:
     external: true
     name: vechain

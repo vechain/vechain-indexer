@@ -149,6 +149,14 @@ open class VetDelegatedByBlockService(
         }
     }
 
+    /**
+     * Invalidates the in-memory `latestRecordCache`. Must be invoked from the processor's rollback
+     * path so the cache cannot drift ahead of the persisted state after a rollback.
+     */
+    open fun resetCache() {
+        latestRecordCache = null
+    }
+
     private fun advanceCache(block: Block, latest: VetDelegatedByBlock) {
         latestRecordCache =
             latest.copy(

@@ -178,7 +178,7 @@ enabled_nets:
         safe-membership: "24713855"
         safe-tx-state: "24713855"
         safe-tx-proposals: "24713855"
-      sync-log-interval: "100"
+      sync-log-interval: "10"
       channel-batch-size: "15"
       checkpoint-save-interval-seconds: "60"
       pruner:
@@ -427,7 +427,7 @@ enabled_nets:
         safe-membership: "24762886"
         safe-tx-state: "24762886"
         safe-tx-proposals: "24762886"
-      sync-log-interval: "100"
+      sync-log-interval: "10"
       channel-batch-size: "15"
       checkpoint-save-interval-seconds: "60"
       pruner:

@@ -34,4 +34,9 @@ open class NftHoldersByBlockProcessor(
             service.saveRecords(newRecords)
         }
     }
+
+    override fun resetProcessingState() {
+        super.resetProcessingState()
+        service.resetCache()
+    }
 }

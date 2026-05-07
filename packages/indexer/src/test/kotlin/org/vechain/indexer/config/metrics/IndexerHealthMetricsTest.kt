@@ -152,11 +152,12 @@ class IndexerHealthMetricsTest {
         val expectedCodes =
             mapOf(
                 Status.NOT_INITIALISED to 0.0,
-                Status.INITIALISED to 1.0,
+                Status.READY_TO_FAST_SYNC to 1.0,
                 Status.SYNCING to 2.0,
                 Status.FAST_SYNCING to 3.0,
                 Status.SHUT_DOWN to 5.0,
                 Status.FULLY_SYNCED to 6.0,
+                Status.READY_TO_SYNC to 7.0,
             )
 
         expectedCodes.forEach { (status, expectedCode) ->

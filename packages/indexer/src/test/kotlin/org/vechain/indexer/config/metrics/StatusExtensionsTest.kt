@@ -42,11 +42,12 @@ class StatusExtensionsTest {
     @Test
     fun `toStatusCode returns expected values for all statuses`() {
         assertThat(toStatusCode(Status.NOT_INITIALISED)).isEqualTo(0.0)
-        assertThat(toStatusCode(Status.INITIALISED)).isEqualTo(1.0)
+        assertThat(toStatusCode(Status.READY_TO_FAST_SYNC)).isEqualTo(1.0)
         assertThat(toStatusCode(Status.SYNCING)).isEqualTo(2.0)
         assertThat(toStatusCode(Status.FAST_SYNCING)).isEqualTo(3.0)
         assertThat(toStatusCode(Status.SHUT_DOWN)).isEqualTo(5.0)
         assertThat(toStatusCode(Status.FULLY_SYNCED)).isEqualTo(6.0)
+        assertThat(toStatusCode(Status.READY_TO_SYNC)).isEqualTo(7.0)
     }
 
     @Test

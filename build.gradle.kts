@@ -99,6 +99,16 @@ allprojects {
         }
     }
 
+    tasks.register("resolveAndLockAll") {
+        notCompatibleWithConfigurationCache("Resolves all configurations at execution time")
+        doFirst {
+            require(gradle.startParameter.isWriteDependencyLocks) {
+                "${this.path} must be run with --write-locks (e.g. via `make update-locks`)"
+            }
+        }
+        doLast { configurations.filter { it.isCanBeResolved }.forEach { it.resolve() } }
+    }
+
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
         dependsOn("installGitHooks")
@@ -245,7 +255,7 @@ allprojects {
         implementation("io.micrometer:micrometer-registry-datadog:1.14.5")
 
         // Core indexer dependency
-        implementation("org.vechain:indexer-core:9.0.1")
+        implementation("org.vechain:indexer-core:10.0.0")
 
         // Test dependencies
         testImplementation("org.springframework.boot:spring-boot-starter-test:3.5.12")

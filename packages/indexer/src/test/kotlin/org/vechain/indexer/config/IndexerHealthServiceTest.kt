@@ -39,14 +39,25 @@ class IndexerHealthServiceTest {
     }
 
     @Test
-    fun `INITIALISED status returns UP`() {
+    fun `READY_TO_FAST_SYNC status returns UP`() {
         val indexer = mockk<Indexer>()
-        every { indexer.getStatus() } returns Status.INITIALISED
+        every { indexer.getStatus() } returns Status.READY_TO_FAST_SYNC
 
         val (status, message) = service.getIndexerHealth(indexer)
 
         assertThat(status).isEqualTo(HealthStatus.UP)
-        assertThat(message).isEqualTo("Indexer is initialised but not started")
+        assertThat(message).isEqualTo("Indexer is ready to fast sync")
+    }
+
+    @Test
+    fun `READY_TO_SYNC status returns UP`() {
+        val indexer = mockk<Indexer>()
+        every { indexer.getStatus() } returns Status.READY_TO_SYNC
+
+        val (status, message) = service.getIndexerHealth(indexer)
+
+        assertThat(status).isEqualTo(HealthStatus.UP)
+        assertThat(message).isEqualTo("Indexer is ready to sync")
     }
 
     @Test

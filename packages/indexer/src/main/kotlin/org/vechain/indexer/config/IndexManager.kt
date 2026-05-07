@@ -1,5 +1,6 @@
 package org.vechain.indexer.config
 
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
@@ -34,10 +35,16 @@ open class IndexManager(
     private val metrics: IndexerHealthMetrics,
     private val applicationContext: ApplicationContext,
     @param:Value("\${indexer.channel-batch-size}") private val channelBatchSize: Int,
+    @param:Value("\${indexer.catch-up-interval-seconds:5}")
+    private val catchUpIntervalSeconds: Long,
     @param:Autowired(required = false)
     private val delegationLifecycleHistoryService: DelegationLifecycleHistoryService? = null,
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
+
+    init {
+        require(catchUpIntervalSeconds > 0) { "indexer.catch-up-interval-seconds must be > 0" }
+    }
 
     @EventListener(ApplicationReadyEvent::class)
     open fun start() {
@@ -82,11 +89,17 @@ open class IndexManager(
     }
 
     private fun startIndexers() {
+        // Override the upstream 5-minute default for catchUpInterval. With the upstream default,
+        // LogsIndexers (FastSyncableIndexer) that finish fast sync early stay parked at
+        // READY_TO_SYNC for the rest of the slice before the runner re-classifies and lets them
+        // join steady-state. A short interval keeps the catch-up loop reactive — re-evaluation
+        // overhead per tick is negligible.
         IndexerRunner.launch(
                 scope = appCoroutineScope,
                 thorClient = thorClient,
                 indexers = indexers,
                 blockBatchSize = channelBatchSize,
+                catchUpInterval = catchUpIntervalSeconds.seconds,
             )
             .apply {
                 invokeOnCompletion { throwable ->
