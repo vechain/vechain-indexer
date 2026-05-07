@@ -71,6 +71,7 @@ class IndexManagerTest {
                 metrics = metrics,
                 applicationContext = applicationContext,
                 channelBatchSize = 10,
+                catchUpIntervalSeconds = 5,
             )
 
         manager.onShutdown()
@@ -89,7 +90,7 @@ class IndexManagerTest {
         mockkObject(IndexerRunner.Companion)
         val runnerJob = mockk<Job>(relaxed = true)
         every {
-            IndexerRunner.launch(any(), any(), any<List<Indexer>>(), any(), any(), any())
+            IndexerRunner.launch(any(), any(), any<List<Indexer>>(), any(), any(), any(), any())
         } returns runnerJob
 
         val collectionConfig = mockk<CollectionConfig>(relaxed = true)
@@ -115,6 +116,7 @@ class IndexManagerTest {
                 metrics = metrics,
                 applicationContext = applicationContext,
                 channelBatchSize = 10,
+                catchUpIntervalSeconds = 5,
             )
 
         manager.start()
@@ -126,7 +128,7 @@ class IndexManagerTest {
         }
         verify(exactly = 1) { indexBootstrapState.markReady(any()) }
         verify(exactly = 1) {
-            IndexerRunner.launch(any(), any(), any<List<Indexer>>(), any(), any(), any())
+            IndexerRunner.launch(any(), any(), any<List<Indexer>>(), any(), any(), any(), any())
         }
     }
 }
