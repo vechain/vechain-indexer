@@ -179,7 +179,7 @@ enabled_nets:
         safe-tx-state: "24713855"
         safe-tx-proposals: "24713855"
       sync-log-interval: "10"
-      channel-batch-size: "15"
+      channel-batch-size: "5"
       checkpoint-save-interval-seconds: "60"
       pruner:
         enabled: "true"
@@ -428,7 +428,7 @@ enabled_nets:
         safe-tx-state: "24762886"
         safe-tx-proposals: "24762886"
       sync-log-interval: "10"
-      channel-batch-size: "15"
+      channel-batch-size: "5"
       checkpoint-save-interval-seconds: "60"
       pruner:
         enabled: "true"
