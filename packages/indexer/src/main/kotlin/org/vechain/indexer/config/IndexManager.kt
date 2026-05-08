@@ -51,13 +51,18 @@ open class IndexManager(
         logger.info("Application ready. Starting collection and index bootstrap in background")
 
         appCoroutineScope.launch {
-            val initializerCount = collectionConfigs.size + 1
+            val initializerCount = collectionConfigs.size
             indexBootstrapState.markRunning(initializerCount)
 
             try {
                 val bootstrapStart = TimeSource.Monotonic.markNow()
-                indexerVersionCollectionConfig.ensureIndexes()
+                // IndexerVersion must bootstrap first: other configs' initCollection() writes to
+                // it via IndexerVersionService.checkAndResetCollectionIfVersionChanged.
+                indexerVersionCollectionConfig.initCollection()
+                indexerVersionCollectionConfig.removeStaleIndexes()
+                indexerVersionCollectionConfig.createPendingIndexes()
                 collectionConfigs
+                    .filter { it !== indexerVersionCollectionConfig }
                     .sortedBy { it.modelObj.simpleName }
                     .forEach {
                         val start = TimeSource.Monotonic.markNow()

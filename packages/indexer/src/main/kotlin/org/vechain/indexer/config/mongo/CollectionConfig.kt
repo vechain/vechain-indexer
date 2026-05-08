@@ -161,10 +161,8 @@ abstract class CollectionConfig(
                         logger.info("Removing stale index: {} from {}", name, collectionName)
                         mongoTemplate.indexOps(collectionName).dropIndex(name)
                     } catch (e: Exception) {
-                        logger.warn(
-                            "Failed to remove stale index: {} from {}",
-                            name,
-                            collectionName,
+                        throw IllegalStateException(
+                            "Failed to remove stale index $name from $collectionName",
                             e,
                         )
                     }
@@ -185,25 +183,28 @@ abstract class CollectionConfig(
     }
 
     /**
-     * Creates the indexes registered via [ensureIndexes]. Indexes whose names already exist on the
-     * collection are skipped silently — [removeStaleIndexes] has already dropped any drifted
-     * same-named index, so a surviving match is guaranteed to be correct.
+     * Creates the indexes registered via [ensureIndexes]. Indexes whose names already exist are
+     * validated against the pending spec via [specMatches]; a name match with drifted options
+     * throws rather than silently skipping creation.
      */
     fun createPendingIndexes() {
         if (pendingIndexes.isEmpty()) return
 
-        val existingByEntity = mutableMapOf<Class<*>, Set<String>>()
+        val existingByEntity = mutableMapOf<Class<*>, Map<String, IndexInfo>>()
         val toCreate =
             pendingIndexes.filter { pending ->
                 val existing =
                     existingByEntity.getOrPut(pending.entityClass) {
-                        mongoTemplate.indexOps(pending.entityClass).indexInfo.mapTo(
-                            mutableSetOf()
-                        ) {
+                        mongoTemplate.indexOps(pending.entityClass).indexInfo.associateBy {
                             it.name
                         }
                     }
-                pending.name !in existing
+                val match = existing[pending.name] ?: return@filter true
+                check(specMatches(pending, match)) {
+                    "Index ${pending.name} for ${pending.entityClass.simpleName} exists with " +
+                        "mismatched options; removeStaleIndexes should have dropped it"
+                }
+                false
             }
 
         if (toCreate.isEmpty()) {
