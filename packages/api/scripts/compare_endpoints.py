@@ -205,8 +205,11 @@ def compare_json(
         return diffs
 
     if type(a) != type(b):
-        diffs.append((path, f"type mismatch: {type(a).__name__} != {type(b).__name__}"))
-        return diffs
+        # int vs float of the same value (e.g. 1 vs 1.0) is not a meaningful divergence;
+        # let both fall through to the leaf equality + tolerance branch below.
+        if not (is_real_number(a) and is_real_number(b)):
+            diffs.append((path, f"type mismatch: {type(a).__name__} != {type(b).__name__}"))
+            return diffs
 
     if isinstance(a, dict):
         akeys = set(a.keys())
