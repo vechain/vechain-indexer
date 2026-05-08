@@ -23,14 +23,14 @@ open class TreasuryTransferCollectionConfig(
     @Value("\${indexer.version.b3tr-treasury}") private val version: Int = 1
 
     override fun initCollection() {
-        logger.info("Check collection version for ${modelObj.simpleName}")
+        logger.debug("Check collection version for ${modelObj.simpleName}")
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.TREASURY_TRANSFER.NAME,
             TreasuryTransfer::class.java,
             version,
         )
         ensureCollection()
-        logger.info("Initializing indexes for ${modelObj.simpleName}")
+        logger.debug("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
                 buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),

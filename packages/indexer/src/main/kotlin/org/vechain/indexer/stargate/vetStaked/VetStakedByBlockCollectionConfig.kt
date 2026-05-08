@@ -24,7 +24,7 @@ open class VetStakedByBlockCollectionConfig(
     @Value("\${indexer.version.stargate-vet-staked-by-block}") private val version: Int = 1
 
     override fun initCollection() {
-        logger.info("Check collection version for ${modelObj.simpleName}")
+        logger.debug("Check collection version for ${modelObj.simpleName}")
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.VET_STAKED_BY_BLOCK.NAME,
             VetStakedByBlock::class.java,

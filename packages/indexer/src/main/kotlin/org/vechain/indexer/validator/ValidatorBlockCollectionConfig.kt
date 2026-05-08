@@ -23,7 +23,7 @@ open class ValidatorBlockCollectionConfig(
     @Value("\${indexer.version.validator-rewards}") private val version: Int = 1
 
     override fun initCollection() {
-        logger.info("Check collection version for ${modelObj.simpleName}")
+        logger.debug("Check collection version for ${modelObj.simpleName}")
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.VALIDATOR_BLOCK.NAME,
             ValidatorBlock::class.java,

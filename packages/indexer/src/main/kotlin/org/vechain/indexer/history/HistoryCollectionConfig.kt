@@ -24,14 +24,14 @@ open class HistoryCollectionConfig(
     @Value("\${indexer.version.history}") private val version: Int = 1
 
     override fun initCollection() {
-        logger.info("Check collection version for ${modelObj.simpleName}")
+        logger.debug("Check collection version for ${modelObj.simpleName}")
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.HISTORY.NAME,
             IndexedHistoryEvent::class.java,
             version,
         )
         this.ensureCollection()
-        logger.info("Initializing indexes for ${modelObj.simpleName}")
+        logger.debug("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
                 buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),

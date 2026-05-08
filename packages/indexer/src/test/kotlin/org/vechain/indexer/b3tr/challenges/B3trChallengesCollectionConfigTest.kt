@@ -31,6 +31,7 @@ class B3trChallengesCollectionConfigTest {
         every { mongoTemplate.getCollectionName(B3trChallenge::class.java) } returns
             "b3tr_challenges"
         every { mongoTemplate.indexOps(B3trChallenge::class.java) } returns indexOperations
+        every { indexOperations.indexInfo } returns emptyList()
         every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
         B3trChallengesCollectionConfig(

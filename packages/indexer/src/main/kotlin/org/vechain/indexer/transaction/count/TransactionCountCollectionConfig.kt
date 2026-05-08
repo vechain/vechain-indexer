@@ -23,14 +23,14 @@ open class TransactionCountCollectionConfig(
     @Value("\${indexer.version.transaction-count:3}") private val version: Int = 1
 
     override fun initCollection() {
-        logger.info("Check collection version for ${modelObj.simpleName}")
+        logger.debug("Check collection version for ${modelObj.simpleName}")
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.TRANSACTION_COUNT.NAME,
             TransactionCountSummary::class.java,
             version,
         )
         ensureCollection()
-        logger.info("Initializing indexes for ${modelObj.simpleName}")
+        logger.debug("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(buildIndex(TransactionCountSummary::blockNumber.name to Sort.Direction.DESC))
         )

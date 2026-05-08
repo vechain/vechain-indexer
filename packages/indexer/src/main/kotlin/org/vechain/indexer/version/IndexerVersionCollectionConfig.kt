@@ -1,34 +1,27 @@
 package org.vechain.indexer.version
 
-import org.slf4j.LoggerFactory
+import kotlinx.coroutines.CoroutineScope
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
+import org.vechain.indexer.config.mongo.CollectionConfig
 
 @Configuration
-open class IndexerVersionCollectionConfig(private val mongoTemplate: MongoTemplate) {
-    private val logger = LoggerFactory.getLogger(this::class.java)
+open class IndexerVersionCollectionConfig(
+    mongoTemplate: MongoTemplate,
+    appCoroutineScope: CoroutineScope,
+) : CollectionConfig(mongoTemplate, appCoroutineScope, IndexerVersion::class.java) {
 
-    fun ensureIndexes() {
-        try {
-            logger.info("⏱ Creating unique index on collectionName for IndexerVersion")
-            mongoTemplate
-                .indexOps(IndexerVersion::class.java)
-                .createIndex(
-                    Index()
-                        .on(IndexerVersion::collectionName.name, Sort.Direction.ASC)
-                        .unique()
-                        .named("collectionName_1_unique")
-                        .background()
-                )
-            logger.info("✅ Creation Success: collectionName_1_unique for IndexerVersion")
-        } catch (e: Exception) {
-            logger.error("⛔ Creation Failed: collectionName_1_unique for IndexerVersion", e)
-            throw IllegalStateException(
-                "Failed to create index collectionName_1_unique for IndexerVersion",
-                e,
-            )
-        }
+    override fun initCollection() {
+        ensureCollection()
+        ensureIndexes(
+            indexes =
+                listOf(
+                    "collectionName_1_unique" to
+                        Index().on(IndexerVersion::collectionName.name, Sort.Direction.ASC).unique()
+                ),
+            partialFilter = null,
+        )
     }
 }

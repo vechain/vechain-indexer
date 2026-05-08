@@ -23,7 +23,7 @@ open class NftHoldersByBlockCollectionConfig(
     @Value("\${indexer.version.stargate-nft-holders-by-block}") private val version: Int = 1
 
     override fun initCollection() {
-        logger.info("Check collection version for ${modelObj.simpleName}")
+        logger.debug("Check collection version for ${modelObj.simpleName}")
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
                 indexerName = IndexerNames.NFT_HOLDERS_BY_BLOCK.NAME,
