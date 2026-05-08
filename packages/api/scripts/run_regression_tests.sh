@@ -7,10 +7,14 @@ set -euo pipefail
 # and compares responses from both endpoints.
 #
 # Environment variables:
-#   BASELINE_URL  - Known-good reference endpoint (default: https://indexer.mainnet.vechain.org)
-#   CANDIDATE_URL - Candidate endpoint being validated (default: https://mainnet.dead.prod.veworld.vechain.org)
-#   SPEC_URL      - OpenAPI spec URL (default: derived from BASELINE_URL)
-#   TIMEOUT       - Request timeout in seconds (default: 30)
+#   BASELINE_URL       - Known-good reference endpoint (default: https://indexer.mainnet.vechain.org)
+#   CANDIDATE_URL      - Candidate endpoint being validated (default: https://mainnet.dead.prod.veworld.vechain.org)
+#   SPEC_URL           - OpenAPI spec URL (default: derived from BASELINE_URL)
+#   TIMEOUT            - Request timeout in seconds (default: 30)
+#   NUM_ABS_TOLERANCE  - Absolute numeric tolerance for leaf diffs (default: 1)
+#   NUM_REL_TOLERANCE  - Relative numeric tolerance for leaf diffs (default: 0)
+#                        Diffs within max(abs, rel*max(|a|,|b|)) are reported but
+#                        do not fail the run.
 #
 # Usage:
 #   packages/api/scripts/run_regression_tests.sh
@@ -25,6 +29,8 @@ BASELINE_URL="${BASELINE_URL:-https://indexer.mainnet.vechain.org}"
 CANDIDATE_URL="${CANDIDATE_URL:-https://mainnet.dead.prod.veworld.vechain.org}"
 SPEC_URL="${SPEC_URL:-${BASELINE_URL}/api-docs}"
 TIMEOUT="${TIMEOUT:-30}"
+NUM_ABS_TOLERANCE="${NUM_ABS_TOLERANCE:-1}"
+NUM_REL_TOLERANCE="${NUM_REL_TOLERANCE:-0}"
 
 # Create temporary endpoints config
 CONFIG_FILE=$(mktemp /tmp/regression-endpoints.XXXXXX.json)
@@ -63,10 +69,13 @@ echo "Running regression comparison" >&2
 echo "  baseline:  ${BASELINE_URL}" >&2
 echo "  candidate: ${CANDIDATE_URL}" >&2
 echo "  spec: ${SPEC_URL}" >&2
+echo "  numeric tolerance: abs=${NUM_ABS_TOLERANCE}, rel=${NUM_REL_TOLERANCE}" >&2
 
 python3 "${SCRIPT_DIR}/compare_from_spec.py" \
   --config-file "$CONFIG_FILE" \
   --test-values "$TEST_VALUES_FILE" \
   --spec-url "$SPEC_URL" \
   --timeout "$TIMEOUT" \
+  --num-abs-tolerance "$NUM_ABS_TOLERANCE" \
+  --num-rel-tolerance "$NUM_REL_TOLERANCE" \
   "$@"

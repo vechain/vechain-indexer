@@ -198,5 +198,110 @@ class CompareFromSpecTest(unittest.TestCase):
         )
 
 
+class ToleratedDriftTest(unittest.TestCase):
+    """End-to-end behavior of the abs/rel numeric tolerance through execute_test_case."""
+
+    def _run(self, baseline, candidate, **tol):
+        operation = MODULE.Operation(
+            path="/api/v1/b3tr/richlist/{address}", method="GET"
+        )
+        test_case = MODULE.TestCase(
+            operation=operation,
+            path_params={"address": "0xeb0c565f69557481c6c7fa347cae273128a0996e"},
+            query_params={"scope": "ALL"},
+            label="GET /api/v1/b3tr/richlist/{address}",
+        )
+        with patch.object(MODULE, "fetch_json", side_effect=[baseline, candidate]):
+            return MODULE.execute_test_case(
+                test_case,
+                endpoints=[
+                    ("baseline", "https://baseline.example.com"),
+                    ("candidate", "https://candidate.example.com"),
+                ],
+                common_headers={},
+                timeout=5,
+                insecure=False,
+                cafile=None,
+                ignored_paths=set(),
+                unordered_lists=False,
+                **tol,
+            )
+
+    def test_tolerated_only_does_not_fail_the_run(self):
+        # Mirrors the real richlist drift: totalHolders and rank ±1, topPercentage
+        # tiny float drift. With abs=1 these should classify as tolerated drift.
+        baseline = {
+            "rank": 2581489,
+            "totalHolders": 2581488,
+            "topPercentage": 0.059771728553454445,
+        }
+        candidate = {
+            "rank": 2581488,
+            "totalHolders": 2581487,
+            "topPercentage": 0.059771751707446134,
+        }
+        result = self._run(baseline, candidate, num_abs_tolerance=1.0)
+
+        self.assertFalse(result.all_match, "tolerated drift is not a strict match")
+        self.assertFalse(
+            result.has_mismatch, "tolerated diffs must not count as a mismatch"
+        )
+        self.assertTrue(result.has_tolerated)
+        self.assertTrue(result.tolerated_only)
+        # The whole point: the run still passes.
+        self.assertTrue(result.effective_pass)
+
+        tolerated_paths = {
+            p for p, _ in result.tolerated_diffs["baseline vs candidate"]
+        }
+        self.assertEqual(
+            tolerated_paths,
+            {"root.rank", "root.totalHolders", "root.topPercentage"},
+        )
+
+    def test_drift_outside_tolerance_still_fails(self):
+        baseline = {"totalHolders": 100}
+        candidate = {"totalHolders": 1000}
+        result = self._run(baseline, candidate, num_abs_tolerance=1.0)
+
+        self.assertTrue(result.has_mismatch)
+        self.assertFalse(result.tolerated_only)
+        self.assertFalse(result.effective_pass)
+
+    def test_large_integer_drift_above_2_to_53_not_silently_tolerated(self):
+        # Past 2**53 a naive float-cast tolerance would lose precision and
+        # potentially mark large diffs as tolerated. With Decimal-based math,
+        # a 1000-unit drift must remain a hard diff under abs=1.
+        baseline = {"balance": 2**53}
+        candidate = {"balance": 2**53 + 1000}
+        result = self._run(baseline, candidate, num_abs_tolerance=1.0)
+
+        self.assertTrue(
+            result.has_mismatch,
+            "1000-unit drift at uint53+ scale must not be silently tolerated",
+        )
+        self.assertFalse(result.effective_pass)
+
+    def test_uint256_neighbour_drift_is_tolerated(self):
+        # Two uint256-scale ints that differ by exactly 1 -- legitimate chain-tip
+        # drift -- must be classified as tolerated under abs=1.
+        baseline = {"supply": 1_000_000_000_000_000_000_000_000_001}
+        candidate = {"supply": 1_000_000_000_000_000_000_000_000_002}
+        result = self._run(baseline, candidate, num_abs_tolerance=1.0)
+
+        self.assertFalse(result.has_mismatch)
+        self.assertTrue(result.tolerated_only)
+        self.assertTrue(result.effective_pass)
+
+    def test_strict_match_when_tolerance_disabled(self):
+        # With tolerance disabled (defaults), the same drift case fails.
+        baseline = {"rank": 2581489, "totalHolders": 2581488}
+        candidate = {"rank": 2581488, "totalHolders": 2581487}
+        result = self._run(baseline, candidate)
+
+        self.assertTrue(result.has_mismatch)
+        self.assertFalse(result.effective_pass)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -88,6 +88,7 @@ jobs:
               f"| **Baseline** | `{baseline}` |",
               f"| **Total** | {s['total']} |",
               f"| **Passed** | {s['passed']} |",
+              f"| **Tolerated drift** | {s.get('tolerated', 0)} |",
               f"| **Deprecated Reported** | {s.get('deprecated', 0)} |",
               f"| **Failed** | {s['failed']} |",
               "",
@@ -118,6 +119,7 @@ jobs:
                   lines.append("")
 
           failures = [r for r in results if r["status"] == "fail"]
+          tolerated = [r for r in results if r["status"] == "tolerated"]
           deprecated = [r for r in results if r["status"] == "deprecated"]
 
           if failures:
@@ -161,10 +163,51 @@ jobs:
 
                   lines.append("</details>")
                   lines.append("")
-          elif not deprecated:
+          elif not deprecated and not tolerated:
               lines.append("All endpoints matched.")
           else:
               lines.append("No non-deprecated endpoints failed.")
+
+          if tolerated:
+              lines.append("")
+              lines.append("### Tolerated drift")
+              lines.append("")
+              lines.append(
+                  "These endpoints differed by amounts within the configured numeric "
+                  "tolerance and did not fail the run. Typically caused by chain-tip "
+                  "drift between the two indexers (e.g. `endBlock` ±1, holder counts ±1)."
+              )
+              lines.append("")
+              esc = html.escape
+              for r in tolerated:
+                  method = esc(r["method"].upper())
+                  path = esc(r["path"])
+                  label = esc(r.get("label", ""))
+                  codes = r.get("status_codes", {})
+                  tdiffs = r.get("tolerated_diffs", {})
+
+                  code_parts = [f"{esc(str(name))}: {code}" for name, code in codes.items()]
+                  code_str = ", ".join(code_parts)
+
+                  lines.append("<details>")
+                  lines.append(f"<summary><code>{method} {path}</code> — {label} (status: {code_str})</summary>")
+                  lines.append("")
+
+                  for pair, diff_list in tdiffs.items():
+                      if not diff_list:
+                          continue
+                      lines.append(f"**Tolerated diffs** (`{esc(pair)}`): {len(diff_list)} drift(s)")
+                      lines.append("")
+                      lines.append("```")
+                      for json_path, description in diff_list[:20]:
+                          lines.append(f"  ~ {json_path}: {description}")
+                      if len(diff_list) > 20:
+                          lines.append(f"  ... and {len(diff_list) - 20} more")
+                      lines.append("```")
+                      lines.append("")
+
+                  lines.append("</details>")
+                  lines.append("")
 
           if deprecated:
               lines.append("")
