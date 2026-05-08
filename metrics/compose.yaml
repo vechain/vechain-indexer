@@ -14,7 +14,7 @@ services:
     restart: unless-stopped
     networks:
       - vechain-metrics
-      - vechain
+#      - vechain
 
   grafana:
     image: grafana/grafana:latest
@@ -39,9 +39,9 @@ services:
 networks:
   vechain-metrics:
     name: vechain-metrics
-  vechain:
-    external: true
-    name: vechain
+#  vechain:
+#    external: true
+#    name: vechain
 
 volumes:
   prometheus_data:
