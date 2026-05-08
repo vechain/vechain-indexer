@@ -32,6 +32,7 @@ class TransactionCollectionConfigTest {
         every { mongoTemplate.getCollectionName(IndexedTransaction::class.java) } returns
             "transactions"
         every { mongoTemplate.indexOps(IndexedTransaction::class.java) } returns indexOperations
+        every { indexOperations.indexInfo } returns emptyList()
         every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
         TransactionCollectionConfig(

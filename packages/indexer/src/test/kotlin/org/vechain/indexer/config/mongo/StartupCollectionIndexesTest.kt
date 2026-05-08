@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import org.bson.Document
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
@@ -55,6 +56,7 @@ class StartupCollectionIndexesTest {
             mongoTemplate.exists(any<Query>(), AccountOverview::class.java, "account_overviews")
         } returns true
         every { mongoTemplate.indexOps(AccountOverview::class.java) } returns indexOperations
+        every { indexOperations.indexInfo } returns emptyList()
         every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
         AccountOverviewCollectionConfig(
@@ -90,6 +92,7 @@ class StartupCollectionIndexesTest {
         every { mongoTemplate.exists(any<Query>(), VetBalance::class.java, "vet_balances") } returns
             true
         every { mongoTemplate.indexOps(VetBalance::class.java) } returns indexOperations
+        every { indexOperations.indexInfo } returns emptyList()
         every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
         VetBalanceCollectionConfig(
@@ -123,6 +126,7 @@ class StartupCollectionIndexesTest {
         every { mongoTemplate.collectionExists(Contract::class.java) } returns true
         every { mongoTemplate.getCollectionName(Contract::class.java) } returns "contracts"
         every { mongoTemplate.indexOps(Contract::class.java) } returns indexOperations
+        every { indexOperations.indexInfo } returns emptyList()
         every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
         ContractCollectionConfig(
@@ -151,6 +155,7 @@ class StartupCollectionIndexesTest {
         every { mongoTemplate.collectionExists(Delegation::class.java) } returns true
         every { mongoTemplate.getCollectionName(Delegation::class.java) } returns "delegations"
         every { mongoTemplate.indexOps(Delegation::class.java) } returns indexOperations
+        every { indexOperations.indexInfo } returns emptyList()
         every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
         DelegationCollectionConfig(
@@ -191,7 +196,10 @@ class StartupCollectionIndexesTest {
         every { mongoTemplate.getCollectionName(Contract::class.java) } returns "contracts"
         every { mongoTemplate.indexOps(Contract::class.java) } returns indexOperations
         every { mongoTemplate.indexOps("contracts") } returns indexOperations
-        every { indexOperations.indexInfo } returns listOf(legacyIndex)
+        // First read happens during removeStaleIndexes (drop legacy);
+        // second read happens during createPendingIndexes after the drop,
+        // when the legacy entry is gone.
+        every { indexOperations.indexInfo } returnsMany listOf(listOf(legacyIndex), emptyList())
         every { indexOperations.dropIndex("blockNumber_-1_legacy") } just Runs
         every { indexOperations.createIndex(capture(createdIndexes)) } returns "created"
 
@@ -239,7 +247,10 @@ class StartupCollectionIndexesTest {
         every { mongoTemplate.getCollectionName(Contract::class.java) } returns "contracts"
         every { mongoTemplate.indexOps(Contract::class.java) } returns indexOperations
         every { mongoTemplate.indexOps("contracts") } returns indexOperations
-        every { indexOperations.indexInfo } returns listOf(driftedIndex)
+        // First read happens during removeStaleIndexes (drop drifted);
+        // second read happens during createPendingIndexes after the drop,
+        // when the drifted entry is gone.
+        every { indexOperations.indexInfo } returnsMany listOf(listOf(driftedIndex), emptyList())
         every { indexOperations.dropIndex("blockNumber_-1") } just Runs
         every { indexOperations.createIndex(capture(createdIndexes)) } returns "created"
 
@@ -269,6 +280,75 @@ class StartupCollectionIndexesTest {
             },
             "expected blockNumber_-1 to be recreated with the new {status: {\$exists: true}} partial filter",
         )
+    }
+
+    @Test
+    fun `removeStaleIndexes throws when dropIndex fails so drift is not silently masked`() {
+        val legacyIndex =
+            IndexInfo(
+                listOf(IndexField.create("blockNumber", Sort.Direction.DESC)),
+                "blockNumber_-1_legacy",
+                false,
+                false,
+                "",
+            )
+        every {
+            indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
+        } returns false
+        every { mongoTemplate.collectionExists(Contract::class.java) } returns true
+        every { mongoTemplate.getCollectionName(Contract::class.java) } returns "contracts"
+        every { mongoTemplate.indexOps(Contract::class.java) } returns indexOperations
+        every { mongoTemplate.indexOps("contracts") } returns indexOperations
+        every { indexOperations.indexInfo } returns listOf(legacyIndex)
+        every { indexOperations.dropIndex("blockNumber_-1_legacy") } throws
+            RuntimeException("mongo unavailable")
+
+        val config =
+            ContractCollectionConfig(
+                mongoTemplate = mongoTemplate,
+                appCoroutineScope = CoroutineScope(Dispatchers.Unconfined),
+                indexerVersionService = indexerVersionService,
+            )
+        config.initCollection()
+
+        val ex = assertThrows<IllegalStateException> { config.removeStaleIndexes() }
+        assertTrue(ex.message!!.contains("blockNumber_-1_legacy"))
+    }
+
+    @Test
+    fun `createPendingIndexes throws when same-named index has drifted options`() {
+        // Defense-in-depth: if removeStaleIndexes ever fails to drop a drifted same-named index
+        // (e.g. a regression in the drop logic, or it isn't called), createPendingIndexes must not
+        // silently skip creation by name alone — that would leave the drift in place.
+        val driftedIndex =
+            IndexInfo.indexInfoOf(
+                Document("name", "blockNumber_-1")
+                    .append("key", Document("blockNumber", -1))
+                    .append(
+                        "partialFilterExpression",
+                        Document("blockNumber", Document("\$exists", true)),
+                    )
+            )
+        every {
+            indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
+        } returns false
+        every { mongoTemplate.collectionExists(Contract::class.java) } returns true
+        every { mongoTemplate.getCollectionName(Contract::class.java) } returns "contracts"
+        every { mongoTemplate.indexOps(Contract::class.java) } returns indexOperations
+        every { mongoTemplate.indexOps("contracts") } returns indexOperations
+        every { indexOperations.indexInfo } returns listOf(driftedIndex)
+
+        val config =
+            TestPartialFilterDriftConfig(
+                mongoTemplate = mongoTemplate,
+                appCoroutineScope = CoroutineScope(Dispatchers.Unconfined),
+                indexerVersionService = indexerVersionService,
+            )
+        config.initCollection()
+
+        val ex = assertThrows<IllegalStateException> { config.createPendingIndexes() }
+        assertTrue(ex.message!!.contains("blockNumber_-1"))
+        assertTrue(ex.message!!.contains("mismatched options"))
     }
 
     /**

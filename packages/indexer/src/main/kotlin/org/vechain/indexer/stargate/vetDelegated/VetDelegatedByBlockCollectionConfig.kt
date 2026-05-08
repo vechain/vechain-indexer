@@ -24,7 +24,7 @@ open class VetDelegatedByBlockCollectionConfig(
     @Value("\${indexer.version.stargate-vet-delegated-by-block}") private val version: Int = 1
 
     override fun initCollection() {
-        logger.info("Check collection version for ${modelObj.simpleName}")
+        logger.debug("Check collection version for ${modelObj.simpleName}")
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.VET_DELEGATED_BY_BLOCK.NAME,
             VetDelegatedByBlock::class.java,

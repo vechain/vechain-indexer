@@ -28,7 +28,7 @@ open class VetBalanceCollectionConfig(
     @Value("\${indexer.version.vet-balance:1}") private val version: Int = 1
 
     override fun initCollection() {
-        logger.info("Check collection version for ${modelObj.simpleName}")
+        logger.debug("Check collection version for ${modelObj.simpleName}")
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.VET_BALANCE.NAME,
             VetBalance::class.java,
@@ -36,7 +36,7 @@ open class VetBalanceCollectionConfig(
         )
         ensureCollection()
         preloadGenesisIfCollectionEmpty()
-        logger.info("Initializing indexes for ${modelObj.simpleName}")
+        logger.debug("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
                 buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),

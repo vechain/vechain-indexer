@@ -155,6 +155,7 @@ class ActionSummaryCollectionConfigTest {
         every { mongoTemplate.collectionExists(entityClass) } returns true
         every { mongoTemplate.getCollectionName(entityClass) } returns "test_collection"
         every { mongoTemplate.indexOps(entityClass) } returns indexOperations
+        every { indexOperations.indexInfo } returns emptyList()
         every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
         return capturedIndexes
     }

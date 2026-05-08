@@ -24,14 +24,14 @@ open class SafeTxProposalCollectionConfig(
     @Value("\${indexer.version.safe-tx-proposals:1}") private val version: Int = 1
 
     override fun initCollection() {
-        logger.info("Check collection version for ${modelObj.simpleName}")
+        logger.debug("Check collection version for ${modelObj.simpleName}")
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.SAFE_TX_PROPOSAL.NAME,
             SafeTxProposal::class.java,
             version,
         )
         ensureCollection()
-        logger.info("Initializing indexes for ${modelObj.simpleName}")
+        logger.debug("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
                 buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),

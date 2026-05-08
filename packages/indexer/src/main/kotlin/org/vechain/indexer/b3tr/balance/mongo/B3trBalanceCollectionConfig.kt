@@ -24,14 +24,14 @@ open class B3trBalanceCollectionConfig(
     @Value("\${indexer.version.b3tr-balance}") private val version: Int = 1
 
     override fun initCollection() {
-        logger.info("Check collection version for ${modelObj.simpleName}")
+        logger.debug("Check collection version for ${modelObj.simpleName}")
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.B3TR_BALANCE.NAME,
             B3trBalance::class.java,
             version,
         )
         ensureCollection()
-        logger.info("Initializing indexes for ${modelObj.simpleName}")
+        logger.debug("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
                 buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),

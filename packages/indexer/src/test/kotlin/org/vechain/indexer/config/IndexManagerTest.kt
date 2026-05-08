@@ -100,7 +100,10 @@ class IndexManagerTest {
         every { collectionConfig.createPendingIndexes() } just Runs
 
         val indexBootstrapState = mockk<IndexBootstrapState>(relaxed = true)
-        every { indexerVersionCollectionConfig.ensureIndexes() } just Runs
+        every { indexerVersionCollectionConfig.modelObj } returns Any::class.java
+        every { indexerVersionCollectionConfig.initCollection() } just Runs
+        every { indexerVersionCollectionConfig.removeStaleIndexes() } just Runs
+        every { indexerVersionCollectionConfig.createPendingIndexes() } just Runs
 
         val indexer = mockk<Indexer>(relaxed = true)
         every { indexer.name } returns "test-indexer"
@@ -122,6 +125,9 @@ class IndexManagerTest {
         manager.start()
 
         verifyOrder {
+            indexerVersionCollectionConfig.initCollection()
+            indexerVersionCollectionConfig.removeStaleIndexes()
+            indexerVersionCollectionConfig.createPendingIndexes()
             collectionConfig.initCollection()
             collectionConfig.removeStaleIndexes()
             collectionConfig.createPendingIndexes()
