@@ -34,14 +34,14 @@ services:
 #        reservations:
 #          memory: 1024m
     networks:
-      vechain-database:
+      vechain-indexer-network:
         aliases:
           - mongo-node1
 
 networks:
-  vechain-database:
+  vechain-indexer-network:
     driver: bridge
-    name: vechain-database
+    name: vechain-indexer-network
 
 volumes:
   vechain-data-1:

@@ -159,7 +159,7 @@ indexer:
   checkpoint:
     save-interval-seconds: ${INDEXER_CHECKPOINT_SAVE_INTERVAL_SECONDS:60}
   channel-batch-size: ${INDEXER_CHANNEL_BATCH_SIZE:10}
-  catch-up-interval-seconds: ${INDEXER_CATCH_UP_INTERVAL_SECONDS:5}
+  catch-up-interval-seconds: ${INDEXER_CATCH_UP_INTERVAL_SECONDS:300}
   inline-versioning:
     block-window: ${INLINE_VERSIONING_BLOCK_WINDOW:10000}
     max-versions: ${INLINE_VERSIONING_MAX_VERSIONS:100}

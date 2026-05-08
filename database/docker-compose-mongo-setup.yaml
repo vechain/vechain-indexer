@@ -12,9 +12,9 @@ services:
       MONGO_API_PASSWORD: "password"
     restart: "no"
     networks:
-      - vechain-database
+      - vechain-indexer-network
 
 networks:
-  vechain-database:
+  vechain-indexer-network:
     external: true
-    name: vechain-database
+    name: vechain-indexer-network

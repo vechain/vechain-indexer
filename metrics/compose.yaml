@@ -13,8 +13,7 @@ services:
       - '--web.enable-lifecycle'
     restart: unless-stopped
     networks:
-      - vechain-metrics
-      - vechain
+      - vechain-indexer-network
 
   grafana:
     image: grafana/grafana:latest
@@ -34,14 +33,12 @@ services:
       - prometheus
     restart: unless-stopped
     networks:
-      - vechain-metrics
+      - vechain-indexer-network
 
 networks:
-  vechain-metrics:
-    name: vechain-metrics
-  vechain:
+  vechain-indexer-network:
     external: true
-    name: vechain
+    name: vechain-indexer-network
 
 volumes:
   prometheus_data:
