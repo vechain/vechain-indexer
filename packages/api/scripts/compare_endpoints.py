@@ -138,6 +138,30 @@ def ignored_paths_for_matching_error_statuses(
 def is_primitive(x: Any) -> bool:
     return isinstance(x, (str, int, float, bool, type(None)))
 
+
+def is_real_number(x: Any) -> bool:
+    # bool is a subclass of int in Python; exclude it so True/False mismatches stay strict.
+    return isinstance(x, (int, float)) and not isinstance(x, bool)
+
+
+def within_numeric_tolerance(
+    a: Any,
+    b: Any,
+    abs_tol: float,
+    rel_tol: float,
+) -> bool:
+    if abs_tol <= 0.0 and rel_tol <= 0.0:
+        return False
+    if not (is_real_number(a) and is_real_number(b)):
+        return False
+    af = float(a)
+    bf = float(b)
+    if af == bf:
+        return True
+    diff = abs(af - bf)
+    bound = max(abs_tol, rel_tol * max(abs(af), abs(bf)))
+    return diff <= bound
+
 def path_child(parent: Path, key: Union[str, int]) -> Path:
     if parent == "":
         parent = "root"
@@ -153,8 +177,11 @@ def compare_json(
     *,
     path: Path = "root",
     diffs: List[Tuple[Path, str]] | None = None,
+    tolerated_diffs: List[Tuple[Path, str]] | None = None,
     ignored_paths: Set[Path] | None = None,
     unordered_lists: bool = False,
+    num_abs_tolerance: float = 0.0,
+    num_rel_tolerance: float = 0.0,
 ) -> List[Tuple[Path, str]]:
     if diffs is None:
         diffs = []
@@ -185,7 +212,17 @@ def compare_json(
             p = path_child(path, k)
             if any(p == ip or p.startswith(ip + ".") or p.startswith(ip + "[") for ip in ignored_paths):
                 continue
-            compare_json(a[k], b[k], path=p, diffs=diffs, ignored_paths=ignored_paths, unordered_lists=unordered_lists)
+            compare_json(
+                a[k],
+                b[k],
+                path=p,
+                diffs=diffs,
+                tolerated_diffs=tolerated_diffs,
+                ignored_paths=ignored_paths,
+                unordered_lists=unordered_lists,
+                num_abs_tolerance=num_abs_tolerance,
+                num_rel_tolerance=num_rel_tolerance,
+            )
         return diffs
 
     if isinstance(a, list):
@@ -216,11 +253,28 @@ def compare_json(
             p = path_child(path, i)
             if any(p == ip or p.startswith(ip + ".") or p.startswith(ip + "[") for ip in ignored_paths):
                 continue
-            compare_json(a[i], b[i], path=p, diffs=diffs, ignored_paths=ignored_paths, unordered_lists=unordered_lists)
+            compare_json(
+                a[i],
+                b[i],
+                path=p,
+                diffs=diffs,
+                tolerated_diffs=tolerated_diffs,
+                ignored_paths=ignored_paths,
+                unordered_lists=unordered_lists,
+                num_abs_tolerance=num_abs_tolerance,
+                num_rel_tolerance=num_rel_tolerance,
+            )
         return diffs
 
     if a != b:
-        diffs.append((path, f"value mismatch: {repr(a)} != {repr(b)}"))
+        if tolerated_diffs is not None and within_numeric_tolerance(
+            a, b, num_abs_tolerance, num_rel_tolerance
+        ):
+            tolerated_diffs.append(
+                (path, f"value mismatch within tolerance: {repr(a)} != {repr(b)}")
+            )
+        else:
+            diffs.append((path, f"value mismatch: {repr(a)} != {repr(b)}"))
     return diffs
 
 def ssl_context_for(insecure: bool, cafile: str | None) -> ssl.SSLContext | None:
@@ -251,6 +305,18 @@ if __name__ == "__main__":
     parser.add_argument("--ignore-path", action="append", default=[], help="Path to ignore (repeatable)")
     parser.add_argument("--unordered-lists", action="store_true", help="Treat primitive lists as unordered")
     parser.add_argument("--pretty", action="store_true", help="Print normalized JSON for inspection")
+    parser.add_argument(
+        "--num-abs-tolerance",
+        type=float,
+        default=0.0,
+        help="Absolute numeric tolerance: leaf numeric mismatches with |a-b| within this bound are reported as tolerated (do not fail).",
+    )
+    parser.add_argument(
+        "--num-rel-tolerance",
+        type=float,
+        default=0.0,
+        help="Relative numeric tolerance (fraction of max(|a|,|b|)). Combined with --num-abs-tolerance via max(); diff within max(abs, rel*max(|a|,|b|)) is tolerated.",
+    )
 
     parser.add_argument("--insecure", action="store_true", help="Skip TLS verification")
     parser.add_argument("--insecure1", action="store_true", help="Skip TLS for URL1")
@@ -310,11 +376,15 @@ if __name__ == "__main__":
         status2,
         ignored,
     )
+    tolerated: List[Tuple[Path, str]] = []
     diffs = compare_json(
         a,
         b,
+        tolerated_diffs=tolerated,
         ignored_paths=effective_ignored,
         unordered_lists=args.unordered_lists,
+        num_abs_tolerance=args.num_abs_tolerance,
+        num_rel_tolerance=args.num_rel_tolerance,
     )
 
     if args.pretty:
@@ -331,10 +401,19 @@ if __name__ == "__main__":
         print()
 
     if not diffs:
-        print("Match: JSON responses are equal.")
+        if tolerated:
+            print(f"Match (with {len(tolerated)} tolerated numeric diff(s)).")
+            for p, msg in tolerated:
+                print(f"~ {p}: {msg}")
+        else:
+            print("Match: JSON responses are equal.")
         sys.exit(0)
     else:
         print("Mismatch: JSON responses differ.\n")
         for p, msg in diffs:
             print(f"- {p}: {msg}")
+        if tolerated:
+            print(f"\n{len(tolerated)} additional tolerated numeric diff(s):")
+            for p, msg in tolerated:
+                print(f"~ {p}: {msg}")
         sys.exit(1)

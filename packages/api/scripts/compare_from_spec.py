@@ -127,14 +127,28 @@ class ComparisonResult:
     status_codes: Dict[str, int]
     diffs: Dict[str, List[Tuple[str, str]]]
     errors: Dict[str, str]
+    tolerated_diffs: Dict[str, List[Tuple[str, str]]] = field(default_factory=dict)
 
     @property
     def all_match(self) -> bool:
-        return not self.errors and all(len(d) == 0 for d in self.diffs.values())
+        return (
+            not self.errors
+            and all(len(d) == 0 for d in self.diffs.values())
+            and all(len(d) == 0 for d in self.tolerated_diffs.values())
+        )
 
     @property
     def has_mismatch(self) -> bool:
+        # Tolerated diffs do not count as a mismatch for pass/fail purposes.
         return bool(self.errors) or any(len(d) > 0 for d in self.diffs.values())
+
+    @property
+    def has_tolerated(self) -> bool:
+        return any(len(d) > 0 for d in self.tolerated_diffs.values())
+
+    @property
+    def tolerated_only(self) -> bool:
+        return not self.has_mismatch and self.has_tolerated
 
     @property
     def ignored_due_to_deprecation(self) -> bool:
@@ -142,7 +156,7 @@ class ComparisonResult:
 
     @property
     def effective_pass(self) -> bool:
-        return self.all_match or self.ignored_due_to_deprecation
+        return not self.has_mismatch or self.ignored_due_to_deprecation
 
 
 def normalize_response_for_test_case(tc: TestCase, response: Any) -> Any:
@@ -677,6 +691,8 @@ def execute_test_case(
     cafile: Optional[str],
     ignored_paths: Set[str],
     unordered_lists: bool,
+    num_abs_tolerance: float = 0.0,
+    num_rel_tolerance: float = 0.0,
 ) -> ComparisonResult:
     ctx = ssl_context_for(insecure, cafile)
     responses: Dict[str, Any] = {}
@@ -710,12 +726,14 @@ def execute_test_case(
             errors[name] = str(e)
 
     diffs: Dict[str, List[Tuple[str, str]]] = {}
+    tolerated: Dict[str, List[Tuple[str, str]]] = {}
     ep_names = list(responses.keys())
     for i in range(len(ep_names)):
         for j in range(i + 1, len(ep_names)):
             n1, n2 = ep_names[i], ep_names[j]
             key = f"{n1} vs {n2}"
-            pair_diffs = []
+            pair_diffs: List[Tuple[str, str]] = []
+            pair_tolerated: List[Tuple[str, str]] = []
             if status_codes.get(n1) != status_codes.get(n2):
                 pair_diffs.append(
                     ("status", f"status code mismatch: {status_codes.get(n1)} != {status_codes.get(n2)}")
@@ -727,13 +745,17 @@ def execute_test_case(
             )
             pair_diffs.extend(
                 compare_json(
-                responses[n1],
-                responses[n2],
-                ignored_paths=effective_ignored_paths,
-                unordered_lists=unordered_lists,
-            )
+                    responses[n1],
+                    responses[n2],
+                    tolerated_diffs=pair_tolerated,
+                    ignored_paths=effective_ignored_paths,
+                    unordered_lists=unordered_lists,
+                    num_abs_tolerance=num_abs_tolerance,
+                    num_rel_tolerance=num_rel_tolerance,
+                )
             )
             diffs[key] = pair_diffs
+            tolerated[key] = pair_tolerated
 
     return ComparisonResult(
         test_case=tc,
@@ -741,6 +763,7 @@ def execute_test_case(
         status_codes=status_codes,
         diffs=diffs,
         errors=errors,
+        tolerated_diffs=tolerated,
     )
 
 
@@ -751,6 +774,7 @@ def execute_test_case(
 def print_summary(results: List[ComparisonResult]) -> None:
     total = len(results)
     passed = sum(1 for r in results if r.all_match)
+    tolerated_only = sum(1 for r in results if r.tolerated_only)
     deprecated = sum(1 for r in results if r.ignored_due_to_deprecation)
     failed = sum(1 for r in results if r.has_mismatch and not r.ignored_due_to_deprecation)
 
@@ -759,6 +783,7 @@ def print_summary(results: List[ComparisonResult]) -> None:
     print(f"{'=' * 70}")
     print(f"  Total test cases : {total}")
     print(f"  Matching         : {passed}")
+    print(f"  Tolerated drift  : {tolerated_only}")
     print(f"  Deprecated       : {deprecated}")
     print(f"  Differing        : {failed}")
     print(f"{'=' * 70}\n")
@@ -766,6 +791,8 @@ def print_summary(results: List[ComparisonResult]) -> None:
     for result in results:
         if result.all_match:
             icon = "PASS"
+        elif result.tolerated_only:
+            icon = "WARN"
         elif result.ignored_due_to_deprecation:
             icon = "DEPRECATED"
         else:
@@ -776,7 +803,7 @@ def print_summary(results: List[ComparisonResult]) -> None:
         for ep, err in result.errors.items():
             print(f"   Warning: Error from {ep}: {err}")
 
-        if not result.all_match:
+        if result.has_mismatch:
             for pair, diffs in result.diffs.items():
                 if diffs:
                     print(f"   {pair}: {len(diffs)} difference(s)")
@@ -784,6 +811,15 @@ def print_summary(results: List[ComparisonResult]) -> None:
                         print(f"      - {p}: {msg}")
                     if len(diffs) > 5:
                         print(f"      ... and {len(diffs) - 5} more")
+
+        if result.has_tolerated:
+            for pair, tdiffs in result.tolerated_diffs.items():
+                if tdiffs:
+                    print(f"   {pair}: {len(tdiffs)} tolerated numeric drift(s)")
+                    for p, msg in tdiffs[:5]:
+                        print(f"      ~ {p}: {msg}")
+                    if len(tdiffs) > 5:
+                        print(f"      ... and {len(tdiffs) - 5} more")
         print()
 
 
@@ -793,6 +829,7 @@ def save_report(results: List[ComparisonResult], output_file: str) -> None:
         "summary": {
             "total": len(results),
             "passed": sum(1 for r in results if r.all_match),
+            "tolerated": sum(1 for r in results if r.tolerated_only),
             "deprecated": sum(1 for r in results if r.ignored_due_to_deprecation),
             "failed": sum(1 for r in results if r.has_mismatch and not r.ignored_due_to_deprecation),
         },
@@ -801,6 +838,8 @@ def save_report(results: List[ComparisonResult], output_file: str) -> None:
     for r in results:
         if r.all_match:
             status = "pass"
+        elif r.tolerated_only:
+            status = "tolerated"
         elif r.ignored_due_to_deprecation:
             status = "deprecated"
         else:
@@ -815,6 +854,7 @@ def save_report(results: List[ComparisonResult], output_file: str) -> None:
                 "errors": r.errors,
                 "status_codes": r.status_codes,
                 "diffs": {k: list(v) for k, v in r.diffs.items()},
+                "tolerated_diffs": {k: list(v) for k, v in r.tolerated_diffs.items()},
             }
         )
     with open(output_file, "w") as f:
@@ -874,6 +914,18 @@ def main() -> None:
     comp.add_argument("--unordered-lists", action="store_true", help="Treat primitive lists as unordered")
     comp.add_argument("--timeout", type=int, default=30, help="Request timeout in seconds (default: 30)")
     comp.add_argument("--headers", default="", help="JSON object of extra headers for all requests")
+    comp.add_argument(
+        "--num-abs-tolerance",
+        type=float,
+        default=0.0,
+        help="Absolute numeric tolerance: leaf numeric mismatches with |a-b| within this bound are reported as tolerated drift (do not fail).",
+    )
+    comp.add_argument(
+        "--num-rel-tolerance",
+        type=float,
+        default=0.0,
+        help="Relative numeric tolerance (fraction of max(|a|,|b|)). Combined with --num-abs-tolerance via max().",
+    )
 
     tls = parser.add_argument_group("TLS")
     tls.add_argument("--insecure", action="store_true", help="Skip TLS certificate verification")
@@ -1006,9 +1058,16 @@ def main() -> None:
             cafile=args.cafile,
             ignored_paths=ignored,
             unordered_lists=args.unordered_lists,
+            num_abs_tolerance=args.num_abs_tolerance,
+            num_rel_tolerance=args.num_rel_tolerance,
         )
         results.append(result)
-        status = "All endpoints match" if result.all_match else "Differences found"
+        if result.all_match:
+            status = "All endpoints match"
+        elif result.tolerated_only:
+            status = "Tolerated drift only"
+        else:
+            status = "Differences found"
         print(f"   {status}")
 
     print_summary(results)
