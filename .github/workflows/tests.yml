@@ -208,7 +208,7 @@ jobs:
           docker compose version
           echo "ℹ️ Networks"
           docker network ls
-          docker network inspect vechain-database || true
+          docker network inspect vechain-indexer-network || true
           docker network inspect vechain-thor-e2e || true
           echo "ℹ️ Containers"
           docker ps -a

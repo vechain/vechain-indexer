@@ -23,8 +23,7 @@ services:
     ports:
       - "8081:8080"
     networks:
-      - vechain
-      - vechain-database
+      - vechain-indexer-network
 #      - vechain-thor
 
   vechain-indexer-api:
@@ -50,20 +49,16 @@ services:
       - "8080:8080"
     tty: true
     networks:
-      - vechain
-      - vechain-database
+      - vechain-indexer-network
 
 secrets:
   gradle_props:
     file: ${GRADLE_PROPERTIES_FILE:-./gradle/docker.gradle.properties}
 
 networks:
-  vechain:
-    driver: bridge
-    name: vechain
-  vechain-database:
+  vechain-indexer-network:
     external: true
-    name: vechain-database
+    name: vechain-indexer-network
 #  vechain-thor:
 #    external: true
 #    name: vechain-thor
