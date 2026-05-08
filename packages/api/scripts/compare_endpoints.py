@@ -34,6 +34,7 @@ import sys
 import urllib.request
 import urllib.error
 import ssl
+from decimal import Decimal
 from typing import Any, List, Tuple, Dict, Set, Union
 
 Path = str
@@ -144,6 +145,14 @@ def is_real_number(x: Any) -> bool:
     return isinstance(x, (int, float)) and not isinstance(x, bool)
 
 
+def _to_decimal(x: Any) -> Decimal:
+    # ints convert exactly; floats go through str() so the value matches what JSON decoded
+    # (avoids reintroducing float-binary noise that Decimal(float) would expose).
+    if isinstance(x, int):
+        return Decimal(x)
+    return Decimal(str(x))
+
+
 def within_numeric_tolerance(
     a: Any,
     b: Any,
@@ -154,12 +163,16 @@ def within_numeric_tolerance(
         return False
     if not (is_real_number(a) and is_real_number(b)):
         return False
-    af = float(a)
-    bf = float(b)
-    if af == bf:
+    # Compare and compute the bound in Decimal so uint256-scale integers don't lose
+    # precision through a float round-trip (1e18+1 and 1e18+1000 both round to the same
+    # float, which would otherwise mask diffs much larger than the configured tolerance).
+    ad = _to_decimal(a)
+    bd = _to_decimal(b)
+    if ad == bd:
         return True
-    diff = abs(af - bf)
-    bound = max(abs_tol, rel_tol * max(abs(af), abs(bf)))
+    diff = abs(ad - bd)
+    magnitude = max(abs(ad), abs(bd))
+    bound = max(_to_decimal(abs_tol), _to_decimal(rel_tol) * magnitude)
     return diff <= bound
 
 def path_child(parent: Path, key: Union[str, int]) -> Path:
