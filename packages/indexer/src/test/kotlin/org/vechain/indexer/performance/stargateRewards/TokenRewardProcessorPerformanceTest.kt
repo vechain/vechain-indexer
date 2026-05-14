@@ -3,7 +3,6 @@ package org.vechain.indexer.performance.stargateRewards
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.vechain.indexer.BlockIndexer
@@ -18,23 +17,21 @@ import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.stargate.rewards.TokenRewardProcessor
 import org.vechain.indexer.stargate.rewards.TokenRewardService
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
-import org.vechain.indexer.validator.DelegationRepository
-import org.vechain.indexer.validator.domain.ValidatorDecoder
+import org.vechain.indexer.validator.DelegationV2Repository
+import org.vechain.indexer.validator.ValidatorV2Repository
 
 @Disabled("Performance test - run explicitly with --tests when needed")
-@ActiveProfiles("token-reward", "delegation")
+@ActiveProfiles("token-reward", "delegation-v2", "validator-v2")
 class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var tokenRewardRepository: TokenRewardRepository
     @Autowired lateinit var tokenRewardService: TokenRewardService
     @Autowired lateinit var inlineVersioningProperties: InlineVersioningProperties
     @Autowired lateinit var mongoTemplate: MongoTemplate
-    @Autowired lateinit var delegationRepository: DelegationRepository
+    @Autowired lateinit var validatorV2Repository: ValidatorV2Repository
+    @Autowired lateinit var delegationV2Repository: DelegationV2Repository
     @Autowired lateinit var checkpointService: CheckpointService
     @Autowired lateinit var processorMetrics: ProcessorMetrics
-
-    @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
-    lateinit var getAllValidatorsContract: String
 
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
@@ -84,7 +81,8 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
                     repository = tokenRewardRepository,
                     mongoTemplate = mongoTemplate,
                     inlineVersioningProperties = inlineVersioningProperties,
-                    delegationRepository = delegationRepository,
+                    validatorV2Repository = validatorV2Repository,
+                    delegationV2Repository = delegationV2Repository,
                     thorClient = thorClient,
                     profiler = profiler,
                 )
@@ -118,7 +116,7 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(100L)
-            .callDataClauses(ValidatorDecoder.buildClauses(getAllValidatorsContract))
+            .callDataClauses(listOf(TokenRewardService.energyTotalSupplyClause()))
             .includeFullBlock()
             .build()
     }

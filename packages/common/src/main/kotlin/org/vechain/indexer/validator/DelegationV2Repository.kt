@@ -12,7 +12,7 @@ import org.vechain.indexer.BaseIndexedRepository
  * Query surface for V2 delegation documents. Mirrors the V1 [DelegationRepository] surface so the
  * API layer can swap one for the other without touching call sites.
  */
-@Profile("delegation-v2")
+@Profile("delegation-v2", "token-reward")
 @Repository
 interface DelegationV2Repository : BaseIndexedRepository<DelegationV2, String> {
 
