@@ -9,7 +9,7 @@ import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 
-@Profile("delegation-v2")
+@Profile("delegation-v2", "delegation")
 @Component
 open class DelegationV2Processor(
     repository: DelegationV2Repository,

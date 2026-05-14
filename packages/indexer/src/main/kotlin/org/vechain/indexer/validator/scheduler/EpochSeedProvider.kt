@@ -29,7 +29,7 @@ interface EpochSeedProvider {
  *
  * Results are cached per seed-block number; in steady state we hit Thor exactly once per epoch.
  */
-@Profile("validator-v2")
+@Profile("validator-v2", "validator")
 @Component
 class SubprocessEpochSeedProvider(
     private val scheduler: ThorSchedulerProcess,

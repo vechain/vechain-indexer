@@ -77,7 +77,7 @@ data class ValidatorV2Aggregates(
 }
 
 /** Builds [ValidatorV2Aggregates] for one request. Active when the V2 validator profile is on. */
-@Profile("validator-v2")
+@Profile("validator-v2", "validator")
 @Service
 open class ValidatorV2AggregateService(
     private val validatorRepository: ValidatorV2Repository,

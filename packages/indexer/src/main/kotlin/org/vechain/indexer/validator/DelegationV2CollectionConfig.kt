@@ -12,7 +12,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("delegation-v2")
+@Profile("delegation-v2", "delegation")
 @Configuration
 open class DelegationV2CollectionConfig(
     mongoTemplate: MongoTemplate,

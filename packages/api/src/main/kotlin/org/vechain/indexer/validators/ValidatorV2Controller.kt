@@ -33,7 +33,7 @@ import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validator.StatusV2
 import org.vechain.indexer.validator.ValidatorV2
 
-@Profile("validator-v2")
+@Profile("validator-v2", "validator")
 @Tag(name = "Validator", description = "Query validator documents")
 @Validated
 @RestController

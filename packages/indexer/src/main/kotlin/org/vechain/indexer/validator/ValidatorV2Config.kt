@@ -10,7 +10,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("validator-v2")
+@Profile("validator-v2", "validator")
 open class ValidatorV2Config {
 
     @Bean

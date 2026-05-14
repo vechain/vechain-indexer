@@ -30,7 +30,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
  * 4. Apply event mutations.
  * 5. Diff against prior state and emit only changed documents.
  */
-@Profile("delegation-v2")
+@Profile("delegation-v2", "delegation")
 @Service
 open class DelegationV2Service(
     private val repository: DelegationV2Repository,

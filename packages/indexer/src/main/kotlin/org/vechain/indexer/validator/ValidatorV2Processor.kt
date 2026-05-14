@@ -9,7 +9,7 @@ import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 
-@Profile("validator-v2")
+@Profile("validator-v2", "validator")
 @Component
 open class ValidatorV2Processor(
     repository: ValidatorV2Repository,

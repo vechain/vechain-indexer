@@ -1,5 +1,6 @@
 package org.vechain.indexer.validator
 
+import java.math.BigDecimal
 import java.math.BigInteger
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
@@ -7,37 +8,47 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.event.AbiLoader
-import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.explorer.TimestampUtils.calculateTimeBoundary
 import org.vechain.indexer.explorer.TimestampUtils.isDailyChange
 import org.vechain.indexer.explorer.TimestampUtils.isHourlyChange
 import org.vechain.indexer.explorer.TimestampUtils.isMonthlyChange
 import org.vechain.indexer.explorer.TimestampUtils.isWeeklyChange
+import org.vechain.indexer.stargate.rewards.TokenRewardService
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
-import org.vechain.indexer.validator.domain.ValidatorDecoder.buildVTHOTotalsClauses
-import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeResponseInfo
-import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeRows
-import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeVTHOIssued
-import org.vechain.indexer.validator.domain.ValidatorDecoder.hasDelegations
-import org.vechain.indexer.validator.models.DecodedValidatorInfo
 
-@Profile("validator", "validator-reward")
+/**
+ * Per-block validator reward ledger.
+ *
+ * Reads everything it needs from `ValidatorV2` (signer's delegation flag, missed-slot attribution,
+ * online recovery) plus a single builtin `Energy.totalSupply()` chain call. No aggregator, no
+ * per-validator chain fan-out — the missed-slot detection that V1 did by iterating every validator
+ * per block is replaced by a targeted query on V2's already-derived `lastMissedBlockNumber` /
+ * `lastProposedBlockNumber` fields.
+ *
+ * Wire shape on `validator_block_rewards` is unchanged: same VALIDATED / MISSED documents, same
+ * fields, same id scheme (`"$blockNumber-$validatorId"`).
+ */
+@Profile("validator-reward")
 @Service
 open class ValidatorBlockService(
     private val repository: ValidatorBlockRepository,
+    private val validatorRepository: ValidatorV2Repository,
     private val thorClient: ThorClient,
 ) {
-    private val cachedGetValidatorsAbi: ConcurrentHashMap<String, AbiElement> = ConcurrentHashMap()
-
     private val hourlyCache = ConcurrentHashMap<String, Long>()
     private val dailyCache = ConcurrentHashMap<String, Long>()
     private val weeklyCache = ConcurrentHashMap<String, Long>()
     private val monthlyCache = ConcurrentHashMap<String, Long>()
+
+    /**
+     * Validators currently in an open offline period: id → block number at which their open MISSED
+     * record was written. Used to (a) suppress duplicate MISSED records for continuing offline runs
+     * and (b) close out the prior MISSED record when the validator next produces.
+     */
     private val offlineValidators = ConcurrentHashMap<String, Long>()
 
     /** Cached VTHO total supply from the previous block to calculate deltas. */
@@ -45,7 +56,6 @@ open class ValidatorBlockService(
 
     init {
         preloadLatestAggregates()
-
         preLoadOfflineValidators()
     }
 
@@ -53,31 +63,19 @@ open class ValidatorBlockService(
         block: Block,
         callResponses: List<InspectionResult>,
     ): List<ValidatorBlock> {
-        // Fetch ABIs for decoding
-        loadAllValidatorAbiFunctions(
-            listOf(
-                "getValidators",
-                "totalStake",
-                "vthoTotalSupply",
-                "getVetPriceUsd",
-                "getVthoPriceUsd",
-                "totalBurned",
-            )
-        )
+        val blockTotalSupply =
+            TokenRewardService.decodeTotalSupply(callResponses) ?: return emptyList()
 
-        val decodedInfo = decodeResponseInfo(callResponses, cachedGetValidatorsAbi)
+        val validationInfo = getValidationInfo(block, blockTotalSupply)
+        val missedSlots = getValidatorsWithMissedSlots(block)
+        val recovered = getRecoveredValidators(block)
 
-        val validationInfo = getValidationInfo(block, decodedInfo)
-
-        val missedSlots = getValidatorsWithMissedSlots(decodedInfo, block)
-
-        return listOfNotNull(validationInfo) + missedSlots
+        return listOfNotNull(validationInfo) + missedSlots + recovered
     }
 
     @Transactional
     open fun save(records: List<ValidatorBlock>) {
         repository.saveAll(records)
-
         records.forEach {
             if (it.isHourly == true) hourlyCache[it.validator] = it.blockTimestamp
             if (it.isDaily == true) dailyCache[it.validator] = it.blockTimestamp
@@ -86,28 +84,27 @@ open class ValidatorBlockService(
         }
     }
 
-    suspend fun getValidationInfo(
-        block: Block,
-        decodedInfo: DecodedValidatorInfo?,
-    ): ValidatorBlock? {
-        // Get total VTHO issued at this block
-        val blockTotalSupply = getTotalVTHOIssued(decodedInfo, block.id)
+    // ---------------------------------------------------------------------------------------------
+    // Reward attribution for block.signer
+    // ---------------------------------------------------------------------------------------------
 
-        // Initialize cache on restart using the previous block’s reward
+    /**
+     * Builds the VALIDATED record for [block.signer]. Returns `null` when the signer isn't a
+     * tracked validator yet (e.g. cold start before `ValidatorV2` has caught up).
+     */
+    suspend fun getValidationInfo(block: Block, blockTotalSupply: BigInteger): ValidatorBlock? {
+        val signer = block.signer
+        val validator = validatorRepository.findByIdOrNull(signer) ?: return null
+        val hasDelegations = (validator.delegatorVetStaked ?: BigDecimal.ZERO) > BigDecimal.ZERO
+
+        // Cold-start: seed prev-supply from the parent block.
         if (vthoTotalSupply == BigInteger.ZERO) {
             vthoTotalSupply = getTotalVTHOIssuedAtBlock(block.parentID)
         }
 
-        val hasDelegations = decodedInfo?.hasDelegations(block.signer)
-
-        if (hasDelegations == null || hasDelegations == -1) {
-            return null
-        }
-
         val blockReward = blockTotalSupply.subtract(vthoTotalSupply)
-        vthoTotalSupply = blockTotalSupply // update cache
+        vthoTotalSupply = blockTotalSupply
 
-        // Sum all transaction rewards in this block
         val priorityRewards: BigInteger =
             block.transactions
                 .map { it.reward }
@@ -115,18 +112,18 @@ open class ValidatorBlockService(
                 .fold(BigInteger.ZERO, BigInteger::add)
 
         val delegationRewards =
-            if (hasDelegations == 1) {
+            if (hasDelegations) {
                 blockReward.multiply(BigInteger("7")).divide(BigInteger("10"))
             } else {
                 BigInteger.ZERO
             }
 
         return ValidatorBlock(
-            id = "${block.number}-${block.signer}",
+            id = "${block.number}-$signer",
             blockNumber = block.number,
             blockId = block.id,
             blockTimestamp = block.timestamp,
-            validator = block.signer,
+            validator = signer,
             blockReward = blockReward,
             priorityReward = priorityRewards,
             total = blockReward.add(priorityRewards),
@@ -134,118 +131,87 @@ open class ValidatorBlockService(
             delegatorRewards = delegationRewards,
             validatorRewards = blockReward.add(priorityRewards).subtract(delegationRewards),
             isHourly =
-                calculateTimeBoundary(
-                    hourlyCache[block.signer] ?: 0L,
-                    block.timestamp,
-                    ::isHourlyChange,
-                ),
+                calculateTimeBoundary(hourlyCache[signer] ?: 0L, block.timestamp, ::isHourlyChange),
             isDaily =
-                calculateTimeBoundary(
-                    dailyCache[block.signer] ?: 0L,
-                    block.timestamp,
-                    ::isDailyChange,
-                ),
+                calculateTimeBoundary(dailyCache[signer] ?: 0L, block.timestamp, ::isDailyChange),
             isWeekly =
-                calculateTimeBoundary(
-                    weeklyCache[block.signer] ?: 0L,
-                    block.timestamp,
-                    ::isWeeklyChange,
-                ),
+                calculateTimeBoundary(weeklyCache[signer] ?: 0L, block.timestamp, ::isWeeklyChange),
             isMonthly =
                 calculateTimeBoundary(
-                    monthlyCache[block.signer] ?: 0L,
+                    monthlyCache[signer] ?: 0L,
                     block.timestamp,
                     ::isMonthlyChange,
                 ),
         )
     }
 
-    fun getValidatorsWithMissedSlots(
-        decodedInfo: DecodedValidatorInfo?,
-        block: Block,
-    ): List<ValidatorBlock> {
-        if (decodedInfo == null) {
-            return emptyList()
-        }
+    // ---------------------------------------------------------------------------------------------
+    // Missed-slot detection (V2-driven)
+    // ---------------------------------------------------------------------------------------------
 
-        val rows = decodeRows(decodedInfo.decodedValidators)
-
-        return rows.mapNotNull { row ->
-            val validatorId = row.id
-            val status = row.status.toInt()
-            val wentOfflineAt = row.offlineBlock.toLong()
-
-            val isMissed = !row.online && status == 2 && wentOfflineAt == block.number
-
-            if (isMissed) {
-                offlineValidators[validatorId] = block.number
-                return@mapNotNull ValidatorBlock(
-                    id = "${block.number}-$validatorId",
-                    blockId = block.id,
-                    blockNumber = block.number,
-                    blockTimestamp = block.timestamp,
-                    validator = validatorId,
-                    status = BlockStatus.MISSED,
-                )
-            }
-
-            if (row.online && offlineValidators.containsKey(validatorId)) {
-                val offlineStartBlock = offlineValidators.remove(validatorId)
-                if (offlineStartBlock != null) {
-                    val offlineDocId = "$offlineStartBlock-$validatorId"
-                    val offlineDoc = repository.findByIdOrNull(offlineDocId)
-                    return@mapNotNull offlineDoc?.copy(
-                        blocksOffline = block.number - offlineDoc.blockNumber,
-                        onlineBlock = block.number,
-                    )
-                }
-            }
-
-            return@mapNotNull null
+    /**
+     * Validators whose `lastMissedBlockNumber == block.number` AND aren't already tracked as
+     * offline. V2's `ValidatorV2Service.updateLiveness` updates `lastMissedBlockNumber` for every
+     * missed slot, so this query returns the set of just-missed validators directly — no full
+     * validator-list iteration needed.
+     */
+    fun getValidatorsWithMissedSlots(block: Block): List<ValidatorBlock> {
+        val justMissed = validatorRepository.findByLastMissedBlockNumber(block.number)
+        return justMissed.mapNotNull { v ->
+            if (offlineValidators.containsKey(v.id)) return@mapNotNull null
+            offlineValidators[v.id] = block.number
+            ValidatorBlock(
+                id = "${block.number}-${v.id}",
+                blockId = block.id,
+                blockNumber = block.number,
+                blockTimestamp = block.timestamp,
+                validator = v.id,
+                status = BlockStatus.MISSED,
+            )
         }
     }
 
-    /** Resolve total VTHO issued = totalSupply + burned */
-    suspend fun getTotalVTHOIssued(
-        decodedInfo: DecodedValidatorInfo?,
-        blockId: String,
-    ): BigInteger {
-        if (decodedInfo == null) {
-            return getTotalVTHOIssuedAtBlock(blockId)
+    /**
+     * Currently-offline validators who proposed at [block]. For each, close out their open MISSED
+     * record with `blocksOffline` + `onlineBlock`, drop them from the offline set.
+     */
+    fun getRecoveredValidators(block: Block): List<ValidatorBlock> {
+        if (offlineValidators.isEmpty()) return emptyList()
+        val recovered =
+            validatorRepository
+                .findByLastProposedBlockNumberAndIdIn(block.number, offlineValidators.keys)
+                .map { it.id }
+        if (recovered.isEmpty()) return emptyList()
+
+        return recovered.mapNotNull { validatorId ->
+            val offlineStartBlock = offlineValidators.remove(validatorId) ?: return@mapNotNull null
+            val offlineDoc =
+                repository.findByIdOrNull("$offlineStartBlock-$validatorId")
+                    ?: return@mapNotNull null
+            offlineDoc.copy(
+                blocksOffline = block.number - offlineDoc.blockNumber,
+                onlineBlock = block.number,
+            )
         }
-        return decodedInfo.vthoTotalSupply
     }
 
+    // ---------------------------------------------------------------------------------------------
+    // VTHO supply fallback
+    // ---------------------------------------------------------------------------------------------
+
+    /** Cold-start fallback: read the parent block's `Energy.totalSupply()` directly. */
     suspend fun getTotalVTHOIssuedAtBlock(blockId: String): BigInteger {
         val response =
-            thorClient.inspectClauses(buildVTHOTotalsClauses(), BlockRevision.Id(blockId))
-
-        if (response.size < 2) {
-            return BigInteger.ZERO
-        }
-
-        val inspectionResults =
-            listOf(
-                InspectionResult(
-                    data = response[0].data,
-                    events = emptyList(),
-                    transfers = emptyList(),
-                    gasUsed = 0,
-                    reverted = false,
-                    vmError = null,
-                ),
-                InspectionResult(
-                    data = response[1].data,
-                    events = emptyList(),
-                    transfers = emptyList(),
-                    gasUsed = 0,
-                    reverted = false,
-                    vmError = null,
-                ),
+            thorClient.inspectClauses(
+                listOf(TokenRewardService.energyTotalSupplyClause()),
+                BlockRevision.Id(blockId),
             )
-
-        return decodeVTHOIssued(inspectionResults)
+        return TokenRewardService.decodeTotalSupply(response) ?: BigInteger.ZERO
     }
+
+    // ---------------------------------------------------------------------------------------------
+    // Bootstrap caches
+    // ---------------------------------------------------------------------------------------------
 
     private fun preloadLatestAggregates() {
         repository.findLatestHourly().forEach { hourlyCache[it._id.validator] = it.blockTimestamp }
@@ -258,13 +224,5 @@ open class ValidatorBlockService(
 
     private fun preLoadOfflineValidators() {
         repository.findLatestMissed().forEach { offlineValidators[it.validator] = it.blockNumber }
-    }
-
-    private fun loadAllValidatorAbiFunctions(functionNames: List<String>) {
-        if (cachedGetValidatorsAbi.isNotEmpty()) return // already loaded
-
-        val abis = AbiLoader.load(basePath = "abis/stargate", names = functionNames)
-
-        abis.forEach { abi -> cachedGetValidatorsAbi[abi.name!!] = abi }
     }
 }

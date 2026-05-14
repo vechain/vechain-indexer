@@ -22,7 +22,7 @@ import org.vechain.indexer.thor.client.ThorClient
  *   other's data.
  */
 @Configuration
-@Profile("delegation-v2")
+@Profile("delegation-v2", "delegation")
 open class DelegationV2Config {
 
     @Bean

@@ -12,7 +12,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("validator", "validator-reward")
+@Profile("validator-reward")
 @Configuration
 open class ValidatorBlockCollectionConfig(
     mongoTemplate: MongoTemplate,

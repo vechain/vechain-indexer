@@ -27,7 +27,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 import org.vechain.indexer.validator.scheduler.EpochSeedProvider
 import org.vechain.indexer.validator.scheduler.ThorSchedulerProcess
 
-@Profile("validator-v2")
+@Profile("validator-v2", "validator")
 @Service
 open class ValidatorV2Service(
     private val repository: ValidatorV2Repository,
