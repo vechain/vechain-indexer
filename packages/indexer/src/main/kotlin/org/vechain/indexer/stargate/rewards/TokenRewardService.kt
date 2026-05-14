@@ -28,8 +28,8 @@ import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.ContractUtils
-import org.vechain.indexer.validator.DelegationStatusV2
-import org.vechain.indexer.validator.DelegationV2Repository
+import org.vechain.indexer.validator.DelegationRepository
+import org.vechain.indexer.validator.DelegationStatus
 import org.vechain.indexer.validator.ValidatorV2
 import org.vechain.indexer.validator.ValidatorV2Repository
 
@@ -40,7 +40,7 @@ open class TokenRewardService(
     private val mongoTemplate: MongoTemplate,
     private val inlineVersioningProperties: InlineVersioningProperties,
     private val validatorV2Repository: ValidatorV2Repository,
-    private val delegationV2Repository: DelegationV2Repository,
+    private val delegationV2Repository: DelegationRepository,
     private val thorClient: ThorClient,
 ) {
     /**
@@ -81,7 +81,7 @@ open class TokenRewardService(
         val validatorId = block.signer
 
         // Cycle info now comes from the V2 validator collection (was: aggregator decode).
-        // dependsOn(delegationV2Indexer) → transitively dependsOn(validatorV2Indexer) guarantees
+        // dependsOn(delegationIndexer) → transitively dependsOn(validatorV2Indexer) guarantees
         // that ValidatorV2 has applied this block's state by the time we read it here.
         val validator =
             validatorV2Repository.findByIdOrNull(validatorId)
@@ -213,8 +213,8 @@ open class TokenRewardService(
     /**
      * Fetch or create reward trackers for a validator at the start of a new cycle.
      *
-     * Reads currently-active delegations from [DelegationV2Repository] (was V1
-     * `delegationRepository`). The `dependsOn(delegationV2Indexer)` ordering guarantees that
+     * Reads currently-active delegations from [DelegationRepository] (was V1
+     * `delegationRepository`). The `dependsOn(delegationIndexer)` ordering guarantees that
      * delegations transitioning at this block's cycle boundary have already been applied.
      */
     fun getOrFetchRewardsNewCycle(
@@ -225,7 +225,7 @@ open class TokenRewardService(
         val delegations =
             delegationV2Repository.findByValidatorAndStatusIn(
                 validatorId,
-                listOf(DelegationStatusV2.ACTIVE, DelegationStatusV2.EXITING),
+                listOf(DelegationStatus.ACTIVE, DelegationStatus.EXITING),
             )
 
         if (delegations.isEmpty()) return emptyList()

@@ -166,11 +166,6 @@ object IndexerNames {
         const val COLLECTION = "delegations"
     }
 
-    object DELEGATION_V2 {
-        const val NAME = "DelegationIndexerV2"
-        const val COLLECTION = "delegations_v2"
-    }
-
     object VTHO_GENERATED_BY_BLOCK {
         const val NAME = "VthoGeneratedByBlockIndexer"
         const val COLLECTION = "stargate_vtho_generated_by_block"

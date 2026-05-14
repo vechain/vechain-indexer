@@ -14,15 +14,15 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.accounts.TimeFrame
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Block
-import org.vechain.indexer.validator.DelegationV2LevelAggregateResult
-import org.vechain.indexer.validator.DelegationV2Repository
+import org.vechain.indexer.validator.DelegationLevelAggregateResult
+import org.vechain.indexer.validator.DelegationRepository
 import strikt.api.expectThat
 import strikt.assertions.*
 
 @ExtendWith(MockKExtension::class)
 class VetDelegatedByBlockServiceTest {
     @MockK lateinit var repository: VetDelegatedByBlockRepository
-    @MockK lateinit var delegationRepository: DelegationV2Repository
+    @MockK lateinit var delegationRepository: DelegationRepository
     private lateinit var service: VetDelegatedByBlockService
 
     @BeforeEach
@@ -45,9 +45,7 @@ class VetDelegatedByBlockServiceTest {
 
     private fun mockActiveAggregation(vararg levels: Pair<TokenLevel, String>) {
         every { delegationRepository.aggregateActiveDelegationsByLevel() } returns
-            levels.map { (level, amount) ->
-                DelegationV2LevelAggregateResult(level.name, amount, 1)
-            }
+            levels.map { (level, amount) -> DelegationLevelAggregateResult(level.name, amount, 1) }
     }
 
     @Test

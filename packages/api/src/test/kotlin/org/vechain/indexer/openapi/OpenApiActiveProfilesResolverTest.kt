@@ -17,7 +17,7 @@ class OpenApiActiveProfilesResolverTest {
                     "accounts",
                     "b3tr",
                     "contracts",
-                    "delegation-v2",
+                    "delegation",
                     "explorer",
                     "history",
                     "nfts",

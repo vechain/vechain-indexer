@@ -15,7 +15,7 @@ class OpenApiActiveProfilesResolver : ActiveProfilesResolver {
                     "accounts",
                     "b3tr",
                     "contracts",
-                    "delegation-v2",
+                    "delegation",
                     "explorer",
                     "history",
                     "nfts",

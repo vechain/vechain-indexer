@@ -21,9 +21,9 @@ import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
 import org.vechain.indexer.thor.HexUtils.toHex
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
-import org.vechain.indexer.validator.DelegationStatusV2
-import org.vechain.indexer.validator.DelegationV2
-import org.vechain.indexer.validator.DelegationV2Repository
+import org.vechain.indexer.validator.Delegation
+import org.vechain.indexer.validator.DelegationRepository
+import org.vechain.indexer.validator.DelegationStatus
 import org.vechain.indexer.validator.StatusV2
 import org.vechain.indexer.validator.ValidatorV2
 import org.vechain.indexer.validator.ValidatorV2Repository
@@ -33,7 +33,7 @@ class TokenRewardServiceTest {
     private val mongoTemplate = mockk<MongoTemplate>(relaxed = true)
     private val inlineVersioningProperties = mockk<InlineVersioningProperties>()
     private val validatorV2Repository = mockk<ValidatorV2Repository>(relaxed = true)
-    private val delegationV2Repository = mockk<DelegationV2Repository>(relaxed = true)
+    private val delegationV2Repository = mockk<DelegationRepository>(relaxed = true)
     private val thorClient = mockk<ThorClient>(relaxed = true)
 
     private lateinit var service: TokenRewardService
@@ -209,12 +209,12 @@ class TokenRewardServiceTest {
         val validator = "0x00000000000000000000000000000000000000a1"
 
         val delegation =
-            DelegationV2(
+            Delegation(
                 id = "del-1",
                 validator = validator,
                 tokenId = "10001",
                 owner = "0xOWNER",
-                status = DelegationStatusV2.ACTIVE,
+                status = DelegationStatus.ACTIVE,
                 tokenLevel = TokenLevel.Dawn,
                 stakedAmount = "10000",
                 totalRewardsClaimed = BigInteger.ZERO,
@@ -227,7 +227,7 @@ class TokenRewardServiceTest {
         every {
             delegationV2Repository.findByValidatorAndStatusIn(
                 validator,
-                listOf(DelegationStatusV2.ACTIVE, DelegationStatusV2.EXITING),
+                listOf(DelegationStatus.ACTIVE, DelegationStatus.EXITING),
             )
         } returns listOf(delegation)
 

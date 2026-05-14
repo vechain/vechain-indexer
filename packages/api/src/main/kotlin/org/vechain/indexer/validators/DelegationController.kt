@@ -23,8 +23,8 @@ import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validation.ValidTokenId
-import org.vechain.indexer.validator.DelegationStatusV2
-import org.vechain.indexer.validator.DelegationV2
+import org.vechain.indexer.validator.Delegation
+import org.vechain.indexer.validator.DelegationStatus
 
 @Profile("delegation")
 @Tag(name = "Validator", description = "Query delegation documents")
@@ -49,7 +49,7 @@ open class DelegationController(private val service: DelegationService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "statuses",
-        schema = Schema(type = "array", implementation = DelegationStatusV2::class),
+        schema = Schema(type = "array", implementation = DelegationStatus::class),
         description = "Filter by one or more statuses",
         required = false,
     )
@@ -58,13 +58,13 @@ open class DelegationController(private val service: DelegationService) {
     open fun getDelegations(
         @RequestParam(required = false) validator: String?,
         @ValidTokenId @RequestParam(required = false) tokenId: String?,
-        @RequestParam(required = false) statuses: List<DelegationStatusV2>?,
+        @RequestParam(required = false) statuses: List<DelegationStatus>?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<DelegationResponse> {
         val pageable =
-            toPageable(page, size, direction, DelegationV2::blockNumber.name, DelegationV2::id.name)
+            toPageable(page, size, direction, Delegation::blockNumber.name, Delegation::id.name)
         val results = service.getDelegations(validator, tokenId, statuses, pageable)
         return paginatedResponse(results.map(DelegationResponse::from))
     }

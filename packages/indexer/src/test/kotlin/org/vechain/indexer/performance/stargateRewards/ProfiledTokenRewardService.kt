@@ -9,7 +9,7 @@ import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
-import org.vechain.indexer.validator.DelegationV2Repository
+import org.vechain.indexer.validator.DelegationRepository
 import org.vechain.indexer.validator.ValidatorV2Repository
 
 /**
@@ -23,7 +23,7 @@ class ProfiledTokenRewardService(
     mongoTemplate: MongoTemplate,
     inlineVersioningProperties: InlineVersioningProperties,
     validatorV2Repository: ValidatorV2Repository,
-    delegationV2Repository: DelegationV2Repository,
+    delegationV2Repository: DelegationRepository,
     thorClient: ThorClient,
     private val profiler: DetailedProfiler,
 ) :

@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // V1 delegation pipeline — superseded by DelegationV2.
-
 package org.vechain.indexer.validator
 
 import java.math.BigInteger
@@ -7,569 +5,435 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Block
-import org.vechain.indexer.thor.model.InspectionResult
-import org.vechain.indexer.utils.EventUtils.shouldProcessDelegationEvent
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
 /**
- * DelegationService is responsible for managing the lifecycle of delegations.
+ * V2 delegation indexer.
  *
- * Each block, it:
- * 1. Finds delegations that are due for a status transition.
- * 2. Finds delegations referenced in chain events.
- * 3. Finds delegations belonging to validators that exited or disappeared.
- * 4. Applies lifecycle transitions (QUEUED -> ACTIVE -> EXITING -> EXITED).
- * 5. Applies event mutations (initiation, exit requests, withdrawals, rewards).
- * 6. Forces exit of delegations if their validator disappeared.
+ * Pure event-driven. Reads `ValidatorV2` from MongoDB (via [ValidatorV2Repository]) for cycle math
+ * — no chain calls, no aggregator dependency, no `callDataClauses`. Ordering with the V2 validator
+ * indexer is handled by `dependsOn(validatorV2Indexer)` in [DelegationConfig].
  *
- * Returns updated delegations and those that must be archived.
+ * Each block:
+ * 1. Load three sets of candidates: (a) due-this-block, (b) zero-cycle (validator hasn't started
+ *    yet), (c) any delegation/validator touched by this block's events.
+ * 2. Apply scheduled transitions for due delegations (QUEUED→ACTIVE, EXITING→EXITED).
+ * 3. Refresh `transitionAtBlock` on zero-cycle delegations whose validator has since activated.
+ * 4. Apply event mutations.
+ * 5. Diff against prior state and emit only changed documents.
  */
-@Profile("validator", "validator-stats", "delegation")
+@Profile("delegation")
 @Service
 open class DelegationService(
     private val repository: DelegationRepository,
+    private val validatorRepository: ValidatorV2Repository,
     private val mongoTemplate: MongoTemplate,
     private val inlineVersioningProperties: InlineVersioningProperties,
-    private val validatorDelegationService: ValidatorDelegationService,
     @param:Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
     private val stakerSC: String,
 ) {
-    private val logger = LoggerFactory.getLogger(DelegationService::class.java)
-    private var cachedValidators: Set<String> = emptySet()
-    private var zeroCycleDelegationsCache: MutableList<Delegation>? = null
-
-    open fun findById(id: String): Delegation? = repository.findByIdOrNull(id)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     open suspend fun processBlock(
         block: Block,
         events: List<IndexedEvent>,
-        callResponses: List<InspectionResult>,
     ): Pair<List<Delegation>, List<Delegation>> {
-        val validatorSnapshots = validatorDelegationService.decodeValidatorSnapshots(callResponses)
-        val disappeared = checkMissingValidators(validatorSnapshots)
-
-        // 1. Collect delegations from different sources
-        val (unknownStart, due) = findDueDelegations(block)
-        val eventDelegations = findDelegationsFromEvents(events)
-        val validatorExitDelegations = findDelegationsFromExits(events, disappeared)
-
-        // 2. Build preload cache (deduped) and secondary index maps
-        val allLoaded =
-            (unknownStart + due + eventDelegations + validatorExitDelegations).associateBy { it.id }
-        val preloaded = allLoaded.toMutableMap()
-        val tokenIdToId = buildTokenIdIndex(allLoaded.values)
-        val validatorToIds = buildValidatorIndex(allLoaded.values)
-
-        // 3. Create accumulator with preload-backed findById
-        val accumulator =
-            VersionedDocumentAccumulator<Delegation>(
-                findById = { id -> preloaded[id] ?: findById(id) },
-                initialVersion = 1,
+        val due =
+            repository.findByTransitionAtBlockAndStatusIn(
+                block.number,
+                listOf(DelegationStatus.QUEUED, DelegationStatus.EXITING),
             )
-        accumulator.startBlock()
+        val zeroCycle = loadZeroCycle()
 
-        // 4. Process (same logical order as before)
-        checkForUpdatesOnUnknown(unknownStart, block, validatorSnapshots, accumulator)
-        applyScheduledTransitions(block, allLoaded.keys, accumulator)
-        applyEventMutations(
-            events,
-            block,
-            validatorSnapshots,
-            accumulator,
-            tokenIdToId,
-            validatorToIds,
-        )
-        disappeared.forEach { handleValidatorDisappeared(it, block, accumulator, validatorToIds) }
+        val tokenIds = events.mapNotNull { it.params.getAsString("tokenId") }.distinct()
+        val byTokenId =
+            if (tokenIds.isNotEmpty()) repository.findByTokenIdIn(tokenIds) else emptyList()
 
-        val results = accumulator.results()
-        updateZeroCycleCache(results.first)
-        return results
+        val touchedValidatorIds =
+            events
+                .filter {
+                    (it.eventType == "ValidationSignaledExit" ||
+                        it.eventType == "ValidationWithdrawn") &&
+                        it.address.equals(stakerSC, ignoreCase = true)
+                }
+                .mapNotNull { it.params.getAsString("validator")?.lowercase() }
+                .distinct()
+        val byValidator =
+            if (touchedValidatorIds.isNotEmpty()) repository.findByValidatorIn(touchedValidatorIds)
+            else emptyList()
+
+        val existing = (due + zeroCycle + byTokenId + byValidator).associateBy { it.id }
+        val working = existing.toMutableMap()
+        val tokenIdToId: MutableMap<String, String> =
+            working.values.associateBy({ it.tokenId }, { it.id }).toMutableMap()
+        val validatorToIds: MutableMap<String, MutableList<String>> =
+            working.values
+                .filter { it.status != DelegationStatus.EXITED }
+                .groupBy { it.validator }
+                .mapValues { (_, dels) -> dels.map { it.id }.toMutableList() }
+                .toMutableMap()
+
+        val validators = preloadValidators(working.values, events)
+
+        applyScheduledTransitions(block, working)
+        refreshZeroCycle(block, working, validators)
+        events.forEach { ev ->
+            applyEventMutation(ev, block, working, tokenIdToId, validatorToIds, validators)
+        }
+
+        val updates =
+            working.values.mapNotNull { carried ->
+                val prior = existing[carried.id]
+                if (carried == prior) null
+                else
+                    carried.copy(
+                        blockId = block.id,
+                        blockNumber = block.number,
+                        blockTimestamp = block.timestamp,
+                        version = (prior?.version ?: 0) + 1,
+                    )
+            }
+        val archive = updates.mapNotNull { existing[it.id] }
+        return updates to archive
     }
 
     @Transactional(rollbackFor = [Exception::class])
-    open fun save(updated: List<Delegation>, existing: List<Delegation>) {
+    open fun save(updates: List<Delegation>, archive: List<Delegation>) {
         saveVersionedDocuments(
-            updated,
-            existing,
+            updates,
+            archive,
             mongoTemplate,
             inlineVersioningProperties.blockWindow,
             inlineVersioningProperties.maxVersions,
             inlineVersioningProperties.minVersions,
         )
+        updateZeroCycleCache(updates)
     }
 
-    open fun invalidateCache() {
-        zeroCycleDelegationsCache = null
-    }
-
-    // ------------------------------
-    // Cache maintenance
-    // ------------------------------
+    // ------------------------------ zero-cycle cache ------------------------------
 
     /**
-     * Updates the zero-cycle cache after a block is processed. Delegations that got a non-zero
-     * validatorNextCycle or are EXITED are removed. New delegations with validatorNextCycle == 0
-     * are added.
-     */
-    private fun updateZeroCycleCache(updatedDelegations: List<Delegation>) {
-        val cache = zeroCycleDelegationsCache ?: return
-        if (updatedDelegations.isEmpty()) return
-
-        val updatedById = updatedDelegations.associateBy { it.id }
-
-        // Single pass: update existing entries and remove those no longer zero-cycle
-        val cachedIds = mutableSetOf<String>()
-        val iter = cache.listIterator()
-        while (iter.hasNext()) {
-            val cached = iter.next()
-            val entry = updatedById[cached.id] ?: cached
-            if (entry.validatorNextCycle != 0L || entry.status == Status.EXITED) {
-                iter.remove()
-            } else {
-                if (entry !== cached) iter.set(entry)
-                cachedIds.add(entry.id)
-            }
-        }
-
-        // Add any new zero-cycle delegations not already in cache
-        updatedDelegations
-            .filter {
-                it.validatorNextCycle == 0L && it.status != Status.EXITED && it.id !in cachedIds
-            }
-            .forEach { cache.add(it) }
-    }
-
-    // ------------------------------
-    // Secondary index builders
-    // ------------------------------
-
-    private fun buildTokenIdIndex(delegations: Collection<Delegation>): MutableMap<String, String> =
-        delegations
-            .filter { it.status != Status.EXITED }
-            .associateBy({ it.tokenId }, { it.id })
-            .toMutableMap()
-
-    private fun buildValidatorIndex(
-        delegations: Collection<Delegation>
-    ): MutableMap<String, MutableList<String>> =
-        delegations
-            .filter { it.status != Status.EXITED }
-            .groupBy { it.validator }
-            .mapValues { (_, dels) -> dels.map { it.id }.toMutableList() }
-            .toMutableMap()
-
-    // ------------------------------
-    // Step 1 helpers
-    // ------------------------------
-
-    private fun findDueDelegations(block: Block): Pair<List<Delegation>, List<Delegation>> {
-        // Zero-cycle delegations rarely change, so we cache them to avoid
-        // loading the same set from MongoDB on every single block.
-        val zeroCycle =
-            zeroCycleDelegationsCache
-                ?: run {
-                    val loaded =
-                        repository
-                            .findByValidatorNextCycleInAndStatusIn(
-                                listOf(0L),
-                                listOf(Status.QUEUED, Status.EXITING),
-                            )
-                            .toMutableList()
-                    zeroCycleDelegationsCache = loaded
-                    loaded
-                }
-
-        // Due-for-transition delegations: fast point lookup for this specific block number
-        val due =
-            repository.findByValidatorNextCycleInAndStatusIn(
-                listOf(block.number),
-                listOf(Status.QUEUED, Status.EXITING),
-            )
-
-        return zeroCycle to due
-    }
-
-    private fun findDelegationsFromEvents(events: List<IndexedEvent>): List<Delegation> {
-        val ids = events.mapNotNull { event -> event.params.getAsString("tokenId") }.distinct()
-        return if (ids.isNotEmpty()) repository.findByTokenIdIn(ids).toList() else emptyList()
-    }
-
-    private fun findDelegationsFromExits(
-        events: List<IndexedEvent>,
-        disappeared: Set<String>,
-    ): List<Delegation> {
-        val exitingValidators =
-            events
-                .filter { it.eventType == "ValidatorExitRequested" }
-                .mapNotNull { it.params.getAsString("validator") }
-
-        return if (exitingValidators.isNotEmpty() || disappeared.isNotEmpty()) {
-            repository.findByValidatorIn(exitingValidators + disappeared)
-        } else {
-            emptyList()
-        }
-    }
-
-    // ------------------------------
-    // Transitions
-    // ------------------------------
-
-    private fun applyScheduledTransitions(
-        block: Block,
-        candidateIds: Set<String>,
-        accumulator: VersionedDocumentAccumulator<Delegation>,
-    ) {
-        candidateIds.forEach { id ->
-            val (existing, nextVersion) = accumulator.resolve(id)
-            if (
-                existing != null &&
-                    (existing.status == Status.QUEUED || existing.status == Status.EXITING) &&
-                    existing.validatorNextCycle == block.number
-            ) {
-                accumulator.put(
-                    id,
-                    existing,
-                    existing.copy(
-                        status = validatorDelegationService.nextStatus(existing.status),
-                        blockId = block.id,
-                        blockNumber = block.number,
-                        blockTimestamp = block.timestamp,
-                        version = nextVersion,
-                    ),
-                )
-            }
-        }
-    }
-
-    /**
-     * Resolves delegations with unknown start blocks.
+     * In-memory mirror of zero-cycle delegations (status QUEUED with no scheduled transition —
+     * waiting for their validator to gain a `startBlock`). Loaded lazily; kept in sync with MongoDB
+     * by [updateZeroCycleCache] after every successful [save]. Cleared via [invalidateCache] on
+     * rollback (wired through `DelegationProcessor.resetProcessingState`).
      *
-     * Uses validator snapshots if available, otherwise queries the chain
-     * (`getValidationPeriodDetails`). When a non-zero start block is found, the delegation is
-     * updated with the new cycle info via the accumulator.
+     * Cached because the set rarely changes block-to-block but the query is unbounded — V1 took the
+     * same shortcut for the same reason.
      */
-    private suspend fun checkForUpdatesOnUnknown(
-        unknown: List<Delegation>,
+    private var zeroCycleCache: MutableMap<String, Delegation>? = null
+
+    /** Drop the zero-cycle cache. Invoked on rollback so the next block reloads from MongoDB. */
+    open fun invalidateCache() {
+        zeroCycleCache = null
+    }
+
+    private fun loadZeroCycle(): List<Delegation> {
+        val cached = zeroCycleCache
+        if (cached != null) return cached.values.toList()
+        val loaded =
+            repository
+                .findByTransitionAtBlockIsNullAndStatusIn(listOf(DelegationStatus.QUEUED))
+                .associateByTo(mutableMapOf()) { it.id }
+        zeroCycleCache = loaded
+        return loaded.values.toList()
+    }
+
+    private fun updateZeroCycleCache(updates: List<Delegation>) {
+        val cache = zeroCycleCache ?: return
+        updates.forEach { u ->
+            val isZeroCycle = u.status == DelegationStatus.QUEUED && u.transitionAtBlock == null
+            if (isZeroCycle) cache[u.id] = u else cache.remove(u.id)
+        }
+    }
+
+    // ------------------------------ scheduled transitions ------------------------------
+
+    private fun applyScheduledTransitions(block: Block, working: MutableMap<String, Delegation>) {
+        working.values.toList().forEach { d ->
+            if (d.transitionAtBlock != block.number) return@forEach
+            val next =
+                when (d.status) {
+                    DelegationStatus.QUEUED ->
+                        d.copy(status = DelegationStatus.ACTIVE, transitionAtBlock = null)
+                    DelegationStatus.EXITING ->
+                        d.copy(status = DelegationStatus.EXITED, transitionAtBlock = null)
+                    else -> return@forEach
+                }
+            working[d.id] = next
+        }
+    }
+
+    /**
+     * Zero-cycle delegations are those waiting on a validator that hadn't yet been activated when
+     * the delegation was created. Once the validator gains a non-zero `startBlock`, re-derive
+     * [Delegation.transitionAtBlock] so the next scheduled-transition pass can flip the status.
+     */
+    private fun refreshZeroCycle(
         block: Block,
-        validatorsSnapshots: Map<String, ValidatorSnapshot>,
-        accumulator: VersionedDocumentAccumulator<Delegation>,
+        working: MutableMap<String, Delegation>,
+        validators: Map<String, ValidatorV2>,
     ) {
-        if (unknown.isEmpty()) return
-
-        val validators = unknown.groupBy { it.validator }
-
-        val snapshotEmpty = validatorsSnapshots.isEmpty()
-        val responses: List<InspectionResult> =
-            (if (snapshotEmpty) {
-                validatorDelegationService.fetchValidationPeriodDetails(validators.keys.toList())
-            } else {
-                emptyList()
-            })
-
-        validators.keys.forEachIndexed { index, validatorId ->
-            val startBlock =
-                if (snapshotEmpty) {
-                    validatorDelegationService.determineStartBlock(responses[index])
-                } else {
-                    validatorsSnapshots[validatorId]?.startBlock ?: 0L
-                }
-
-            if (startBlock != 0L) {
-                validators[validatorId]?.forEach { delegation ->
-                    val (existing, nextVersion) = accumulator.resolve(delegation.id)
-                    if (existing != null) {
-                        accumulator.put(
-                            delegation.id,
-                            existing,
-                            existing.copy(
-                                validatorNextCycle = startBlock,
-                                blockId = block.id,
-                                blockNumber = block.number,
-                                blockTimestamp = block.timestamp,
-                                version = nextVersion,
-                            ),
-                        )
-                    }
-                }
+        working.values.toList().forEach { d ->
+            if (d.status != DelegationStatus.QUEUED) return@forEach
+            if (d.transitionAtBlock != null) return@forEach
+            val next = nextCycleStart(d.validator, block.number, validators) ?: return@forEach
+            if (next > block.number) {
+                working[d.id] = d.copy(transitionAtBlock = next)
             }
         }
     }
 
-    // ------------------------------
-    // Event mutations
-    // ------------------------------
+    // ------------------------------ validator preload ------------------------------
 
-    private suspend fun applyEventMutations(
+    /**
+     * One batched read of every [ValidatorV2] this block might need to inspect: the validator of
+     * every delegation we've loaded into `working`, plus any validator referenced by a
+     * `DelegationInitiated` event (which can name a validator we don't yet have a delegation for).
+     *
+     * Replaces per-call `findByIdOrNull` lookups in [nextCycleStart] and [validatorExitBlock] —
+     * relevant because [refreshZeroCycle] previously hit the repository once per cached zero-cycle
+     * delegation per block.
+     */
+    private fun preloadValidators(
+        inWorking: Collection<Delegation>,
         events: List<IndexedEvent>,
-        block: Block,
-        validatorSnapshots: Map<String, ValidatorSnapshot>,
-        accumulator: VersionedDocumentAccumulator<Delegation>,
-        tokenIdToId: MutableMap<String, String>,
-        validatorToIds: MutableMap<String, MutableList<String>>,
-    ) {
-        events
-            .filter { shouldProcessDelegationEvent(it, stakerSC) }
-            .forEach { ev ->
-                when (ev.eventType) {
-                    "DelegationInitiated" ->
-                        handleDelegationInitiated(
-                            ev,
-                            block,
-                            validatorSnapshots,
-                            accumulator,
-                            tokenIdToId,
-                            validatorToIds,
-                        )
-                    "DelegationExitRequested" ->
-                        handleDelegationExitRequested(ev, block, accumulator)
-                    "DelegationWithdrawn" -> handleDelegationWithdrawn(ev, block, accumulator)
-                    "DelegationRewardsClaimed" ->
-                        handleDelegationRewardsClaimed(ev, block, accumulator)
-                    "Transfer" -> handleTransfer(ev, block, accumulator, tokenIdToId)
-                    "ValidatorExitRequested" ->
-                        handleValidatorExitRequested(
-                            ev,
-                            block,
-                            validatorSnapshots,
-                            accumulator,
-                            validatorToIds,
-                        )
+    ): Map<String, ValidatorV2> {
+        val ids: Set<String> = buildSet {
+            inWorking.forEach { add(it.validator) }
+            events.forEach { ev ->
+                if (ev.eventType == "DelegationInitiated") {
+                    ev.params.getAsString("validator")?.lowercase()?.let { add(it) }
                 }
             }
+        }
+        if (ids.isEmpty()) return emptyMap()
+        return validatorRepository.findAllById(ids).associateBy { it.id }
     }
 
-    // ------------------------------
-    // Individual event handlers
-    // ------------------------------
+    // ------------------------------ event mutations ------------------------------
 
-    /** Handles a new delegation being initiated. */
-    private suspend fun handleDelegationInitiated(
+    private fun applyEventMutation(
         ev: IndexedEvent,
         block: Block,
-        validatorSnapshots: Map<String, ValidatorSnapshot>,
-        accumulator: VersionedDocumentAccumulator<Delegation>,
+        working: MutableMap<String, Delegation>,
         tokenIdToId: MutableMap<String, String>,
         validatorToIds: MutableMap<String, MutableList<String>>,
+        validators: Map<String, ValidatorV2>,
     ) {
-        val delegationId = ev.params.getAsString("delegationId")!!
-        val tokenId = ev.params.getAsString("tokenId")!!
-        val validator = ev.params.getAsString("validator")!!
-        val (cycleLength, nextCycle) =
-            validatorDelegationService.resolveCycleInfo(validator, block.number, validatorSnapshots)
+        if (!isRelevantEvent(ev)) return
+        when (ev.eventType) {
+            "DelegationInitiated" ->
+                onDelegationInitiated(ev, block, working, tokenIdToId, validatorToIds, validators)
+            "DelegationExitRequested" -> onDelegationExitRequested(ev, block, working, validators)
+            "DelegationWithdrawn" -> onDelegationWithdrawn(ev, working)
+            "DelegationRewardsClaimed" -> onDelegationRewardsClaimed(ev, working)
+            "Transfer" -> onTransfer(ev, working, tokenIdToId)
+            "ValidationSignaledExit" ->
+                onValidationSignaledExit(ev, block, working, validatorToIds, validators)
+            "ValidationWithdrawn" -> onValidationWithdrawn(ev, working, validatorToIds)
+            else -> {
+                /* ignored */
+            }
+        }
+    }
 
-        val (existing, nextVersion) = accumulator.resolve(delegationId)
-        val newDelegation =
+    private fun isRelevantEvent(ev: IndexedEvent): Boolean =
+        when (ev.eventType) {
+            // Only the builtin staker can signal validator-level lifecycle.
+            "ValidationSignaledExit",
+            "ValidationWithdrawn" -> ev.address.equals(stakerSC, ignoreCase = true)
+            // Delegation lifecycle is emitted by the Stargate contracts, not the staker.
+            "DelegationInitiated",
+            "DelegationExitRequested",
+            "DelegationWithdrawn",
+            "DelegationRewardsClaimed",
+            "Transfer" -> !ev.address.equals(stakerSC, ignoreCase = true)
+            else -> false
+        }
+
+    private fun onDelegationInitiated(
+        ev: IndexedEvent,
+        block: Block,
+        working: MutableMap<String, Delegation>,
+        tokenIdToId: MutableMap<String, String>,
+        validatorToIds: MutableMap<String, MutableList<String>>,
+        validators: Map<String, ValidatorV2>,
+    ) {
+        val delegationId = ev.params.getAsString("delegationId") ?: return
+        val tokenId = ev.params.getAsString("tokenId") ?: return
+        val validator = ev.params.getAsString("validator")?.lowercase() ?: return
+        val levelOrdinal = ev.params.getAsString("levelId")?.toIntOrNull() ?: return
+        val level = TokenLevel.fromOrdinal(levelOrdinal) ?: return
+        val amount = ev.params.getAsString("amount") ?: "0"
+        val owner = ev.origin ?: return
+
+        val transitionAt = nextCycleStart(validator, block.number, validators)
+
+        working[delegationId] =
             Delegation(
                 id = delegationId,
                 validator = validator,
                 tokenId = tokenId,
-                tokenLevel = TokenLevel.fromOrdinal(ev.params.getAsString("levelId")!!.toInt())!!,
-                status = Status.QUEUED,
-                stakedAmount = ev.params.getAsString("amount")!!,
+                owner = owner,
+                status = DelegationStatus.QUEUED,
+                tokenLevel = level,
+                stakedAmount = amount,
                 totalRewardsClaimed = BigInteger.ZERO,
-                owner = ev.origin!!,
+                txId = ev.txId,
+                transitionAtBlock = transitionAt,
                 blockId = block.id,
                 blockNumber = block.number,
                 blockTimestamp = block.timestamp,
-                version = nextVersion,
-                validatorNextCycle = nextCycle,
-                validatorCycleLength = cycleLength,
-                txId = ev.txId,
             )
-
-        accumulator.put(delegationId, existing, newDelegation)
         tokenIdToId[tokenId] = delegationId
         validatorToIds.getOrPut(validator) { mutableListOf() }.add(delegationId)
     }
 
-    /** Handles a delegation requesting exit. */
-    private fun handleDelegationExitRequested(
+    private fun onDelegationExitRequested(
         ev: IndexedEvent,
         block: Block,
-        accumulator: VersionedDocumentAccumulator<Delegation>,
+        working: MutableMap<String, Delegation>,
+        validators: Map<String, ValidatorV2>,
     ) {
-        val delegationId = ev.params.getAsString("delegationId")!!
-        val (existing, nextVersion) = accumulator.resolve(delegationId)
-        if (existing == null || existing.status == Status.EXITED) return
+        val delegationId = ev.params.getAsString("delegationId") ?: return
+        val current = working[delegationId] ?: return
+        if (current.status == DelegationStatus.EXITED) return
 
-        accumulator.put(
-            delegationId,
-            existing,
-            existing.copy(
-                status = Status.EXITING,
-                blockId = block.id,
-                blockNumber = block.number,
-                blockTimestamp = block.timestamp,
-                validatorNextCycle =
-                    validatorDelegationService.resolveNextCycleBlock(
-                        existing.validatorNextCycle,
-                        existing.validatorCycleLength,
-                        block.number,
-                    ),
-                version = nextVersion,
+        working[delegationId] =
+            current.copy(
+                status = DelegationStatus.EXITING,
+                transitionAtBlock = nextCycleStart(current.validator, block.number, validators),
                 txId = ev.txId,
-            ),
-        )
+            )
     }
 
-    /** Handles a delegation being withdrawn (final exit). */
-    private fun handleDelegationWithdrawn(
+    private fun onDelegationWithdrawn(ev: IndexedEvent, working: MutableMap<String, Delegation>) {
+        val delegationId = ev.params.getAsString("delegationId") ?: return
+        val current = working[delegationId] ?: return
+        working[delegationId] =
+            current.copy(status = DelegationStatus.EXITED, transitionAtBlock = null, txId = ev.txId)
+    }
+
+    private fun onDelegationRewardsClaimed(
         ev: IndexedEvent,
-        block: Block,
-        accumulator: VersionedDocumentAccumulator<Delegation>,
+        working: MutableMap<String, Delegation>,
     ) {
-        val delegationId = ev.params.getAsString("delegationId")!!
-        val (existing, nextVersion) = accumulator.resolve(delegationId)
-        if (existing == null) return
-
-        accumulator.put(
-            delegationId,
-            existing,
-            existing.copy(
-                status = Status.EXITED,
-                blockId = block.id,
-                blockNumber = block.number,
-                blockTimestamp = block.timestamp,
-                version = nextVersion,
-            ),
-        )
+        val delegationId = ev.params.getAsString("delegationId") ?: return
+        val amount = ev.params.getAsBigInteger("amount") ?: return
+        val current = working[delegationId] ?: return
+        working[delegationId] =
+            current.copy(totalRewardsClaimed = current.totalRewardsClaimed + amount)
     }
 
-    /** Handles a rewards claim on a delegation. */
-    private fun handleDelegationRewardsClaimed(
+    private fun onTransfer(
         ev: IndexedEvent,
-        block: Block,
-        accumulator: VersionedDocumentAccumulator<Delegation>,
-    ) {
-        val delegationId = ev.params.getAsString("delegationId")!!
-        val amount = ev.params.getAsBigInteger("amount")!!
-        val (existing, nextVersion) = accumulator.resolve(delegationId)
-        if (existing == null) return
-
-        accumulator.put(
-            delegationId,
-            existing,
-            existing.copy(
-                totalRewardsClaimed = existing.totalRewardsClaimed + amount,
-                blockNumber = block.number,
-                blockTimestamp = block.timestamp,
-                blockId = block.id,
-                version = nextVersion,
-            ),
-        )
-    }
-
-    /** Handles a token transfer -- O(1) lookup via tokenIdToId secondary index. */
-    private fun handleTransfer(
-        ev: IndexedEvent,
-        block: Block,
-        accumulator: VersionedDocumentAccumulator<Delegation>,
+        working: MutableMap<String, Delegation>,
         tokenIdToId: Map<String, String>,
     ) {
         val tokenId = ev.params.getAsString("tokenId") ?: return
         val to = ev.params.getAsString("to") ?: return
         val delegationId = tokenIdToId[tokenId] ?: return
-
-        val (existing, nextVersion) = accumulator.resolve(delegationId)
-        if (existing == null || existing.status == Status.EXITED) return
-
-        accumulator.put(
-            delegationId,
-            existing,
-            existing.copy(
-                owner = to,
-                blockId = block.id,
-                blockNumber = block.number,
-                blockTimestamp = block.timestamp,
-                version = nextVersion,
-            ),
-        )
+        val current = working[delegationId] ?: return
+        if (current.status == DelegationStatus.EXITED) return
+        working[delegationId] = current.copy(owner = to)
     }
 
-    /** Handles a validator requesting exit -- uses validatorToIds for O(1) lookup. */
-    private suspend fun handleValidatorExitRequested(
+    /**
+     * The validator just signalled exit. Move all its still-active delegations to EXITING. We
+     * estimate the transition block using the validator's next cycle boundary: if `ValidatorV2`
+     * already carries an `exitBlock` from a prior walk, prefer that; otherwise the next-cycle
+     * estimate will be reconciled at the next epoch walk.
+     */
+    private fun onValidationSignaledExit(
         ev: IndexedEvent,
         block: Block,
-        validatorSnapshots: Map<String, ValidatorSnapshot>,
-        accumulator: VersionedDocumentAccumulator<Delegation>,
+        working: MutableMap<String, Delegation>,
         validatorToIds: Map<String, List<String>>,
+        validators: Map<String, ValidatorV2>,
     ) {
-        val validatorId = ev.params.getAsString("validator")!!
+        val validatorId = ev.params.getAsString("validator")?.lowercase() ?: return
+        val ids = validatorToIds[validatorId] ?: return
         val exitAt =
-            validatorDelegationService.getValidatorExitBlock(validatorId, validatorSnapshots)
+            validatorExitBlock(validatorId, validators)
+                ?: nextCycleStart(validatorId, block.number, validators)
 
-        val delegationIds = validatorToIds[validatorId] ?: return
-        delegationIds.forEach { id ->
-            val (existing, nextVersion) = accumulator.resolve(id)
-            if (existing == null || existing.status == Status.EXITED) return@forEach
-            if (existing.status == Status.EXITING) return@forEach
-
-            accumulator.put(
-                id,
-                existing,
-                existing.copy(
-                    status = Status.EXITING,
-                    validatorNextCycle = exitAt,
-                    blockId = block.id,
-                    blockNumber = block.number,
-                    blockTimestamp = block.timestamp,
-                    version = nextVersion,
+        ids.forEach { id ->
+            val current = working[id] ?: return@forEach
+            if (
+                current.status == DelegationStatus.EXITED ||
+                    current.status == DelegationStatus.EXITING
+            ) {
+                return@forEach
+            }
+            working[id] =
+                current.copy(
+                    status = DelegationStatus.EXITING,
+                    transitionAtBlock = exitAt,
                     txId = ev.txId,
-                ),
-            )
+                )
         }
     }
 
-    /** Handles a validator disappearing completely from chain state. */
-    private fun handleValidatorDisappeared(
-        validatorId: String,
-        block: Block,
-        accumulator: VersionedDocumentAccumulator<Delegation>,
+    /**
+     * Validator fully withdrew — chain has dropped them from the staker. Force every remaining
+     * delegation to EXITED. This is the V2 equivalent of V1's "validator disappeared" detection,
+     * but driven by an explicit chain event rather than periodic set diffing.
+     */
+    private fun onValidationWithdrawn(
+        ev: IndexedEvent,
+        working: MutableMap<String, Delegation>,
         validatorToIds: Map<String, List<String>>,
     ) {
-        val delegationIds = validatorToIds[validatorId] ?: return
-        delegationIds.forEach { id ->
-            val (existing, nextVersion) = accumulator.resolve(id)
-            if (existing == null || existing.status == Status.EXITED) return@forEach
-
-            accumulator.put(
-                id,
-                existing,
-                existing.copy(
-                    status = Status.EXITED,
-                    validatorNextCycle = block.number,
-                    blockId = block.id,
-                    blockNumber = block.number,
-                    blockTimestamp = block.timestamp,
-                    version = nextVersion,
-                ),
-            )
+        val validatorId = ev.params.getAsString("validator")?.lowercase() ?: return
+        val ids = validatorToIds[validatorId] ?: return
+        ids.forEach { id ->
+            val current = working[id] ?: return@forEach
+            if (current.status == DelegationStatus.EXITED) return@forEach
+            working[id] =
+                current.copy(
+                    status = DelegationStatus.EXITED,
+                    transitionAtBlock = null,
+                    txId = ev.txId,
+                )
         }
     }
 
-    /** Detect validators that disappeared compared to previous state. */
-    private fun checkMissingValidators(
-        validatorsSnapshots: Map<String, ValidatorSnapshot>
-    ): Set<String> {
-        val currentValidators = validatorsSnapshots.keys
-        if (currentValidators.isEmpty()) return emptySet()
+    // ------------------------------ validator helpers (MongoDB-backed)
+    // ------------------------------
 
-        if (cachedValidators.isEmpty()) {
-            cachedValidators = repository.findValidatorIdsByStatusNot(Status.EXITED).toSet()
-        }
-
-        val removed = cachedValidators.minus(currentValidators)
-        cachedValidators = currentValidators
-        return removed
+    /**
+     * Next cycle-boundary block for [validatorId] after [blockNumber], computed from the persisted
+     * `ValidatorV2` row in the supplied [validators] map (preloaded once per block by
+     * [preloadValidators]). Returns `null` if the validator isn't known or hasn't been activated
+     * (no `startBlock`/`cyclePeriodLength`).
+     */
+    private fun nextCycleStart(
+        validatorId: String,
+        blockNumber: Long,
+        validators: Map<String, ValidatorV2>,
+    ): Long? {
+        val v = validators[validatorId] ?: return null
+        val start = v.startBlock ?: return null
+        val period = v.cyclePeriodLength ?: return null
+        if (start <= 0L || period <= 0L) return null
+        if (blockNumber < start) return start
+        val offset = blockNumber - start
+        val positionInCycle = offset % period
+        val currentCycleStart = blockNumber - positionInCycle
+        return currentCycleStart + period
     }
+
+    private fun validatorExitBlock(
+        validatorId: String,
+        validators: Map<String, ValidatorV2>,
+    ): Long? = validators[validatorId]?.exitBlock
 }

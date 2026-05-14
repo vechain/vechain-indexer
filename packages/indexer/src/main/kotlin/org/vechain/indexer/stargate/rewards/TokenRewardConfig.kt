@@ -14,12 +14,12 @@ import org.vechain.indexer.thor.client.ThorClient
 /**
  * Wires the token-reward indexer.
  *
- * Reads validator cycle state from `ValidatorV2` and the active-delegation set from `DelegationV2`
- * — no V1 aggregator dependency. The single `callDataClause` here fetches the builtin Energy
+ * Reads validator cycle state from `ValidatorV2` and the active-delegation set from `Delegation` —
+ * no V1 aggregator dependency. The single `callDataClause` here fetches the builtin Energy
  * contract's `totalSupply()`, which is the only chain read this indexer needs (the per-block reward
  * is the delta between consecutive totals).
  *
- * The `dependsOn(delegationV2Indexer)` chain transitively pulls `validatorV2Indexer` in too:
+ * The `dependsOn(delegationIndexer)` chain transitively pulls `validatorV2Indexer` in too:
  * `validator-v2 → delegation-v2 → token-reward`. So activating the `token-reward` profile requires
  * both upstream profiles to be active as well.
  */
@@ -31,7 +31,7 @@ open class TokenRewardConfig {
     open fun tokenRewardIndexer(
         thorClient: ThorClient,
         processor: TokenRewardProcessor,
-        @Qualifier("delegationV2Indexer") delegationV2Indexer: Indexer,
+        @Qualifier("delegationIndexer") delegationIndexer: Indexer,
         @Value("\${indexer.start-block.delegation}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
     ): BlockIndexer =
@@ -43,6 +43,6 @@ open class TokenRewardConfig {
             .syncLoggerInterval(syncLoggerInterval)
             .callDataClauses(listOf(TokenRewardService.energyTotalSupplyClause()))
             .includeFullBlock()
-            .dependsOn(delegationV2Indexer)
+            .dependsOn(delegationIndexer)
             .build()
 }

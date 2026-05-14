@@ -1,43 +1,53 @@
 package org.vechain.indexer.validator
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonView
+import com.fasterxml.jackson.annotation.JsonInclude
 import java.math.BigInteger
-import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.stargate.token.TokenLevel
-import org.vechain.indexer.thor.model.Views
 
-@Deprecated(
-    message =
-        "V1 delegation model. Superseded by DelegationV2 (collection `delegations_v2`, profile " +
-            "`delegation-v2`). V1 maintains validator-cycle metadata on each delegation via " +
-            "chain reads through the V1 validator aggregator; V2 is event-driven, reads " +
-            "ValidatorV2 from MongoDB for cycle math, and drops the chain dependency entirely.",
-    replaceWith = ReplaceWith("DelegationV2"),
-)
+/**
+ * Indexed delegation state — V2.
+ *
+ * Mirrors the V1 [Delegation] document shape so the API layer can keep the same response surface,
+ * but is built from events alone — no chain reads, no aggregator dependency.
+ *
+ * ### Differences from V1 [Delegation]
+ * - Drops `validatorCycleLength` — always derivable from `ValidatorV2.stakingPeriodLength`.
+ * - Renames `validatorNextCycle` → [transitionAtBlock]. Same semantics (block at which the next
+ *   scheduled status flip is due) but the value is computed from `ValidatorV2` reads, not from
+ *   chain inspections. `null` means "no scheduled transition" (either zero-cycle delegation whose
+ *   validator hasn't started, or a terminal [DelegationStatus.EXITED]).
+ * - [status] uses [DelegationStatus] (no `NONE` — a delegation always has a definite state) to keep
+ *   V2 isolated from V1's [Status] enum.
+ *
+ * The V1 [Delegation.totalRewardsClaimed] semantics carry over unchanged.
+ */
 @Document(collection = IndexerNames.DELEGATION.COLLECTION)
-data class Delegation
-@ConstructorBinding
-constructor(
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Delegation(
     @Id val id: String,
-    @JsonIgnore @field:JsonView(Views.Internal::class) override val version: Int,
     val validator: String,
     val tokenId: String,
     val owner: String,
-    val status: Status,
+    val status: DelegationStatus,
     val tokenLevel: TokenLevel,
     val stakedAmount: String,
     val totalRewardsClaimed: BigInteger,
     @JsonIgnore val txId: String,
-    @JsonIgnore val validatorNextCycle: Long,
-    @JsonIgnore val validatorCycleLength: Long,
+    /**
+     * Block at which the next scheduled status transition is due (QUEUED→ACTIVE or EXITING→EXITED).
+     * `null` when no transition is scheduled — either the bound validator hasn't been activated yet
+     * (zero-cycle), or the delegation is in a terminal state.
+     */
+    @JsonIgnore val transitionAtBlock: Long? = null,
     @JsonIgnore override val blockId: String,
     @JsonIgnore override val blockNumber: Long,
     @JsonIgnore override val blockTimestamp: Long,
+    @JsonIgnore override val version: Int = 0,
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = id
 }

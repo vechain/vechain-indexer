@@ -6,20 +6,20 @@ import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Service
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.HexUtils
-import org.vechain.indexer.validator.DelegationStatusV2
-import org.vechain.indexer.validator.DelegationV2
-import org.vechain.indexer.validator.DelegationV2Repository
+import org.vechain.indexer.validator.Delegation
+import org.vechain.indexer.validator.DelegationRepository
+import org.vechain.indexer.validator.DelegationStatus
 
 @Profile("delegation")
 @Service
-open class DelegationService(private val delegationRepository: DelegationV2Repository) {
+open class DelegationService(private val delegationRepository: DelegationRepository) {
 
     open fun getDelegations(
         validator: String?,
         tokenId: String?,
-        statuses: List<DelegationStatusV2>?,
+        statuses: List<DelegationStatus>?,
         pageable: Pageable,
-    ): Slice<DelegationV2> {
+    ): Slice<Delegation> {
         val normalisedValidator = validator?.let(HexUtils::normalise)
 
         return when {

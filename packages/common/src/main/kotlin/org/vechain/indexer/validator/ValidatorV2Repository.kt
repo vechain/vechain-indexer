@@ -5,14 +5,7 @@ import org.springframework.data.mongodb.repository.Query
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.BaseIndexedRepository
 
-@Profile(
-    "validator-v2",
-    "validator",
-    "delegation-v2",
-    "delegation",
-    "token-reward",
-    "validator-reward",
-)
+@Profile("validator-v2", "validator", "delegation", "token-reward", "validator-reward")
 @Repository
 interface ValidatorV2Repository : BaseIndexedRepository<ValidatorV2, String> {
     @Query("{ 'status': { '\$ne': ?0 } }") fun findByStatusNot(status: StatusV2): List<ValidatorV2>

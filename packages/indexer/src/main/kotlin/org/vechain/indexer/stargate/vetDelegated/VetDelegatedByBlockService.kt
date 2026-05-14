@@ -9,7 +9,7 @@ import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.CacheUtils
 import org.vechain.indexer.utils.RolloverUtils
-import org.vechain.indexer.validator.DelegationV2Repository
+import org.vechain.indexer.validator.DelegationRepository
 
 /**
  * @title VetDelegatedByBlockService
@@ -24,7 +24,7 @@ import org.vechain.indexer.validator.DelegationV2Repository
 @Service
 open class VetDelegatedByBlockService(
     private val repository: VetDelegatedByBlockRepository,
-    private val delegationRepository: DelegationV2Repository,
+    private val delegationRepository: DelegationRepository,
 ) {
     private val logger = LoggerFactory.getLogger(VetDelegatedByBlockService::class.java)
     private var latestRecordCache: VetDelegatedByBlock? = null

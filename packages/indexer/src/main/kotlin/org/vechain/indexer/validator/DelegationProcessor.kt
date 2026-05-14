@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // V1 delegation pipeline — superseded by DelegationV2.
-
 package org.vechain.indexer.validator
 
 import org.springframework.context.annotation.Profile
@@ -11,7 +9,7 @@ import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 
-@Profile("validator", "validator-stats", "delegation")
+@Profile("delegation")
 @Component
 open class DelegationProcessor(
     repository: DelegationRepository,
@@ -28,19 +26,27 @@ open class DelegationProcessor(
         collectionName = IndexerNames.DELEGATION.COLLECTION,
         processorMetrics = processorMetrics,
     ) {
+
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.BlockResult) {
-            service.invalidateCache()
             throw IllegalArgumentException(
-                "Expected IndexingResult.BlockResult with full block data but got ${entry::class.qualifiedName}"
+                "Expected IndexingResult.BlockResult but got ${entry::class.simpleName}"
             )
         }
 
-        val (updated, existing) =
-            service.processBlock(entry.block, entry.events(), entry.callResults)
+        val (updated, archived) = service.processBlock(entry.block, entry.events())
 
-        if (updated.isNotEmpty() || existing.isNotEmpty()) {
-            service.save(updated, existing)
+        if (updated.isNotEmpty()) {
+            service.save(updated, archived)
         }
+    }
+
+    /**
+     * Called by [org.vechain.indexer.BaseStatefulProcessor.rollback] on reorg. The service holds an
+     * in-memory mirror of zero-cycle delegations — drop it so the next block reloads from the
+     * (now-rolled-back) database state instead of carrying entries from the reorged branch.
+     */
+    override fun resetProcessingState() {
+        service.invalidateCache()
     }
 }

@@ -4,9 +4,9 @@ import java.math.BigDecimal
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.stargate.token.TokenLevel
-import org.vechain.indexer.validator.DelegationStatusV2
-import org.vechain.indexer.validator.DelegationV2
-import org.vechain.indexer.validator.DelegationV2Repository
+import org.vechain.indexer.validator.Delegation
+import org.vechain.indexer.validator.DelegationRepository
+import org.vechain.indexer.validator.DelegationStatus
 import org.vechain.indexer.validator.StatusV2
 import org.vechain.indexer.validator.ValidatorV2
 import org.vechain.indexer.validator.ValidatorV2Repository
@@ -24,7 +24,7 @@ import org.vechain.indexer.validator.ValidatorV2Repository
 data class ValidatorV2Aggregates(
     val totalWeight: BigDecimal,
     val totalNextPeriodWeight: BigDecimal,
-    val delegationsByValidator: Map<String, List<DelegationV2>>,
+    val delegationsByValidator: Map<String, List<Delegation>>,
 ) {
     /**
      * Current-cycle effective delegation stake: sum of `tokenLevel.effectiveStake` over ACTIVE +
@@ -33,7 +33,7 @@ data class ValidatorV2Aggregates(
     fun currentCycleEffectiveDelegationStake(validatorId: String): BigDecimal =
         delegationsByValidator[validatorId]
             ?.filter {
-                it.status == DelegationStatusV2.ACTIVE || it.status == DelegationStatusV2.EXITING
+                it.status == DelegationStatus.ACTIVE || it.status == DelegationStatus.EXITING
             }
             ?.sumOf { it.tokenLevel.effectiveStake } ?: BigDecimal.ZERO
 
@@ -57,20 +57,20 @@ data class ValidatorV2Aggregates(
     fun currentDelegatedLevelCounts(validatorId: String): Map<TokenLevel, Long> =
         delegationsByValidator[validatorId]
             ?.filter {
-                it.status == DelegationStatusV2.ACTIVE || it.status == DelegationStatusV2.EXITING
+                it.status == DelegationStatus.ACTIVE || it.status == DelegationStatus.EXITING
             }
             ?.groupingBy { it.tokenLevel }
             ?.eachCount()
             ?.mapValues { (_, c) -> c.toLong() } ?: emptyMap()
 
     companion object {
-        private fun willBeActiveAt(d: DelegationV2, atBlock: Long): Boolean {
+        private fun willBeActiveAt(d: Delegation, atBlock: Long): Boolean {
             val transitionAt = d.transitionAtBlock
             return when (d.status) {
-                DelegationStatusV2.ACTIVE -> true
-                DelegationStatusV2.QUEUED -> transitionAt != null && transitionAt <= atBlock
-                DelegationStatusV2.EXITING -> transitionAt != null && transitionAt > atBlock
-                DelegationStatusV2.EXITED -> false
+                DelegationStatus.ACTIVE -> true
+                DelegationStatus.QUEUED -> transitionAt != null && transitionAt <= atBlock
+                DelegationStatus.EXITING -> transitionAt != null && transitionAt > atBlock
+                DelegationStatus.EXITED -> false
             }
         }
     }
@@ -81,7 +81,7 @@ data class ValidatorV2Aggregates(
 @Service
 open class ValidatorV2AggregateService(
     private val validatorRepository: ValidatorV2Repository,
-    private val delegationRepository: DelegationV2Repository,
+    private val delegationRepository: DelegationRepository,
 ) {
     /**
      * Compute the per-request aggregate context. Performs **three** Mongo round-trips total
@@ -103,9 +103,9 @@ open class ValidatorV2AggregateService(
                 delegationRepository.findByValidatorInAndStatusIn(
                     validatorIdsOnPage,
                     listOf(
-                        DelegationStatusV2.QUEUED,
-                        DelegationStatusV2.ACTIVE,
-                        DelegationStatusV2.EXITING,
+                        DelegationStatus.QUEUED,
+                        DelegationStatus.ACTIVE,
+                        DelegationStatus.EXITING,
                     ),
                 )
 

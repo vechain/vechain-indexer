@@ -286,7 +286,7 @@ class ValidatorServiceTest {
         every { ValidatorDecoder.decodeResponseInfo(any(), any()) } returns decodedInfo()
         every { delegationRepository.aggregateActiveDelegationsByValidatorAndLevel() } returns
             listOf(
-                ValidatorDelegationLevelAggregateResult(
+                DelegationValidatorLevelAggregateResult(
                     validator = validatorId,
                     level = TokenLevel.Dawn.name,
                     nftCount = 2L,

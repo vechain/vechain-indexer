@@ -8,26 +8,26 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Slice
 import org.springframework.data.domain.SliceImpl
 import org.vechain.indexer.thor.Address
-import org.vechain.indexer.validator.DelegationStatusV2
-import org.vechain.indexer.validator.DelegationV2
-import org.vechain.indexer.validator.DelegationV2CountAggregateResult
-import org.vechain.indexer.validator.DelegationV2Repository
-import org.vechain.indexer.validator.DelegationV2StatusCount
+import org.vechain.indexer.validator.Delegation
+import org.vechain.indexer.validator.DelegationCountAggregateResult
+import org.vechain.indexer.validator.DelegationRepository
+import org.vechain.indexer.validator.DelegationStatus
+import org.vechain.indexer.validator.DelegationStatusCount
 import strikt.api.expectThat
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
 
 class DelegationServiceTest {
-    private val repository: DelegationV2Repository = mockk()
+    private val repository: DelegationRepository = mockk()
     private val service = DelegationService(repository)
 
     private val pageable = PageRequest.of(0, 20)
-    private val emptySlice: Slice<DelegationV2> = SliceImpl(emptyList())
+    private val emptySlice: Slice<Delegation> = SliceImpl(emptyList())
 
     private val validatorMixedCase = "0xABCDef0123456789ABCDef0123456789abcdef00"
     private val normalisedValidator = "0xabcdef0123456789abcdef0123456789abcdef00"
     private val tokenId = "42"
-    private val statuses = listOf(DelegationStatusV2.ACTIVE, DelegationStatusV2.QUEUED)
+    private val statuses = listOf(DelegationStatus.ACTIVE, DelegationStatus.QUEUED)
 
     @Test
     fun `getDelegations with no filters calls findAll`() {
@@ -128,13 +128,13 @@ class DelegationServiceTest {
     fun `getDelegationCounts without validator aggregates across all validators`() {
         val results =
             listOf(
-                DelegationV2CountAggregateResult(
+                DelegationCountAggregateResult(
                     _id = normalisedValidator,
                     counts =
                         listOf(
-                            DelegationV2StatusCount("QUEUED", 3L),
-                            DelegationV2StatusCount("ACTIVE", 7L),
-                            DelegationV2StatusCount("EXITING", 2L),
+                            DelegationStatusCount("QUEUED", 3L),
+                            DelegationStatusCount("ACTIVE", 7L),
+                            DelegationStatusCount("EXITING", 2L),
                         ),
                 )
             )
@@ -169,9 +169,9 @@ class DelegationServiceTest {
     fun `getDelegationCounts defaults missing status counts to zero`() {
         val results =
             listOf(
-                DelegationV2CountAggregateResult(
+                DelegationCountAggregateResult(
                     _id = normalisedValidator,
-                    counts = listOf(DelegationV2StatusCount("ACTIVE", 5L)),
+                    counts = listOf(DelegationStatusCount("ACTIVE", 5L)),
                 )
             )
         every { repository.aggregateDelegationCountsByValidator() } returns results

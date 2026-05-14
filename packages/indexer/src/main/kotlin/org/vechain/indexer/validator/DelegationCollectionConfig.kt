@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // V1 delegation pipeline — superseded by DelegationV2.
-
 package org.vechain.indexer.validator
 
 import kotlinx.coroutines.CoroutineScope
@@ -14,7 +12,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("validator", "validator-stats", "delegation")
+@Profile("delegation")
 @Configuration
 open class DelegationCollectionConfig(
     mongoTemplate: MongoTemplate,
@@ -37,18 +35,17 @@ open class DelegationCollectionConfig(
             listOf(
                 buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),
                 buildIndex(
-                    Delegation::validator.name to Sort.Direction.ASC,
                     Delegation::status.name to Sort.Direction.ASC,
+                    Delegation::transitionAtBlock.name to Sort.Direction.ASC,
                 ),
                 buildIndex(
+                    Delegation::validator.name to Sort.Direction.ASC,
                     Delegation::status.name to Sort.Direction.ASC,
-                    Delegation::validatorNextCycle.name to Sort.Direction.ASC,
                 ),
                 buildIndex(Delegation::tokenId.name to Sort.Direction.ASC),
                 buildIndex(
                     Delegation::status.name to Sort.Direction.ASC,
                     Delegation::tokenLevel.name to Sort.Direction.ASC,
-                    Delegation::stakedAmount.name to Sort.Direction.ASC,
                 ),
                 buildIndex(
                     Delegation::status.name to Sort.Direction.ASC,
