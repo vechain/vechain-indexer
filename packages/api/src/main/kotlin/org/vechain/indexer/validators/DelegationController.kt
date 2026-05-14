@@ -6,13 +6,12 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
-import org.springframework.data.domain.Slice
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import org.vechain.indexer.constants.VALIDATORS_PATH_V2
+import org.vechain.indexer.constants.VALIDATORS_PATH
 import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
@@ -20,33 +19,29 @@ import org.vechain.indexer.docs.TokenIdParameter
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
-import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validation.ValidTokenId
 import org.vechain.indexer.validator.DelegationStatusV2
 import org.vechain.indexer.validator.DelegationV2
-import org.vechain.indexer.validator.DelegationV2Repository
 
-@Profile("delegation-v2")
-@Tag(name = "Delegation V2", description = "Query V2 delegation documents")
+@Profile("delegation")
+@Tag(name = "Validator", description = "Query delegation documents")
 @Validated
 @RestController
-@RequestMapping(VALIDATORS_PATH_V2 + "/delegations")
-open class DelegationV2Controller(private val delegationRepository: DelegationV2Repository) {
+@RequestMapping(VALIDATORS_PATH + "/delegations")
+open class DelegationController(private val service: DelegationService) {
 
     @GetMapping
     @Operation(
-        summary = "Get V2 delegations with optional filters",
+        summary = "Get delegations with optional filters",
         description =
             """
-            Returns delegations from the V2 indexer. Filterable by:
+            Returns delegations. Filterable by:
             - `validator`: delegations for a specific validator
             - `tokenId`: delegations for a specific NFT tokenId
             - `statuses`: array of statuses of interest (QUEUED / ACTIVE / EXITING / EXITED)
-
-            Wire shape matches `/api/v1/validators/delegations` exactly — same field names and JSON types.
             """,
     )
     @AddressParameter(name = "validator", description = "Filter by validator address")
@@ -67,57 +62,23 @@ open class DelegationV2Controller(private val delegationRepository: DelegationV2
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
-    ): PaginatedResponse<DelegationV2Response> {
+    ): PaginatedResponse<DelegationResponse> {
         val pageable =
             toPageable(page, size, direction, DelegationV2::blockNumber.name, DelegationV2::id.name)
-
-        val results: Slice<DelegationV2> =
-            when {
-                validator != null && statuses != null ->
-                    delegationRepository.findByValidatorAndStatusIn(
-                        HexUtils.normalise(validator),
-                        statuses,
-                        pageable,
-                    )
-                validator != null ->
-                    delegationRepository.findByValidator(HexUtils.normalise(validator), pageable)
-                tokenId != null -> delegationRepository.findByTokenId(tokenId, pageable)
-                statuses != null -> delegationRepository.findByStatusIn(statuses, pageable)
-                else -> delegationRepository.findAll(pageable)
-            }
-
-        return paginatedResponse(results.map(DelegationV2Response::from))
+        val results = service.getDelegations(validator, tokenId, statuses, pageable)
+        return paginatedResponse(results.map(DelegationResponse::from))
     }
 
     @GetMapping("/count")
     @Operation(
-        summary = "Get V2 delegation counts by status for all validators",
+        summary = "Get delegation counts by status for all validators",
         description =
-            "Returns the count of V2 delegations grouped by status (QUEUED, ACTIVE, EXITING) " +
+            "Returns the count of delegations grouped by status (QUEUED, ACTIVE, EXITING) " +
                 "for all validators, or optionally filtered to a specific validator.",
     )
     @AddressParameter(name = "validator", description = "Optional validator address to filter by")
     @CommonApiResponses
     open fun getDelegationCounts(
         @ValidAddress @RequestParam(required = false) validator: Address?
-    ): List<DelegationCountsResponse> {
-        val results =
-            if (validator != null) {
-                delegationRepository.aggregateDelegationCountsByValidator(
-                    validator.value.lowercase()
-                )
-            } else {
-                delegationRepository.aggregateDelegationCountsByValidator()
-            }
-
-        return results.map { result ->
-            val countsByStatus = result.counts.associateBy { it.status }
-            DelegationCountsResponse(
-                validator = result._id,
-                queued = countsByStatus["QUEUED"]?.count ?: 0L,
-                active = countsByStatus["ACTIVE"]?.count ?: 0L,
-                exiting = countsByStatus["EXITING"]?.count ?: 0L,
-            )
-        }
-    }
+    ): List<DelegationCountsResponse> = service.getDelegationCounts(validator)
 }

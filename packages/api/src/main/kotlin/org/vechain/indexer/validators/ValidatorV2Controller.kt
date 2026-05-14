@@ -34,21 +34,25 @@ import org.vechain.indexer.validator.StatusV2
 import org.vechain.indexer.validator.ValidatorV2
 
 @Profile("validator-v2")
-@Tag(name = "Validator V2", description = "Query V2 validator documents")
+@Tag(name = "Validator", description = "Query validator documents")
 @Validated
 @RestController
 @RequestMapping(VALIDATORS_PATH_V2)
-open class ValidatorV2Controller(private val mongoTemplate: MongoTemplate) {
+open class ValidatorV2Controller(
+    private val mongoTemplate: MongoTemplate,
+    private val aggregateService: ValidatorV2AggregateService,
+    private val priceProvider: PriceProvider,
+) {
 
     @GetMapping
     @Operation(
         summary = "Get V2 validators with optional filters",
         description =
-            "Returns validators from the V2 indexer. Simple derived fields (stake splits, " +
-                "cycleEndBlock, percentageOffline) are populated. Price- and aggregate-dependent " +
-                "fields (TVL, yields, NFT yields, blockProbability, totalWeight, online, " +
-                "totalRewards) are not yet wired up — see `ValidatorV2Response` for the formulas " +
-                "and dependencies required to add each.",
+            "Returns validators from the V2 indexer. TVL / yield / NFT-yield fields are populated " +
+                "when `PriceFeedOracle` is configured on the active network; otherwise they're " +
+                "omitted (the rest of the validator data is still returned). `online` and " +
+                "`totalRewards` are not yet wired up — see `ValidatorV2Response` for the " +
+                "remaining formulas.",
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -83,7 +87,12 @@ open class ValidatorV2Controller(private val mongoTemplate: MongoTemplate) {
         val results = mongoTemplate.find<ValidatorV2>(query)
         val hasNext = results.size > pageable.pageSize
         val pageContent = if (hasNext) results.dropLast(1) else results
-        val mapped = pageContent.map(ValidatorV2Response::from)
+
+        // One aggregate query and one price read per request, shared across every row.
+        val aggregates = aggregateService.build(pageContent.map { it.id })
+        val prices = priceProvider.get()
+
+        val mapped = pageContent.map { ValidatorV2Response.from(it, aggregates, prices) }
         return paginatedResponse(SliceImpl(mapped, pageable, hasNext))
     }
 
@@ -106,6 +115,9 @@ open class ValidatorV2Controller(private val mongoTemplate: MongoTemplate) {
         val doc =
             mongoTemplate.findOne<ValidatorV2>(Query(Criteria.where("_id").`is`(normalised)))
                 ?: throw ResourceNotFoundException("Validator V2 not found for id $normalised")
-        return ValidatorV2Response.from(doc)
+
+        val aggregates = aggregateService.build(listOf(doc.id))
+        val prices = priceProvider.get()
+        return ValidatorV2Response.from(doc, aggregates, prices)
     }
 }

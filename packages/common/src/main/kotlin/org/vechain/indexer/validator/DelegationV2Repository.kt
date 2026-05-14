@@ -12,7 +12,7 @@ import org.vechain.indexer.BaseIndexedRepository
  * Query surface for V2 delegation documents. Mirrors the V1 [DelegationRepository] surface so the
  * API layer can swap one for the other without touching call sites.
  */
-@Profile("delegation-v2", "token-reward")
+@Profile("delegation", "delegation-v2", "token-reward")
 @Repository
 interface DelegationV2Repository : BaseIndexedRepository<DelegationV2, String> {
 
@@ -30,6 +30,12 @@ interface DelegationV2Repository : BaseIndexedRepository<DelegationV2, String> {
     @Query("{ 'validator': { '\$in': ?0 } }")
     fun findByValidatorIn(validators: List<String>): List<DelegationV2>
 
+    @Query("{ 'validator': { '\$in': ?0 }, 'status': { '\$in': ?1 } }")
+    fun findByValidatorInAndStatusIn(
+        validators: List<String>,
+        statuses: List<DelegationStatusV2>,
+    ): List<DelegationV2>
+
     @Query("{ 'validator': ?0, 'status': { '\$in': ?1 } }")
     fun findByValidatorAndStatusIn(
         validator: String,
@@ -46,8 +52,30 @@ interface DelegationV2Repository : BaseIndexedRepository<DelegationV2, String> {
     @Query("{ 'validator': ?0 }")
     fun findByValidator(validator: String, pageable: Pageable): Slice<DelegationV2>
 
+    @Query("{ 'validator': ?0, 'tokenId': ?1 }")
+    fun findByValidatorAndTokenId(
+        validator: String,
+        tokenId: String,
+        pageable: Pageable,
+    ): Slice<DelegationV2>
+
+    @Query("{ 'validator': ?0, 'tokenId': ?1, 'status': { '\$in': ?2 } }")
+    fun findByValidatorAndTokenIdAndStatusIn(
+        validator: String,
+        tokenId: String,
+        statuses: List<DelegationStatusV2>,
+        pageable: Pageable,
+    ): Slice<DelegationV2>
+
     @Query("{ 'tokenId': ?0 }")
     fun findByTokenId(tokenId: String, pageable: Pageable): Slice<DelegationV2>
+
+    @Query("{ 'tokenId': ?0, 'status': { '\$in': ?1 } }")
+    fun findByTokenIdAndStatusIn(
+        tokenId: String,
+        statuses: List<DelegationStatusV2>,
+        pageable: Pageable,
+    ): Slice<DelegationV2>
 
     @Query("{ 'tokenId': { '\$in': ?0 } }")
     fun findByTokenIdIn(tokenIds: List<String>): List<DelegationV2>
