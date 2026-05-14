@@ -11,6 +11,14 @@ import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Views
 
+@Deprecated(
+    message =
+        "V1 delegation model. Superseded by DelegationV2 (collection `delegations_v2`, profile " +
+            "`delegation-v2`). V1 maintains validator-cycle metadata on each delegation via " +
+            "chain reads through the V1 validator aggregator; V2 is event-driven, reads " +
+            "ValidatorV2 from MongoDB for cycle math, and drops the chain dependency entirely.",
+    replaceWith = ReplaceWith("DelegationV2"),
+)
 @Document(collection = IndexerNames.DELEGATION.COLLECTION)
 data class Delegation
 @ConstructorBinding

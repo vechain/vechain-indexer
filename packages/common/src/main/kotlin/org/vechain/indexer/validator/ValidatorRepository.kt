@@ -7,6 +7,11 @@ import org.springframework.data.mongodb.repository.Query
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.BaseIndexedRepository
 
+@Suppress("DEPRECATION")
+@Deprecated(
+    message = "V1 validator repository — use ValidatorV2Repository.",
+    replaceWith = ReplaceWith("ValidatorV2Repository"),
+)
 @Profile("validator", "validator-stats")
 @Repository
 interface ValidatorRepository : BaseIndexedRepository<Validator, String> {

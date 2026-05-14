@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Mixes V1 (deprecated) and V1-only (block-rewards) helpers.
+
 package org.vechain.indexer.validators
 
 import kotlinx.coroutines.runBlocking

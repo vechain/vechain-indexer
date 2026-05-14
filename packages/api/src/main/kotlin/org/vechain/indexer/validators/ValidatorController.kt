@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Mixes V1 (deprecated) and V1-only (block-rewards) endpoints.
+
 package org.vechain.indexer.validator
 
 import io.swagger.v3.oas.annotations.Operation
@@ -43,9 +45,15 @@ open class ValidatorController(
 ) {
     @GetMapping
     @Operation(
-        summary = "Get validators with optional filters",
+        summary = "Get validators with optional filters (deprecated — use /api/v2/validators)",
         description =
             """
+            **Deprecated:** Replaced by `GET /api/v2/validators`. The V2 endpoint is backed by
+            `ValidatorV2`, which calls the builtin Staker directly (no deployed aggregator) and
+            exposes the same stake/queue/period fields plus the better PoS-schedule liveness
+            counters. Price-/yield-dependent fields (`*Tvl`, `*Yield`, `nftYields*`) are not yet
+            wired up on V2 — see `ValidatorV2Response` for the formulas required.
+
             This endpoint retrieves validator stats.
 
             You can filter the results by:
@@ -59,6 +67,7 @@ open class ValidatorController(
             - `page` and `size`: Controls pagination
             - `direction`: Either `asc` or `desc`
             """,
+        deprecated = true,
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -130,8 +139,11 @@ open class ValidatorController(
 
     @GetMapping("/{validatorId}")
     @Operation(
-        summary = "Get a single validator by ID",
-        description = "Returns a single validator's stats by their address.",
+        summary = "Get a single validator by ID (deprecated — use /api/v2/validators/{id})",
+        description =
+            "**Deprecated:** Replaced by `GET /api/v2/validators/{validatorId}`. " +
+                "Returns a single validator's stats by their address.",
+        deprecated = true,
     )
     @AddressParameter(
         name = "validatorId",
@@ -148,9 +160,15 @@ open class ValidatorController(
 
     @GetMapping("/delegations")
     @Operation(
-        summary = "Get delegations with optional filters",
+        summary =
+            "Get delegations with optional filters " +
+                "(deprecated — use /api/v2/validators/delegations)",
         description =
             """
+            **Deprecated:** Replaced by `GET /api/v2/validators/delegations`. The V2 endpoint is
+            backed by `DelegationV2`, which is event-driven and removes the V1 dependency on
+            chain validator reads.
+
             This endpoint retrieves delegation records.
 
             You can filter by:
@@ -160,6 +178,7 @@ open class ValidatorController(
 
             You can also sort and paginate.
             """,
+        deprecated = true,
     )
     @AddressParameter(name = "validator", description = "Filter by validator address")
     @TokenIdParameter
@@ -357,10 +376,14 @@ open class ValidatorController(
 
     @GetMapping("/delegations/count")
     @Operation(
-        summary = "Get delegation counts by status for all validators",
+        summary =
+            "Get delegation counts by status for all validators " +
+                "(deprecated — use /api/v2/validators/delegations/count)",
         description =
-            "Returns the count of delegations grouped by status (QUEUED, ACTIVE, EXITING) for all validators, " +
-                "or optionally filtered to a specific validator.",
+            "**Deprecated:** Replaced by `GET /api/v2/validators/delegations/count`. " +
+                "Returns the count of delegations grouped by status (QUEUED, ACTIVE, EXITING) " +
+                "for all validators, or optionally filtered to a specific validator.",
+        deprecated = true,
     )
     @AddressParameter(name = "validator", description = "Optional validator address to filter by")
     @CommonApiResponses

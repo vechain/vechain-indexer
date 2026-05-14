@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // V1 delegation pipeline — superseded by DelegationV2.
-
 package org.vechain.indexer.validator
 
 import kotlinx.coroutines.CoroutineScope
@@ -14,21 +12,21 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("validator", "validator-stats", "delegation")
+@Profile("delegation-v2")
 @Configuration
-open class DelegationCollectionConfig(
+open class DelegationV2CollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, appCoroutineScope, Delegation::class.java) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, DelegationV2::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    @Value("\${indexer.version.delegation}") private val version: Int = 1
+    @Value("\${indexer.version.delegation-v2:1}") private val version: Int = 1
 
     override fun initCollection() {
         logger.debug("Check collection version for ${modelObj.simpleName}")
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            IndexerNames.DELEGATION.NAME,
-            Delegation::class.java,
+            IndexerNames.DELEGATION_V2.NAME,
+            DelegationV2::class.java,
             version,
         )
         this.ensureCollection()
@@ -37,23 +35,22 @@ open class DelegationCollectionConfig(
             listOf(
                 buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),
                 buildIndex(
-                    Delegation::validator.name to Sort.Direction.ASC,
-                    Delegation::status.name to Sort.Direction.ASC,
+                    DelegationV2::status.name to Sort.Direction.ASC,
+                    DelegationV2::transitionAtBlock.name to Sort.Direction.ASC,
                 ),
                 buildIndex(
-                    Delegation::status.name to Sort.Direction.ASC,
-                    Delegation::validatorNextCycle.name to Sort.Direction.ASC,
+                    DelegationV2::validator.name to Sort.Direction.ASC,
+                    DelegationV2::status.name to Sort.Direction.ASC,
                 ),
-                buildIndex(Delegation::tokenId.name to Sort.Direction.ASC),
+                buildIndex(DelegationV2::tokenId.name to Sort.Direction.ASC),
                 buildIndex(
-                    Delegation::status.name to Sort.Direction.ASC,
-                    Delegation::tokenLevel.name to Sort.Direction.ASC,
-                    Delegation::stakedAmount.name to Sort.Direction.ASC,
+                    DelegationV2::status.name to Sort.Direction.ASC,
+                    DelegationV2::tokenLevel.name to Sort.Direction.ASC,
                 ),
                 buildIndex(
-                    Delegation::status.name to Sort.Direction.ASC,
-                    Delegation::validator.name to Sort.Direction.ASC,
-                    Delegation::tokenLevel.name to Sort.Direction.ASC,
+                    DelegationV2::status.name to Sort.Direction.ASC,
+                    DelegationV2::validator.name to Sort.Direction.ASC,
+                    DelegationV2::tokenLevel.name to Sort.Direction.ASC,
                 ),
             )
         )

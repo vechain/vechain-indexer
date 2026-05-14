@@ -11,6 +11,15 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.stargate.token.TokenLevelDecimalValues
 
+@Deprecated(
+    message =
+        "V1 validator model. Superseded by ValidatorV2 (collection `validators_v2`, profile " +
+            "`validator-v2`). V1 reads chain validator state via a deployed `GetValidators` " +
+            "aggregator contract that complicates solo/custom-network deploys; V2 calls the " +
+            "builtin Staker directly and moves price/yield/NFT-yield derivations to the API " +
+            "layer.",
+    replaceWith = ReplaceWith("ValidatorV2"),
+)
 @Document(collection = IndexerNames.VALIDATOR.COLLECTION)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Validator(

@@ -1,4 +1,18 @@
 # syntax=docker/dockerfile:1
+
+# Build the Go co-process used by the ValidatorV2 indexer's PoS schedule reconstruction.
+FROM golang:1.26-alpine AS go-builder
+WORKDIR /src
+RUN apk add --no-cache gcc musl-dev
+COPY tools/thor-scheduler/go.mod tools/thor-scheduler/go.sum* ./
+RUN --mount=type=cache,target=/root/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    GOTOOLCHAIN=auto go mod download
+COPY tools/thor-scheduler/ ./
+RUN --mount=type=cache,target=/root/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=1 GOTOOLCHAIN=auto go build -trimpath -o /out/thor-scheduler .
+
 FROM amazoncorretto:21-alpine3.22 AS builder
 
 ARG PACKAGE_NAME
@@ -59,5 +73,6 @@ ENV APP_VERSION=$APP_VERSION
 WORKDIR /usr/app
 
 COPY --from=builder /usr/app/packages/$PACKAGE_NAME/build/libs/$PACKAGE_NAME*.jar /usr/app/app.jar
+COPY --from=go-builder /out/thor-scheduler /usr/app/tools/thor-scheduler/thor-scheduler
 
 CMD java -Dapp.version=$APP_VERSION -jar /usr/app/app.jar

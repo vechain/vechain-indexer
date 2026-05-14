@@ -15,6 +15,10 @@ gradle/docker.gradle.properties
 # Source packages (needed by both Dockerfiles)
 !packages/
 
+# Go co-process source (needed by Dockerfile go-builder stage)
+!tools/
+tools/thor-scheduler/thor-scheduler
+
 # Exclude test-only package
 packages/e2e/
 

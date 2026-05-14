@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // V1 delegation pipeline — superseded by DelegationV2.
+
 package org.vechain.indexer.validator
 
 import org.springframework.context.annotation.Profile

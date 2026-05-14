@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // V1 validator pipeline — superseded by ValidatorV2.
+
 package org.vechain.indexer.validator
 
 import java.math.BigDecimal
