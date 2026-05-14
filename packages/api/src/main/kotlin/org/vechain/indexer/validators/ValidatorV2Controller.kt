@@ -67,7 +67,7 @@ open class ValidatorV2Controller(private val mongoTemplate: MongoTemplate) {
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<ValidatorV2Response> {
-        val pageable = toPageable(page, size, direction, ValidatorV2::validatorLockedStake.name)
+        val pageable = toPageable(page, size, direction, ValidatorV2::validatorVetStaked.name)
 
         val criteria = mutableListOf<Criteria>()
         status?.let { criteria += Criteria.where(ValidatorV2::status.name).`in`(it) }

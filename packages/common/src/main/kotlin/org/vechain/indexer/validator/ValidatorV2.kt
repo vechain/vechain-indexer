@@ -13,19 +13,13 @@ import org.vechain.indexer.VersionedDocument
 /**
  * Indexed validator state — V2.
  *
- * Persists only what the chain (built-in Staker) and PoS schedule observation provide directly. All
- * TVL/yield/price-dependent fields and most pure derivations live at the API/projection layer.
+ * Persists only what the chain (built-in Staker) and PoS schedule observation provide directly.
+ * Field names match V1 [Validator] one-for-one so consumer migration is a straight swap of the
+ * document type. The PoS-schedule liveness counters (`scheduledBlocks` / `proposedBlocks` /
+ * `missedBlocks` / `lastProposedBlockNumber` / `lastMissedBlockNumber`) are the only entirely new
+ * fields.
  *
  * ### Mapping from V1 [Validator]
- *
- * **Renamed (semantically the same):**
- * - `cyclePeriodLength` → `stakingPeriodLength`
- * - `validatorVetStaked` → `validatorLockedStake`
- * - `delegatorVetStaked` → `delegatorsLockedStake`
- * - `validatorQueuedVetStaked` → `validatorQueuedStake`
- * - `queuedVetStaked` → `totalQueuedStake`
- * - `exitingVetStaked` → `totalExitingStake`
- * - `validatorExitingVetStaked` → `validatorExitingStake`
  *
  * **Replaced by better V2 fields (drive V1's API surface from these):**
  * - V1 `offlineBlocks` → V2 `missedBlocks` (actually-missed PoS slots, not the transient chain
@@ -34,10 +28,10 @@ import org.vechain.indexer.VersionedDocument
  * - V1 `online` → derive at API from `lastProposedBlockNumber` recency.
  *
  * **Derivable, NOT stored — compute at API/projection layer:**
- * - `vetStaked` = `validatorLockedStake + delegatorsLockedStake`
- * - `delegatorQueuedVetStaked` = `totalQueuedStake - validatorQueuedStake`
- * - `delegatorExitingVetStaked` = `totalExitingStake - validatorExitingStake`
- * - `cycleEndBlock` = `startBlock + (completedPeriods + 1) * stakingPeriodLength`
+ * - `vetStaked` = `validatorVetStaked + delegatorVetStaked`
+ * - `delegatorQueuedVetStaked` = `queuedVetStaked - validatorQueuedVetStaked`
+ * - `delegatorExitingVetStaked` = `exitingVetStaked - validatorExitingVetStaked`
+ * - `cycleEndBlock` = `startBlock + (completedPeriods + 1) * cyclePeriodLength`
  * - `totalWeight` = sum of `validatorLockedWeight` across active set (chain aggregate)
  * - `blockProbability` = `validatorLockedWeight / totalWeight`
  * - `blocksPerEpoch` = constant (180)
@@ -51,7 +45,8 @@ import org.vechain.indexer.VersionedDocument
  *
  * Requires VET/VTHO USD prices from `PriceFeedOracle` (network-specific contract) and Stargate
  * `getDelegatorsEffectiveStake`. Keeping these out lets the indexer run unchanged across mainnet,
- * testnet, solo, and custom networks.
+ * testnet, solo, and custom networks. They could be reintroduced by calling those contracts
+ * directly (not via the V1 `GetValidators` aggregator) and config-gating the calls per network.
  *
  * **Not yet wired up:**
  * - `totalRewards` — V1 declared this field but never populated it. The reward ledger lives in the
@@ -68,17 +63,17 @@ data class ValidatorV2(
     val endorser: String? = null,
     val beneficiary: String? = null,
     val status: StatusV2? = null,
-    val stakingPeriodLength: Long? = null,
+    val cyclePeriodLength: Long? = null,
     val startBlock: Long? = null,
     val exitBlock: Long? = null,
     val completedPeriods: Long? = null,
-    @Field(targetType = FieldType.DECIMAL128) val validatorLockedStake: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val validatorVetStaked: BigDecimal? = null,
     @Field(targetType = FieldType.DECIMAL128) val validatorLockedWeight: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val delegatorsLockedStake: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val validatorQueuedStake: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val totalQueuedStake: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val totalExitingStake: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val validatorExitingStake: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val delegatorVetStaked: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val validatorQueuedVetStaked: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val queuedVetStaked: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val exitingVetStaked: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val validatorExitingVetStaked: BigDecimal? = null,
     @Field(targetType = FieldType.DECIMAL128) val totalNextPeriodWeight: BigDecimal? = null,
     val queuePosition: Long? = null,
     val availableStartBlock: Long? = null,

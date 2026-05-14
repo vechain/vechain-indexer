@@ -135,12 +135,12 @@ open class ValidatorV2Service(
                     "ValidationQueued" -> onValidationQueued(current, ev)
                     "ValidationSignaledExit" ->
                         // Snapshot the validator's own locked stake — that's the portion
-                        // that's now exiting. `totalExitingStake` (from the walk) carries
+                        // that's now exiting. `exitingVetStaked` (from the walk) carries
                         // both validator + delegator exits; `delegatorExitingStake` is
                         // derived as the difference at API time.
                         current.copy(
                             status = StatusV2.EXITING,
-                            validatorExitingStake = current.validatorLockedStake,
+                            validatorExitingVetStaked = current.validatorVetStaked,
                         )
                     "ValidationWithdrawn" -> onValidationWithdrawn(current, ev)
                     "StakeIncreased" -> onStakeIncreased(current, ev)
@@ -177,8 +177,8 @@ open class ValidatorV2Service(
         return current.copy(
             status = StatusV2.QUEUED,
             endorser = endorser ?: current.endorser,
-            stakingPeriodLength = period ?: current.stakingPeriodLength,
-            validatorQueuedStake = stakeVet ?: current.validatorQueuedStake,
+            cyclePeriodLength = period ?: current.cyclePeriodLength,
+            validatorQueuedVetStaked = stakeVet ?: current.validatorQueuedVetStaked,
         )
     }
 
@@ -188,16 +188,16 @@ open class ValidatorV2Service(
         // After withdrawal the validator no longer exists in the staker; zero out volatile stakes.
         return current.copy(
             status = StatusV2.WITHDRAWN,
-            validatorLockedStake = BigDecimal.ZERO,
+            validatorVetStaked = BigDecimal.ZERO,
             validatorLockedWeight = BigDecimal.ZERO,
-            validatorQueuedStake = BigDecimal.ZERO,
-            delegatorsLockedStake = BigDecimal.ZERO,
-            totalQueuedStake = BigDecimal.ZERO,
-            totalExitingStake =
-                (current.totalExitingStake ?: BigDecimal.ZERO)
+            validatorQueuedVetStaked = BigDecimal.ZERO,
+            delegatorVetStaked = BigDecimal.ZERO,
+            queuedVetStaked = BigDecimal.ZERO,
+            exitingVetStaked =
+                (current.exitingVetStaked ?: BigDecimal.ZERO)
                     .subtract(stakeVet)
                     .max(BigDecimal.ZERO),
-            validatorExitingStake = BigDecimal.ZERO,
+            validatorExitingVetStaked = BigDecimal.ZERO,
             totalNextPeriodWeight = BigDecimal.ZERO,
             queuePosition = null,
             availableStartBlock = null,
@@ -211,13 +211,12 @@ open class ValidatorV2Service(
         // will reconcile any drift.
         return if (current.status == StatusV2.QUEUED) {
             current.copy(
-                validatorQueuedStake =
-                    (current.validatorQueuedStake ?: BigDecimal.ZERO).add(addedVet)
+                validatorQueuedVetStaked =
+                    (current.validatorQueuedVetStaked ?: BigDecimal.ZERO).add(addedVet)
             )
         } else {
             current.copy(
-                validatorLockedStake =
-                    (current.validatorLockedStake ?: BigDecimal.ZERO).add(addedVet)
+                validatorVetStaked = (current.validatorVetStaked ?: BigDecimal.ZERO).add(addedVet)
             )
         }
     }
@@ -227,15 +226,15 @@ open class ValidatorV2Service(
             ev.params.getAsBigInteger("removed")?.let(NumberUtils::toVET) ?: return current
         return if (current.status == StatusV2.QUEUED) {
             current.copy(
-                validatorQueuedStake =
-                    (current.validatorQueuedStake ?: BigDecimal.ZERO)
+                validatorQueuedVetStaked =
+                    (current.validatorQueuedVetStaked ?: BigDecimal.ZERO)
                         .subtract(removedVet)
                         .max(BigDecimal.ZERO)
             )
         } else {
             current.copy(
-                validatorLockedStake =
-                    (current.validatorLockedStake ?: BigDecimal.ZERO)
+                validatorVetStaked =
+                    (current.validatorVetStaked ?: BigDecimal.ZERO)
                         .subtract(removedVet)
                         .max(BigDecimal.ZERO)
             )
@@ -385,24 +384,24 @@ open class ValidatorV2Service(
                 )
 
             val current = working[validatorId] ?: newDoc(validatorId, block)
-            val validatorLockedStake = (validation["stake"] as BigInteger)
+            val validatorVetStaked = (validation["stake"] as BigInteger)
             val lockedVet = (totals["lockedVET"] as BigInteger)
             val exitBlockRaw = (period["exitBlock"] as BigInteger).toLong()
             working[validatorId] =
                 current.copy(
                     endorser = (validation["endorser"] as String).lowercase(),
                     status = StatusV2.fromCode((validation["status"] as BigInteger).toInt()),
-                    validatorLockedStake = NumberUtils.toVET(validatorLockedStake),
+                    validatorVetStaked = NumberUtils.toVET(validatorVetStaked),
                     validatorLockedWeight = NumberUtils.toVET(validation["weight"] as BigInteger),
-                    validatorQueuedStake =
+                    validatorQueuedVetStaked =
                         NumberUtils.toVET(validation["queuedStake"] as BigInteger),
-                    delegatorsLockedStake =
-                        NumberUtils.toVET((lockedVet - validatorLockedStake).max(BigInteger.ZERO)),
-                    totalQueuedStake = NumberUtils.toVET(totals["queuedVET"] as BigInteger),
-                    totalExitingStake = NumberUtils.toVET(totals["exitingVET"] as BigInteger),
+                    delegatorVetStaked =
+                        NumberUtils.toVET((lockedVet - validatorVetStaked).max(BigInteger.ZERO)),
+                    queuedVetStaked = NumberUtils.toVET(totals["queuedVET"] as BigInteger),
+                    exitingVetStaked = NumberUtils.toVET(totals["exitingVET"] as BigInteger),
                     totalNextPeriodWeight =
                         NumberUtils.toVET(totals["nextPeriodWeight"] as BigInteger),
-                    stakingPeriodLength = (period["period"] as BigInteger).toLong(),
+                    cyclePeriodLength = (period["period"] as BigInteger).toLong(),
                     startBlock = (period["startBlock"] as BigInteger).toLong(),
                     exitBlock = exitBlockRaw.takeIf { it in 1L until MAX_UINT32_LONG },
                     completedPeriods = (period["completedPeriods"] as BigInteger).toLong(),

@@ -418,7 +418,7 @@ open class DelegationV2Service(
      * Next cycle-boundary block for [validatorId] after [blockNumber], computed from the persisted
      * `ValidatorV2` row in the supplied [validators] map (preloaded once per block by
      * [preloadValidators]). Returns `null` if the validator isn't known or hasn't been activated
-     * (no `startBlock`/`stakingPeriodLength`).
+     * (no `startBlock`/`cyclePeriodLength`).
      */
     private fun nextCycleStart(
         validatorId: String,
@@ -427,7 +427,7 @@ open class DelegationV2Service(
     ): Long? {
         val v = validators[validatorId] ?: return null
         val start = v.startBlock ?: return null
-        val period = v.stakingPeriodLength ?: return null
+        val period = v.cyclePeriodLength ?: return null
         if (start <= 0L || period <= 0L) return null
         if (blockNumber < start) return start
         val offset = blockNumber - start

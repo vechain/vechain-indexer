@@ -138,24 +138,24 @@ data class ValidatorV2Response(
 ) {
     companion object {
         fun from(v: ValidatorV2): ValidatorV2Response {
-            val validatorLocked = v.validatorLockedStake ?: BigDecimal.ZERO
-            val delegatorsLocked = v.delegatorsLockedStake ?: BigDecimal.ZERO
+            val validatorLocked = v.validatorVetStaked ?: BigDecimal.ZERO
+            val delegatorsLocked = v.delegatorVetStaked ?: BigDecimal.ZERO
             val totalLocked = validatorLocked + delegatorsLocked
 
-            val totalQueued = v.totalQueuedStake ?: BigDecimal.ZERO
-            val validatorQueued = v.validatorQueuedStake ?: BigDecimal.ZERO
+            val totalQueued = v.queuedVetStaked ?: BigDecimal.ZERO
+            val validatorQueued = v.validatorQueuedVetStaked ?: BigDecimal.ZERO
             val delegatorQueued = (totalQueued - validatorQueued).max(BigDecimal.ZERO)
 
-            val totalExiting = v.totalExitingStake ?: BigDecimal.ZERO
-            val validatorExiting = v.validatorExitingStake ?: BigDecimal.ZERO
+            val totalExiting = v.exitingVetStaked ?: BigDecimal.ZERO
+            val validatorExiting = v.validatorExitingVetStaked ?: BigDecimal.ZERO
             val delegatorExiting = (totalExiting - validatorExiting).max(BigDecimal.ZERO)
 
             val startBlock = v.startBlock
             val completedPeriods = v.completedPeriods
-            val stakingPeriodLength = v.stakingPeriodLength
+            val cyclePeriodLength = v.cyclePeriodLength
             val cycleEndBlock =
-                if (startBlock != null && completedPeriods != null && stakingPeriodLength != null) {
-                    startBlock + (completedPeriods + 1L) * stakingPeriodLength
+                if (startBlock != null && completedPeriods != null && cyclePeriodLength != null) {
+                    startBlock + (completedPeriods + 1L) * cyclePeriodLength
                 } else null
 
             val percentageOffline =
@@ -171,19 +171,19 @@ data class ValidatorV2Response(
                 beneficiary = v.beneficiary,
                 status = v.status,
                 vetStaked = totalLocked.takeIf { it > BigDecimal.ZERO },
-                validatorVetStaked = v.validatorLockedStake,
-                delegatorVetStaked = v.delegatorsLockedStake,
-                queuedVetStaked = v.totalQueuedStake,
-                validatorQueuedVetStaked = v.validatorQueuedStake,
+                validatorVetStaked = v.validatorVetStaked,
+                delegatorVetStaked = v.delegatorVetStaked,
+                queuedVetStaked = v.queuedVetStaked,
+                validatorQueuedVetStaked = v.validatorQueuedVetStaked,
                 delegatorQueuedVetStaked = delegatorQueued.takeIf { it > BigDecimal.ZERO },
-                exitingVetStaked = v.totalExitingStake,
-                validatorExitingVetStaked = v.validatorExitingStake,
+                exitingVetStaked = v.exitingVetStaked,
+                validatorExitingVetStaked = v.validatorExitingVetStaked,
                 delegatorExitingVetStaked = delegatorExiting.takeIf { it > BigDecimal.ZERO },
                 validatorLockedWeight = v.validatorLockedWeight,
                 totalNextPeriodWeight = v.totalNextPeriodWeight,
                 startBlock = v.startBlock,
                 exitBlock = v.exitBlock,
-                cyclePeriodLength = v.stakingPeriodLength,
+                cyclePeriodLength = v.cyclePeriodLength,
                 cycleEndBlock = cycleEndBlock,
                 completedPeriods = v.completedPeriods,
                 queuePosition = v.queuePosition,
