@@ -51,9 +51,13 @@ open class StargateTokenService(
         block: Block,
         events: List<IndexedEvent>,
     ): Pair<Collection<StargateToken>, List<StargateToken>> {
-        if (block.number < validatorStartBlock) return emptyList<StargateToken>() to emptyList()
-
-        val validatorsRefreshed = !activeValidatorsLoaded || isEpochBoundary(block.number)
+        // NFT lifecycle events (mints, transfers, manager changes) can fire in the gap between
+        // the Stargate NFT deployment and the validator indexer's start block — index them.
+        // Only the validator-collection read is gated; the validator map stays empty until the
+        // parent indexer has data, and delegation events don't fire on-chain before then.
+        val validatorIndexerActive = block.number >= validatorStartBlock
+        val validatorsRefreshed =
+            validatorIndexerActive && (!activeValidatorsLoaded || isEpochBoundary(block.number))
         if (validatorsRefreshed) {
             activeValidators =
                 validatorRepository.findByStatusNot(Status.WITHDRAWN).associateBy {
@@ -128,7 +132,7 @@ open class StargateTokenService(
     // Snapshot Loading
     // ------------------------------------------------------------------------
 
-    private suspend fun loadRelevantTokenSnapshots(
+    private fun loadRelevantTokenSnapshots(
         block: Block,
         events: List<IndexedEvent>,
         removedValidators: Set<String>,

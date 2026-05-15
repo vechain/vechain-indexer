@@ -95,22 +95,42 @@ class StargateEventService(
         base: StargateToken?,
         validators: Map<String, Validator>,
         existingTokens: MutableList<StargateToken>,
-    ): StargateToken? =
-        when (event.eventType) {
+    ): StargateToken? {
+        fun required(): StargateToken = requireBaseToken(base, event, tokenId)
+        return when (event.eventType) {
             "TokenMinted" -> handleTokenMinted(event, tokenId)
-            "TokenBurned" -> handleTokenUnstaked(event, base!!, existingTokens)
-            "Transfer" -> handleTokenTransfer(event, base!!, existingTokens)
-            "DelegationInitiated" -> handleDelegate(event, base!!, validators, existingTokens)
-            "DelegationExitRequested" -> handleDelegateExitRequest(event, base!!, existingTokens)
-            "DelegationWithdrawn" -> handleExitDelegate(event, base!!, existingTokens)
-            "TokenManagerAdded" -> handleManagerAdded(event, base!!, existingTokens)
-            "TokenManagerRemoved" -> handleManagerRemoved(event, base!!, existingTokens)
-            "MaturityPeriodBoosted" -> handleTokenBoosted(event, base!!, existingTokens)
+            "TokenBurned" -> handleTokenUnstaked(event, required(), existingTokens)
+            "Transfer" -> handleTokenTransfer(event, required(), existingTokens)
+            "DelegationInitiated" -> handleDelegate(event, required(), validators, existingTokens)
+            "DelegationExitRequested" ->
+                handleDelegateExitRequest(event, required(), existingTokens)
+            "DelegationWithdrawn" -> handleExitDelegate(event, required(), existingTokens)
+            "TokenManagerAdded" -> handleManagerAdded(event, required(), existingTokens)
+            "TokenManagerRemoved" -> handleManagerRemoved(event, required(), existingTokens)
+            "MaturityPeriodBoosted" -> handleTokenBoosted(event, required(), existingTokens)
             "NodeDelegated" -> handleNodeManagementEvent(event, base, existingTokens)
             "BaseVTHORewardsClaimed",
-            "DelegationRewardsClaimed" -> handleRewardsClaimed(event, base!!, existingTokens)
+            "DelegationRewardsClaimed" -> handleRewardsClaimed(event, required(), existingTokens)
             else -> base
         }
+    }
+
+    private fun requireBaseToken(
+        base: StargateToken?,
+        event: IndexedEvent,
+        tokenId: String,
+    ): StargateToken =
+        base
+            ?: throw IllegalStateException(
+                "No StargateToken loaded for ${event.eventType} event: tokenId=$tokenId, " +
+                    "blockNumber=${event.blockNumber}, blockId=${event.blockId}, " +
+                    "txId=${event.txId}, contract=${event.address}. " +
+                    "The token was not present in the stargate_token collection at this block, " +
+                    "so the event cannot be applied. Likely causes: the preceding TokenMinted " +
+                    "event was never indexed (check INDEXER_START_BLOCK_STARGATE_TOKEN and the " +
+                    "indexer's history), the token id is wrong in the event, or the token was " +
+                    "deleted out-of-band."
+            )
 
     private fun handleValidationSignaledExit(
         event: IndexedEvent,
