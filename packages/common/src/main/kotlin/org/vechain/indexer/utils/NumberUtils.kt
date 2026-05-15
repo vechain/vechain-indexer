@@ -34,7 +34,9 @@ object NumberUtils {
         }
 
     fun BigInteger.toLongOrNull(): Long? =
-        if (this == BigInteger.valueOf(Long.MAX_VALUE)) null else this.toLong()
+        if (this > BigInteger.valueOf(Long.MAX_VALUE) || this < BigInteger.valueOf(Long.MIN_VALUE))
+            null
+        else this.toLong()
 
     fun toScaledDecimal(value: BigDecimal, scale: Int = 6): BigDecimal =
         value.setScale(scale, RoundingMode.HALF_UP)
