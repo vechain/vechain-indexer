@@ -171,7 +171,7 @@ open class TokenRewardService(
         var cached = validatorCycleCache[validatorId]
         var newCycle = false
 
-        if (cached == null || block.number > cached.nextCycleBlock) {
+        if (cached == null || block.number >= cached.nextCycleBlock) {
             updateValidatorCycleCache(validator)
             newCycle = true
             cached = validatorCycleCache[validatorId] ?: return emptyList()
@@ -480,8 +480,12 @@ open class TokenRewardService(
     suspend fun getTotalVTHOIssuedAtBlock(blockId: String): BigInteger {
         val response =
             thorClient.inspectClauses(listOf(energyTotalSupplyClause()), BlockRevision.Id(blockId))
-        if (response.isEmpty()) return BigInteger.ZERO
-        return decodeTotalSupply(response[0]) ?: BigInteger.ZERO
+        // Fail fast — a silent zero baseline would make the very next block's reward equal the
+        // entire VTHO supply, corrupting the cumulative delta forever.
+        return decodeTotalSupply(response)
+            ?: throw IllegalStateException(
+                "Energy.totalSupply() decode failed at block $blockId (response=$response)"
+            )
     }
 
     private fun getTimeInfo(blockTimestamp: Long): LocalDate {

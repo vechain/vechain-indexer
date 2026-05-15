@@ -148,7 +148,7 @@ class StargateEventService(
                 when (it.delegationStatus) {
                     Status.NONE -> false
                     Status.EXITING ->
-                        exitAt == null || (it.delegationNextPeriod ?: Long.MAX_VALUE) <= exitAt
+                        exitAt == null || (it.delegationNextPeriod ?: Long.MAX_VALUE) >= exitAt
                     else -> true
                 }
             }
