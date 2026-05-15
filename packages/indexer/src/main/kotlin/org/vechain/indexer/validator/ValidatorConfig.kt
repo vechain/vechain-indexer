@@ -18,6 +18,7 @@ import org.vechain.indexer.thor.client.ThorClient
     "validator-reward",
     "token-reward",
     "vet-delegated-by-block",
+    "history",
 )
 open class ValidatorConfig {
 

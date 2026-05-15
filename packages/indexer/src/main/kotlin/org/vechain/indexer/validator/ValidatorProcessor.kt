@@ -17,6 +17,7 @@ import org.vechain.indexer.config.metrics.ProcessorMetrics
     "validator-reward",
     "token-reward",
     "vet-delegated-by-block",
+    "history",
 )
 @Component
 open class ValidatorProcessor(

@@ -36,6 +36,7 @@ import org.vechain.indexer.validator.scheduler.ThorSchedulerProcess
     "validator-reward",
     "token-reward",
     "vet-delegated-by-block",
+    "history",
 )
 @Service
 open class ValidatorService(

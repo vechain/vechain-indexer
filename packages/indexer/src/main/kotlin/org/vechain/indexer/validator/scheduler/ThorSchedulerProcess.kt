@@ -33,6 +33,7 @@ import org.springframework.stereotype.Component
     "validator-reward",
     "token-reward",
     "vet-delegated-by-block",
+    "history",
 )
 @Component
 class ThorSchedulerProcess(

@@ -12,6 +12,7 @@ import org.vechain.indexer.BaseIndexedRepository
     "stargate-token",
     "token-reward",
     "validator-reward",
+    "history",
 )
 @Repository
 interface ValidatorRepository : BaseIndexedRepository<Validator, String> {

@@ -37,6 +37,7 @@ interface EpochSeedProvider {
     "validator-reward",
     "token-reward",
     "vet-delegated-by-block",
+    "history",
 )
 @Component
 class SubprocessEpochSeedProvider(
