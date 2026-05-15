@@ -306,21 +306,30 @@ open class ValidatorService(
         repeat(slotsElapsed) { k ->
             val scheduledId = schedule[k % schedule.size]
             val isActualSlot = k == slotsElapsed - 1
-            val current = working[scheduledId] ?: return@repeat
-            working[scheduledId] =
-                if (isActualSlot) {
-                    current.copy(
-                        scheduledBlocks = current.scheduledBlocks + 1,
-                        proposedBlocks = current.proposedBlocks + 1,
+            if (isActualSlot) {
+                val scheduled = working[scheduledId]
+                if (scheduled != null) {
+                    working[scheduledId] =
+                        scheduled.copy(scheduledBlocks = scheduled.scheduledBlocks + 1)
+                }
+                // Trust block.signer over the reconstructed schedule for proposal attribution;
+                // they can diverge if our active-set view lags the chain.
+                val proposerId = if (working.containsKey(signer)) signer else scheduledId
+                val proposer = working[proposerId] ?: return@repeat
+                working[proposerId] =
+                    proposer.copy(
+                        proposedBlocks = proposer.proposedBlocks + 1,
                         lastProposedBlockNumber = block.number,
                     )
-                } else {
+            } else {
+                val current = working[scheduledId] ?: return@repeat
+                working[scheduledId] =
                     current.copy(
                         scheduledBlocks = current.scheduledBlocks + 1,
                         missedBlocks = current.missedBlocks + 1,
                         lastMissedBlockNumber = block.number,
                     )
-                }
+            }
         }
     }
 
