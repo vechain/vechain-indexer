@@ -168,9 +168,9 @@ class ValidatorBlockServiceTest {
 
     @Test
     fun `getValidationInfo computes delta correctly across multiple blocks`() = runBlocking {
-        every { validatorRepository.findByIdOrNull(any()) } answers
+        every { validatorRepository.findById(any()) } answers
             {
-                validatorV2(it.invocation.args[0] as String)
+                java.util.Optional.of(validatorV2(it.invocation.args[0] as String))
             }
 
         val block1 = createBlock(num = 101, signer = "0xVAL1")
