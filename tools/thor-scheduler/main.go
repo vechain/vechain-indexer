@@ -63,7 +63,12 @@ func main() {
 		}
 		var req Request
 		if err := json.Unmarshal(line, &req); err != nil {
-			writeResp(out, enc, Response{Error: fmt.Sprintf("invalid request: %v", err)})
+			// Best-effort: pull just the id so the caller can still correlate.
+			var idOnly struct {
+				ID uint64 `json:"id"`
+			}
+			_ = json.Unmarshal(line, &idOnly)
+			writeResp(out, enc, Response{ID: idOnly.ID, Error: fmt.Sprintf("invalid request: %v", err)})
 			continue
 		}
 		resp := handle(req)
