@@ -12,7 +12,8 @@ make build
 ```
 
 This produces a `thor-scheduler` binary in this directory. The Kotlin side reads the binary path
-from the `validator-v2.scheduler-binary` Spring property (default `./tools/thor-scheduler/thor-scheduler`).
+from the `validator.scheduler-binary` Spring property (default `./tools/thor-scheduler/thor-scheduler`),
+overridable via the `VALIDATOR_SCHEDULER_BINARY` env var.
 
 ## Protocol
 
