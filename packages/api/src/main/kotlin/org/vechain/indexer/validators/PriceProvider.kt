@@ -39,6 +39,7 @@ open class PriceProvider(
     private data class Cached(val prices: Prices?, val fetchedAt: Long)
 
     @Volatile private var cache: Cached? = null
+    private val fetchLock = Any()
     private val logger = LoggerFactory.getLogger(javaClass)
 
     /**
@@ -51,9 +52,16 @@ open class PriceProvider(
         if (current != null && now - current.fetchedAt < TTL_MILLIS) {
             return current.prices
         }
-        val fresh = fetch()
-        cache = Cached(fresh, now)
-        return fresh
+        synchronized(fetchLock) {
+            val recheck = cache
+            val afterLock = System.currentTimeMillis()
+            if (recheck != null && afterLock - recheck.fetchedAt < TTL_MILLIS) {
+                return recheck.prices
+            }
+            val fresh = fetch()
+            cache = Cached(fresh, afterLock)
+            return fresh
+        }
     }
 
     private fun fetch(): Prices? {
