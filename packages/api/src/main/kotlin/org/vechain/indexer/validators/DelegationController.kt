@@ -56,7 +56,7 @@ open class DelegationController(private val service: DelegationService) {
     @PaginationParameters
     @CommonApiResponses
     open fun getDelegations(
-        @RequestParam(required = false) validator: String?,
+        @ValidAddress @RequestParam(required = false) validator: Address?,
         @ValidTokenId @RequestParam(required = false) tokenId: String?,
         @RequestParam(required = false) statuses: List<DelegationStatus>?,
         @RequestParam(required = false) page: Int?,
@@ -65,7 +65,7 @@ open class DelegationController(private val service: DelegationService) {
     ): PaginatedResponse<DelegationResponse> {
         val pageable =
             toPageable(page, size, direction, Delegation::blockNumber.name, Delegation::id.name)
-        val results = service.getDelegations(validator, tokenId, statuses, pageable)
+        val results = service.getDelegations(validator?.value, tokenId, statuses, pageable)
         return paginatedResponse(results.map(DelegationResponse::from))
     }
 
