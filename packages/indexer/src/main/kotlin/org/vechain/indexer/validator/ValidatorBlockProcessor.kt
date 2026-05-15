@@ -34,4 +34,8 @@ open class ValidatorBlockProcessor(
             service.save(newRecords)
         }
     }
+
+    override fun resetProcessingState() {
+        service.invalidateCache()
+    }
 }

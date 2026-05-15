@@ -234,4 +234,20 @@ open class ValidatorBlockService(
     private fun preLoadOfflineValidators() {
         repository.findLatestMissed().forEach { offlineValidators[it.validator] = it.blockNumber }
     }
+
+    /**
+     * Drop every in-memory cache and rebuild from durable state. Invoked from
+     * [ValidatorBlockProcessor.resetProcessingState] on rollback so a reorg can't leave
+     * `vthoTotalSupply` or `offlineValidators` ahead of the rewound database.
+     */
+    open fun invalidateCache() {
+        offlineValidators.clear()
+        hourlyCache.clear()
+        dailyCache.clear()
+        weeklyCache.clear()
+        monthlyCache.clear()
+        vthoTotalSupply = BigInteger.ZERO
+        preloadLatestAggregates()
+        preLoadOfflineValidators()
+    }
 }
