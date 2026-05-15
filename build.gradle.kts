@@ -285,6 +285,12 @@ allprojects {
         implementation("io.netty:netty-handler-proxy:4.1.118.Final")
         implementation("io.netty:netty-codec-socks:4.1.118.Final")
         implementation("io.netty:netty-transport-classes-epoll:4.1.118.Final")
+
+        // Override the okhttp3 4.3.1 transitively pulled by web3j:core:5.0.0 (via
+        // thor-devkit.java:v1.0.0). 4.3.1 has known CVEs (e.g. CVE-2021-0341, fixed in 4.9.2).
+        // 4.12.0 is the final 4.x release and API-compatible with web3j's expectations.
+        implementation("com.squareup.okhttp3:okhttp:4.12.0")
+        implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     }
 }
 
