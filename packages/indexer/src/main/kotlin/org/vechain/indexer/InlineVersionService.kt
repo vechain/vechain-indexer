@@ -241,22 +241,46 @@ object InlineVersionService {
                     }
 
                 if (restoreIndex < 0) {
-                    // Every retained snapshot is itself inside the rolled-back range, so we can't
-                    // express the pre-target state. Surfacing this lets alignComponents aggregate
-                    // it with any other unhappy indexers and tell the operator to drop state — the
-                    // same actionable outcome as the existing "previousVersions empty" branch.
+                    // No retained snapshot predates the target. Two sub-cases:
+                    //
+                    // 1. The oldest retained snapshot IS the document's birth (its version equals
+                    //    initialVersion). The doc came into existence inside the rolled-back range
+                    //    and had no pre-target state — delete it, mirroring how the version <=
+                    //    initialVersion branch below treats brand-new docs.
+                    //
+                    // 2. The oldest retained snapshot is itself > initialVersion. Earlier history
+                    //    was trimmed by the blockWindow / maxVersions caps, so we cannot tell
+                    //    whether the doc existed before the target. Throw so the operator decides;
+                    //    indexer-core's alignComponents will aggregate this into its actionable
+                    //    "drop state for these indexers" error.
+                    val oldestRetainedVersion =
+                        previousVersions.last().getInteger("version", initialVersion)
+                    if (oldestRetainedVersion <= initialVersion) {
+                        logger.info(
+                            "Rolling back ({}): _id={} born within target range (current v{}, oldest retained v{} >= {}), deleting",
+                            collectionName,
+                            docId,
+                            version,
+                            oldestRetainedVersion,
+                            blockNumber,
+                        )
+                        writes.add(DeleteOneModel(idFilter))
+                        continue
+                    }
                     logger.error(
-                        "Retained versions exhausted for rollback ({}): _id={}, version={}, blockNumber={}, retained={}, target={}",
+                        "Retained versions exhausted for rollback ({}): _id={}, version={}, blockNumber={}, retained={}, oldestRetainedVersion={}, target={}",
                         collectionName,
                         docId,
                         version,
                         doc.getLong("blockNumber"),
                         previousVersions.size,
+                        oldestRetainedVersion,
                         blockNumber,
                     )
                     throw RollbackException(
                         "Retained versions exhausted rolling back $collectionName/$docId to block $blockNumber: " +
-                            "every retained snapshot is at block >= $blockNumber (retained=${previousVersions.size}, current=$version)"
+                            "every retained snapshot is at block >= $blockNumber and pre-target history was trimmed " +
+                            "(retained=${previousVersions.size}, current=$version, oldestRetainedVersion=$oldestRetainedVersion)"
                     )
                 }
 

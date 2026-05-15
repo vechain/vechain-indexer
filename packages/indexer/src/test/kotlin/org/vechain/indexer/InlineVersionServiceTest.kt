@@ -137,9 +137,44 @@ internal class InlineVersionServiceTest {
     }
 
     @Test
-    fun `rollback throws when every retained version is inside the rolled-back range`() {
-        // Every retained snapshot has blockNumber >= target, so no pre-target state is
-        // representable. The operator needs to know — drop state for this indexer and restart.
+    fun `rollback deletes documents born inside the rolled-back range`() {
+        // Doc's full history is captured in _previousVersions (oldest retained version equals
+        // initialVersion), and every snapshot is inside the rolled-back range. The doc didn't
+        // exist before the target block — delete it. Regression for stargate_tokens NFT 15613:
+        // current v=3 with 2 retained versions (v1, v2) all at blocks >= target.
+        val writes = slot<List<WriteModel<Document>>>()
+        val doc =
+            Document("_id", "doc-1")
+                .append("version", 3)
+                .append("blockNumber", 400L)
+                .append(
+                    "_previousVersions",
+                    listOf(
+                        Document("version", 2).append("blockNumber", 350L),
+                        Document("version", 1).append("blockNumber", 300L),
+                    ),
+                )
+
+        every { mongoTemplate.getCollection("test_collection") } returns collection
+        every { collection.find(any<Bson>()) } returns findIterable
+        every { findIterable.iterator() } returns cursor
+        every { cursor.hasNext() } returnsMany listOf(true, false)
+        every { cursor.next() } returns doc
+        every { collection.bulkWrite(capture(writes), any<BulkWriteOptions>()) } returns
+            mockBulkWriteResult(modifiedCount = 0, deletedCount = 1)
+
+        InlineVersionService.rollback("test_collection", 250L, mongoTemplate, initialVersion = 1)
+
+        expectThat(writes.captured).hasSize(1)
+        assertInstanceOf(DeleteOneModel::class.java, writes.captured.single())
+    }
+
+    @Test
+    fun `rollback throws when pre-target history was trimmed and retained versions are exhausted`() {
+        // Oldest retained version is v2, not v1 — earlier history was trimmed by the blockWindow
+        // / maxVersions cap. We cannot tell whether the doc existed before the target, so throw
+        // and let the operator decide. indexer-core's alignComponents aggregates this into its
+        // actionable "drop state for these indexers" error.
         val doc =
             Document("_id", "doc-1")
                 .append("version", 4)
@@ -149,7 +184,6 @@ internal class InlineVersionServiceTest {
                     listOf(
                         Document("version", 3).append("blockNumber", 390L),
                         Document("version", 2).append("blockNumber", 380L),
-                        Document("version", 1).append("blockNumber", 370L),
                     ),
                 )
 
