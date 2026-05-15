@@ -11,7 +11,7 @@ class TransactionTest {
 
     @BeforeEach
     fun `perform healthcheck`() {
-        VeWorldAPIClient.performIndexerHealthCheck("TransactionIndexer")
+        VeWorldAPIClient.waitForFullSync()
     }
 
     @Test

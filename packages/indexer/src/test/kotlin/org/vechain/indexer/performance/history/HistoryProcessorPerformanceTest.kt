@@ -3,6 +3,7 @@ package org.vechain.indexer.performance.history
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.vechain.indexer.Indexer
@@ -18,7 +19,7 @@ import org.vechain.indexer.history.HistoryService
 import org.vechain.indexer.nft.NftBlacklistClient
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
-import org.vechain.indexer.validator.ValidatorDelegationService
+import org.vechain.indexer.validator.ValidatorRepository
 
 @Disabled("Performance test - run explicitly with --tests when needed")
 @ActiveProfiles("history")
@@ -32,10 +33,12 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var blacklistClient: NftBlacklistClient
     @Autowired lateinit var delegationLifecycleHistoryService: DelegationLifecycleHistoryService
-    @Autowired lateinit var validatorDelegationService: ValidatorDelegationService
+    @Autowired lateinit var validatorRepository: ValidatorRepository
 
     @Autowired lateinit var checkpointService: CheckpointService
     @Autowired lateinit var processorMetrics: ProcessorMetrics
+
+    @Autowired @Qualifier("validatorIndexer") lateinit var validatorIndexer: Indexer
 
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
@@ -90,7 +93,8 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
                         mongoTemplate,
                         blacklistClient,
                         delegationLifecycleHistoryService,
-                        validatorDelegationService,
+                        validatorRepository,
+                        0L,
                         profiler,
                     )
                 ProfiledHistoryProcessor(
@@ -114,10 +118,10 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
             .historyIndexer(
                 thorClient = thorClient,
                 processor = processor,
+                validatorIndexer = validatorIndexer,
                 startBlock = startBlock,
                 syncLoggerInterval = 100L,
                 bEProperties = businessEventProperties,
-                getAllValidatorsAddress = "0xvalidators",
             )
     }
 

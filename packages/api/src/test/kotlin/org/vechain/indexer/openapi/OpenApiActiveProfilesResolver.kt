@@ -15,6 +15,7 @@ class OpenApiActiveProfilesResolver : ActiveProfilesResolver {
                     "accounts",
                     "b3tr",
                     "contracts",
+                    "delegation",
                     "explorer",
                     "history",
                     "nfts",
@@ -23,6 +24,7 @@ class OpenApiActiveProfilesResolver : ActiveProfilesResolver {
                     "transactions",
                     "transfers",
                     "validator",
+                    "validator-reward",
                     "vevote",
                 )
                 .sorted()

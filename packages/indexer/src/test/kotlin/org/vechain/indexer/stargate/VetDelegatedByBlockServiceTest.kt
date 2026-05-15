@@ -359,6 +359,53 @@ class VetDelegatedByBlockServiceTest {
     }
 
     @Test
+    fun `rollover after skipped blocks emits record whose id matches its blockNumber`() {
+        // Reproduces the bug where `id` defaulted at construction-time was never refreshed by
+        // `advanceCache`, causing a rollover emitted from the cached `latest` to upsert into the
+        // original record's _id and overwrite it.
+        val latestRecord =
+            VetDelegatedByBlock(
+                "block-100",
+                100,
+                1735560000, // Dec 30 2024 @ 12:00 UTC
+                total = BigInteger("10"),
+                byLevel = mapOf(TokenLevel.Strength to BigInteger("10")),
+                hourOfDay = 12,
+                dayOfMonth = 30,
+                weekOfYear = 53,
+                month = 12,
+                year = 2024,
+                timeFrames = emptyList(),
+                blockTotal = BigInteger.ZERO,
+                hourTotal = BigInteger.ZERO,
+                dayTotal = BigInteger.ZERO,
+                weekTotal = BigInteger.ZERO,
+                monthTotal = BigInteger.ZERO,
+                yearTotal = BigInteger.ZERO,
+            )
+        expectThat(latestRecord.id).isEqualTo("100")
+        every { repository.getLatestRecord() } returns latestRecord
+        mockActiveAggregation(TokenLevel.Strength to "10")
+
+        // Five skipped blocks within the same hour → cache advances each time.
+        service.processBlock(mockBlock(101, 1735560010))
+        service.processBlock(mockBlock(102, 1735560020))
+        service.processBlock(mockBlock(103, 1735560030))
+        service.processBlock(mockBlock(104, 1735560040))
+        service.processBlock(mockBlock(105, 1735560050))
+
+        // Block 106 crosses into hour 13 → HOUR rollover.
+        val result = service.processBlock(mockBlock(106, 1735563600))
+
+        expectThat(result).hasSize(2)
+        expectThat(result[0].timeFrames).contains(TimeFrame.HOUR)
+        expectThat(result[0].blockNumber).isEqualTo(105)
+        expectThat(result[0].id).isEqualTo("105")
+        expectThat(result[1].blockNumber).isEqualTo(106)
+        expectThat(result[1].id).isEqualTo("106")
+    }
+
+    @Test
     fun `cache falls back to DB when parentID does not match`() {
         val latestRecord =
             VetDelegatedByBlock(

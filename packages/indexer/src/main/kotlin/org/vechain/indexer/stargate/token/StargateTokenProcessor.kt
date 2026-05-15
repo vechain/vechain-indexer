@@ -33,11 +33,14 @@ open class StargateTokenProcessor(
             )
         }
 
-        val (updated, existing) =
-            service.processBlock(entry.block, entry.callResults, entry.events())
+        val (updated, existing) = service.processBlock(entry.block, entry.events())
 
         if (updated.isNotEmpty() || existing.isNotEmpty()) {
             service.save(updated, existing)
         }
+    }
+
+    override fun resetProcessingState() {
+        service.invalidateCache()
     }
 }

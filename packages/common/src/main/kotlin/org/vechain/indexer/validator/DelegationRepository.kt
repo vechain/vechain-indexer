@@ -8,42 +8,78 @@ import org.springframework.data.mongodb.repository.Query
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.BaseIndexedRepository
 
-@Profile("validator", "validator-stats", "delegation", "stargate", "vet-delegated-by-block")
+/** Query surface for [Delegation] documents. */
+@Profile("delegation")
 @Repository
 interface DelegationRepository : BaseIndexedRepository<Delegation, String> {
-    @Query("{ 'validatorNextCycle': { '\$in': ?0 }, 'status': { '\$in': ?1 } }")
-    fun findByValidatorNextCycleInAndStatusIn(
-        blockNumber: List<Long>,
-        statuses: List<Status>,
+
+    @Query("{ 'transitionAtBlock': ?0, 'status': { '\$in': ?1 } }")
+    fun findByTransitionAtBlockAndStatusIn(
+        blockNumber: Long,
+        statuses: List<DelegationStatus>,
     ): List<Delegation>
+
+    @Query("{ 'transitionAtBlock': null, 'status': { '\$in': ?0 } }")
+    fun findByTransitionAtBlockIsNullAndStatusIn(statuses: List<DelegationStatus>): List<Delegation>
 
     @Query("{ 'validator': { '\$in': ?0 } }")
     fun findByValidatorIn(validators: List<String>): List<Delegation>
 
-    @Query(value = "{ 'status': { '\$ne': ?0 } }", fields = "{ 'validator' : 1, '_id' : 0 }")
-    fun findValidatorIdsByStatusNot(status: Status): List<String>
+    @Query("{ 'validator': { '\$in': ?0 }, 'status': { '\$in': ?1 } }")
+    fun findByValidatorInAndStatusIn(
+        validators: List<String>,
+        statuses: List<DelegationStatus>,
+    ): List<Delegation>
 
     @Query("{ 'validator': ?0, 'status': { '\$in': ?1 } }")
     fun findByValidatorAndStatusIn(
         validator: String,
-        statuses: List<Status>,
+        statuses: List<DelegationStatus>,
         pageable: Pageable,
     ): Slice<Delegation>
 
     @Query("{ 'validator': ?0, 'status': { '\$in': ?1 } }")
-    fun findByValidatorAndStatusIn(validator: String, statuses: List<Status>): List<Delegation>
+    fun findByValidatorAndStatusIn(
+        validator: String,
+        statuses: List<DelegationStatus>,
+    ): List<Delegation>
 
     @Query("{ 'validator': ?0 }")
     fun findByValidator(validator: String, pageable: Pageable): Slice<Delegation>
 
+    @Query("{ 'validator': ?0, 'tokenId': ?1 }")
+    fun findByValidatorAndTokenId(
+        validator: String,
+        tokenId: String,
+        pageable: Pageable,
+    ): Slice<Delegation>
+
+    @Query("{ 'validator': ?0, 'tokenId': ?1, 'status': { '\$in': ?2 } }")
+    fun findByValidatorAndTokenIdAndStatusIn(
+        validator: String,
+        tokenId: String,
+        statuses: List<DelegationStatus>,
+        pageable: Pageable,
+    ): Slice<Delegation>
+
     @Query("{ 'tokenId': ?0 }")
     fun findByTokenId(tokenId: String, pageable: Pageable): Slice<Delegation>
+
+    @Query("{ 'tokenId': ?0, 'status': { '\$in': ?1 } }")
+    fun findByTokenIdAndStatusIn(
+        tokenId: String,
+        statuses: List<DelegationStatus>,
+        pageable: Pageable,
+    ): Slice<Delegation>
 
     @Query("{ 'tokenId': { '\$in': ?0 } }")
     fun findByTokenIdIn(tokenIds: List<String>): List<Delegation>
 
     @Query("{ 'status': { '\$in': ?0 } }")
-    fun findByStatusIn(statuses: Collection<Status>, pageable: Pageable): Slice<Delegation>
+    fun findByStatusIn(
+        statuses: Collection<DelegationStatus>,
+        pageable: Pageable,
+    ): Slice<Delegation>
 
     @Aggregation(
         pipeline =
@@ -68,8 +104,8 @@ interface DelegationRepository : BaseIndexedRepository<Delegation, String> {
     ): List<DelegationCountAggregateResult>
 
     /**
-     * Aggregate active delegations (ACTIVE + EXITING) by token level. Returns total staked amount
-     * and NFT count per level.
+     * Active (ACTIVE + EXITING) delegations grouped by NFT level. Powers chain-wide level mix reads
+     * at the API layer.
      */
     @Aggregation(
         pipeline =
@@ -81,6 +117,11 @@ interface DelegationRepository : BaseIndexedRepository<Delegation, String> {
     )
     fun aggregateActiveDelegationsByLevel(): List<DelegationLevelAggregateResult>
 
+    /**
+     * Active delegations grouped by (validator, level). Replaces V1's
+     * `aggregateActiveDelegationsByValidatorAndLevel`, which V1 used to feed `nftYields` on the
+     * validator document. In V2 the API joins this with `Validator` at read time.
+     */
     @Aggregation(
         pipeline =
             [
@@ -90,7 +131,7 @@ interface DelegationRepository : BaseIndexedRepository<Delegation, String> {
             ]
     )
     fun aggregateActiveDelegationsByValidatorAndLevel():
-        List<ValidatorDelegationLevelAggregateResult>
+        List<DelegationValidatorLevelAggregateResult>
 }
 
 data class DelegationStatusCount(val status: String, val count: Long)
@@ -103,7 +144,7 @@ data class DelegationLevelAggregateResult(
     val nftCount: Long,
 )
 
-data class ValidatorDelegationLevelAggregateResult(
+data class DelegationValidatorLevelAggregateResult(
     val validator: String,
     val level: String,
     val nftCount: Long,

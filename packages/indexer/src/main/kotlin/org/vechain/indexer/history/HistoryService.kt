@@ -1,6 +1,7 @@
 package org.vechain.indexer.history
 
 import org.apache.commons.codec.digest.DigestUtils
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
@@ -14,14 +15,15 @@ import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.nft.NftBlacklistClient
 import org.vechain.indexer.thor.model.Block
-import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.EventUtils
 import org.vechain.indexer.utils.ParamUtils.getAsBoolean
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 import org.vechain.indexer.utils.ParamUtils.getAsLong
 import org.vechain.indexer.utils.ParamUtils.getAsString
-import org.vechain.indexer.validator.ValidatorDelegationService
+import org.vechain.indexer.validator.Status
+import org.vechain.indexer.validator.ValidatorRepository
+import org.vechain.indexer.validator.ValidatorSnapshot
 
 @Profile("history")
 @Service
@@ -30,25 +32,33 @@ open class HistoryService(
     private val mongoTemplate: MongoTemplate,
     private val blacklistClient: NftBlacklistClient,
     private val delegationLifecycleHistoryService: DelegationLifecycleHistoryService,
-    private val validatorDelegationService: ValidatorDelegationService,
+    private val validatorRepository: ValidatorRepository,
+    @param:Value("\${indexer.start-block.validator}") private val validatorStartBlock: Long,
 ) {
     /**
      * Normalizes a block into history rows by combining recognised event-derived history,
      * delegation lifecycle rows, and fallback `UNKNOWN_TX` rows for transactions that did not emit
      * a recognised history event.
+     *
+     * Delegation lifecycle processing only runs once the validator indexer's start block is reached
+     * — before that, the staker built-in is not online so there is no validator state to read and
+     * no delegations can exist.
      */
     open suspend fun processBlock(
         events: List<IndexedEvent>,
         block: Block,
-        callResponses: List<InspectionResult>,
     ): List<IndexedHistoryEvent> {
         val indexedHistoryEvents = mutableListOf<IndexedHistoryEvent>()
         val transactionIdsWithHistoryEvents = mutableSetOf<String>()
-        val validatorSnapshots = validatorDelegationService.decodeValidatorSnapshots(callResponses)
+        val processDelegationLifecycle = block.number >= validatorStartBlock
+        val validatorSnapshots: Map<String, ValidatorSnapshot> =
+            if (processDelegationLifecycle) loadValidatorSnapshots() else emptyMap()
 
-        indexedHistoryEvents.addAll(
-            delegationLifecycleHistoryService.onBlockStart(block, validatorSnapshots)
-        )
+        if (processDelegationLifecycle) {
+            indexedHistoryEvents.addAll(
+                delegationLifecycleHistoryService.onBlockStart(block, validatorSnapshots)
+            )
+        }
 
         for ((index, event) in events.withIndex()) {
             val eventName = EventUtils.determineEventType(event.params)
@@ -63,25 +73,39 @@ open class HistoryService(
                 continue
             }
 
-            val lifecycleResult =
-                delegationLifecycleHistoryService.onEvent(
-                    event = event,
-                    historyEvent = eventName?.let { buildHistoryEvent(event, it) },
-                    block = block,
-                    validatorSnapshots = validatorSnapshots,
-                    order = 1_000 + index,
-                )
+            val historyEvent = eventName?.let { buildHistoryEvent(event, it) }
 
-            lifecycleResult.historyEvent?.let {
-                indexedHistoryEvents.add(it)
-                transactionIdsWithHistoryEvents.add(event.txId)
+            if (processDelegationLifecycle) {
+                val lifecycleResult =
+                    delegationLifecycleHistoryService.onEvent(
+                        event = event,
+                        historyEvent = historyEvent,
+                        block = block,
+                        validatorSnapshots = validatorSnapshots,
+                        order = 1_000 + index,
+                    )
+
+                lifecycleResult.historyEvent?.let {
+                    indexedHistoryEvents.add(it)
+                    transactionIdsWithHistoryEvents.add(event.txId)
+                }
+                indexedHistoryEvents.addAll(lifecycleResult.additionalEvents)
+                lifecycleResult.additionalEvents.forEach {
+                    transactionIdsWithHistoryEvents.add(it.txId)
+                }
+            } else {
+                historyEvent?.let {
+                    indexedHistoryEvents.add(it)
+                    transactionIdsWithHistoryEvents.add(event.txId)
+                }
             }
-            indexedHistoryEvents.addAll(lifecycleResult.additionalEvents)
         }
 
-        indexedHistoryEvents.addAll(
-            delegationLifecycleHistoryService.onBlockEnd(block, validatorSnapshots)
-        )
+        if (processDelegationLifecycle) {
+            indexedHistoryEvents.addAll(
+                delegationLifecycleHistoryService.onBlockEnd(block, validatorSnapshots)
+            )
+        }
         // Keep account history complete even when a transaction has no mapped history event.
         indexedHistoryEvents.addAll(
             buildUnknownTransactionHistoryEvents(block, transactionIdsWithHistoryEvents)
@@ -89,6 +113,17 @@ open class HistoryService(
 
         return indexedHistoryEvents
     }
+
+    private fun loadValidatorSnapshots(): Map<String, ValidatorSnapshot> =
+        validatorRepository.findByStatusNot(Status.WITHDRAWN).associate { v ->
+            v.id to
+                ValidatorSnapshot(
+                    validatorId = v.id,
+                    stakingPeriodLength = v.cyclePeriodLength ?: 0L,
+                    startBlock = v.startBlock ?: 0L,
+                    exitBlock = v.exitBlock ?: 0L,
+                )
+        }
 
     @Transactional(rollbackFor = [Exception::class])
     open fun save(events: List<IndexedHistoryEvent>) {

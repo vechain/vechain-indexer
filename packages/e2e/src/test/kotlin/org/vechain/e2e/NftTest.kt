@@ -12,7 +12,7 @@ class NftTest {
 
     @BeforeEach
     fun `perform healthcheck`() {
-        VeWorldAPIClient.performIndexerHealthCheck("NftIndexer")
+        VeWorldAPIClient.waitForFullSync()
     }
 
     @Test

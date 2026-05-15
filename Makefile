@@ -22,8 +22,10 @@ update-locks: #@ Refresh Gradle lockfiles (root + all subprojects) after a depen
 build: format build-indexer build-api #@ Build the application with Gradle.
 	echo "Build completed."
 .PHONY:build
-build-indexer: #@ Build the application with Gradle.
+build-indexer: build-thor-scheduler #@ Build the application with Gradle.
 	./gradlew :package:indexer:build -x test
+build-thor-scheduler: #@ Build the Go thor-scheduler co-process used by the ValidatorV2 indexer.
+	$(MAKE) -C tools/thor-scheduler build
 build-api: #@ Build the application with Gradle.
 	./gradlew :package:api:build -x test
 

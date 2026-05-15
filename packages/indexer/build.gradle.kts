@@ -1,3 +1,4 @@
+import org.gradle.jvm.tasks.Jar
 import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 dependencies {

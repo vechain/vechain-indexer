@@ -163,6 +163,7 @@ open class VetDelegatedByBlockService(
                 blockId = block.id,
                 blockNumber = block.number,
                 blockTimestamp = block.timestamp,
+                id = block.number.toString(),
             )
     }
 
