@@ -24,6 +24,7 @@ class OpenApiActiveProfilesResolver : ActiveProfilesResolver {
                     "transactions",
                     "transfers",
                     "validator",
+                    "validator-reward",
                     "vevote",
                 )
                 .sorted()

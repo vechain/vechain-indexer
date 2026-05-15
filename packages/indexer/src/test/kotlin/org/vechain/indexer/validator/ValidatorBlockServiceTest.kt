@@ -22,7 +22,7 @@ import org.vechain.indexer.thor.model.Transaction
 @ExtendWith(MockKExtension::class)
 class ValidatorBlockServiceTest {
     private lateinit var repository: ValidatorBlockRepository
-    private lateinit var validatorRepository: ValidatorV2Repository
+    private lateinit var validatorRepository: ValidatorRepository
     private lateinit var thorClient: ThorClient
     private lateinit var service: ValidatorBlockService
 
@@ -73,13 +73,13 @@ class ValidatorBlockServiceTest {
         delegatorStake: BigDecimal = BigDecimal.ZERO,
         lastMissed: Long? = null,
         lastProposed: Long? = null,
-    ): ValidatorV2 =
-        ValidatorV2(
+    ): Validator =
+        Validator(
             id = id,
             blockId = "blk",
             blockNumber = 0,
             blockTimestamp = 0,
-            status = StatusV2.ACTIVE,
+            status = Status.ACTIVE,
             delegatorVetStaked = delegatorStake,
             lastMissedBlockNumber = lastMissed,
             lastProposedBlockNumber = lastProposed,

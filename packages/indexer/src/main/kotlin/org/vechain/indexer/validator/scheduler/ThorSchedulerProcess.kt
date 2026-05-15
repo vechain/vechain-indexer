@@ -25,10 +25,10 @@ import org.springframework.stereotype.Component
  * requests so we can correlate by line position; if we ever need concurrent requests we can switch
  * to id-keyed correlation (the protocol already echoes ids).
  */
-@Profile("validator-v2", "validator")
+@Profile("validator", "delegation", "validator-reward", "token-reward", "vet-delegated-by-block")
 @Component
 class ThorSchedulerProcess(
-    @param:Value("\${validator-v2.scheduler-binary:./tools/thor-scheduler/thor-scheduler}")
+    @param:Value("\${validator.scheduler-binary:./tools/thor-scheduler/thor-scheduler}")
     private val binaryPath: String
 ) : InitializingBean, DisposableBean {
 

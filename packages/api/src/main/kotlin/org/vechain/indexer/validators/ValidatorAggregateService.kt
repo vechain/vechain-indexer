@@ -7,21 +7,21 @@ import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.validator.Delegation
 import org.vechain.indexer.validator.DelegationRepository
 import org.vechain.indexer.validator.DelegationStatus
-import org.vechain.indexer.validator.StatusV2
-import org.vechain.indexer.validator.ValidatorV2
-import org.vechain.indexer.validator.ValidatorV2Repository
+import org.vechain.indexer.validator.Status
+import org.vechain.indexer.validator.Validator
+import org.vechain.indexer.validator.ValidatorRepository
 
 /**
  * Per-request aggregates that feed [ValidatorV2Response.from]. Built once per HTTP request and
  * shared across every row, so list endpoints don't recompute the chain-wide sums per validator.
  * - [totalWeight]: chain-wide sum of `validatorLockedWeight` across ACTIVE validators. Drives
  *   `blockProbability` and the current-cycle yield formulas.
- * - [totalNextPeriodWeight]: chain-wide sum of `ValidatorV2.totalNextPeriodWeight` across ACTIVE
+ * - [totalNextPeriodWeight]: chain-wide sum of `Validator.totalNextPeriodWeight` across ACTIVE
  *   validators. Drives `blockProbabilityNextCycle` and `nftYieldsIfDelegatedNextCycle`.
  * - [delegationsByValidator]: every relevant delegation (status QUEUED / ACTIVE / EXITING) grouped
  *   by validator id, for the per-validator current-cycle and next-cycle delegation calculations.
  */
-data class ValidatorV2Aggregates(
+data class ValidatorAggregates(
     val totalWeight: BigDecimal,
     val totalNextPeriodWeight: BigDecimal,
     val delegationsByValidator: Map<String, List<Delegation>>,
@@ -76,11 +76,11 @@ data class ValidatorV2Aggregates(
     }
 }
 
-/** Builds [ValidatorV2Aggregates] for one request. Active when the V2 validator profile is on. */
-@Profile("validator-v2", "validator")
+/** Builds [ValidatorAggregates] for one request. Active when the V2 validator profile is on. */
+@Profile("validator")
 @Service
-open class ValidatorV2AggregateService(
-    private val validatorRepository: ValidatorV2Repository,
+open class ValidatorAggregateService(
+    private val validatorRepository: ValidatorRepository,
     private val delegationRepository: DelegationRepository,
 ) {
     /**
@@ -89,11 +89,11 @@ open class ValidatorV2AggregateService(
      * 1. all ACTIVE validators (for the two chain-wide weight sums)
      * 2. relevant delegations for the validators we're about to render
      *
-     * The active-validator query is the same one [ValidatorV2Service] uses for its in-memory cache;
+     * The active-validator query is the same one [ValidatorService] uses for its in-memory cache;
      * it's small (~100 rows) and easily cacheable at the API layer if it ever shows up on profiles.
      */
-    open fun build(validatorIdsOnPage: List<String>): ValidatorV2Aggregates {
-        val activeValidators = validatorRepository.findByStatus(StatusV2.ACTIVE)
+    open fun build(validatorIdsOnPage: List<String>): ValidatorAggregates {
+        val activeValidators = validatorRepository.findByStatus(Status.ACTIVE)
         val totalWeight = sumWeight(activeValidators) { it.validatorLockedWeight }
         val totalNextPeriodWeight = sumWeight(activeValidators) { it.totalNextPeriodWeight }
 
@@ -109,7 +109,7 @@ open class ValidatorV2AggregateService(
                     ),
                 )
 
-        return ValidatorV2Aggregates(
+        return ValidatorAggregates(
             totalWeight = totalWeight,
             totalNextPeriodWeight = totalNextPeriodWeight,
             delegationsByValidator = delegations.groupBy { it.validator },
@@ -117,8 +117,8 @@ open class ValidatorV2AggregateService(
     }
 
     private fun sumWeight(
-        validators: List<ValidatorV2>,
-        selector: (ValidatorV2) -> BigDecimal?,
+        validators: List<Validator>,
+        selector: (Validator) -> BigDecimal?,
     ): BigDecimal =
         validators.fold(BigDecimal.ZERO) { acc, v -> acc + (selector(v) ?: BigDecimal.ZERO) }
 }

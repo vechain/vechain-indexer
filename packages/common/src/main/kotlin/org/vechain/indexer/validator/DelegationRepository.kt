@@ -120,7 +120,7 @@ interface DelegationRepository : BaseIndexedRepository<Delegation, String> {
     /**
      * Active delegations grouped by (validator, level). Replaces V1's
      * `aggregateActiveDelegationsByValidatorAndLevel`, which V1 used to feed `nftYields` on the
-     * validator document. In V2 the API joins this with `ValidatorV2` at read time.
+     * validator document. In V2 the API joins this with `Validator` at read time.
      */
     @Aggregation(
         pipeline =

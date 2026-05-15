@@ -2,7 +2,7 @@ package org.vechain.indexer.validator
 
 /**
  * Lifecycle status of a [Delegation]. Deliberately separate from V1's [Status] enum so V2 is
- * isolated from V1, and from [StatusV2] which models validators (not delegations).
+ * isolated from V1, and from [Status] which models validators (not delegations).
  *
  * Transitions:
  * - On [DelegationService] observing `DelegationInitiated` → [QUEUED]

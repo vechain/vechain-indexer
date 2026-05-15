@@ -28,6 +28,7 @@ import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validators.AllValidatorsMissedBlocksResponse
 import org.vechain.indexer.validators.MissedBlocksTimeframe
+import org.vechain.indexer.validators.ValidatorResponse
 import org.vechain.indexer.validators.ValidatorService
 
 @Profile("validator")
@@ -41,11 +42,12 @@ open class ValidatorController(private val service: ValidatorService) {
         summary = "Get validators with optional filters (deprecated — use /api/v2/validators)",
         description =
             """
-            **Deprecated:** Replaced by `GET /api/v2/validators`. The V2 endpoint is backed by
-            `ValidatorV2`, which calls the builtin Staker directly (no deployed aggregator) and
-            exposes the same stake/queue/period fields plus the better PoS-schedule liveness
-            counters. Price-/yield-dependent fields (`*Tvl`, `*Yield`, `nftYields*`) are not yet
-            wired up on V2 — see `ValidatorV2Response` for the formulas required.
+            **Deprecated:** Replaced by `GET /api/v2/validators`. This endpoint now reads from the
+            V2 indexer (`validators_v2`) and reshapes the V2 document into the V1 wire format.
+            `online` and `totalRewards` are returned as `null` (not populated on V2). `offlineBlocks`
+            is sourced from V2's PoS-schedule misses and is numerically different from the V1
+            transient `OfflineBlock` pointer. `sortBy=nft:<Level>` has no V2 equivalent and silently
+            falls back to the default sort.
 
             This endpoint retrieves validator stats.
 
@@ -115,7 +117,7 @@ open class ValidatorController(private val service: ValidatorService) {
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
         @RequestParam(required = false, defaultValue = "validatorTvl") sortBy: String,
-    ): PaginatedResponse<Validator> {
+    ): PaginatedResponse<ValidatorResponse> {
         val sortField = SortFieldUtils.getSortFieldValidator(sortBy)
         val pageable = toPageable(page, size, direction, sortField)
 
@@ -145,7 +147,7 @@ open class ValidatorController(private val service: ValidatorService) {
         required = true,
     )
     @CommonApiResponses
-    open fun getValidatorById(@PathVariable @ValidAddress validatorId: Address): Validator {
+    open fun getValidatorById(@PathVariable @ValidAddress validatorId: Address): ValidatorResponse {
         val normalised = HexUtils.normalise(validatorId.value)
         return service.getValidatorById(normalised)
             ?: throw ResourceNotFoundException("Validator not found for id $normalised")

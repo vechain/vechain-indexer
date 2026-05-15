@@ -156,11 +156,6 @@ object IndexerNames {
         const val COLLECTION = "validators"
     }
 
-    object VALIDATOR_V2 {
-        const val NAME = "ValidatorIndexerV2"
-        const val COLLECTION = "validators_v2"
-    }
-
     object DELEGATION {
         const val NAME = "DelegationIndexer"
         const val COLLECTION = "delegations"

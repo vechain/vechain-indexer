@@ -24,15 +24,15 @@ import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.validator.Delegation
 import org.vechain.indexer.validator.DelegationRepository
 import org.vechain.indexer.validator.DelegationStatus
-import org.vechain.indexer.validator.StatusV2
-import org.vechain.indexer.validator.ValidatorV2
-import org.vechain.indexer.validator.ValidatorV2Repository
+import org.vechain.indexer.validator.Status
+import org.vechain.indexer.validator.Validator
+import org.vechain.indexer.validator.ValidatorRepository
 
 class TokenRewardServiceTest {
     private val repository = mockk<TokenRewardRepository>(relaxed = true)
     private val mongoTemplate = mockk<MongoTemplate>(relaxed = true)
     private val inlineVersioningProperties = mockk<InlineVersioningProperties>()
-    private val validatorV2Repository = mockk<ValidatorV2Repository>(relaxed = true)
+    private val validatorV2Repository = mockk<ValidatorRepository>(relaxed = true)
     private val delegationV2Repository = mockk<DelegationRepository>(relaxed = true)
     private val thorClient = mockk<ThorClient>(relaxed = true)
 
@@ -112,13 +112,13 @@ class TokenRewardServiceTest {
         startBlock: Long = 0,
         completed: Long = 0,
         delegatorStake: BigDecimal = BigDecimal.ONE,
-    ): ValidatorV2 =
-        ValidatorV2(
+    ): Validator =
+        Validator(
             id = address,
             blockId = "0xBLOCK",
             blockNumber = 100,
             blockTimestamp = 0,
-            status = StatusV2.ACTIVE,
+            status = Status.ACTIVE,
             cyclePeriodLength = cycleLength,
             startBlock = startBlock,
             completedPeriods = completed,

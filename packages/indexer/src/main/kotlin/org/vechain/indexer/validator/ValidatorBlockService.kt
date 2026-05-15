@@ -23,7 +23,7 @@ import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
 /**
  * Per-block validator reward ledger.
  *
- * Reads everything it needs from `ValidatorV2` (signer's delegation flag, missed-slot attribution,
+ * Reads everything it needs from `Validator` (signer's delegation flag, missed-slot attribution,
  * online recovery) plus a single builtin `Energy.totalSupply()` chain call. No aggregator, no
  * per-validator chain fan-out — the missed-slot detection that V1 did by iterating every validator
  * per block is replaced by a targeted query on V2's already-derived `lastMissedBlockNumber` /
@@ -36,7 +36,7 @@ import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
 @Service
 open class ValidatorBlockService(
     private val repository: ValidatorBlockRepository,
-    private val validatorRepository: ValidatorV2Repository,
+    private val validatorRepository: ValidatorRepository,
     private val thorClient: ThorClient,
 ) {
     private val hourlyCache = ConcurrentHashMap<String, Long>()
@@ -90,7 +90,7 @@ open class ValidatorBlockService(
 
     /**
      * Builds the VALIDATED record for [block.signer]. Returns `null` when the signer isn't a
-     * tracked validator yet (e.g. cold start before `ValidatorV2` has caught up).
+     * tracked validator yet (e.g. cold start before `Validator` has caught up).
      */
     suspend fun getValidationInfo(block: Block, blockTotalSupply: BigInteger): ValidatorBlock? {
         val signer = block.signer
@@ -151,7 +151,7 @@ open class ValidatorBlockService(
 
     /**
      * Validators whose `lastMissedBlockNumber == block.number` AND aren't already tracked as
-     * offline. V2's `ValidatorV2Service.updateLiveness` updates `lastMissedBlockNumber` for every
+     * offline. V2's `ValidatorService.updateLiveness` updates `lastMissedBlockNumber` for every
      * missed slot, so this query returns the set of just-missed validators directly — no full
      * validator-list iteration needed.
      */

@@ -16,10 +16,10 @@ import org.vechain.indexer.stargate.token.TokenLevel
  * but is built from events alone — no chain reads, no aggregator dependency.
  *
  * ### Differences from V1 [Delegation]
- * - Drops `validatorCycleLength` — always derivable from `ValidatorV2.stakingPeriodLength`.
+ * - Drops `validatorCycleLength` — always derivable from `Validator.stakingPeriodLength`.
  * - Renames `validatorNextCycle` → [transitionAtBlock]. Same semantics (block at which the next
- *   scheduled status flip is due) but the value is computed from `ValidatorV2` reads, not from
- *   chain inspections. `null` means "no scheduled transition" (either zero-cycle delegation whose
+ *   scheduled status flip is due) but the value is computed from `Validator` reads, not from chain
+ *   inspections. `null` means "no scheduled transition" (either zero-cycle delegation whose
  *   validator hasn't started, or a terminal [DelegationStatus.EXITED]).
  * - [status] uses [DelegationStatus] (no `NONE` — a delegation always has a definite state) to keep
  *   V2 isolated from V1's [Status] enum.

@@ -1,4 +1,6 @@
-@file:Suppress("DEPRECATION") // Mixes V1 (deprecated) and V1-only (block-rewards) helpers.
+@file:Suppress(
+    "DEPRECATION"
+) // V1 (deprecated) wire surface backed by V2 data + V1-only block-rewards helpers.
 
 package org.vechain.indexer.validators
 
@@ -34,6 +36,8 @@ open class ValidatorService(
     private val validatorBlockRepository: ValidatorBlockRepository,
     private val mongoTemplate: MongoTemplate,
     private val thorClient: ThorClient,
+    private val aggregateService: ValidatorAggregateService,
+    private val priceProvider: PriceProvider,
 ) {
 
     open fun getValidatorBlocks(
@@ -215,7 +219,7 @@ open class ValidatorService(
         endorser: String?,
         statuses: List<Status>?,
         pageable: Pageable,
-    ): Slice<Validator> {
+    ): Slice<ValidatorResponse> {
         val criteriaList = mutableListOf<Criteria>()
 
         validatorId?.let { criteriaList.add(Criteria.where("_id").`is`(it.lowercase())) }
@@ -236,12 +240,20 @@ open class ValidatorService(
         val results = mongoTemplate.find<Validator>(query)
         val hasNext = results.size > pageable.pageSize
         val page = if (hasNext) results.dropLast(1) else results
-        return SliceImpl(page, pageable, hasNext)
+
+        val aggregates = aggregateService.build(page.map { it.id })
+        val prices = priceProvider.get()
+        val mapped = page.map { ValidatorResponse.from(it, aggregates, prices) }
+
+        return SliceImpl(mapped, pageable, hasNext)
     }
 
-    open fun getValidatorById(validatorId: String): Validator? {
+    open fun getValidatorById(validatorId: String): ValidatorResponse? {
         val query = Query(Criteria.where("_id").`is`(validatorId.lowercase()))
-        return mongoTemplate.findOne<Validator>(query)
+        val doc = mongoTemplate.findOne<Validator>(query) ?: return null
+        val aggregates = aggregateService.build(listOf(doc.id))
+        val prices = priceProvider.get()
+        return ValidatorResponse.from(doc, aggregates, prices)
     }
 
     open fun getMissedBlocksPercentage(

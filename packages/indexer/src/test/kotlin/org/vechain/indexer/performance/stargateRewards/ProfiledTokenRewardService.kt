@@ -10,7 +10,7 @@ import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.DelegationRepository
-import org.vechain.indexer.validator.ValidatorV2Repository
+import org.vechain.indexer.validator.ValidatorRepository
 
 /**
  * Thin profiling wrapper around [TokenRewardService] for the performance test harness. Captures
@@ -22,7 +22,7 @@ class ProfiledTokenRewardService(
     repository: TokenRewardRepository,
     mongoTemplate: MongoTemplate,
     inlineVersioningProperties: InlineVersioningProperties,
-    validatorV2Repository: ValidatorV2Repository,
+    validatorV2Repository: ValidatorRepository,
     delegationV2Repository: DelegationRepository,
     thorClient: ThorClient,
     private val profiler: DetailedProfiler,

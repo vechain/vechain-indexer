@@ -3,6 +3,7 @@ package org.vechain.indexer.validators
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import java.math.BigDecimal
 import java.math.BigInteger
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -30,12 +31,23 @@ class ValidatorServiceTest {
     private val validatorBlockRepository: ValidatorBlockRepository = mockk()
     private val mongoTemplate: MongoTemplate = mockk()
     private val thorClient: ThorClient = mockk()
+    private val aggregateService: ValidatorAggregateService = mockk {
+        every { build(any()) } returns
+            ValidatorAggregates(
+                totalWeight = BigDecimal.ZERO,
+                totalNextPeriodWeight = BigDecimal.ZERO,
+                delegationsByValidator = emptyMap(),
+            )
+    }
+    private val priceProvider: PriceProvider = mockk { every { get() } returns null }
 
     private val service =
         ValidatorService(
             validatorBlockRepository = validatorBlockRepository,
             mongoTemplate = mongoTemplate,
             thorClient = thorClient,
+            aggregateService = aggregateService,
+            priceProvider = priceProvider,
         )
 
     @Test

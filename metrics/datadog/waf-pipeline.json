@@ -367,6 +367,12 @@
         },
         {
           "filter": {
+            "query": "@httpRequest.uri:\"/api/v2/validators\""
+          },
+          "name": "/api/v2/validators"
+        },
+        {
+          "filter": {
             "query": "@httpRequest.uri:\"/api-docs\""
           },
           "name": "/api-docs"
@@ -610,6 +616,12 @@
             "query": "@httpRequest.uri:/api/v2/history/*"
           },
           "name": "/api/v2/history/{account}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v2/validators/*"
+          },
+          "name": "/api/v2/validators/{validatorId}"
         },
         {
           "filter": {

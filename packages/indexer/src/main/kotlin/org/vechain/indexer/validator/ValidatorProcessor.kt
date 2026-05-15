@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // V1 validator pipeline — superseded by ValidatorV2.
-
 package org.vechain.indexer.validator
 
 import org.springframework.context.annotation.Profile
@@ -11,7 +9,7 @@ import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 
-@Profile("validator", "validator-stats")
+@Profile("validator", "delegation", "validator-reward", "token-reward", "vet-delegated-by-block")
 @Component
 open class ValidatorProcessor(
     repository: ValidatorRepository,
@@ -36,11 +34,19 @@ open class ValidatorProcessor(
             )
         }
 
-        val (updated, existing) =
-            service.processBlock(entry.block, entry.events(), entry.callResults)
+        val (updated, archived) = service.processBlock(entry.block, entry.events())
 
         if (updated.isNotEmpty()) {
-            service.save(updated, existing)
+            service.save(updated, archived)
         }
+    }
+
+    /**
+     * Called by [org.vechain.indexer.BaseStatefulProcessor.rollback] on reorg. The service holds an
+     * in-memory mirror of the active-validator collection — drop it so the next block reloads from
+     * the (now-rolled-back) database state instead of carrying entries from the reorged branch.
+     */
+    override fun resetProcessingState() {
+        service.invalidateCache()
     }
 }

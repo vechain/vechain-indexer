@@ -18,9 +18,9 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 /**
  * V2 delegation indexer.
  *
- * Pure event-driven. Reads `ValidatorV2` from MongoDB (via [ValidatorV2Repository]) for cycle math
- * — no chain calls, no aggregator dependency, no `callDataClauses`. Ordering with the V2 validator
- * indexer is handled by `dependsOn(validatorV2Indexer)` in [DelegationConfig].
+ * Pure event-driven. Reads `Validator` from MongoDB (via [ValidatorRepository]) for cycle math — no
+ * chain calls, no aggregator dependency, no `callDataClauses`. Ordering with the V2 validator
+ * indexer is handled by `dependsOn(validatorIndexer)` in [DelegationConfig].
  *
  * Each block:
  * 1. Load three sets of candidates: (a) due-this-block, (b) zero-cycle (validator hasn't started
@@ -34,7 +34,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 @Service
 open class DelegationService(
     private val repository: DelegationRepository,
-    private val validatorRepository: ValidatorV2Repository,
+    private val validatorRepository: ValidatorRepository,
     private val mongoTemplate: MongoTemplate,
     private val inlineVersioningProperties: InlineVersioningProperties,
     @param:Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
@@ -180,7 +180,7 @@ open class DelegationService(
     private fun refreshZeroCycle(
         block: Block,
         working: MutableMap<String, Delegation>,
-        validators: Map<String, ValidatorV2>,
+        validators: Map<String, Validator>,
     ) {
         working.values.toList().forEach { d ->
             if (d.status != DelegationStatus.QUEUED) return@forEach
@@ -195,7 +195,7 @@ open class DelegationService(
     // ------------------------------ validator preload ------------------------------
 
     /**
-     * One batched read of every [ValidatorV2] this block might need to inspect: the validator of
+     * One batched read of every [Validator] this block might need to inspect: the validator of
      * every delegation we've loaded into `working`, plus any validator referenced by a
      * `DelegationInitiated` event (which can name a validator we don't yet have a delegation for).
      *
@@ -206,7 +206,7 @@ open class DelegationService(
     private fun preloadValidators(
         inWorking: Collection<Delegation>,
         events: List<IndexedEvent>,
-    ): Map<String, ValidatorV2> {
+    ): Map<String, Validator> {
         val ids: Set<String> = buildSet {
             inWorking.forEach { add(it.validator) }
             events.forEach { ev ->
@@ -227,7 +227,7 @@ open class DelegationService(
         working: MutableMap<String, Delegation>,
         tokenIdToId: MutableMap<String, String>,
         validatorToIds: MutableMap<String, MutableList<String>>,
-        validators: Map<String, ValidatorV2>,
+        validators: Map<String, Validator>,
     ) {
         if (!isRelevantEvent(ev)) return
         when (ev.eventType) {
@@ -266,7 +266,7 @@ open class DelegationService(
         working: MutableMap<String, Delegation>,
         tokenIdToId: MutableMap<String, String>,
         validatorToIds: MutableMap<String, MutableList<String>>,
-        validators: Map<String, ValidatorV2>,
+        validators: Map<String, Validator>,
     ) {
         val delegationId = ev.params.getAsString("delegationId") ?: return
         val tokenId = ev.params.getAsString("tokenId") ?: return
@@ -302,7 +302,7 @@ open class DelegationService(
         ev: IndexedEvent,
         block: Block,
         working: MutableMap<String, Delegation>,
-        validators: Map<String, ValidatorV2>,
+        validators: Map<String, Validator>,
     ) {
         val delegationId = ev.params.getAsString("delegationId") ?: return
         val current = working[delegationId] ?: return
@@ -349,7 +349,7 @@ open class DelegationService(
 
     /**
      * The validator just signalled exit. Move all its still-active delegations to EXITING. We
-     * estimate the transition block using the validator's next cycle boundary: if `ValidatorV2`
+     * estimate the transition block using the validator's next cycle boundary: if `Validator`
      * already carries an `exitBlock` from a prior walk, prefer that; otherwise the next-cycle
      * estimate will be reconciled at the next epoch walk.
      */
@@ -358,7 +358,7 @@ open class DelegationService(
         block: Block,
         working: MutableMap<String, Delegation>,
         validatorToIds: Map<String, List<String>>,
-        validators: Map<String, ValidatorV2>,
+        validators: Map<String, Validator>,
     ) {
         val validatorId = ev.params.getAsString("validator")?.lowercase() ?: return
         val ids = validatorToIds[validatorId] ?: return
@@ -412,14 +412,14 @@ open class DelegationService(
 
     /**
      * Next cycle-boundary block for [validatorId] after [blockNumber], computed from the persisted
-     * `ValidatorV2` row in the supplied [validators] map (preloaded once per block by
+     * `Validator` row in the supplied [validators] map (preloaded once per block by
      * [preloadValidators]). Returns `null` if the validator isn't known or hasn't been activated
      * (no `startBlock`/`cyclePeriodLength`).
      */
     private fun nextCycleStart(
         validatorId: String,
         blockNumber: Long,
-        validators: Map<String, ValidatorV2>,
+        validators: Map<String, Validator>,
     ): Long? {
         val v = validators[validatorId] ?: return null
         val start = v.startBlock ?: return null
@@ -432,8 +432,6 @@ open class DelegationService(
         return currentCycleStart + period
     }
 
-    private fun validatorExitBlock(
-        validatorId: String,
-        validators: Map<String, ValidatorV2>,
-    ): Long? = validators[validatorId]?.exitBlock
+    private fun validatorExitBlock(validatorId: String, validators: Map<String, Validator>): Long? =
+        validators[validatorId]?.exitBlock
 }

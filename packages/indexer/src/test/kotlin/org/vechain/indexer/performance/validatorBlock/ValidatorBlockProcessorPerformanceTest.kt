@@ -16,15 +16,15 @@ import org.vechain.indexer.stargate.rewards.TokenRewardService
 import org.vechain.indexer.validator.ValidatorBlockProcessor
 import org.vechain.indexer.validator.ValidatorBlockRepository
 import org.vechain.indexer.validator.ValidatorBlockService
-import org.vechain.indexer.validator.ValidatorV2Repository
+import org.vechain.indexer.validator.ValidatorRepository
 
 @Disabled("Performance test - run explicitly with --tests when needed")
-@ActiveProfiles("validator-reward", "validator-v2")
+@ActiveProfiles("validator-reward", "validator")
 class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var validatorBlockRepository: ValidatorBlockRepository
     @Autowired lateinit var validatorBlockService: ValidatorBlockService
-    @Autowired lateinit var validatorV2Repository: ValidatorV2Repository
+    @Autowired lateinit var validatorV2Repository: ValidatorRepository
     @Autowired lateinit var checkpointService: CheckpointService
     @Autowired lateinit var processorMetrics: ProcessorMetrics
 
@@ -98,7 +98,7 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
             }
 
         // Build the indexer directly (skipping ValidatorBlockConfig) so we don't need the
-        // `validatorV2Indexer` bean for ordering — perf test runs this indexer in isolation.
+        // `validatorIndexer` bean for ordering — perf test runs this indexer in isolation.
         return IndexerFactory()
             .name(IndexerNames.VALIDATOR_BLOCK.NAME)
             .thorClient(thorClient)

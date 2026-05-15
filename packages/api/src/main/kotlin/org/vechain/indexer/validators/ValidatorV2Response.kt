@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION") // Reuses V1 `Status` as a placeholder for ValidatorCalculator math.
-
 package org.vechain.indexer.validators
 
 import com.fasterxml.jackson.annotation.JsonInclude
@@ -7,12 +5,11 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import org.vechain.indexer.stargate.token.TokenLevelDecimalValues
 import org.vechain.indexer.validator.Status
-import org.vechain.indexer.validator.StatusV2
-import org.vechain.indexer.validator.ValidatorV2
+import org.vechain.indexer.validator.Validator
 import org.vechain.indexer.validator.logic.ValidatorCalculator
 
 /**
- * Public API representation of a [ValidatorV2] document. Matches the V1 wire surface so consumer
+ * Public API representation of a [Validator] document. Matches the V1 wire surface so consumer
  * migration is a swap of the endpoint, not of the field set.
  *
  * Fields fall into three groups:
@@ -31,7 +28,7 @@ data class ValidatorV2Response(
     val id: String,
     val endorser: String?,
     val beneficiary: String?,
-    val status: StatusV2?,
+    val status: Status?,
 
     // ---- Stake breakdown ----
     val vetStaked: BigDecimal?,
@@ -89,8 +86,8 @@ data class ValidatorV2Response(
 ) {
     companion object {
         fun from(
-            v: ValidatorV2,
-            aggregates: ValidatorV2Aggregates,
+            v: Validator,
+            aggregates: ValidatorAggregates,
             prices: PriceProvider.Prices?,
         ): ValidatorV2Response {
             // --- stake derivations ---
@@ -228,9 +225,9 @@ data class ValidatorV2Response(
                 // nftYieldsIfDelegatedNextCycle — uses MongoDB-derived next-cycle delegation stake
                 // (Stargate.getDelegatorsEffectiveStake is not needed).
                 if (
-                    v.status != StatusV2.EXITING &&
-                        v.status != StatusV2.EXITED &&
-                        v.status != StatusV2.WITHDRAWN &&
+                    v.status != Status.EXITING &&
+                        v.status != Status.EXITED &&
+                        v.status != Status.WITHDRAWN &&
                         nextPeriodWeight != null &&
                         totalNextPeriodWeight > BigDecimal.ZERO &&
                         startBlock != null &&

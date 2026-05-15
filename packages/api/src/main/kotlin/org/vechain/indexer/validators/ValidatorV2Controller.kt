@@ -30,17 +30,17 @@ import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
-import org.vechain.indexer.validator.StatusV2
-import org.vechain.indexer.validator.ValidatorV2
+import org.vechain.indexer.validator.Status
+import org.vechain.indexer.validator.Validator
 
-@Profile("validator-v2", "validator")
+@Profile("validator")
 @Tag(name = "Validator", description = "Query validator documents")
 @Validated
 @RestController
 @RequestMapping(VALIDATORS_PATH_V2)
 open class ValidatorV2Controller(
     private val mongoTemplate: MongoTemplate,
-    private val aggregateService: ValidatorV2AggregateService,
+    private val aggregateService: ValidatorAggregateService,
     private val priceProvider: PriceProvider,
 ) {
 
@@ -57,7 +57,7 @@ open class ValidatorV2Controller(
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "status",
-        schema = Schema(type = "array", implementation = StatusV2::class),
+        schema = Schema(type = "array", implementation = Status::class),
         description = "Filter by one or more validator statuses",
         required = false,
     )
@@ -65,18 +65,18 @@ open class ValidatorV2Controller(
     @CommonApiResponses
     @PaginationParameters
     open fun getValidators(
-        @RequestParam(required = false) status: List<StatusV2>?,
+        @RequestParam(required = false) status: List<Status>?,
         @RequestParam(required = false) endorser: String?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<ValidatorV2Response> {
-        val pageable = toPageable(page, size, direction, ValidatorV2::validatorVetStaked.name)
+        val pageable = toPageable(page, size, direction, Validator::validatorVetStaked.name)
 
         val criteria = mutableListOf<Criteria>()
-        status?.let { criteria += Criteria.where(ValidatorV2::status.name).`in`(it) }
+        status?.let { criteria += Criteria.where(Validator::status.name).`in`(it) }
         endorser?.let {
-            criteria += Criteria.where(ValidatorV2::endorser.name).`is`(HexUtils.normalise(it))
+            criteria += Criteria.where(Validator::endorser.name).`is`(HexUtils.normalise(it))
         }
 
         val query =
@@ -84,7 +84,7 @@ open class ValidatorV2Controller(
             else Query()
         query.with(pageable).limit(pageable.pageSize + 1)
 
-        val results = mongoTemplate.find<ValidatorV2>(query)
+        val results = mongoTemplate.find<Validator>(query)
         val hasNext = results.size > pageable.pageSize
         val pageContent = if (hasNext) results.dropLast(1) else results
 
@@ -113,7 +113,7 @@ open class ValidatorV2Controller(
     ): ValidatorV2Response {
         val normalised = HexUtils.normalise(validatorId.value)
         val doc =
-            mongoTemplate.findOne<ValidatorV2>(Query(Criteria.where("_id").`is`(normalised)))
+            mongoTemplate.findOne<Validator>(Query(Criteria.where("_id").`is`(normalised)))
                 ?: throw ResourceNotFoundException("Validator V2 not found for id $normalised")
 
         val aggregates = aggregateService.build(listOf(doc.id))

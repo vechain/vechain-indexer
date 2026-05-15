@@ -16,12 +16,12 @@ import org.vechain.indexer.thor.client.ThorClient
  * Wires the validator-block indexer.
  *
  * Reads validator state (signer's delegation flag, missed-slot attribution, online recovery) from
- * `ValidatorV2` — no V1 aggregator dependency. The single `callDataClause` here fetches the builtin
+ * `Validator` — no V1 aggregator dependency. The single `callDataClause` here fetches the builtin
  * Energy contract's `totalSupply()`, which is the only chain read this indexer needs (per-block
  * reward = `supply[N] − supply[N−1]`).
  *
- * Activating the `validator-reward` profile now requires `validator-v2` to be active as well — the
- * `dependsOn(validatorV2Indexer)` declaration enforces both ordering and bean availability.
+ * Activating the `validator-reward` profile now requires `validator` to be active as well — the
+ * `dependsOn(validatorIndexer)` declaration enforces both ordering and bean availability.
  */
 @Configuration
 @Profile("validator-reward")
@@ -30,7 +30,7 @@ open class ValidatorBlockConfig {
     open fun validatorBlockIndexer(
         thorClient: ThorClient,
         processor: ValidatorBlockProcessor,
-        @Qualifier("validatorV2Indexer") validatorV2Indexer: Indexer,
+        @Qualifier("validatorIndexer") validatorIndexer: Indexer,
         @Value("\${indexer.start-block.validator}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
     ): BlockIndexer =
@@ -42,6 +42,6 @@ open class ValidatorBlockConfig {
             .syncLoggerInterval(syncLoggerInterval)
             .callDataClauses(listOf(TokenRewardService.energyTotalSupplyClause()))
             .includeFullBlock()
-            .dependsOn(validatorV2Indexer)
+            .dependsOn(validatorIndexer)
             .build()
 }

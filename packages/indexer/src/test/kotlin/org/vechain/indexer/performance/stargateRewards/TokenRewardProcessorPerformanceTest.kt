@@ -18,17 +18,17 @@ import org.vechain.indexer.stargate.rewards.TokenRewardProcessor
 import org.vechain.indexer.stargate.rewards.TokenRewardService
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
 import org.vechain.indexer.validator.DelegationRepository
-import org.vechain.indexer.validator.ValidatorV2Repository
+import org.vechain.indexer.validator.ValidatorRepository
 
 @Disabled("Performance test - run explicitly with --tests when needed")
-@ActiveProfiles("token-reward", "delegation", "validator-v2")
+@ActiveProfiles("token-reward", "delegation", "validator")
 class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var tokenRewardRepository: TokenRewardRepository
     @Autowired lateinit var tokenRewardService: TokenRewardService
     @Autowired lateinit var inlineVersioningProperties: InlineVersioningProperties
     @Autowired lateinit var mongoTemplate: MongoTemplate
-    @Autowired lateinit var validatorV2Repository: ValidatorV2Repository
+    @Autowired lateinit var validatorV2Repository: ValidatorRepository
     @Autowired lateinit var delegationV2Repository: DelegationRepository
     @Autowired lateinit var checkpointService: CheckpointService
     @Autowired lateinit var processorMetrics: ProcessorMetrics

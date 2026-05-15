@@ -1,6 +1,5 @@
 package org.vechain.indexer.validator
 
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -9,30 +8,19 @@ import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.validator.domain.ValidatorDecoder.buildClauses
 
-@Deprecated(
-    message =
-        "V1 validator indexer wiring. Activate `ValidatorV2Config` (profile `validator-v2`) " +
-            "instead. V1 depends on a deployed `GetValidators` aggregator contract and on the " +
-            "network-specific PriceFeedOracle / Stargate addresses; V2 calls the builtin Staker " +
-            "directly and leaves price-driven fields to the API layer."
-)
 @Configuration
-@Profile("validator", "validator-stats")
+@Profile("validator", "delegation", "validator-reward", "token-reward", "vet-delegated-by-block")
 open class ValidatorConfig {
 
     @Bean
     open fun validatorIndexer(
         thorClient: ThorClient,
         processor: ValidatorProcessor,
-        @Qualifier("delegationIndexer") delegationIndexer: Indexer,
         @Value("\${indexer.start-block.validator}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLogInterval: Long,
         @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
         builtinStakerAddress: String,
-        @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
-        getAllValidatorsAddress: String,
     ): Indexer =
         IndexerFactory()
             .name(IndexerNames.VALIDATOR.NAME)
@@ -44,10 +32,15 @@ open class ValidatorConfig {
             .abis("abis/stargate")
             .abiContracts(listOf(builtinStakerAddress))
             .abiEventNames(
-                listOf("BeneficiarySet", "StakeDecreased", "StakeIncreased", "ValidationWithdrawn")
+                listOf(
+                    "BeneficiarySet",
+                    "StakeDecreased",
+                    "StakeIncreased",
+                    "ValidationQueued",
+                    "ValidationSignaledExit",
+                    "ValidationWithdrawn",
+                )
             )
-            .callDataClauses(buildClauses(getAllValidatorsAddress))
-            .dependsOn(delegationIndexer)
             .excludeVetTransfers()
             .build()
 }

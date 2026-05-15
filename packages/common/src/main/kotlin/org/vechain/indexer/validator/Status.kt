@@ -1,11 +1,12 @@
 package org.vechain.indexer.validator
 
 enum class Status {
-    NONE, // Initial state
-    QUEUED, // Waiting to be activated
-    ACTIVE, // Fully active and validating
-    EXITED, // Exited and funds withdrawn
-    EXITING // Pending exit (exit signaled, waiting in exit queue)
+    NONE,
+    QUEUED,
+    ACTIVE,
+    EXITING, // exit signaled, waiting for ExitBlock
+    EXITED, // past ExitBlock; cooldown or withdrawable derived from blockNumber
+    WITHDRAWN // ValidationWithdrawn observed; terminal
     ;
 
     companion object {

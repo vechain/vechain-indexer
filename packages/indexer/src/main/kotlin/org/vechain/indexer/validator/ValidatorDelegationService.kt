@@ -14,10 +14,10 @@ import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeValidators
-import org.vechain.indexer.validator.logic.ValidatorAssembler.listOf
+import org.vechain.indexer.validator.domain.ValidatorDecoder.listOf
 import org.vechain.indexer.validator.logic.ValidatorCalculator.calculateNextCycleStart
 
-@Profile("validator", "validator-stats", "delegation", "stargate", "stargate-token", "history")
+@Profile("delegation", "stargate", "stargate-token", "history")
 @Service
 class ValidatorDelegationService(
     private val thorClient: ThorClient,

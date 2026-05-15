@@ -26,6 +26,7 @@ class OpenApiActiveProfilesResolverTest {
                     "transactions",
                     "transfers",
                     "validator",
+                    "validator-reward",
                     "vevote",
                 )
         } finally {
