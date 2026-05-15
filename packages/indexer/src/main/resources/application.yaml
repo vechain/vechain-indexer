@@ -164,7 +164,7 @@ indexer:
     historic-proposals: ${INDEXER_STOP_BLOCK_HISTORIC_PROPOSALS:22948372}
   sync-log-interval: ${INDEXER_SYNC_LOG_INTERVAL:10}
   checkpoint:
-    save-interval-seconds: ${INDEXER_CHECKPOINT_SAVE_INTERVAL_SECONDS:60}
+    save-interval-seconds: ${INDEXER_CHECKPOINT_SAVE_INTERVAL_SECONDS:5}
   channel-batch-size: ${INDEXER_CHANNEL_BATCH_SIZE:10}
   catch-up-interval-seconds: ${INDEXER_CATCH_UP_INTERVAL_SECONDS:300}
   inline-versioning:

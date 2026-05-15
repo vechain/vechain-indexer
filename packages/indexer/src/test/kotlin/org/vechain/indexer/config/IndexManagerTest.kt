@@ -63,6 +63,7 @@ class IndexManagerTest {
         val manager =
             IndexManager(
                 indexers = listOf(indexer),
+                processors = emptyList(),
                 collectionConfigs = emptyList(),
                 indexerVersionCollectionConfig = indexerVersionCollectionConfig,
                 indexBootstrapState = mockk(),
@@ -111,6 +112,7 @@ class IndexManagerTest {
         val manager =
             IndexManager(
                 indexers = listOf(indexer),
+                processors = emptyList(),
                 collectionConfigs = listOf(collectionConfig),
                 indexerVersionCollectionConfig = indexerVersionCollectionConfig,
                 indexBootstrapState = indexBootstrapState,

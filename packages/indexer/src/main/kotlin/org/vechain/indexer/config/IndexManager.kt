@@ -15,6 +15,7 @@ import org.springframework.context.ApplicationContext
 import org.springframework.context.event.ContextClosedEvent
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
+import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerRunner
@@ -27,6 +28,7 @@ import org.vechain.indexer.version.IndexerVersionCollectionConfig
 @Component
 open class IndexManager(
     private val indexers: List<Indexer>,
+    private val processors: List<BaseProcessor>,
     private val collectionConfigs: List<CollectionConfig>,
     private val indexerVersionCollectionConfig: IndexerVersionCollectionConfig,
     private val indexBootstrapState: IndexBootstrapState,
@@ -128,6 +130,10 @@ open class IndexManager(
     open fun onShutdown() {
         logger.info("Shutting down indexers")
 
+        // shutDown() flips the indexer's status so the next processBlock() throws
+        // CancellationException; any in-flight call that already passed the status check completes
+        // normally. After this loop, no further process() call will update a processor's tracked
+        // lastObservedBlock, so the flush below sees the final value.
         indexers.forEach { indexer ->
             try {
                 indexer.shutDown()
@@ -144,6 +150,22 @@ open class IndexManager(
                 }
             }
         }
+
+        // Force-flush each processor's checkpoint past the throttle. Eliminates the routine
+        // up-to-saveIntervalSeconds gap between in-memory progress and persisted checkpoint on a
+        // clean restart, which otherwise puts sibling indexers at different persisted positions
+        // and trips alignComponents in indexer-core 10.3+.
+        processors.forEach { processor ->
+            try {
+                processor.flushCheckpoint()
+            } catch (e: Exception) {
+                logger.error(
+                    "Failed to flush checkpoint on shutdown for ${processor::class.simpleName}",
+                    e,
+                )
+            }
+        }
+
         // Cancel the coroutine scope to stop all running indexers
         appCoroutineScope.cancel()
 

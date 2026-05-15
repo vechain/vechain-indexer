@@ -160,7 +160,7 @@ enabled_nets:
         safe-tx-proposals:          '0'
       sync-log-interval: '10'
       channel-batch-size: '15'
-      checkpoint-save-interval-seconds: '60'
+      checkpoint-save-interval-seconds: '5'
       pruner:
         enabled:                    'true'
         interval:                   '3000'
