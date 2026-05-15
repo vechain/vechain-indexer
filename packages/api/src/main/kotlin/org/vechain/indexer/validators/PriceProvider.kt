@@ -87,10 +87,10 @@ open class PriceProvider(
             val vet = decodeValue(responses[0].data) ?: return null
             val vtho = decodeValue(responses[1].data) ?: return null
             Prices(vetUsd = vet, vthoUsd = vtho)
-        } catch (t: Throwable) {
+        } catch (e: Exception) {
             logger.debug(
                 "PriceFeedOracle read failed; treating prices as unavailable: {}",
-                t.message,
+                e.message,
             )
             null
         }
