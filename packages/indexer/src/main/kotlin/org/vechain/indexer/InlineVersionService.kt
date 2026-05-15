@@ -229,17 +229,48 @@ object InlineVersionService {
                     )
                 }
 
-                // Take the first entry as the restored version
-                val restored = Document(previousVersions[0])
+                // Walk _previousVersions (newest first) and pick the first snapshot that predates
+                // the rollback target. Single-step rollback breaks for any depth greater than one
+                // update: e.g. a doc updated at blocks 100/200/300/400, rolling back to 250 with
+                // previousVersions=[v3@300, v2@200, v1@100] must restore v2 (not v3@300, which is
+                // still in the rolled-back range).
+                val restoreIndex =
+                    previousVersions.indexOfFirst { entry ->
+                        val bn = (entry.get("blockNumber") as? Number)?.toLong()
+                        bn != null && bn < blockNumber
+                    }
+
+                if (restoreIndex < 0) {
+                    // Every retained snapshot is itself inside the rolled-back range, so we can't
+                    // express the pre-target state. Surfacing this lets alignComponents aggregate
+                    // it with any other unhappy indexers and tell the operator to drop state — the
+                    // same actionable outcome as the existing "previousVersions empty" branch.
+                    logger.error(
+                        "Retained versions exhausted for rollback ({}): _id={}, version={}, blockNumber={}, retained={}, target={}",
+                        collectionName,
+                        docId,
+                        version,
+                        doc.getLong("blockNumber"),
+                        previousVersions.size,
+                        blockNumber,
+                    )
+                    throw RollbackException(
+                        "Retained versions exhausted rolling back $collectionName/$docId to block $blockNumber: " +
+                            "every retained snapshot is at block >= $blockNumber (retained=${previousVersions.size}, current=$version)"
+                    )
+                }
+
+                // Take the chosen entry as the restored version
+                val restored = Document(previousVersions[restoreIndex])
                 // Strip any _previousVersions from the restored entry (defense-in-depth)
                 restored.remove(PREVIOUS_VERSIONS_FIELD)
 
-                // Build replacement: restored fields + original _id + remaining versions
+                // Build replacement: restored fields + original _id + remaining (older) versions
                 val replacement = Document(restored)
                 replacement["_id"] = docId
                 val remaining =
-                    if (previousVersions.size > 1) {
-                        previousVersions.subList(1, previousVersions.size)
+                    if (restoreIndex + 1 < previousVersions.size) {
+                        previousVersions.subList(restoreIndex + 1, previousVersions.size)
                     } else {
                         emptyList()
                     }

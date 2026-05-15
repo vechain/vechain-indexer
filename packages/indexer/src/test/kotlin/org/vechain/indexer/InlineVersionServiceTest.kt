@@ -18,6 +18,7 @@ import org.bson.Document
 import org.bson.conversions.Bson
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
@@ -87,6 +88,87 @@ internal class InlineVersionServiceTest {
         verify(exactly = 1) { collection.bulkWrite(any<List<WriteModel<Document>>>(), any()) }
         expectThat(writes.captured).hasSize(1)
         assertInstanceOf(DeleteOneModel::class.java, writes.captured.single())
+    }
+
+    @Test
+    fun `rollback walks past retained versions that are still inside the rolled-back range`() {
+        // Regression: a doc updated frequently has _previousVersions whose newest entries are
+        // themselves still >= the rollback target. The pre-fix behaviour restored
+        // _previousVersions[0] unconditionally, leaving the doc at a blockNumber inside the
+        // rolled-back range and tripping alignToBlock's lastSyncedBlock check on the next pass.
+        val writes = slot<List<WriteModel<Document>>>()
+        val doc =
+            Document("_id", "doc-1")
+                .append("version", 4)
+                .append("blockNumber", 400L)
+                .append("field", "v4")
+                .append(
+                    "_previousVersions",
+                    listOf(
+                        Document("version", 3).append("blockNumber", 300L).append("field", "v3"),
+                        Document("version", 2).append("blockNumber", 200L).append("field", "v2"),
+                        Document("version", 1).append("blockNumber", 100L).append("field", "v1"),
+                    ),
+                )
+
+        every { mongoTemplate.getCollection("test_collection") } returns collection
+        every { collection.find(any<Bson>()) } returns findIterable
+        every { findIterable.iterator() } returns cursor
+        every { cursor.hasNext() } returnsMany listOf(true, false)
+        every { cursor.next() } returns doc
+        every { collection.bulkWrite(capture(writes), any<BulkWriteOptions>()) } returns
+            mockBulkWriteResult(modifiedCount = 1, deletedCount = 0)
+
+        InlineVersionService.rollback("test_collection", 250L, mongoTemplate, initialVersion = 1)
+
+        val write = writes.captured.single()
+        assertInstanceOf(ReplaceOneModel::class.java, write)
+        val replacement = (write as ReplaceOneModel<Document>).replacement
+        assertEquals(2, replacement["version"])
+        assertEquals(200L, replacement["blockNumber"])
+        assertEquals("v2", replacement["field"])
+        // The skipped v3 entry must NOT survive in _previousVersions — only entries older than
+        // the restored snapshot remain.
+        val remaining =
+            @Suppress("UNCHECKED_CAST") (replacement["_previousVersions"] as List<Document>)
+        expectThat(remaining).hasSize(1)
+        assertEquals(1, remaining.single()["version"])
+        assertEquals(100L, remaining.single()["blockNumber"])
+    }
+
+    @Test
+    fun `rollback throws when every retained version is inside the rolled-back range`() {
+        // Every retained snapshot has blockNumber >= target, so no pre-target state is
+        // representable. The operator needs to know — drop state for this indexer and restart.
+        val doc =
+            Document("_id", "doc-1")
+                .append("version", 4)
+                .append("blockNumber", 400L)
+                .append(
+                    "_previousVersions",
+                    listOf(
+                        Document("version", 3).append("blockNumber", 390L),
+                        Document("version", 2).append("blockNumber", 380L),
+                        Document("version", 1).append("blockNumber", 370L),
+                    ),
+                )
+
+        every { mongoTemplate.getCollection("test_collection") } returns collection
+        every { collection.find(any<Bson>()) } returns findIterable
+        every { findIterable.iterator() } returns cursor
+        every { cursor.hasNext() } returnsMany listOf(true, false)
+        every { cursor.next() } returns doc
+
+        assertThrows(RollbackException::class.java) {
+            InlineVersionService.rollback(
+                "test_collection",
+                250L,
+                mongoTemplate,
+                initialVersion = 1,
+            )
+        }
+
+        verify(exactly = 0) { collection.bulkWrite(any<List<WriteModel<Document>>>(), any()) }
     }
 
     private fun mockBulkWriteResult(modifiedCount: Int, deletedCount: Int): BulkWriteResult =
