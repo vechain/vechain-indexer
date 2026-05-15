@@ -5,7 +5,7 @@ import org.springframework.data.mongodb.repository.Aggregation
 import org.springframework.data.mongodb.repository.Query
 import org.vechain.indexer.BaseIndexedRepository
 
-@Profile("validator-reward")
+@Profile("validator", "validator-reward")
 interface ValidatorBlockRepository : BaseIndexedRepository<ValidatorBlock, String> {
 
     // Finds the latest hourly block per validator and status -> VALIDATED only

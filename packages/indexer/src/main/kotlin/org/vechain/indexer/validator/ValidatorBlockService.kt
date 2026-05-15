@@ -32,7 +32,7 @@ import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
  * Wire shape on `validator_block_rewards` is unchanged: same VALIDATED / MISSED documents, same
  * fields, same id scheme (`"$blockNumber-$validatorId"`).
  */
-@Profile("validator-reward")
+@Profile("validator", "validator-reward")
 @Service
 open class ValidatorBlockService(
     private val repository: ValidatorBlockRepository,
