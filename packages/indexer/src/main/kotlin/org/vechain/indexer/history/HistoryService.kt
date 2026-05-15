@@ -90,6 +90,9 @@ open class HistoryService(
                     transactionIdsWithHistoryEvents.add(event.txId)
                 }
                 indexedHistoryEvents.addAll(lifecycleResult.additionalEvents)
+                lifecycleResult.additionalEvents.forEach {
+                    transactionIdsWithHistoryEvents.add(it.txId)
+                }
             } else {
                 historyEvent?.let {
                     indexedHistoryEvents.add(it)
