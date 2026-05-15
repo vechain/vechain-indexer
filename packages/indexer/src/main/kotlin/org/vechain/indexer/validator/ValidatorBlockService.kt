@@ -210,7 +210,12 @@ open class ValidatorBlockService(
                 listOf(TokenRewardService.energyTotalSupplyClause()),
                 BlockRevision.Id(blockId),
             )
-        return TokenRewardService.decodeTotalSupply(response) ?: BigInteger.ZERO
+        // Fail fast — a silent zero baseline would make the very next block's reward equal the
+        // entire VTHO supply, corrupting the cumulative delta forever.
+        return TokenRewardService.decodeTotalSupply(response)
+            ?: throw IllegalStateException(
+                "Energy.totalSupply() decode failed at block $blockId (response=$response)"
+            )
     }
 
     // ---------------------------------------------------------------------------------------------
