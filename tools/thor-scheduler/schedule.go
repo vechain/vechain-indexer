@@ -39,6 +39,7 @@ func computeSchedule(seedHex string, parentBlockNumber uint32, proposers []Propo
 	var totalWeight uint64
 	var firstAddr thor.Address
 	var firstSet bool
+	activeCount := 0
 	for i, p := range proposers {
 		addr, err := parseAddress(p.Address)
 		if err != nil {
@@ -46,14 +47,21 @@ func computeSchedule(seedHex string, parentBlockNumber uint32, proposers []Propo
 		}
 		thorProposers[i] = scheduler.Proposer{Address: addr, Active: p.Active, Weight: p.Weight}
 		totalWeight += p.Weight
-		if !firstSet {
-			firstAddr = addr
-			firstSet = true
+		if p.Active {
+			activeCount++
+			if !firstSet {
+				firstAddr = addr
+				firstSet = true
+			}
 		}
 	}
+	if activeCount == 0 {
+		return []string{}, nil
+	}
 
-	// NewPoSScheduler requires `addr` to be in the proposer set. We don't care which — we only
-	// need access to the deterministic shuffle.
+	// NewPoSScheduler requires `addr` to be in the proposer set AND active — an inactive `addr`
+	// gets included in the shuffled sequence (pos.go: `p.Active || p.Address == addr`), which
+	// would inflate len(sequence) past activeCount and break the slot probe below.
 	sched, err := scheduler.NewPoSScheduler(
 		firstAddr,
 		thorProposers,
@@ -69,15 +77,6 @@ func computeSchedule(seedHex string, parentBlockNumber uint32, proposers []Propo
 	}
 
 	blockInterval := thor.BlockInterval()
-	activeCount := 0
-	for _, p := range proposers {
-		if p.Active {
-			activeCount++
-		}
-	}
-	if activeCount == 0 {
-		return []string{}, nil
-	}
 
 	result := make([]string, 0, activeCount)
 	for k := 0; k < activeCount; k++ {
