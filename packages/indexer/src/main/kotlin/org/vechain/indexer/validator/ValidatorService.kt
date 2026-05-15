@@ -28,16 +28,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 import org.vechain.indexer.validator.scheduler.EpochSeedProvider
 import org.vechain.indexer.validator.scheduler.ThorSchedulerProcess
 
-@Profile(
-    "validator",
-    "delegation",
-    "stargate",
-    "stargate-token",
-    "validator-reward",
-    "token-reward",
-    "vet-delegated-by-block",
-    "history",
-)
+@Profile("validator", "stargate-token", "history")
 @Service
 open class ValidatorService(
     private val repository: ValidatorRepository,

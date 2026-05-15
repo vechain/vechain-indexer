@@ -10,16 +10,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile(
-    "validator",
-    "delegation",
-    "stargate",
-    "stargate-token",
-    "validator-reward",
-    "token-reward",
-    "vet-delegated-by-block",
-    "history",
-)
+@Profile("validator", "stargate-token", "history")
 open class ValidatorConfig {
 
     @Bean

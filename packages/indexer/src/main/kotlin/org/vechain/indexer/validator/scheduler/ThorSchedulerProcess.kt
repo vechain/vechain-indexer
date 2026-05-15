@@ -25,16 +25,7 @@ import org.springframework.stereotype.Component
  * requests so we can correlate by line position; if we ever need concurrent requests we can switch
  * to id-keyed correlation (the protocol already echoes ids).
  */
-@Profile(
-    "validator",
-    "delegation",
-    "stargate",
-    "stargate-token",
-    "validator-reward",
-    "token-reward",
-    "vet-delegated-by-block",
-    "history",
-)
+@Profile("validator", "stargate-token", "history")
 @Component
 class ThorSchedulerProcess(
     @param:Value("\${validator.scheduler-binary:./tools/thor-scheduler/thor-scheduler}")

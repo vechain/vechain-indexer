@@ -12,15 +12,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile(
-    "validator",
-    "delegation",
-    "stargate",
-    "stargate-token",
-    "token-reward",
-    "validator-reward",
-    "history",
-)
+@Profile("validator", "stargate-token", "history")
 @Configuration
 open class ValidatorCollectionConfig(
     mongoTemplate: MongoTemplate,
