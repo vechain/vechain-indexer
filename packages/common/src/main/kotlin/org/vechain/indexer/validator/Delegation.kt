@@ -47,7 +47,7 @@ data class Delegation(
     @JsonIgnore override val blockId: String,
     @JsonIgnore override val blockNumber: Long,
     @JsonIgnore override val blockTimestamp: Long,
-    @JsonIgnore override val version: Int = 0,
+    @JsonIgnore override val version: Int = 1,
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = id
 }
