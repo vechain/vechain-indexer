@@ -28,5 +28,6 @@ open class FungibleTokenInteractionsConfig {
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
             .excludeVetTransfers()
+            .disableEventCriteria()
             .build()
 }
