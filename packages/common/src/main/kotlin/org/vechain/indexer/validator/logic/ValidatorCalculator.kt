@@ -24,6 +24,7 @@ object ValidatorCalculator {
      */
     fun calculateNextCycleStart(snapshot: ValidatorSnapshot, currentBlock: Long): Long {
         if (snapshot.startBlock == 0L) return 0L
+        if (snapshot.stakingPeriodLength <= 0L) return 0L
         val offset = currentBlock - snapshot.startBlock
         val positionInCycle = offset % snapshot.stakingPeriodLength
         val currentCycleStart = currentBlock - positionInCycle
@@ -119,7 +120,7 @@ object ValidatorCalculator {
         status: Status,
         nextCycleStake: BigDecimal,
     ): Map<TokenLevel, BigDecimal> {
-        if (status == Status.EXITING) {
+        if (status == Status.EXITING || status == Status.EXITED || status == Status.WITHDRAWN) {
             return emptyMap()
         }
         return TokenLevel.entries
