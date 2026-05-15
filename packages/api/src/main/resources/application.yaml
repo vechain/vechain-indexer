@@ -27,6 +27,13 @@ spring:
     name: vechain-api
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:nfts,transactions,transfers,history,stargate,vevote-results,vevote-historic-proposals,b3tr,explorer,accounts,validator,safe}
+    group:
+      validator: [delegation]
+      delegation: [validator]
+      validator-reward: [validator]
+      token-reward: [delegation]
+      vet-delegated-by-block: [delegation]
+      stargate: [delegation]
   output:
     ansi:
       enabled: always

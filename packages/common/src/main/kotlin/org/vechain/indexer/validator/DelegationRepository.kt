@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository
 import org.vechain.indexer.BaseIndexedRepository
 
 /** Query surface for [Delegation] documents. */
-@Profile("delegation", "token-reward", "stargate", "vet-delegated-by-block")
+@Profile("delegation")
 @Repository
 interface DelegationRepository : BaseIndexedRepository<Delegation, String> {
 
