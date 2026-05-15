@@ -16,6 +16,7 @@ object VeWorldAPIClient {
     private const val BASE_URL = "http://localhost:8080"
     private const val INDEXER_URL = "http://localhost:8081"
     private const val API_URL = "http://localhost:8080/api/v1/"
+    private const val THOR_URL = "http://localhost:8669"
 
     private val REST_TEMPLATE = RestTemplate()
 
@@ -96,6 +97,96 @@ object VeWorldAPIClient {
         }
 
         throw Exception("Indexer health check failed")
+    }
+
+    /**
+     * Waits until every indexer has caught up to Thor's head block, and the state stays caught up
+     * for [stabilityMs] continuously.
+     *
+     * `syncStatus == FULLY_SYNCED` alone is a race: it fires when the indexer matches Thor's head
+     * *at the moment the check was made*, but new blocks can land between that decision and the
+     * test query. Comparing each indexer's `currentBlock` against a re-read Thor head, plus a short
+     * stability window, eliminates that race for tests with deterministic seed data.
+     *
+     * If [indexerNames] is empty, every indexer reported by `/actuator/health` is required to keep
+     * up.
+     */
+    fun waitForFullSync(
+        timeoutMs: Long = 60_000,
+        stabilityMs: Long = 2_000,
+        vararg indexerNames: String,
+    ) {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        var stableSince: Long? = null
+        var lastError: String? = null
+        while (System.currentTimeMillis() < deadline) {
+            try {
+                val thorHead = getThorHeadBlock()
+                val indexers = fetchIndexersHealth()
+                val tracked =
+                    if (indexerNames.isEmpty()) indexers
+                    else indexers.filter { it["indexerName"] in indexerNames }
+                if (tracked.isEmpty()) {
+                    lastError = "No matching indexers found (requested: ${indexerNames.toList()})"
+                    stableSince = null
+                } else {
+                    val laggards =
+                        tracked.filter { (it["currentBlock"]?.toLongOrNull() ?: -1L) < thorHead }
+                    if (laggards.isEmpty()) {
+                        val now = System.currentTimeMillis()
+                        if (stableSince == null) stableSince = now
+                        if (now - stableSince >= stabilityMs) return
+                    } else {
+                        stableSince = null
+                        lastError =
+                            "Lagging indexers (thor head=$thorHead): " +
+                                laggards.joinToString {
+                                    "${it["indexerName"]}@${it["currentBlock"]}"
+                                }
+                    }
+                }
+            } catch (e: Exception) {
+                stableSince = null
+                lastError = e.message
+            }
+            Thread.sleep(500)
+        }
+        throw Exception("Indexers did not fully sync within $timeoutMs ms. Last error: $lastError")
+    }
+
+    private fun getThorHeadBlock(): Long {
+        val res =
+            REST_TEMPLATE.exchange(
+                "$THOR_URL/blocks/best",
+                HttpMethod.GET,
+                null,
+                object : ParameterizedTypeReference<Map<String, Any>>() {},
+            )
+        if (!res.statusCode.is2xxSuccessful)
+            throw Exception("Thor head request failed with status ${res.statusCode}")
+        val number =
+            res.body?.get("number") ?: throw Exception("Thor head response missing 'number'")
+        return when (number) {
+            is Number -> number.toLong()
+            is String -> number.toLong()
+            else -> throw Exception("Unexpected thor head 'number' type: ${number::class}")
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun fetchIndexersHealth(): List<LinkedHashMap<String, String>> {
+        val res =
+            REST_TEMPLATE.exchange(
+                "$INDEXER_URL/actuator/health",
+                HttpMethod.GET,
+                null,
+                HealthCheckResponse::class.java,
+            )
+        if (!res.statusCode.is2xxSuccessful || res.body?.status != "UP")
+            throw Exception("Indexer health endpoint not UP (status=${res.statusCode})")
+        return res.body?.components?.get("indexer")?.details?.get("IndexersHealth")
+            as? List<LinkedHashMap<String, String>>
+            ?: throw Exception("Indexer health response missing IndexersHealth")
     }
 
     fun getNfts(
