@@ -3,6 +3,7 @@ package org.vechain.indexer.performance.validatorBlock
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.test.context.ActiveProfiles
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
@@ -27,6 +28,8 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var validatorV2Repository: ValidatorRepository
     @Autowired lateinit var checkpointService: CheckpointService
     @Autowired lateinit var processorMetrics: ProcessorMetrics
+
+    @Value("\${indexer.start-block.validator}") var validatorStartBlock: Long = 0L
 
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
@@ -73,6 +76,7 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
                     repository = validatorBlockRepository,
                     validatorRepository = validatorV2Repository,
                     thorClient = thorClient,
+                    validatorStartBlock = validatorStartBlock,
                     profiler = profiler,
                 )
             } else {

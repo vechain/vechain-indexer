@@ -31,7 +31,15 @@ class ValidatorBlockServiceTest {
         repository = mockk(relaxed = true)
         validatorRepository = mockk(relaxed = true)
         thorClient = mockk(relaxed = true)
-        service = spyk(ValidatorBlockService(repository, validatorRepository, thorClient))
+        service =
+            spyk(
+                ValidatorBlockService(
+                    repository,
+                    validatorRepository,
+                    thorClient,
+                    validatorStartBlock = 0L,
+                )
+            )
 
         every { repository.findLatestHourly() } returns emptyList()
         every { repository.findLatestDaily() } returns emptyList()

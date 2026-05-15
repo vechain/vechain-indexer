@@ -19,8 +19,9 @@ class ProfiledValidatorBlockService(
     repository: ValidatorBlockRepository,
     validatorRepository: ValidatorRepository,
     thorClient: ThorClient,
+    validatorStartBlock: Long,
     private val profiler: DetailedProfiler,
-) : ValidatorBlockService(repository, validatorRepository, thorClient) {
+) : ValidatorBlockService(repository, validatorRepository, thorClient, validatorStartBlock) {
 
     override suspend fun processBlock(
         block: Block,

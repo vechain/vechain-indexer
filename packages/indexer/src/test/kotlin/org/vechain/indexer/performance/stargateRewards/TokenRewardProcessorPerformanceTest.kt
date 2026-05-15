@@ -3,6 +3,7 @@ package org.vechain.indexer.performance.stargateRewards
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.vechain.indexer.BlockIndexer
@@ -32,6 +33,8 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var delegationV2Repository: DelegationRepository
     @Autowired lateinit var checkpointService: CheckpointService
     @Autowired lateinit var processorMetrics: ProcessorMetrics
+
+    @Value("\${indexer.start-block.validator}") var validatorStartBlock: Long = 0L
 
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
@@ -84,6 +87,7 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
                     validatorV2Repository = validatorV2Repository,
                     delegationV2Repository = delegationV2Repository,
                     thorClient = thorClient,
+                    validatorStartBlock = validatorStartBlock,
                     profiler = profiler,
                 )
             } else {

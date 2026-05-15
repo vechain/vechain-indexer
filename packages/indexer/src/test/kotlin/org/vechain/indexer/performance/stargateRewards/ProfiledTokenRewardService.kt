@@ -25,6 +25,7 @@ class ProfiledTokenRewardService(
     validatorV2Repository: ValidatorRepository,
     delegationV2Repository: DelegationRepository,
     thorClient: ThorClient,
+    validatorStartBlock: Long,
     private val profiler: DetailedProfiler,
 ) :
     TokenRewardService(
@@ -34,6 +35,7 @@ class ProfiledTokenRewardService(
         validatorV2Repository,
         delegationV2Repository,
         thorClient,
+        validatorStartBlock,
     ) {
 
     override suspend fun processBlock(

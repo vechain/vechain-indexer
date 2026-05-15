@@ -55,6 +55,7 @@ class TokenRewardServiceTest {
                     validatorV2Repository,
                     delegationV2Repository,
                     thorClient,
+                    validatorStartBlock = 0L,
                 )
             )
     }

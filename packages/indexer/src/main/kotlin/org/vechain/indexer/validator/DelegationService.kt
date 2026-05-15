@@ -39,6 +39,7 @@ open class DelegationService(
     private val inlineVersioningProperties: InlineVersioningProperties,
     @param:Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
     private val stakerSC: String,
+    @param:Value("\${indexer.start-block.validator}") private val validatorStartBlock: Long,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -46,6 +47,8 @@ open class DelegationService(
         block: Block,
         events: List<IndexedEvent>,
     ): Pair<List<Delegation>, List<Delegation>> {
+        if (block.number < validatorStartBlock) return emptyList<Delegation>() to emptyList()
+
         val due =
             repository.findByTransitionAtBlockAndStatusIn(
                 block.number,

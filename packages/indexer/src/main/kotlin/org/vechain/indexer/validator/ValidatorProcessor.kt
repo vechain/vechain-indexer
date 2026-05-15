@@ -9,7 +9,15 @@ import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 
-@Profile("validator", "delegation", "validator-reward", "token-reward", "vet-delegated-by-block")
+@Profile(
+    "validator",
+    "delegation",
+    "stargate",
+    "stargate-token",
+    "validator-reward",
+    "token-reward",
+    "vet-delegated-by-block",
+)
 @Component
 open class ValidatorProcessor(
     repository: ValidatorRepository,

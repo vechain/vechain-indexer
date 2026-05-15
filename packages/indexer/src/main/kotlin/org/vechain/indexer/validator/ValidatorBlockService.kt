@@ -4,6 +4,7 @@ import java.math.BigDecimal
 import java.math.BigInteger
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -38,6 +39,7 @@ open class ValidatorBlockService(
     private val repository: ValidatorBlockRepository,
     private val validatorRepository: ValidatorRepository,
     private val thorClient: ThorClient,
+    @param:Value("\${indexer.start-block.validator}") private val validatorStartBlock: Long,
 ) {
     private val hourlyCache = ConcurrentHashMap<String, Long>()
     private val dailyCache = ConcurrentHashMap<String, Long>()
@@ -63,6 +65,8 @@ open class ValidatorBlockService(
         block: Block,
         callResponses: List<InspectionResult>,
     ): List<ValidatorBlock> {
+        if (block.number < validatorStartBlock) return emptyList()
+
         val blockTotalSupply =
             TokenRewardService.decodeTotalSupply(callResponses) ?: return emptyList()
 

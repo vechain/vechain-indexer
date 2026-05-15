@@ -20,6 +20,7 @@ import org.vechain.indexer.thor.AddressUtils
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.BlockRevision
+import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.utils.NumberUtils
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
@@ -27,7 +28,15 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 import org.vechain.indexer.validator.scheduler.EpochSeedProvider
 import org.vechain.indexer.validator.scheduler.ThorSchedulerProcess
 
-@Profile("validator", "delegation", "validator-reward", "token-reward", "vet-delegated-by-block")
+@Profile(
+    "validator",
+    "delegation",
+    "stargate",
+    "stargate-token",
+    "validator-reward",
+    "token-reward",
+    "vet-delegated-by-block",
+)
 @Service
 open class ValidatorService(
     private val repository: ValidatorRepository,
@@ -38,6 +47,7 @@ open class ValidatorService(
     private val thorScheduler: ThorSchedulerProcess,
     @param:Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
     private val stakerAddress: String,
+    @param:Value("\${indexer.start-block.validator}") private val validatorStartBlock: Long,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
     private val abiCache: ConcurrentHashMap<String, AbiElement> = ConcurrentHashMap()
@@ -55,6 +65,8 @@ open class ValidatorService(
         block: Block,
         matchedEvents: List<IndexedEvent>,
     ): Pair<List<Validator>, List<Validator>> {
+        if (block.number < validatorStartBlock) return emptyList<Validator>() to emptyList()
+
         val existing = loadActive()
         val working = existing.toMutableMap()
 
@@ -331,8 +343,8 @@ open class ValidatorService(
      */
     private suspend fun walkStakerState(block: Block, working: MutableMap<String, Validator>) {
         val revision = BlockRevision.Id(block.id)
-        val activeIds = walkList("firstActive", revision)
-        val queuedIds = walkList("firstQueued", revision)
+        val activeIds = walkList("firstActive", block, revision)
+        val queuedIds = walkList("firstQueued", block, revision)
         val onChainIds = activeIds + queuedIds
 
         if (onChainIds.isEmpty()) {
@@ -367,21 +379,29 @@ open class ValidatorService(
                 )
             }
         val responses = thorClient.inspectClauses(perValidatorClauses, revision)
+        requireStakerResponseCount(
+            "validator state walk",
+            responses,
+            perValidatorClauses.size,
+            block,
+        )
 
         onChainIds.forEachIndexed { index, validatorId ->
             val base = index * 3
+            val validationAbi = getAbi("getValidation")
+            val periodAbi = getAbi("getValidationPeriodDetails")
+            val totalsAbi = getAbi("getValidationTotals")
             val validation =
-                FunctionReturnDecoder.decode(responses[base].data, getAbi("getValidation").outputs)
+                decodeStakerResponse("getValidation", responses[base], validationAbi, block)
             val period =
-                FunctionReturnDecoder.decode(
-                    responses[base + 1].data,
-                    getAbi("getValidationPeriodDetails").outputs,
+                decodeStakerResponse(
+                    "getValidationPeriodDetails",
+                    responses[base + 1],
+                    periodAbi,
+                    block,
                 )
             val totals =
-                FunctionReturnDecoder.decode(
-                    responses[base + 2].data,
-                    getAbi("getValidationTotals").outputs,
-                )
+                decodeStakerResponse("getValidationTotals", responses[base + 2], totalsAbi, block)
 
             val current = working[validatorId] ?: newDoc(validatorId, block)
             val validatorVetStaked = (validation["stake"] as BigInteger)
@@ -446,25 +466,31 @@ open class ValidatorService(
         }
     }
 
-    private suspend fun walkList(headFn: String, revision: BlockRevision): List<String> {
+    private suspend fun walkList(
+        headFn: String,
+        block: Block,
+        revision: BlockRevision,
+    ): List<String> {
         val ids = mutableListOf<String>()
         val headAbi = getAbi(headFn)
         val nextAbi = getAbi("next")
         val firstResp =
-            thorClient
-                .inspectClauses(
+            requireSingleStakerResponse(
+                headFn,
+                thorClient.inspectClauses(
                     listOf(ContractUtils.createClause(stakerAddress, headAbi)),
                     revision,
-                )
-                .first()
+                ),
+                block,
+            )
         var current =
-            (FunctionReturnDecoder.decode(firstResp.data, headAbi.outputs)[headFn] as String)
-                .lowercase()
+            (decodeStakerResponse(headFn, firstResp, headAbi, block)[headFn] as String).lowercase()
         while (!Address(current).isZero()) {
             ids.add(current)
             val nextResp =
-                thorClient
-                    .inspectClauses(
+                requireSingleStakerResponse(
+                    "next",
+                    thorClient.inspectClauses(
                         listOf(
                             ContractUtils.createClause(
                                 stakerAddress,
@@ -473,14 +499,88 @@ open class ValidatorService(
                             )
                         ),
                         revision,
-                    )
-                    .first()
+                    ),
+                    block,
+                )
             current =
-                (FunctionReturnDecoder.decode(nextResp.data, nextAbi.outputs)["nextValidation"]
-                        as String)
+                (decodeStakerResponse("next", nextResp, nextAbi, block)["nextValidation"] as String)
                     .lowercase()
         }
         return ids
+    }
+
+    private fun requireSingleStakerResponse(
+        functionName: String,
+        responses: List<InspectionResult>,
+        block: Block,
+    ): InspectionResult {
+        requireStakerResponseCount(functionName, responses, 1, block)
+        return responses.first()
+    }
+
+    private fun requireStakerResponseCount(
+        functionName: String,
+        responses: List<InspectionResult>,
+        expected: Int,
+        block: Block,
+    ) {
+        if (responses.size == expected) return
+        throw IllegalStateException(
+            "Built-in staker inspect call '$functionName' returned ${responses.size} " +
+                "response(s), expected $expected at block ${block.number} (${block.id}) for " +
+                "contract $stakerAddress. Check INDEXER_START_BLOCK_VALIDATOR, THOR_URL, and " +
+                "BUILTIN_STAKER_CONTRACT."
+        )
+    }
+
+    private fun decodeStakerResponse(
+        functionName: String,
+        response: InspectionResult,
+        abi: AbiElement,
+        block: Block,
+    ): Map<String, Any?> {
+        val cleanData = response.data.removePrefix("0x")
+        val expectedMinHexLength = abi.outputs.size * ABI_WORD_HEX_LENGTH
+        if (
+            response.reverted ||
+                !response.vmError.isNullOrBlank() ||
+                cleanData.length < expectedMinHexLength
+        ) {
+            throw stakerInspectFailure(functionName, response, block, expectedMinHexLength)
+        }
+
+        return try {
+            FunctionReturnDecoder.decode(response.data, abi.outputs)
+        } catch (ex: RuntimeException) {
+            throw stakerInspectFailure(functionName, response, block, expectedMinHexLength, ex)
+        }
+    }
+
+    private fun stakerInspectFailure(
+        functionName: String,
+        response: InspectionResult,
+        block: Block,
+        expectedMinHexLength: Int,
+        cause: RuntimeException? = null,
+    ): IllegalStateException {
+        val cleanData = response.data.removePrefix("0x")
+        val reason =
+            when {
+                response.reverted -> "reverted"
+                !response.vmError.isNullOrBlank() -> "failed with VM error '${response.vmError}'"
+                cleanData.isBlank() -> "returned no ABI data"
+                else ->
+                    "returned malformed ABI data (${cleanData.length} hex chars, expected at " +
+                        "least $expectedMinHexLength)"
+            }
+        return IllegalStateException(
+            "Built-in staker inspect call '$functionName' $reason at block ${block.number} " +
+                "(${block.id}) for contract $stakerAddress. Check INDEXER_START_BLOCK_VALIDATOR, " +
+                "THOR_URL, and BUILTIN_STAKER_CONTRACT; this usually means the validator indexer " +
+                "is reading a block before the built-in staker exists, or it is pointed at the " +
+                "wrong network/contract.",
+            cause,
+        )
     }
 
     private fun getAbi(name: String): AbiElement =
@@ -526,6 +626,7 @@ open class ValidatorService(
     companion object {
         private const val EPOCH_LENGTH = 180L
         private const val BLOCK_INTERVAL_SECONDS = 10L
+        private const val ABI_WORD_HEX_LENGTH = 64
         private const val MAX_UINT32_LONG = 4294967295L
     }
 }

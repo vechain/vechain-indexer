@@ -29,7 +29,15 @@ interface EpochSeedProvider {
  *
  * Results are cached per seed-block number; in steady state we hit Thor exactly once per epoch.
  */
-@Profile("validator", "delegation", "validator-reward", "token-reward", "vet-delegated-by-block")
+@Profile(
+    "validator",
+    "delegation",
+    "stargate",
+    "stargate-token",
+    "validator-reward",
+    "token-reward",
+    "vet-delegated-by-block",
+)
 @Component
 class SubprocessEpochSeedProvider(
     private val scheduler: ThorSchedulerProcess,

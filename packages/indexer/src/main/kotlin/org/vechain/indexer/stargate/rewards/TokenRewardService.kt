@@ -7,6 +7,7 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.temporal.WeekFields
 import java.util.concurrent.ConcurrentHashMap
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
@@ -42,6 +43,7 @@ open class TokenRewardService(
     private val validatorV2Repository: ValidatorRepository,
     private val delegationV2Repository: DelegationRepository,
     private val thorClient: ThorClient,
+    @param:Value("\${indexer.start-block.validator}") private val validatorStartBlock: Long,
 ) {
     /**
      * @notice In-memory cache of validator cycle information.
@@ -78,6 +80,8 @@ open class TokenRewardService(
         block: Block,
         callResponses: List<InspectionResult>,
     ): Pair<List<TokenReward>, List<TokenReward>> {
+        if (block.number < validatorStartBlock) return Pair(emptyList(), emptyList())
+
         val validatorId = block.signer
 
         // Cycle info now comes from the V2 validator collection (was: aggregator decode).
