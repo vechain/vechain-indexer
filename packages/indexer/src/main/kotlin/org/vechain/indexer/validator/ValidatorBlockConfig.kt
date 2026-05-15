@@ -24,7 +24,7 @@ import org.vechain.indexer.thor.client.ThorClient
  * `dependsOn(validatorIndexer)` declaration enforces both ordering and bean availability.
  */
 @Configuration
-@Profile("validator", "validator-reward")
+@Profile("validator & validator-reward")
 open class ValidatorBlockConfig {
     @Bean
     open fun validatorBlockIndexer(
