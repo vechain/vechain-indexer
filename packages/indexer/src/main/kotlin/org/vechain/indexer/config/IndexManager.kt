@@ -3,8 +3,11 @@ package org.vechain.indexer.config
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -130,31 +133,39 @@ open class IndexManager(
     open fun onShutdown() {
         logger.info("Shutting down indexers")
 
-        // shutDown() flips the indexer's status so the next processBlock() throws
-        // CancellationException; any in-flight call that already passed the status check completes
-        // normally. After this loop, no further process() call will update a processor's tracked
-        // lastObservedBlock, so the flush below sees the final value.
+        // Soft stop: flip each indexer's status so the next processBlock() throws
+        // CancellationException. Any in-flight call that already passed the status check is
+        // allowed to complete naturally.
         indexers.forEach { indexer ->
             try {
                 indexer.shutDown()
             } catch (e: Exception) {
                 logger.error("Failed to close indexer ${indexer.name}", e)
-            } finally {
-                try {
-                    publishShutdownMetrics(indexer)
-                } catch (e: Exception) {
-                    logger.error(
-                        "Failed to publish shutdown metrics for indexer ${indexer.name}",
-                        e,
-                    )
-                }
             }
         }
 
-        // Force-flush each processor's checkpoint past the throttle. Eliminates the routine
-        // up-to-saveIntervalSeconds gap between in-memory progress and persisted checkpoint on a
-        // clean restart, which otherwise puts sibling indexers at different persisted positions
-        // and trips alignComponents in indexer-core 10.3+.
+        // Hard stop: cancel the runner's scope and wait for all in-flight coroutines to finish.
+        // Without the join, flushCheckpoint() could read lastObservedBlock from a processor whose
+        // process() coroutine has not yet returned — then a post-flush process() could advance
+        // lastObservedBlock while the throttle prevents trySaveCheckpoint from persisting it,
+        // leaving the on-disk checkpoint stale. Bounded by SHUTDOWN_DRAIN_TIMEOUT so a stuck
+        // coroutine cannot hold the container past its SIGTERM grace period.
+        val drained = runBlocking {
+            withTimeoutOrNull(SHUTDOWN_DRAIN_TIMEOUT) {
+                appCoroutineScope.coroutineContext.job.cancelAndJoin()
+                true
+            } ?: false
+        }
+        if (!drained) {
+            logger.warn(
+                "Coroutine scope did not drain within {}; flushing checkpoints anyway",
+                SHUTDOWN_DRAIN_TIMEOUT,
+            )
+        }
+
+        // All in-flight process() calls have returned (or the drain timed out). Force-flush each
+        // processor's checkpoint past the throttle, closing the up-to-saveIntervalSeconds gap
+        // between in-memory progress and persisted checkpoint on a clean restart.
         processors.forEach { processor ->
             try {
                 processor.flushCheckpoint()
@@ -166,10 +177,21 @@ open class IndexManager(
             }
         }
 
-        // Cancel the coroutine scope to stop all running indexers
-        appCoroutineScope.cancel()
+        // Publish final metrics after the runner has stopped so values reflect the genuine
+        // last-processed state.
+        indexers.forEach { indexer ->
+            try {
+                publishShutdownMetrics(indexer)
+            } catch (e: Exception) {
+                logger.error("Failed to publish shutdown metrics for indexer ${indexer.name}", e)
+            }
+        }
 
         logger.info("Indexers shut down complete")
+    }
+
+    companion object {
+        private val SHUTDOWN_DRAIN_TIMEOUT = 30.seconds
     }
 
     private fun publishShutdownMetrics(indexer: Indexer) {
