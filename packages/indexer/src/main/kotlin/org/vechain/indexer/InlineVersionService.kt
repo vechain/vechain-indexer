@@ -229,17 +229,72 @@ object InlineVersionService {
                     )
                 }
 
-                // Take the first entry as the restored version
-                val restored = Document(previousVersions[0])
+                // Walk _previousVersions (newest first) and pick the first snapshot that predates
+                // the rollback target. Single-step rollback breaks for any depth greater than one
+                // update: e.g. a doc updated at blocks 100/200/300/400, rolling back to 250 with
+                // previousVersions=[v3@300, v2@200, v1@100] must restore v2 (not v3@300, which is
+                // still in the rolled-back range).
+                val restoreIndex =
+                    previousVersions.indexOfFirst { entry ->
+                        val bn = (entry.get("blockNumber") as? Number)?.toLong()
+                        bn != null && bn < blockNumber
+                    }
+
+                if (restoreIndex < 0) {
+                    // No retained snapshot predates the target. Two sub-cases:
+                    //
+                    // 1. The oldest retained snapshot IS the document's birth (its version equals
+                    //    initialVersion). The doc came into existence inside the rolled-back range
+                    //    and had no pre-target state — delete it, mirroring how the version <=
+                    //    initialVersion branch below treats brand-new docs.
+                    //
+                    // 2. The oldest retained snapshot is itself > initialVersion. Earlier history
+                    //    was trimmed by the blockWindow / maxVersions caps, so we cannot tell
+                    //    whether the doc existed before the target. Throw so the operator decides;
+                    //    indexer-core's alignComponents will aggregate this into its actionable
+                    //    "drop state for these indexers" error.
+                    val oldestRetainedVersion =
+                        previousVersions.last().getInteger("version", initialVersion)
+                    if (oldestRetainedVersion <= initialVersion) {
+                        logger.info(
+                            "Rolling back ({}): _id={} born within target range (current v{}, oldest retained v{} >= {}), deleting",
+                            collectionName,
+                            docId,
+                            version,
+                            oldestRetainedVersion,
+                            blockNumber,
+                        )
+                        writes.add(DeleteOneModel(idFilter))
+                        continue
+                    }
+                    logger.error(
+                        "Retained versions exhausted for rollback ({}): _id={}, version={}, blockNumber={}, retained={}, oldestRetainedVersion={}, target={}",
+                        collectionName,
+                        docId,
+                        version,
+                        doc.getLong("blockNumber"),
+                        previousVersions.size,
+                        oldestRetainedVersion,
+                        blockNumber,
+                    )
+                    throw RollbackException(
+                        "Retained versions exhausted rolling back $collectionName/$docId to block $blockNumber: " +
+                            "every retained snapshot is at block >= $blockNumber and pre-target history was trimmed " +
+                            "(retained=${previousVersions.size}, current=$version, oldestRetainedVersion=$oldestRetainedVersion)"
+                    )
+                }
+
+                // Take the chosen entry as the restored version
+                val restored = Document(previousVersions[restoreIndex])
                 // Strip any _previousVersions from the restored entry (defense-in-depth)
                 restored.remove(PREVIOUS_VERSIONS_FIELD)
 
-                // Build replacement: restored fields + original _id + remaining versions
+                // Build replacement: restored fields + original _id + remaining (older) versions
                 val replacement = Document(restored)
                 replacement["_id"] = docId
                 val remaining =
-                    if (previousVersions.size > 1) {
-                        previousVersions.subList(1, previousVersions.size)
+                    if (restoreIndex + 1 < previousVersions.size) {
+                        previousVersions.subList(restoreIndex + 1, previousVersions.size)
                     } else {
                         emptyList()
                     }

@@ -180,7 +180,7 @@ enabled_nets:
         safe-tx-proposals: "24713855"
       sync-log-interval: "10"
       channel-batch-size: "5"
-      checkpoint-save-interval-seconds: "60"
+      checkpoint-save-interval-seconds: "5"
       pruner:
         enabled: "true"
         interval: "60480"
@@ -429,7 +429,7 @@ enabled_nets:
         safe-tx-proposals: "24762886"
       sync-log-interval: "10"
       channel-batch-size: "5"
-      checkpoint-save-interval-seconds: "60"
+      checkpoint-save-interval-seconds: "5"
       pruner:
         enabled: "true"
         interval: "60480"

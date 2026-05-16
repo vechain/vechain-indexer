@@ -3,8 +3,11 @@ package org.vechain.indexer.config
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -15,6 +18,7 @@ import org.springframework.context.ApplicationContext
 import org.springframework.context.event.ContextClosedEvent
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
+import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerRunner
@@ -27,6 +31,7 @@ import org.vechain.indexer.version.IndexerVersionCollectionConfig
 @Component
 open class IndexManager(
     private val indexers: List<Indexer>,
+    private val processors: List<BaseProcessor>,
     private val collectionConfigs: List<CollectionConfig>,
     private val indexerVersionCollectionConfig: IndexerVersionCollectionConfig,
     private val indexBootstrapState: IndexBootstrapState,
@@ -128,26 +133,65 @@ open class IndexManager(
     open fun onShutdown() {
         logger.info("Shutting down indexers")
 
+        // Soft stop: flip each indexer's status so the next processBlock() throws
+        // CancellationException. Any in-flight call that already passed the status check is
+        // allowed to complete naturally.
         indexers.forEach { indexer ->
             try {
                 indexer.shutDown()
             } catch (e: Exception) {
                 logger.error("Failed to close indexer ${indexer.name}", e)
-            } finally {
-                try {
-                    publishShutdownMetrics(indexer)
-                } catch (e: Exception) {
-                    logger.error(
-                        "Failed to publish shutdown metrics for indexer ${indexer.name}",
-                        e,
-                    )
-                }
             }
         }
-        // Cancel the coroutine scope to stop all running indexers
-        appCoroutineScope.cancel()
+
+        // Hard stop: cancel the runner's scope and wait for all in-flight coroutines to finish.
+        // Without the join, flushCheckpoint() could read lastObservedBlock from a processor whose
+        // process() coroutine has not yet returned — then a post-flush process() could advance
+        // lastObservedBlock while the throttle prevents trySaveCheckpoint from persisting it,
+        // leaving the on-disk checkpoint stale. Bounded by SHUTDOWN_DRAIN_TIMEOUT so a stuck
+        // coroutine cannot hold the container past its SIGTERM grace period.
+        val drained = runBlocking {
+            withTimeoutOrNull(SHUTDOWN_DRAIN_TIMEOUT) {
+                appCoroutineScope.coroutineContext.job.cancelAndJoin()
+                true
+            } ?: false
+        }
+        if (!drained) {
+            logger.warn(
+                "Coroutine scope did not drain within {}; flushing checkpoints anyway",
+                SHUTDOWN_DRAIN_TIMEOUT,
+            )
+        }
+
+        // All in-flight process() calls have returned (or the drain timed out). Force-flush each
+        // processor's checkpoint past the throttle, closing the up-to-saveIntervalSeconds gap
+        // between in-memory progress and persisted checkpoint on a clean restart.
+        processors.forEach { processor ->
+            try {
+                processor.flushCheckpoint()
+            } catch (e: Exception) {
+                logger.error(
+                    "Failed to flush checkpoint on shutdown for ${processor::class.simpleName}",
+                    e,
+                )
+            }
+        }
+
+        // Publish final metrics after the runner has stopped so values reflect the genuine
+        // last-processed state.
+        indexers.forEach { indexer ->
+            try {
+                publishShutdownMetrics(indexer)
+            } catch (e: Exception) {
+                logger.error("Failed to publish shutdown metrics for indexer ${indexer.name}", e)
+            }
+        }
 
         logger.info("Indexers shut down complete")
+    }
+
+    companion object {
+        private val SHUTDOWN_DRAIN_TIMEOUT = 30.seconds
     }
 
     private fun publishShutdownMetrics(indexer: Indexer) {
