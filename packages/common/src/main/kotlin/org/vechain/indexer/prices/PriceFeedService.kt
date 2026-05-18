@@ -97,7 +97,7 @@ open class PriceFeedService(
     }
 
     private fun decodeValue(feed: PriceFeed, result: InspectionResult): BigDecimal {
-        if (result.reverted || result.vmError != null) {
+        if (result.reverted || !result.vmError.isNullOrBlank()) {
             throw PriceFeedUnavailableException(
                 "PriceFeedOracle call reverted for $feed: ${result.vmError ?: "no reason"}"
             )

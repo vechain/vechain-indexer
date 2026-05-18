@@ -192,6 +192,21 @@ internal class PriceFeedServiceTest {
     }
 
     @Test
+    fun `treats empty vmError as success`() {
+        // Thor may serialize a successful inspection with vmError = "" rather than null; that
+        // shouldn't be mistaken for a failed call. Matches the convention in TransactionUtils
+        // and the indexer-side ValidatorService.
+        val scaled = BigInteger("1500000000000") // $1.50
+        coEvery {
+            thorClient.inspectClauses(any<List<Clause>>(), BlockRevision.Keyword.BEST)
+        } returns listOf(inspectionResult(scaled).copy(vmError = ""))
+
+        val price = service.getPrice(PriceFeed.VET_USD)
+
+        expectThat(price).isEqualTo(BigDecimal("1.500000000000"))
+    }
+
+    @Test
     fun `wraps decoder exceptions as PriceFeedUnavailableException`() {
         // Truncated payload that the decoder cannot parse as `(uint128, uint128)`.
         coEvery {
