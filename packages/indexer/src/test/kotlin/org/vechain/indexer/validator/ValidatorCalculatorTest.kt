@@ -124,6 +124,36 @@ class ValidatorCalculatorTest {
     }
 
     @Test
+    fun `nftYieldsIfDelegatedNextCycle scales with totalNextPeriodVET, not nextCycleStake`() {
+        // VTHO issuance is 76800 * sqrt(networkVET) / blocksPerYear. With nextCycleStake held
+        // constant and Dawn's 10K stake negligible vs 1e8/4e8 totals, the yield should scale
+        // linearly with sqrt(totalNextPeriodVET) — so 4× the network total ≈ 2× the yield.
+        // If a regression swapped totalNextPeriodVET for nextCycleStake, both runs would be equal.
+        fun runWith(totalNextPeriodVET: BigDecimal): BigDecimal =
+            ValidatorCalculator.calculateNftLevelYieldsIfDelegatedNextCycle(
+                    nextPeriodWeight = BigDecimal("1000000"),
+                    totalNextPeriodVET = totalNextPeriodVET,
+                    nextCycleEffectiveDelegationStake = BigDecimal("10000000"),
+                    totalNextPeriodWeight = BigDecimal("10000000"),
+                    vthoPriceUsd = BigDecimal("0.01"),
+                    vetPriceUsd = BigDecimal("0.03"),
+                    status = Status.ACTIVE,
+                    nextCycleStake = BigDecimal("100000000"),
+                )[TokenLevel.Dawn]!!
+
+        val yieldAt1e8 = runWith(BigDecimal("100000000"))
+        val yieldAt4e8 = runWith(BigDecimal("400000000"))
+
+        assertThat(yieldAt1e8).isGreaterThan(BigDecimal.ZERO)
+        val ratio = yieldAt4e8.divide(yieldAt1e8, 4, RoundingMode.HALF_UP)
+        assertThat(ratio)
+            .isCloseTo(
+                BigDecimal("2.0"),
+                org.assertj.core.api.Assertions.within(BigDecimal("0.01")),
+            )
+    }
+
+    @Test
     fun `nftYields is empty when validator has no delegated levels`() {
         val result =
             ValidatorCalculator.calculateDelegatedNftLevelYieldsCurrentCycle(
