@@ -4,6 +4,7 @@ package org.vechain.indexer.validators
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import java.math.BigDecimal
+import org.vechain.indexer.prices.PriceFeedService
 import org.vechain.indexer.stargate.token.TokenLevelDecimalValues
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator
@@ -68,7 +69,7 @@ data class ValidatorResponse(
         fun from(
             v: Validator,
             aggregates: ValidatorAggregates,
-            prices: PriceProvider.Prices?,
+            prices: PriceFeedService.Prices?,
         ): ValidatorResponse {
             val v2 = ValidatorV2Response.from(v, aggregates, prices)
             return ValidatorResponse(

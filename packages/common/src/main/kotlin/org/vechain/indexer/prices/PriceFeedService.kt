@@ -1,10 +1,11 @@
-package org.vechain.indexer.validators
+package org.vechain.indexer.prices
 
 import java.math.BigDecimal
 import java.math.BigInteger
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.contracts.abi.FunctionDefinition
 import org.vechain.indexer.contracts.abi.FunctionParameter
@@ -25,8 +26,9 @@ import org.vechain.indexer.utils.NumberUtils
  * Returns `null` if [priceFeedOracleAddress] isn't configured (solo / custom networks). Callers use
  * that signal to omit price-dependent fields from the response.
  */
+@Profile("prices")
 @Component
-open class PriceProvider(
+open class PriceFeedService(
     private val thorClient: ThorClient,
     @param:Value("\${business-event.substitutions.PRICE_FEED_ORACLE_CONTRACT:}")
     private val priceFeedOracleAddress: String,

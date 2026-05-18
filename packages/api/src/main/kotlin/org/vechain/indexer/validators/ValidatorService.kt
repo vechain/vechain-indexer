@@ -16,6 +16,7 @@ import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
 import org.vechain.indexer.explorer.TimestampUtils.SECONDS_PER_DAY
+import org.vechain.indexer.prices.PriceFeedService
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -37,7 +38,7 @@ open class ValidatorService(
     private val mongoTemplate: MongoTemplate,
     private val thorClient: ThorClient,
     private val aggregateService: ValidatorAggregateService,
-    private val priceProvider: PriceProvider,
+    private val priceFeedService: PriceFeedService,
 ) {
 
     open fun getValidatorBlocks(
@@ -242,7 +243,7 @@ open class ValidatorService(
         val page = if (hasNext) results.dropLast(1) else results
 
         val aggregates = aggregateService.build(page.map { it.id })
-        val prices = priceProvider.get()
+        val prices = priceFeedService.get()
         val mapped = page.map { ValidatorResponse.from(it, aggregates, prices) }
 
         return SliceImpl(mapped, pageable, hasNext)
@@ -252,7 +253,7 @@ open class ValidatorService(
         val query = Query(Criteria.where("_id").`is`(validatorId.lowercase()))
         val doc = mongoTemplate.findOne<Validator>(query) ?: return null
         val aggregates = aggregateService.build(listOf(doc.id))
-        val prices = priceProvider.get()
+        val prices = priceFeedService.get()
         return ValidatorResponse.from(doc, aggregates, prices)
     }
 

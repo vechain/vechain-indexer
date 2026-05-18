@@ -23,6 +23,7 @@ import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.exception.ResourceNotFoundException
+import org.vechain.indexer.prices.PriceFeedService
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -41,7 +42,7 @@ import org.vechain.indexer.validator.Validator
 open class ValidatorV2Controller(
     private val mongoTemplate: MongoTemplate,
     private val aggregateService: ValidatorAggregateService,
-    private val priceProvider: PriceProvider,
+    private val priceFeedService: PriceFeedService,
 ) {
 
     @GetMapping
@@ -90,7 +91,7 @@ open class ValidatorV2Controller(
 
         // One aggregate query and one price read per request, shared across every row.
         val aggregates = aggregateService.build(pageContent.map { it.id })
-        val prices = priceProvider.get()
+        val prices = priceFeedService.get()
 
         val mapped = pageContent.map { ValidatorV2Response.from(it, aggregates, prices) }
         return paginatedResponse(SliceImpl(mapped, pageable, hasNext))
@@ -117,7 +118,7 @@ open class ValidatorV2Controller(
                 ?: throw ResourceNotFoundException("Validator V2 not found for id $normalised")
 
         val aggregates = aggregateService.build(listOf(doc.id))
-        val prices = priceProvider.get()
+        val prices = priceFeedService.get()
         return ValidatorV2Response.from(doc, aggregates, prices)
     }
 }
