@@ -10,6 +10,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
 import org.vechain.indexer.exception.AbstractHttpException
 import org.vechain.indexer.exception.ExceptionResponse
+import org.vechain.indexer.exception.PriceFeedUnavailableException
 
 @RestControllerAdvice
 open class ExceptionResponseConfig : ResponseEntityExceptionHandler() {
@@ -87,6 +88,33 @@ open class ExceptionResponseConfig : ResponseEntityExceptionHandler() {
 
         this.logger.warn(
             "HTTP ${status.value()} ($path) ${status.reasonPhrase}: (id=${response.id}) - $message"
+        )
+
+        return ResponseEntity(response, status)
+    }
+
+    /**
+     * Maps upstream price-oracle failures to 503 so callers see an explicit unavailability signal.
+     */
+    @ExceptionHandler(value = [PriceFeedUnavailableException::class])
+    protected fun handlePriceFeedUnavailable(
+        req: HttpServletRequest,
+        ex: PriceFeedUnavailableException,
+    ): ResponseEntity<ExceptionResponse> {
+
+        val status = HttpStatus.SERVICE_UNAVAILABLE
+        val path = req.requestURI ?: req.servletPath
+
+        val response =
+            ExceptionResponse(
+                path = path,
+                status = status.value(),
+                error = status.reasonPhrase,
+                message = null,
+            )
+
+        this.logger.warn(
+            "HTTP ${status.value()} ($path) ${status.reasonPhrase}: (id=${response.id}) - ${ex.message}"
         )
 
         return ResponseEntity(response, status)

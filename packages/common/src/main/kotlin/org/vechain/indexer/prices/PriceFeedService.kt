@@ -11,20 +11,22 @@ import org.vechain.indexer.contracts.abi.FunctionDefinition
 import org.vechain.indexer.contracts.abi.FunctionParameter
 import org.vechain.indexer.event.model.abi.InputOutput
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
+import org.vechain.indexer.exception.PriceFeedUnavailableException
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.utils.NumberUtils
 
 /**
- * VET / VTHO USD prices for API-layer derivations (TVL, yields, NFT yields).
+ * USD prices for assets quoted by the vechain.energy `PriceFeedOracle` contract.
  *
- * Calls `PriceFeedOracle.getLatestValue(bytes32)` directly — no aggregator, no per-network
- * deployment assumptions. Results are cached for [TTL_MILLIS] so a single page-render hits the
- * chain at most once.
+ * Calls `getLatestValue(bytes32)` per feed in a single `inspectClauses` batch. The new [getPrice] /
+ * [getPrices] API throws [PriceFeedUnavailableException] on any read failure so the surrounding
+ * endpoint can fail explicitly (mapped to HTTP 503 by `ExceptionResponseConfig`) instead of
+ * silently returning a half-populated response.
  *
- * Returns `null` if [priceFeedOracleAddress] isn't configured (solo / custom networks). Callers use
- * that signal to omit price-dependent fields from the response.
+ * The legacy [get] helper preserves the previous null-on-failure behaviour for the V1/V2 validator
+ * endpoints; it will be removed once those callers are migrated.
  */
 @Profile("prices")
 @Component
@@ -34,7 +36,10 @@ open class PriceFeedService(
     private val priceFeedOracleAddress: String,
 ) {
     /**
-     * Most-recently-fetched VET and VTHO USD prices, scaled to BigDecimal (10^-12 oracle units).
+     * Snapshot of VET and VTHO USD prices.
+     *
+     * Retained as a back-compat shim for the V1/V2 validator endpoints. New callers should use
+     * [getPrice] / [getPrices] and receive a [PriceFeedUnavailableException] on failure.
      */
     data class Prices(val vetUsd: BigDecimal, val vthoUsd: BigDecimal)
 
@@ -45,8 +50,9 @@ open class PriceFeedService(
     private val logger = LoggerFactory.getLogger(javaClass)
 
     /**
-     * Returns the cached pair, fetching fresh values when the cache is stale or absent. Returns
-     * `null` if the oracle isn't configured or the read failed.
+     * Returns the cached VET/VTHO pair, fetching fresh values when the cache is stale or absent.
+     * Returns `null` if the oracle isn't configured or the read failed — preserved for the existing
+     * validator endpoints. Will be removed once those callers migrate to [getPrices].
      */
     open fun get(): Prices? {
         val now = System.currentTimeMillis()
@@ -60,60 +66,85 @@ open class PriceFeedService(
             if (recheck != null && afterLock - recheck.fetchedAt < TTL_MILLIS) {
                 return recheck.prices
             }
-            val fresh = fetch()
+            val fresh =
+                try {
+                    val map = getPrices(setOf(PriceFeed.VET_USD, PriceFeed.VTHO_USD))
+                    Prices(
+                        vetUsd = map.getValue(PriceFeed.VET_USD),
+                        vthoUsd = map.getValue(PriceFeed.VTHO_USD),
+                    )
+                } catch (e: PriceFeedUnavailableException) {
+                    logger.debug(
+                        "PriceFeedOracle read failed; treating prices as unavailable: {}",
+                        e.message,
+                    )
+                    null
+                }
             cache = Cached(fresh, afterLock)
             return fresh
         }
     }
 
-    private fun fetch(): Prices? {
-        if (priceFeedOracleAddress.isBlank()) return null
-        return try {
-            val clauses =
-                listOf(
-                    ContractUtils.createClause(
-                        priceFeedOracleAddress,
-                        GET_LATEST_VALUE_ABI,
-                        BigInteger(VET_ID.removePrefix("0x"), 16),
-                    ),
-                    ContractUtils.createClause(
-                        priceFeedOracleAddress,
-                        GET_LATEST_VALUE_ABI,
-                        BigInteger(VTHO_ID.removePrefix("0x"), 16),
-                    ),
-                )
-            val responses = runBlocking {
-                thorClient.inspectClauses(clauses, BlockRevision.Keyword.BEST)
-            }
-            if (responses.size < 2) return null
-            val vet = decodeValue(responses[0].data) ?: return null
-            val vtho = decodeValue(responses[1].data) ?: return null
-            Prices(vetUsd = vet, vthoUsd = vtho)
-        } catch (e: Exception) {
-            logger.debug(
-                "PriceFeedOracle read failed; treating prices as unavailable: {}",
-                e.message,
+    /**
+     * Returns the latest USD price for [feed]. Throws [PriceFeedUnavailableException] if the oracle
+     * isn't configured or the read failed.
+     */
+    open fun getPrice(feed: PriceFeed): BigDecimal = getPrices(setOf(feed)).getValue(feed)
+
+    /**
+     * Returns the latest USD price for every feed in [feeds] in a single `inspectClauses` batch.
+     * Throws [PriceFeedUnavailableException] if any clause is missing data or the call fails.
+     *
+     * The result is keyed by [PriceFeed]; iteration order matches the input collection.
+     */
+    open fun getPrices(feeds: Collection<PriceFeed>): Map<PriceFeed, BigDecimal> {
+        require(feeds.isNotEmpty()) { "feeds must not be empty" }
+        if (priceFeedOracleAddress.isBlank()) {
+            throw PriceFeedUnavailableException(
+                "PriceFeedOracle contract address is not configured"
             )
-            null
         }
+        val ordered = feeds.toSet().toList()
+        val clauses =
+            ordered.map { feed ->
+                ContractUtils.createClause(
+                    priceFeedOracleAddress,
+                    GET_LATEST_VALUE_ABI,
+                    feed.toBytes32(),
+                )
+            }
+        val responses =
+            try {
+                runBlocking { thorClient.inspectClauses(clauses, BlockRevision.Keyword.BEST) }
+            } catch (e: Exception) {
+                throw PriceFeedUnavailableException("PriceFeedOracle read failed: ${e.message}", e)
+            }
+        if (responses.size < clauses.size) {
+            throw PriceFeedUnavailableException(
+                "PriceFeedOracle returned ${responses.size} responses for ${clauses.size} clauses"
+            )
+        }
+        return ordered
+            .mapIndexed { index, feed -> feed to decodeValue(feed, responses[index].data) }
+            .toMap()
     }
 
-    private fun decodeValue(data: String): BigDecimal? {
-        if (data.isBlank() || data == "0x") return null
+    private fun decodeValue(feed: PriceFeed, data: String): BigDecimal {
+        if (data.isBlank() || data == "0x") {
+            throw PriceFeedUnavailableException("PriceFeedOracle returned empty data for $feed")
+        }
         val decoded = FunctionReturnDecoder.decode(data, OUTPUTS)
-        val raw = decoded["value"] as? BigInteger ?: return null
+        val raw =
+            decoded["value"] as? BigInteger
+                ?: throw PriceFeedUnavailableException(
+                    "PriceFeedOracle response for $feed missing 'value' field"
+                )
         // Oracle returns uint128 scaled by 10^12; convert to a USD BigDecimal.
         return NumberUtils.toUSD(raw)
     }
 
     companion object {
         private const val TTL_MILLIS = 30_000L
-
-        // VeChain's PriceFeedOracle keys (bytes32 ASCII).
-        private const val VET_ID =
-            "0x7665742d75736400000000000000000000000000000000000000000000000000"
-        private const val VTHO_ID =
-            "0x7674686f2d757364000000000000000000000000000000000000000000000000"
 
         private val GET_LATEST_VALUE_ABI =
             FunctionDefinition(
