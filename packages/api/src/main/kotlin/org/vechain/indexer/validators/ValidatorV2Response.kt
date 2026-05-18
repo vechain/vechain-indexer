@@ -148,7 +148,8 @@ data class ValidatorV2Response(
             var nftYields: TokenLevelDecimalValues? = null
             if (blocksPerYear != null && totalLocked > BigDecimal.ZERO) {
                 val hasDelegations = delegatorVet > BigDecimal.ZERO
-                val vthoIssued = ValidatorCalculator.determineVTHOIssuedPerBlock(totalLocked)
+                val vthoIssued =
+                    ValidatorCalculator.determineVTHOIssuedPerBlock(aggregates.totalActiveVetStaked)
                 val (vYield, tvlYield, avgYield) =
                     ValidatorCalculator.calculateValidatorYield(
                         validatorTvl = validatorTvl,
@@ -197,7 +198,10 @@ data class ValidatorV2Response(
             var nextCycleAvgDelegatorYield: BigDecimal? = null
             if (blocksPerYearNextCycle != null && nextCycleStake > BigDecimal.ZERO) {
                 val nextHasDelegations = nextCycleDelegatorStake > BigDecimal.ZERO
-                val nextVthoIssued = ValidatorCalculator.determineVTHOIssuedPerBlock(nextCycleStake)
+                val nextVthoIssued =
+                    ValidatorCalculator.determineVTHOIssuedPerBlock(
+                        aggregates.totalActiveNextCycleVetStaked
+                    )
                 val (ncV, ncT, ncA) =
                     ValidatorCalculator.calculateValidatorYield(
                         validatorTvl = nextCycleValidatorTvl,
