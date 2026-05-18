@@ -22,16 +22,19 @@ import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
 
 /**
- * Per-block validator reward ledger.
+ * Per-block validator slot ledger.
  *
- * Reads everything it needs from `Validator` (signer's delegation flag, missed-slot attribution,
- * online recovery) plus a single builtin `Energy.totalSupply()` chain call. No aggregator, no
- * per-validator chain fan-out — the missed-slot detection that V1 did by iterating every validator
- * per block is replaced by a targeted query on V2's already-derived `lastMissedBlockNumber` /
- * `lastProposedBlockNumber` fields.
+ * Writes one VALIDATED row per block (the signer's reward record) plus one MISSED row per missed
+ * PoS slot. Reads everything it needs from `Validator` (signer's delegation flag, missed-slot
+ * attribution) plus a single builtin `Energy.totalSupply()` chain call.
  *
- * Wire shape on `validator_block_rewards` is unchanged: same VALIDATED / MISSED documents, same
- * fields, same id scheme (`"$blockNumber-$validatorId"`).
+ * Document id scheme: `"$blockNumber-$validatorId"` for VALIDATED and
+ * `"$blockNumber-$validatorId-MISSED"` for MISSED. The MISSED suffix prevents a collision when the
+ * signer also missed an elapsed slot in the same block transition (otherwise the second `saveAll`
+ * entry would upsert over the VALIDATED reward row). Two distinct validators missing slots within
+ * the same block produce two rows. A single validator missing two slots at the same block — only
+ * possible when `slotsElapsed > schedule.size`, i.e. >~17 min outage with <100 active validators —
+ * collapses to one MISSED row; the cumulative counters on `Validator` still reflect both misses.
  */
 @Profile("validator & validator-reward")
 @Service
@@ -46,19 +49,11 @@ open class ValidatorBlockService(
     private val weeklyCache = ConcurrentHashMap<String, Long>()
     private val monthlyCache = ConcurrentHashMap<String, Long>()
 
-    /**
-     * Validators currently in an open offline period: id → block number at which their open MISSED
-     * record was written. Used to (a) suppress duplicate MISSED records for continuing offline runs
-     * and (b) close out the prior MISSED record when the validator next produces.
-     */
-    private val offlineValidators = ConcurrentHashMap<String, Long>()
-
     /** Cached VTHO total supply from the previous block to calculate deltas. */
     @Volatile private var vthoTotalSupply: BigInteger = BigInteger.ZERO
 
     init {
         preloadLatestAggregates()
-        preLoadOfflineValidators()
     }
 
     open suspend fun processBlock(
@@ -72,9 +67,8 @@ open class ValidatorBlockService(
 
         val validationInfo = getValidationInfo(block, blockTotalSupply)
         val missedSlots = getValidatorsWithMissedSlots(block)
-        val recovered = getRecoveredValidators(block)
 
-        return listOfNotNull(validationInfo) + missedSlots + recovered
+        return listOfNotNull(validationInfo) + missedSlots
     }
 
     @Transactional
@@ -93,7 +87,7 @@ open class ValidatorBlockService(
     // ---------------------------------------------------------------------------------------------
 
     /**
-     * Builds the VALIDATED record for [block.signer]. Returns `null` when the signer isn't a
+     * Builds the VALIDATED record for `block.signer`. Returns `null` when the signer isn't a
      * tracked validator yet (e.g. cold start before `Validator` has caught up).
      */
     suspend fun getValidationInfo(block: Block, blockTotalSupply: BigInteger): ValidatorBlock? {
@@ -154,47 +148,24 @@ open class ValidatorBlockService(
     // ---------------------------------------------------------------------------------------------
 
     /**
-     * Validators whose `lastMissedBlockNumber == block.number` AND aren't already tracked as
-     * offline. V2's `ValidatorService.updateLiveness` updates `lastMissedBlockNumber` for every
-     * missed slot, so this query returns the set of just-missed validators directly — no full
-     * validator-list iteration needed.
+     * One MISSED row per validator whose `lastMissedBlockNumber == block.number`. Each row is a
+     * single missed PoS slot — `V2's ValidatorService.updateLiveness` updates
+     * `lastMissedBlockNumber` for every missed slot, so this query returns the just-missed
+     * validators directly.
      */
     fun getValidatorsWithMissedSlots(block: Block): List<ValidatorBlock> {
         val justMissed = validatorRepository.findByLastMissedBlockNumber(block.number)
-        return justMissed.mapNotNull { v ->
-            if (offlineValidators.containsKey(v.id)) return@mapNotNull null
-            offlineValidators[v.id] = block.number
+        return justMissed.map { v ->
             ValidatorBlock(
-                id = "${block.number}-${v.id}",
+                // Suffix the status so a signer who also missed an elapsed slot at the same
+                // block doesn't collide with their VALIDATED record id (`"$blockNumber-$id"`)
+                // and overwrite the reward row on saveAll.
+                id = "${block.number}-${v.id}-${BlockStatus.MISSED}",
                 blockId = block.id,
                 blockNumber = block.number,
                 blockTimestamp = block.timestamp,
                 validator = v.id,
                 status = BlockStatus.MISSED,
-            )
-        }
-    }
-
-    /**
-     * Currently-offline validators who proposed at [block]. For each, close out their open MISSED
-     * record with `blocksOffline` + `onlineBlock`, drop them from the offline set.
-     */
-    fun getRecoveredValidators(block: Block): List<ValidatorBlock> {
-        if (offlineValidators.isEmpty()) return emptyList()
-        val recovered =
-            validatorRepository
-                .findByLastProposedBlockNumberAndIdIn(block.number, offlineValidators.keys)
-                .map { it.id }
-        if (recovered.isEmpty()) return emptyList()
-
-        return recovered.mapNotNull { validatorId ->
-            val offlineStartBlock = offlineValidators.remove(validatorId) ?: return@mapNotNull null
-            val offlineDoc =
-                repository.findByIdOrNull("$offlineStartBlock-$validatorId")
-                    ?: return@mapNotNull null
-            offlineDoc.copy(
-                blocksOffline = block.number - offlineDoc.blockNumber,
-                onlineBlock = block.number,
             )
         }
     }
@@ -231,23 +202,17 @@ open class ValidatorBlockService(
         }
     }
 
-    private fun preLoadOfflineValidators() {
-        repository.findLatestMissed().forEach { offlineValidators[it.validator] = it.blockNumber }
-    }
-
     /**
      * Drop every in-memory cache and rebuild from durable state. Invoked from
      * [ValidatorBlockProcessor.resetProcessingState] on rollback so a reorg can't leave
-     * `vthoTotalSupply` or `offlineValidators` ahead of the rewound database.
+     * `vthoTotalSupply` ahead of the rewound database.
      */
     open fun invalidateCache() {
-        offlineValidators.clear()
         hourlyCache.clear()
         dailyCache.clear()
         weeklyCache.clear()
         monthlyCache.clear()
         vthoTotalSupply = BigInteger.ZERO
         preloadLatestAggregates()
-        preLoadOfflineValidators()
     }
 }

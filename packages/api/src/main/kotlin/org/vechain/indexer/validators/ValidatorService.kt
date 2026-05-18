@@ -271,65 +271,61 @@ open class ValidatorService(
         )
     }
 
+    open fun getMissedSlots(
+        timeframe: MissedBlocksTimeframe,
+        validator: String? = null,
+    ): ValidatorMissedSlotsResponse {
+        val currentBlock = runBlocking { thorClient.getBlock(BlockRevision.Keyword.BEST) }.number
+        val startBlock = startBlockFor(timeframe, currentBlock)
+
+        val stats =
+            if (validator != null) {
+                validatorBlockRepository.aggregateMissedSlotsInRangeForValidator(
+                    startBlock,
+                    currentBlock,
+                    validator,
+                )
+            } else {
+                validatorBlockRepository.aggregateMissedSlotsInRange(startBlock, currentBlock)
+            }
+
+        return ValidatorMissedSlotsResponse(
+            timeframe = timeframe,
+            startBlock = startBlock,
+            endBlock = currentBlock,
+            validators = stats,
+        )
+    }
+
+    @Deprecated("Use getMissedSlots — same window, slot-based ratio instead of offline span.")
     open fun getMissedBlocksPercentage(
         timeframe: MissedBlocksTimeframe,
         validator: String? = null,
     ): AllValidatorsMissedBlocksResponse {
-        val currentBlock = runBlocking { thorClient.getBlock(BlockRevision.Keyword.BEST) }.number
-        val blocksPerSecond = 10L // VeChain produces ~1 block per 10 seconds
-
-        val startBlock =
-            when (timeframe) {
-                MissedBlocksTimeframe.DAY -> currentBlock - (SECONDS_PER_DAY / blocksPerSecond)
-                MissedBlocksTimeframe.WEEK ->
-                    currentBlock - (7L * SECONDS_PER_DAY / blocksPerSecond)
-                MissedBlocksTimeframe.MONTH ->
-                    currentBlock - (30L * SECONDS_PER_DAY / blocksPerSecond)
-                MissedBlocksTimeframe.YEAR ->
-                    currentBlock - (365L * SECONDS_PER_DAY / blocksPerSecond)
-            }.coerceAtLeast(0L)
-
-        val missedDocs =
-            if (validator != null) {
-                validatorBlockRepository.findMissedInRange(validator, startBlock, currentBlock)
-            } else {
-                validatorBlockRepository.findAllMissedInRange(startBlock, currentBlock)
-            }
-
-        // Group by validator and calculate missed blocks for each
-        val validatorMissedMap = mutableMapOf<String, Long>()
-
-        for (doc in missedDocs) {
-            val validatorAddr = doc.validator
-            val offlineStart = if (doc.blockNumber < startBlock) startBlock else doc.blockNumber
-            val offlineEnd = doc.onlineBlock ?: currentBlock
-
-            if (offlineEnd >= offlineStart) {
-                val missedCount = offlineEnd - offlineStart + 1L
-                validatorMissedMap[validatorAddr] =
-                    (validatorMissedMap[validatorAddr] ?: 0L) + missedCount
-            }
-        }
-
-        val totalBlocks = (currentBlock - startBlock + 1L).toDouble()
-
-        val validatorStats =
-            validatorMissedMap
-                .map { (validatorAddr, missedBlocks) ->
-                    ValidatorMissedBlocksPercentage(
-                        validator = validatorAddr,
-                        missedPercentage =
-                            if (totalBlocks > 0) (missedBlocks.toDouble() / totalBlocks) * 100.0
-                            else 0.0,
-                    )
-                }
-                .sortedByDescending { it.missedPercentage }
-
+        val slots = getMissedSlots(timeframe, validator)
         return AllValidatorsMissedBlocksResponse(
-            timeframe = timeframe,
-            startBlock = startBlock,
-            endBlock = currentBlock,
-            validators = validatorStats,
+            timeframe = slots.timeframe,
+            startBlock = slots.startBlock,
+            endBlock = slots.endBlock,
+            validators =
+                slots.validators.map {
+                    ValidatorMissedBlocksPercentage(
+                        validator = it.validator,
+                        missedPercentage = it.missedSlotRatio * 100.0,
+                    )
+                },
         )
+    }
+
+    private fun startBlockFor(timeframe: MissedBlocksTimeframe, currentBlock: Long): Long {
+        val secondsPerBlock = 10L // VeChain produces ~1 block per 10 seconds
+        val days =
+            when (timeframe) {
+                MissedBlocksTimeframe.DAY -> 1L
+                MissedBlocksTimeframe.WEEK -> 7L
+                MissedBlocksTimeframe.MONTH -> 30L
+                MissedBlocksTimeframe.YEAR -> 365L
+            }
+        return (currentBlock - days * SECONDS_PER_DAY / secondsPerBlock).coerceAtLeast(0L)
     }
 }

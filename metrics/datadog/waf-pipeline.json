@@ -343,6 +343,12 @@
         },
         {
           "filter": {
+            "query": "@httpRequest.uri:\"/api/v2/validators/missed-slots\""
+          },
+          "name": "/api/v2/validators/missed-slots"
+        },
+        {
+          "filter": {
             "query": "@httpRequest.uri:\"/api/v1/nfts\""
           },
           "name": "/api/v1/nfts"

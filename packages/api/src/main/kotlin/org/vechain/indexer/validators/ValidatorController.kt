@@ -288,12 +288,18 @@ open class ValidatorController(private val service: ValidatorService) {
             validator.value.lowercase(),
         )
 
+    @Deprecated("Use GET /api/v2/validators/missed-slots")
     @GetMapping("/blocks/missed")
     @Operation(
-        summary = "Get missed blocks percentage for validators",
+        summary = "Get missed blocks percentage for validators (deprecated)",
         description =
-            "Returns missed block percentages for all validators or a specific validator within a specified timeframe. " +
-                "Timeframe options: DAY (last 24h), WEEK (last 7 days), MONTH (last 30 days), YEAR (last 365 days).",
+            "**Deprecated:** Replaced by `GET /api/v2/validators/missed-slots`. " +
+                "`missedPercentage` is now `missedSlots / scheduledSlots * 100` over the window " +
+                "— i.e. the fraction of the validator's scheduled PoS slots that were missed, " +
+                "not the fraction of all chain blocks during an offline span as previously. " +
+                "Timeframe options: DAY (last 24h), WEEK (last 7 days), MONTH (last 30 days), " +
+                "YEAR (last 365 days).",
+        deprecated = true,
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
