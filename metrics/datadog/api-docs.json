@@ -3831,9 +3831,6 @@
           "validatorTvl": {
             "type": "number"
           },
-          "validatorTvlPercentage": {
-            "type": "number"
-          },
           "validatorVetStaked": {
             "type": "number"
           },
@@ -3845,10 +3842,20 @@
           }
         },
         "required": [
+          "delegatorExitingVetStaked",
+          "delegatorQueuedVetStaked",
           "delegatorTvl",
+          "delegatorVetStaked",
+          "exitingVetStaked",
           "id",
+          "online",
+          "queuedVetStaked",
           "totalTvl",
-          "validatorTvl"
+          "validatorExitingVetStaked",
+          "validatorQueuedVetStaked",
+          "validatorTvl",
+          "validatorVetStaked",
+          "vetStaked"
         ],
         "type": "object"
       },
@@ -3919,9 +3926,12 @@
             "format": "int64",
             "type": "integer"
           },
-          "missedBlocks": {
+          "missedSlots": {
             "format": "int64",
             "type": "integer"
+          },
+          "missedSlotsPercentage": {
+            "type": "number"
           },
           "nextCycleAvgDelegatorYield": {
             "type": "number"
@@ -3938,9 +3948,6 @@
           "nftYieldsIfDelegatedNextCycle": {
             "$ref": "#/components/schemas/TokenLevelDecimalValues"
           },
-          "percentageOffline": {
-            "type": "number"
-          },
           "proposedBlocks": {
             "format": "int64",
             "type": "integer"
@@ -3952,7 +3959,7 @@
           "queuedVetStaked": {
             "type": "number"
           },
-          "scheduledBlocks": {
+          "scheduledSlots": {
             "format": "int64",
             "type": "integer"
           },
@@ -4012,9 +4019,9 @@
           "blocksPerEpoch",
           "delegatorTvl",
           "id",
-          "missedBlocks",
+          "missedSlots",
           "proposedBlocks",
-          "scheduledBlocks",
+          "scheduledSlots",
           "totalTvl",
           "validatorTvl"
         ],
