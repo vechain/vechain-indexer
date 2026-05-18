@@ -17,6 +17,7 @@ import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
+import org.vechain.indexer.docs.PriceOracleUnavailableResponse
 import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
@@ -108,6 +109,7 @@ open class ValidatorController(private val service: ValidatorService) {
             ),
     )
     @CommonApiResponses
+    @PriceOracleUnavailableResponse
     @PaginationParameters
     open fun getValidators(
         @RequestParam(required = false) endorser: String?,
@@ -147,6 +149,7 @@ open class ValidatorController(private val service: ValidatorService) {
         required = true,
     )
     @CommonApiResponses
+    @PriceOracleUnavailableResponse
     open fun getValidatorById(@PathVariable @ValidAddress validatorId: Address): ValidatorResponse {
         val normalised = HexUtils.normalise(validatorId.value)
         return service.getValidatorById(normalised)

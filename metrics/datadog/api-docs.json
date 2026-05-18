@@ -3845,7 +3845,10 @@
           }
         },
         "required": [
-          "id"
+          "delegatorTvl",
+          "id",
+          "totalTvl",
+          "validatorTvl"
         ],
         "type": "object"
       },
@@ -4007,10 +4010,13 @@
         },
         "required": [
           "blocksPerEpoch",
+          "delegatorTvl",
           "id",
           "missedBlocks",
           "proposedBlocks",
-          "scheduledBlocks"
+          "scheduledBlocks",
+          "totalTvl",
+          "validatorTvl"
         ],
         "type": "object"
       },
@@ -14490,6 +14496,21 @@
               }
             },
             "description": "Service not available"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "PriceFeedOracle is unreachable or returned an unusable response"
           }
         },
         "summary": "Get validators with optional filters (deprecated — use /api/v2/validators)",
@@ -15536,6 +15557,21 @@
               }
             },
             "description": "Service not available"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "PriceFeedOracle is unreachable or returned an unusable response"
           }
         },
         "summary": "Get a single validator by ID (deprecated — use /api/v2/validators/{id})",
@@ -16907,7 +16943,7 @@
     },
     "/api/v2/validators": {
       "get": {
-        "description": "Returns validators from the V2 indexer. TVL / yield / NFT-yield fields are populated when `PriceFeedOracle` is configured on the active network; otherwise they're omitted (the rest of the validator data is still returned). `online` and `totalRewards` are not yet wired up — see `ValidatorV2Response` for the remaining formulas.",
+        "description": "Returns validators from the V2 indexer. TVL / yield / NFT-yield fields require VET and VTHO USD prices from the vechain.energy `PriceFeedOracle`; if the oracle is unavailable the endpoint returns 503 rather than a half-populated response. `online` and `totalRewards` are not yet wired up — see `ValidatorV2Response` for the remaining formulas.",
         "operationId": "getValidators",
         "parameters": [
           {
@@ -17052,6 +17088,21 @@
               }
             },
             "description": "Service not available"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "PriceFeedOracle is unreachable or returned an unusable response"
           }
         },
         "summary": "Get V2 validators with optional filters",
@@ -17150,6 +17201,21 @@
               }
             },
             "description": "Service not available"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "PriceFeedOracle is unreachable or returned an unusable response"
           }
         },
         "summary": "Get a single V2 validator by ID",

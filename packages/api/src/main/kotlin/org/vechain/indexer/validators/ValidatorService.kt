@@ -16,6 +16,8 @@ import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
 import org.vechain.indexer.explorer.TimestampUtils.SECONDS_PER_DAY
+import org.vechain.indexer.prices.PriceFeed
+import org.vechain.indexer.prices.PriceFeedService
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -37,7 +39,7 @@ open class ValidatorService(
     private val mongoTemplate: MongoTemplate,
     private val thorClient: ThorClient,
     private val aggregateService: ValidatorAggregateService,
-    private val priceProvider: PriceProvider,
+    private val priceFeedService: PriceFeedService,
 ) {
 
     open fun getValidatorBlocks(
@@ -241,9 +243,17 @@ open class ValidatorService(
         val hasNext = results.size > pageable.pageSize
         val page = if (hasNext) results.dropLast(1) else results
 
+        // Empty pages don't need price data — skip the oracle hop so a no-match query never
+        // returns 503 just because the oracle happens to be flaky.
+        if (page.isEmpty()) {
+            return SliceImpl(emptyList(), pageable, hasNext)
+        }
+
         val aggregates = aggregateService.build(page.map { it.id })
-        val prices = priceProvider.get()
-        val mapped = page.map { ValidatorResponse.from(it, aggregates, prices) }
+        val prices = priceFeedService.getPrices(setOf(PriceFeed.VET_USD, PriceFeed.VTHO_USD))
+        val vetPrice = prices.getValue(PriceFeed.VET_USD)
+        val vthoPrice = prices.getValue(PriceFeed.VTHO_USD)
+        val mapped = page.map { ValidatorResponse.from(it, aggregates, vetPrice, vthoPrice) }
 
         return SliceImpl(mapped, pageable, hasNext)
     }
@@ -252,8 +262,13 @@ open class ValidatorService(
         val query = Query(Criteria.where("_id").`is`(validatorId.lowercase()))
         val doc = mongoTemplate.findOne<Validator>(query) ?: return null
         val aggregates = aggregateService.build(listOf(doc.id))
-        val prices = priceProvider.get()
-        return ValidatorResponse.from(doc, aggregates, prices)
+        val prices = priceFeedService.getPrices(setOf(PriceFeed.VET_USD, PriceFeed.VTHO_USD))
+        return ValidatorResponse.from(
+            doc,
+            aggregates,
+            prices.getValue(PriceFeed.VET_USD),
+            prices.getValue(PriceFeed.VTHO_USD),
+        )
     }
 
     open fun getMissedBlocksPercentage(

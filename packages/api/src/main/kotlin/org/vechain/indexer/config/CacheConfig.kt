@@ -37,6 +37,7 @@ open class CacheConfig(private val cacheProperties: CacheProperties) {
                 "official_token_addresses",
                 "gmNft_countByLevelAndOwnerNot",
                 "b3tr_richlist_total_holders",
+                "price_feed_value",
             )
     }
 

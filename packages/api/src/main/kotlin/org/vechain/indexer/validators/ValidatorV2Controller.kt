@@ -22,7 +22,10 @@ import org.vechain.indexer.constants.VALIDATORS_PATH_V2
 import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
+import org.vechain.indexer.docs.PriceOracleUnavailableResponse
 import org.vechain.indexer.exception.ResourceNotFoundException
+import org.vechain.indexer.prices.PriceFeed
+import org.vechain.indexer.prices.PriceFeedService
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -41,18 +44,18 @@ import org.vechain.indexer.validator.Validator
 open class ValidatorV2Controller(
     private val mongoTemplate: MongoTemplate,
     private val aggregateService: ValidatorAggregateService,
-    private val priceProvider: PriceProvider,
+    private val priceFeedService: PriceFeedService,
 ) {
 
     @GetMapping
     @Operation(
         summary = "Get V2 validators with optional filters",
         description =
-            "Returns validators from the V2 indexer. TVL / yield / NFT-yield fields are populated " +
-                "when `PriceFeedOracle` is configured on the active network; otherwise they're " +
-                "omitted (the rest of the validator data is still returned). `online` and " +
-                "`totalRewards` are not yet wired up — see `ValidatorV2Response` for the " +
-                "remaining formulas.",
+            "Returns validators from the V2 indexer. TVL / yield / NFT-yield fields require " +
+                "VET and VTHO USD prices from the vechain.energy `PriceFeedOracle`; if the " +
+                "oracle is unavailable the endpoint returns 503 rather than a half-populated " +
+                "response. `online` and `totalRewards` are not yet wired up — see " +
+                "`ValidatorV2Response` for the remaining formulas.",
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -63,6 +66,7 @@ open class ValidatorV2Controller(
     )
     @AddressParameter(name = "endorser", description = "Filter by endorser address")
     @CommonApiResponses
+    @PriceOracleUnavailableResponse
     @PaginationParameters
     open fun getValidators(
         @RequestParam(required = false) status: List<Status>?,
@@ -88,11 +92,20 @@ open class ValidatorV2Controller(
         val hasNext = results.size > pageable.pageSize
         val pageContent = if (hasNext) results.dropLast(1) else results
 
+        // No rows means no price-dependent fields to compute — skip the oracle hop so an empty
+        // page never returns 503 just because the oracle happens to be flaky.
+        if (pageContent.isEmpty()) {
+            return paginatedResponse(SliceImpl(emptyList(), pageable, hasNext))
+        }
+
         // One aggregate query and one price read per request, shared across every row.
         val aggregates = aggregateService.build(pageContent.map { it.id })
-        val prices = priceProvider.get()
+        val prices = priceFeedService.getPrices(setOf(PriceFeed.VET_USD, PriceFeed.VTHO_USD))
+        val vetPrice = prices.getValue(PriceFeed.VET_USD)
+        val vthoPrice = prices.getValue(PriceFeed.VTHO_USD)
 
-        val mapped = pageContent.map { ValidatorV2Response.from(it, aggregates, prices) }
+        val mapped =
+            pageContent.map { ValidatorV2Response.from(it, aggregates, vetPrice, vthoPrice) }
         return paginatedResponse(SliceImpl(mapped, pageable, hasNext))
     }
 
@@ -108,6 +121,7 @@ open class ValidatorV2Controller(
         required = true,
     )
     @CommonApiResponses
+    @PriceOracleUnavailableResponse
     open fun getValidatorById(
         @PathVariable @ValidAddress validatorId: Address
     ): ValidatorV2Response {
@@ -117,7 +131,12 @@ open class ValidatorV2Controller(
                 ?: throw ResourceNotFoundException("Validator V2 not found for id $normalised")
 
         val aggregates = aggregateService.build(listOf(doc.id))
-        val prices = priceProvider.get()
-        return ValidatorV2Response.from(doc, aggregates, prices)
+        val prices = priceFeedService.getPrices(setOf(PriceFeed.VET_USD, PriceFeed.VTHO_USD))
+        return ValidatorV2Response.from(
+            doc,
+            aggregates,
+            prices.getValue(PriceFeed.VET_USD),
+            prices.getValue(PriceFeed.VTHO_USD),
+        )
     }
 }

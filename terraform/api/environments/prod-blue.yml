@@ -128,6 +128,11 @@ enabled_nets:
         b3tr-richlist-total-holders:
           max-size: "10"
           ttl-seconds: "300"
+      # vechain.energy PriceFeedOracle — mainnet deployment.
+      pricing:
+        oracle:
+          thor-url: "https://mainnet.vechain.org"
+          contract-address: "0x49eC7192BF804Abc289645ca86F1eD01a6C17713"
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -377,6 +382,11 @@ enabled_nets:
         b3tr-richlist-total-holders:
           max-size: "10"
           ttl-seconds: "300"
+      # vechain.energy PriceFeedOracle — testnet deployment.
+      pricing:
+        oracle:
+          thor-url: "https://testnet.vechain.org"
+          contract-address: "0xdcCAaBd81B38e0dEEf4c202bC7F1261A4D9192C6"
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"

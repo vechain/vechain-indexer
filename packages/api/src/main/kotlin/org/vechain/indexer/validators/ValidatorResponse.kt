@@ -40,9 +40,9 @@ data class ValidatorResponse(
     val totalRewards: BigDecimal?,
     val blockProbability: BigDecimal?,
     val blocksPerEpoch: BigDecimal?,
-    val totalTvl: BigDecimal?,
-    val validatorTvl: BigDecimal?,
-    val delegatorTvl: BigDecimal?,
+    val totalTvl: BigDecimal,
+    val validatorTvl: BigDecimal,
+    val delegatorTvl: BigDecimal,
     val validatorTvlPercentage: BigDecimal?,
     val tvlBasedYield: BigDecimal?,
     val validatorYield: BigDecimal?,
@@ -68,9 +68,10 @@ data class ValidatorResponse(
         fun from(
             v: Validator,
             aggregates: ValidatorAggregates,
-            prices: PriceProvider.Prices?,
+            vetPrice: BigDecimal,
+            vthoPrice: BigDecimal,
         ): ValidatorResponse {
-            val v2 = ValidatorV2Response.from(v, aggregates, prices)
+            val v2 = ValidatorV2Response.from(v, aggregates, vetPrice, vthoPrice)
             return ValidatorResponse(
                 id = v2.id,
                 endorser = v2.endorser,

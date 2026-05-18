@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Primary
 import org.vechain.indexer.thor.client.ThorClient
 
 /**
@@ -21,10 +22,14 @@ open class ThorClientConfig {
      * URL for all requests made by the client. The returned client adds caching support and
      * configures a default project identifier header for the indexer.
      *
-     * This bean is only created if no other [ThorClient] bean is present.
+     * Marked [Primary] so unqualified `ThorClient` injections continue to resolve when additional
+     * qualified `ThorClient` beans are present (e.g. the mainnet-pointed `priceOracleThorClient`).
+     * The conditional matches the bean's specific name so adding a qualified peer does not
+     * accidentally suppress this default.
      */
     @Bean
-    @ConditionalOnMissingBean(ThorClient::class)
+    @Primary
+    @ConditionalOnMissingBean(name = ["thorClient"])
     open fun thorClient(@Value("\${thor.url}") thorUrl: String): ThorClient =
         CachingThorClient(thorUrl, Pair("X-Project-Id", "veworld-indexer"))
 }

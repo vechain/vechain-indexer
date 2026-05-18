@@ -28,7 +28,7 @@ spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:nfts,transactions,transfers,history,stargate,vevote-results,vevote-historic-proposals,b3tr,explorer,accounts,validator,safe}
     group:
-      validator: [delegation]
+      validator: [delegation, prices]
       delegation: [validator]
       validator-reward: [validator]
       token-reward: [delegation]
@@ -66,6 +66,15 @@ spring.data:
 
 thor:
   url: ${THOR_URL:https://testnet.vechain.org}
+
+# vechain.energy `PriceFeedOracle`. Each deployment configures the values matching its target
+# network in terraform (mainnet for mainnet/devnet deployments, testnet for testnet). The
+# defaults below are mainnet because that's the safest fallback for local dev or anywhere the
+# env vars aren't set — the oracle is not deployed on solo / custom networks.
+pricing:
+  oracle:
+    thor-url: ${PRICE_ORACLE_THOR_URL:https://mainnet.vechain.org}
+    contract-address: ${PRICE_ORACLE_CONTRACT:0x49eC7192BF804Abc289645ca86F1eD01a6C17713}
 
 vechain:
   forks:
@@ -143,6 +152,9 @@ cache:
     b3tr_richlist_total_holders:
       max-size: ${CACHE_B3TR_RICHLIST_TOTAL_HOLDERS_MAX_SIZE:10}
       ttl-seconds: ${CACHE_B3TR_RICHLIST_TOTAL_HOLDERS_TTL_SECONDS:600}
+    price_feed_value:
+      max-size: ${CACHE_PRICE_FEED_VALUE_MAX_SIZE:16}
+      ttl-seconds: ${CACHE_PRICE_FEED_VALUE_TTL_SECONDS:30}
   warmers:
     enabled: ${CACHE_WARMERS_ENABLED:true}
     tick-interval-ms: ${CACHE_WARMERS_TICK_INTERVAL_MS:60000}
