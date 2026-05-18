@@ -1,6 +1,10 @@
 package org.vechain.indexer.stargate.rewards
 
-import io.mockk.*
+import io.mockk.clearAllMocks
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.spyk
+import java.math.BigDecimal
 import java.math.BigInteger
 import java.time.Instant
 import java.time.ZoneOffset
@@ -10,22 +14,26 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.config.InlineVersioningProperties
+import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
 import org.vechain.indexer.thor.HexUtils.toHex
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
-import org.vechain.indexer.thor.model.InspectionResult
+import org.vechain.indexer.validator.Delegation
 import org.vechain.indexer.validator.DelegationRepository
+import org.vechain.indexer.validator.DelegationStatus
 import org.vechain.indexer.validator.Status
-import org.vechain.indexer.validator.models.DecodedValidatorInfo
+import org.vechain.indexer.validator.Validator
+import org.vechain.indexer.validator.ValidatorRepository
 
 class TokenRewardServiceTest {
     private val repository = mockk<TokenRewardRepository>(relaxed = true)
     private val mongoTemplate = mockk<MongoTemplate>(relaxed = true)
     private val inlineVersioningProperties = mockk<InlineVersioningProperties>()
-    private val delegationRepository = mockk<DelegationRepository>(relaxed = true)
+    private val validatorV2Repository = mockk<ValidatorRepository>(relaxed = true)
+    private val delegationV2Repository = mockk<DelegationRepository>(relaxed = true)
     private val thorClient = mockk<ThorClient>(relaxed = true)
 
     private lateinit var service: TokenRewardService
@@ -44,8 +52,10 @@ class TokenRewardServiceTest {
                     repository,
                     mongoTemplate,
                     inlineVersioningProperties,
-                    delegationRepository,
+                    validatorV2Repository,
+                    delegationV2Repository,
                     thorClient,
+                    validatorStartBlock = 0L,
                 )
             )
     }
@@ -97,48 +107,41 @@ class TokenRewardServiceTest {
             version = 1,
         )
 
+    private fun validatorV2(
+        address: String,
+        cycleLength: Long = 1,
+        startBlock: Long = 0,
+        completed: Long = 0,
+        delegatorStake: BigDecimal = BigDecimal.ONE,
+    ): Validator =
+        Validator(
+            id = address,
+            blockId = "0xBLOCK",
+            blockNumber = 100,
+            blockTimestamp = 0,
+            status = Status.ACTIVE,
+            cyclePeriodLength = cycleLength,
+            startBlock = startBlock,
+            completedPeriods = completed,
+            delegatorVetStaked = delegatorStake,
+        )
+
+    /** Reflectively seeds the private `vthoTotalSupply` cache. */
+    private fun seedVthoTotalSupply(value: BigInteger) {
+        val field = TokenRewardService::class.java.getDeclaredField("vthoTotalSupply")
+        field.isAccessible = true
+        field.set(service, value)
+    }
+
     @Test
     fun `getDelegatorsBlockReward computes 70 percent share`() {
         val b = block(10)
-        val decoded =
-            DecodedValidatorInfo(
-                vthoTotalSupply = BigInteger.valueOf(1000),
-                vthoBurned = BigInteger.valueOf(100),
-                vetPriceUsd = BigInteger.TEN,
-                vthoPriceUsd = BigInteger.TEN,
-                totalWeight = BigInteger.ZERO,
-                decodedValidators = emptyMap(),
-            )
+        // Pre-seed cached supply so the cold-start path doesn't kick in.
+        seedVthoTotalSupply(BigInteger.valueOf(500))
 
-        // return dummy responses – actual decoding mocked
-        coEvery { thorClient.inspectClauses(any(), any()) } returns
-            listOf(
-                InspectionResult(
-                    data = "0x1",
-                    events = emptyList(),
-                    transfers = emptyList(),
-                    0,
-                    reverted = false,
-                    vmError = null,
-                ),
-                InspectionResult(
-                    data = "0x2",
-                    events = emptyList(),
-                    transfers = emptyList(),
-                    0,
-                    reverted = false,
-                    vmError = null,
-                ),
-            )
+        val result = runBlocking { service.getDelegatorsBlockReward(b, BigInteger.valueOf(1000)) }
 
-        mockkObject(org.vechain.indexer.validator.domain.ValidatorDecoder)
-        every {
-            org.vechain.indexer.validator.domain.ValidatorDecoder.decodeVTHOIssued(any())
-        } returns BigInteger.valueOf(500)
-
-        val result = runBlocking { service.getDelegatorsBlockReward(b, decoded) }
-
-        // (total=1000, prev=500, delta=500) * 0.7 = 350
+        // (block=1000, prev=500, delta=500) * 0.7 = 350
         assertThat(result).isEqualTo(BigInteger.valueOf(350))
     }
 
@@ -146,27 +149,7 @@ class TokenRewardServiceTest {
     fun `updateRewardInfo distributes rewards proportionally`() {
         val validator = "0x00000000000000000000000000000000000000a1"
 
-        // set up cycle cache with real decodedValidators map
-        service.updateValidatorCycleCache(
-            validator,
-            DecodedValidatorInfo(
-                vthoTotalSupply = BigInteger.ZERO,
-                vthoBurned = BigInteger.ZERO,
-                vetPriceUsd = BigInteger.TEN,
-                vthoPriceUsd = BigInteger.TEN,
-                totalWeight = BigInteger.ZERO,
-                decodedValidators =
-                    mapOf(
-                        "masters" to listOf(validator),
-                        "stakingPeriodLengths" to listOf(BigInteger.ONE),
-                        "startBlocks" to listOf(BigInteger.ZERO),
-                        "completedPeriods" to listOf(BigInteger.ZERO),
-                        "delegatorsStake" to listOf(BigInteger.ONE),
-                    ),
-            ),
-        )
-
-        // manually set totalEffectiveDelegations in cache
+        service.updateValidatorCycleCache(validatorV2(validator))
         service.validatorCycleCache[validator]!!.totalEffectiveDelegations = BigInteger.ONE
 
         val tr = tokenReward(validator, "10001", stake = BigInteger.ONE)
@@ -190,24 +173,7 @@ class TokenRewardServiceTest {
     fun `updateRewardInfo stamps current block metadata on rollover records`() {
         val validator = "0x00000000000000000000000000000000000000a1"
 
-        service.updateValidatorCycleCache(
-            validator,
-            DecodedValidatorInfo(
-                vthoTotalSupply = BigInteger.ZERO,
-                vthoBurned = BigInteger.ZERO,
-                vetPriceUsd = BigInteger.TEN,
-                vthoPriceUsd = BigInteger.TEN,
-                totalWeight = BigInteger.ZERO,
-                decodedValidators =
-                    mapOf(
-                        "masters" to listOf(validator),
-                        "stakingPeriodLengths" to listOf(BigInteger.ONE),
-                        "startBlocks" to listOf(BigInteger.ZERO),
-                        "completedPeriods" to listOf(BigInteger.ZERO),
-                        "delegatorsStake" to listOf(BigInteger.ONE),
-                    ),
-            ),
-        )
+        service.updateValidatorCycleCache(validatorV2(validator))
         service.validatorCycleCache[validator]!!.totalEffectiveDelegations = BigInteger.ONE
 
         val rewardTracker =
@@ -243,40 +209,32 @@ class TokenRewardServiceTest {
     fun `getOrFetchRewardsNewCycle creates new docs for missing delegations`() {
         val validator = "0x00000000000000000000000000000000000000a1"
 
-        // Mock delegation with tokenLevel that has effectiveStake
-        val mockDelegation =
-            mockk<org.vechain.indexer.validator.Delegation> {
-                every { tokenId } returns "10001"
-                every { tokenLevel } returns org.vechain.indexer.stargate.token.TokenLevel.Dawn
-            }
+        val delegation =
+            Delegation(
+                id = "del-1",
+                validator = validator,
+                tokenId = "10001",
+                owner = "0xOWNER",
+                status = DelegationStatus.ACTIVE,
+                tokenLevel = TokenLevel.Dawn,
+                stakedAmount = "10000",
+                totalRewardsClaimed = BigInteger.ZERO,
+                txId = "0xTX",
+                blockId = "0xBLOCK",
+                blockNumber = 100,
+                blockTimestamp = 0,
+            )
 
         every {
-            delegationRepository.findByValidatorAndStatusIn(
+            delegationV2Repository.findByValidatorAndStatusIn(
                 validator,
-                listOf(Status.ACTIVE, Status.EXITING),
+                listOf(DelegationStatus.ACTIVE, DelegationStatus.EXITING),
             )
-        } returns listOf(mockDelegation)
+        } returns listOf(delegation)
 
         every { repository.findAllById(any<List<String>>()) } returns emptyList()
 
-        service.updateValidatorCycleCache(
-            validator,
-            DecodedValidatorInfo(
-                vthoTotalSupply = BigInteger.ZERO,
-                vthoBurned = BigInteger.ZERO,
-                vetPriceUsd = BigInteger.TEN,
-                vthoPriceUsd = BigInteger.TEN,
-                totalWeight = BigInteger.ZERO,
-                decodedValidators =
-                    mapOf(
-                        "masters" to listOf(validator),
-                        "stakingPeriodLengths" to listOf(BigInteger.ONE),
-                        "startBlocks" to listOf(BigInteger.ZERO),
-                        "completedPeriods" to listOf(BigInteger.ZERO),
-                        "delegatorsStake" to listOf(BigInteger.ONE),
-                    ),
-            ),
-        )
+        service.updateValidatorCycleCache(validatorV2(validator))
 
         val result =
             service.getOrFetchRewardsNewCycle(
@@ -285,10 +243,9 @@ class TokenRewardServiceTest {
                 Instant.now().atZone(ZoneOffset.UTC).toLocalDate(),
             )
 
-        // Dawn level has effectiveStake of 10000 (staked) * 1 (rewardMultiplier) = 10000
-        // Converted to wei: 10000 * 10^18
+        // Dawn level effectiveStake (in VET) converted to wei (× 10^18).
         val expectedStakeWei =
-            java.math.BigDecimal("10000").multiply(java.math.BigDecimal.TEN.pow(18)).toBigInteger()
+            TokenLevel.Dawn.effectiveStake.multiply(BigDecimal.TEN.pow(18)).toBigInteger()
         assertThat(result).hasSize(1)
         assertThat(result.first().effectiveStake).isEqualTo(expectedStakeWei)
     }

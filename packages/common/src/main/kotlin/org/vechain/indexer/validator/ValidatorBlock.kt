@@ -24,8 +24,6 @@ constructor(
     val status: BlockStatus,
     val delegatorRewards: BigInteger? = null,
     val validatorRewards: BigInteger? = null,
-    val blocksOffline: Long? = null,
-    val onlineBlock: Long? = null,
     @JsonIgnore val isHourly: Boolean? = null,
     @JsonIgnore val isDaily: Boolean? = null,
     @JsonIgnore val isWeekly: Boolean? = null,

@@ -19,8 +19,7 @@ import org.vechain.indexer.stargate.token.StargateEventService
 import org.vechain.indexer.stargate.token.StargateTokenProcessor
 import org.vechain.indexer.stargate.token.StargateTokenRepository
 import org.vechain.indexer.stargate.token.StargateTokenService
-import org.vechain.indexer.validator.ValidatorDelegationService
-import org.vechain.indexer.validator.domain.ValidatorDecoder
+import org.vechain.indexer.validator.ValidatorRepository
 
 @Disabled("Performance test - run explicitly with --tests when needed")
 @ActiveProfiles("stargate-token")
@@ -29,7 +28,9 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var stargateTokenRepository: StargateTokenRepository
     @Autowired lateinit var stargateTokenService: StargateTokenService
     @Autowired lateinit var stargateEventService: StargateEventService
-    @Autowired lateinit var validatorDelegationService: ValidatorDelegationService
+    @Autowired lateinit var validatorRepository: ValidatorRepository
+
+    @Value("\${indexer.start-block.validator}") var validatorStartBlock: Long = 0L
     @Autowired lateinit var inlineVersioningProperties: InlineVersioningProperties
     @Autowired lateinit var mongoTemplate: MongoTemplate
     @Autowired lateinit var checkpointService: CheckpointService
@@ -44,8 +45,8 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
     @Value("\${business-event.substitutions.STARGATE_CONTRACT}")
     lateinit var stargateContract: String
 
-    @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
-    lateinit var getAllValidatorsContract: String
+    @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
+    lateinit var builtinStakerContract: String
 
     @Value("\${business-event.substitutions.NODE_MANAGEMENT_CONTRACT}")
     lateinit var nodeManagementContract: String
@@ -97,9 +98,10 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
                 ProfiledStargateTokenService(
                     repository = stargateTokenRepository,
                     eventService = stargateEventService,
-                    validatorDelegationService = validatorDelegationService,
+                    validatorRepository = validatorRepository,
                     mongoTemplate = mongoTemplate,
                     inlineVersioningProperties = inlineVersioningProperties,
+                    validatorStartBlock = validatorStartBlock,
                     profiler = profiler,
                 )
             } else {
@@ -139,6 +141,7 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
                     stargateNftContract,
                     stargateDelegationContract,
                     stargateContract,
+                    builtinStakerContract,
                     nodeManagementContract,
                 )
             )
@@ -153,12 +156,12 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
                     "TokenManagerRemoved",
                     "MaturityPeriodBoosted",
                     "ValidationSignaledExit",
+                    "ValidationWithdrawn",
                     "DelegationRewardsClaimed",
                     "BaseVTHORewardsClaimed",
                     "NodeDelegated",
                 )
             )
-            .callDataClauses(listOf(ValidatorDecoder.buildClauses(getAllValidatorsContract)[0]))
             .excludeVetTransfers()
             .build()
     }

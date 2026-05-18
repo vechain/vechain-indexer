@@ -1,6 +1,5 @@
 package org.vechain.indexer.validator
 
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -9,23 +8,19 @@ import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.validator.domain.ValidatorDecoder.buildClauses
 
 @Configuration
-@Profile("validator", "validator-stats")
+@Profile("validator", "stargate-token", "history")
 open class ValidatorConfig {
 
     @Bean
     open fun validatorIndexer(
         thorClient: ThorClient,
         processor: ValidatorProcessor,
-        @Qualifier("delegationIndexer") delegationIndexer: Indexer,
         @Value("\${indexer.start-block.validator}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLogInterval: Long,
         @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
         builtinStakerAddress: String,
-        @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
-        getAllValidatorsAddress: String,
     ): Indexer =
         IndexerFactory()
             .name(IndexerNames.VALIDATOR.NAME)
@@ -37,10 +32,15 @@ open class ValidatorConfig {
             .abis("abis/stargate")
             .abiContracts(listOf(builtinStakerAddress))
             .abiEventNames(
-                listOf("BeneficiarySet", "StakeDecreased", "StakeIncreased", "ValidationWithdrawn")
+                listOf(
+                    "BeneficiarySet",
+                    "StakeDecreased",
+                    "StakeIncreased",
+                    "ValidationQueued",
+                    "ValidationSignaledExit",
+                    "ValidationWithdrawn",
+                )
             )
-            .callDataClauses(buildClauses(getAllValidatorsAddress))
-            .dependsOn(delegationIndexer)
             .excludeVetTransfers()
             .build()
 }

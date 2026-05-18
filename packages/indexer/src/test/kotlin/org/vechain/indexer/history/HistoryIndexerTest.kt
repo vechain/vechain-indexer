@@ -7,6 +7,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.SimpleBlockIndexerCoordinator
 import org.vechain.indexer.config.BusinessEventProperties
@@ -28,6 +29,8 @@ class HistoryIndexerTest {
 
     @MockK lateinit var thorClient: ThorClient
 
+    @MockK lateinit var validatorIndexer: Indexer
+
     @MockK lateinit var businessEventProperties: BusinessEventProperties
 
     @BeforeEach
@@ -36,6 +39,8 @@ class HistoryIndexerTest {
         every { businessEventProperties.substitutions } returns BUSINESS_EVENT_PARAMS
         coEvery { thorClient.inspectClauses(any(), any()) } returns
             listOf(InspectionResult("0x", emptyList(), emptyList(), 0, false, ""))
+        every { validatorIndexer.startBlock } returns 0L
+        every { validatorIndexer.name } returns "validator"
     }
 
     @Test
@@ -58,7 +63,7 @@ class HistoryIndexerTest {
                         startBlock = b3trBlock.number,
                         syncLoggerInterval = 1L,
                         bEProperties = businessEventProperties,
-                        getAllValidatorsAddress = "0xvalidators",
+                        validatorIndexer = validatorIndexer,
                     )
 
             // Create a coordinator to run the indexer
@@ -106,7 +111,7 @@ class HistoryIndexerTest {
                     startBlock = dexBlock.number,
                     syncLoggerInterval = 1L,
                     bEProperties = businessEventProperties,
-                    getAllValidatorsAddress = "0xvalidators",
+                    validatorIndexer = validatorIndexer,
                 )
 
         // Create a coordinator to run the indexer
@@ -152,7 +157,7 @@ class HistoryIndexerTest {
                     startBlock = mpSales.number,
                     syncLoggerInterval = 1L,
                     bEProperties = businessEventProperties,
-                    getAllValidatorsAddress = "0xvalidators",
+                    validatorIndexer = validatorIndexer,
                 )
 
         // Create a coordinator to run the indexer
@@ -208,7 +213,7 @@ class HistoryIndexerTest {
                     startBlock = startBlock.number,
                     syncLoggerInterval = 1L,
                     bEProperties = businessEventProperties,
-                    getAllValidatorsAddress = "0xvalidators",
+                    validatorIndexer = validatorIndexer,
                 )
 
         // Create a coordinator to run the indexer
@@ -269,7 +274,7 @@ class HistoryIndexerTest {
                     startBlock = startBlock.number,
                     syncLoggerInterval = 1L,
                     bEProperties = businessEventProperties,
-                    getAllValidatorsAddress = "0xvalidators",
+                    validatorIndexer = validatorIndexer,
                 )
 
         // Create a coordinator to run the indexer

@@ -12,7 +12,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("validator", "validator-stats")
+@Profile("validator", "stargate-token", "history")
 @Configuration
 open class ValidatorCollectionConfig(
     mongoTemplate: MongoTemplate,
@@ -34,11 +34,10 @@ open class ValidatorCollectionConfig(
         ensureIndexes(
             listOf(
                 buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),
+                buildIndex(Validator::status.name to Sort.Direction.ASC),
                 buildIndex(Validator::endorser.name to Sort.Direction.ASC),
-                buildIndex(Validator::validatorTvl.name to Sort.Direction.DESC),
-                buildIndex(Validator::delegatorTvl.name to Sort.Direction.DESC),
-                buildIndex(Validator::totalTvl.name to Sort.Direction.DESC),
-                buildIndex(Validator::blockProbability.name to Sort.Direction.DESC),
+                buildIndex(Validator::lastMissedBlockNumber.name to Sort.Direction.ASC),
+                buildIndex(Validator::lastProposedBlockNumber.name to Sort.Direction.ASC),
             )
         )
     }

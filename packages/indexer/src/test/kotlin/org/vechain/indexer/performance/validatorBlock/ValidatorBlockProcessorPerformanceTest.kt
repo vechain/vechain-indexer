@@ -6,36 +6,36 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.test.context.ActiveProfiles
 import org.vechain.indexer.BlockIndexer
+import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
-import org.vechain.indexer.validator.ValidatorBlockConfig
+import org.vechain.indexer.stargate.rewards.TokenRewardService
 import org.vechain.indexer.validator.ValidatorBlockProcessor
 import org.vechain.indexer.validator.ValidatorBlockRepository
 import org.vechain.indexer.validator.ValidatorBlockService
+import org.vechain.indexer.validator.ValidatorRepository
 
 @Disabled("Performance test - run explicitly with --tests when needed")
-@ActiveProfiles("validator-reward")
+@ActiveProfiles("validator-reward", "validator")
 class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var validatorBlockRepository: ValidatorBlockRepository
     @Autowired lateinit var validatorBlockService: ValidatorBlockService
+    @Autowired lateinit var validatorV2Repository: ValidatorRepository
     @Autowired lateinit var checkpointService: CheckpointService
     @Autowired lateinit var processorMetrics: ProcessorMetrics
 
-    @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
-    lateinit var getAllValidatorsAddress: String
+    @Value("\${indexer.start-block.validator}") var validatorStartBlock: Long = 0L
 
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
-        // Clear database to start fresh
         validatorBlockRepository.deleteAll()
         println("✓ Cleared validator block database")
 
-        // Create profiler for detailed timing analysis
         val profiler = DetailedProfiler()
 
         val config =
@@ -55,14 +55,12 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
                 profiler = profiler,
             )
 
-        // Print errors if any (for debugging)
         if (metrics.errors.isNotEmpty()) {
             println("\n⚠️  ERRORS ENCOUNTERED (${metrics.errors.size}):")
             metrics.errors.forEach { println("  - $it") }
             println()
         }
 
-        // Assert performance targets
         assert(metrics.blocksPerSecond > 1.0) {
             "Performance too slow: ${metrics.blocksPerSecond} blocks/sec"
         }
@@ -72,12 +70,13 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
         startBlock: Long,
         profiler: DetailedProfiler? = null,
     ): BlockIndexer {
-        // Create profiled service and processor when profiler is provided
         val serviceToUse =
             if (profiler != null) {
                 ProfiledValidatorBlockService(
                     repository = validatorBlockRepository,
+                    validatorRepository = validatorV2Repository,
                     thorClient = thorClient,
+                    validatorStartBlock = validatorStartBlock,
                     profiler = profiler,
                 )
             } else {
@@ -102,15 +101,17 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
                 )
             }
 
-        return ValidatorBlockConfig()
-            .validatorBlockIndexer(
-                thorClient = thorClient,
-                processor = processor,
-                startBlock = startBlock,
-                syncLoggerInterval = 100L,
-                bEProperties = businessEventProperties,
-                getAllValidatorsAddress = getAllValidatorsAddress,
-            )
+        // Build the indexer directly (skipping ValidatorBlockConfig) so we don't need the
+        // `validatorIndexer` bean for ordering — perf test runs this indexer in isolation.
+        return IndexerFactory()
+            .name(IndexerNames.VALIDATOR_BLOCK.NAME)
+            .thorClient(thorClient)
+            .processor(processor)
+            .startBlock(startBlock)
+            .syncLoggerInterval(100L)
+            .callDataClauses(listOf(TokenRewardService.energyTotalSupplyClause()))
+            .includeFullBlock()
+            .build()
     }
 
     /** Profiled wrapper for ValidatorBlockProcessor */

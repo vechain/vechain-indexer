@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component
 @ConfigurationProperties(prefix = "indexer.checkpoint")
 class CheckpointProperties {
     /** Minimum interval in seconds between checkpoint saves per collection. */
-    var saveIntervalSeconds: Long = 60
+    var saveIntervalSeconds: Long = 5
 
     @PostConstruct
     fun validate() {

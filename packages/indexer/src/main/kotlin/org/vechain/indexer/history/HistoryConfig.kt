@@ -1,5 +1,6 @@
 package org.vechain.indexer.history
 
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -9,7 +10,6 @@ import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.validator.domain.ValidatorDecoder
 
 @Configuration
 @Profile("history")
@@ -19,11 +19,10 @@ open class HistoryConfig() {
     open fun historyIndexer(
         thorClient: ThorClient,
         processor: HistoryProcessor,
+        @Qualifier("validatorIndexer") validatorIndexer: Indexer,
         @Value("\${indexer.start-block.history}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         bEProperties: BusinessEventProperties,
-        @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
-        getAllValidatorsAddress: String,
     ): Indexer {
         return IndexerFactory()
             .name(IndexerNames.HISTORY.NAME)
@@ -37,7 +36,7 @@ open class HistoryConfig() {
             .businessEvents("business-events", "abis")
             .businessEventSubstitutionParams(bEProperties.substitutions)
             .startBlock(startBlock)
-            .callDataClauses(listOf(ValidatorDecoder.buildClauses(getAllValidatorsAddress).first()))
+            .dependsOn(validatorIndexer)
             .includeFullBlock()
             .includeVetTransfers()
             .build()

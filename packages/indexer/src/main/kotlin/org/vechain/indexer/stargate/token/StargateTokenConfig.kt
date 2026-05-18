@@ -1,5 +1,6 @@
 package org.vechain.indexer.stargate.token
 
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -8,7 +9,6 @@ import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.validator.domain.ValidatorDecoder
 
 @Configuration
 @Profile("stargate", "stargate-token")
@@ -18,6 +18,7 @@ open class StargateTokenConfig {
     open fun stargateIndexer(
         thorClient: ThorClient,
         processor: StargateTokenProcessor,
+        @Qualifier("validatorIndexer") validatorIndexer: Indexer,
         @Value("\${indexer.start-block.stargate}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLogInterval: Long,
         @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
@@ -25,8 +26,8 @@ open class StargateTokenConfig {
         @Value("\${business-event.substitutions.STARGATE_DELEGATION_CONTRACT}")
         stargateDelegationContract: String,
         @Value("\${business-event.substitutions.STARGATE_CONTRACT}") stargateContract: String,
-        @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
-        getAllValidatorsContract: String,
+        @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
+        builtinStakerAddress: String,
         @Value("\${business-event.substitutions.NODE_MANAGEMENT_CONTRACT}")
         nodeManagementContract: String,
     ): Indexer =
@@ -43,6 +44,7 @@ open class StargateTokenConfig {
                     stargateNftContract,
                     stargateDelegationContract,
                     stargateContract,
+                    builtinStakerAddress,
                     nodeManagementContract,
                 )
             )
@@ -57,12 +59,13 @@ open class StargateTokenConfig {
                     "TokenManagerRemoved",
                     "MaturityPeriodBoosted",
                     "ValidationSignaledExit",
+                    "ValidationWithdrawn",
                     "DelegationRewardsClaimed",
                     "BaseVTHORewardsClaimed",
                     "NodeDelegated",
                 )
             )
-            .callDataClauses(listOf(ValidatorDecoder.buildClauses(getAllValidatorsContract)[0]))
+            .dependsOn(validatorIndexer)
             .excludeVetTransfers()
             .build()
 }

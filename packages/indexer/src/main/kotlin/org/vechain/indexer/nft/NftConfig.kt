@@ -36,5 +36,6 @@ open class NftConfig() {
                 mapOf("BLACKLIST_CONTRACT_ADDRESS" to blacklistContract)
             )
             .excludeVetTransfers()
+            .disableEventCriteria()
             .build()
 }

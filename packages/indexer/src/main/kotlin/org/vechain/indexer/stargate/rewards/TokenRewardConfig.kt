@@ -9,10 +9,20 @@ import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
-import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.validator.domain.ValidatorDecoder
 
+/**
+ * Wires the token-reward indexer.
+ *
+ * Reads validator cycle state from `Validator` and the active-delegation set from `Delegation` — no
+ * V1 aggregator dependency. The single `callDataClause` here fetches the builtin Energy contract's
+ * `totalSupply()`, which is the only chain read this indexer needs (the per-block reward is the
+ * delta between consecutive totals).
+ *
+ * The `dependsOn(delegationIndexer)` chain transitively pulls `validatorIndexer` in too: `validator
+ * → delegation-v2 → token-reward`. So activating the `token-reward` profile requires both upstream
+ * profiles to be active as well.
+ */
 @Configuration
 @Profile("token-reward")
 open class TokenRewardConfig {
@@ -24,9 +34,6 @@ open class TokenRewardConfig {
         @Qualifier("delegationIndexer") delegationIndexer: Indexer,
         @Value("\${indexer.start-block.delegation}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        bEProperties: BusinessEventProperties,
-        @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
-        getAllValidatorsAddress: String,
     ): BlockIndexer =
         IndexerFactory()
             .name(IndexerNames.TOKEN_REWARD.NAME)
@@ -34,7 +41,7 @@ open class TokenRewardConfig {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .callDataClauses(ValidatorDecoder.buildClauses(getAllValidatorsAddress))
+            .callDataClauses(listOf(TokenRewardService.energyTotalSupplyClause()))
             .includeFullBlock()
             .dependsOn(delegationIndexer)
             .build()

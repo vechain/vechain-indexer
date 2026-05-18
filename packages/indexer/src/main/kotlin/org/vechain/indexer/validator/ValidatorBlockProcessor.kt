@@ -8,7 +8,7 @@ import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 
-@Profile("validator", "validator-reward")
+@Profile("validator & validator-reward")
 @Component
 open class ValidatorBlockProcessor(
     private val service: ValidatorBlockService,
@@ -33,5 +33,9 @@ open class ValidatorBlockProcessor(
         if (newRecords.isNotEmpty()) {
             service.save(newRecords)
         }
+    }
+
+    override fun resetProcessingState() {
+        service.invalidateCache()
     }
 }

@@ -1,3 +1,7 @@
+@file:Suppress(
+    "DEPRECATION"
+) // V1 (deprecated) wire surface backed by V2 data + V1-only block-rewards helpers.
+
 package org.vechain.indexer.validators
 
 import kotlinx.coroutines.runBlocking
@@ -12,6 +16,8 @@ import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
 import org.vechain.indexer.explorer.TimestampUtils.SECONDS_PER_DAY
+import org.vechain.indexer.prices.PriceFeed
+import org.vechain.indexer.prices.PriceFeedService
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -32,6 +38,8 @@ open class ValidatorService(
     private val validatorBlockRepository: ValidatorBlockRepository,
     private val mongoTemplate: MongoTemplate,
     private val thorClient: ThorClient,
+    private val aggregateService: ValidatorAggregateService,
+    private val priceFeedService: PriceFeedService,
 ) {
 
     open fun getValidatorBlocks(
@@ -213,7 +221,7 @@ open class ValidatorService(
         endorser: String?,
         statuses: List<Status>?,
         pageable: Pageable,
-    ): Slice<Validator> {
+    ): Slice<ValidatorResponse> {
         val criteriaList = mutableListOf<Criteria>()
 
         validatorId?.let { criteriaList.add(Criteria.where("_id").`is`(it.lowercase())) }
@@ -234,73 +242,90 @@ open class ValidatorService(
         val results = mongoTemplate.find<Validator>(query)
         val hasNext = results.size > pageable.pageSize
         val page = if (hasNext) results.dropLast(1) else results
-        return SliceImpl(page, pageable, hasNext)
+
+        // Empty pages don't need price data — skip the oracle hop so a no-match query never
+        // returns 503 just because the oracle happens to be flaky.
+        if (page.isEmpty()) {
+            return SliceImpl(emptyList(), pageable, hasNext)
+        }
+
+        val aggregates = aggregateService.build(page.map { it.id })
+        val prices = priceFeedService.getPrices(setOf(PriceFeed.VET_USD, PriceFeed.VTHO_USD))
+        val vetPrice = prices.getValue(PriceFeed.VET_USD)
+        val vthoPrice = prices.getValue(PriceFeed.VTHO_USD)
+        val mapped = page.map { ValidatorResponse.from(it, aggregates, vetPrice, vthoPrice) }
+
+        return SliceImpl(mapped, pageable, hasNext)
     }
 
-    open fun getValidatorById(validatorId: String): Validator? {
+    open fun getValidatorById(validatorId: String): ValidatorResponse? {
         val query = Query(Criteria.where("_id").`is`(validatorId.lowercase()))
-        return mongoTemplate.findOne<Validator>(query)
+        val doc = mongoTemplate.findOne<Validator>(query) ?: return null
+        val aggregates = aggregateService.build(listOf(doc.id))
+        val prices = priceFeedService.getPrices(setOf(PriceFeed.VET_USD, PriceFeed.VTHO_USD))
+        return ValidatorResponse.from(
+            doc,
+            aggregates,
+            prices.getValue(PriceFeed.VET_USD),
+            prices.getValue(PriceFeed.VTHO_USD),
+        )
     }
 
+    open fun getMissedSlots(
+        timeframe: MissedBlocksTimeframe,
+        validator: String? = null,
+    ): ValidatorMissedSlotsResponse {
+        val currentBlock = runBlocking { thorClient.getBlock(BlockRevision.Keyword.BEST) }.number
+        val startBlock = startBlockFor(timeframe, currentBlock)
+
+        val stats =
+            if (validator != null) {
+                validatorBlockRepository.aggregateMissedSlotsInRangeForValidator(
+                    startBlock,
+                    currentBlock,
+                    validator,
+                )
+            } else {
+                validatorBlockRepository.aggregateMissedSlotsInRange(startBlock, currentBlock)
+            }
+
+        return ValidatorMissedSlotsResponse(
+            timeframe = timeframe,
+            startBlock = startBlock,
+            endBlock = currentBlock,
+            validators = stats,
+        )
+    }
+
+    @Deprecated("Use getMissedSlots — same window, slot-based ratio instead of offline span.")
     open fun getMissedBlocksPercentage(
         timeframe: MissedBlocksTimeframe,
         validator: String? = null,
     ): AllValidatorsMissedBlocksResponse {
-        val currentBlock = runBlocking { thorClient.getBlock(BlockRevision.Keyword.BEST) }.number
-        val blocksPerSecond = 10L // VeChain produces ~1 block per 10 seconds
-
-        val startBlock =
-            when (timeframe) {
-                MissedBlocksTimeframe.DAY -> currentBlock - (SECONDS_PER_DAY / blocksPerSecond)
-                MissedBlocksTimeframe.WEEK ->
-                    currentBlock - (7L * SECONDS_PER_DAY / blocksPerSecond)
-                MissedBlocksTimeframe.MONTH ->
-                    currentBlock - (30L * SECONDS_PER_DAY / blocksPerSecond)
-                MissedBlocksTimeframe.YEAR ->
-                    currentBlock - (365L * SECONDS_PER_DAY / blocksPerSecond)
-            }.coerceAtLeast(0L)
-
-        val missedDocs =
-            if (validator != null) {
-                validatorBlockRepository.findMissedInRange(validator, startBlock, currentBlock)
-            } else {
-                validatorBlockRepository.findAllMissedInRange(startBlock, currentBlock)
-            }
-
-        // Group by validator and calculate missed blocks for each
-        val validatorMissedMap = mutableMapOf<String, Long>()
-
-        for (doc in missedDocs) {
-            val validatorAddr = doc.validator
-            val offlineStart = if (doc.blockNumber < startBlock) startBlock else doc.blockNumber
-            val offlineEnd = doc.onlineBlock ?: currentBlock
-
-            if (offlineEnd >= offlineStart) {
-                val missedCount = offlineEnd - offlineStart + 1L
-                validatorMissedMap[validatorAddr] =
-                    (validatorMissedMap[validatorAddr] ?: 0L) + missedCount
-            }
-        }
-
-        val totalBlocks = (currentBlock - startBlock + 1L).toDouble()
-
-        val validatorStats =
-            validatorMissedMap
-                .map { (validatorAddr, missedBlocks) ->
-                    ValidatorMissedBlocksPercentage(
-                        validator = validatorAddr,
-                        missedPercentage =
-                            if (totalBlocks > 0) (missedBlocks.toDouble() / totalBlocks) * 100.0
-                            else 0.0,
-                    )
-                }
-                .sortedByDescending { it.missedPercentage }
-
+        val slots = getMissedSlots(timeframe, validator)
         return AllValidatorsMissedBlocksResponse(
-            timeframe = timeframe,
-            startBlock = startBlock,
-            endBlock = currentBlock,
-            validators = validatorStats,
+            timeframe = slots.timeframe,
+            startBlock = slots.startBlock,
+            endBlock = slots.endBlock,
+            validators =
+                slots.validators.map {
+                    ValidatorMissedBlocksPercentage(
+                        validator = it.validator,
+                        missedPercentage = it.missedSlotRatio * 100.0,
+                    )
+                },
         )
+    }
+
+    private fun startBlockFor(timeframe: MissedBlocksTimeframe, currentBlock: Long): Long {
+        val secondsPerBlock = 10L // VeChain produces ~1 block per 10 seconds
+        val days =
+            when (timeframe) {
+                MissedBlocksTimeframe.DAY -> 1L
+                MissedBlocksTimeframe.WEEK -> 7L
+                MissedBlocksTimeframe.MONTH -> 30L
+                MissedBlocksTimeframe.YEAR -> 365L
+            }
+        return (currentBlock - days * SECONDS_PER_DAY / secondsPerBlock).coerceAtLeast(0L)
     }
 }

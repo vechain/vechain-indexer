@@ -12,7 +12,7 @@ class TransferEventTest {
 
     @BeforeEach
     fun `perform healthcheck`() {
-        VeWorldAPIClient.performIndexerHealthCheck("TransferIndexer")
+        VeWorldAPIClient.waitForFullSync()
     }
 
     @Test

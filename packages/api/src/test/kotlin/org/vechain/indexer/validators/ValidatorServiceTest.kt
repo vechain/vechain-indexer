@@ -1,8 +1,10 @@
 package org.vechain.indexer.validators
 
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import java.math.BigDecimal
 import java.math.BigInteger
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -11,8 +13,11 @@ import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Query
 import org.vechain.indexer.exception.BadRequestException
+import org.vechain.indexer.prices.PriceFeed
+import org.vechain.indexer.prices.PriceFeedService
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.validator.BlockStatus
 import org.vechain.indexer.validator.Validator
 import org.vechain.indexer.validator.ValidatorBlock
@@ -30,12 +35,28 @@ class ValidatorServiceTest {
     private val validatorBlockRepository: ValidatorBlockRepository = mockk()
     private val mongoTemplate: MongoTemplate = mockk()
     private val thorClient: ThorClient = mockk()
+    private val aggregateService: ValidatorAggregateService = mockk {
+        every { build(any()) } returns
+            ValidatorAggregates(
+                totalWeight = BigDecimal.ZERO,
+                totalNextPeriodWeight = BigDecimal.ZERO,
+                totalActiveVetStaked = BigDecimal.ZERO,
+                totalActiveNextCycleVetStaked = BigDecimal.ZERO,
+                delegationsByValidator = emptyMap(),
+            )
+    }
+    private val priceFeedService: PriceFeedService = mockk {
+        every { getPrices(any()) } returns
+            mapOf(PriceFeed.VET_USD to BigDecimal.ZERO, PriceFeed.VTHO_USD to BigDecimal.ZERO)
+    }
 
     private val service =
         ValidatorService(
             validatorBlockRepository = validatorBlockRepository,
             mongoTemplate = mongoTemplate,
             thorClient = thorClient,
+            aggregateService = aggregateService,
+            priceFeedService = priceFeedService,
         )
 
     @Test
@@ -431,6 +452,114 @@ class ValidatorServiceTest {
 
         expectThat(result).isNull()
     }
+
+    // -- getMissedSlots / getMissedBlocksPercentage tests --
+
+    @Test
+    fun `getMissedSlots forwards aggregation result and computes DAY window`() {
+        // 10s/block, 86400s/day → 8640 blocks/day. currentBlock 100_000, startBlock = 91_360.
+        val currentBlock = 100_000L
+        val expectedStart = 91_360L
+        coEvery { thorClient.getBlock(any<BlockRevision>()) } returns block(currentBlock)
+
+        val stats =
+            listOf(
+                org.vechain.indexer.validator.ValidatorMissedSlotsResult(
+                    validator = "0xa",
+                    scheduledSlots = 100,
+                    missedSlots = 3,
+                    proposedBlocks = 97,
+                    missedSlotRatio = 0.03,
+                    livenessRatio = 0.97,
+                )
+            )
+        every {
+            validatorBlockRepository.aggregateMissedSlotsInRange(expectedStart, currentBlock)
+        } returns stats
+
+        val result = service.getMissedSlots(MissedBlocksTimeframe.DAY, validator = null)
+
+        expectThat(result.startBlock).isEqualTo(expectedStart)
+        expectThat(result.endBlock).isEqualTo(currentBlock)
+        expectThat(result.timeframe).isEqualTo(MissedBlocksTimeframe.DAY)
+        expectThat(result.validators).isEqualTo(stats)
+    }
+
+    @Test
+    fun `getMissedSlots scoped to a single validator hits the filtered aggregation`() {
+        val currentBlock = 50_000L
+        coEvery { thorClient.getBlock(any<BlockRevision>()) } returns block(currentBlock)
+        every {
+            validatorBlockRepository.aggregateMissedSlotsInRangeForValidator(any(), any(), "0xabc")
+        } returns emptyList()
+
+        service.getMissedSlots(MissedBlocksTimeframe.WEEK, validator = "0xabc")
+
+        io.mockk.verify {
+            validatorBlockRepository.aggregateMissedSlotsInRangeForValidator(
+                any(),
+                currentBlock,
+                "0xabc",
+            )
+        }
+    }
+
+    @Test
+    fun `getMissedSlots clamps startBlock at 0 when window precedes genesis`() {
+        coEvery { thorClient.getBlock(any<BlockRevision>()) } returns block(10L)
+        val slot = slot<Long>()
+        every { validatorBlockRepository.aggregateMissedSlotsInRange(capture(slot), any()) } returns
+            emptyList()
+
+        service.getMissedSlots(MissedBlocksTimeframe.YEAR, validator = null)
+
+        expectThat(slot.captured).isEqualTo(0L)
+    }
+
+    @Test
+    fun `getMissedBlocksPercentage maps missedSlotRatio to percentage`() {
+        coEvery { thorClient.getBlock(any<BlockRevision>()) } returns block(100_000L)
+        every { validatorBlockRepository.aggregateMissedSlotsInRange(any(), any()) } returns
+            listOf(
+                org.vechain.indexer.validator.ValidatorMissedSlotsResult(
+                    validator = "0xa",
+                    scheduledSlots = 200,
+                    missedSlots = 5,
+                    proposedBlocks = 195,
+                    missedSlotRatio = 0.025,
+                    livenessRatio = 0.975,
+                )
+            )
+
+        val result = service.getMissedBlocksPercentage(MissedBlocksTimeframe.DAY)
+
+        expectThat(result.validators).hasSize(1)
+        expectThat(result.validators[0].validator).isEqualTo("0xa")
+        expectThat(result.validators[0].missedPercentage).isEqualTo(2.5)
+    }
+
+    private fun block(number: Long): org.vechain.indexer.thor.model.Block =
+        org.vechain.indexer.thor.model.Block(
+            id = "0xblock-$number",
+            number = number,
+            timestamp = number * 10,
+            parentID = "0xparent",
+            size = 0,
+            gasLimit = 0,
+            baseFeePerGas = "0x0",
+            beneficiary = "0x0",
+            gasUsed = 0,
+            totalScore = 0,
+            txsRoot = "0x0",
+            txsFeatures = 0,
+            stateRoot = "0x0",
+            receiptsRoot = "0x0",
+            com = false,
+            signer = "0x0",
+            isTrunk = true,
+            isFinalized = true,
+            transactions = emptyList(),
+        )
 
     private fun validator(id: String): Validator =
         Validator(id = id, blockId = "0xblock1", blockNumber = 1, blockTimestamp = 10)

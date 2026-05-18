@@ -19,22 +19,22 @@ import org.vechain.indexer.stargate.rewards.TokenRewardProcessor
 import org.vechain.indexer.stargate.rewards.TokenRewardService
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
 import org.vechain.indexer.validator.DelegationRepository
-import org.vechain.indexer.validator.domain.ValidatorDecoder
+import org.vechain.indexer.validator.ValidatorRepository
 
 @Disabled("Performance test - run explicitly with --tests when needed")
-@ActiveProfiles("token-reward", "delegation")
+@ActiveProfiles("token-reward", "delegation", "validator")
 class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var tokenRewardRepository: TokenRewardRepository
     @Autowired lateinit var tokenRewardService: TokenRewardService
     @Autowired lateinit var inlineVersioningProperties: InlineVersioningProperties
     @Autowired lateinit var mongoTemplate: MongoTemplate
-    @Autowired lateinit var delegationRepository: DelegationRepository
+    @Autowired lateinit var validatorV2Repository: ValidatorRepository
+    @Autowired lateinit var delegationV2Repository: DelegationRepository
     @Autowired lateinit var checkpointService: CheckpointService
     @Autowired lateinit var processorMetrics: ProcessorMetrics
 
-    @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
-    lateinit var getAllValidatorsContract: String
+    @Value("\${indexer.start-block.validator}") var validatorStartBlock: Long = 0L
 
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
@@ -84,8 +84,10 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
                     repository = tokenRewardRepository,
                     mongoTemplate = mongoTemplate,
                     inlineVersioningProperties = inlineVersioningProperties,
-                    delegationRepository = delegationRepository,
+                    validatorV2Repository = validatorV2Repository,
+                    delegationV2Repository = delegationV2Repository,
                     thorClient = thorClient,
+                    validatorStartBlock = validatorStartBlock,
                     profiler = profiler,
                 )
             } else {
@@ -118,7 +120,7 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(100L)
-            .callDataClauses(ValidatorDecoder.buildClauses(getAllValidatorsContract))
+            .callDataClauses(listOf(TokenRewardService.energyTotalSupplyClause()))
             .includeFullBlock()
             .build()
     }

@@ -6,6 +6,11 @@
 - Use `make test` to run unit/integration tests (excludes e2e).
 - Individual package tests: `make test-api`, `make test-indexer`, `make test-common`.
 
+## Toolchain
+
+- `make build` requires **Go >= 1.26** on the host to build the `tools/thor-scheduler` Go co-process used by the Validator indexer. The sub-Makefile looks for `go` on `PATH`, then `~/sdk/go*/bin/go`, then `/opt/homebrew/bin/go`, then `/usr/local/go/bin/go`; set `GO=/path/to/go` to override. Docker flows do not need a host Go install.
+- `ThorSchedulerProcessTest` silently skips (via `assumeTrue`) when the binary isn't built — run `make build-thor-scheduler` before `make test-indexer` if you want it to execute.
+
 ## Required Pre-Commit Scripts
 
 Always run these two scripts before committing or pushing any change, and commit any resulting file updates. CI enforces both and will fail if the generated files drift.

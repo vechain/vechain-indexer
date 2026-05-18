@@ -26,6 +26,7 @@ abstract class BaseStatefulProcessor(
             mongoTemplate,
             VersionedDocumentInitialVersions.forCollection(collectionName),
         )
+        rewindLastObservedBlock(blockNumber - 1)
         val elapsed = start.elapsedNow()
         if (elapsed > 1.seconds) {
             startupLogger.warn(

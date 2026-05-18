@@ -1,8 +1,10 @@
 package org.vechain.indexer.stargate.token
 
 import kotlin.collections.plus
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.config.InlineVersioningProperties
@@ -10,11 +12,10 @@ import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.model.Block
-import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.ParamUtils.getAsString
 import org.vechain.indexer.validator.Status
-import org.vechain.indexer.validator.ValidatorDelegationService
-import org.vechain.indexer.validator.ValidatorSnapshot
+import org.vechain.indexer.validator.Validator
+import org.vechain.indexer.validator.ValidatorRepository
 
 /**
  * StargateService
@@ -31,22 +32,43 @@ import org.vechain.indexer.validator.ValidatorSnapshot
 open class StargateTokenService(
     private val stargateTokenRepository: StargateTokenRepository,
     private val eventService: StargateEventService,
-    private val validatorDelegationService: ValidatorDelegationService,
+    private val validatorRepository: ValidatorRepository,
     private val mongoTemplate: MongoTemplate,
     private val inlineVersioningProperties: InlineVersioningProperties,
+    @param:Value("\${indexer.start-block.validator}") private val validatorStartBlock: Long,
 ) {
     private var cachedValidators: Set<String> = emptySet()
+    private var cachedValidatorsLoaded = false
+
+    // Validator cycle fields (cyclePeriodLength / startBlock / exitBlock) are only written by
+    // ValidatorService at cold start and every epoch boundary, so we reload on the same cadence
+    // instead of scanning the validator collection every block.
+    private var activeValidators: Map<String, Validator> = emptyMap()
+    private var activeValidatorsLoaded = false
 
     /** Main entry point for processing a block. */
     open suspend fun processBlock(
         block: Block,
-        callResponses: List<InspectionResult>,
         events: List<IndexedEvent>,
     ): Pair<Collection<StargateToken>, List<StargateToken>> {
-        val validatorSnapshots = validatorDelegationService.decodeValidatorSnapshots(callResponses)
-        val removedValidators = checkMissingValidators(validatorSnapshots)
+        // NFT lifecycle events (mints, transfers, manager changes) can fire in the gap between
+        // the Stargate NFT deployment and the validator indexer's start block — index them.
+        // Only the validator-collection read is gated; the validator map stays empty until the
+        // parent indexer has data, and delegation events don't fire on-chain before then.
+        val validatorIndexerActive = block.number >= validatorStartBlock
+        val validatorsRefreshed =
+            validatorIndexerActive && (!activeValidatorsLoaded || isEpochBoundary(block.number))
+        if (validatorsRefreshed) {
+            activeValidators =
+                validatorRepository.findByStatusNot(Status.WITHDRAWN).associateBy {
+                    it.id.lowercase()
+                }
+            activeValidatorsLoaded = true
+        }
 
-        val exitingValidators = findDelegationsFromExits(events)
+        val removedValidators = checkMissingValidators(activeValidators, validatorsRefreshed)
+
+        val lifecycleValidators = findValidatorLifecycleEvents(events)
         val existingTokens = mutableListOf<StargateToken>()
 
         // DB lookups
@@ -55,8 +77,9 @@ open class StargateTokenService(
                 block,
                 events,
                 removedValidators,
-                exitingValidators,
-                validatorSnapshots,
+                lifecycleValidators,
+                activeValidators,
+                validatorsRefreshed,
                 existingTokens,
             )
 
@@ -71,7 +94,7 @@ open class StargateTokenService(
         eventService.handleStargateEvents(
             events,
             latestTokenSnapshots,
-            validatorSnapshots,
+            activeValidators,
             existingTokens,
         )
 
@@ -98,16 +121,24 @@ open class StargateTokenService(
         )
     }
 
+    open fun invalidateCache() {
+        cachedValidators = emptySet()
+        cachedValidatorsLoaded = false
+        activeValidators = emptyMap()
+        activeValidatorsLoaded = false
+    }
+
     // ------------------------------------------------------------------------
     // Snapshot Loading
     // ------------------------------------------------------------------------
 
-    private suspend fun loadRelevantTokenSnapshots(
+    private fun loadRelevantTokenSnapshots(
         block: Block,
         events: List<IndexedEvent>,
         removedValidators: Set<String>,
-        exitingValidators: List<String>,
-        validatorSnapshots: Map<String, ValidatorSnapshot>,
+        lifecycleValidators: Set<String>,
+        validators: Map<String, Validator>,
+        validatorsRefreshed: Boolean,
         existingTokens: MutableList<StargateToken>,
     ): MutableMap<String, StargateToken> {
         // 1. Gather candidate snapshots from DB
@@ -126,7 +157,7 @@ open class StargateTokenService(
                 .orEmpty()
 
         val snapshotsByValidatorId =
-            (removedValidators + exitingValidators)
+            (removedValidators + lifecycleValidators)
                 .takeIf { it.isNotEmpty() }
                 ?.let { stargateTokenRepository.findByValidatorIdIn(it) }
                 .orEmpty()
@@ -145,7 +176,13 @@ open class StargateTokenService(
 
         // 3. Resolve unknown start blocks
         val resolvedUnknowns =
-            resolveUnknownDelegations(unknown, block, validatorSnapshots, existingTokens)
+            resolveUnknownDelegations(
+                unknown,
+                block,
+                validators,
+                validatorsRefreshed,
+                existingTokens,
+            )
 
         // 4. Merge everything together
         return (snapshotsByTokenId + snapshotsByValidatorId + transitioning + resolvedUnknowns)
@@ -195,43 +232,37 @@ open class StargateTokenService(
     /**
      * Resolves delegations with unknown start blocks.
      *
-     * Uses validator snapshots if available, otherwise queries the chain.
+     * Unknowns are resolved only after a refreshed validator cache so this path does not add a
+     * per-block validator collection read.
      */
-    private suspend fun resolveUnknownDelegations(
+    private fun resolveUnknownDelegations(
         unknown: List<StargateToken>,
         block: Block,
-        validatorsSnapshots: Map<String, ValidatorSnapshot>,
+        validators: Map<String, Validator>,
+        validatorsRefreshed: Boolean,
         existingTokens: MutableList<StargateToken>,
     ): List<StargateToken> {
         if (unknown.isEmpty()) return emptyList()
+        if (!validatorsRefreshed) return emptyList()
 
-        val validators: Map<String, List<StargateToken>> =
-            unknown.filter { it.validatorId != null }.groupBy { it.validatorId!! }
-
-        val snapshotEmpty = validatorsSnapshots.isEmpty()
-        val responses: List<InspectionResult> =
-            if (snapshotEmpty) {
-                validatorDelegationService.fetchValidationPeriodDetails(validators.keys.toList())
-            } else {
-                emptyList()
-            }
+        val grouped: Map<String, List<StargateToken>> =
+            unknown.filter { it.validatorId != null }.groupBy { it.validatorId!!.lowercase() }
 
         val resolved = mutableListOf<StargateToken>()
 
-        validators.keys.forEachIndexed { index, validatorId ->
-            val startBlock =
-                if (snapshotEmpty) {
-                    validatorDelegationService.determineStartBlock(responses[index])
-                } else {
-                    validatorsSnapshots[validatorId]?.startBlock ?: 0L
-                }
+        grouped.keys.forEach { validatorId ->
+            val validator =
+                validators[validatorId] ?: validatorRepository.findByIdOrNull(validatorId)
+            val startBlock = validator?.startBlock ?: 0L
 
             if (startBlock != 0L) {
-                validators[validatorId]?.forEach { existing ->
+                grouped[validatorId]?.forEach { existing ->
                     existingTokens.add(existing)
                     resolved +=
                         existing.copy(
                             delegationNextPeriod = startBlock,
+                            delegationPeriodLength =
+                                validator?.cyclePeriodLength ?: existing.delegationPeriodLength,
                             blockId = block.id,
                             blockNumber = block.number,
                             blockTimestamp = block.timestamp,
@@ -266,20 +297,30 @@ open class StargateTokenService(
                         blockTimestamp = block.timestamp,
                         delegationStatus = Status.NONE,
                         validatorId = null,
+                        delegationNextPeriod = null,
+                        delegationPeriodLength = null,
+                        validatorExiting = null,
                     )
             }
     }
 
     /** Detect validators that disappeared compared to previous state. */
     private fun checkMissingValidators(
-        validatorsSnapshots: Map<String, ValidatorSnapshot>
+        validators: Map<String, Validator>,
+        validatorsRefreshed: Boolean,
     ): Set<String> {
-        val currentValidators = validatorsSnapshots.keys
+        if (!validatorsRefreshed) return emptySet()
+        val currentValidators = validators.keys
         if (currentValidators.isEmpty()) return emptySet()
 
-        if (cachedValidators.isEmpty()) {
+        if (!cachedValidatorsLoaded) {
             cachedValidators =
-                stargateTokenRepository.findAllDistinctValidatorIds().filterNotNull().toSet()
+                stargateTokenRepository
+                    .findAllDistinctValidatorIds()
+                    .filterNotNull()
+                    .map { it.lowercase() }
+                    .toSet()
+            cachedValidatorsLoaded = true
         }
 
         val removed = cachedValidators.minus(currentValidators)
@@ -288,9 +329,18 @@ open class StargateTokenService(
         return removed
     }
 
-    /** Extract validator IDs from exit events. */
-    private fun findDelegationsFromExits(events: List<IndexedEvent>): List<String> =
+    /** Extract validator IDs from validator lifecycle events. */
+    private fun findValidatorLifecycleEvents(events: List<IndexedEvent>): Set<String> =
         events
-            .filter { it.eventType == "ValidatorExitRequested" }
-            .mapNotNull { it.params.getAsString("validator") }
+            .filter {
+                it.eventType == "ValidationSignaledExit" || it.eventType == "ValidationWithdrawn"
+            }
+            .mapNotNull { it.params.getAsString("validator")?.lowercase() }
+            .toSet()
+
+    private fun isEpochBoundary(blockNumber: Long): Boolean = blockNumber % EPOCH_LENGTH == 0L
+
+    companion object {
+        const val EPOCH_LENGTH = 180L
+    }
 }

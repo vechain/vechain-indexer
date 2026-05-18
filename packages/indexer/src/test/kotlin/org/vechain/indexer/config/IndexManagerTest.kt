@@ -18,6 +18,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.context.ApplicationContext
+import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerRunner
@@ -63,6 +64,7 @@ class IndexManagerTest {
         val manager =
             IndexManager(
                 indexers = listOf(indexer),
+                processors = emptyList(),
                 collectionConfigs = emptyList(),
                 indexerVersionCollectionConfig = indexerVersionCollectionConfig,
                 indexBootstrapState = mockk(),
@@ -81,6 +83,73 @@ class IndexManagerTest {
         verify { metrics.setIndexerSyncStatus("test-indexer", Status.SHUT_DOWN) }
         verify { metrics.setIndexerCurrentBlock("test-indexer", 1234L) }
         verify { metrics.setBlocksPerSecond("test-indexer", 0.0) }
+    }
+
+    @Test
+    fun `onShutdown flushes each processor's checkpoint`() {
+        val processorA = mockk<BaseProcessor>()
+        val processorB = mockk<BaseProcessor>()
+        every { processorA.flushCheckpoint() } just Runs
+        every { processorB.flushCheckpoint() } just Runs
+
+        val manager =
+            IndexManager(
+                indexers = emptyList(),
+                processors = listOf(processorA, processorB),
+                collectionConfigs = emptyList(),
+                indexerVersionCollectionConfig = indexerVersionCollectionConfig,
+                indexBootstrapState = mockk(),
+                appCoroutineScope = appCoroutineScope,
+                thorClient = thorClient,
+                metrics = metrics,
+                applicationContext = applicationContext,
+                channelBatchSize = 10,
+                catchUpIntervalSeconds = 5,
+            )
+
+        manager.onShutdown()
+
+        verify(exactly = 1) { processorA.flushCheckpoint() }
+        verify(exactly = 1) { processorB.flushCheckpoint() }
+    }
+
+    @Test
+    fun `onShutdown continues flushing and publishing metrics when one flush throws`() {
+        // The shutdown sequence must be best-effort: a single processor that fails to flush its
+        // checkpoint cannot starve later processors or the final-metrics publish step. Each step
+        // is independently try/catched in IndexManager.onShutdown.
+        val processorA = mockk<BaseProcessor>()
+        val processorB = mockk<BaseProcessor>()
+        every { processorA.flushCheckpoint() } throws RuntimeException("flush A failed")
+        every { processorB.flushCheckpoint() } just Runs
+
+        val indexer = mockk<BlockIndexer>()
+        var status = Status.FULLY_SYNCED
+        every { indexer.name } returns "test-indexer"
+        every { indexer.shutDown() } answers { status = Status.SHUT_DOWN }
+        every { indexer.getStatus() } answers { status }
+        every { indexer.getCurrentBlockNumber() } returns 42L
+
+        val manager =
+            IndexManager(
+                indexers = listOf(indexer),
+                processors = listOf(processorA, processorB),
+                collectionConfigs = emptyList(),
+                indexerVersionCollectionConfig = indexerVersionCollectionConfig,
+                indexBootstrapState = mockk(),
+                appCoroutineScope = appCoroutineScope,
+                thorClient = thorClient,
+                metrics = metrics,
+                applicationContext = applicationContext,
+                channelBatchSize = 10,
+                catchUpIntervalSeconds = 5,
+            )
+
+        manager.onShutdown()
+
+        verify(exactly = 1) { processorA.flushCheckpoint() }
+        verify(exactly = 1) { processorB.flushCheckpoint() }
+        verify { metrics.setIndexerCurrentBlock("test-indexer", 42L) }
     }
 
     @Test
@@ -111,6 +180,7 @@ class IndexManagerTest {
         val manager =
             IndexManager(
                 indexers = listOf(indexer),
+                processors = emptyList(),
                 collectionConfigs = listOf(collectionConfig),
                 indexerVersionCollectionConfig = indexerVersionCollectionConfig,
                 indexBootstrapState = indexBootstrapState,

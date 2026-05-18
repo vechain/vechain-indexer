@@ -1,354 +1,68 @@
 package org.vechain.indexer.validator.domain
 
-import java.math.BigInteger
 import org.vechain.indexer.contracts.abi.FunctionDefinition
 import org.vechain.indexer.contracts.abi.FunctionParameter
 import org.vechain.indexer.event.model.abi.AbiElement
-import org.vechain.indexer.event.model.abi.InputOutput
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
-import org.vechain.indexer.thor.AddressUtils
-import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
 import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.ContractUtils
-import org.vechain.indexer.validator.logic.ValidatorAssembler.listOf
-import org.vechain.indexer.validator.models.DecodedValidatorInfo
-import org.vechain.indexer.validator.models.DecodedValidatorRow
 
 /**
- * Handles decoding of validator data from Thor smart contract calls. All ABI-related logic is
- * centralized here.
+ * Residual helpers retained for non-validator indexers (Stargate token, History,
+ * VthoGeneratedByBlock) that still rely on the legacy `GetAllValidators` aggregator call data. The
+ * V1 ValidatorIndexer that owned this file has been deleted; the surviving pieces are kept here
+ * (rather than inlined into each caller) because porting those other pipelines off the aggregator
+ * is a separate, out-of-scope refactor.
  */
 object ValidatorDecoder {
-    // --- Public API ---
-
-    /** Decode all validator info in one go from inspection responses. */
-    fun decodeResponseInfo(
-        responses: List<InspectionResult>,
-        validatorsAbi: Map<String, AbiElement>,
-    ): DecodedValidatorInfo? {
-        if (responses.size < 2 || !responses[0].hasAbiData() || !responses[1].hasAbiData()) {
-            return null
-        }
-
-        val decodedValidators =
-            FunctionReturnDecoder.decode(
-                responses[0].data,
-                validatorsAbi["getValidators"]!!.outputs,
-            )
-
-        val totalWeight = decodeSingle(responses, validatorsAbi, 1, "totalStake", "totalWeight")
-        val vthoTotalSupply =
-            decodeSingle(responses, validatorsAbi, 2, "vthoTotalSupply", "vthoTotalSupply")
-        val vetPriceUsd = decodeSingle(responses, validatorsAbi, 3, "getVetPriceUsd", "vetPriceUsd")
-        val vthoPriceUsd =
-            decodeSingle(responses, validatorsAbi, 4, "getVthoPriceUsd", "vthoPriceUsd")
-        val vthoBurned = decodeSingle(responses, validatorsAbi, 5, "totalBurned", "totalBurned")
-
-        return DecodedValidatorInfo(
-            decodedValidators,
-            totalWeight,
-            vthoTotalSupply,
-            vetPriceUsd,
-            vthoPriceUsd,
-            vthoBurned,
-        )
-    }
-
-    /** Decode raw validator list from ABI output. */
-    fun decodeValidators(
-        responses: List<InspectionResult>,
-        validatorsAbi: AbiElement,
-    ): Map<String, Any?> {
-        if (responses.isEmpty() || !responses[0].hasAbiData()) {
-            return emptyMap()
-        }
-        return FunctionReturnDecoder.decode(responses[0].data, validatorsAbi.outputs)
-    }
-
-    /** Convert decoded validator arrays into typed rows for downstream processing. */
-    fun decodeRows(decodedValidators: Map<String, Any?>): List<DecodedValidatorRow> {
-        val ids = decodedValidators.listOf<String>("masters")
-        val endorsers = decodedValidators.listOf<String>("endorsors")
-        val statuses = decodedValidators.listOf<BigInteger>("statuses")
-        val onlines = decodedValidators.listOf<Boolean>("onlines")
-        val offlineBlocks = decodedValidators.listOf<BigInteger>("offlineBlocks")
-        val stakingPeriodLengths = decodedValidators.listOf<Int>("stakingPeriodLengths")
-        val startBlocks = decodedValidators.listOf<BigInteger>("startBlocks")
-        val exitBlocks = decodedValidators.listOf<BigInteger>("exitBlocks")
-        val completedPeriods = decodedValidators.listOf<BigInteger>("completedPeriods")
-        val lockedVET = decodedValidators.listOf<BigInteger>("validatorLockedStakes")
-        val lockedWeight = decodedValidators.listOf<BigInteger>("validatorLockedWeights")
-        val delegatorsStake = decodedValidators.listOf<BigInteger>("delegatorsStake")
-        val validatorQueuedStakes = decodedValidators.listOf<BigInteger>("validatorQueuedStakes")
-        val totalQueuedStakes = decodedValidators.listOf<BigInteger>("totalQueuedStakes")
-        val totalExitingStakes = decodedValidators.listOf<BigInteger>("totalExitingStakes")
-        val totalNextPeriodWeights = decodedValidators.listOf<BigInteger>("totalNextPeriodWeights")
-        val nextPeriodDelegationStakes =
-            decodedValidators.listOf<BigInteger>("nextPeriodDelegationStakes")
-
-        ensureConsistentRowLengths(
-            mapOf(
-                "masters" to ids.size,
-                "endorsors" to endorsers.size,
-                "statuses" to statuses.size,
-                "onlines" to onlines.size,
-                "offlineBlocks" to offlineBlocks.size,
-                "stakingPeriodLengths" to stakingPeriodLengths.size,
-                "startBlocks" to startBlocks.size,
-                "exitBlocks" to exitBlocks.size,
-                "completedPeriods" to completedPeriods.size,
-                "validatorLockedStakes" to lockedVET.size,
-                "validatorLockedWeights" to lockedWeight.size,
-                "delegatorsStake" to delegatorsStake.size,
-                "validatorQueuedStakes" to validatorQueuedStakes.size,
-                "totalQueuedStakes" to totalQueuedStakes.size,
-                "totalExitingStakes" to totalExitingStakes.size,
-                "totalNextPeriodWeights" to totalNextPeriodWeights.size,
-                "nextPeriodDelegationStakes" to nextPeriodDelegationStakes.size,
-            )
-        )
-
-        return ids.indices.map { index ->
-            DecodedValidatorRow(
-                id = ids[index],
-                endorser = endorsers[index],
-                status = statuses[index],
-                online = onlines[index],
-                offlineBlock = offlineBlocks[index],
-                stakingPeriodLength = stakingPeriodLengths[index],
-                startBlock = startBlocks[index],
-                exitBlock = exitBlocks[index],
-                completedPeriods = completedPeriods[index],
-                validatorLockedVET = lockedVET[index],
-                validatorLockedWeight = lockedWeight[index],
-                delegatorsStake = delegatorsStake[index],
-                validatorQueuedStake = validatorQueuedStakes[index],
-                totalQueuedStake = totalQueuedStakes[index],
-                totalExitingStake = totalExitingStakes[index],
-                totalNextPeriodWeight = totalNextPeriodWeights[index],
-                nextPeriodDelegationStake = nextPeriodDelegationStakes[index],
-            )
-        }
-    }
-
-    /** Resolve total VTHO issued = totalSupply + burned. */
-    fun decodeVTHOIssued(responses: List<InspectionResult>): BigInteger {
-        if (responses.size < 2 || !responses[0].hasAbiData() || !responses[1].hasAbiData()) {
-            return BigInteger.ZERO
-        }
-
-        val decodedTotalSupply =
-            FunctionReturnDecoder.decode(
-                responses[0].data,
-                listOf(InputOutput("uint256", "vthoTotalSupply", "uint256")),
-            )
-
-        val totalSupply = decodedTotalSupply["vthoTotalSupply"] as? BigInteger ?: BigInteger.ZERO
-
-        return totalSupply
-    }
-
-    /** ABI clauses for fetching validator contract data. */
+    /**
+     * Returns the `getValidators` clause against the legacy aggregator at [getAllValidatorInfoSC].
+     * Existing callers index into `[0]` / `first()` — return type kept as `List<Clause>` so those
+     * call sites compile unchanged.
+     */
     fun buildClauses(getAllValidatorInfoSC: String): List<Clause> {
-        val abiFunctions =
-            listOf(
-                // getValidators
-                FunctionDefinition(
-                    name = "getValidators",
-                    inputs = emptyList(),
-                    outputs =
-                        listOf(
-                            FunctionParameter("masters", "address[]"),
-                            FunctionParameter("endorsors", "address[]"),
-                            FunctionParameter("statuses", "uint8[]"),
-                            FunctionParameter("onlines", "bool[]"),
-                            FunctionParameter("offlineBlocks", "uint32[]"),
-                            FunctionParameter("stakingPeriodLengths", "uint32[]"),
-                            FunctionParameter("startBlocks", "uint32[]"),
-                            FunctionParameter("exitBlocks", "uint32[]"),
-                            FunctionParameter("completedPeriods", "uint32[]"),
-                            FunctionParameter("validatorLockedStakes", "uint256[]"),
-                            FunctionParameter("validatorLockedWeights", "uint256[]"),
-                            FunctionParameter("delegatorsStake", "uint256[]"),
-                            FunctionParameter("validatorQueuedStakes", "uint256[]"),
-                            FunctionParameter("totalQueuedStakes", "uint256[]"),
-                            FunctionParameter("totalExitingStakes", "uint256[]"),
-                            FunctionParameter("totalNextPeriodWeights", "uint256[]"),
-                            FunctionParameter("nextPeriodDelegationStakes", "uint256[]"),
-                        ),
-                    stateMutability = "view",
-                ),
-                // totalStake
-                FunctionDefinition(
-                    name = "totalStake",
-                    inputs = emptyList(),
-                    outputs =
-                        listOf(
-                            FunctionParameter("totalStake", "uint256"),
-                            FunctionParameter("totalWeight", "uint256"),
-                        ),
-                    stateMutability = "view",
-                ),
-                // vthoTotalSupply
-                FunctionDefinition(
-                    name = "vthoTotalSupply",
-                    inputs = emptyList(),
-                    outputs = listOf(FunctionParameter("vthoTotalSupply", "uint256")),
-                    stateMutability = "view",
-                ),
-                // getVetPriceUsd
-                FunctionDefinition(
-                    name = "getVetPriceUsd",
-                    inputs = emptyList(),
-                    outputs = listOf(FunctionParameter("vetPriceUsd", "uint128")),
-                    stateMutability = "view",
-                ),
-                // getVthoPriceUsd
-                FunctionDefinition(
-                    name = "getVthoPriceUsd",
-                    inputs = emptyList(),
-                    outputs = listOf(FunctionParameter("vthoPriceUsd", "uint128")),
-                    stateMutability = "view",
-                ),
-                // totalBurned
-                FunctionDefinition(
-                    name = "totalBurned",
-                    inputs = emptyList(),
-                    outputs = listOf(FunctionParameter("totalBurned", "uint256")),
-                    stateMutability = "view",
-                ),
+        val getValidators =
+            FunctionDefinition(
+                name = "getValidators",
+                inputs = emptyList(),
+                outputs =
+                    listOf(
+                        FunctionParameter("masters", "address[]"),
+                        FunctionParameter("endorsors", "address[]"),
+                        FunctionParameter("statuses", "uint8[]"),
+                        FunctionParameter("onlines", "bool[]"),
+                        FunctionParameter("offlineBlocks", "uint32[]"),
+                        FunctionParameter("stakingPeriodLengths", "uint32[]"),
+                        FunctionParameter("startBlocks", "uint32[]"),
+                        FunctionParameter("exitBlocks", "uint32[]"),
+                        FunctionParameter("completedPeriods", "uint32[]"),
+                        FunctionParameter("validatorLockedStakes", "uint256[]"),
+                        FunctionParameter("validatorLockedWeights", "uint256[]"),
+                        FunctionParameter("delegatorsStake", "uint256[]"),
+                        FunctionParameter("validatorQueuedStakes", "uint256[]"),
+                        FunctionParameter("totalQueuedStakes", "uint256[]"),
+                        FunctionParameter("totalExitingStakes", "uint256[]"),
+                        FunctionParameter("totalNextPeriodWeights", "uint256[]"),
+                        FunctionParameter("nextPeriodDelegationStakes", "uint256[]"),
+                    ),
+                stateMutability = "view",
             )
-
-        return abiFunctions.map { fn -> ContractUtils.createClause(getAllValidatorInfoSC, fn) }
-    }
-
-    /** ABI clauses for fetching VTHO totals (supply + burned). */
-    fun buildVTHOTotalsClauses(): List<Clause> =
-        listOf(
-            ContractUtils.createClause(
-                VTHO_CONTRACT_ADDRESS,
-                FunctionDefinition(
-                    name = "totalSupply",
-                    inputs = emptyList(),
-                    outputs = listOf(FunctionParameter("vthoTotalSupply", "uint256")),
-                    stateMutability = "view",
-                ),
-            ),
-            ContractUtils.createClause(
-                VTHO_CONTRACT_ADDRESS,
-                FunctionDefinition(
-                    name = "totalBurned",
-                    inputs = emptyList(),
-                    outputs = listOf(FunctionParameter("vthoBurned", "uint256")),
-                    stateMutability = "view",
-                ),
-            ),
-        )
-
-    fun DecodedValidatorInfo.hasDelegations(address: String): Int {
-        val ids = this.decodedValidators.listOf<String>("masters")
-        val delegatorsStake = this.decodedValidators.listOf<BigInteger>("delegatorsStake")
-        val statuses = this.decodedValidators.listOf<BigInteger>("statuses")
-        val index = ids.indexOf(address)
-        if (index == -1) return -1
-        val status = statuses[index].toInt()
-        if (status != 2) return -1
-
-        return if (delegatorsStake[index] > BigInteger.ZERO) {
-            1
-        } else {
-            0
-        }
-    }
-
-    // --- Private helpers ---
-
-    private fun decodeSingle(
-        responses: List<InspectionResult>,
-        abi: Map<String, AbiElement>,
-        index: Int,
-        functionName: String,
-        key: String,
-    ): BigInteger {
-        val decoded =
-            FunctionReturnDecoder.decode(
-                responses[index].data,
-                abi[functionName]?.outputs
-                    ?: throw IllegalArgumentException("ABI not found for $functionName"),
-            )
-        return decoded[key] as? BigInteger
-            ?: throw IllegalStateException("Expected BigInteger for $functionName.$key")
-    }
-
-    private fun ensureConsistentRowLengths(lengths: Map<String, Int>) {
-        val expectedSize = lengths.getValue("masters")
-        val mismatches =
-            lengths
-                .filterValues { it != expectedSize }
-                .entries
-                .joinToString(", ") { (name, size) -> "$name=$size" }
-
-        if (mismatches.isNotEmpty()) {
-            throw IllegalStateException(
-                "Decoded validator arrays have inconsistent lengths: masters=$expectedSize, $mismatches"
-            )
-        }
+        return listOf(ContractUtils.createClause(getAllValidatorInfoSC, getValidators))
     }
 
     fun InspectionResult.hasAbiData(): Boolean = this.data.isNotBlank() && this.data != "0x"
 
-    // --- Queue Functions ---
-
-    /** ABI definition for firstQueued function */
-    val firstQueuedFunction =
-        FunctionDefinition(
-            name = "firstQueued",
-            inputs = emptyList(),
-            outputs = listOf(FunctionParameter("first", "address")),
-            stateMutability = "view",
-        )
-
-    /** ABI definition for next function to iterate through queue */
-    val nextQueuedFunction =
-        FunctionDefinition(
-            name = "next",
-            inputs = listOf(FunctionParameter("prev", "address")),
-            outputs = listOf(FunctionParameter("nextValidation", "address")),
-            stateMutability = "view",
-        )
-
-    /** Build clause to get first queued validator */
-    fun buildFirstQueuedClause(stakerContract: String): Clause =
-        ContractUtils.createClause(stakerContract, firstQueuedFunction)
-
-    /** Build clause to get next queued validator after prev */
-    fun buildNextQueuedClause(stakerContract: String, prev: String): Clause =
-        ContractUtils.createClause(stakerContract, nextQueuedFunction, AddressUtils.toBigInt(prev))
-
-    /** Decode first queued validator address from response */
-    fun decodeFirstQueued(response: InspectionResult): String? {
-        if (!response.hasAbiData()) return null
-        val decoded =
-            FunctionReturnDecoder.decode(
-                response.data,
-                listOf(InputOutput("address", "first", "address")),
-            )
-        val address = decoded["first"] as? String
-        return if (address == null || address == ZERO_ADDRESS) null else address
+    /** Decodes the first response in [responses] using [abi]'s output schema. */
+    fun decodeValidators(responses: List<InspectionResult>, abi: AbiElement): Map<String, Any?> {
+        if (responses.isEmpty() || !responses[0].hasAbiData()) return emptyMap()
+        return FunctionReturnDecoder.decode(responses[0].data, abi.outputs)
     }
 
-    /** Decode next queued validator address from response */
-    fun decodeNextQueued(response: InspectionResult): String? {
-        if (!response.hasAbiData()) return null
-        val decoded =
-            FunctionReturnDecoder.decode(
-                response.data,
-                listOf(InputOutput("address", "nextValidation", "address")),
+    @Suppress("UNCHECKED_CAST")
+    inline fun <reified T> Map<String, Any?>.listOf(key: String): List<T> =
+        this[key] as? List<T>
+            ?: throw IllegalArgumentException(
+                "Expected List<${T::class.simpleName}> for key '$key'"
             )
-        val address = decoded["nextValidation"] as? String
-        return if (address == null || address == ZERO_ADDRESS) null else address
-    }
-
-    private const val ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 }

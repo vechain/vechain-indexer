@@ -343,6 +343,12 @@
         },
         {
           "filter": {
+            "query": "@httpRequest.uri:\"/api/v2/validators/missed-slots\""
+          },
+          "name": "/api/v2/validators/missed-slots"
+        },
+        {
+          "filter": {
             "query": "@httpRequest.uri:\"/api/v1/nfts\""
           },
           "name": "/api/v1/nfts"
@@ -364,6 +370,12 @@
             "query": "@httpRequest.uri:\"/api/v1/validators\""
           },
           "name": "/api/v1/validators"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:\"/api/v2/validators\""
+          },
+          "name": "/api/v2/validators"
         },
         {
           "filter": {
@@ -610,6 +622,12 @@
             "query": "@httpRequest.uri:/api/v2/history/*"
           },
           "name": "/api/v2/history/{account}"
+        },
+        {
+          "filter": {
+            "query": "@httpRequest.uri:/api/v2/validators/*"
+          },
+          "name": "/api/v2/validators/{validatorId}"
         },
         {
           "filter": {

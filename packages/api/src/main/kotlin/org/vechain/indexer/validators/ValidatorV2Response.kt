@@ -1,0 +1,298 @@
+package org.vechain.indexer.validators
+
+import com.fasterxml.jackson.annotation.JsonInclude
+import java.math.BigDecimal
+import java.math.RoundingMode
+import org.vechain.indexer.stargate.token.TokenLevelDecimalValues
+import org.vechain.indexer.validator.Status
+import org.vechain.indexer.validator.Validator
+import org.vechain.indexer.validator.logic.ValidatorCalculator
+
+/**
+ * Public API representation of a [Validator] document. Matches the V1 wire surface so consumer
+ * migration is a swap of the endpoint, not of the field set.
+ *
+ * Fields fall into three groups:
+ * - **Stored** — copied straight from the V2 document.
+ * - **Derived from V2 + aggregates** — `totalWeight`, `blockProbability`, `blocksPerYear`,
+ *   `cycleEndBlock`, `missedSlotsPercentage`, etc. Computed in [from] using per-request aggregates.
+ * - **Price-dependent** — TVL, yields, NFT yields. `vetPrice` / `vthoPrice` are required (the
+ *   controller fetches them up front and the endpoint returns 503 if the oracle is unavailable), so
+ *   TVL is always derivable. Yields can still be null for non-price reasons — e.g. a QUEUED
+ *   validator has no `blocksPerYear` yet.
+ *
+ * Still deferred (separate workstreams):
+ * - `online` — needs an "is recently proposed" recency threshold + current best block.
+ * - `totalRewards` — depends on the validator-reward ledger (V1's `validator-reward` profile).
+ */
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class ValidatorV2Response(
+    val id: String,
+    val endorser: String?,
+    val beneficiary: String?,
+    val status: Status?,
+
+    // ---- Stake breakdown ----
+    val vetStaked: BigDecimal?,
+    val validatorVetStaked: BigDecimal?,
+    val delegatorVetStaked: BigDecimal?,
+    val queuedVetStaked: BigDecimal?,
+    val validatorQueuedVetStaked: BigDecimal?,
+    val delegatorQueuedVetStaked: BigDecimal?,
+    val exitingVetStaked: BigDecimal?,
+    val validatorExitingVetStaked: BigDecimal?,
+    val delegatorExitingVetStaked: BigDecimal?,
+
+    // ---- Weight + probability ----
+    val validatorLockedWeight: BigDecimal?,
+    val totalNextPeriodWeight: BigDecimal?,
+    val totalWeight: BigDecimal?,
+    val blockProbability: BigDecimal?,
+    val blocksPerYear: BigDecimal?,
+    val blocksPerEpoch: Long = 180L,
+
+    // ---- Cycle ----
+    val startBlock: Long?,
+    val exitBlock: Long?,
+    val cyclePeriodLength: Long?,
+    val cycleEndBlock: Long?,
+    val completedPeriods: Long?,
+    val queuePosition: Long?,
+    val availableStartBlock: Long?,
+
+    // ---- Liveness ----
+    val scheduledSlots: Long,
+    val proposedBlocks: Long,
+    val missedSlots: Long,
+    val missedSlotsPercentage: BigDecimal?,
+    val lastProposedBlockNumber: Long?,
+    val lastMissedBlockNumber: Long?,
+
+    // ---- Price-dependent: TVL (non-null — controller guarantees prices or 503s) ----
+    val validatorTvl: BigDecimal,
+    val delegatorTvl: BigDecimal,
+    val totalTvl: BigDecimal,
+    val validatorTvlPercentage: BigDecimal?,
+
+    // ---- Price-dependent: yields ----
+    val validatorYield: BigDecimal?,
+    val tvlBasedYield: BigDecimal?,
+    val avgDelegatorYield: BigDecimal?,
+    val nextCycleValidatorYield: BigDecimal?,
+    val nextCycleTvlBasedYield: BigDecimal?,
+    val nextCycleAvgDelegatorYield: BigDecimal?,
+
+    // ---- Price-dependent: NFT yields ----
+    val nftYields: TokenLevelDecimalValues?,
+    val nftYieldsIfDelegatedNextCycle: TokenLevelDecimalValues?,
+) {
+    companion object {
+        fun from(
+            v: Validator,
+            aggregates: ValidatorAggregates,
+            vetPrice: BigDecimal,
+            vthoPrice: BigDecimal,
+        ): ValidatorV2Response {
+            // --- stake derivations ---
+            val validatorVet = v.validatorVetStaked ?: BigDecimal.ZERO
+            val delegatorVet = v.delegatorVetStaked ?: BigDecimal.ZERO
+            val totalLocked = validatorVet + delegatorVet
+
+            val queued = v.queuedVetStaked ?: BigDecimal.ZERO
+            val validatorQueued = v.validatorQueuedVetStaked ?: BigDecimal.ZERO
+            val delegatorQueued = (queued - validatorQueued).max(BigDecimal.ZERO)
+
+            val exiting = v.exitingVetStaked ?: BigDecimal.ZERO
+            val validatorExiting = v.validatorExitingVetStaked ?: BigDecimal.ZERO
+            val delegatorExiting = (exiting - validatorExiting).max(BigDecimal.ZERO)
+
+            // --- cycle ---
+            val startBlock = v.startBlock
+            val completedPeriods = v.completedPeriods
+            val cyclePeriodLength = v.cyclePeriodLength
+            val cycleEndBlock =
+                if (startBlock != null && completedPeriods != null && cyclePeriodLength != null) {
+                    startBlock + (completedPeriods + 1L) * cyclePeriodLength
+                } else null
+
+            // --- weight + block probability (current cycle) ---
+            val totalWeight = aggregates.totalWeight.takeIf { it > BigDecimal.ZERO }
+            val validatorWeight = v.validatorLockedWeight
+            val blockProbability =
+                if (totalWeight != null && validatorWeight != null) {
+                    validatorWeight.divide(totalWeight, 12, RoundingMode.HALF_UP)
+                } else null
+            val blocksPerYear = blockProbability?.let { ValidatorCalculator.blocksPerYear(it) }
+
+            // --- percentage offline ---
+            val missedSlotsPercentage =
+                if (v.scheduledSlots > 0L) {
+                    BigDecimal(v.missedSlots)
+                        .divide(BigDecimal(v.scheduledSlots), 6, RoundingMode.HALF_UP)
+                        .multiply(BigDecimal(100))
+                } else null
+
+            // --- TVL (always derivable: prices are guaranteed by the controller) ---
+            val validatorTvl = validatorVet.multiply(vetPrice)
+            val delegatorTvl = delegatorVet.multiply(vetPrice)
+            val totalTvl = validatorTvl.add(delegatorTvl)
+            val validatorTvlPercentage =
+                if (totalTvl > BigDecimal.ZERO) {
+                    validatorTvl.divide(totalTvl, 12, RoundingMode.HALF_UP)
+                } else null
+
+            // --- Current-cycle yields (need blocksPerYear + a non-zero stake) ---
+            var validatorYield: BigDecimal? = null
+            var tvlBasedYield: BigDecimal? = null
+            var avgDelegatorYield: BigDecimal? = null
+            var nftYields: TokenLevelDecimalValues? = null
+            if (blocksPerYear != null && totalLocked > BigDecimal.ZERO) {
+                val hasDelegations = delegatorVet > BigDecimal.ZERO
+                val vthoIssued =
+                    ValidatorCalculator.determineVTHOIssuedPerBlock(aggregates.totalActiveVetStaked)
+                val (vYield, tvlYield, avgYield) =
+                    ValidatorCalculator.calculateValidatorYield(
+                        validatorTvl = validatorTvl,
+                        delegatorTvl = delegatorTvl,
+                        hasDelegations = hasDelegations,
+                        blocksPerYear = blocksPerYear,
+                        vthoIssued = vthoIssued,
+                        vthoPrice = vthoPrice,
+                    )
+                validatorYield = vYield
+                tvlBasedYield = tvlYield
+                avgDelegatorYield = avgYield
+
+                nftYields =
+                    TokenLevelDecimalValues.fromMap(
+                        ValidatorCalculator.calculateDelegatedNftLevelYieldsCurrentCycle(
+                            currentDelegatedLevels = aggregates.currentDelegatedLevelCounts(v.id),
+                            blocksPerYear = blocksPerYear,
+                            vthoIssued = vthoIssued,
+                            vthoPriceUsd = vthoPrice,
+                            vetPriceUsd = vetPrice,
+                        )
+                    )
+            }
+
+            // --- Next-cycle projections ---
+            val nextCycleStake = (queued + totalLocked - exiting).max(BigDecimal.ZERO)
+            val nextCycleValidatorStake =
+                (validatorVet + validatorQueued - validatorExiting).max(BigDecimal.ZERO)
+            val nextCycleDelegatorStake =
+                (delegatorVet + delegatorQueued - delegatorExiting).max(BigDecimal.ZERO)
+            val nextCycleValidatorTvl = nextCycleValidatorStake.multiply(vetPrice)
+            val nextCycleDelegatorTvl = nextCycleDelegatorStake.multiply(vetPrice)
+
+            val nextPeriodWeight = v.totalNextPeriodWeight
+            val totalNextPeriodWeight = aggregates.totalNextPeriodWeight
+            val blockProbabilityNextCycle =
+                if (nextPeriodWeight != null && totalNextPeriodWeight > BigDecimal.ZERO) {
+                    nextPeriodWeight.divide(totalNextPeriodWeight, 12, RoundingMode.HALF_UP)
+                } else null
+            val blocksPerYearNextCycle =
+                blockProbabilityNextCycle?.let { ValidatorCalculator.blocksPerYear(it) }
+
+            var nextCycleValidatorYield: BigDecimal? = null
+            var nextCycleTvlBasedYield: BigDecimal? = null
+            var nextCycleAvgDelegatorYield: BigDecimal? = null
+            if (blocksPerYearNextCycle != null && nextCycleStake > BigDecimal.ZERO) {
+                val nextHasDelegations = nextCycleDelegatorStake > BigDecimal.ZERO
+                val nextVthoIssued =
+                    ValidatorCalculator.determineVTHOIssuedPerBlock(
+                        aggregates.totalActiveNextCycleVetStaked
+                    )
+                val (ncV, ncT, ncA) =
+                    ValidatorCalculator.calculateValidatorYield(
+                        validatorTvl = nextCycleValidatorTvl,
+                        delegatorTvl = nextCycleDelegatorTvl,
+                        hasDelegations = nextHasDelegations,
+                        blocksPerYear = blocksPerYearNextCycle,
+                        vthoIssued = nextVthoIssued,
+                        vthoPrice = vthoPrice,
+                    )
+                nextCycleValidatorYield = ncV
+                nextCycleTvlBasedYield = ncT
+                nextCycleAvgDelegatorYield = ncA
+            }
+
+            // nftYieldsIfDelegatedNextCycle — uses MongoDB-derived next-cycle delegation stake
+            // (Stargate.getDelegatorsEffectiveStake is not needed).
+            var nftYieldsIfDelegatedNextCycle: TokenLevelDecimalValues? = null
+            if (
+                v.status != Status.EXITING &&
+                    v.status != Status.EXITED &&
+                    v.status != Status.WITHDRAWN &&
+                    nextPeriodWeight != null &&
+                    totalNextPeriodWeight > BigDecimal.ZERO &&
+                    startBlock != null &&
+                    completedPeriods != null &&
+                    cyclePeriodLength != null
+            ) {
+                val periodPlusTwoBlock = startBlock + (completedPeriods + 2L) * cyclePeriodLength
+                val nextCycleEffectiveDelegationStake =
+                    aggregates.nextCycleEffectiveDelegationStake(v.id, periodPlusTwoBlock)
+                val mapped =
+                    ValidatorCalculator.calculateNftLevelYieldsIfDelegatedNextCycle(
+                        nextPeriodWeight = nextPeriodWeight,
+                        totalNextPeriodVET = aggregates.totalActiveNextCycleVetStaked,
+                        nextCycleEffectiveDelegationStake = nextCycleEffectiveDelegationStake,
+                        totalNextPeriodWeight = totalNextPeriodWeight,
+                        vthoPriceUsd = vthoPrice,
+                        vetPriceUsd = vetPrice,
+                        // ValidatorCalculator only checks for `Status.EXITING`; we pre-filter
+                        // and pass a non-EXITING placeholder.
+                        status = Status.ACTIVE,
+                        nextCycleStake = nextCycleStake,
+                    )
+                nftYieldsIfDelegatedNextCycle = TokenLevelDecimalValues.fromMap(mapped)
+            }
+
+            return ValidatorV2Response(
+                id = v.id,
+                endorser = v.endorser,
+                beneficiary = v.beneficiary,
+                status = v.status,
+                vetStaked = totalLocked.takeIf { it > BigDecimal.ZERO },
+                validatorVetStaked = v.validatorVetStaked,
+                delegatorVetStaked = v.delegatorVetStaked,
+                queuedVetStaked = v.queuedVetStaked,
+                validatorQueuedVetStaked = v.validatorQueuedVetStaked,
+                delegatorQueuedVetStaked = delegatorQueued.takeIf { it > BigDecimal.ZERO },
+                exitingVetStaked = v.exitingVetStaked,
+                validatorExitingVetStaked = v.validatorExitingVetStaked,
+                delegatorExitingVetStaked = delegatorExiting.takeIf { it > BigDecimal.ZERO },
+                validatorLockedWeight = v.validatorLockedWeight,
+                totalNextPeriodWeight = v.totalNextPeriodWeight,
+                totalWeight = totalWeight,
+                blockProbability = blockProbability,
+                blocksPerYear = blocksPerYear,
+                startBlock = startBlock,
+                exitBlock = v.exitBlock,
+                cyclePeriodLength = cyclePeriodLength,
+                cycleEndBlock = cycleEndBlock,
+                completedPeriods = completedPeriods,
+                queuePosition = v.queuePosition,
+                availableStartBlock = v.availableStartBlock,
+                scheduledSlots = v.scheduledSlots,
+                proposedBlocks = v.proposedBlocks,
+                missedSlots = v.missedSlots,
+                missedSlotsPercentage = missedSlotsPercentage,
+                lastProposedBlockNumber = v.lastProposedBlockNumber,
+                lastMissedBlockNumber = v.lastMissedBlockNumber,
+                validatorTvl = validatorTvl,
+                delegatorTvl = delegatorTvl,
+                totalTvl = totalTvl,
+                validatorTvlPercentage = validatorTvlPercentage,
+                validatorYield = validatorYield,
+                tvlBasedYield = tvlBasedYield,
+                avgDelegatorYield = avgDelegatorYield,
+                nextCycleValidatorYield = nextCycleValidatorYield,
+                nextCycleTvlBasedYield = nextCycleTvlBasedYield,
+                nextCycleAvgDelegatorYield = nextCycleAvgDelegatorYield,
+                nftYields = nftYields,
+                nftYieldsIfDelegatedNextCycle = nftYieldsIfDelegatedNextCycle,
+            )
+        }
+    }
+}

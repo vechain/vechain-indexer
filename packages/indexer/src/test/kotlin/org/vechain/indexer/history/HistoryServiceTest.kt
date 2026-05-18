@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.aggregation.AggregationResults
+import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.SimpleBlockIndexerCoordinator
 import org.vechain.indexer.config.BusinessEventProperties
@@ -26,6 +27,7 @@ import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.ValidatorDelegationService
+import org.vechain.indexer.validator.ValidatorRepository
 
 @ExtendWith(MockKExtension::class)
 class HistoryServiceTest {
@@ -36,6 +38,10 @@ class HistoryServiceTest {
     @MockK lateinit var blacklistClient: NftBlacklistClient
 
     @MockK lateinit var validatorDelegationService: ValidatorDelegationService
+
+    @MockK lateinit var validatorRepository: ValidatorRepository
+
+    @MockK lateinit var validatorIndexer: Indexer
 
     @MockK lateinit var thorClient: ThorClient
 
@@ -60,7 +66,8 @@ class HistoryServiceTest {
         coEvery { thorClient.inspectClauses(any(), any()) } returns
             listOf(InspectionResult("0x", emptyList(), emptyList(), 0, false, ""))
         coEvery { blacklistClient.isBlacklisted(any(), any()) } returns false
-        every { validatorDelegationService.decodeValidatorSnapshots(any()) } returns emptyMap()
+        every { validatorIndexer.startBlock } returns 0L
+        every { validatorIndexer.name } returns "validator"
         coEvery { validatorDelegationService.resolveCycleInfo(any(), any(), any()) } answers
             {
                 5L to (secondArg<Long>() + 5L)
@@ -69,6 +76,7 @@ class HistoryServiceTest {
             {
                 thirdArg<Long>() + 5L
             }
+        every { validatorRepository.findByStatusNot(Status.WITHDRAWN) } returns emptyList()
 
         val delegationLifecycleHistoryService =
             DelegationLifecycleHistoryService(
@@ -84,7 +92,8 @@ class HistoryServiceTest {
                 mongoTemplate = mongoTemplate,
                 blacklistClient = blacklistClient,
                 delegationLifecycleHistoryService = delegationLifecycleHistoryService,
-                validatorDelegationService = validatorDelegationService,
+                validatorRepository = validatorRepository,
+                validatorStartBlock = 0L,
             )
     }
 
@@ -108,17 +117,8 @@ class HistoryServiceTest {
                     blockResult.events().any { it.eventType == "STARGATE_DELEGATION_EXIT_REQUEST" }
                 }
 
-            historyService.processBlock(
-                requestResult.events(),
-                requestResult.block,
-                requestResult.callResults,
-            )
-            val exitRecords =
-                historyService.processBlock(
-                    exitResult.events(),
-                    exitResult.block,
-                    exitResult.callResults,
-                )
+            historyService.processBlock(requestResult.events(), requestResult.block)
+            val exitRecords = historyService.processBlock(exitResult.events(), exitResult.block)
 
             val exitRequest =
                 exitRecords.first {
@@ -136,7 +136,7 @@ class HistoryServiceTest {
         runBlocking {
             val block = BlockFixtures.BLOCK_MULTIPLE_TXS
 
-            val records = historyService.processBlock(emptyList(), block, emptyList())
+            val records = historyService.processBlock(emptyList(), block)
 
             assertThat(records).hasSize(block.transactions.size)
             assertThat(records.map { it.eventName }).containsOnly(HistoryEventName.UNKNOWN_TX)
@@ -170,7 +170,7 @@ class HistoryServiceTest {
                         ),
                 )
 
-            val records = historyService.processBlock(listOf(event), block, emptyList())
+            val records = historyService.processBlock(listOf(event), block)
 
             assertThat(records).hasSize(1)
             assertThat(records.single().eventName).isEqualTo(HistoryEventName.TRANSFER_VET)
@@ -194,10 +194,10 @@ class HistoryServiceTest {
                 .historyIndexer(
                     thorClient = thorClient,
                     processor = processor,
+                    validatorIndexer = validatorIndexer,
                     startBlock = blocks.first().number,
                     syncLoggerInterval = 1L,
                     bEProperties = businessEventProperties,
-                    getAllValidatorsAddress = "0xvalidators",
                 )
 
         SimpleBlockIndexerCoordinator.launch(indexer = indexer, blocks = blocks)

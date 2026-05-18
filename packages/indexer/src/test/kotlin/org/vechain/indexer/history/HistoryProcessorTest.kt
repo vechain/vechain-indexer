@@ -56,7 +56,7 @@ internal class HistoryProcessorTest {
     fun `process - if no events or transactions are present then processBlock should still be called`() {
         val block = BlockFixtures.BLOCK_NO_CLAUSES
 
-        coEvery { historyService.processBlock(emptyList(), block, emptyList()) } returns emptyList()
+        coEvery { historyService.processBlock(emptyList(), block) } returns emptyList()
 
         runBlocking {
             processor.process(
@@ -64,7 +64,7 @@ internal class HistoryProcessorTest {
             )
         }
 
-        coVerify(exactly = 1) { historyService.processBlock(emptyList(), block, emptyList()) }
+        coVerify(exactly = 1) { historyService.processBlock(emptyList(), block) }
         verify(exactly = 0) { historyService.save(any()) }
     }
 
@@ -73,7 +73,7 @@ internal class HistoryProcessorTest {
         val events = INDEXED_EVENTS_BLACKLIST
         val block = BlockFixtures.BLOCK_NO_CLAUSES
 
-        coEvery { historyService.processBlock(events, block, emptyList()) } returns emptyList()
+        coEvery { historyService.processBlock(events, block) } returns emptyList()
 
         runBlocking {
             processor.process(
@@ -82,7 +82,7 @@ internal class HistoryProcessorTest {
         }
 
         coVerify(exactly = 1) {
-            historyService.processBlock(events, BlockFixtures.BLOCK_NO_CLAUSES, emptyList())
+            historyService.processBlock(events, BlockFixtures.BLOCK_NO_CLAUSES)
         }
     }
 
@@ -91,7 +91,7 @@ internal class HistoryProcessorTest {
         val block = BLOCK_SINGLE_CLAUSE
         val events = emptyList<IndexedEvent>()
 
-        coEvery { historyService.processBlock(events, block, emptyList()) } returns emptyList()
+        coEvery { historyService.processBlock(events, block) } returns emptyList()
 
         runBlocking {
             processor.process(
@@ -99,7 +99,7 @@ internal class HistoryProcessorTest {
             )
         }
 
-        coVerify(exactly = 1) { historyService.processBlock(events, block, emptyList()) }
+        coVerify(exactly = 1) { historyService.processBlock(events, block) }
     }
 
     @Test
@@ -132,7 +132,7 @@ internal class HistoryProcessorTest {
         val block = BlockFixtures.BLOCK_NO_CLAUSES
         val records = listOf<IndexedHistoryEvent>(mockk<IndexedHistoryEvent>())
 
-        coEvery { historyService.processBlock(events, block, emptyList()) } returns records
+        coEvery { historyService.processBlock(events, block) } returns records
         every { historyService.save(records) } returns Unit
 
         runBlocking {
@@ -141,7 +141,7 @@ internal class HistoryProcessorTest {
             )
         }
 
-        coVerify(exactly = 1) { historyService.processBlock(events, block, emptyList()) }
+        coVerify(exactly = 1) { historyService.processBlock(events, block) }
         verify(exactly = 1) { historyService.save(records) }
     }
 
@@ -170,8 +170,7 @@ internal class HistoryProcessorTest {
         val block = BlockFixtures.BLOCK_NO_CLAUSES
         val returnedRecords = listOf(syntheticHistoryEvent(block, eventName))
 
-        coEvery { historyService.processBlock(emptyList(), block, emptyList()) } returns
-            returnedRecords
+        coEvery { historyService.processBlock(emptyList(), block) } returns returnedRecords
         every { historyService.save(any()) } just Runs
 
         runBlocking {
@@ -180,7 +179,7 @@ internal class HistoryProcessorTest {
             )
         }
 
-        coVerify(exactly = 1) { historyService.processBlock(emptyList(), block, emptyList()) }
+        coVerify(exactly = 1) { historyService.processBlock(emptyList(), block) }
         verify(exactly = 1) {
             historyService.save(match { it.singleOrNull()?.eventName == eventName })
         }

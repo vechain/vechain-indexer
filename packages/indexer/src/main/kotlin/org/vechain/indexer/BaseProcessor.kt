@@ -21,6 +21,10 @@ abstract class BaseProcessor(
     protected val startupLogger = LoggerFactory.getLogger(this::class.java)
     private val metricsRecorder = ProcessorMetricsRecorder(indexerName, processorMetrics)
 
+    // Set after each successful processEntry. Reader is the shutdown thread (a different thread
+    // from the per-processor coroutine that writes it), hence @Volatile.
+    @Volatile private var lastObservedBlock: Long? = null
+
     abstract suspend fun processEntry(entry: IndexingResult)
 
     /**
@@ -43,10 +47,51 @@ abstract class BaseProcessor(
         try {
             assertEventsInBlockOrder(entry.events())
             processEntry(entry)
-            checkpointService.trySaveCheckpoint(collectionName, entry.latestBlockNumber())
+            val latest = entry.latestBlockNumber()
+            lastObservedBlock = latest
+            checkpointService.trySaveCheckpoint(collectionName, latest)
             metricsRecorder.recordEvents(entry.events().size)
         } finally {
             metricsRecorder.record(entry, start.elapsedNow())
+        }
+    }
+
+    /**
+     * Updates the in-memory checkpoint cursor after a rollback so a subsequent [flushCheckpoint]
+     * cannot overwrite the persisted post-rollback state with a stale higher block. Subclasses that
+     * override [rollback] (e.g. [BaseStatefulProcessor]) MUST call this with the same
+     * `blockNumber - 1` they wrote to the checkpoint.
+     */
+    protected fun rewindLastObservedBlock(blockNumber: Long) {
+        lastObservedBlock = blockNumber
+    }
+
+    /**
+     * Force-flush the checkpoint to the most recently processed block, bypassing the throttle.
+     * Called on graceful shutdown so a clean restart resumes from the actual last-processed block
+     * rather than up to [org.vechain.indexer.config.CheckpointProperties.saveIntervalSeconds]
+     * earlier. The post-restart drift this closes is what trips `alignComponents` in indexer-core
+     * 10.3+ when siblings in a dependency component land at different persisted positions.
+     *
+     * No-op if this processor has not yet successfully processed a block in this JVM.
+     */
+    fun flushCheckpoint() {
+        val block = lastObservedBlock ?: return
+        try {
+            checkpointService.saveCheckpoint(collectionName, block)
+            startupLogger.info(
+                "{}: flushed checkpoint for {} at block {} on shutdown",
+                indexerName,
+                collectionName,
+                block,
+            )
+        } catch (e: Exception) {
+            startupLogger.error(
+                "Failed to flush checkpoint on shutdown for {} at block {}",
+                indexerName,
+                block,
+                e,
+            )
         }
     }
 
@@ -104,6 +149,7 @@ abstract class BaseProcessor(
         resetProcessingState()
         checkpointService.saveCheckpoint(collectionName, blockNumber - 1)
         repository.deleteAllByBlockNumberGreaterThanEqual(blockNumber)
+        rewindLastObservedBlock(blockNumber - 1)
         val elapsed = start.elapsedNow()
         if (elapsed > 1.seconds) {
             startupLogger.warn(

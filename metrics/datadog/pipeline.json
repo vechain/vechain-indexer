@@ -399,6 +399,12 @@
         },
         {
           "filter": {
+            "query": "@http.url_details.path:\"/api/v2/validators/missed-slots\""
+          },
+          "name": "/api/v2/validators/missed-slots"
+        },
+        {
+          "filter": {
             "query": "@http.url_details.path:\"/api/v1/nfts\""
           },
           "name": "/api/v1/nfts"
@@ -420,6 +426,12 @@
             "query": "@http.url_details.path:\"/api/v1/validators\""
           },
           "name": "/api/v1/validators"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:\"/api/v2/validators\""
+          },
+          "name": "/api/v2/validators"
         },
         {
           "filter": {
@@ -669,6 +681,12 @@
         },
         {
           "filter": {
+            "query": "@http.url_details.path:/api/v2/validators/*"
+          },
+          "name": "/api/v2/validators/{validatorId}"
+        },
+        {
+          "filter": {
             "query": "@http.url_details.path:/api/v1/b3tr/actions/users/*/app/*/overview"
           },
           "name": "/api/v1/b3tr/actions/users/{wallet}/app/{appId}/overview"
@@ -788,6 +806,12 @@
             "query": "@http.url_details.path:/api/v2/history*"
           },
           "name": "v2-history"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:/api/v2/validators*"
+          },
+          "name": "v2-validators"
         },
         {
           "filter": {

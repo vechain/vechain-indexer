@@ -331,6 +331,14 @@ module "ecs-lb-service-api" {
       value = each.value.thor_url
     },
     {
+      name  = "PRICE_ORACLE_THOR_URL"
+      value = each.value.api.pricing.oracle.thor-url
+    },
+    {
+      name  = "PRICE_ORACLE_CONTRACT"
+      value = each.value.api.pricing.oracle.contract-address
+    },
+    {
       name  = "X_ALLOC_VOTING_CONTRACT"
       value = each.value.indexer.business-event.substitutions.X_ALLOC_VOTING_CONTRACT
     },

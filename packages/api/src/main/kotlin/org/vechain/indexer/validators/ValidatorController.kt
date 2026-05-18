@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // Mixes V1 (deprecated) and V1-only (block-rewards) endpoints.
+
 package org.vechain.indexer.validator
 
 import io.swagger.v3.oas.annotations.Operation
@@ -6,7 +8,6 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
-import org.springframework.data.domain.Slice
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.VALIDATORS_PATH
@@ -16,7 +17,7 @@ import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
-import org.vechain.indexer.docs.TokenIdParameter
+import org.vechain.indexer.docs.PriceOracleUnavailableResponse
 import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
@@ -26,10 +27,9 @@ import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.utils.SortFieldUtils
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
-import org.vechain.indexer.validation.ValidTokenId
 import org.vechain.indexer.validators.AllValidatorsMissedBlocksResponse
-import org.vechain.indexer.validators.DelegationCountsResponse
 import org.vechain.indexer.validators.MissedBlocksTimeframe
+import org.vechain.indexer.validators.ValidatorResponse
 import org.vechain.indexer.validators.ValidatorService
 
 @Profile("validator")
@@ -37,15 +37,19 @@ import org.vechain.indexer.validators.ValidatorService
 @Validated
 @RestController
 @RequestMapping(VALIDATORS_PATH)
-open class ValidatorController(
-    private val delegationRepository: DelegationRepository,
-    private val service: ValidatorService,
-) {
+open class ValidatorController(private val service: ValidatorService) {
     @GetMapping
     @Operation(
-        summary = "Get validators with optional filters",
+        summary = "Get validators with optional filters (deprecated — use /api/v2/validators)",
         description =
             """
+            **Deprecated:** Replaced by `GET /api/v2/validators`. This endpoint now reads from the
+            V2 indexer (`validators_v2`) and reshapes the V2 document into the V1 wire format.
+            `online` and `totalRewards` are returned as `null` (not populated on V2). `offlineBlocks`
+            is sourced from V2's PoS-schedule misses and is numerically different from the V1
+            transient `OfflineBlock` pointer. `sortBy=nft:<Level>` has no V2 equivalent and silently
+            falls back to the default sort.
+
             This endpoint retrieves validator stats.
 
             You can filter the results by:
@@ -59,6 +63,7 @@ open class ValidatorController(
             - `page` and `size`: Controls pagination
             - `direction`: Either `asc` or `desc`
             """,
+        deprecated = true,
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -104,6 +109,7 @@ open class ValidatorController(
             ),
     )
     @CommonApiResponses
+    @PriceOracleUnavailableResponse
     @PaginationParameters
     open fun getValidators(
         @RequestParam(required = false) endorser: String?,
@@ -113,7 +119,7 @@ open class ValidatorController(
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
         @RequestParam(required = false, defaultValue = "validatorTvl") sortBy: String,
-    ): PaginatedResponse<Validator> {
+    ): PaginatedResponse<ValidatorResponse> {
         val sortField = SortFieldUtils.getSortFieldValidator(sortBy)
         val pageable = toPageable(page, size, direction, sortField)
 
@@ -130,8 +136,11 @@ open class ValidatorController(
 
     @GetMapping("/{validatorId}")
     @Operation(
-        summary = "Get a single validator by ID",
-        description = "Returns a single validator's stats by their address.",
+        summary = "Get a single validator by ID (deprecated — use /api/v2/validators/{id})",
+        description =
+            "**Deprecated:** Replaced by `GET /api/v2/validators/{validatorId}`. " +
+                "Returns a single validator's stats by their address.",
+        deprecated = true,
     )
     @AddressParameter(
         name = "validatorId",
@@ -140,65 +149,11 @@ open class ValidatorController(
         required = true,
     )
     @CommonApiResponses
-    open fun getValidatorById(@PathVariable @ValidAddress validatorId: Address): Validator {
+    @PriceOracleUnavailableResponse
+    open fun getValidatorById(@PathVariable @ValidAddress validatorId: Address): ValidatorResponse {
         val normalised = HexUtils.normalise(validatorId.value)
         return service.getValidatorById(normalised)
             ?: throw ResourceNotFoundException("Validator not found for id $normalised")
-    }
-
-    @GetMapping("/delegations")
-    @Operation(
-        summary = "Get delegations with optional filters",
-        description =
-            """
-            This endpoint retrieves delegation records.
-
-            You can filter by:
-            - `validator`: delegations for a specific validator
-            - `tokenId`: delegations for a specific NFT tokenId
-            - `statuses`: array of statuses of interest
-
-            You can also sort and paginate.
-            """,
-    )
-    @AddressParameter(name = "validator", description = "Filter by validator address")
-    @TokenIdParameter
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "statuses",
-        schema = Schema(type = "array", implementation = Status::class),
-        description = "Filter by one or more statuses",
-        required = false,
-    )
-    @PaginationParameters
-    @CommonApiResponses
-    open fun getDelegations(
-        @RequestParam(required = false) validator: String?,
-        @ValidTokenId @RequestParam(required = false) tokenId: String?,
-        @RequestParam(required = false) statuses: List<Status>?,
-        @RequestParam(required = false) page: Int?,
-        @ValidPageSize @RequestParam(required = false) size: Int?,
-        @RequestParam(required = false) direction: String?,
-    ): PaginatedResponse<Delegation> {
-        val pageable =
-            toPageable(page, size, direction, Delegation::blockNumber.name, Delegation::id.name)
-
-        val results: Slice<Delegation> =
-            when {
-                validator != null && statuses != null ->
-                    delegationRepository.findByValidatorAndStatusIn(
-                        HexUtils.normalise(validator),
-                        statuses,
-                        pageable,
-                    )
-                validator != null ->
-                    delegationRepository.findByValidator(HexUtils.normalise(validator), pageable)
-                tokenId != null -> delegationRepository.findByTokenId(tokenId, pageable)
-                statuses != null -> delegationRepository.findByStatusIn(statuses, pageable)
-                else -> delegationRepository.findAll(pageable)
-            }
-
-        return paginatedResponse(results)
     }
 
     @Deprecated(
@@ -333,12 +288,18 @@ open class ValidatorController(
             validator.value.lowercase(),
         )
 
+    @Deprecated("Use GET /api/v2/validators/missed-slots")
     @GetMapping("/blocks/missed")
     @Operation(
-        summary = "Get missed blocks percentage for validators",
+        summary = "Get missed blocks percentage for validators (deprecated)",
         description =
-            "Returns missed block percentages for all validators or a specific validator within a specified timeframe. " +
-                "Timeframe options: DAY (last 24h), WEEK (last 7 days), MONTH (last 30 days), YEAR (last 365 days).",
+            "**Deprecated:** Replaced by `GET /api/v2/validators/missed-slots`. " +
+                "`missedPercentage` is now `missedSlots / scheduledSlots * 100` over the window " +
+                "— i.e. the fraction of the validator's scheduled PoS slots that were missed, " +
+                "not the fraction of all chain blocks during an offline span as previously. " +
+                "Timeframe options: DAY (last 24h), WEEK (last 7 days), MONTH (last 30 days), " +
+                "YEAR (last 365 days).",
+        deprecated = true,
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -354,36 +315,4 @@ open class ValidatorController(
         @ValidAddress @RequestParam(required = false) validator: Address?,
     ): AllValidatorsMissedBlocksResponse =
         service.getMissedBlocksPercentage(timeframe, validator?.value?.lowercase())
-
-    @GetMapping("/delegations/count")
-    @Operation(
-        summary = "Get delegation counts by status for all validators",
-        description =
-            "Returns the count of delegations grouped by status (QUEUED, ACTIVE, EXITING) for all validators, " +
-                "or optionally filtered to a specific validator.",
-    )
-    @AddressParameter(name = "validator", description = "Optional validator address to filter by")
-    @CommonApiResponses
-    open fun getDelegationCounts(
-        @ValidAddress @RequestParam(required = false) validator: Address?
-    ): List<DelegationCountsResponse> {
-        val results =
-            if (validator != null) {
-                delegationRepository.aggregateDelegationCountsByValidator(
-                    validator.value.lowercase()
-                )
-            } else {
-                delegationRepository.aggregateDelegationCountsByValidator()
-            }
-
-        return results.map { result ->
-            val countsByStatus = result.counts.associateBy { it.status }
-            DelegationCountsResponse(
-                validator = result._id,
-                queued = countsByStatus["QUEUED"]?.count ?: 0L,
-                active = countsByStatus["ACTIVE"]?.count ?: 0L,
-                exiting = countsByStatus["EXITING"]?.count ?: 0L,
-            )
-        }
-    }
 }

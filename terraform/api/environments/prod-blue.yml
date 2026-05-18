@@ -128,6 +128,11 @@ enabled_nets:
         b3tr-richlist-total-holders:
           max-size: "10"
           ttl-seconds: "300"
+      # vechain.energy PriceFeedOracle — mainnet deployment.
+      pricing:
+        oracle:
+          thor-url: "https://mainnet.vechain.org"
+          contract-address: "0x49eC7192BF804Abc289645ca86F1eD01a6C17713"
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -180,7 +185,7 @@ enabled_nets:
         safe-tx-proposals: "24713855"
       sync-log-interval: "10"
       channel-batch-size: "5"
-      checkpoint-save-interval-seconds: "60"
+      checkpoint-save-interval-seconds: "5"
       pruner:
         enabled: "true"
         interval: "60480"
@@ -210,7 +215,7 @@ enabled_nets:
         stargate-nft-holders-by-block: "9"
         stargate-nft-owner-balance: "3"
         stargate-vet-staked-by-block: "9"
-        stargate-vet-delegated-by-block: "9"
+        stargate-vet-delegated-by-block: "10"
         b3tr-proposal-comments: "3"
         b3tr-proposal-results: "8"
         b3tr-challenges: "5"
@@ -229,11 +234,11 @@ enabled_nets:
         block-usage: "2"
         average-fees-per-user: "4"
         historic-proposals: "4"
-        validator: "8"
-        validator-rewards: "4"
-        stargate-token: "8"
-        token-rewards: "6"
-        delegation: "11"
+        validator: "9"
+        validator-rewards: "5"
+        stargate-token: "9"
+        token-rewards: "7"
+        delegation: "12"
         account-totals-series: "3"
         account-overview: "7"
         b3tr-balance: "6"
@@ -377,6 +382,11 @@ enabled_nets:
         b3tr-richlist-total-holders:
           max-size: "10"
           ttl-seconds: "300"
+      # vechain.energy PriceFeedOracle — testnet deployment.
+      pricing:
+        oracle:
+          thor-url: "https://testnet.vechain.org"
+          contract-address: "0xdcCAaBd81B38e0dEEf4c202bC7F1261A4D9192C6"
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -429,7 +439,7 @@ enabled_nets:
         safe-tx-proposals: "24762886"
       sync-log-interval: "10"
       channel-batch-size: "5"
-      checkpoint-save-interval-seconds: "60"
+      checkpoint-save-interval-seconds: "5"
       pruner:
         enabled: "true"
         interval: "60480"
@@ -459,7 +469,7 @@ enabled_nets:
         stargate-nft-holders-by-block: "9"
         stargate-nft-owner-balance: "3"
         stargate-vet-staked-by-block: "9"
-        stargate-vet-delegated-by-block: "9"
+        stargate-vet-delegated-by-block: "10"
         b3tr-proposal-comments: "3"
         b3tr-proposal-results: "8"
         b3tr-challenges: "5"
@@ -478,11 +488,11 @@ enabled_nets:
         block-usage: "2"
         average-fees-per-user: "4"
         historic-proposals: "3"
-        validator: "8"
-        validator-rewards: "4"
-        stargate-token: "9"
-        token-rewards: "5"
-        delegation: "10"
+        validator: "9"
+        validator-rewards: "5"
+        stargate-token: "10"
+        token-rewards: "6"
+        delegation: "11"
         account-totals-series: "3"
         account-overview: "7"
         b3tr-balance: "6"

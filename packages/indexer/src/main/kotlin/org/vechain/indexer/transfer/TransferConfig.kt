@@ -28,5 +28,6 @@ open class TransferConfig {
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
             .includeVetTransfers()
+            .disableEventCriteria()
             .build()
 }

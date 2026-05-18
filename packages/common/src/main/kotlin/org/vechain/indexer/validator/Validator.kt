@@ -9,8 +9,27 @@ import org.springframework.data.mongodb.core.mapping.Field
 import org.springframework.data.mongodb.core.mapping.FieldType
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.stargate.token.TokenLevelDecimalValues
 
+/**
+ * Indexed validator state. Persists only what the chain (built-in Staker) and PoS-schedule
+ * observation provide directly; derived and price-dependent fields are computed at API read time.
+ *
+ * **Derivable at the API/projection layer, NOT stored:**
+ * - `delegatorQueuedVetStaked` = `queuedVetStaked - validatorQueuedVetStaked`
+ * - `delegatorExitingVetStaked` = `exitingVetStaked - validatorExitingVetStaked`
+ * - `cycleEndBlock` = `startBlock + (completedPeriods + 1) * cyclePeriodLength`
+ * - `totalWeight` = sum of `validatorLockedWeight` across the active set (chain aggregate)
+ * - `blockProbability` = `validatorLockedWeight / totalWeight`
+ * - `blocksPerEpoch` = constant (180)
+ * - `blocksPerYear` = constant (3,155,760)
+ *
+ * **Price-/oracle-dependent, fetched at API read time:** TVL, current- and next-cycle yields, NFT
+ * yields. Requires VET/VTHO USD prices from `PriceFeedOracle` (network-specific contract). Keeping
+ * these out of the indexer lets it run unchanged on mainnet, testnet, solo, and custom networks.
+ *
+ * **Not yet wired up:** `totalRewards` (the reward ledger lives in the separate `validator-reward`
+ * profile).
+ */
 @Document(collection = IndexerNames.VALIDATOR.COLLECTION)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Validator(
@@ -18,59 +37,33 @@ data class Validator(
     @JsonIgnore override val blockId: String,
     @JsonIgnore override val blockNumber: Long,
     @JsonIgnore override val blockTimestamp: Long,
-    val endorser: String? = null, // address of the endorser
+    val endorser: String? = null,
     val beneficiary: String? = null,
-    val status: Status? = null, // active, inactive, jailed, etc.
-    @Field(targetType = FieldType.DECIMAL128)
-    val vetStaked: BigDecimal? = null, // amount of VET staked
-    @Field(targetType = FieldType.DECIMAL128) val validatorVetStaked: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val delegatorVetStaked: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val queuedVetStaked: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val validatorQueuedVetStaked: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val delegatorQueuedVetStaked: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val validatorExitingVetStaked: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val delegatorExitingVetStaked: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val exitingVetStaked: BigDecimal? = null,
-    @JsonIgnore
-    val exitingValidatorVetStaked: BigDecimal =
-        BigDecimal.ZERO, // amount of VET in the process of exiting
-    val cycleEndBlock: Long? = null, // end block of the current cycle
-    @Field(targetType = FieldType.DECIMAL128)
-    val totalRewards: BigDecimal? = null, // total rewards earned
-    @Field(targetType = FieldType.DECIMAL128) val blockProbability: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val blocksPerEpoch: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val totalTvl: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val validatorTvl: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val delegatorTvl: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val validatorTvlPercentage: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val tvlBasedYield: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val validatorYield: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val avgDelegatorYield: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val nextCycleTvlBasedYield: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val nextCycleValidatorYield: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val nextCycleAvgDelegatorYield: BigDecimal? = null,
-    val nftYieldsIfDelegatedNextCycle: TokenLevelDecimalValues? = null,
-    val nftYields: TokenLevelDecimalValues? = null,
-    @Field(targetType = FieldType.DECIMAL128) val totalWeight: BigDecimal? = null,
-    val online: Boolean? = null,
-    val completedPeriods: Long? = null,
-    val startBlock: Long? = null,
+    val status: Status? = null,
     val cyclePeriodLength: Long? = null,
-    @Field(targetType = FieldType.DECIMAL128) val blocksPerYear: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val percentageOffline: BigDecimal? = null,
-    val offlineBlocks: Long? = null,
-    val exitBlock: Long? = null, // Block at which validator will exit (for EXITING status)
-    val queuePosition: Long? = null, // Position in queue (1-based), null if not QUEUED
-    val availableStartBlock: Long? = null, // Block at which queued validator can become active
+    val startBlock: Long? = null,
+    val exitBlock: Long? = null,
+    val completedPeriods: Long? = null,
+    @Field(targetType = FieldType.DECIMAL128) val validatorVetStaked: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val validatorLockedWeight: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val delegatorVetStaked: BigDecimal? = null,
+    // Persisted sum of validatorVetStaked + delegatorVetStaked. Stored so V1's deprecated
+    // `sortBy=totalTvl` can map to a Mongo-sortable field (TVL preserves stake order within
+    // a single request since vetPrice is a per-request scalar).
+    @Field(targetType = FieldType.DECIMAL128) val vetStaked: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val validatorQueuedVetStaked: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val queuedVetStaked: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val exitingVetStaked: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val validatorExitingVetStaked: BigDecimal? = null,
+    @Field(targetType = FieldType.DECIMAL128) val totalNextPeriodWeight: BigDecimal? = null,
+    val queuePosition: Long? = null,
+    val availableStartBlock: Long? = null,
+    val scheduledSlots: Long = 0,
+    val proposedBlocks: Long = 0,
+    val missedSlots: Long = 0,
+    val lastProposedBlockNumber: Long? = null,
+    val lastMissedBlockNumber: Long? = null,
     @JsonIgnore override val version: Int = 0,
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = id
-
-    /**
-     * Check if this Validator is equivalent to another, ignoring volatile fields such as blockId,
-     * blockNumber, blockTimestamp, and version.
-     */
-    fun isEquivalentTo(other: Validator): Boolean =
-        this.copy(blockId = "", blockNumber = 0, blockTimestamp = 0, version = 0) ==
-            other.copy(blockId = "", blockNumber = 0, blockTimestamp = 0, version = 0)
 }

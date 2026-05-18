@@ -3,6 +3,7 @@ package org.vechain.indexer.stargate.token
 import java.math.BigInteger
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.Address
@@ -10,9 +11,9 @@ import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsBoolean
 import org.vechain.indexer.utils.ParamUtils.getAsString
 import org.vechain.indexer.validator.Status
+import org.vechain.indexer.validator.Validator
 import org.vechain.indexer.validator.ValidatorDelegationService
-import org.vechain.indexer.validator.ValidatorSnapshot
-import org.vechain.indexer.validator.logic.ValidatorCalculator
+import org.vechain.indexer.validator.ValidatorRepository
 
 /**
  * StargateEventApplier
@@ -30,6 +31,7 @@ import org.vechain.indexer.validator.logic.ValidatorCalculator
 @Service
 class StargateEventService(
     private val validatorDelegationService: ValidatorDelegationService,
+    private val validatorRepository: ValidatorRepository,
     @Value("\${business-event.substitutions.STARGATE_DELEGATION_CONTRACT}")
     private val stargateDelegationContract: String,
 ) {
@@ -37,24 +39,30 @@ class StargateEventService(
     suspend fun handleStargateEvents(
         events: List<IndexedEvent>,
         latestTokenSnapshots: MutableMap<String, StargateToken>,
-        validatorSnapshots: Map<String, ValidatorSnapshot>,
+        validators: Map<String, Validator>,
         existingTokens: MutableList<StargateToken>,
     ) {
-        // Handle validator exit events separately
-        val validatorEvents = events.filter { it.eventType == "ValidatorExitRequested" }
-        validatorEvents.forEach { event ->
-            handleValidatorExitRequested(
-                event,
-                latestTokenSnapshots,
-                validatorSnapshots,
-                existingTokens,
-            )
-        }
+        events
+            .filter { it.eventType == "ValidationSignaledExit" }
+            .forEach { event ->
+                handleValidationSignaledExit(
+                    event,
+                    latestTokenSnapshots,
+                    validators,
+                    existingTokens,
+                )
+            }
+
+        events
+            .filter { it.eventType == "ValidationWithdrawn" }
+            .forEach { event ->
+                handleValidationWithdrawn(event, latestTokenSnapshots, existingTokens)
+            }
 
         // Group remaining events by tokenId (fallback to nodeId)
         val groupedEvents =
             events
-                .filter { it.eventType != "ValidatorExitRequested" }
+                .filter { it.eventType !in VALIDATOR_LIFECYCLE_EVENTS }
                 .groupBy {
                     it.params.getAsString("tokenId")?.takeIf { id -> id.isNotBlank() }
                         ?: it.params.getAsString(
@@ -74,36 +82,118 @@ class StargateEventService(
             var current: StargateToken? = latestTokenSnapshots[id]
 
             tokenEvents.forEach { event ->
-                current = processEvent(event, tokenId, current, validatorSnapshots, existingTokens)
+                current = processEvent(event, tokenId, current, validators, existingTokens)
             }
             if (current != null) latestTokenSnapshots[tokenId] = current
         }
     }
 
     // Process a single event for a token
-    private suspend fun processEvent(
+    private fun processEvent(
         event: IndexedEvent,
         tokenId: String,
         base: StargateToken?,
-        validatorSnapshots: Map<String, ValidatorSnapshot>,
+        validators: Map<String, Validator>,
         existingTokens: MutableList<StargateToken>,
-    ): StargateToken? =
-        when (event.eventType) {
+    ): StargateToken? {
+        fun required(): StargateToken = requireBaseToken(base, event, tokenId)
+        return when (event.eventType) {
             "TokenMinted" -> handleTokenMinted(event, tokenId)
-            "TokenBurned" -> handleTokenUnstaked(event, base!!, existingTokens)
-            "Transfer" -> handleTokenTransfer(event, base!!, existingTokens)
-            "DelegationInitiated" ->
-                handleDelegate(event, base!!, validatorSnapshots, existingTokens)
-            "DelegationExitRequested" -> handleDelegateExitRequest(event, base!!, existingTokens)
-            "DelegationWithdrawn" -> handleExitDelegate(event, base!!, existingTokens)
-            "TokenManagerAdded" -> handleManagerAdded(event, base!!, existingTokens)
-            "TokenManagerRemoved" -> handleManagerRemoved(event, base!!, existingTokens)
-            "MaturityPeriodBoosted" -> handleTokenBoosted(event, base!!, existingTokens)
+            "TokenBurned" -> handleTokenUnstaked(event, required(), existingTokens)
+            "Transfer" -> handleTokenTransfer(event, required(), existingTokens)
+            "DelegationInitiated" -> handleDelegate(event, required(), validators, existingTokens)
+            "DelegationExitRequested" ->
+                handleDelegateExitRequest(event, required(), existingTokens)
+            "DelegationWithdrawn" -> handleExitDelegate(event, required(), existingTokens)
+            "TokenManagerAdded" -> handleManagerAdded(event, required(), existingTokens)
+            "TokenManagerRemoved" -> handleManagerRemoved(event, required(), existingTokens)
+            "MaturityPeriodBoosted" -> handleTokenBoosted(event, required(), existingTokens)
             "NodeDelegated" -> handleNodeManagementEvent(event, base, existingTokens)
             "BaseVTHORewardsClaimed",
-            "DelegationRewardsClaimed" -> handleRewardsClaimed(event, base!!, existingTokens)
+            "DelegationRewardsClaimed" -> handleRewardsClaimed(event, required(), existingTokens)
             else -> base
         }
+    }
+
+    private fun requireBaseToken(
+        base: StargateToken?,
+        event: IndexedEvent,
+        tokenId: String,
+    ): StargateToken =
+        base
+            ?: throw IllegalStateException(
+                "No StargateToken loaded for ${event.eventType} event: tokenId=$tokenId, " +
+                    "blockNumber=${event.blockNumber}, blockId=${event.blockId}, " +
+                    "txId=${event.txId}, contract=${event.address}. " +
+                    "The token was not present in the stargate_token collection at this block, " +
+                    "so the event cannot be applied. Likely causes: the preceding TokenMinted " +
+                    "event was never indexed (check INDEXER_START_BLOCK_STARGATE_TOKEN and the " +
+                    "indexer's history), the token id is wrong in the event, or the token was " +
+                    "deleted out-of-band."
+            )
+
+    private fun handleValidationSignaledExit(
+        event: IndexedEvent,
+        latestTokenSnapshots: MutableMap<String, StargateToken>,
+        validators: Map<String, Validator>,
+        existingTokens: MutableList<StargateToken>,
+    ) {
+        val validatorId = event.params.getAsString("validator")?.lowercase() ?: return
+        val exitAt = resolveValidatorExitBlock(validatorId, event.blockNumber, validators)
+        val affectedTokens =
+            latestTokenSnapshots.values.filter { it.validatorId?.lowercase() == validatorId }
+
+        affectedTokens
+            .filter {
+                when (it.delegationStatus) {
+                    Status.NONE -> false
+                    Status.EXITING ->
+                        exitAt == null || (it.delegationNextPeriod ?: Long.MAX_VALUE) >= exitAt
+                    else -> true
+                }
+            }
+            .forEach { token ->
+                existingTokens.add(token)
+                latestTokenSnapshots[token.tokenId] =
+                    token.copy(
+                        version = token.version + 1,
+                        blockId = event.blockId,
+                        blockNumber = event.blockNumber,
+                        blockTimestamp = event.blockTimestamp,
+                        delegationStatus = Status.EXITING,
+                        delegationNextPeriod = exitAt ?: token.delegationNextPeriod,
+                        validatorExiting = true,
+                    )
+            }
+    }
+
+    private fun handleValidationWithdrawn(
+        event: IndexedEvent,
+        latestTokenSnapshots: MutableMap<String, StargateToken>,
+        existingTokens: MutableList<StargateToken>,
+    ) {
+        val validatorId = event.params.getAsString("validator")?.lowercase() ?: return
+
+        latestTokenSnapshots.values
+            .filter {
+                it.validatorId?.lowercase() == validatorId && it.delegationStatus != Status.NONE
+            }
+            .forEach { token ->
+                existingTokens.add(token)
+                latestTokenSnapshots[token.tokenId] =
+                    token.copy(
+                        version = token.version + 1,
+                        blockId = event.blockId,
+                        blockNumber = event.blockNumber,
+                        blockTimestamp = event.blockTimestamp,
+                        delegationStatus = Status.NONE,
+                        validatorId = null,
+                        delegationNextPeriod = null,
+                        delegationPeriodLength = null,
+                        validatorExiting = null,
+                    )
+            }
+    }
 
     // ------------------------------------------------------------------------
     // Event Handlers
@@ -215,18 +305,18 @@ class StargateEventService(
     }
 
     // Token delegation event
-    private suspend fun handleDelegate(
+    private fun handleDelegate(
         event: IndexedEvent,
         base: StargateToken,
-        validatorSnapshots: Map<String, ValidatorSnapshot>,
+        validators: Map<String, Validator>,
         existingTokens: MutableList<StargateToken>,
     ): StargateToken {
         val validator =
-            event.params.getAsString("validator")
+            event.params.getAsString("validator")?.lowercase()
                 ?: throw IllegalStateException("Validator not found")
 
         val (periodLength, nextCycleStart) =
-            resolveCycleInfo(validator, event.blockNumber, validatorSnapshots)
+            resolveCycleInfo(validator, event.blockNumber, validators)
 
         existingTokens.add(base)
         return base.copy(
@@ -353,58 +443,54 @@ class StargateEventService(
             boosted = false,
         )
 
-    private suspend fun handleValidatorExitRequested(
-        event: IndexedEvent,
-        latestTokenSnapshots: MutableMap<String, StargateToken>,
-        validatorSnapshots: Map<String, ValidatorSnapshot>,
-        existingTokens: MutableList<StargateToken>,
-    ) {
-        val validatorId =
-            event.params.getAsString("validatorId")
-                ?: throw IllegalArgumentException("ValidatorExitRequested missing validatorId")
-
-        val exitAt =
-            validatorDelegationService.getValidatorExitBlock(validatorId, validatorSnapshots)
-        val affectedTokens = latestTokenSnapshots.values.filter { it.validatorId == validatorId }
-
-        affectedTokens
-            .filter {
-                when (it.delegationStatus) {
-                    Status.NONE -> false
-                    Status.EXITING -> (it.delegationNextPeriod ?: Long.MAX_VALUE) <= exitAt
-                    else -> true
-                }
-            }
-            .forEach { token ->
-                existingTokens.add(token)
-                val snapshot =
-                    token.copy(
-                        version = token.version + 1,
-                        blockId = event.blockId,
-                        blockNumber = event.blockNumber,
-                        blockTimestamp = event.blockTimestamp,
-                        delegationStatus = Status.EXITING,
-                        validatorExiting = true,
-                    )
-                latestTokenSnapshots[token.tokenId] = snapshot
-            }
-    }
-
     // ------------------------------------------------------------------------
     // Helpers
     // ------------------------------------------------------------------------
 
-    private suspend fun resolveCycleInfo(
+    private fun resolveCycleInfo(
         validatorId: String,
         blockNumber: Long,
-        validatorSnapshots: Map<String, ValidatorSnapshot>,
-    ): Pair<Long, Long> {
-        val snapshot = validatorSnapshots[validatorId]
-        return if (snapshot != null) {
-            snapshot.stakingPeriodLength to
-                ValidatorCalculator.calculateNextCycleStart(snapshot, blockNumber)
-        } else {
-            validatorDelegationService.getValidatorPeriodInfo(validatorId, blockNumber)
-        }
+        validators: Map<String, Validator>,
+    ): Pair<Long?, Long> {
+        val validator = resolveValidator(validatorId, validators) ?: return null to 0L
+        val period = validator.cyclePeriodLength?.takeIf { it > 0L } ?: return null to 0L
+        return period to nextCycleStart(validator, blockNumber)
+    }
+
+    private fun resolveValidatorExitBlock(
+        validatorId: String,
+        blockNumber: Long,
+        validators: Map<String, Validator>,
+    ): Long? {
+        val validator = resolveValidator(validatorId, validators) ?: return null
+        validator.exitBlock
+            ?.takeIf { it > 0L }
+            ?.let {
+                return it
+            }
+        return nextCycleStart(validator, blockNumber).takeIf { it > 0L }
+    }
+
+    private fun resolveValidator(
+        validatorId: String,
+        validators: Map<String, Validator>,
+    ): Validator? {
+        val normalized = validatorId.lowercase()
+        return validators[normalized] ?: validatorRepository.findByIdOrNull(normalized)
+    }
+
+    private fun nextCycleStart(validator: Validator, blockNumber: Long): Long {
+        val startBlock = validator.startBlock ?: 0L
+        val period = validator.cyclePeriodLength ?: 0L
+        if (startBlock == 0L || period <= 0L) return 0L
+        val offset = blockNumber - startBlock
+        val positionInCycle = offset % period
+        val currentCycleStart = blockNumber - positionInCycle
+        return currentCycleStart + period
+    }
+
+    companion object {
+        private val VALIDATOR_LIFECYCLE_EVENTS =
+            setOf("ValidationSignaledExit", "ValidationWithdrawn")
     }
 }

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.HttpStatusCode
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.exception.InternalServerException
+import org.vechain.indexer.exception.PriceFeedUnavailableException
 import strikt.api.expect
 import strikt.assertions.isEqualTo
 import strikt.assertions.isNotNull
@@ -70,6 +71,23 @@ internal class ExceptionResponseConfigTest : ExceptionResponseConfig() {
             that(res.body?.path).isEqualTo(requestPath)
             that(res.body?.status).isEqualTo(500)
             that(res.body?.error).isEqualTo("Internal Server Error")
+            that(res.body?.id).isNotNull()
+            that(res.body?.timestamp).isNotNull()
+        }
+    }
+
+    @Test
+    fun `PriceFeedUnavailableException maps to 503 with no message body`() {
+        val exception = PriceFeedUnavailableException("oracle unreachable")
+
+        val res = handlePriceFeedUnavailable(servlet, exception)
+
+        expect {
+            that(res.statusCode).isEqualTo(HttpStatusCode.valueOf(503))
+            that(res.body?.message).isNull()
+            that(res.body?.path).isEqualTo(requestPath)
+            that(res.body?.status).isEqualTo(503)
+            that(res.body?.error).isEqualTo("Service Unavailable")
             that(res.body?.id).isNotNull()
             that(res.body?.timestamp).isNotNull()
         }

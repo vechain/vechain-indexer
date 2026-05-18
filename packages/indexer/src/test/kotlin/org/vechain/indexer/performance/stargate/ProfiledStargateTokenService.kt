@@ -9,16 +9,15 @@ import org.vechain.indexer.stargate.token.StargateToken
 import org.vechain.indexer.stargate.token.StargateTokenRepository
 import org.vechain.indexer.stargate.token.StargateTokenService
 import org.vechain.indexer.thor.model.Block
-import org.vechain.indexer.thor.model.InspectionResult
-import org.vechain.indexer.validator.ValidatorDelegationService
+import org.vechain.indexer.validator.ValidatorRepository
 
 /**
  * Extended StargateTokenService that profiles EVERY internal method call Tracks performance of:
  * - processBlock (main processing)
  * - save (MongoDB writes)
- * - decodeValidatorSnapshots (validator state decoding)
+ * - validator snapshot cache loading
  * - checkMissingValidators (missing validator detection)
- * - findDelegationsFromExits (exit event processing)
+ * - validator lifecycle event processing
  * - loadRelevantTokenSnapshots (DB lookups for relevant tokens)
  * - resolveUnknownDelegations (unknown delegation resolution)
  * - processDelegationStatusTransitions (status transitions)
@@ -28,26 +27,27 @@ import org.vechain.indexer.validator.ValidatorDelegationService
 class ProfiledStargateTokenService(
     repository: StargateTokenRepository,
     eventService: StargateEventService,
-    validatorDelegationService: ValidatorDelegationService,
+    validatorRepository: ValidatorRepository,
     mongoTemplate: MongoTemplate,
     inlineVersioningProperties: InlineVersioningProperties,
+    validatorStartBlock: Long,
     private val profiler: DetailedProfiler,
 ) :
     StargateTokenService(
         repository,
         eventService,
-        validatorDelegationService,
+        validatorRepository,
         mongoTemplate,
         inlineVersioningProperties,
+        validatorStartBlock,
     ) {
 
     override suspend fun processBlock(
         block: Block,
-        callResponses: List<InspectionResult>,
         events: List<IndexedEvent>,
     ): Pair<Collection<StargateToken>, List<StargateToken>> {
         return profiler.timeSuspend("      StargateTokenService.processBlock") {
-            super.processBlock(block, callResponses, events)
+            super.processBlock(block, events)
         }
     }
 

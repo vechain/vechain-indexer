@@ -17,6 +17,7 @@ class OpenApiActiveProfilesResolverTest {
                     "accounts",
                     "b3tr",
                     "contracts",
+                    "delegation",
                     "explorer",
                     "history",
                     "nfts",
@@ -25,6 +26,7 @@ class OpenApiActiveProfilesResolverTest {
                     "transactions",
                     "transfers",
                     "validator",
+                    "validator-reward",
                     "vevote",
                 )
         } finally {

@@ -1,62 +1,51 @@
 package org.vechain.indexer.validator
 
-import io.mockk.*
+import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.junit5.MockKExtension
+import io.mockk.mockk
+import io.mockk.spyk
+import io.mockk.verify
+import java.math.BigDecimal
 import java.math.BigInteger
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.repository.findByIdOrNull
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.Transaction
-import org.vechain.indexer.validator.models.DecodedValidatorInfo
 
 @ExtendWith(MockKExtension::class)
 class ValidatorBlockServiceTest {
     private lateinit var repository: ValidatorBlockRepository
+    private lateinit var validatorRepository: ValidatorRepository
     private lateinit var thorClient: ThorClient
     private lateinit var service: ValidatorBlockService
 
     @BeforeEach
     fun setup() {
         repository = mockk(relaxed = true)
+        validatorRepository = mockk(relaxed = true)
         thorClient = mockk(relaxed = true)
-        service = spyk(ValidatorBlockService(repository, thorClient))
+        service =
+            spyk(
+                ValidatorBlockService(
+                    repository,
+                    validatorRepository,
+                    thorClient,
+                    validatorStartBlock = 0L,
+                )
+            )
 
         every { repository.findLatestHourly() } returns emptyList()
         every { repository.findLatestDaily() } returns emptyList()
         every { repository.findLatestWeekly() } returns emptyList()
         every { repository.findLatestMonthly() } returns emptyList()
     }
-
-    private fun buildDecoded(): Map<String, Any?> =
-        mapOf(
-            "masters" to listOf("0xVAL1", "0xVAL2"),
-            "endorsors" to listOf("0xEND1", "0xEND2"),
-            "statuses" to listOf(BigInteger.TWO, BigInteger.TWO),
-            "onlines" to listOf(true, true),
-            "offlineBlocks" to listOf(BigInteger.ZERO, BigInteger.ZERO),
-            "stakingPeriodLengths" to listOf(10, 10),
-            "startBlocks" to listOf(BigInteger.TEN, BigInteger.TEN),
-            "exitBlocks" to listOf(BigInteger.valueOf(4294967295), BigInteger.valueOf(4294967295)),
-            "completedPeriods" to listOf(BigInteger.valueOf(5), BigInteger.valueOf(5)),
-            "validatorLockedStakes" to
-                listOf(
-                    BigInteger("1000000000000000000"),
-                    BigInteger("1000000000000000000"),
-                ), // 1 VET
-            "validatorLockedWeights" to listOf(BigInteger.valueOf(100), BigInteger.valueOf(100)),
-            "delegatorsStake" to
-                listOf(BigInteger("500000000000000000"), BigInteger.ZERO), // 0.5 VET
-            "totalQueuedStakes" to listOf(BigInteger.ZERO, BigInteger.ZERO),
-            "totalExitingStakes" to listOf(BigInteger.ZERO, BigInteger.ZERO),
-            "validatorQueuedStakes" to listOf(BigInteger.ZERO, BigInteger.ZERO),
-            "totalNextPeriodWeights" to listOf(BigInteger.valueOf(100), BigInteger.valueOf(100)),
-            "nextPeriodDelegationStakes" to listOf(BigInteger.ZERO, BigInteger.ZERO),
-        )
 
     private fun createBlock(
         num: Long = 100,
@@ -86,14 +75,21 @@ class ValidatorBlockServiceTest {
             transactions = txs,
         )
 
-    private fun createDecoded(supply: Long, burned: Long): DecodedValidatorInfo =
-        DecodedValidatorInfo(
-            decodedValidators = buildDecoded(),
-            vthoTotalSupply = BigInteger.valueOf(supply),
-            vthoBurned = BigInteger.valueOf(burned),
-            totalWeight = BigInteger.ZERO,
-            vetPriceUsd = BigInteger.ZERO,
-            vthoPriceUsd = BigInteger.ZERO,
+    private fun validatorV2(
+        id: String,
+        delegatorStake: BigDecimal = BigDecimal.ZERO,
+        lastMissed: Long? = null,
+        lastProposed: Long? = null,
+    ): Validator =
+        Validator(
+            id = id,
+            blockId = "blk",
+            blockNumber = 0,
+            blockTimestamp = 0,
+            status = Status.ACTIVE,
+            delegatorVetStaked = delegatorStake,
+            lastMissedBlockNumber = lastMissed,
+            lastProposedBlockNumber = lastProposed,
         )
 
     @Test
@@ -153,83 +149,93 @@ class ValidatorBlockServiceTest {
                     ),
             )
 
-        val decodedInfo = createDecoded(1000, 100) // supply=1000, burned=100
+        every { validatorRepository.findByIdOrNull("0xVAL1") } returns
+            validatorV2("0xVAL1", delegatorStake = BigDecimal("0.5"))
 
-        // simulate initial cache
+        // Cold-start fallback: parent block totalSupply = 900
         coEvery { service.getTotalVTHOIssuedAtBlock("block-99") } returns BigInteger.valueOf(900)
 
-        val result = service.getValidationInfo(block, decodedInfo)!!
+        val result = service.getValidationInfo(block, BigInteger.valueOf(1000))!!
 
         assertEquals("100-0xVAL1", result.id)
-        assertEquals(BigInteger.valueOf(100), result.blockReward) // (1000+100) - 900
-        assertEquals(BigInteger.valueOf(21), result.priorityReward) // 16+5
+        assertEquals(BigInteger.valueOf(100), result.blockReward) // 1000 - 900
+        assertEquals(BigInteger.valueOf(21), result.priorityReward) // 16 + 5
         assertEquals(BigInteger.valueOf(121), result.total)
         assertEquals(BlockStatus.VALIDATED, result.status)
+        assertEquals(BigInteger.valueOf(70), result.delegatorRewards) // 100 * 0.7 (has delegations)
     }
 
     @Test
     fun `getValidationInfo computes delta correctly across multiple blocks`() = runBlocking {
-        // First block initializes cache
-        val block1 = createBlock(num = 101, signer = "0xVAL1")
-        val info1 = createDecoded(1000, 0)
+        every { validatorRepository.findById(any()) } answers
+            {
+                java.util.Optional.of(validatorV2(it.invocation.args[0] as String))
+            }
 
+        val block1 = createBlock(num = 101, signer = "0xVAL1")
         coEvery { service.getTotalVTHOIssuedAtBlock("block-100") } returns BigInteger.valueOf(900)
-        val res1 = service.getValidationInfo(block1, info1)!!
+        val res1 = service.getValidationInfo(block1, BigInteger.valueOf(1000))!!
         assertEquals(BigInteger.valueOf(100), res1.blockReward)
 
-        // Second block uses updated cache
+        // Second block: cache now holds 1000 from the prior call.
         val block2 = createBlock(num = 102, signer = "0xVAL2")
-        val info2 = createDecoded(1200, 0)
-
-        val res2 = service.getValidationInfo(block2, info2)!!
+        val res2 = service.getValidationInfo(block2, BigInteger.valueOf(1200))!!
         assertEquals(BigInteger.valueOf(200), res2.blockReward) // 1200 - 1000
     }
 
     @Test
-    fun `getValidatorsWithMissedSlots returns missed validators`() {
+    fun `getValidatorsWithMissedSlots returns just-missed validators`() {
         val block = createBlock(num = 50, signer = "0xvalidator")
 
-        val decodedInfo =
-            DecodedValidatorInfo(
-                decodedValidators =
-                    mapOf(
-                        "masters" to listOf("0xA", "0xB"),
-                        "endorsors" to listOf("0xEA", "0xEB"),
-                        "onlines" to listOf(false, true),
-                        "offlineBlocks" to listOf(BigInteger.valueOf(50), BigInteger.ZERO),
-                        "statuses" to listOf(BigInteger.TWO, BigInteger.ONE),
-                        "stakingPeriodLengths" to listOf(10, 10),
-                        "startBlocks" to listOf(BigInteger.ZERO, BigInteger.ZERO),
-                        "exitBlocks" to
-                            listOf(BigInteger.valueOf(4294967295), BigInteger.valueOf(4294967295)),
-                        "completedPeriods" to listOf(BigInteger.ZERO, BigInteger.ZERO),
-                        "validatorLockedStakes" to listOf(BigInteger.ZERO, BigInteger.ZERO),
-                        "validatorLockedWeights" to listOf(BigInteger.ZERO, BigInteger.ZERO),
-                        "delegatorsStake" to listOf(BigInteger.ZERO, BigInteger.ZERO),
-                        "validatorQueuedStakes" to listOf(BigInteger.ZERO, BigInteger.ZERO),
-                        "totalQueuedStakes" to listOf(BigInteger.ZERO, BigInteger.ZERO),
-                        "totalExitingStakes" to listOf(BigInteger.ZERO, BigInteger.ZERO),
-                        "totalNextPeriodWeights" to listOf(BigInteger.ZERO, BigInteger.ZERO),
-                        "nextPeriodDelegationStakes" to listOf(BigInteger.ZERO, BigInteger.ZERO),
-                    ),
-                vthoTotalSupply = BigInteger.ZERO,
-                vthoBurned = BigInteger.ZERO,
-                totalWeight = BigInteger.ZERO,
-                vetPriceUsd = BigInteger.ZERO,
-                vthoPriceUsd = BigInteger.ZERO,
-            )
+        every { validatorRepository.findByLastMissedBlockNumber(50) } returns
+            listOf(validatorV2("0xA", lastMissed = 50))
 
-        val result = service.getValidatorsWithMissedSlots(decodedInfo, block)
+        val result = service.getValidatorsWithMissedSlots(block)
         assertEquals(1, result.size)
         assertEquals("0xA", result[0].validator)
         assertEquals(BlockStatus.MISSED, result[0].status)
     }
 
     @Test
-    fun `getTotalVTHOIssued uses decoded info if available`() = runBlocking {
-        val decodedInfo = createDecoded(500, 100)
-        val total = service.getTotalVTHOIssued(decodedInfo, "block-1")
-        assertEquals(BigInteger.valueOf(500), total)
+    fun `getValidatorsWithMissedSlots emits one MISSED row per missed slot, no gating`() {
+        // Same validator misses at two consecutive blocks — both should be recorded.
+        val block1 = createBlock(num = 50, signer = "0xX")
+        every { validatorRepository.findByLastMissedBlockNumber(50) } returns
+            listOf(validatorV2("0xA", lastMissed = 50))
+        assertEquals(1, service.getValidatorsWithMissedSlots(block1).size)
+
+        val block2 = createBlock(num = 51, signer = "0xX")
+        every { validatorRepository.findByLastMissedBlockNumber(51) } returns
+            listOf(validatorV2("0xA", lastMissed = 51))
+        val second = service.getValidatorsWithMissedSlots(block2)
+        assertEquals(1, second.size)
+        assertEquals(51L, second[0].blockNumber)
+        assertEquals(BlockStatus.MISSED, second[0].status)
+    }
+
+    @Test
+    fun `getValidatorsWithMissedSlots emits one row per validator missing at the same block`() {
+        val block = createBlock(num = 200, signer = "0xX")
+        every { validatorRepository.findByLastMissedBlockNumber(200) } returns
+            listOf(validatorV2("0xA", lastMissed = 200), validatorV2("0xB", lastMissed = 200))
+
+        val result = service.getValidatorsWithMissedSlots(block)
+        assertEquals(2, result.size)
+        assertEquals(setOf("0xA", "0xB"), result.map { it.validator }.toSet())
+        assertEquals(setOf("200-0xA-MISSED", "200-0xB-MISSED"), result.map { it.id }.toSet())
+    }
+
+    @Test
+    fun `MISSED id is disambiguated from VALIDATED id when signer also missed at same block`() {
+        // Signer V proposes block 300 (VALIDATED id = "300-0xV") and ALSO missed an earlier
+        // elapsed slot at the same block (lastMissedBlockNumber == 300). The MISSED row must not
+        // share an id with the VALIDATED row or saveAll would overwrite the reward record.
+        val block = createBlock(num = 300, signer = "0xV")
+        every { validatorRepository.findByLastMissedBlockNumber(300) } returns
+            listOf(validatorV2("0xV", lastMissed = 300))
+
+        val missed = service.getValidatorsWithMissedSlots(block).single()
+        assertEquals("300-0xV-MISSED", missed.id)
     }
 
     @Test
