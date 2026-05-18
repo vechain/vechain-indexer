@@ -18,8 +18,8 @@ import org.vechain.indexer.validator.Validator
  * - `online` is hardcoded `true` (V2 doesn't compute a recency-based liveness flag; V1 is on its
  *   way out so we keep the field truthful-by-default rather than null).
  * - `totalRewards` is `null` (V1 declared it but never populated it).
- * - `offlineBlocks` is sourced from V2's `missedBlocks` (PoS-schedule misses), numerically
- *   different from V1's transient `OfflineBlock` pointer. Field name preserved for compatibility.
+ * - `offlineBlocks` is sourced from V2's `missedSlots` (PoS-schedule misses), numerically different
+ *   from V1's transient `OfflineBlock` pointer. Field name preserved for compatibility.
  * - Stake fields coalesce to zero (V1 always emitted `0` rather than dropping the key under
  *   `@JsonInclude(NON_NULL)`).
  * - All `BigDecimal` outputs are scaled to 6 dp via [NumberUtils.toScaledDecimal] to match V1's
@@ -117,8 +117,8 @@ data class ValidatorResponse(
                 startBlock = v2.startBlock,
                 cyclePeriodLength = v2.cyclePeriodLength,
                 blocksPerYear = v2.blocksPerYear.scaled(),
-                percentageOffline = v2.percentageOffline.scaled(),
-                offlineBlocks = v2.missedBlocks,
+                percentageOffline = v2.missedSlotsPercentage.scaled(),
+                offlineBlocks = v2.missedSlots,
                 exitBlock = v2.exitBlock,
                 queuePosition = v2.queuePosition,
                 availableStartBlock = v2.availableStartBlock,
