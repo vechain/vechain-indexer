@@ -45,21 +45,21 @@ open class PriceFeedService(
      * Returns every published price feed in one batched call. Throws
      * [PriceFeedUnavailableException] on any oracle read failure.
      */
-    @Cacheable(value = [PRICE_FEED_VALUE_CACHE], key = "'all'")
+    @Cacheable(value = [PRICE_FEED_VALUE_CACHE], key = "'all'", sync = true)
     open fun getAllPrices(): Map<PriceFeed, BigDecimal> = fetchFromOracle(PriceFeed.entries.toSet())
 
     /**
      * Returns the latest USD price for [feed]. Throws [PriceFeedUnavailableException] if the oracle
      * isn't configured or the read failed.
      */
-    @Cacheable(value = [PRICE_FEED_VALUE_CACHE], key = "#feed")
+    @Cacheable(value = [PRICE_FEED_VALUE_CACHE], key = "#feed", sync = true)
     open fun getPrice(feed: PriceFeed): BigDecimal = fetchFromOracle(setOf(feed)).getValue(feed)
 
     /**
      * Returns the latest USD price for every feed in [feeds]. Throws
      * [PriceFeedUnavailableException] if the read failed.
      */
-    @Cacheable(value = [PRICE_FEED_VALUE_CACHE], key = "#feeds")
+    @Cacheable(value = [PRICE_FEED_VALUE_CACHE], key = "#feeds", sync = true)
     open fun getPrices(feeds: Set<PriceFeed>): Map<PriceFeed, BigDecimal> {
         require(feeds.isNotEmpty()) { "feeds must not be empty" }
         return fetchFromOracle(feeds)
