@@ -2,6 +2,7 @@ package org.vechain.indexer.prices
 
 import io.mockk.coEvery
 import io.mockk.mockk
+import io.mockk.slot
 import java.math.BigDecimal
 import java.math.BigInteger
 import org.junit.jupiter.api.Test
@@ -11,6 +12,7 @@ import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.thor.model.InspectionResult
+import org.vechain.indexer.utils.ContractUtils
 import strikt.api.expectThat
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
@@ -63,6 +65,35 @@ internal class PriceFeedServiceTest {
         expectThat(prices).hasSize(PriceFeed.entries.size)
         expectThat(prices.keys.toList()).isEqualTo(PriceFeed.entries.toList())
     }
+
+    @Test
+    fun `builds one clause per feed with the getLatestValue selector and bytes32 id`() {
+        val captured = slot<List<Clause>>()
+        coEvery { thorClient.inspectClauses(capture(captured), BlockRevision.Keyword.BEST) } returns
+            listOf(
+                inspectionResult(BigInteger.ONE),
+                inspectionResult(BigInteger.ONE),
+                inspectionResult(BigInteger.ONE),
+            )
+
+        val requested = listOf(PriceFeed.VET_USD, PriceFeed.VTHO_USD, PriceFeed.B3TR_USD)
+        service.getPrices(requested.toSet())
+
+        val expectedSelector = ContractUtils.getFunctionSignature("getLatestValue(bytes32)")
+        val clauses = captured.captured
+        expectThat(clauses).hasSize(requested.size)
+
+        clauses.zip(requested).forEach { (clause, feed) ->
+            expectThat(clause.to).isEqualTo(contractAddress)
+            // calldata layout: "0x" + 4-byte selector (8 hex) + 32-byte arg (64 hex)
+            val raw = clause.data.removePrefix("0x").lowercase()
+            expectThat(raw.length).isEqualTo(8 + 64)
+            expectThat(raw.substring(0, 8)).isEqualTo(expectedSelector.lowercase())
+            expectThat(raw.substring(8)).isEqualTo(feed.toBytes32().toHex())
+        }
+    }
+
+    private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
 
     @Test
     fun `throws PriceFeedUnavailableException when the contract address is blank`() {
