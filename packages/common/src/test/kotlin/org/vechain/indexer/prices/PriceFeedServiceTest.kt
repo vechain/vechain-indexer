@@ -130,6 +130,24 @@ internal class PriceFeedServiceTest {
     }
 
     @Test
+    fun `throws PriceFeedUnavailableException when more responses than clauses`() {
+        // Defensive: Thor returning surplus responses would be a server bug; fail loud rather
+        // than silently dropping extras.
+        coEvery {
+            thorClient.inspectClauses(any<List<Clause>>(), BlockRevision.Keyword.BEST)
+        } returns
+            listOf(
+                inspectionResult(BigInteger.ONE),
+                inspectionResult(BigInteger.ONE),
+                inspectionResult(BigInteger.ONE),
+            )
+
+        assertThrows<PriceFeedUnavailableException> {
+            service.getPrices(setOf(PriceFeed.VET_USD, PriceFeed.VTHO_USD))
+        }
+    }
+
+    @Test
     fun `throws PriceFeedUnavailableException when response data is blank`() {
         coEvery {
             thorClient.inspectClauses(any<List<Clause>>(), BlockRevision.Keyword.BEST)

@@ -86,9 +86,9 @@ open class PriceFeedService(
             } catch (e: Exception) {
                 throw PriceFeedUnavailableException("PriceFeedOracle read failed: ${e.message}", e)
             }
-        if (responses.size < clauses.size) {
+        if (responses.size != clauses.size) {
             throw PriceFeedUnavailableException(
-                "PriceFeedOracle returned ${responses.size} responses for ${clauses.size} clauses"
+                "PriceFeedOracle returned ${responses.size} responses for ${clauses.size} clauses (counts differ)"
             )
         }
         return ordered
