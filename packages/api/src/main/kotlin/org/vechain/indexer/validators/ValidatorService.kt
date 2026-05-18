@@ -243,6 +243,12 @@ open class ValidatorService(
         val hasNext = results.size > pageable.pageSize
         val page = if (hasNext) results.dropLast(1) else results
 
+        // Empty pages don't need price data — skip the oracle hop so a no-match query never
+        // returns 503 just because the oracle happens to be flaky.
+        if (page.isEmpty()) {
+            return SliceImpl(emptyList(), pageable, hasNext)
+        }
+
         val aggregates = aggregateService.build(page.map { it.id })
         val prices = priceFeedService.getPrices(setOf(PriceFeed.VET_USD, PriceFeed.VTHO_USD))
         val vetPrice = prices.getValue(PriceFeed.VET_USD)

@@ -92,6 +92,12 @@ open class ValidatorV2Controller(
         val hasNext = results.size > pageable.pageSize
         val pageContent = if (hasNext) results.dropLast(1) else results
 
+        // No rows means no price-dependent fields to compute — skip the oracle hop so an empty
+        // page never returns 503 just because the oracle happens to be flaky.
+        if (pageContent.isEmpty()) {
+            return paginatedResponse(SliceImpl(emptyList(), pageable, hasNext))
+        }
+
         // One aggregate query and one price read per request, shared across every row.
         val aggregates = aggregateService.build(pageContent.map { it.id })
         val prices = priceFeedService.getPrices(setOf(PriceFeed.VET_USD, PriceFeed.VTHO_USD))
