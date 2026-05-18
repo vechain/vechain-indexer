@@ -66,7 +66,7 @@ class ValidatorCalculatorTest {
     private fun callProjectedNftYields(nextCycleStake: BigDecimal, status: Status = Status.ACTIVE) =
         ValidatorCalculator.calculateNftLevelYieldsIfDelegatedNextCycle(
             nextPeriodWeight = BigDecimal("1000000"),
-            nextPeriodVET = BigDecimal("100000000"),
+            totalNextPeriodVET = BigDecimal("100000000"),
             nextCycleEffectiveDelegationStake = BigDecimal("10000000"),
             totalNextPeriodWeight = BigDecimal("10000000"),
             vthoPriceUsd = BigDecimal("0.01"),
