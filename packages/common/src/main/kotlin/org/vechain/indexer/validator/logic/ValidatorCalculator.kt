@@ -112,7 +112,7 @@ object ValidatorCalculator {
      */
     fun calculateNftLevelYieldsIfDelegatedNextCycle(
         nextPeriodWeight: BigDecimal,
-        nextPeriodVET: BigDecimal,
+        totalNextPeriodVET: BigDecimal,
         nextCycleEffectiveDelegationStake: BigDecimal,
         totalNextPeriodWeight: BigDecimal,
         vthoPriceUsd: BigDecimal,
@@ -135,7 +135,10 @@ object ValidatorCalculator {
                     return@mapNotNull null
                 }
 
-                val totalVET = nextPeriodVET + level.staked
+                // VTHO issuance is a network-wide quantity (1200 × 64 × sqrt(networkVET)); use the
+                // chain-wide next-cycle VET sum so the issuance scales correctly when projecting
+                // the impact of adding this NFT's stake.
+                val totalVET = totalNextPeriodVET + level.staked
                 val vthoIssued = determineVTHOIssuedPerBlock(totalVET)
 
                 val nftWeight = level.effectiveWeight

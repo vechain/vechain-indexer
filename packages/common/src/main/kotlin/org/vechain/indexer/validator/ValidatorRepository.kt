@@ -12,6 +12,9 @@ interface ValidatorRepository : BaseIndexedRepository<Validator, String> {
 
     @Query("{ 'status': ?0 }") fun findByStatus(status: Status): List<Validator>
 
+    @Query("{ 'status': { '\$in': ?0 } }")
+    fun findByStatusIn(statuses: Collection<Status>): List<Validator>
+
     @Query("{ 'lastMissedBlockNumber': ?0 }")
     fun findByLastMissedBlockNumber(blockNumber: Long): List<Validator>
 

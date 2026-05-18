@@ -235,7 +235,7 @@ data class ValidatorV2Response(
                 val mapped =
                     ValidatorCalculator.calculateNftLevelYieldsIfDelegatedNextCycle(
                         nextPeriodWeight = nextPeriodWeight,
-                        nextPeriodVET = nextCycleStake,
+                        totalNextPeriodVET = aggregates.totalActiveNextCycleVetStaked,
                         nextCycleEffectiveDelegationStake = nextCycleEffectiveDelegationStake,
                         totalNextPeriodWeight = totalNextPeriodWeight,
                         vthoPriceUsd = vthoPrice,
