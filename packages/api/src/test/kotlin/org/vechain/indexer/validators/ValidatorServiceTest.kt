@@ -12,6 +12,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Query
 import org.vechain.indexer.exception.BadRequestException
+import org.vechain.indexer.prices.PriceFeed
 import org.vechain.indexer.prices.PriceFeedService
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.client.ThorClient
@@ -40,7 +41,10 @@ class ValidatorServiceTest {
                 delegationsByValidator = emptyMap(),
             )
     }
-    private val priceFeedService: PriceFeedService = mockk { every { get() } returns null }
+    private val priceFeedService: PriceFeedService = mockk {
+        every { getPrices(any()) } returns
+            mapOf(PriceFeed.VET_USD to BigDecimal.ZERO, PriceFeed.VTHO_USD to BigDecimal.ZERO)
+    }
 
     private val service =
         ValidatorService(

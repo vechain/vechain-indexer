@@ -3,7 +3,6 @@ package org.vechain.indexer.prices
 import java.math.BigDecimal
 import java.math.BigInteger
 import kotlinx.coroutines.runBlocking
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.cache.annotation.Cacheable
@@ -27,12 +26,9 @@ import org.vechain.indexer.utils.NumberUtils
  * The first request after expiry pays the oracle round-trip; with a 30s TTL that's bounded to a
  * handful of upstream calls per minute per process.
  *
- * [getPrice] / [getPrices] throw [PriceFeedUnavailableException] on any read failure so the
- * surrounding endpoint can fail explicitly (mapped to HTTP 503 by `ExceptionResponseConfig`)
- * instead of silently returning a half-populated response.
- *
- * The legacy [get] helper preserves the previous null-on-failure behaviour for the V1/V2 validator
- * endpoints; it will be removed once those callers are migrated.
+ * Every public method throws [PriceFeedUnavailableException] on any read failure so the surrounding
+ * endpoint can fail explicitly (mapped to HTTP 503 by `ExceptionResponseConfig`) instead of
+ * silently returning a half-populated response.
  *
  * The injected [ThorClient] is the `priceOracleThorClient` configured by [PriceOracleConfig]; its
  * base URL and the contract address are wired per-deployment in terraform so the service always
@@ -44,16 +40,6 @@ open class PriceFeedService(
     @Qualifier("priceOracleThorClient") private val thorClient: ThorClient,
     @param:Value("\${pricing.oracle.contract-address}") private val priceFeedOracleAddress: String,
 ) {
-    /**
-     * Snapshot of VET and VTHO USD prices.
-     *
-     * Retained as a back-compat shim for the V1/V2 validator endpoints. New callers should use
-     * [getPrice] / [getPrices] and receive a [PriceFeedUnavailableException] on failure.
-     */
-    data class Prices(val vetUsd: BigDecimal, val vthoUsd: BigDecimal)
-
-    private val logger = LoggerFactory.getLogger(javaClass)
-
     /**
      * Returns every published price feed in one batched call. Throws
      * [PriceFeedUnavailableException] on any oracle read failure.
@@ -77,27 +63,6 @@ open class PriceFeedService(
         require(feeds.isNotEmpty()) { "feeds must not be empty" }
         return fetchFromOracle(feeds)
     }
-
-    /**
-     * Returns the VET/VTHO pair, fetching fresh values when the cache is stale or absent. Returns
-     * `null` if the oracle isn't configured or the read failed — preserved for the existing
-     * validator endpoints. Will be removed once those callers migrate to [getPrices].
-     */
-    @Cacheable(value = [PRICE_FEED_VALUE_CACHE], key = "'legacy-vet-vtho'")
-    open fun get(): Prices? =
-        try {
-            val map = fetchFromOracle(setOf(PriceFeed.VET_USD, PriceFeed.VTHO_USD))
-            Prices(
-                vetUsd = map.getValue(PriceFeed.VET_USD),
-                vthoUsd = map.getValue(PriceFeed.VTHO_USD),
-            )
-        } catch (e: PriceFeedUnavailableException) {
-            logger.debug(
-                "PriceFeedOracle read failed; treating prices as unavailable: {}",
-                e.message,
-            )
-            null
-        }
 
     private fun fetchFromOracle(feeds: Set<PriceFeed>): Map<PriceFeed, BigDecimal> {
         if (priceFeedOracleAddress.isBlank()) {

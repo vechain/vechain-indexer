@@ -16,6 +16,7 @@ import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
 import org.vechain.indexer.explorer.TimestampUtils.SECONDS_PER_DAY
+import org.vechain.indexer.prices.PriceFeed
 import org.vechain.indexer.prices.PriceFeedService
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
@@ -243,8 +244,10 @@ open class ValidatorService(
         val page = if (hasNext) results.dropLast(1) else results
 
         val aggregates = aggregateService.build(page.map { it.id })
-        val prices = priceFeedService.get()
-        val mapped = page.map { ValidatorResponse.from(it, aggregates, prices) }
+        val prices = priceFeedService.getPrices(setOf(PriceFeed.VET_USD, PriceFeed.VTHO_USD))
+        val vetPrice = prices.getValue(PriceFeed.VET_USD)
+        val vthoPrice = prices.getValue(PriceFeed.VTHO_USD)
+        val mapped = page.map { ValidatorResponse.from(it, aggregates, vetPrice, vthoPrice) }
 
         return SliceImpl(mapped, pageable, hasNext)
     }
@@ -253,8 +256,13 @@ open class ValidatorService(
         val query = Query(Criteria.where("_id").`is`(validatorId.lowercase()))
         val doc = mongoTemplate.findOne<Validator>(query) ?: return null
         val aggregates = aggregateService.build(listOf(doc.id))
-        val prices = priceFeedService.get()
-        return ValidatorResponse.from(doc, aggregates, prices)
+        val prices = priceFeedService.getPrices(setOf(PriceFeed.VET_USD, PriceFeed.VTHO_USD))
+        return ValidatorResponse.from(
+            doc,
+            aggregates,
+            prices.getValue(PriceFeed.VET_USD),
+            prices.getValue(PriceFeed.VTHO_USD),
+        )
     }
 
     open fun getMissedBlocksPercentage(
