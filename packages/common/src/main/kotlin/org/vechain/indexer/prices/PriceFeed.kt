@@ -3,7 +3,8 @@ package org.vechain.indexer.prices
 private const val BYTES32_LENGTH = 32
 
 /**
- * USD price feeds published by the vechain.energy `PriceFeedOracle` contract on mainnet.
+ * USD price feeds published by the vechain.energy `PriceFeedOracle` contract on both mainnet and
+ * testnet (the same bytes32 keys are used on each deployment; only the contract address differs).
  *
  * Each feed is keyed by a short ASCII identifier (e.g. `vet-usd`) that the on-chain contract
  * expects as a `bytes32` — the ASCII bytes right-padded with zeros to 32 bytes. See
