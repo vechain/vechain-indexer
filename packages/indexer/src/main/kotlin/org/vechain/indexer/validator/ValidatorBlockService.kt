@@ -28,11 +28,13 @@ import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
  * PoS slot. Reads everything it needs from `Validator` (signer's delegation flag, missed-slot
  * attribution) plus a single builtin `Energy.totalSupply()` chain call.
  *
- * Document id scheme: `"$blockNumber-$validatorId"` for both VALIDATED and MISSED. Two distinct
- * validators missing slots within the same block produce two rows (different ids). A single
- * validator missing two slots at the same block — only possible when `slotsElapsed >
- * schedule.size`, i.e. >~17 min outage with <100 active validators — collapses to one MISSED row;
- * the cumulative counters on `Validator` still reflect both misses.
+ * Document id scheme: `"$blockNumber-$validatorId"` for VALIDATED and
+ * `"$blockNumber-$validatorId-MISSED"` for MISSED. The MISSED suffix prevents a collision when the
+ * signer also missed an elapsed slot in the same block transition (otherwise the second `saveAll`
+ * entry would upsert over the VALIDATED reward row). Two distinct validators missing slots within
+ * the same block produce two rows. A single validator missing two slots at the same block — only
+ * possible when `slotsElapsed > schedule.size`, i.e. >~17 min outage with <100 active validators —
+ * collapses to one MISSED row; the cumulative counters on `Validator` still reflect both misses.
  */
 @Profile("validator & validator-reward")
 @Service
@@ -155,7 +157,10 @@ open class ValidatorBlockService(
         val justMissed = validatorRepository.findByLastMissedBlockNumber(block.number)
         return justMissed.map { v ->
             ValidatorBlock(
-                id = "${block.number}-${v.id}",
+                // Suffix the status so a signer who also missed an elapsed slot at the same
+                // block doesn't collide with their VALIDATED record id (`"$blockNumber-$id"`)
+                // and overwrite the reward row on saveAll.
+                id = "${block.number}-${v.id}-${BlockStatus.MISSED}",
                 blockId = block.id,
                 blockNumber = block.number,
                 blockTimestamp = block.timestamp,

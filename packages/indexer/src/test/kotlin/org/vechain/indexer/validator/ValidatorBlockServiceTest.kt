@@ -222,7 +222,20 @@ class ValidatorBlockServiceTest {
         val result = service.getValidatorsWithMissedSlots(block)
         assertEquals(2, result.size)
         assertEquals(setOf("0xA", "0xB"), result.map { it.validator }.toSet())
-        assertEquals(setOf("200-0xA", "200-0xB"), result.map { it.id }.toSet())
+        assertEquals(setOf("200-0xA-MISSED", "200-0xB-MISSED"), result.map { it.id }.toSet())
+    }
+
+    @Test
+    fun `MISSED id is disambiguated from VALIDATED id when signer also missed at same block`() {
+        // Signer V proposes block 300 (VALIDATED id = "300-0xV") and ALSO missed an earlier
+        // elapsed slot at the same block (lastMissedBlockNumber == 300). The MISSED row must not
+        // share an id with the VALIDATED row or saveAll would overwrite the reward record.
+        val block = createBlock(num = 300, signer = "0xV")
+        every { validatorRepository.findByLastMissedBlockNumber(300) } returns
+            listOf(validatorV2("0xV", lastMissed = 300))
+
+        val missed = service.getValidatorsWithMissedSlots(block).single()
+        assertEquals("300-0xV-MISSED", missed.id)
     }
 
     @Test
