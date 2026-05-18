@@ -3845,7 +3845,10 @@
           }
         },
         "required": [
-          "id"
+          "delegatorTvl",
+          "id",
+          "totalTvl",
+          "validatorTvl"
         ],
         "type": "object"
       },
@@ -4007,10 +4010,13 @@
         },
         "required": [
           "blocksPerEpoch",
+          "delegatorTvl",
           "id",
           "missedBlocks",
           "proposedBlocks",
-          "scheduledBlocks"
+          "scheduledBlocks",
+          "totalTvl",
+          "validatorTvl"
         ],
         "type": "object"
       },
@@ -16907,7 +16913,7 @@
     },
     "/api/v2/validators": {
       "get": {
-        "description": "Returns validators from the V2 indexer. TVL / yield / NFT-yield fields are populated when `PriceFeedOracle` is configured on the active network; otherwise they're omitted (the rest of the validator data is still returned). `online` and `totalRewards` are not yet wired up — see `ValidatorV2Response` for the remaining formulas.",
+        "description": "Returns validators from the V2 indexer. TVL / yield / NFT-yield fields require VET and VTHO USD prices from the vechain.energy `PriceFeedOracle`; if the oracle is unavailable the endpoint returns 503 rather than a half-populated response. `online` and `totalRewards` are not yet wired up — see `ValidatorV2Response` for the remaining formulas.",
         "operationId": "getValidators",
         "parameters": [
           {
