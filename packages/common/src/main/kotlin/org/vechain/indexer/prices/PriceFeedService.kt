@@ -4,6 +4,7 @@ import java.math.BigDecimal
 import java.math.BigInteger
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
@@ -27,13 +28,16 @@ import org.vechain.indexer.utils.NumberUtils
  *
  * The legacy [get] helper preserves the previous null-on-failure behaviour for the V1/V2 validator
  * endpoints; it will be removed once those callers are migrated.
+ *
+ * The injected [ThorClient] is the `priceOracleThorClient` configured by [PriceOracleConfig]; its
+ * base URL and the contract address are wired per-deployment in terraform so the service always
+ * reads from the right oracle for the active network.
  */
 @Profile("prices")
 @Component
 open class PriceFeedService(
-    private val thorClient: ThorClient,
-    @param:Value("\${business-event.substitutions.PRICE_FEED_ORACLE_CONTRACT:}")
-    private val priceFeedOracleAddress: String,
+    @Qualifier("priceOracleThorClient") private val thorClient: ThorClient,
+    @param:Value("\${pricing.oracle.contract-address}") private val priceFeedOracleAddress: String,
 ) {
     /**
      * Snapshot of VET and VTHO USD prices.

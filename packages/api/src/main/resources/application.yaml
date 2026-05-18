@@ -67,6 +67,15 @@ spring.data:
 thor:
   url: ${THOR_URL:https://testnet.vechain.org}
 
+# vechain.energy `PriceFeedOracle`. Each deployment configures the values matching its target
+# network in terraform (mainnet for mainnet/devnet deployments, testnet for testnet). The
+# defaults below are mainnet because that's the safest fallback for local dev or anywhere the
+# env vars aren't set — the oracle is not deployed on solo / custom networks.
+pricing:
+  oracle:
+    thor-url: ${PRICE_ORACLE_THOR_URL:https://mainnet.vechain.org}
+    contract-address: ${PRICE_ORACLE_CONTRACT:0x49eC7192BF804Abc289645ca86F1eD01a6C17713}
+
 vechain:
   forks:
     galactica:
