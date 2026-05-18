@@ -15,6 +15,7 @@ import org.vechain.indexer.event.utils.FunctionReturnDecoder
 import org.vechain.indexer.exception.PriceFeedUnavailableException
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockRevision
+import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.utils.NumberUtils
 
@@ -91,15 +92,29 @@ open class PriceFeedService(
             )
         }
         return ordered
-            .mapIndexed { index, feed -> feed to decodeValue(feed, responses[index].data) }
+            .mapIndexed { index, feed -> feed to decodeValue(feed, responses[index]) }
             .toMap()
     }
 
-    private fun decodeValue(feed: PriceFeed, data: String): BigDecimal {
+    private fun decodeValue(feed: PriceFeed, result: InspectionResult): BigDecimal {
+        if (result.reverted || result.vmError != null) {
+            throw PriceFeedUnavailableException(
+                "PriceFeedOracle call reverted for $feed: ${result.vmError ?: "no reason"}"
+            )
+        }
+        val data = result.data
         if (data.isBlank() || data == "0x") {
             throw PriceFeedUnavailableException("PriceFeedOracle returned empty data for $feed")
         }
-        val decoded = FunctionReturnDecoder.decode(data, OUTPUTS)
+        val decoded =
+            try {
+                FunctionReturnDecoder.decode(data, OUTPUTS)
+            } catch (e: Exception) {
+                throw PriceFeedUnavailableException(
+                    "PriceFeedOracle response for $feed could not be decoded: ${e.message}",
+                    e,
+                )
+            }
         val raw =
             decoded["value"] as? BigInteger
                 ?: throw PriceFeedUnavailableException(

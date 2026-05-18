@@ -116,6 +116,42 @@ internal class PriceFeedServiceTest {
         assertThrows<PriceFeedUnavailableException> { service.getPrice(PriceFeed.VET_USD) }
     }
 
+    @Test
+    fun `throws PriceFeedUnavailableException when the clause reverted`() {
+        coEvery {
+            thorClient.inspectClauses(any<List<Clause>>(), BlockRevision.Keyword.BEST)
+        } returns
+            listOf(
+                inspectionResult(BigInteger.ONE)
+                    .copy(reverted = true, vmError = "execution reverted")
+            )
+
+        val exception =
+            assertThrows<PriceFeedUnavailableException> { service.getPrice(PriceFeed.VET_USD) }
+
+        expectThat(exception.message)
+            .isEqualTo("PriceFeedOracle call reverted for VET_USD: execution reverted")
+    }
+
+    @Test
+    fun `throws PriceFeedUnavailableException when the clause reports a vmError`() {
+        coEvery {
+            thorClient.inspectClauses(any<List<Clause>>(), BlockRevision.Keyword.BEST)
+        } returns listOf(inspectionResult(BigInteger.ONE).copy(vmError = "out of gas"))
+
+        assertThrows<PriceFeedUnavailableException> { service.getPrice(PriceFeed.VET_USD) }
+    }
+
+    @Test
+    fun `wraps decoder exceptions as PriceFeedUnavailableException`() {
+        // Truncated payload that the decoder cannot parse as `(uint128, uint128)`.
+        coEvery {
+            thorClient.inspectClauses(any<List<Clause>>(), BlockRevision.Keyword.BEST)
+        } returns listOf(emptyInspectionResult("0xdeadbeef"))
+
+        assertThrows<PriceFeedUnavailableException> { service.getPrice(PriceFeed.VET_USD) }
+    }
+
     private fun inspectionResult(
         value: BigInteger,
         updatedAt: BigInteger = BigInteger.valueOf(1_700_000_000L),
