@@ -17,10 +17,4 @@ interface ValidatorRepository : BaseIndexedRepository<Validator, String> {
 
     @Query("{ 'lastMissedBlockNumber': ?0 }")
     fun findByLastMissedBlockNumber(blockNumber: Long): List<Validator>
-
-    @Query("{ 'lastProposedBlockNumber': ?0, '_id': { '\$in': ?1 } }")
-    fun findByLastProposedBlockNumberAndIdIn(
-        blockNumber: Long,
-        ids: Collection<String>,
-    ): List<Validator>
 }

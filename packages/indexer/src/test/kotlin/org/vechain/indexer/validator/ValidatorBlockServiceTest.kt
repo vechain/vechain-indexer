@@ -45,7 +45,6 @@ class ValidatorBlockServiceTest {
         every { repository.findLatestDaily() } returns emptyList()
         every { repository.findLatestWeekly() } returns emptyList()
         every { repository.findLatestMonthly() } returns emptyList()
-        every { repository.findLatestMissed() } returns emptyList()
     }
 
     private fun createBlock(
@@ -198,47 +197,32 @@ class ValidatorBlockServiceTest {
     }
 
     @Test
-    fun `getValidatorsWithMissedSlots suppresses duplicate misses for continuing offline runs`() {
+    fun `getValidatorsWithMissedSlots emits one MISSED row per missed slot, no gating`() {
+        // Same validator misses at two consecutive blocks — both should be recorded.
         val block1 = createBlock(num = 50, signer = "0xX")
         every { validatorRepository.findByLastMissedBlockNumber(50) } returns
             listOf(validatorV2("0xA", lastMissed = 50))
         assertEquals(1, service.getValidatorsWithMissedSlots(block1).size)
 
-        // Next block, same validator misses again — should not emit another MISSED record.
         val block2 = createBlock(num = 51, signer = "0xX")
         every { validatorRepository.findByLastMissedBlockNumber(51) } returns
             listOf(validatorV2("0xA", lastMissed = 51))
-        assertEquals(0, service.getValidatorsWithMissedSlots(block2).size)
+        val second = service.getValidatorsWithMissedSlots(block2)
+        assertEquals(1, second.size)
+        assertEquals(51L, second[0].blockNumber)
+        assertEquals(BlockStatus.MISSED, second[0].status)
     }
 
     @Test
-    fun `getRecoveredValidators closes out the open MISSED record when validator proposes`() {
-        // Seed: validator went offline at block 50.
-        val offlineBlock = createBlock(num = 50)
-        every { validatorRepository.findByLastMissedBlockNumber(50) } returns
-            listOf(validatorV2("0xA", lastMissed = 50))
-        service.getValidatorsWithMissedSlots(offlineBlock)
+    fun `getValidatorsWithMissedSlots emits one row per validator missing at the same block`() {
+        val block = createBlock(num = 200, signer = "0xX")
+        every { validatorRepository.findByLastMissedBlockNumber(200) } returns
+            listOf(validatorV2("0xA", lastMissed = 200), validatorV2("0xB", lastMissed = 200))
 
-        // At block 60, the offline validator proposes — recovery.
-        val recoveryBlock = createBlock(num = 60)
-        every { validatorRepository.findByLastProposedBlockNumberAndIdIn(60, any()) } returns
-            listOf(validatorV2("0xA", lastProposed = 60))
-
-        val originalMissed =
-            ValidatorBlock(
-                id = "50-0xA",
-                blockId = "block-50",
-                blockNumber = 50,
-                blockTimestamp = 12345L,
-                validator = "0xA",
-                status = BlockStatus.MISSED,
-            )
-        every { repository.findById("50-0xA") } returns java.util.Optional.of(originalMissed)
-
-        val recovered = service.getRecoveredValidators(recoveryBlock)
-        assertEquals(1, recovered.size)
-        assertEquals(10L, recovered[0].blocksOffline) // 60 - 50
-        assertEquals(60L, recovered[0].onlineBlock)
+        val result = service.getValidatorsWithMissedSlots(block)
+        assertEquals(2, result.size)
+        assertEquals(setOf("0xA", "0xB"), result.map { it.validator }.toSet())
+        assertEquals(setOf("200-0xA", "200-0xB"), result.map { it.id }.toSet())
     }
 
     @Test

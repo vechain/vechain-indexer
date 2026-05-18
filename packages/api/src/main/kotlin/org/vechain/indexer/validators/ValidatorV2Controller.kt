@@ -45,6 +45,7 @@ open class ValidatorV2Controller(
     private val mongoTemplate: MongoTemplate,
     private val aggregateService: ValidatorAggregateService,
     private val priceFeedService: PriceFeedService,
+    private val service: ValidatorService,
 ) {
 
     @GetMapping
@@ -108,6 +109,31 @@ open class ValidatorV2Controller(
             pageContent.map { ValidatorV2Response.from(it, aggregates, vetPrice, vthoPrice) }
         return paginatedResponse(SliceImpl(mapped, pageable, hasNext))
     }
+
+    @GetMapping("/missed-slots")
+    @Operation(
+        summary = "Get missed-slot ratios for validators",
+        description =
+            "Returns each validator's missed-slot accounting over the requested timeframe. " +
+                "`scheduledSlots = proposedBlocks + missedSlots` and is the denominator for " +
+                "`missedSlotRatio` and `livenessRatio`. Validators with no scheduled slots in the " +
+                "window are absent from the response. Timeframe options: DAY (last 24h), WEEK " +
+                "(last 7 days), MONTH (last 30 days), YEAR (last 365 days).",
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "timeframe",
+        schema = Schema(implementation = MissedBlocksTimeframe::class),
+        description = "Time period to calculate missed slots for",
+        required = true,
+    )
+    @AddressParameter(name = "validator", description = "Optional validator address to filter by")
+    @CommonApiResponses
+    open fun getMissedSlots(
+        @RequestParam timeframe: MissedBlocksTimeframe,
+        @ValidAddress @RequestParam(required = false) validator: Address?,
+    ): ValidatorMissedSlotsResponse =
+        service.getMissedSlots(timeframe, validator?.value?.lowercase())
 
     @GetMapping("/{validatorId}")
     @Operation(
