@@ -68,10 +68,10 @@ data class ValidatorV2Response(
     val lastProposedBlockNumber: Long?,
     val lastMissedBlockNumber: Long?,
 
-    // ---- Price-dependent: TVL ----
-    val validatorTvl: BigDecimal?,
-    val delegatorTvl: BigDecimal?,
-    val totalTvl: BigDecimal?,
+    // ---- Price-dependent: TVL (non-null — controller guarantees prices or 503s) ----
+    val validatorTvl: BigDecimal,
+    val delegatorTvl: BigDecimal,
+    val totalTvl: BigDecimal,
     val validatorTvlPercentage: BigDecimal?,
 
     // ---- Price-dependent: yields ----
