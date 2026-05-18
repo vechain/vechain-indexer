@@ -22,6 +22,7 @@ import org.vechain.indexer.constants.VALIDATORS_PATH_V2
 import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
+import org.vechain.indexer.docs.PriceOracleUnavailableResponse
 import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.prices.PriceFeed
 import org.vechain.indexer.prices.PriceFeedService
@@ -65,6 +66,7 @@ open class ValidatorV2Controller(
     )
     @AddressParameter(name = "endorser", description = "Filter by endorser address")
     @CommonApiResponses
+    @PriceOracleUnavailableResponse
     @PaginationParameters
     open fun getValidators(
         @RequestParam(required = false) status: List<Status>?,
@@ -113,6 +115,7 @@ open class ValidatorV2Controller(
         required = true,
     )
     @CommonApiResponses
+    @PriceOracleUnavailableResponse
     open fun getValidatorById(
         @PathVariable @ValidAddress validatorId: Address
     ): ValidatorV2Response {
