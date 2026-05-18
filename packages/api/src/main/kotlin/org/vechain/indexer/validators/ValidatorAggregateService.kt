@@ -18,12 +18,20 @@ import org.vechain.indexer.validator.ValidatorRepository
  *   `blockProbability` and the current-cycle yield formulas.
  * - [totalNextPeriodWeight]: chain-wide sum of `Validator.totalNextPeriodWeight` across ACTIVE
  *   validators. Drives `blockProbabilityNextCycle` and `nftYieldsIfDelegatedNextCycle`.
+ * - [totalActiveVetStaked]: chain-wide sum of `validatorVetStaked + delegatorVetStaked` across
+ *   ACTIVE validators. Feeds the VeChain VTHO issuance formula (`1200 × 64 × sqrt(networkVET)`),
+ *   which is a network-wide quantity — passing a single validator's stake here under-issues by
+ *   `sqrt(networkVET / validatorVET)`.
+ * - [totalActiveNextCycleVetStaked]: same idea for next-cycle projections, including queued and
+ *   minus exiting stake.
  * - [delegationsByValidator]: every relevant delegation (status QUEUED / ACTIVE / EXITING) grouped
  *   by validator id, for the per-validator current-cycle and next-cycle delegation calculations.
  */
 data class ValidatorAggregates(
     val totalWeight: BigDecimal,
     val totalNextPeriodWeight: BigDecimal,
+    val totalActiveVetStaked: BigDecimal,
+    val totalActiveNextCycleVetStaked: BigDecimal,
     val delegationsByValidator: Map<String, List<Delegation>>,
 ) {
     /**
@@ -96,6 +104,21 @@ open class ValidatorAggregateService(
         val activeValidators = validatorRepository.findByStatus(Status.ACTIVE)
         val totalWeight = sumWeight(activeValidators) { it.validatorLockedWeight }
         val totalNextPeriodWeight = sumWeight(activeValidators) { it.totalNextPeriodWeight }
+        val totalActiveVetStaked =
+            activeValidators.fold(BigDecimal.ZERO) { acc, v ->
+                acc +
+                    (v.validatorVetStaked ?: BigDecimal.ZERO) +
+                    (v.delegatorVetStaked ?: BigDecimal.ZERO)
+            }
+        val totalActiveNextCycleVetStaked =
+            activeValidators.fold(BigDecimal.ZERO) { acc, v ->
+                val locked =
+                    (v.validatorVetStaked ?: BigDecimal.ZERO) +
+                        (v.delegatorVetStaked ?: BigDecimal.ZERO)
+                val queued = v.queuedVetStaked ?: BigDecimal.ZERO
+                val exiting = v.exitingVetStaked ?: BigDecimal.ZERO
+                acc + (locked + queued - exiting).max(BigDecimal.ZERO)
+            }
 
         val delegations =
             if (validatorIdsOnPage.isEmpty()) emptyList()
@@ -112,6 +135,8 @@ open class ValidatorAggregateService(
         return ValidatorAggregates(
             totalWeight = totalWeight,
             totalNextPeriodWeight = totalNextPeriodWeight,
+            totalActiveVetStaked = totalActiveVetStaked,
+            totalActiveNextCycleVetStaked = totalActiveNextCycleVetStaked,
             delegationsByValidator = delegations.groupBy { it.validator },
         )
     }

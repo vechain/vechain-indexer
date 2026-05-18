@@ -253,7 +253,7 @@ open class ValidatorService(
      * If [epochSeedProvider] yields a seed we reconstruct the deterministic PoS schedule and
      * attribute scheduled / proposed / missed slots precisely. Without a seed (current default,
      * until Beta extraction via VRF Verify is implemented), we fall back to bumping only
-     * `proposedBlocks` for the actual signer; `scheduledBlocks` and `missedBlocks` stay at zero so
+     * `proposedBlocks` for the actual signer; `scheduledSlots` and `missedSlots` stay at zero so
      * the reader can tell attribution wasn't running.
      */
     private suspend fun updateLiveness(block: Block, working: MutableMap<String, Validator>) {
@@ -301,7 +301,7 @@ open class ValidatorService(
                 val scheduled = working[scheduledId]
                 if (scheduled != null) {
                     working[scheduledId] =
-                        scheduled.copy(scheduledBlocks = scheduled.scheduledBlocks + 1)
+                        scheduled.copy(scheduledSlots = scheduled.scheduledSlots + 1)
                 }
                 // Trust block.signer over the reconstructed schedule for proposal attribution;
                 // they can diverge if our active-set view lags the chain.
@@ -316,8 +316,8 @@ open class ValidatorService(
                 val current = working[scheduledId] ?: return@repeat
                 working[scheduledId] =
                     current.copy(
-                        scheduledBlocks = current.scheduledBlocks + 1,
-                        missedBlocks = current.missedBlocks + 1,
+                        scheduledSlots = current.scheduledSlots + 1,
+                        missedSlots = current.missedSlots + 1,
                         lastMissedBlockNumber = block.number,
                     )
             }

@@ -15,7 +15,7 @@ import org.vechain.indexer.validator.logic.ValidatorCalculator
  * Fields fall into three groups:
  * - **Stored** — copied straight from the V2 document.
  * - **Derived from V2 + aggregates** — `totalWeight`, `blockProbability`, `blocksPerYear`,
- *   `cycleEndBlock`, `percentageOffline`, etc. Computed in [from] using per-request aggregates.
+ *   `cycleEndBlock`, `missedSlotsPercentage`, etc. Computed in [from] using per-request aggregates.
  * - **Price-dependent** — TVL, yields, NFT yields. `vetPrice` / `vthoPrice` are required (the
  *   controller fetches them up front and the endpoint returns 503 if the oracle is unavailable), so
  *   TVL is always derivable. Yields can still be null for non-price reasons — e.g. a QUEUED
@@ -61,10 +61,10 @@ data class ValidatorV2Response(
     val availableStartBlock: Long?,
 
     // ---- Liveness ----
-    val scheduledBlocks: Long,
+    val scheduledSlots: Long,
     val proposedBlocks: Long,
-    val missedBlocks: Long,
-    val percentageOffline: BigDecimal?,
+    val missedSlots: Long,
+    val missedSlotsPercentage: BigDecimal?,
     val lastProposedBlockNumber: Long?,
     val lastMissedBlockNumber: Long?,
 
@@ -125,10 +125,10 @@ data class ValidatorV2Response(
             val blocksPerYear = blockProbability?.let { ValidatorCalculator.blocksPerYear(it) }
 
             // --- percentage offline ---
-            val percentageOffline =
-                if (v.scheduledBlocks > 0L) {
-                    BigDecimal(v.missedBlocks)
-                        .divide(BigDecimal(v.scheduledBlocks), 6, RoundingMode.HALF_UP)
+            val missedSlotsPercentage =
+                if (v.scheduledSlots > 0L) {
+                    BigDecimal(v.missedSlots)
+                        .divide(BigDecimal(v.scheduledSlots), 6, RoundingMode.HALF_UP)
                         .multiply(BigDecimal(100))
                 } else null
 
@@ -148,7 +148,8 @@ data class ValidatorV2Response(
             var nftYields: TokenLevelDecimalValues? = null
             if (blocksPerYear != null && totalLocked > BigDecimal.ZERO) {
                 val hasDelegations = delegatorVet > BigDecimal.ZERO
-                val vthoIssued = ValidatorCalculator.determineVTHOIssuedPerBlock(totalLocked)
+                val vthoIssued =
+                    ValidatorCalculator.determineVTHOIssuedPerBlock(aggregates.totalActiveVetStaked)
                 val (vYield, tvlYield, avgYield) =
                     ValidatorCalculator.calculateValidatorYield(
                         validatorTvl = validatorTvl,
@@ -197,7 +198,10 @@ data class ValidatorV2Response(
             var nextCycleAvgDelegatorYield: BigDecimal? = null
             if (blocksPerYearNextCycle != null && nextCycleStake > BigDecimal.ZERO) {
                 val nextHasDelegations = nextCycleDelegatorStake > BigDecimal.ZERO
-                val nextVthoIssued = ValidatorCalculator.determineVTHOIssuedPerBlock(nextCycleStake)
+                val nextVthoIssued =
+                    ValidatorCalculator.determineVTHOIssuedPerBlock(
+                        aggregates.totalActiveNextCycleVetStaked
+                    )
                 val (ncV, ncT, ncA) =
                     ValidatorCalculator.calculateValidatorYield(
                         validatorTvl = nextCycleValidatorTvl,
@@ -270,10 +274,10 @@ data class ValidatorV2Response(
                 completedPeriods = completedPeriods,
                 queuePosition = v.queuePosition,
                 availableStartBlock = v.availableStartBlock,
-                scheduledBlocks = v.scheduledBlocks,
+                scheduledSlots = v.scheduledSlots,
                 proposedBlocks = v.proposedBlocks,
-                missedBlocks = v.missedBlocks,
-                percentageOffline = percentageOffline,
+                missedSlots = v.missedSlots,
+                missedSlotsPercentage = missedSlotsPercentage,
                 lastProposedBlockNumber = v.lastProposedBlockNumber,
                 lastMissedBlockNumber = v.lastMissedBlockNumber,
                 validatorTvl = validatorTvl,

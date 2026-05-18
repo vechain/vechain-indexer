@@ -38,6 +38,8 @@ class ValidatorServiceTest {
             ValidatorAggregates(
                 totalWeight = BigDecimal.ZERO,
                 totalNextPeriodWeight = BigDecimal.ZERO,
+                totalActiveVetStaked = BigDecimal.ZERO,
+                totalActiveNextCycleVetStaked = BigDecimal.ZERO,
                 delegationsByValidator = emptyMap(),
             )
     }
