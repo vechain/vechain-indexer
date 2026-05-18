@@ -152,6 +152,9 @@ cache:
     b3tr_richlist_total_holders:
       max-size: ${CACHE_B3TR_RICHLIST_TOTAL_HOLDERS_MAX_SIZE:10}
       ttl-seconds: ${CACHE_B3TR_RICHLIST_TOTAL_HOLDERS_TTL_SECONDS:600}
+    price_feed_value:
+      max-size: ${CACHE_PRICE_FEED_VALUE_MAX_SIZE:16}
+      ttl-seconds: ${CACHE_PRICE_FEED_VALUE_TTL_SECONDS:30}
   warmers:
     enabled: ${CACHE_WARMERS_ENABLED:true}
     tick-interval-ms: ${CACHE_WARMERS_TICK_INTERVAL_MS:60000}
