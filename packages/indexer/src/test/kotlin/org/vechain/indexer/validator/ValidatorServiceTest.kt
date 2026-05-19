@@ -7,7 +7,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.vechain.indexer.config.DetectedNetwork
 import org.vechain.indexer.config.InlineVersioningProperties
+import org.vechain.indexer.config.NetworkDetectionService
+import org.vechain.indexer.config.VeChainNetwork
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.Clause
@@ -23,6 +26,7 @@ class ValidatorServiceTest {
     private lateinit var mongoTemplate: MongoTemplate
     private lateinit var epochSeedProvider: EpochSeedProvider
     private lateinit var thorScheduler: ThorSchedulerProcess
+    private lateinit var networkDetectionService: NetworkDetectionService
     private lateinit var service: ValidatorService
 
     @BeforeEach
@@ -32,6 +36,9 @@ class ValidatorServiceTest {
         mongoTemplate = mockk(relaxed = true)
         epochSeedProvider = mockk()
         thorScheduler = mockk()
+        networkDetectionService = mockk()
+        every { networkDetectionService.detectBlocking() } returns
+            DetectedNetwork(network = VeChainNetwork.MAINNET, genesisBlock = mockk())
         service =
             ValidatorService(
                 repository,
@@ -40,6 +47,7 @@ class ValidatorServiceTest {
                 InlineVersioningProperties(),
                 epochSeedProvider,
                 thorScheduler,
+                networkDetectionService,
                 STAKER_ADDRESS,
                 validatorStartBlock = 0L,
             )

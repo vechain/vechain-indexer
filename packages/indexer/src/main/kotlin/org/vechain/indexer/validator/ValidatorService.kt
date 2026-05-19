@@ -10,6 +10,8 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.config.InlineVersioningProperties
+import org.vechain.indexer.config.NetworkDetectionService
+import org.vechain.indexer.config.VeChainNetwork
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
@@ -37,12 +39,17 @@ open class ValidatorService(
     private val inlineVersioningProperties: InlineVersioningProperties,
     private val epochSeedProvider: EpochSeedProvider,
     private val thorScheduler: ThorSchedulerProcess,
+    private val networkDetectionService: NetworkDetectionService,
     @param:Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
     private val stakerAddress: String,
     @param:Value("\${indexer.start-block.validator}") private val validatorStartBlock: Long,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
     private val abiCache: ConcurrentHashMap<String, AbiElement> = ConcurrentHashMap()
+
+    private val detectedNetwork: VeChainNetwork by lazy {
+        networkDetectionService.detectBlocking().network
+    }
 
     @Volatile private var lastProcessedBlock: Block? = null
 
@@ -250,14 +257,33 @@ open class ValidatorService(
     /**
      * Cumulative liveness counters derived from block headers alone — no state reads.
      *
-     * If [epochSeedProvider] yields a seed we reconstruct the deterministic PoS schedule and
-     * attribute scheduled / proposed / missed slots precisely. Without a seed (current default,
+     * On a custom single-proposer network (Thor solo) we credit the lone signer with one
+     * scheduled-and-proposed slot per block — no VRF schedule exists to reconstruct.
+     *
+     * Otherwise, if [epochSeedProvider] yields a seed we reconstruct the deterministic PoS schedule
+     * and attribute scheduled / proposed / missed slots precisely. Without a seed (current default,
      * until Beta extraction via VRF Verify is implemented), we fall back to bumping only
      * `proposedBlocks` for the actual signer; `scheduledSlots` and `missedSlots` stay at zero so
      * the reader can tell attribution wasn't running.
      */
     private suspend fun updateLiveness(block: Block, working: MutableMap<String, Validator>) {
         val signer = block.signer.lowercase()
+
+        // Thor solo (and any custom single-proposer network) has no VRF schedule to
+        // reconstruct: the sole ACTIVE validator is the scheduled proposer for every block.
+        // Credit one scheduled-and-proposed slot to the signer so liveness reflects reality
+        // instead of being stuck at the seed-missing fallback (scheduledSlots = 0).
+        if (isSoloLikeNetwork(working)) {
+            val current = working[signer] ?: return
+            working[signer] =
+                current.copy(
+                    scheduledSlots = current.scheduledSlots + 1,
+                    proposedBlocks = current.proposedBlocks + 1,
+                    lastProposedBlockNumber = block.number,
+                )
+            return
+        }
+
         val seed = epochSeedProvider.seedFor(block)
 
         if (seed == null) {
@@ -322,6 +348,11 @@ open class ValidatorService(
                     )
             }
         }
+    }
+
+    private fun isSoloLikeNetwork(working: MutableMap<String, Validator>): Boolean {
+        if (detectedNetwork != VeChainNetwork.CUSTOM) return false
+        return working.values.count { it.status == Status.ACTIVE } == 1
     }
 
     private suspend fun parentTimestampFor(block: Block): Long {
