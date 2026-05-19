@@ -399,9 +399,9 @@
         },
         {
           "filter": {
-            "query": "@http.url_details.path:\"/api/v2/validators/missed-slots\""
+            "query": "@http.url_details.path:\"/api/v2/validators/slots\""
           },
-          "name": "/api/v2/validators/missed-slots"
+          "name": "/api/v2/validators/slots"
         },
         {
           "filter": {
@@ -648,6 +648,12 @@
             "query": "@http.url_details.path:/api/v2/history/token/*"
           },
           "name": "/api/v2/history/token/{tokenId}"
+        },
+        {
+          "filter": {
+            "query": "@http.url_details.path:/api/v2/validators/*/slots"
+          },
+          "name": "/api/v2/validators/{validatorId}/slots"
         },
         {
           "filter": {
