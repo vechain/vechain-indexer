@@ -40,8 +40,7 @@ open class IndexManager(
     private val metrics: IndexerHealthMetrics,
     private val applicationContext: ApplicationContext,
     @param:Value("\${indexer.channel-batch-size}") private val channelBatchSize: Int,
-    @param:Value("\${indexer.catch-up-interval-seconds:5}")
-    private val catchUpIntervalSeconds: Long,
+    @param:Value("\${indexer.catch-up-interval-seconds}") private val catchUpIntervalSeconds: Long,
     @param:Autowired(required = false)
     private val delegationLifecycleHistoryService: DelegationLifecycleHistoryService? = null,
 ) {
