@@ -168,12 +168,16 @@ open class ValidatorV2Controller(
         @PathVariable @ValidAddress validatorId: Address,
         @ValidNonNegativeLong @RequestParam startTimestamp: Long,
         @ValidNonNegativeLong @RequestParam endTimestamp: Long,
-    ): ValidatorSlotStats =
-        service.getSlotStatsForValidator(
-            startTimestamp,
-            endTimestamp,
-            HexUtils.normalise(validatorId.value),
-        )
+    ): ValidatorSlotStats {
+        val normalised = HexUtils.normalise(validatorId.value)
+        return service.getSlotStatsForValidator(startTimestamp, endTimestamp, normalised)
+            ?: ValidatorSlotStats(
+                validator = normalised,
+                proposedBlocks = 0L,
+                missedSlots = 0L,
+                missedSlotRatio = 0.0,
+            )
+    }
 
     @GetMapping("/{validatorId}")
     @Operation(

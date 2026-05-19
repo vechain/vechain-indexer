@@ -15,6 +15,7 @@ import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.prices.PriceFeed
 import org.vechain.indexer.prices.PriceFeedService
 import org.vechain.indexer.thor.Address
+import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.validator.BlockStatus
 import org.vechain.indexer.validator.Validator
 import org.vechain.indexer.validator.ValidatorBlock
@@ -46,6 +47,7 @@ class ValidatorServiceTest {
         every { getPrices(any()) } returns
             mapOf(PriceFeed.VET_USD to BigDecimal.ZERO, PriceFeed.VTHO_USD to BigDecimal.ZERO)
     }
+    private val thorClient: ThorClient = mockk()
 
     private val service =
         ValidatorService(
@@ -53,6 +55,7 @@ class ValidatorServiceTest {
             mongoTemplate = mongoTemplate,
             aggregateService = aggregateService,
             priceFeedService = priceFeedService,
+            thorClient = thorClient,
         )
 
     @Test
@@ -499,7 +502,7 @@ class ValidatorServiceTest {
     }
 
     @Test
-    fun `getSlotStatsForValidator returns zero-filled result when validator has no rows in window`() {
+    fun `getSlotStatsForValidator returns null when validator has no rows in window`() {
         every {
             validatorBlockRepository.aggregateSlotStatsInTimestampRangeForValidator(
                 1_000L,
@@ -510,15 +513,7 @@ class ValidatorServiceTest {
 
         val result = service.getSlotStatsForValidator(1_000L, 2_000L, "0xabc")
 
-        expectThat(result)
-            .isEqualTo(
-                ValidatorSlotStats(
-                    validator = "0xabc",
-                    proposedBlocks = 0L,
-                    missedSlots = 0L,
-                    missedSlotRatio = 0.0,
-                )
-            )
+        expectThat(result).isNull()
     }
 
     private fun validator(id: String): Validator =
