@@ -238,7 +238,7 @@ enabled_nets:
         validator-rewards: "6"
         stargate-token: "10"
         token-rewards: "8"
-        delegation: "11"
+        delegation: "13"
         account-totals-series: "3"
         account-overview: "7"
         b3tr-balance: "6"
