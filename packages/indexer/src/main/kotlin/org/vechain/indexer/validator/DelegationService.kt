@@ -416,8 +416,9 @@ open class DelegationService(
     /**
      * Next cycle-boundary block for [validatorId] after [blockNumber], computed from the persisted
      * `Validator` row in the supplied [validators] map (preloaded once per block by
-     * [preloadValidators]). Returns `null` if the validator isn't known or hasn't been activated
-     * (no `startBlock`/`cyclePeriodLength`).
+     * [preloadValidators]). Returns `null` if the validator isn't known or isn't yet active —
+     * gating on [Status.ACTIVE]/[Status.EXITING] rather than `startBlock > 0`, since genesis
+     * validators on Thor solo (Hayabusa from block 0) legitimately have `startBlock = 0`.
      */
     private fun nextCycleStart(
         validatorId: String,
@@ -425,9 +426,10 @@ open class DelegationService(
         validators: Map<String, Validator>,
     ): Long? {
         val v = validators[validatorId] ?: return null
+        if (v.status != Status.ACTIVE && v.status != Status.EXITING) return null
         val start = v.startBlock ?: return null
         val period = v.cyclePeriodLength ?: return null
-        if (start <= 0L || period <= 0L) return null
+        if (period <= 0L) return null
         if (blockNumber < start) return start
         val offset = blockNumber - start
         val positionInCycle = offset % period
