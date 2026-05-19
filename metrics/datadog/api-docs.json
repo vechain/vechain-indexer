@@ -3697,76 +3697,6 @@
         ],
         "type": "object"
       },
-      "ValidatorMissedSlotsResponse": {
-        "properties": {
-          "endBlock": {
-            "format": "int64",
-            "type": "integer"
-          },
-          "startBlock": {
-            "format": "int64",
-            "type": "integer"
-          },
-          "timeframe": {
-            "enum": [
-              "DAY",
-              "WEEK",
-              "MONTH",
-              "YEAR"
-            ],
-            "type": "string"
-          },
-          "validators": {
-            "items": {
-              "$ref": "#/components/schemas/ValidatorMissedSlotsResult"
-            },
-            "type": "array"
-          }
-        },
-        "required": [
-          "endBlock",
-          "startBlock",
-          "timeframe",
-          "validators"
-        ],
-        "type": "object"
-      },
-      "ValidatorMissedSlotsResult": {
-        "properties": {
-          "livenessRatio": {
-            "format": "double",
-            "type": "number"
-          },
-          "missedSlotRatio": {
-            "format": "double",
-            "type": "number"
-          },
-          "missedSlots": {
-            "format": "int64",
-            "type": "integer"
-          },
-          "proposedBlocks": {
-            "format": "int64",
-            "type": "integer"
-          },
-          "scheduledSlots": {
-            "format": "int64",
-            "type": "integer"
-          },
-          "validator": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "livenessRatio",
-          "missedSlotRatio",
-          "missedSlots",
-          "proposedBlocks",
-          "scheduledSlots",
-          "validator"
-        ],
-        "type": "object"
-      },
       "ValidatorResponse": {
         "properties": {
           "availableStartBlock": {
@@ -3918,6 +3848,32 @@
           "validatorTvl",
           "validatorVetStaked",
           "vetStaked"
+        ],
+        "type": "object"
+      },
+      "ValidatorSlotStats": {
+        "properties": {
+          "missedSlotRatio": {
+            "format": "double",
+            "type": "number"
+          },
+          "missedSlots": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "proposedBlocks": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "validator": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "missedSlotRatio",
+          "missedSlots",
+          "proposedBlocks",
+          "validator"
         ],
         "type": "object"
       },
@@ -15161,7 +15117,7 @@
     "/api/v1/validators/blocks/missed": {
       "get": {
         "deprecated": true,
-        "description": "**Deprecated:** Replaced by `GET /api/v2/validators/missed-slots`. `missedPercentage` is now `missedSlots / scheduledSlots * 100` over the window — i.e. the fraction of the validator's scheduled PoS slots that were missed, not the fraction of all chain blocks during an offline span as previously. Timeframe options: DAY (last 24h), WEEK (last 7 days), MONTH (last 30 days), YEAR (last 365 days).",
+        "description": "**Deprecated:** Replaced by `GET /api/v2/validators/slots`. `missedPercentage` is `missedSlots / scheduledSlots * 100` over the window. `startBlock` and `endBlock` are zeroed in this legacy shape — the underlying query now filters by timestamp.",
         "operationId": "getMissedBlocksPercentage",
         "parameters": [
           {
@@ -17181,35 +17137,35 @@
         ]
       }
     },
-    "/api/v2/validators/missed-slots": {
+    "/api/v2/validators/slots": {
       "get": {
-        "description": "Returns each validator's missed-slot accounting over the requested timeframe. `scheduledSlots = proposedBlocks + missedSlots` and is the denominator for `missedSlotRatio` and `livenessRatio`. Validators with no scheduled slots in the window are absent from the response. Timeframe options: DAY (last 24h), WEEK (last 7 days), MONTH (last 30 days), YEAR (last 365 days).",
-        "operationId": "getMissedSlots",
+        "description": "Returns each validator's slot accounting across the requested timestamp window (inclusive, Unix seconds). `missedSlotRatio = missedSlots / (proposedBlocks + missedSlots)`. Validators with no scheduled slots in the window are absent from the response.",
+        "operationId": "getSlotStats",
         "parameters": [
           {
-            "description": "Time period to calculate missed slots for",
+            "description": "Return records after this time (Unix time in seconds).",
+            "example": 1704143600,
             "in": "query",
-            "name": "timeframe",
+            "name": "startTimestamp",
             "required": true,
             "schema": {
-              "enum": [
-                "DAY",
-                "WEEK",
-                "MONTH",
-                "YEAR"
-              ],
-              "type": "string"
+              "format": "int64",
+              "maximum": 31556889832694400,
+              "minimum": 0,
+              "type": "integer"
             }
           },
           {
-            "description": "Optional validator address to filter by",
-            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            "description": "Return records before this time (Unix time in seconds).",
+            "example": 1704153600,
             "in": "query",
-            "name": "validator",
-            "required": false,
+            "name": "endTimestamp",
+            "required": true,
             "schema": {
-              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
-              "type": "string"
+              "format": "int64",
+              "maximum": 31556889832694400,
+              "minimum": 0,
+              "type": "integer"
             }
           },
           {
@@ -17221,7 +17177,10 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/ValidatorMissedSlotsResponse"
+                  "items": {
+                    "$ref": "#/components/schemas/ValidatorSlotStats"
+                  },
+                  "type": "array"
                 }
               }
             },
@@ -17288,7 +17247,7 @@
             "description": "Service not available"
           }
         },
-        "summary": "Get missed-slot ratios for validators",
+        "summary": "Get per-validator slot accounting over a time range",
         "tags": [
           "Validator"
         ]
@@ -17402,6 +17361,130 @@
           }
         },
         "summary": "Get a single V2 validator by ID",
+        "tags": [
+          "Validator"
+        ]
+      }
+    },
+    "/api/v2/validators/{validatorId}/slots": {
+      "get": {
+        "description": "Returns one validator's slot accounting across the requested timestamp window (inclusive, Unix seconds). Returns zeroed counts when the validator had no scheduled slots in the window.",
+        "operationId": "getSlotStatsForValidator",
+        "parameters": [
+          {
+            "description": "Validator address",
+            "example": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            "in": "path",
+            "name": "validatorId",
+            "required": true,
+            "schema": {
+              "pattern": "^(0x)?[0-9a-fA-F]{40}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Return records after this time (Unix time in seconds).",
+            "example": 1704143600,
+            "in": "query",
+            "name": "startTimestamp",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "maximum": 31556889832694400,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Return records before this time (Unix time in seconds).",
+            "example": 1704153600,
+            "in": "query",
+            "name": "endTimestamp",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "maximum": 31556889832694400,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/XProjectIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidatorSlotStats"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Validation errors occurred, eg: invalid input"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Access to the requested resource is forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Requested resource was not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExceptionResponse"
+                }
+              }
+            },
+            "description": "Service not available"
+          }
+        },
+        "summary": "Get a single validator's slot accounting over a time range",
         "tags": [
           "Validator"
         ]
