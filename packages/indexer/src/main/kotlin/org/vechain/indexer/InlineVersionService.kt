@@ -253,8 +253,9 @@ object InlineVersionService {
                     //    whether the doc existed before the target. Throw so the operator decides;
                     //    indexer-core's alignComponents will aggregate this into its actionable
                     //    "drop state for these indexers" error.
-                    val oldestRetainedVersion =
-                        previousVersions.last().getInteger("version", initialVersion)
+                    val oldestEntry = previousVersions.last()
+                    val oldestRetainedVersion = oldestEntry.getInteger("version", initialVersion)
+                    val oldestRetainedBlock = (oldestEntry.get("blockNumber") as? Number)?.toLong()
                     if (oldestRetainedVersion <= initialVersion) {
                         logger.info(
                             "Rolling back ({}): _id={} born within target range (current v{}, oldest retained v{} >= {}), deleting",
@@ -267,20 +268,23 @@ object InlineVersionService {
                         writes.add(DeleteOneModel(idFilter))
                         continue
                     }
+                    val currentBlock = doc.getLong("blockNumber")
                     logger.error(
-                        "Retained versions exhausted for rollback ({}): _id={}, version={}, blockNumber={}, retained={}, oldestRetainedVersion={}, target={}",
+                        "Retained versions exhausted for rollback ({}): _id={}, current v{} @ block {}, retained={}, oldest retained v{} @ block {}, target={}",
                         collectionName,
                         docId,
                         version,
-                        doc.getLong("blockNumber"),
+                        currentBlock,
                         previousVersions.size,
                         oldestRetainedVersion,
+                        oldestRetainedBlock,
                         blockNumber,
                     )
                     throw RollbackException(
                         "Retained versions exhausted rolling back $collectionName/$docId to block $blockNumber: " +
                             "every retained snapshot is at block >= $blockNumber and pre-target history was trimmed " +
-                            "(retained=${previousVersions.size}, current=$version, oldestRetainedVersion=$oldestRetainedVersion)"
+                            "(retained=${previousVersions.size}, current v$version @ block $currentBlock, " +
+                            "oldest retained v$oldestRetainedVersion @ block $oldestRetainedBlock)"
                     )
                 }
 
