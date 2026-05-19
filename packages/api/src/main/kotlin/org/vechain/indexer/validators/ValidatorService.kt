@@ -4,6 +4,7 @@
 
 package org.vechain.indexer.validators
 
+import kotlinx.coroutines.runBlocking
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
@@ -19,6 +20,8 @@ import org.vechain.indexer.prices.PriceFeedService
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
+import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.timeseries.TimeSeriesResolution
 import org.vechain.indexer.utils.TimeSeriesUtils
 import org.vechain.indexer.utils.TimeValidationUtils
@@ -36,6 +39,7 @@ open class ValidatorService(
     private val mongoTemplate: MongoTemplate,
     private val aggregateService: ValidatorAggregateService,
     private val priceFeedService: PriceFeedService,
+    private val thorClient: ThorClient,
 ) {
 
     open fun getValidatorBlocks(
@@ -284,7 +288,7 @@ open class ValidatorService(
         startTimestamp: Long,
         endTimestamp: Long,
         validator: String,
-    ): ValidatorSlotStats {
+    ): ValidatorSlotStats? {
         TimeValidationUtils.validateTimestamps(
             startTimestamp,
             endTimestamp,
@@ -294,11 +298,8 @@ open class ValidatorService(
         return validatorBlockRepository
             .aggregateSlotStatsInTimestampRangeForValidator(startTimestamp, endTimestamp, validator)
             .firstOrNull()
-            ?: ValidatorSlotStats(
-                validator = validator,
-                proposedBlocks = 0L,
-                missedSlots = 0L,
-                missedSlotRatio = 0.0,
-            )
     }
+
+    open fun getCurrentBlockNumber(): Long =
+        runBlocking { thorClient.getBlock(BlockRevision.Keyword.BEST) }.number
 }

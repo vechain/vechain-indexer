@@ -298,8 +298,10 @@ open class ValidatorController(private val service: ValidatorService) {
         summary = "Get missed blocks percentage for validators (deprecated)",
         description =
             "**Deprecated:** Replaced by `GET /api/v2/validators/slots`. `missedPercentage` is " +
-                "`missedSlots / scheduledSlots * 100` over the window. `startBlock` and `endBlock` " +
-                "are zeroed in this legacy shape — the underlying query now filters by timestamp.",
+                "`missedSlots / scheduledSlots * 100` over the window. `startBlock` is derived " +
+                "from `endBlock - days * 8640` (VeChain's ~10s block rate); `endBlock` is the " +
+                "current chain head. Only validators with at least one missed slot in the window " +
+                "appear in `validators`.",
         deprecated = true,
     )
     @Parameter(
@@ -327,21 +329,27 @@ open class ValidatorController(private val service: ValidatorService) {
         val normalised = validator?.value?.let { HexUtils.normalise(it) }
         val stats =
             if (normalised != null) {
-                listOf(service.getSlotStatsForValidator(startTimestamp, endTimestamp, normalised))
+                listOfNotNull(
+                    service.getSlotStatsForValidator(startTimestamp, endTimestamp, normalised)
+                )
             } else {
                 service.getSlotStats(startTimestamp, endTimestamp)
             }
+        val endBlock = service.getCurrentBlockNumber()
+        val startBlock = (endBlock - days * 8_640L).coerceAtLeast(0L)
         return AllValidatorsMissedBlocksResponse(
             timeframe = timeframe,
-            startBlock = 0L,
-            endBlock = 0L,
+            startBlock = startBlock,
+            endBlock = endBlock,
             validators =
-                stats.map {
-                    ValidatorMissedBlocksPercentage(
-                        validator = it.validator,
-                        missedPercentage = it.missedSlotRatio * 100.0,
-                    )
-                },
+                stats
+                    .filter { it.missedSlots > 0L }
+                    .map {
+                        ValidatorMissedBlocksPercentage(
+                            validator = it.validator,
+                            missedPercentage = it.missedSlotRatio * 100.0,
+                        )
+                    },
         )
     }
 }

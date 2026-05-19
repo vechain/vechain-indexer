@@ -15117,7 +15117,7 @@
     "/api/v1/validators/blocks/missed": {
       "get": {
         "deprecated": true,
-        "description": "**Deprecated:** Replaced by `GET /api/v2/validators/slots`. `missedPercentage` is `missedSlots / scheduledSlots * 100` over the window. `startBlock` and `endBlock` are zeroed in this legacy shape — the underlying query now filters by timestamp.",
+        "description": "**Deprecated:** Replaced by `GET /api/v2/validators/slots`. `missedPercentage` is `missedSlots / scheduledSlots * 100` over the window. `startBlock` is derived from `endBlock - days * 8640` (VeChain's ~10s block rate); `endBlock` is the current chain head. Only validators with at least one missed slot in the window appear in `validators`.",
         "operationId": "getMissedBlocksPercentage",
         "parameters": [
           {
