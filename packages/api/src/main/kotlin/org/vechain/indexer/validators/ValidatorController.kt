@@ -29,6 +29,7 @@ import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validators.AllValidatorsMissedBlocksResponse
 import org.vechain.indexer.validators.MissedBlocksTimeframe
+import org.vechain.indexer.validators.ValidatorMissedBlocksPercentage
 import org.vechain.indexer.validators.ValidatorResponse
 import org.vechain.indexer.validators.ValidatorService
 
@@ -288,17 +289,17 @@ open class ValidatorController(private val service: ValidatorService) {
             validator.value.lowercase(),
         )
 
-    @Deprecated("Use GET /api/v2/validators/missed-slots")
+    // -- Deprecated: kept for client switch-over only. All legacy logic is inlined here so the
+    // whole endpoint can be removed in one go alongside MissedBlocksTimeframe.kt and
+    // ValidatorMissedBlocksStats.kt.
+    @Deprecated("Use GET /api/v2/validators/slots")
     @GetMapping("/blocks/missed")
     @Operation(
         summary = "Get missed blocks percentage for validators (deprecated)",
         description =
-            "**Deprecated:** Replaced by `GET /api/v2/validators/missed-slots`. " +
-                "`missedPercentage` is now `missedSlots / scheduledSlots * 100` over the window " +
-                "— i.e. the fraction of the validator's scheduled PoS slots that were missed, " +
-                "not the fraction of all chain blocks during an offline span as previously. " +
-                "Timeframe options: DAY (last 24h), WEEK (last 7 days), MONTH (last 30 days), " +
-                "YEAR (last 365 days).",
+            "**Deprecated:** Replaced by `GET /api/v2/validators/slots`. `missedPercentage` is " +
+                "`missedSlots / scheduledSlots * 100` over the window. `startBlock` and `endBlock` " +
+                "are zeroed in this legacy shape — the underlying query now filters by timestamp.",
         deprecated = true,
     )
     @Parameter(
@@ -313,6 +314,34 @@ open class ValidatorController(private val service: ValidatorService) {
     open fun getMissedBlocksPercentage(
         @RequestParam timeframe: MissedBlocksTimeframe,
         @ValidAddress @RequestParam(required = false) validator: Address?,
-    ): AllValidatorsMissedBlocksResponse =
-        service.getMissedBlocksPercentage(timeframe, validator?.value?.lowercase())
+    ): AllValidatorsMissedBlocksResponse {
+        val days =
+            when (timeframe) {
+                MissedBlocksTimeframe.DAY -> 1L
+                MissedBlocksTimeframe.WEEK -> 7L
+                MissedBlocksTimeframe.MONTH -> 30L
+                MissedBlocksTimeframe.YEAR -> 365L
+            }
+        val endTimestamp = System.currentTimeMillis() / 1000L
+        val startTimestamp = (endTimestamp - days * 86_400L).coerceAtLeast(0L)
+        val normalised = validator?.value?.lowercase()
+        val stats =
+            if (normalised != null) {
+                listOf(service.getSlotStatsForValidator(startTimestamp, endTimestamp, normalised))
+            } else {
+                service.getSlotStats(startTimestamp, endTimestamp)
+            }
+        return AllValidatorsMissedBlocksResponse(
+            timeframe = timeframe,
+            startBlock = 0L,
+            endBlock = 0L,
+            validators =
+                stats.map {
+                    ValidatorMissedBlocksPercentage(
+                        validator = it.validator,
+                        missedPercentage = it.missedSlotRatio * 100.0,
+                    )
+                },
+        )
+    }
 }

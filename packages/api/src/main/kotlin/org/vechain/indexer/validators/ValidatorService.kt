@@ -4,7 +4,6 @@
 
 package org.vechain.indexer.validators
 
-import kotlinx.coroutines.runBlocking
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
@@ -15,14 +14,11 @@ import org.springframework.data.mongodb.core.findOne
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
-import org.vechain.indexer.explorer.TimestampUtils.SECONDS_PER_DAY
 import org.vechain.indexer.prices.PriceFeed
 import org.vechain.indexer.prices.PriceFeedService
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
-import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.timeseries.TimeSeriesResolution
 import org.vechain.indexer.utils.TimeSeriesUtils
 import org.vechain.indexer.utils.TimeValidationUtils
@@ -31,13 +27,13 @@ import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator
 import org.vechain.indexer.validator.ValidatorBlock
 import org.vechain.indexer.validator.ValidatorBlockRepository
+import org.vechain.indexer.validator.ValidatorSlotStats
 
 @Profile("validator")
 @Service
 open class ValidatorService(
     private val validatorBlockRepository: ValidatorBlockRepository,
     private val mongoTemplate: MongoTemplate,
-    private val thorClient: ThorClient,
     private val aggregateService: ValidatorAggregateService,
     private val priceFeedService: PriceFeedService,
 ) {
@@ -271,61 +267,38 @@ open class ValidatorService(
         )
     }
 
-    open fun getMissedSlots(
-        timeframe: MissedBlocksTimeframe,
-        validator: String? = null,
-    ): ValidatorMissedSlotsResponse {
-        val currentBlock = runBlocking { thorClient.getBlock(BlockRevision.Keyword.BEST) }.number
-        val startBlock = startBlockFor(timeframe, currentBlock)
-
-        val stats =
-            if (validator != null) {
-                validatorBlockRepository.aggregateMissedSlotsInRangeForValidator(
-                    startBlock,
-                    currentBlock,
-                    validator,
-                )
-            } else {
-                validatorBlockRepository.aggregateMissedSlotsInRange(startBlock, currentBlock)
-            }
-
-        return ValidatorMissedSlotsResponse(
-            timeframe = timeframe,
-            startBlock = startBlock,
-            endBlock = currentBlock,
-            validators = stats,
+    open fun getSlotStats(startTimestamp: Long, endTimestamp: Long): List<ValidatorSlotStats> {
+        TimeValidationUtils.validateTimestamps(
+            startTimestamp,
+            endTimestamp,
+            "startTimestamp",
+            "endTimestamp",
+        )
+        return validatorBlockRepository.aggregateSlotStatsInTimestampRange(
+            startTimestamp,
+            endTimestamp,
         )
     }
 
-    @Deprecated("Use getMissedSlots — same window, slot-based ratio instead of offline span.")
-    open fun getMissedBlocksPercentage(
-        timeframe: MissedBlocksTimeframe,
-        validator: String? = null,
-    ): AllValidatorsMissedBlocksResponse {
-        val slots = getMissedSlots(timeframe, validator)
-        return AllValidatorsMissedBlocksResponse(
-            timeframe = slots.timeframe,
-            startBlock = slots.startBlock,
-            endBlock = slots.endBlock,
-            validators =
-                slots.validators.map {
-                    ValidatorMissedBlocksPercentage(
-                        validator = it.validator,
-                        missedPercentage = it.missedSlotRatio * 100.0,
-                    )
-                },
+    open fun getSlotStatsForValidator(
+        startTimestamp: Long,
+        endTimestamp: Long,
+        validator: String,
+    ): ValidatorSlotStats {
+        TimeValidationUtils.validateTimestamps(
+            startTimestamp,
+            endTimestamp,
+            "startTimestamp",
+            "endTimestamp",
         )
-    }
-
-    private fun startBlockFor(timeframe: MissedBlocksTimeframe, currentBlock: Long): Long {
-        val secondsPerBlock = 10L // VeChain produces ~1 block per 10 seconds
-        val days =
-            when (timeframe) {
-                MissedBlocksTimeframe.DAY -> 1L
-                MissedBlocksTimeframe.WEEK -> 7L
-                MissedBlocksTimeframe.MONTH -> 30L
-                MissedBlocksTimeframe.YEAR -> 365L
-            }
-        return (currentBlock - days * SECONDS_PER_DAY / secondsPerBlock).coerceAtLeast(0L)
+        return validatorBlockRepository
+            .aggregateSlotStatsInTimestampRangeForValidator(startTimestamp, endTimestamp, validator)
+            .firstOrNull()
+            ?: ValidatorSlotStats(
+                validator = validator,
+                proposedBlocks = 0L,
+                missedSlots = 0L,
+                missedSlotRatio = 0.0,
+            )
     }
 }

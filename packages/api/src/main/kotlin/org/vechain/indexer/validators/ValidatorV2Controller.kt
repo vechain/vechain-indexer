@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.VALIDATORS_PATH_V2
 import org.vechain.indexer.docs.AddressParameter
+import org.vechain.indexer.docs.AfterParameter
+import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.PriceOracleUnavailableResponse
@@ -32,9 +34,11 @@ import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.ValidAddress
+import org.vechain.indexer.validation.ValidNonNegativeLong
 import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator
+import org.vechain.indexer.validator.ValidatorSlotStats
 
 @Profile("validator")
 @Tag(name = "Validator", description = "Query validator documents")
@@ -110,30 +114,50 @@ open class ValidatorV2Controller(
         return paginatedResponse(SliceImpl(mapped, pageable, hasNext))
     }
 
-    @GetMapping("/missed-slots")
+    @GetMapping("/slots")
     @Operation(
-        summary = "Get missed-slot ratios for validators",
+        summary = "Get per-validator slot accounting over a time range",
         description =
-            "Returns each validator's missed-slot accounting over the requested timeframe. " +
-                "`scheduledSlots = proposedBlocks + missedSlots` and is the denominator for " +
-                "`missedSlotRatio` and `livenessRatio`. Validators with no scheduled slots in the " +
-                "window are absent from the response. Timeframe options: DAY (last 24h), WEEK " +
-                "(last 7 days), MONTH (last 30 days), YEAR (last 365 days).",
+            "Returns each validator's slot accounting across the requested timestamp window " +
+                "(inclusive, Unix seconds). `missedSlotRatio = missedSlots / (proposedBlocks + " +
+                "missedSlots)`. Validators with no scheduled slots in the window are absent from " +
+                "the response.",
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "timeframe",
-        schema = Schema(implementation = MissedBlocksTimeframe::class),
-        description = "Time period to calculate missed slots for",
+    @AfterParameter(name = "startTimestamp", required = true)
+    @BeforeParameter(name = "endTimestamp", required = true)
+    @CommonApiResponses
+    open fun getSlotStats(
+        @ValidNonNegativeLong @RequestParam startTimestamp: Long,
+        @ValidNonNegativeLong @RequestParam endTimestamp: Long,
+    ): List<ValidatorSlotStats> = service.getSlotStats(startTimestamp, endTimestamp)
+
+    @GetMapping("/{validatorId}/slots")
+    @Operation(
+        summary = "Get a single validator's slot accounting over a time range",
+        description =
+            "Returns one validator's slot accounting across the requested timestamp window " +
+                "(inclusive, Unix seconds). Returns zeroed counts when the validator had no " +
+                "scheduled slots in the window.",
+    )
+    @AddressParameter(
+        name = "validatorId",
+        `in` = ParameterIn.PATH,
+        description = "Validator address",
         required = true,
     )
-    @AddressParameter(name = "validator", description = "Optional validator address to filter by")
+    @AfterParameter(name = "startTimestamp", required = true)
+    @BeforeParameter(name = "endTimestamp", required = true)
     @CommonApiResponses
-    open fun getMissedSlots(
-        @RequestParam timeframe: MissedBlocksTimeframe,
-        @ValidAddress @RequestParam(required = false) validator: Address?,
-    ): ValidatorMissedSlotsResponse =
-        service.getMissedSlots(timeframe, validator?.value?.lowercase())
+    open fun getSlotStatsForValidator(
+        @PathVariable @ValidAddress validatorId: Address,
+        @ValidNonNegativeLong @RequestParam startTimestamp: Long,
+        @ValidNonNegativeLong @RequestParam endTimestamp: Long,
+    ): ValidatorSlotStats =
+        service.getSlotStatsForValidator(
+            startTimestamp,
+            endTimestamp,
+            HexUtils.normalise(validatorId.value),
+        )
 
     @GetMapping("/{validatorId}")
     @Operation(

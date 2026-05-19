@@ -114,40 +114,38 @@ interface ValidatorBlockRepository : BaseIndexedRepository<ValidatorBlock, Strin
     ): ValidatorBlock?
 
     /**
-     * Per-validator slot accounting over `[startBlock, endBlock]`. Counts VALIDATED rows as
-     * proposed blocks and MISSED rows as missed slots; `scheduledSlots = proposed + missed`.
-     * Validators with no rows in the window are absent from the result.
+     * Per-validator slot accounting over `[startTimestamp, endTimestamp]` (inclusive, Unix
+     * seconds). VALIDATED rows count as proposed blocks, MISSED rows as missed slots. Validators
+     * with no rows in the window are absent from the result.
      */
     @Aggregation(
         pipeline =
             [
-                "{ '\$match': { 'blockNumber': { '\$gte': ?0, '\$lte': ?1 }, 'status': { '\$in': ['VALIDATED', 'MISSED'] } } }",
+                "{ '\$match': { 'blockTimestamp': { '\$gte': ?0, '\$lte': ?1 }, 'status': { '\$in': ['VALIDATED', 'MISSED'] } } }",
                 "{ '\$group': { '_id': '\$validator', 'proposedBlocks': { '\$sum': { '\$cond': [{ '\$eq': ['\$status', 'VALIDATED'] }, 1, 0] } }, 'missedSlots': { '\$sum': { '\$cond': [{ '\$eq': ['\$status', 'MISSED'] }, 1, 0] } } } }",
-                "{ '\$addFields': { 'scheduledSlots': { '\$add': ['\$proposedBlocks', '\$missedSlots'] } } }",
-                "{ '\$addFields': { 'missedSlotRatio': { '\$cond': [{ '\$gt': ['\$scheduledSlots', 0] }, { '\$divide': ['\$missedSlots', '\$scheduledSlots'] }, 0.0] }, 'livenessRatio': { '\$cond': [{ '\$gt': ['\$scheduledSlots', 0] }, { '\$divide': ['\$proposedBlocks', '\$scheduledSlots'] }, 0.0] } } }",
-                "{ '\$project': { '_id': 0, 'validator': '\$_id', 'scheduledSlots': 1, 'missedSlots': 1, 'proposedBlocks': 1, 'missedSlotRatio': 1, 'livenessRatio': 1 } }",
+                "{ '\$addFields': { 'missedSlotRatio': { '\$let': { 'vars': { 'scheduled': { '\$add': ['\$proposedBlocks', '\$missedSlots'] } }, 'in': { '\$cond': [{ '\$gt': ['\$\$scheduled', 0] }, { '\$divide': ['\$missedSlots', '\$\$scheduled'] }, 0.0] } } } } }",
+                "{ '\$project': { '_id': 0, 'validator': '\$_id', 'proposedBlocks': 1, 'missedSlots': 1, 'missedSlotRatio': 1 } }",
                 "{ '\$sort': { 'missedSlotRatio': -1 } }",
             ]
     )
-    fun aggregateMissedSlotsInRange(
-        startBlock: Long,
-        endBlock: Long,
-    ): List<ValidatorMissedSlotsResult>
+    fun aggregateSlotStatsInTimestampRange(
+        startTimestamp: Long,
+        endTimestamp: Long,
+    ): List<ValidatorSlotStats>
 
-    /** Same as [aggregateMissedSlotsInRange] but scoped to a single validator. */
+    /** Same as [aggregateSlotStatsInTimestampRange] but scoped to a single validator. */
     @Aggregation(
         pipeline =
             [
-                "{ '\$match': { 'validator': ?2, 'blockNumber': { '\$gte': ?0, '\$lte': ?1 }, 'status': { '\$in': ['VALIDATED', 'MISSED'] } } }",
+                "{ '\$match': { 'validator': ?2, 'blockTimestamp': { '\$gte': ?0, '\$lte': ?1 }, 'status': { '\$in': ['VALIDATED', 'MISSED'] } } }",
                 "{ '\$group': { '_id': '\$validator', 'proposedBlocks': { '\$sum': { '\$cond': [{ '\$eq': ['\$status', 'VALIDATED'] }, 1, 0] } }, 'missedSlots': { '\$sum': { '\$cond': [{ '\$eq': ['\$status', 'MISSED'] }, 1, 0] } } } }",
-                "{ '\$addFields': { 'scheduledSlots': { '\$add': ['\$proposedBlocks', '\$missedSlots'] } } }",
-                "{ '\$addFields': { 'missedSlotRatio': { '\$cond': [{ '\$gt': ['\$scheduledSlots', 0] }, { '\$divide': ['\$missedSlots', '\$scheduledSlots'] }, 0.0] }, 'livenessRatio': { '\$cond': [{ '\$gt': ['\$scheduledSlots', 0] }, { '\$divide': ['\$proposedBlocks', '\$scheduledSlots'] }, 0.0] } } }",
-                "{ '\$project': { '_id': 0, 'validator': '\$_id', 'scheduledSlots': 1, 'missedSlots': 1, 'proposedBlocks': 1, 'missedSlotRatio': 1, 'livenessRatio': 1 } }",
+                "{ '\$addFields': { 'missedSlotRatio': { '\$let': { 'vars': { 'scheduled': { '\$add': ['\$proposedBlocks', '\$missedSlots'] } }, 'in': { '\$cond': [{ '\$gt': ['\$\$scheduled', 0] }, { '\$divide': ['\$missedSlots', '\$\$scheduled'] }, 0.0] } } } } }",
+                "{ '\$project': { '_id': 0, 'validator': '\$_id', 'proposedBlocks': 1, 'missedSlots': 1, 'missedSlotRatio': 1 } }",
             ]
     )
-    fun aggregateMissedSlotsInRangeForValidator(
-        startBlock: Long,
-        endBlock: Long,
+    fun aggregateSlotStatsInTimestampRangeForValidator(
+        startTimestamp: Long,
+        endTimestamp: Long,
         validator: String,
-    ): List<ValidatorMissedSlotsResult>
+    ): List<ValidatorSlotStats>
 }
