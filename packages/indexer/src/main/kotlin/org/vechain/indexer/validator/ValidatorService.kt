@@ -350,7 +350,7 @@ open class ValidatorService(
         }
     }
 
-    private fun isSoloLikeNetwork(working: MutableMap<String, Validator>): Boolean {
+    private fun isSoloLikeNetwork(working: Map<String, Validator>): Boolean {
         if (detectedNetwork != VeChainNetwork.CUSTOM) return false
         return working.values.count { it.status == Status.ACTIVE } == 1
     }
