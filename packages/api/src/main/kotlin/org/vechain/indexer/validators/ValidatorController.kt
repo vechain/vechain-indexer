@@ -324,7 +324,7 @@ open class ValidatorController(private val service: ValidatorService) {
             }
         val endTimestamp = System.currentTimeMillis() / 1000L
         val startTimestamp = (endTimestamp - days * 86_400L).coerceAtLeast(0L)
-        val normalised = validator?.value?.lowercase()
+        val normalised = validator?.value?.let { HexUtils.normalise(it) }
         val stats =
             if (normalised != null) {
                 listOf(service.getSlotStatsForValidator(startTimestamp, endTimestamp, normalised))

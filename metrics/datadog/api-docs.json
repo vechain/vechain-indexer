@@ -17143,7 +17143,7 @@
         "operationId": "getSlotStats",
         "parameters": [
           {
-            "description": "Return records after this time (Unix time in seconds).",
+            "description": "Start timestamp in Unix seconds (inclusive)",
             "example": 1704143600,
             "in": "query",
             "name": "startTimestamp",
@@ -17156,7 +17156,7 @@
             }
           },
           {
-            "description": "Return records before this time (Unix time in seconds).",
+            "description": "End timestamp in Unix seconds (inclusive)",
             "example": 1704153600,
             "in": "query",
             "name": "endTimestamp",
@@ -17383,7 +17383,7 @@
             }
           },
           {
-            "description": "Return records after this time (Unix time in seconds).",
+            "description": "Start timestamp in Unix seconds (inclusive)",
             "example": 1704143600,
             "in": "query",
             "name": "startTimestamp",
@@ -17396,7 +17396,7 @@
             }
           },
           {
-            "description": "Return records before this time (Unix time in seconds).",
+            "description": "End timestamp in Unix seconds (inclusive)",
             "example": 1704153600,
             "in": "query",
             "name": "endTimestamp",

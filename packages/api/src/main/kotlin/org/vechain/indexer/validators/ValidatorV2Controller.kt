@@ -123,8 +123,16 @@ open class ValidatorV2Controller(
                 "missedSlots)`. Validators with no scheduled slots in the window are absent from " +
                 "the response.",
     )
-    @AfterParameter(name = "startTimestamp", required = true)
-    @BeforeParameter(name = "endTimestamp", required = true)
+    @AfterParameter(
+        name = "startTimestamp",
+        description = "Start timestamp in Unix seconds (inclusive)",
+        required = true,
+    )
+    @BeforeParameter(
+        name = "endTimestamp",
+        description = "End timestamp in Unix seconds (inclusive)",
+        required = true,
+    )
     @CommonApiResponses
     open fun getSlotStats(
         @ValidNonNegativeLong @RequestParam startTimestamp: Long,
@@ -145,8 +153,16 @@ open class ValidatorV2Controller(
         description = "Validator address",
         required = true,
     )
-    @AfterParameter(name = "startTimestamp", required = true)
-    @BeforeParameter(name = "endTimestamp", required = true)
+    @AfterParameter(
+        name = "startTimestamp",
+        description = "Start timestamp in Unix seconds (inclusive)",
+        required = true,
+    )
+    @BeforeParameter(
+        name = "endTimestamp",
+        description = "End timestamp in Unix seconds (inclusive)",
+        required = true,
+    )
     @CommonApiResponses
     open fun getSlotStatsForValidator(
         @PathVariable @ValidAddress validatorId: Address,
