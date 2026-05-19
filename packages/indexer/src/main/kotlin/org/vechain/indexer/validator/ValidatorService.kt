@@ -274,10 +274,7 @@ open class ValidatorService(
         // Credit one scheduled-and-proposed slot to the signer so liveness reflects reality
         // instead of being stuck at the seed-missing fallback (scheduledSlots = 0).
         if (isSoloLikeNetwork(working)) {
-            // On cold-start the signer may not yet be in `working` because
-            // `walkStakerState` runs after `updateLiveness`. Mint a placeholder; the
-            // walk will fill in durable fields via `.copy()` and preserve these counters.
-            val current = working[signer] ?: newDoc(signer, block)
+            val current = working[signer] ?: return
             working[signer] =
                 current.copy(
                     scheduledSlots = current.scheduledSlots + 1,
@@ -355,11 +352,6 @@ open class ValidatorService(
 
     private fun isSoloLikeNetwork(working: Map<String, Validator>): Boolean {
         if (detectedNetwork != VeChainNetwork.CUSTOM) return false
-        // Cold-start: working is empty until walkStakerState populates it later in
-        // processBlock. Treat empty-on-custom as solo-candidate; if the chain actually
-        // has >1 validator, the walk reconciles and subsequent blocks fall through to
-        // the precise count == 1 check.
-        if (working.isEmpty()) return true
         return working.values.count { it.status == Status.ACTIVE } == 1
     }
 
