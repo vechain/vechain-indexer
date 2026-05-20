@@ -151,6 +151,10 @@ open class HistoryService(
                     Criteria.where(IndexedHistoryEvent::contractAddress.name)
                         .`in`(contractAddresses)
                 )
+                // Required to engage the partial-filtered indexes on history_events.
+                addCriteria(Criteria.where(IndexedHistoryEvent::blockNumber.name).exists(true))
+                // Skip docs already flagged so sync replay doesn't rewrite them.
+                addCriteria(Criteria.where(IndexedHistoryEvent::isBlacklisted.name).ne(true))
             }
         val update = Update().set(IndexedHistoryEvent::isBlacklisted.name, true)
         mongoTemplate.updateMulti(query, update, IndexedHistoryEvent::class.java)
@@ -165,6 +169,10 @@ open class HistoryService(
                     Criteria.where(IndexedHistoryEvent::contractAddress.name)
                         .`in`(contractAddresses)
                 )
+                // Required to engage the partial-filtered indexes on history_events.
+                addCriteria(Criteria.where(IndexedHistoryEvent::blockNumber.name).exists(true))
+                // Only flip currently-blacklisted docs; null / false are already excluded by reads.
+                addCriteria(Criteria.where(IndexedHistoryEvent::isBlacklisted.name).`is`(true))
             }
         val update = Update().set(IndexedHistoryEvent::isBlacklisted.name, false)
         mongoTemplate.updateMulti(query, update, IndexedHistoryEvent::class.java)
