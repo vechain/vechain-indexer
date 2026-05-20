@@ -103,6 +103,8 @@ open class NftService(
                 )
                 // Required to engage the partial-filtered indexes on nfts.
                 addCriteria(Criteria.where(IndexedNft::blockNumber.name).exists(true))
+                // Skip docs already flagged so sync replay doesn't rewrite them.
+                addCriteria(Criteria.where(IndexedNft::isBlacklisted.name).ne(true))
             }
         val update = Update().set(IndexedNft::isBlacklisted.name, true)
         mongoTemplate.updateMulti(query, update, IndexedNft::class.java)
@@ -118,6 +120,8 @@ open class NftService(
                 )
                 // Required to engage the partial-filtered indexes on nfts.
                 addCriteria(Criteria.where(IndexedNft::blockNumber.name).exists(true))
+                // Only flip currently-blacklisted docs; null / false are already excluded by reads.
+                addCriteria(Criteria.where(IndexedNft::isBlacklisted.name).`is`(true))
             }
         val update = Update().set(IndexedNft::isBlacklisted.name, false)
         mongoTemplate.updateMulti(query, update, IndexedNft::class.java)
