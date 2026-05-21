@@ -258,7 +258,7 @@ allprojects {
         implementation("io.micrometer:micrometer-registry-datadog:1.14.5")
 
         // Core indexer dependency
-        implementation("org.vechain:indexer-core:pr.149.d0c896d-SNAPSHOT")
+        implementation("org.vechain:indexer-core:10.3.3")
 
         // Test dependencies
         testImplementation("org.springframework.boot:spring-boot-starter-test:3.5.12")
