@@ -122,10 +122,10 @@ class TransactionProcessorPerformanceTest : BasePerformanceTest() {
                 }
 
                 if (entry.block.transactions.isNotEmpty()) {
-                    profiledService.processBlockTransactions(
-                        events = entry.events,
-                        block = entry.block,
-                    )
+                    val records = profiledService.processBlock(entry.block, entry.events)
+                    if (records.isNotEmpty()) {
+                        profiledService.save(records)
+                    }
                 }
             }
         }
