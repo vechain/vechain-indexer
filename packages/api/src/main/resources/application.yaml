@@ -50,6 +50,11 @@ management:
       group:
         liveness:
           include: ping
+  metrics:
+    data:
+      repository:
+        autotime:
+          enabled: false
   datadog:
     metrics:
       export:

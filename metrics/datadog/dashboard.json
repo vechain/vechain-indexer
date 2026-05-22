@@ -352,7 +352,7 @@
                       ],
                       "name": "query1",
                       "search": {
-                        "query": "host:veworld-$deployment_scope* AND \"Failed to fetch block\""
+                        "query": "host:veworld-$deployment_scope* AND \"Error fetching block\""
                       },
                       "storage": "hot"
                     }
@@ -374,126 +374,6 @@
               "height": 2,
               "width": 3,
               "x": 3,
-              "y": 1
-            }
-          },
-          {
-            "definition": {
-              "autoscale": true,
-              "precision": 0,
-              "requests": [
-                {
-                  "conditional_formats": [
-                    {
-                      "comparator": "=",
-                      "palette": "white_on_green",
-                      "value": 0
-                    },
-                    {
-                      "comparator": ">",
-                      "palette": "white_on_yellow",
-                      "value": 0
-                    }
-                  ],
-                  "formulas": [
-                    {
-                      "formula": "default_zero(query1)"
-                    }
-                  ],
-                  "queries": [
-                    {
-                      "compute": {
-                        "aggregation": "count"
-                      },
-                      "data_source": "logs",
-                      "group_by": [],
-                      "indexes": [
-                        "*"
-                      ],
-                      "name": "query1",
-                      "search": {
-                        "query": "host:veworld-$deployment_scope* AND (\"Using fallback parser for proof\")"
-                      },
-                      "storage": "hot"
-                    }
-                  ],
-                  "response_format": "scalar"
-                }
-              ],
-              "timeseries_background": {
-                "type": "bars",
-                "yaxis": {}
-              },
-              "title": "Invalid Proof Detected",
-              "title_align": "left",
-              "title_size": "16",
-              "type": "query_value"
-            },
-            "id": 8685004910904589,
-            "layout": {
-              "height": 2,
-              "width": 3,
-              "x": 6,
-              "y": 1
-            }
-          },
-          {
-            "definition": {
-              "autoscale": true,
-              "precision": 0,
-              "requests": [
-                {
-                  "conditional_formats": [
-                    {
-                      "comparator": "=",
-                      "palette": "white_on_green",
-                      "value": 0
-                    },
-                    {
-                      "comparator": ">",
-                      "palette": "white_on_red",
-                      "value": 0
-                    }
-                  ],
-                  "formulas": [
-                    {
-                      "formula": "default_zero(query1)"
-                    }
-                  ],
-                  "queries": [
-                    {
-                      "compute": {
-                        "aggregation": "count"
-                      },
-                      "data_source": "logs",
-                      "group_by": [],
-                      "indexes": [
-                        "*"
-                      ],
-                      "name": "query1",
-                      "search": {
-                        "query": "host:veworld-$deployment_scope* AND (\"Impact exceeds threshold\")"
-                      },
-                      "storage": "hot"
-                    }
-                  ],
-                  "response_format": "scalar"
-                }
-              ],
-              "timeseries_background": {
-                "type": "bars",
-                "yaxis": {}
-              },
-              "title": "Impact exceeds threshold",
-              "title_align": "left",
-              "title_size": "16",
-              "type": "query_value"
-            },
-            "id": 2689526695652863,
-            "layout": {
-              "height": 2,
-              "width": 3,
-              "x": 9,
               "y": 1
             }
           },
@@ -544,8 +424,8 @@
             "layout": {
               "height": 2,
               "width": 3,
-              "x": 0,
-              "y": 3
+              "x": 6,
+              "y": 1
             }
           },
           {
@@ -604,8 +484,8 @@
             "layout": {
               "height": 2,
               "width": 3,
-              "x": 3,
-              "y": 3
+              "x": 9,
+              "y": 1
             }
           },
           {
@@ -664,7 +544,7 @@
             "layout": {
               "height": 2,
               "width": 3,
-              "x": 6,
+              "x": 0,
               "y": 3
             }
           },
@@ -703,7 +583,7 @@
                       ],
                       "name": "query1",
                       "search": {
-                        "query": "host:veworld-$deployment_scope* AND (\"Restarting indexer\" OR \"Successfully Restarted @ Block\")"
+                        "query": "host:veworld-$deployment_scope* AND (\"restarting all indexers\" OR \"rolling back and restarting\")"
                       },
                       "storage": "hot"
                     }
@@ -724,7 +604,7 @@
             "layout": {
               "height": 2,
               "width": 3,
-              "x": 9,
+              "x": 3,
               "y": 3
             }
           }
@@ -2262,103 +2142,6 @@
               "legend_layout": "auto",
               "requests": [
                 {
-                  "display_type": "line",
-                  "formulas": [
-                    {
-                      "formula": "query1"
-                    }
-                  ],
-                  "queries": [
-                    {
-                      "data_source": "metrics",
-                      "name": "query1",
-                      "query": "sum:spring.data.repository.invocations.count{deployment_scope:$deployment_scope.value} by {repository}.as_rate()"
-                    }
-                  ],
-                  "response_format": "timeseries",
-                  "style": {
-                    "line_type": "solid",
-                    "line_width": "normal",
-                    "palette": "dog_classic"
-                  }
-                }
-              ],
-              "show_legend": true,
-              "title": "Spring Data Repository Invocations",
-              "title_align": "left",
-              "title_size": "16",
-              "type": "timeseries"
-            },
-            "id": 2300000000000007,
-            "layout": {
-              "height": 4,
-              "width": 6,
-              "x": 6,
-              "y": 7
-            }
-          },
-          {
-            "definition": {
-              "requests": [
-                {
-                  "formulas": [
-                    {
-                      "formula": "query1"
-                    }
-                  ],
-                  "queries": [
-                    {
-                      "aggregator": "avg",
-                      "data_source": "metrics",
-                      "name": "query1",
-                      "query": "avg:spring.data.repository.invocations.avg{deployment_scope:$deployment_scope.value} by {repository,method}"
-                    }
-                  ],
-                  "response_format": "scalar",
-                  "sort": {
-                    "count": 10,
-                    "order_by": [
-                      {
-                        "index": 0,
-                        "order": "desc",
-                        "type": "formula"
-                      }
-                    ]
-                  }
-                }
-              ],
-              "style": {
-                "display": {
-                  "legend": "automatic",
-                  "type": "stacked"
-                },
-                "scaling": "absolute"
-              },
-              "title": "Slowest Repositories (Avg Latency)",
-              "title_align": "left",
-              "title_size": "16",
-              "type": "toplist"
-            },
-            "id": 2300000000000010,
-            "layout": {
-              "height": 4,
-              "width": 6,
-              "x": 0,
-              "y": 11
-            }
-          },
-          {
-            "definition": {
-              "legend_columns": [
-                "avg",
-                "min",
-                "max",
-                "value",
-                "sum"
-              ],
-              "legend_layout": "auto",
-              "requests": [
-                {
                   "display_type": "bars",
                   "formulas": [
                     {
@@ -2487,53 +2270,6 @@
           },
           {
             "definition": {
-              "legend_columns": [
-                "avg",
-                "min",
-                "max",
-                "value",
-                "sum"
-              ],
-              "legend_layout": "auto",
-              "requests": [
-                {
-                  "display_type": "line",
-                  "formulas": [
-                    {
-                      "formula": "query1"
-                    }
-                  ],
-                  "queries": [
-                    {
-                      "data_source": "metrics",
-                      "name": "query1",
-                      "query": "max:spring.data.repository.invocations.max{deployment_scope:$deployment_scope.value} by {repository}"
-                    }
-                  ],
-                  "response_format": "timeseries",
-                  "style": {
-                    "line_type": "solid",
-                    "line_width": "normal",
-                    "palette": "dog_classic"
-                  }
-                }
-              ],
-              "show_legend": true,
-              "title": "Spring Data Max Latency by Repository",
-              "title_align": "left",
-              "title_size": "16",
-              "type": "timeseries"
-            },
-            "id": 2300000000000014,
-            "layout": {
-              "height": 2,
-              "width": 6,
-              "x": 6,
-              "y": 16
-            }
-          },
-          {
-            "definition": {
               "requests": [
                 {
                   "formulas": [
@@ -2584,56 +2320,6 @@
           },
           {
             "definition": {
-              "requests": [
-                {
-                  "formulas": [
-                    {
-                      "formula": "query1"
-                    }
-                  ],
-                  "queries": [
-                    {
-                      "aggregator": "sum",
-                      "data_source": "metrics",
-                      "name": "query1",
-                      "query": "sum:spring.data.repository.invocations.count{deployment_scope:$deployment_scope.value} by {state}"
-                    }
-                  ],
-                  "response_format": "scalar",
-                  "sort": {
-                    "count": 10,
-                    "order_by": [
-                      {
-                        "index": 0,
-                        "order": "desc",
-                        "type": "formula"
-                      }
-                    ]
-                  }
-                }
-              ],
-              "style": {
-                "display": {
-                  "legend": "automatic",
-                  "type": "stacked"
-                },
-                "scaling": "relative"
-              },
-              "title": "Spring Data Invocations by State",
-              "title_align": "left",
-              "title_size": "16",
-              "type": "toplist"
-            },
-            "id": 2300000000000016,
-            "layout": {
-              "height": 4,
-              "width": 6,
-              "x": 6,
-              "y": 18
-            }
-          },
-          {
-            "definition": {
               "legend_columns": [
                 "avg",
                 "min",
@@ -2677,100 +2363,6 @@
               "width": 12,
               "x": 0,
               "y": 22
-            }
-          },
-          {
-            "definition": {
-              "legend_columns": [
-                "avg",
-                "min",
-                "max",
-                "value",
-                "sum"
-              ],
-              "legend_layout": "auto",
-              "requests": [
-                {
-                  "display_type": "bars",
-                  "formulas": [
-                    {
-                      "formula": "query1"
-                    }
-                  ],
-                  "queries": [
-                    {
-                      "data_source": "metrics",
-                      "name": "query1",
-                      "query": "sum:spring.data.repository.invocations.sum{deployment_scope:$deployment_scope.value} by {repository}"
-                    }
-                  ],
-                  "response_format": "timeseries",
-                  "style": {
-                    "line_type": "solid",
-                    "line_width": "normal",
-                    "palette": "dog_classic"
-                  }
-                }
-              ],
-              "show_legend": true,
-              "title": "Spring Data Total Time by Repository",
-              "title_align": "left",
-              "title_size": "16",
-              "type": "timeseries"
-            },
-            "id": 2300000000000018,
-            "layout": {
-              "height": 3,
-              "width": 12,
-              "x": 0,
-              "y": 25
-            }
-          },
-          {
-            "definition": {
-              "legend_columns": [
-                "avg",
-                "min",
-                "max",
-                "value",
-                "sum"
-              ],
-              "legend_layout": "auto",
-              "requests": [
-                {
-                  "display_type": "line",
-                  "formulas": [
-                    {
-                      "formula": "query1"
-                    }
-                  ],
-                  "queries": [
-                    {
-                      "data_source": "metrics",
-                      "name": "query1",
-                      "query": "avg:spring.data.repository.invocations.avg{deployment_scope:$deployment_scope.value} by {repository}"
-                    }
-                  ],
-                  "response_format": "timeseries",
-                  "style": {
-                    "line_type": "solid",
-                    "line_width": "normal",
-                    "order_by": "values"
-                  }
-                }
-              ],
-              "show_legend": true,
-              "title": "Spring Data Avg Latency by Repository",
-              "title_align": "left",
-              "title_size": "16",
-              "type": "timeseries"
-            },
-            "id": 2300000000000019,
-            "layout": {
-              "height": 3,
-              "width": 12,
-              "x": 0,
-              "y": 28
             }
           },
           {
@@ -2872,126 +2464,6 @@
           },
           {
             "definition": {
-              "requests": [
-                {
-                  "formulas": [
-                    {
-                      "formula": "query1"
-                    }
-                  ],
-                  "queries": [
-                    {
-                      "aggregator": "sum",
-                      "data_source": "metrics",
-                      "name": "query1",
-                      "query": "sum:spring.data.repository.invocations.count{deployment_scope:$deployment_scope.value} by {method}"
-                    }
-                  ],
-                  "response_format": "scalar",
-                  "sort": {
-                    "count": 10,
-                    "order_by": [
-                      {
-                        "index": 0,
-                        "order": "desc",
-                        "type": "formula"
-                      }
-                    ]
-                  }
-                }
-              ],
-              "style": {
-                "display": {
-                  "legend": "automatic",
-                  "type": "stacked"
-                },
-                "scaling": "relative"
-              },
-              "title": "Spring Data Invocations by Method",
-              "title_align": "left",
-              "title_size": "16",
-              "type": "toplist"
-            },
-            "id": 2300000000000022,
-            "layout": {
-              "height": 4,
-              "width": 6,
-              "x": 6,
-              "y": 34
-            }
-          },
-          {
-            "definition": {
-              "autoscale": true,
-              "precision": 0,
-              "requests": [
-                {
-                  "formulas": [
-                    {
-                      "formula": "query1"
-                    }
-                  ],
-                  "queries": [
-                    {
-                      "aggregator": "sum",
-                      "data_source": "metrics",
-                      "name": "query1",
-                      "query": "sum:spring.data.repository.invocations.count{deployment_scope:$deployment_scope.value}"
-                    }
-                  ],
-                  "response_format": "scalar"
-                }
-              ],
-              "title": "Total Spring Data Invocations",
-              "title_align": "left",
-              "title_size": "16",
-              "type": "query_value"
-            },
-            "id": 2300000000000023,
-            "layout": {
-              "height": 2,
-              "width": 3,
-              "x": 0,
-              "y": 38
-            }
-          },
-          {
-            "definition": {
-              "autoscale": true,
-              "precision": 2,
-              "requests": [
-                {
-                  "formulas": [
-                    {
-                      "formula": "query1"
-                    }
-                  ],
-                  "queries": [
-                    {
-                      "aggregator": "max",
-                      "data_source": "metrics",
-                      "name": "query1",
-                      "query": "max:spring.data.repository.invocations.max{deployment_scope:$deployment_scope.value}"
-                    }
-                  ],
-                  "response_format": "scalar"
-                }
-              ],
-              "title": "Max Spring Data Latency",
-              "title_align": "left",
-              "title_size": "16",
-              "type": "query_value"
-            },
-            "id": 2300000000000024,
-            "layout": {
-              "height": 2,
-              "width": 3,
-              "x": 3,
-              "y": 38
-            }
-          },
-          {
-            "definition": {
               "legend_columns": [
                 "avg",
                 "min",
@@ -3035,103 +2507,6 @@
               "width": 6,
               "x": 6,
               "y": 38
-            }
-          },
-          {
-            "definition": {
-              "requests": [
-                {
-                  "formulas": [
-                    {
-                      "formula": "query1"
-                    }
-                  ],
-                  "queries": [
-                    {
-                      "aggregator": "sum",
-                      "data_source": "metrics",
-                      "name": "query1",
-                      "query": "sum:spring.data.repository.invocations.count{deployment_scope:$deployment_scope.value} by {repository}"
-                    }
-                  ],
-                  "response_format": "scalar",
-                  "sort": {
-                    "count": 10,
-                    "order_by": [
-                      {
-                        "index": 0,
-                        "order": "desc",
-                        "type": "formula"
-                      }
-                    ]
-                  }
-                }
-              ],
-              "style": {
-                "display": {
-                  "legend": "automatic",
-                  "type": "stacked"
-                },
-                "scaling": "relative"
-              },
-              "title": "Spring Data Invocations by Repository",
-              "title_align": "left",
-              "title_size": "16",
-              "type": "toplist"
-            },
-            "id": 2300000000000026,
-            "layout": {
-              "height": 4,
-              "width": 6,
-              "x": 0,
-              "y": 40
-            }
-          },
-          {
-            "definition": {
-              "legend_columns": [
-                "avg",
-                "min",
-                "max",
-                "value",
-                "sum"
-              ],
-              "legend_layout": "auto",
-              "requests": [
-                {
-                  "display_type": "line",
-                  "formulas": [
-                    {
-                      "formula": "query1"
-                    }
-                  ],
-                  "queries": [
-                    {
-                      "data_source": "metrics",
-                      "name": "query1",
-                      "query": "sum:spring.data.repository.invocations.count{deployment_scope:$deployment_scope.value} by {method}.as_rate()"
-                    }
-                  ],
-                  "response_format": "timeseries",
-                  "style": {
-                    "line_type": "solid",
-                    "line_width": "normal",
-                    "order_by": "values"
-                  }
-                }
-              ],
-              "show_legend": true,
-              "title": "Spring Data Invocations Rate by Method",
-              "title_align": "left",
-              "title_size": "16",
-              "type": "timeseries"
-            },
-            "id": 2300000000000027,
-            "layout": {
-              "height": 4,
-              "width": 6,
-              "x": 6,
-              "y": 40
             }
           },
           {
@@ -3201,76 +2576,6 @@
               "height": 2,
               "width": 3,
               "x": 3,
-              "y": 44
-            }
-          },
-          {
-            "definition": {
-              "autoscale": true,
-              "precision": 2,
-              "requests": [
-                {
-                  "formulas": [
-                    {
-                      "formula": "query1"
-                    }
-                  ],
-                  "queries": [
-                    {
-                      "aggregator": "avg",
-                      "data_source": "metrics",
-                      "name": "query1",
-                      "query": "sum:spring.data.repository.invocations.count{deployment_scope:$deployment_scope.value}.as_rate()"
-                    }
-                  ],
-                  "response_format": "scalar"
-                }
-              ],
-              "title": "Repository Calls/sec",
-              "title_align": "left",
-              "title_size": "16",
-              "type": "query_value"
-            },
-            "id": 2300000000000030,
-            "layout": {
-              "height": 2,
-              "width": 3,
-              "x": 6,
-              "y": 44
-            }
-          },
-          {
-            "definition": {
-              "autoscale": true,
-              "precision": 2,
-              "requests": [
-                {
-                  "formulas": [
-                    {
-                      "formula": "query1"
-                    }
-                  ],
-                  "queries": [
-                    {
-                      "aggregator": "avg",
-                      "data_source": "metrics",
-                      "name": "query1",
-                      "query": "sum:spring.data.repository.invocations.count{state:ERROR, deployment_scope:$deployment_scope.value}.as_rate()"
-                    }
-                  ],
-                  "response_format": "scalar"
-                }
-              ],
-              "title": "Errors/sec (Non-SUCCESS)",
-              "title_align": "left",
-              "title_size": "16",
-              "type": "query_value"
-            },
-            "id": 2300000000000031,
-            "layout": {
-              "height": 2,
-              "width": 3,
-              "x": 9,
               "y": 44
             }
           },
@@ -3413,135 +2718,6 @@
               "width": 6,
               "x": 6,
               "y": 49
-            }
-          },
-          {
-            "definition": {
-              "legend_columns": [
-                "avg",
-                "min",
-                "max",
-                "value",
-                "sum"
-              ],
-              "legend_layout": "auto",
-              "requests": [
-                {
-                  "display_type": "line",
-                  "formulas": [
-                    {
-                      "formula": "query1"
-                    }
-                  ],
-                  "queries": [
-                    {
-                      "data_source": "metrics",
-                      "name": "query1",
-                      "query": "avg:spring.data.repository.invocations.avg{deployment_scope:$deployment_scope.value} by {method}"
-                    }
-                  ],
-                  "response_format": "timeseries",
-                  "style": {
-                    "line_type": "solid",
-                    "line_width": "normal",
-                    "order_by": "values"
-                  }
-                }
-              ],
-              "show_legend": true,
-              "title": "Top 10 Slowest Methods (Avg Latency)",
-              "title_align": "left",
-              "title_size": "16",
-              "type": "timeseries"
-            },
-            "id": 2300000000000035,
-            "layout": {
-              "height": 3,
-              "width": 12,
-              "x": 0,
-              "y": 52
-            }
-          },
-          {
-            "definition": {
-              "legend_columns": [
-                "avg",
-                "min",
-                "max",
-                "value",
-                "sum"
-              ],
-              "legend_layout": "auto",
-              "requests": [
-                {
-                  "display_type": "line",
-                  "formulas": [
-                    {
-                      "formula": "query1"
-                    }
-                  ],
-                  "queries": [
-                    {
-                      "data_source": "metrics",
-                      "name": "query1",
-                      "query": "max:spring.data.repository.invocations.max{deployment_scope:$deployment_scope.value} by {repository,method}"
-                    }
-                  ],
-                  "response_format": "timeseries",
-                  "style": {
-                    "line_type": "solid",
-                    "line_width": "normal",
-                    "order_by": "values"
-                  }
-                }
-              ],
-              "show_legend": true,
-              "title": "Max Latency by Repository.Method",
-              "title_align": "left",
-              "title_size": "16",
-              "type": "timeseries"
-            },
-            "id": 2300000000000036,
-            "layout": {
-              "height": 3,
-              "width": 12,
-              "x": 0,
-              "y": 55
-            }
-          },
-          {
-            "definition": {
-              "autoscale": true,
-              "precision": 2,
-              "requests": [
-                {
-                  "formulas": [
-                    {
-                      "formula": "query1"
-                    }
-                  ],
-                  "queries": [
-                    {
-                      "aggregator": "avg",
-                      "data_source": "metrics",
-                      "name": "query1",
-                      "query": "avg:spring.data.repository.invocations.avg{deployment_scope:$deployment_scope.value}"
-                    }
-                  ],
-                  "response_format": "scalar"
-                }
-              ],
-              "title": "Avg Spring Data Latency",
-              "title_align": "left",
-              "title_size": "16",
-              "type": "query_value"
-            },
-            "id": 2300000000000037,
-            "layout": {
-              "height": 2,
-              "width": 3,
-              "x": 0,
-              "y": 58
             }
           }
         ]
