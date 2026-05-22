@@ -352,7 +352,7 @@
                       ],
                       "name": "query1",
                       "search": {
-                        "query": "host:veworld-$deployment_scope* AND \"Failed to fetch block\""
+                        "query": "host:veworld-$deployment_scope* AND \"Error fetching block\""
                       },
                       "storage": "hot"
                     }
@@ -374,126 +374,6 @@
               "height": 2,
               "width": 3,
               "x": 3,
-              "y": 1
-            }
-          },
-          {
-            "definition": {
-              "autoscale": true,
-              "precision": 0,
-              "requests": [
-                {
-                  "conditional_formats": [
-                    {
-                      "comparator": "=",
-                      "palette": "white_on_green",
-                      "value": 0
-                    },
-                    {
-                      "comparator": ">",
-                      "palette": "white_on_yellow",
-                      "value": 0
-                    }
-                  ],
-                  "formulas": [
-                    {
-                      "formula": "default_zero(query1)"
-                    }
-                  ],
-                  "queries": [
-                    {
-                      "compute": {
-                        "aggregation": "count"
-                      },
-                      "data_source": "logs",
-                      "group_by": [],
-                      "indexes": [
-                        "*"
-                      ],
-                      "name": "query1",
-                      "search": {
-                        "query": "host:veworld-$deployment_scope* AND (\"Using fallback parser for proof\")"
-                      },
-                      "storage": "hot"
-                    }
-                  ],
-                  "response_format": "scalar"
-                }
-              ],
-              "timeseries_background": {
-                "type": "bars",
-                "yaxis": {}
-              },
-              "title": "Invalid Proof Detected",
-              "title_align": "left",
-              "title_size": "16",
-              "type": "query_value"
-            },
-            "id": 8685004910904589,
-            "layout": {
-              "height": 2,
-              "width": 3,
-              "x": 6,
-              "y": 1
-            }
-          },
-          {
-            "definition": {
-              "autoscale": true,
-              "precision": 0,
-              "requests": [
-                {
-                  "conditional_formats": [
-                    {
-                      "comparator": "=",
-                      "palette": "white_on_green",
-                      "value": 0
-                    },
-                    {
-                      "comparator": ">",
-                      "palette": "white_on_red",
-                      "value": 0
-                    }
-                  ],
-                  "formulas": [
-                    {
-                      "formula": "default_zero(query1)"
-                    }
-                  ],
-                  "queries": [
-                    {
-                      "compute": {
-                        "aggregation": "count"
-                      },
-                      "data_source": "logs",
-                      "group_by": [],
-                      "indexes": [
-                        "*"
-                      ],
-                      "name": "query1",
-                      "search": {
-                        "query": "host:veworld-$deployment_scope* AND (\"Impact exceeds threshold\")"
-                      },
-                      "storage": "hot"
-                    }
-                  ],
-                  "response_format": "scalar"
-                }
-              ],
-              "timeseries_background": {
-                "type": "bars",
-                "yaxis": {}
-              },
-              "title": "Impact exceeds threshold",
-              "title_align": "left",
-              "title_size": "16",
-              "type": "query_value"
-            },
-            "id": 2689526695652863,
-            "layout": {
-              "height": 2,
-              "width": 3,
-              "x": 9,
               "y": 1
             }
           },
@@ -544,8 +424,8 @@
             "layout": {
               "height": 2,
               "width": 3,
-              "x": 0,
-              "y": 3
+              "x": 6,
+              "y": 1
             }
           },
           {
@@ -604,8 +484,8 @@
             "layout": {
               "height": 2,
               "width": 3,
-              "x": 3,
-              "y": 3
+              "x": 9,
+              "y": 1
             }
           },
           {
@@ -664,7 +544,7 @@
             "layout": {
               "height": 2,
               "width": 3,
-              "x": 6,
+              "x": 0,
               "y": 3
             }
           },
@@ -703,7 +583,7 @@
                       ],
                       "name": "query1",
                       "search": {
-                        "query": "host:veworld-$deployment_scope* AND (\"Restarting indexer\" OR \"Successfully Restarted @ Block\")"
+                        "query": "host:veworld-$deployment_scope* AND (\"restarting all indexers\" OR \"rolling back and restarting\")"
                       },
                       "storage": "hot"
                     }
@@ -724,7 +604,7 @@
             "layout": {
               "height": 2,
               "width": 3,
-              "x": 9,
+              "x": 3,
               "y": 3
             }
           }
