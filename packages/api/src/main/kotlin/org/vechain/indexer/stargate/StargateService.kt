@@ -299,7 +299,7 @@ open class StargateService(
      * @dev Granularity depends on timeRange; DAILY → block-level, WEEK/MONTH/YEAR → rolled periods
      *   only.
      */
-    open fun getTotalVetDelegated(blockNumber: Long?): TotalByBlockDto? {
+    open fun getTotalVetDelegated(blockNumber: Long?): TotalByBlockDto {
         val response =
             if (blockNumber != null) {
                 vetDelegatedByBlockRepository.findLatestBeforeOrAtBlockNumber(blockNumber)

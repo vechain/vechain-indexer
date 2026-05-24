@@ -273,9 +273,7 @@ open class StargateController(
     @CommonApiResponses
     open fun getTotalVetDelegated(
         @ValidNonNegativeLong @RequestParam(required = false) blockNumber: Long?
-    ): TotalByBlockDto =
-        stargateService.getTotalVetDelegated(blockNumber)
-            ?: TotalByBlockDto(total = BigInteger.ZERO, byLevel = emptyMap())
+    ): TotalByBlockDto = stargateService.getTotalVetDelegated(blockNumber)
 
     @GetMapping("/tokens")
     @Operation(
