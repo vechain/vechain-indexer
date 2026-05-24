@@ -2024,19 +2024,8 @@
         ],
         "type": "object"
       },
-      "NftHoldersByBlockDto": {
+      "NftHoldersDto": {
         "properties": {
-          "blockId": {
-            "type": "string"
-          },
-          "blockNumber": {
-            "format": "int64",
-            "type": "integer"
-          },
-          "blockTimestamp": {
-            "format": "int64",
-            "type": "integer"
-          },
           "byLevel": {
             "additionalProperties": {
               "format": "int64",
@@ -2050,9 +2039,6 @@
           }
         },
         "required": [
-          "blockId",
-          "blockNumber",
-          "blockTimestamp",
           "byLevel",
           "total"
         ],
@@ -3268,17 +3254,6 @@
       },
       "TotalByBlockDto": {
         "properties": {
-          "blockId": {
-            "type": "string"
-          },
-          "blockNumber": {
-            "format": "int64",
-            "type": "integer"
-          },
-          "blockTimestamp": {
-            "format": "int64",
-            "type": "integer"
-          },
           "byLevel": {
             "additionalProperties": {
               "type": "integer"
@@ -3301,9 +3276,6 @@
           }
         },
         "required": [
-          "blockId",
-          "blockNumber",
-          "blockTimestamp",
           "byLevel",
           "nftCountByLevel",
           "total",
@@ -9996,7 +9968,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/NftHoldersByBlockDto"
+                  "$ref": "#/components/schemas/NftHoldersDto"
                 }
               }
             },
