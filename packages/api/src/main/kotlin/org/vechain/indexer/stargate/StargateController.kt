@@ -167,9 +167,8 @@ open class StargateController(
             "Optional query parameter to get the total number of NFT holders at a specific block number. If not provided, the latest value will be returned."
     )
     @CommonApiResponses
-    open fun getNftHolders(
-        @RequestParam(required = false) blockNumber: Long?
-    ): NftHoldersByBlockDto = stargateService.getNftHolders(blockNumber)
+    open fun getNftHolders(@RequestParam(required = false) blockNumber: Long?): NftHoldersDto =
+        stargateService.getNftHolders(blockNumber)
 
     @GetMapping("/nft-holders/historic/{range}")
     @Operation(
@@ -276,13 +275,7 @@ open class StargateController(
         @ValidNonNegativeLong @RequestParam(required = false) blockNumber: Long?
     ): TotalByBlockDto =
         stargateService.getTotalVetDelegated(blockNumber)
-            ?: TotalByBlockDto(
-                blockId = "ignoredanyway",
-                blockNumber = 0,
-                blockTimestamp = 0,
-                total = BigInteger.ZERO,
-                byLevel = emptyMap(),
-            )
+            ?: TotalByBlockDto(total = BigInteger.ZERO, byLevel = emptyMap())
 
     @GetMapping("/tokens")
     @Operation(
