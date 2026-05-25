@@ -332,9 +332,7 @@ open class StargateTokenService(
     /** Extract validator IDs from validator lifecycle events. */
     private fun findValidatorLifecycleEvents(events: List<IndexedEvent>): Set<String> =
         events
-            .filter {
-                it.eventType == "ValidationSignaledExit" || it.eventType == "ValidationWithdrawn"
-            }
+            .filter { it.eventType == "ValidationSignaledExit" }
             .mapNotNull { it.params.getAsString("validator")?.lowercase() }
             .toSet()
 

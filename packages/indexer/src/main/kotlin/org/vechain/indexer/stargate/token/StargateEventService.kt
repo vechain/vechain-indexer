@@ -53,12 +53,6 @@ class StargateEventService(
                 )
             }
 
-        events
-            .filter { it.eventType == "ValidationWithdrawn" }
-            .forEach { event ->
-                handleValidationWithdrawn(event, latestTokenSnapshots, existingTokens)
-            }
-
         // Group remaining events by tokenId (fallback to nodeId)
         val groupedEvents =
             events
@@ -163,34 +157,6 @@ class StargateEventService(
                         delegationStatus = Status.EXITING,
                         delegationNextPeriod = exitAt ?: token.delegationNextPeriod,
                         validatorExiting = true,
-                    )
-            }
-    }
-
-    private fun handleValidationWithdrawn(
-        event: IndexedEvent,
-        latestTokenSnapshots: MutableMap<String, StargateToken>,
-        existingTokens: MutableList<StargateToken>,
-    ) {
-        val validatorId = event.params.getAsString("validator")?.lowercase() ?: return
-
-        latestTokenSnapshots.values
-            .filter {
-                it.validatorId?.lowercase() == validatorId && it.delegationStatus != Status.NONE
-            }
-            .forEach { token ->
-                existingTokens.add(token)
-                latestTokenSnapshots[token.tokenId] =
-                    token.copy(
-                        version = token.version + 1,
-                        blockId = event.blockId,
-                        blockNumber = event.blockNumber,
-                        blockTimestamp = event.blockTimestamp,
-                        delegationStatus = Status.NONE,
-                        validatorId = null,
-                        delegationNextPeriod = null,
-                        delegationPeriodLength = null,
-                        validatorExiting = null,
                     )
             }
     }
@@ -490,7 +456,6 @@ class StargateEventService(
     }
 
     companion object {
-        private val VALIDATOR_LIFECYCLE_EVENTS =
-            setOf("ValidationSignaledExit", "ValidationWithdrawn")
+        private val VALIDATOR_LIFECYCLE_EVENTS = setOf("ValidationSignaledExit")
     }
 }

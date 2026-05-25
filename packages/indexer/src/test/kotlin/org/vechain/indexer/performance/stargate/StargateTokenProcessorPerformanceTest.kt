@@ -156,7 +156,6 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
                     "TokenManagerRemoved",
                     "MaturityPeriodBoosted",
                     "ValidationSignaledExit",
-                    "ValidationWithdrawn",
                     "DelegationRewardsClaimed",
                     "BaseVTHORewardsClaimed",
                     "NodeDelegated",
