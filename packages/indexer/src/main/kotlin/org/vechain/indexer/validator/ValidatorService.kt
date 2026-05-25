@@ -202,8 +202,8 @@ open class ValidatorService(
      * Decrement the exiting buckets so the mid-epoch view stays accurate; the walk re-reads
      * `exitingVET` from the chain each epoch and overwrites `exitingVetStaked`.
      * `validatorExitingVetStaked` is only ever set by [ValidationSignaledExit] snapshots, so the
-     * `.max(ZERO)` clamp keeps it sane when `withdrawStake` follows a bare `decreaseStake` (no
-     * prior signalExit).
+     * `.max(BigDecimal.ZERO)` clamp keeps it sane when `withdrawStake` follows a bare
+     * `decreaseStake` (no prior signalExit).
      */
     private fun onValidationWithdrawn(current: Validator, ev: IndexedEvent): Validator {
         val stakeVet = ev.params.getAsBigInteger("stake")?.let(NumberUtils::toVET) ?: return current

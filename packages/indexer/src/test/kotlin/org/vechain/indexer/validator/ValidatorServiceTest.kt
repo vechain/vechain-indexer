@@ -3,6 +3,9 @@ package org.vechain.indexer.validator
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import java.math.BigDecimal
+import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -11,6 +14,9 @@ import org.vechain.indexer.config.DetectedNetwork
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.NetworkDetectionService
 import org.vechain.indexer.config.VeChainNetwork
+import org.vechain.indexer.event.model.generic.AbiEventParameters
+import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.Clause
@@ -19,6 +25,7 @@ import org.vechain.indexer.validator.scheduler.EpochSeedProvider
 import org.vechain.indexer.validator.scheduler.ThorSchedulerProcess
 import strikt.api.expectThat
 import strikt.assertions.contains
+import strikt.assertions.isEqualTo
 
 class ValidatorServiceTest {
     private lateinit var repository: ValidatorRepository
@@ -73,6 +80,93 @@ class ValidatorServiceTest {
             .contains("BUILTIN_STAKER_CONTRACT")
     }
 
+    @Test
+    fun `ValidationWithdrawn decrements exiting buckets without flipping status`() {
+        val existing =
+            baseValidator(VALIDATOR_ID)
+                .copy(
+                    status = Status.EXITING,
+                    validatorVetStaked = BigDecimal("25000000"),
+                    validatorLockedWeight = BigDecimal("97620000"),
+                    validatorQueuedVetStaked = BigDecimal.ZERO,
+                    delegatorVetStaked = BigDecimal("50000000"),
+                    queuedVetStaked = BigDecimal.ZERO,
+                    exitingVetStaked = BigDecimal("35000000"),
+                    validatorExitingVetStaked = BigDecimal("25000000"),
+                    totalNextPeriodWeight = BigDecimal("100000000"),
+                    exitBlock = 23500000L,
+                )
+        every { repository.findByStatusNot(Status.WITHDRAWN) } returns listOf(existing)
+        coEvery { epochSeedProvider.seedFor(any()) } returns null
+
+        // 20M VET withdrawn — within both exiting buckets
+        val event = validationWithdrawnEvent(VALIDATOR_ID, "20000000000000000000000000")
+
+        val (updates, _) = runBlocking { service.processBlock(midEpochBlock(), listOf(event)) }
+
+        val updated = updates.single()
+        // Exiting buckets decremented by the withdrawn stake
+        assertEquals(0, updated.exitingVetStaked!!.compareTo(BigDecimal("15000000")))
+        assertEquals(0, updated.validatorExitingVetStaked!!.compareTo(BigDecimal("5000000")))
+        // Everything else left alone — the original bug was zeroing these / flipping status
+        expectThat(updated) {
+            get { status }.isEqualTo(Status.EXITING)
+            get { validatorVetStaked }.isEqualTo(BigDecimal("25000000"))
+            get { validatorLockedWeight }.isEqualTo(BigDecimal("97620000"))
+            get { delegatorVetStaked }.isEqualTo(BigDecimal("50000000"))
+            get { totalNextPeriodWeight }.isEqualTo(BigDecimal("100000000"))
+            get { exitBlock }.isEqualTo(23500000L)
+        }
+    }
+
+    @Test
+    fun `ValidationWithdrawn clamps exiting buckets at zero`() {
+        // decreaseStake (no prior signalExit) → validatorExitingVetStaked is 0;
+        // withdrawStake must not underflow it.
+        val existing =
+            baseValidator(VALIDATOR_ID)
+                .copy(
+                    status = Status.ACTIVE,
+                    exitingVetStaked = BigDecimal("100000"),
+                    validatorExitingVetStaked = BigDecimal.ZERO,
+                )
+        every { repository.findByStatusNot(Status.WITHDRAWN) } returns listOf(existing)
+        coEvery { epochSeedProvider.seedFor(any()) } returns null
+
+        // Withdraw more than what's in either bucket — both clamp to zero, no underflow
+        val event = validationWithdrawnEvent(VALIDATOR_ID, "500000000000000000000000")
+
+        val (updates, _) = runBlocking { service.processBlock(midEpochBlock(), listOf(event)) }
+
+        val updated = updates.single()
+        assertEquals(0, updated.exitingVetStaked!!.compareTo(BigDecimal.ZERO))
+        assertEquals(0, updated.validatorExitingVetStaked!!.compareTo(BigDecimal.ZERO))
+        expectThat(updated).get { status }.isEqualTo(Status.ACTIVE)
+    }
+
+    private fun baseValidator(id: String): Validator =
+        Validator(
+            id = id,
+            blockId = "0xvblock",
+            blockNumber = 23414400,
+            blockTimestamp = 1760000000,
+        )
+
+    private fun validationWithdrawnEvent(validator: String, stake: String): IndexedEvent =
+        buildIndexedEvent(
+            blockId = "0xblock-withdrawn",
+            blockNumber = 23414401,
+            blockTimestamp = 1760000010,
+            address = STAKER_ADDRESS,
+            eventType = "ValidationWithdrawn",
+            params =
+                AbiEventParameters(returnValues = mapOf("validator" to validator, "stake" to stake)),
+        )
+
+    // Off an epoch boundary (23414400 is one); a non-empty `existing` plus this block number
+    // keeps processBlock on the event-driven path without invoking the staker walk.
+    private fun midEpochBlock(): Block = block().copy(number = 23414401, signer = "0xother")
+
     private fun block(): Block =
         Block(
             id = "0x" + "1".repeat(64),
@@ -108,5 +202,6 @@ class ValidatorServiceTest {
 
     private companion object {
         const val STAKER_ADDRESS = "0x00000000000000000000000000005374616B6572"
+        const val VALIDATOR_ID = "0xfe28fa171d78fb02bc3227bec8073b4d94ab6c4d"
     }
 }
