@@ -5,128 +5,185 @@ import io.mockk.mockk
 import io.mockk.verify
 import java.math.BigDecimal
 import org.junit.jupiter.api.Test
+import org.vechain.indexer.stargate.token.TokenLevel
+import org.vechain.indexer.validator.DelegationLevelFacet
 import org.vechain.indexer.validator.DelegationRepository
-import org.vechain.indexer.validator.Status
-import org.vechain.indexer.validator.Validator
-import org.vechain.indexer.validator.ValidatorRepository
+import org.vechain.indexer.validator.DelegationStatus
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 
 class ValidatorAggregateServiceTest {
-    private val validatorRepository: ValidatorRepository = mockk()
+    private val chainAggregatesService: ValidatorChainAggregatesService = mockk {
+        every { get() } returns
+            ChainWideValidatorAggregates(
+                totalWeight = BigDecimal.ZERO,
+                totalNextPeriodWeight = BigDecimal.ZERO,
+                totalActiveVetStaked = BigDecimal.ZERO,
+                totalActiveNextCycleVetStaked = BigDecimal.ZERO,
+            )
+    }
     private val delegationRepository: DelegationRepository = mockk()
-    private val service = ValidatorAggregateService(validatorRepository, delegationRepository)
+    private val service = ValidatorAggregateService(chainAggregatesService, delegationRepository)
 
     @Test
-    fun `current-cycle totals exclude queued and exiting validators`() {
-        every {
-            validatorRepository.findByStatusIn(listOf(Status.ACTIVE, Status.QUEUED, Status.EXITING))
-        } returns
-            listOf(
-                validator(
-                    id = "active",
-                    status = Status.ACTIVE,
-                    weight = BigDecimal("10"),
-                    nextWeight = BigDecimal("11"),
-                    validatorVet = BigDecimal("100"),
-                ),
-                validator(
-                    id = "queued",
-                    status = Status.QUEUED,
-                    weight = BigDecimal("999"),
-                    nextWeight = BigDecimal("5"),
-                    validatorVet = BigDecimal("999"),
-                ),
-                validator(
-                    id = "exiting",
-                    status = Status.EXITING,
-                    weight = BigDecimal("999"),
-                    nextWeight = BigDecimal("3"),
-                    validatorVet = BigDecimal("999"),
-                ),
+    fun `chain-wide aggregates copied from the cached service`() {
+        every { chainAggregatesService.get() } returns
+            ChainWideValidatorAggregates(
+                totalWeight = BigDecimal("10"),
+                totalNextPeriodWeight = BigDecimal("20"),
+                totalActiveVetStaked = BigDecimal("100"),
+                totalActiveNextCycleVetStaked = BigDecimal("153"),
             )
 
         val aggregates = service.build(emptyList())
 
         expectThat(aggregates.totalWeight).isEqualTo(BigDecimal("10"))
-        expectThat(aggregates.totalActiveVetStaked).isEqualTo(BigDecimal("100"))
-    }
-
-    @Test
-    fun `next-cycle totals include active, queued and exiting validators`() {
-        every {
-            validatorRepository.findByStatusIn(listOf(Status.ACTIVE, Status.QUEUED, Status.EXITING))
-        } returns
-            listOf(
-                validator(
-                    id = "active",
-                    status = Status.ACTIVE,
-                    weight = BigDecimal("10"),
-                    nextWeight = BigDecimal("11"),
-                    validatorVet = BigDecimal("100"),
-                    queuedVet = BigDecimal("5"),
-                    exitingVet = BigDecimal("2"),
-                ),
-                validator(
-                    id = "queued",
-                    status = Status.QUEUED,
-                    nextWeight = BigDecimal("7"),
-                    queuedVet = BigDecimal("50"),
-                ),
-                validator(
-                    id = "exiting",
-                    status = Status.EXITING,
-                    nextWeight = BigDecimal("2"),
-                    validatorVet = BigDecimal("80"),
-                    exitingVet = BigDecimal("80"),
-                ),
-            )
-
-        val aggregates = service.build(emptyList())
-
-        // 11 (active) + 7 (queued) + 2 (exiting)
         expectThat(aggregates.totalNextPeriodWeight).isEqualTo(BigDecimal("20"))
-        // active:  100 + 5 - 2 = 103
-        // queued:  0   + 50 - 0 = 50
-        // exiting: 80  + 0 - 80 = 0
+        expectThat(aggregates.totalActiveVetStaked).isEqualTo(BigDecimal("100"))
         expectThat(aggregates.totalActiveNextCycleVetStaked).isEqualTo(BigDecimal("153"))
     }
 
     @Test
-    fun `single repository call when no validators on page`() {
-        every {
-            validatorRepository.findByStatusIn(listOf(Status.ACTIVE, Status.QUEUED, Status.EXITING))
-        } returns emptyList()
-
+    fun `no delegation fetch when no validators on page`() {
         service.build(emptyList())
 
-        verify(exactly = 1) {
-            validatorRepository.findByStatusIn(listOf(Status.ACTIVE, Status.QUEUED, Status.EXITING))
-        }
-        verify(exactly = 0) { delegationRepository.findByValidatorInAndStatusIn(any(), any()) }
+        verify(exactly = 1) { chainAggregatesService.get() }
+        verify(exactly = 0) { delegationRepository.aggregateDelegationFacetsByValidators(any()) }
     }
 
-    private fun validator(
-        id: String,
-        status: Status,
-        weight: BigDecimal? = null,
-        nextWeight: BigDecimal? = null,
-        validatorVet: BigDecimal = BigDecimal.ZERO,
-        delegatorVet: BigDecimal = BigDecimal.ZERO,
-        queuedVet: BigDecimal = BigDecimal.ZERO,
-        exitingVet: BigDecimal = BigDecimal.ZERO,
-    ): Validator =
-        Validator(
-            id = id,
-            blockId = "0xblk",
-            blockNumber = 1,
-            blockTimestamp = 1,
-            status = status,
-            validatorLockedWeight = weight,
-            totalNextPeriodWeight = nextWeight,
-            validatorVetStaked = validatorVet,
-            delegatorVetStaked = delegatorVet,
-            queuedVetStaked = queuedVet,
-            exitingVetStaked = exitingVet,
+    @Test
+    fun `delegation facets fetched only for validators on the page`() {
+        every {
+            delegationRepository.aggregateDelegationFacetsByValidators(listOf("a", "b"))
+        } returns emptyList()
+
+        service.build(listOf("a", "b"))
+
+        verify(exactly = 1) {
+            delegationRepository.aggregateDelegationFacetsByValidators(listOf("a", "b"))
+        }
+    }
+
+    @Test
+    fun `current-cycle effective stake sums ACTIVE plus EXITING facets by tokenLevel`() {
+        // ACTIVE × 3 Strength + EXITING × 2 Strength + QUEUED (ignored) + EXITED (ignored)
+        every { delegationRepository.aggregateDelegationFacetsByValidators(listOf("v")) } returns
+            listOf(
+                facet("v", DelegationStatus.ACTIVE, TokenLevel.Strength, count = 3),
+                facet("v", DelegationStatus.EXITING, TokenLevel.Strength, count = 2),
+                facet(
+                    "v",
+                    DelegationStatus.QUEUED,
+                    TokenLevel.Strength,
+                    transitionAtBlock = 50,
+                    count = 4,
+                ),
+            )
+
+        val aggregates = service.build(listOf("v"))
+
+        // 5 × Strength.effectiveStake. Computed via the same BigDecimal ops as production so the
+        // scale (effectiveStake = 1_000_000 × 1.5 has scale 1) matches under BigDecimal.equals.
+        expectThat(aggregates.currentCycleEffectiveDelegationStake("v"))
+            .isEqualTo(TokenLevel.Strength.effectiveStake.multiply(BigDecimal.valueOf(5)))
+    }
+
+    @Test
+    fun `next-cycle effective stake applies per-validator transitionAtBlock threshold`() {
+        // periodPlusTwoBlock = 100.
+        // ACTIVE: always counted.
+        // QUEUED with transitionAt 80 (≤ 100): counted; QUEUED with 120 (> 100): excluded.
+        // EXITING with transitionAt 120 (> 100): counted; EXITING with 80 (≤ 100): excluded.
+        every { delegationRepository.aggregateDelegationFacetsByValidators(listOf("v")) } returns
+            listOf(
+                facet("v", DelegationStatus.ACTIVE, TokenLevel.Strength, count = 1),
+                facet(
+                    "v",
+                    DelegationStatus.QUEUED,
+                    TokenLevel.Strength,
+                    transitionAtBlock = 80,
+                    count = 1,
+                ),
+                facet(
+                    "v",
+                    DelegationStatus.QUEUED,
+                    TokenLevel.Strength,
+                    transitionAtBlock = 120,
+                    count = 1,
+                ),
+                facet(
+                    "v",
+                    DelegationStatus.EXITING,
+                    TokenLevel.Strength,
+                    transitionAtBlock = 120,
+                    count = 1,
+                ),
+                facet(
+                    "v",
+                    DelegationStatus.EXITING,
+                    TokenLevel.Strength,
+                    transitionAtBlock = 80,
+                    count = 1,
+                ),
+            )
+
+        val aggregates = service.build(listOf("v"))
+
+        // 3 facets pass × Strength.effectiveStake. Scale-matched as above.
+        expectThat(aggregates.nextCycleEffectiveDelegationStake("v", periodPlusTwoBlock = 100))
+            .isEqualTo(TokenLevel.Strength.effectiveStake.multiply(BigDecimal.valueOf(3)))
+    }
+
+    @Test
+    fun `current delegated level counts merge ACTIVE and EXITING per level`() {
+        every { delegationRepository.aggregateDelegationFacetsByValidators(listOf("v")) } returns
+            listOf(
+                facet("v", DelegationStatus.ACTIVE, TokenLevel.Strength, count = 3),
+                facet("v", DelegationStatus.EXITING, TokenLevel.Strength, count = 2),
+                facet("v", DelegationStatus.ACTIVE, TokenLevel.Thunder, count = 1),
+                facet(
+                    "v",
+                    DelegationStatus.QUEUED,
+                    TokenLevel.Mjolnir,
+                    transitionAtBlock = 10,
+                    count = 9,
+                ),
+            )
+
+        val aggregates = service.build(listOf("v"))
+
+        expectThat(aggregates.currentDelegatedLevelCounts("v"))
+            .isEqualTo(mapOf(TokenLevel.Strength to 5L, TokenLevel.Thunder to 1L))
+    }
+
+    @Test
+    fun `unrecognised status or tokenLevel strings are dropped`() {
+        every { delegationRepository.aggregateDelegationFacetsByValidators(listOf("v")) } returns
+            listOf(
+                DelegationLevelFacet("v", "ACTIVE", "Strength", null, 1),
+                DelegationLevelFacet("v", "ACTIVE", "MysteryLevel", null, 99),
+                DelegationLevelFacet("v", "UNKNOWN", "Strength", null, 99),
+            )
+
+        val aggregates = service.build(listOf("v"))
+
+        // Only the well-formed Strength row contributes.
+        expectThat(aggregates.currentDelegatedLevelCounts("v"))
+            .isEqualTo(mapOf(TokenLevel.Strength to 1L))
+    }
+
+    private fun facet(
+        validator: String,
+        status: DelegationStatus,
+        tokenLevel: TokenLevel,
+        transitionAtBlock: Long? = null,
+        count: Long,
+    ): DelegationLevelFacet =
+        DelegationLevelFacet(
+            validator = validator,
+            status = status.name,
+            tokenLevel = tokenLevel.name,
+            transitionAtBlock = transitionAtBlock,
+            count = count,
         )
 }

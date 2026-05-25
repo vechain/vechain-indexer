@@ -38,6 +38,13 @@ open class ValidatorCollectionConfig(
                 buildIndex(Validator::endorser.name to Sort.Direction.ASC),
                 buildIndex(Validator::lastMissedBlockNumber.name to Sort.Direction.ASC),
                 buildIndex(Validator::lastProposedBlockNumber.name to Sort.Direction.ASC),
+                // Serves the default sort on `/api/v{1,2}/validators` (validatorVetStaked DESC
+                // with `_id` ASC as the deterministic tie-breaker added in PaginationUtils).
+                // The compound shape lets the planner skip the in-memory SORT stage entirely.
+                buildIndex(
+                    Validator::validatorVetStaked.name to Sort.Direction.DESC,
+                    "_id" to Sort.Direction.ASC,
+                ),
             )
         )
     }
