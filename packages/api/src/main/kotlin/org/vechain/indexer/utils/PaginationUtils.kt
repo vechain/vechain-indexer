@@ -36,6 +36,19 @@ object PaginationUtils {
         return PageRequest.of(pageNumber, pageSize, Sort.by(toSortDirection(direction), *fields))
     }
 
+    /**
+     * Append an `_id ASC` tie-breaker so paginated endpoints whose primary sort field may have
+     * duplicates (e.g. validators ranked by `validatorVetStaked` where several rows share the same
+     * stake) return rows in a deterministic order across requests. `_id` is always uniquely
+     * indexed, so the augmented sort is total and adds no scan cost.
+     */
+    fun withIdTieBreaker(pageable: Pageable): Pageable =
+        PageRequest.of(
+            pageable.pageNumber,
+            pageable.pageSize,
+            pageable.sort.and(Sort.by(Direction.ASC, "_id")),
+        )
+
     private fun toSortDirection(direction: String?): Direction {
         val sortDirection: Direction
         try {

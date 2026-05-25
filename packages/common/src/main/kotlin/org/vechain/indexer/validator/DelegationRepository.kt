@@ -25,12 +25,6 @@ interface DelegationRepository : BaseIndexedRepository<Delegation, String> {
     @Query("{ 'validator': { '\$in': ?0 } }")
     fun findByValidatorIn(validators: List<String>): List<Delegation>
 
-    @Query("{ 'validator': { '\$in': ?0 }, 'status': { '\$in': ?1 } }")
-    fun findByValidatorInAndStatusIn(
-        validators: List<String>,
-        statuses: List<DelegationStatus>,
-    ): List<Delegation>
-
     @Query("{ 'validator': ?0, 'status': { '\$in': ?1 } }")
     fun findByValidatorAndStatusIn(
         validator: String,
@@ -132,7 +126,47 @@ interface DelegationRepository : BaseIndexedRepository<Delegation, String> {
     )
     fun aggregateActiveDelegationsByValidatorAndLevel():
         List<DelegationValidatorLevelAggregateResult>
+
+    /**
+     * Per-validator delegation facets keyed by `(status, tokenLevel, transitionAtBlock)`.
+     *
+     * Replaces fetching raw `Delegation` rows for the validators on a page: each delegation
+     * collapses into a counted bucket whose payload is the level (whose `effectiveStake` is
+     * constant) and the scheduled transition block. Three downstream aggregates fall out by walking
+     * the buckets:
+     * - current-cycle effective stake (ACTIVE + EXITING)
+     * - next-cycle effective stake (validator-specific `periodPlusTwoBlock` threshold)
+     * - current-cycle level counts (ACTIVE + EXITING, grouped by [TokenLevel])
+     *
+     * Backed by the existing `(validator, status)` compound index. ACTIVE rows have
+     * `transitionAtBlock = null` and collapse to ≤ 10 rows per validator; QUEUED / EXITING
+     * cardinality is bounded by the number of distinct scheduled transition blocks (typically
+     * O(1)).
+     */
+    @Aggregation(
+        pipeline =
+            [
+                "{ '\$match': { 'validator': { '\$in': ?0 }, 'status': { '\$in': ['QUEUED', 'ACTIVE', 'EXITING'] } } }",
+                "{ '\$group': { '_id': { 'validator': '\$validator', 'status': '\$status', 'tokenLevel': '\$tokenLevel', 'transitionAtBlock': '\$transitionAtBlock' }, 'count': { '\$sum': 1 } } }",
+                "{ '\$project': { '_id': 0, 'validator': '\$_id.validator', 'status': '\$_id.status', 'tokenLevel': '\$_id.tokenLevel', 'transitionAtBlock': '\$_id.transitionAtBlock', 'count': 1 } }",
+            ]
+    )
+    fun aggregateDelegationFacetsByValidators(validators: List<String>): List<DelegationLevelFacet>
 }
+
+/**
+ * One bucket of the `aggregateDelegationFacetsByValidators` result. Enum-typed fields ([status],
+ * [tokenLevel]) are stringly-typed to match the pattern used by other `@Aggregation` DTOs in this
+ * repository — Spring Data MongoDB aggregation deserialization is consistent with `String` but
+ * occasionally fragile around Kotlin enum properties.
+ */
+data class DelegationLevelFacet(
+    val validator: String,
+    val status: String,
+    val tokenLevel: String,
+    val transitionAtBlock: Long?,
+    val count: Long,
+)
 
 data class DelegationStatusCount(val status: String, val count: Long)
 

@@ -160,6 +160,9 @@ cache:
     price_feed_value:
       max-size: ${CACHE_PRICE_FEED_VALUE_MAX_SIZE:16}
       ttl-seconds: ${CACHE_PRICE_FEED_VALUE_TTL_SECONDS:30}
+    validator_chain_wide_aggregates:
+      max-size: ${CACHE_VALIDATOR_CHAIN_WIDE_AGGREGATES_MAX_SIZE:1}
+      ttl-seconds: ${CACHE_VALIDATOR_CHAIN_WIDE_AGGREGATES_TTL_SECONDS:30}
   warmers:
     enabled: ${CACHE_WARMERS_ENABLED:true}
     tick-interval-ms: ${CACHE_WARMERS_TICK_INTERVAL_MS:60000}
