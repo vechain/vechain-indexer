@@ -38,6 +38,7 @@ open class ValidatorConfig {
                     "StakeIncreased",
                     "ValidationQueued",
                     "ValidationSignaledExit",
+                    "ValidationWithdrawn",
                 )
             )
             .excludeVetTransfers()
