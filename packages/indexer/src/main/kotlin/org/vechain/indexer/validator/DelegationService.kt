@@ -63,8 +63,7 @@ open class DelegationService(
         val touchedValidatorIds =
             events
                 .filter {
-                    (it.eventType == "ValidationSignaledExit" ||
-                        it.eventType == "ValidationWithdrawn") &&
+                    it.eventType == "ValidationSignaledExit" &&
                         it.address.equals(stakerSC, ignoreCase = true)
                 }
                 .mapNotNull { it.params.getAsString("validator")?.lowercase() }
@@ -242,7 +241,6 @@ open class DelegationService(
             "Transfer" -> onTransfer(ev, working, tokenIdToId)
             "ValidationSignaledExit" ->
                 onValidationSignaledExit(ev, block, working, validatorToIds, validators)
-            "ValidationWithdrawn" -> onValidationWithdrawn(ev, working, validatorToIds)
             else -> {
                 /* ignored */
             }
@@ -252,8 +250,7 @@ open class DelegationService(
     private fun isRelevantEvent(ev: IndexedEvent): Boolean =
         when (ev.eventType) {
             // Only the builtin staker can signal validator-level lifecycle.
-            "ValidationSignaledExit",
-            "ValidationWithdrawn" -> ev.address.equals(stakerSC, ignoreCase = true)
+            "ValidationSignaledExit" -> ev.address.equals(stakerSC, ignoreCase = true)
             // Delegation lifecycle is emitted by the Stargate contracts, not the staker.
             "DelegationInitiated",
             "DelegationExitRequested",
@@ -381,30 +378,6 @@ open class DelegationService(
                 current.copy(
                     status = DelegationStatus.EXITING,
                     transitionAtBlock = exitAt,
-                    txId = ev.txId,
-                )
-        }
-    }
-
-    /**
-     * Validator fully withdrew — chain has dropped them from the staker. Force every remaining
-     * delegation to EXITED. This is the V2 equivalent of V1's "validator disappeared" detection,
-     * but driven by an explicit chain event rather than periodic set diffing.
-     */
-    private fun onValidationWithdrawn(
-        ev: IndexedEvent,
-        working: MutableMap<String, Delegation>,
-        validatorToIds: Map<String, List<String>>,
-    ) {
-        val validatorId = ev.params.getAsString("validator")?.lowercase() ?: return
-        val ids = validatorToIds[validatorId] ?: return
-        ids.forEach { id ->
-            val current = working[id] ?: return@forEach
-            if (current.status == DelegationStatus.EXITED) return@forEach
-            working[id] =
-                current.copy(
-                    status = DelegationStatus.EXITED,
-                    transitionAtBlock = null,
                     txId = ev.txId,
                 )
         }

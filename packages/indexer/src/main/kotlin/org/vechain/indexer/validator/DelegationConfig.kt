@@ -53,7 +53,6 @@ open class DelegationConfig {
                     "DelegationWithdrawn",
                     "DelegationRewardsClaimed",
                     "ValidationSignaledExit",
-                    "ValidationWithdrawn",
                     "Transfer",
                 )
             )

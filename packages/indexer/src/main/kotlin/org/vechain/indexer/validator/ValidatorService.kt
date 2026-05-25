@@ -193,25 +193,29 @@ open class ValidatorService(
         )
     }
 
+    /**
+     * Endorser pulled previously-cooled-down stake (post-`decreaseStake` / `signalExit`). Not a
+     * terminal-state signal — the validator can stay ACTIVE through this event. True terminal
+     * withdrawal is detected by [markMissingAsWithdrawn] in the epoch walk by diffing against the
+     * staker's on-chain validator list.
+     *
+     * Decrement the exiting buckets so the mid-epoch view stays accurate; the walk re-reads
+     * `exitingVET` from the chain each epoch and overwrites `exitingVetStaked`.
+     * `validatorExitingVetStaked` is only ever set by [ValidationSignaledExit] snapshots, so the
+     * `.max(BigDecimal.ZERO)` clamp keeps it sane when `withdrawStake` follows a bare
+     * `decreaseStake` (no prior signalExit).
+     */
     private fun onValidationWithdrawn(current: Validator, ev: IndexedEvent): Validator {
-        val stakeVet =
-            ev.params.getAsBigInteger("stake")?.let(NumberUtils::toVET) ?: BigDecimal.ZERO
-        // After withdrawal the validator no longer exists in the staker; zero out volatile stakes.
+        val stakeVet = ev.params.getAsBigInteger("stake")?.let(NumberUtils::toVET) ?: return current
         return current.copy(
-            status = Status.WITHDRAWN,
-            validatorVetStaked = BigDecimal.ZERO,
-            validatorLockedWeight = BigDecimal.ZERO,
-            validatorQueuedVetStaked = BigDecimal.ZERO,
-            delegatorVetStaked = BigDecimal.ZERO,
-            queuedVetStaked = BigDecimal.ZERO,
             exitingVetStaked =
                 (current.exitingVetStaked ?: BigDecimal.ZERO)
                     .subtract(stakeVet)
                     .max(BigDecimal.ZERO),
-            validatorExitingVetStaked = BigDecimal.ZERO,
-            totalNextPeriodWeight = BigDecimal.ZERO,
-            queuePosition = null,
-            availableStartBlock = null,
+            validatorExitingVetStaked =
+                (current.validatorExitingVetStaked ?: BigDecimal.ZERO)
+                    .subtract(stakeVet)
+                    .max(BigDecimal.ZERO),
         )
     }
 

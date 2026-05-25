@@ -158,7 +158,12 @@ class StargateEventServiceTest {
         }
 
     @Test
-    fun `handleStargateEvents clears validator tokens on validation withdrawn`() = runBlocking {
+    fun `handleStargateEvents ignores validation withdrawn`() = runBlocking {
+        // ValidationWithdrawn fires whenever an endorser pulls previously-cooled-down stake
+        // (post-`decreaseStake` / `signalExit`); the validator can stay ACTIVE through it.
+        // True terminal withdrawal is detected by the periodic on-chain set diff
+        // (StargateTokenService.checkMissingValidators + handleValidatorsDisappearedSnapshots),
+        // not by this event.
         val token =
             token(
                 delegationStatus = Status.EXITING,
@@ -176,11 +181,8 @@ class StargateEventServiceTest {
             existingTokens = existingTokens,
         )
 
-        val updated = latestTokenSnapshots[token.tokenId]!!
-        assertThat(updated.delegationStatus).isEqualTo(Status.NONE)
-        assertThat(updated.validatorId).isNull()
-        assertThat(updated.delegationNextPeriod).isNull()
-        assertThat(existingTokens).containsExactly(token)
+        assertThat(latestTokenSnapshots[token.tokenId]).isEqualTo(token)
+        assertThat(existingTokens).isEmpty()
     }
 
     @Test

@@ -59,7 +59,6 @@ open class StargateTokenConfig {
                     "TokenManagerRemoved",
                     "MaturityPeriodBoosted",
                     "ValidationSignaledExit",
-                    "ValidationWithdrawn",
                     "DelegationRewardsClaimed",
                     "BaseVTHORewardsClaimed",
                     "NodeDelegated",
