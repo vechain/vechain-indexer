@@ -153,7 +153,6 @@ open class ValidatorService(
                             status = Status.EXITING,
                             validatorExitingVetStaked = current.validatorVetStaked,
                         )
-                    "ValidationWithdrawn" -> onValidationWithdrawn(current, ev)
                     "StakeIncreased" -> onStakeIncreased(current, ev)
                     "StakeDecreased" -> onStakeDecreased(current, ev)
                     "BeneficiarySet" ->
@@ -190,28 +189,6 @@ open class ValidatorService(
             endorser = endorser ?: current.endorser,
             cyclePeriodLength = period ?: current.cyclePeriodLength,
             validatorQueuedVetStaked = stakeVet ?: current.validatorQueuedVetStaked,
-        )
-    }
-
-    private fun onValidationWithdrawn(current: Validator, ev: IndexedEvent): Validator {
-        val stakeVet =
-            ev.params.getAsBigInteger("stake")?.let(NumberUtils::toVET) ?: BigDecimal.ZERO
-        // After withdrawal the validator no longer exists in the staker; zero out volatile stakes.
-        return current.copy(
-            status = Status.WITHDRAWN,
-            validatorVetStaked = BigDecimal.ZERO,
-            validatorLockedWeight = BigDecimal.ZERO,
-            validatorQueuedVetStaked = BigDecimal.ZERO,
-            delegatorVetStaked = BigDecimal.ZERO,
-            queuedVetStaked = BigDecimal.ZERO,
-            exitingVetStaked =
-                (current.exitingVetStaked ?: BigDecimal.ZERO)
-                    .subtract(stakeVet)
-                    .max(BigDecimal.ZERO),
-            validatorExitingVetStaked = BigDecimal.ZERO,
-            totalNextPeriodWeight = BigDecimal.ZERO,
-            queuePosition = null,
-            availableStartBlock = null,
         )
     }
 
