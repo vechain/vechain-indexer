@@ -332,7 +332,10 @@ open class ValidatorService(
 
         val proposers =
             working.values
-                .filter { it.status == Status.ACTIVE }
+                // EXITING validators are still in the staker's active list and producing blocks
+                // until `exitBlock`; include them so VRF-schedule reconstruction matches the
+                // chain's actual leader group.
+                .filter { it.status == Status.ACTIVE || it.status == Status.EXITING }
                 .map {
                     ThorSchedulerProcess.Proposer(
                         address = it.id,
@@ -386,7 +389,10 @@ open class ValidatorService(
 
     private fun isSoloLikeNetwork(working: Map<String, Validator>): Boolean {
         if (detectedNetwork != VeChainNetwork.CUSTOM) return false
-        return working.values.count { it.status == Status.ACTIVE } == 1
+        // EXITING is still actively producing until `exitBlock` — count it as part of the leader
+        // group, otherwise a solo validator that signals exit would lose attribution entirely.
+        return working.values.count { it.status == Status.ACTIVE || it.status == Status.EXITING } ==
+            1
     }
 
     private suspend fun parentTimestampFor(block: Block): Long {
