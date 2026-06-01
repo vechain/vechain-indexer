@@ -375,7 +375,11 @@ open class ValidatorService(
      * 2. firstQueued → next → ... → 0x0 (queued set, in order)
      * 3. for each id: getValidation, getValidationPeriodDetails, getValidationTotals (batched)
      *
-     * Validators present in our working set but absent from both lists are treated as withdrawn.
+     * Validators present in our working set but absent from both lists are *not* automatically
+     * withdrawn — the staker keeps tracking EXITING/EXITED validators through `getValidation` even
+     * after they've fallen off the iterable head lists. [reconcileOffListValidators] queries the
+     * chain for them explicitly and only marks WITHDRAWN when the staker returns `status = NONE`
+     * (zero endorser, zero everything).
      */
     private suspend fun walkStakerState(block: Block, working: MutableMap<String, Validator>) {
         val revision = BlockRevision.Id(block.id)
@@ -383,37 +387,33 @@ open class ValidatorService(
         val queuedIds = walkList("firstQueued", block, revision)
         val onChainIds = activeIds + queuedIds
 
-        if (onChainIds.isEmpty()) {
+        if (onChainIds.isNotEmpty()) {
+            reconcileOnChain(onChainIds, queuedIds, working, block, revision)
+        } else {
             logger.debug("Staker returned no validators at block {}", block.number)
-            // Anyone we knew about that's no longer on chain has been withdrawn.
-            markMissingAsWithdrawn(working, emptySet())
-            return
         }
 
+        reconcileOffListValidators(working, onChainIds.toSet(), block, revision)
+    }
+
+    /**
+     * Reconciles validators that the iterator surfaced (active + queued) by reading their full
+     * state from the chain. This is the steady-state happy path — everything we read replaces what
+     * we had cached.
+     */
+    private suspend fun reconcileOnChain(
+        onChainIds: List<String>,
+        queuedIds: List<String>,
+        working: MutableMap<String, Validator>,
+        block: Block,
+        revision: BlockRevision,
+    ) {
         val queuePositionById = queuedIds.withIndex().associate { (i, id) -> id to (i + 1L) }
 
         // Three clauses per validator: getValidation, getValidationPeriodDetails,
         // getValidationTotals.
         val perValidatorClauses =
-            onChainIds.flatMap { validatorId ->
-                listOf(
-                    ContractUtils.createClause(
-                        stakerAddress,
-                        getAbi("getValidation"),
-                        AddressUtils.toBigInt(validatorId),
-                    ),
-                    ContractUtils.createClause(
-                        stakerAddress,
-                        getAbi("getValidationPeriodDetails"),
-                        AddressUtils.toBigInt(validatorId),
-                    ),
-                    ContractUtils.createClause(
-                        stakerAddress,
-                        getAbi("getValidationTotals"),
-                        AddressUtils.toBigInt(validatorId),
-                    ),
-                )
-            }
+            onChainIds.flatMap { validatorId -> validatorStateClauses(validatorId) }
         val responses = thorClient.inspectClauses(perValidatorClauses, revision)
         requireStakerResponseCount(
             "validator state walk",
@@ -424,45 +424,14 @@ open class ValidatorService(
 
         onChainIds.forEachIndexed { index, validatorId ->
             val base = index * 3
-            val validationAbi = getAbi("getValidation")
-            val periodAbi = getAbi("getValidationPeriodDetails")
-            val totalsAbi = getAbi("getValidationTotals")
-            val validation =
-                decodeStakerResponse("getValidation", responses[base], validationAbi, block)
-            val period =
-                decodeStakerResponse(
-                    "getValidationPeriodDetails",
-                    responses[base + 1],
-                    periodAbi,
-                    block,
-                )
-            val totals =
-                decodeStakerResponse("getValidationTotals", responses[base + 2], totalsAbi, block)
-
-            val current = working[validatorId] ?: newDoc(validatorId, block)
-            val validatorVetStaked = (validation["stake"] as BigInteger)
-            val lockedVet = (totals["lockedVET"] as BigInteger)
-            val exitBlockRaw = (period["exitBlock"] as BigInteger).toLong()
             working[validatorId] =
-                current.copy(
-                    endorser = (validation["endorser"] as String).lowercase(),
-                    status = Status.fromCode((validation["status"] as BigInteger).toInt()),
-                    validatorVetStaked = NumberUtils.toVET(validatorVetStaked),
-                    validatorLockedWeight = NumberUtils.toVET(validation["weight"] as BigInteger),
-                    validatorQueuedVetStaked =
-                        NumberUtils.toVET(validation["queuedStake"] as BigInteger),
-                    delegatorVetStaked =
-                        NumberUtils.toVET((lockedVet - validatorVetStaked).max(BigInteger.ZERO)),
-                    queuedVetStaked = NumberUtils.toVET(totals["queuedVET"] as BigInteger),
-                    exitingVetStaked = NumberUtils.toVET(totals["exitingVET"] as BigInteger),
-                    totalNextPeriodWeight =
-                        NumberUtils.toVET(totals["nextPeriodWeight"] as BigInteger),
-                    cyclePeriodLength = (period["period"] as BigInteger).toLong(),
-                    startBlock = (period["startBlock"] as BigInteger).toLong(),
-                    exitBlock = exitBlockRaw.takeIf { it in 1L until MAX_UINT32_LONG },
-                    completedPeriods = (period["completedPeriods"] as BigInteger).toLong(),
+                applyValidatorStateResponses(
+                    current = working[validatorId] ?: newDoc(validatorId, block),
+                    validationResp = responses[base],
+                    periodResp = responses[base + 1],
+                    totalsResp = responses[base + 2],
+                    block = block,
                     queuePosition = queuePositionById[validatorId],
-                    availableStartBlock = null,
                 )
         }
 
@@ -486,20 +455,127 @@ open class ValidatorService(
                 }
             working[validatorId] = current.copy(availableStartBlock = availableStart)
         }
-
-        markMissingAsWithdrawn(working, onChainIds.toSet())
     }
 
-    private fun markMissingAsWithdrawn(
+    /**
+     * For validators we know about that aren't in the active/queued iterators, fetch their state
+     * directly via `getValidation` and friends. The staker continues to track EXITING/EXITED
+     * validators even after they fall off the iterable heads; only a `status = NONE` (zero
+     * endorser) response means the staker has genuinely dropped them, at which point we mark
+     * WITHDRAWN. Otherwise we adopt the on-chain status, so an EXITED validator stays EXITED rather
+     * than being force-flipped to WITHDRAWN.
+     */
+    private suspend fun reconcileOffListValidators(
         working: MutableMap<String, Validator>,
         onChainIds: Set<String>,
+        block: Block,
+        revision: BlockRevision,
     ) {
-        val snapshot = working.toMap()
-        snapshot.forEach { (id, doc) ->
-            if (id !in onChainIds && doc.status != Status.WITHDRAWN) {
-                working[id] = doc.copy(status = Status.WITHDRAWN)
-            }
+        val offListIds =
+            working.filterValues { it.status != Status.WITHDRAWN }.keys.filter { it !in onChainIds }
+        if (offListIds.isEmpty()) return
+
+        val clauses = offListIds.flatMap { validatorStateClauses(it) }
+        val responses = thorClient.inspectClauses(clauses, revision)
+        requireStakerResponseCount(
+            "off-list validator reconciliation",
+            responses,
+            clauses.size,
+            block,
+        )
+
+        offListIds.forEachIndexed { index, validatorId ->
+            val base = index * 3
+            val validation =
+                decodeStakerResponse(
+                    "getValidation",
+                    responses[base],
+                    getAbi("getValidation"),
+                    block,
+                )
+            val statusCode = (validation["status"] as BigInteger).toInt()
+            val current = working[validatorId] ?: return@forEachIndexed
+            working[validatorId] =
+                if (statusCode == 0) {
+                    // Endorser zeroed, status NONE → staker has dropped this validator.
+                    current.copy(status = Status.WITHDRAWN)
+                } else {
+                    applyValidatorStateResponses(
+                        current = current,
+                        validationResp = responses[base],
+                        periodResp = responses[base + 1],
+                        totalsResp = responses[base + 2],
+                        block = block,
+                        queuePosition = null,
+                    )
+                }
         }
+    }
+
+    private fun validatorStateClauses(validatorId: String) =
+        listOf(
+            ContractUtils.createClause(
+                stakerAddress,
+                getAbi("getValidation"),
+                AddressUtils.toBigInt(validatorId),
+            ),
+            ContractUtils.createClause(
+                stakerAddress,
+                getAbi("getValidationPeriodDetails"),
+                AddressUtils.toBigInt(validatorId),
+            ),
+            ContractUtils.createClause(
+                stakerAddress,
+                getAbi("getValidationTotals"),
+                AddressUtils.toBigInt(validatorId),
+            ),
+        )
+
+    private fun applyValidatorStateResponses(
+        current: Validator,
+        validationResp: InspectionResult,
+        periodResp: InspectionResult,
+        totalsResp: InspectionResult,
+        block: Block,
+        queuePosition: Long?,
+    ): Validator {
+        val validation =
+            decodeStakerResponse("getValidation", validationResp, getAbi("getValidation"), block)
+        val period =
+            decodeStakerResponse(
+                "getValidationPeriodDetails",
+                periodResp,
+                getAbi("getValidationPeriodDetails"),
+                block,
+            )
+        val totals =
+            decodeStakerResponse(
+                "getValidationTotals",
+                totalsResp,
+                getAbi("getValidationTotals"),
+                block,
+            )
+        val validatorVetStaked = (validation["stake"] as BigInteger)
+        val lockedVet = (totals["lockedVET"] as BigInteger)
+        val exitBlockRaw = (period["exitBlock"] as BigInteger).toLong()
+        return current.copy(
+            endorser = (validation["endorser"] as String).lowercase(),
+            status = Status.fromCode((validation["status"] as BigInteger).toInt()),
+            validatorVetStaked = NumberUtils.toVET(validatorVetStaked),
+            validatorLockedWeight = NumberUtils.toVET(validation["weight"] as BigInteger),
+            validatorQueuedVetStaked = NumberUtils.toVET(validation["queuedStake"] as BigInteger),
+            delegatorVetStaked =
+                NumberUtils.toVET((lockedVet - validatorVetStaked).max(BigInteger.ZERO)),
+            queuedVetStaked = NumberUtils.toVET(totals["queuedVET"] as BigInteger),
+            exitingVetStaked = NumberUtils.toVET(totals["exitingVET"] as BigInteger),
+            totalNextPeriodWeight = NumberUtils.toVET(totals["nextPeriodWeight"] as BigInteger),
+            cyclePeriodLength = (period["period"] as BigInteger).toLong(),
+            startBlock = (period["startBlock"] as BigInteger).toLong(),
+            exitBlock = exitBlockRaw.takeIf { it in 1L until MAX_UINT32_LONG },
+            completedPeriods = (period["completedPeriods"] as BigInteger).toLong(),
+            queuePosition = queuePosition,
+            availableStartBlock = null,
+        )
     }
 
     private suspend fun walkList(
