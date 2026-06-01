@@ -100,6 +100,9 @@ down: #@ Stop all the infrastructure and the application.
 ensure-gradle-props:
 	@if [ "$(GRADLE_PROPERTIES_FILE)" = "gradle/docker.gradle.properties" ] && [ ! -f "$(GRADLE_PROPERTIES_FILE)" ]; then \
 		cp gradle/docker.gradle.properties.example "$(GRADLE_PROPERTIES_FILE)"; \
+	elif [ -n "$(GRADLE_PROPERTIES_FILE)" ] && [ ! -r "$(GRADLE_PROPERTIES_FILE)" ]; then \
+		echo "Error: GRADLE_PROPERTIES_FILE='$(GRADLE_PROPERTIES_FILE)' is not readable" >&2; \
+		exit 1; \
 	fi
 
 app-up: format ensure-gradle-props #@ Start the application.
