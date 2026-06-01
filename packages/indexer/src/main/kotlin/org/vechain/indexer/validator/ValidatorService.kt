@@ -96,12 +96,12 @@ open class ValidatorService(
     }
 
     /**
-     * Drop the in-memory active-validator cache. Called from
-     * [ValidatorProcessor.resetProcessingState] on rollback so the next block reloads from MongoDB
-     * instead of carrying state from a reorged-out branch.
+     * Drop the in-memory validator cache. Called from [ValidatorProcessor.resetProcessingState] on
+     * rollback so the next block reloads from MongoDB instead of carrying state from a reorged-out
+     * branch.
      */
     open fun invalidateCache() {
-        activeCache = null
+        validatorCache = null
     }
 
     /**
@@ -111,18 +111,18 @@ open class ValidatorService(
      * kept in sync with MongoDB by [updateCache] after every successful [save]. The
      * single-thread-per-indexer model means no synchronization is needed.
      */
-    private var activeCache: MutableMap<String, Validator>? = null
+    private var validatorCache: MutableMap<String, Validator>? = null
 
     private fun loadAll(): Map<String, Validator> {
-        val cached = activeCache
+        val cached = validatorCache
         if (cached != null) return cached.toMap()
         val loaded = repository.findAll().associateByTo(mutableMapOf()) { it.id }
-        activeCache = loaded
+        validatorCache = loaded
         return loaded.toMap()
     }
 
     private fun updateCache(updates: List<Validator>) {
-        val cache = activeCache ?: return
+        val cache = validatorCache ?: return
         updates.forEach { u -> cache[u.id] = u }
     }
 
