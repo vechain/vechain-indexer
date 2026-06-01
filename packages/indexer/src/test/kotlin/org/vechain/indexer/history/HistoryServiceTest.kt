@@ -76,7 +76,7 @@ class HistoryServiceTest {
             {
                 thirdArg<Long>() + 5L
             }
-        every { validatorRepository.findByStatusNot(Status.WITHDRAWN) } returns emptyList()
+        every { validatorRepository.findAll() } returns emptyList()
 
         val delegationLifecycleHistoryService =
             DelegationLifecycleHistoryService(

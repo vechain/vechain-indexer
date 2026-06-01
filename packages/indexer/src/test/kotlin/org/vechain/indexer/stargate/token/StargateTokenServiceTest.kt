@@ -50,7 +50,7 @@ internal class StargateTokenServiceTest {
         every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
         every { repository.findByValidatorIdIn(any()) } returns emptyList()
         every { repository.findAllDistinctValidatorIds() } returns emptyList()
-        every { validatorRepository.findByStatusNot(Status.WITHDRAWN) } returns emptyList()
+        every { validatorRepository.findAll() } returns emptyList()
         coJustRun { eventService.handleStargateEvents(any(), any(), any(), any()) }
     }
 
@@ -71,7 +71,7 @@ internal class StargateTokenServiceTest {
             every {
                 repository.findByDelegationNextPeriodAndDelegationStatusIn(any(), any())
             } returns listOf(existingToken)
-            every { validatorRepository.findByStatusNot(Status.WITHDRAWN) } returns
+            every { validatorRepository.findAll() } returns
                 listOf(
                     validator(id = "0xvalidator", cyclePeriodLength = 720L, startBlock = 22090000L)
                 )
@@ -107,7 +107,7 @@ internal class StargateTokenServiceTest {
                 repository.findByDelegationNextPeriodAndDelegationStatusIn(any(), any())
             } returns emptyList()
             // 0xexitingval is still present -> not in removedValidators
-            every { validatorRepository.findByStatusNot(Status.WITHDRAWN) } returns
+            every { validatorRepository.findAll() } returns
                 listOf(
                     validator(id = "0xexitingval", cyclePeriodLength = 720L, startBlock = 22000000L)
                 )
@@ -203,7 +203,7 @@ internal class StargateTokenServiceTest {
         every { repository.findAllById(setOf("34132")) } returns listOf(existingToken)
         every { repository.findByDelegationNextPeriodAndDelegationStatusIn(any(), any()) } returns
             emptyList()
-        every { validatorRepository.findByStatusNot(Status.WITHDRAWN) } returns emptyList()
+        every { validatorRepository.findAll() } returns emptyList()
 
         val (updated, existing) = realService.processBlock(block, listOf(managerRemovedEvent))
 

@@ -62,7 +62,7 @@ class ValidatorServiceTest {
 
     @Test
     fun `processBlock reports empty staker inspect response with config context`() {
-        every { repository.findByStatusNot(Status.WITHDRAWN) } returns emptyList()
+        every { repository.findAll() } returns emptyList()
         coEvery { epochSeedProvider.seedFor(any()) } returns null
         coEvery { thorClient.inspectClauses(any<List<Clause>>(), any()) } returns
             listOf(emptyInspectionResult())
@@ -96,7 +96,7 @@ class ValidatorServiceTest {
                     totalNextPeriodWeight = BigDecimal("100000000"),
                     exitBlock = 23500000L,
                 )
-        every { repository.findByStatusNot(Status.WITHDRAWN) } returns listOf(existing)
+        every { repository.findAll() } returns listOf(existing)
         coEvery { epochSeedProvider.seedFor(any()) } returns null
 
         // 20M VET withdrawn — within both exiting buckets
@@ -130,7 +130,7 @@ class ValidatorServiceTest {
                     exitingVetStaked = BigDecimal("100000"),
                     validatorExitingVetStaked = BigDecimal.ZERO,
                 )
-        every { repository.findByStatusNot(Status.WITHDRAWN) } returns listOf(existing)
+        every { repository.findAll() } returns listOf(existing)
         coEvery { epochSeedProvider.seedFor(any()) } returns null
 
         // Withdraw more than what's in either bucket — both clamp to zero, no underflow

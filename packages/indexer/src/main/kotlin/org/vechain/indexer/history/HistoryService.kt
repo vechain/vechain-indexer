@@ -21,7 +21,6 @@ import org.vechain.indexer.utils.ParamUtils.getAsBoolean
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 import org.vechain.indexer.utils.ParamUtils.getAsLong
 import org.vechain.indexer.utils.ParamUtils.getAsString
-import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.ValidatorRepository
 import org.vechain.indexer.validator.ValidatorSnapshot
 
@@ -115,7 +114,7 @@ open class HistoryService(
     }
 
     private fun loadValidatorSnapshots(): Map<String, ValidatorSnapshot> =
-        validatorRepository.findByStatusNot(Status.WITHDRAWN).associate { v ->
+        validatorRepository.findAll().associate { v ->
             v.id to
                 ValidatorSnapshot(
                     validatorId = v.id,

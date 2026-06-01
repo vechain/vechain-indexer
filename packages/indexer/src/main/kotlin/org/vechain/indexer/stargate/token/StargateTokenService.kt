@@ -59,10 +59,7 @@ open class StargateTokenService(
         val validatorsRefreshed =
             validatorIndexerActive && (!activeValidatorsLoaded || isEpochBoundary(block.number))
         if (validatorsRefreshed) {
-            activeValidators =
-                validatorRepository.findByStatusNot(Status.WITHDRAWN).associateBy {
-                    it.id.lowercase()
-                }
+            activeValidators = validatorRepository.findAll().associateBy { it.id.lowercase() }
             activeValidatorsLoaded = true
         }
 
