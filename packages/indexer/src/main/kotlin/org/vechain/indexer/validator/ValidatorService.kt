@@ -221,7 +221,20 @@ open class ValidatorService(
      */
     private fun onValidationWithdrawn(current: Validator, ev: IndexedEvent): Validator {
         if (current.status == Status.QUEUED) {
-            return current.copy(status = Status.EXITED)
+            // Chain zeroes the validator's own `QueuedVET` and removes them from the queue;
+            // delegator queued stake is untouched. The walk won't revisit off-list validators,
+            // so clear queue-only fields here or the stale data will persist forever.
+            val ownQueued = current.validatorQueuedVetStaked ?: BigDecimal.ZERO
+            return current.copy(
+                status = Status.EXITED,
+                validatorQueuedVetStaked = BigDecimal.ZERO,
+                queuedVetStaked =
+                    (current.queuedVetStaked ?: BigDecimal.ZERO)
+                        .subtract(ownQueued)
+                        .max(BigDecimal.ZERO),
+                queuePosition = null,
+                availableStartBlock = null,
+            )
         }
         val stakeVet = ev.params.getAsBigInteger("stake")?.let(NumberUtils::toVET) ?: return current
         return current.copy(
