@@ -31,19 +31,21 @@ build-api: #@ Build the application with Gradle.
 
 # Application Build (Docker)
 comma := ,
-GRADLE_SECRET := $(if $(wildcard $(HOME)/.gradle/gradle.properties),--secret id=gradle_props$(comma)src=$(HOME)/.gradle/gradle.properties,)
+GRADLE_PROPERTIES_FILE ?= gradle/docker.gradle.properties
+export GRADLE_PROPERTIES_FILE
+GRADLE_SECRET := $(if $(GRADLE_PROPERTIES_FILE),--secret id=gradle_props$(comma)src=$(GRADLE_PROPERTIES_FILE),)
 build-image: build-image-indexer build-image-api #@ Build the application with Docker.
 	echo "Build completed."
-build-image-indexer: #@ Build the application with Docker.
+build-image-indexer: ensure-gradle-props #@ Build the application with Docker.
 	docker build $(GRADLE_SECRET) --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=indexer -t veworld-indexer .
-build-image-api: #@ Build the application with Docker.
+build-image-api: ensure-gradle-props #@ Build the application with Docker.
 	docker build $(GRADLE_SECRET) --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=api -t veworld-api .
 
 test: #@ Run all the tests (excluding e2e).
 	./gradlew cleanTest test -x :packages:e2e:test
 test-ci: #@ Run all tests for CI (with caching, excludes e2e).
 	./gradlew test -x :packages:e2e:test
-test-e2e: #@ Run all the end-to-end tests.
+test-e2e: ensure-gradle-props #@ Run all the end-to-end tests.
 	./gradlew :packages:e2e:test --stacktrace
 test-api: #@ Run all the API tests.
 	./gradlew clean :package:api:test
@@ -95,11 +97,10 @@ down: #@ Stop all the infrastructure and the application.
 	make app-down db-down
 
 # Application
-GRADLE_PROPERTIES_FILE ?= $(if $(wildcard $(HOME)/.gradle/gradle.properties),$(HOME)/.gradle/gradle.properties,)
-export GRADLE_PROPERTIES_FILE
-
 ensure-gradle-props:
-	@[ -f gradle/docker.gradle.properties ] || cp gradle/docker.gradle.properties.example gradle/docker.gradle.properties
+	@if [ "$(GRADLE_PROPERTIES_FILE)" = "gradle/docker.gradle.properties" ] && [ ! -f "$(GRADLE_PROPERTIES_FILE)" ]; then \
+		cp gradle/docker.gradle.properties.example "$(GRADLE_PROPERTIES_FILE)"; \
+	fi
 
 app-up: format ensure-gradle-props #@ Start the application.
 	docker compose up -d --build --wait

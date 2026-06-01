@@ -1,7 +1,8 @@
 # GitHub Packages credentials for resolving dependencies from github.com/vechain/indexer-core.
 # Only needed when using SNAPSHOT or pre-release versions of indexer-core.
 #
-# To use: copy this file to gradle/docker.gradle.properties and uncomment the lines below.
+# Docker Make targets copy this file to gradle/docker.gradle.properties when needed.
+# To use GitHub Packages, uncomment the lines in gradle/docker.gradle.properties.
 # The non-.example copy is git-ignored so your credentials stay local.
 #
 # gpr.user=<your-github-username>

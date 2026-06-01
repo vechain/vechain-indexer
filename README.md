@@ -23,12 +23,16 @@
 
 ### GitHub Packages Authentication (optional)
 
-Some dependencies (e.g. `org.vechain:indexer-core`) are hosted on GitHub Packages, which requires authentication even for public repositories. If your build fails to resolve these dependencies, create a [GitHub Personal Access Token (classic)](https://github.com/settings/tokens/new?scopes=read:packages) with the `read:packages` scope and add the following to `~/.gradle/gradle.properties`:
+Normal builds resolve dependencies from Maven Central and do not require credentials. GitHub Packages credentials are only needed when resolving a dependency version that has not reached Maven Central yet, such as a SNAPSHOT or pre-release `org.vechain:indexer-core`.
+
+For local Gradle builds, create a [GitHub Personal Access Token (classic)](https://github.com/settings/tokens/new?scopes=read:packages) with the `read:packages` scope and add the following to `~/.gradle/gradle.properties`:
 
 ```properties
 gpr.user=your-github-username
 gpr.key=your-github-pat
 ```
+
+For Docker builds, put those same properties in `gradle/docker.gradle.properties` or pass another readable file with `GRADLE_PROPERTIES_FILE=/path/to/gradle.properties make build-image`. The default Docker properties file is git-ignored and excluded from the Docker build context.
 
 ## Getting Started
 
