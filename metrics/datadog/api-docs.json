@@ -3048,8 +3048,7 @@
               "QUEUED",
               "ACTIVE",
               "EXITING",
-              "EXITED",
-              "WITHDRAWN"
+              "EXITED"
             ],
             "type": "string"
           },
@@ -3769,8 +3768,7 @@
               "QUEUED",
               "ACTIVE",
               "EXITING",
-              "EXITED",
-              "WITHDRAWN"
+              "EXITED"
             ],
             "type": "string"
           },
@@ -3963,8 +3961,7 @@
               "QUEUED",
               "ACTIVE",
               "EXITING",
-              "EXITED",
-              "WITHDRAWN"
+              "EXITED"
             ],
             "type": "string"
           },
@@ -14348,8 +14345,7 @@
                 "QUEUED",
                 "ACTIVE",
                 "EXITING",
-                "EXITED",
-                "WITHDRAWN"
+                "EXITED"
               ],
               "type": "string"
             }
@@ -16955,8 +16951,7 @@
                 "QUEUED",
                 "ACTIVE",
                 "EXITING",
-                "EXITED",
-                "WITHDRAWN"
+                "EXITED"
               ],
               "type": "string"
             }

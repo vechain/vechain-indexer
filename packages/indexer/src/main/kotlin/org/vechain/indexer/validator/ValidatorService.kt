@@ -66,9 +66,10 @@ open class ValidatorService(
     ): Pair<List<Validator>, List<Validator>> {
         if (block.number < validatorStartBlock) return emptyList<Validator>() to emptyList()
 
-        val existing = loadActive()
+        val existing = loadAll()
         val working = existing.toMutableMap()
 
+        applyScheduledTransitions(block, working)
         applyEventChanges(matchedEvents, working, block)
         updateLiveness(block, working)
 
@@ -95,39 +96,51 @@ open class ValidatorService(
     }
 
     /**
-     * Drop the in-memory active-validator cache. Called from
-     * [ValidatorProcessor.resetProcessingState] on rollback so the next block reloads from MongoDB
-     * instead of carrying state from a reorged-out branch.
+     * Drop the in-memory validator cache. Called from [ValidatorProcessor.resetProcessingState] on
+     * rollback so the next block reloads from MongoDB instead of carrying state from a reorged-out
+     * branch.
      */
     open fun invalidateCache() {
-        activeCache = null
+        validatorCache = null
     }
 
     /**
-     * In-memory mirror of the persisted active-validator set. Loaded lazily on the first
-     * [loadActive] call after startup or invalidation; kept in sync with MongoDB by [updateCache]
-     * after every successful [save]. The single-thread-per-indexer model means no synchronization
-     * is needed.
+     * In-memory mirror of every persisted validator (including [Status.EXITED], which is terminal
+     * but still receives `ValidationWithdrawn` cooldown-refund events that should decrement
+     * `exitingVetStaked`). Loaded lazily on the first [loadAll] call after startup or invalidation;
+     * kept in sync with MongoDB by [updateCache] after every successful [save]. The
+     * single-thread-per-indexer model means no synchronization is needed.
      */
-    private var activeCache: MutableMap<String, Validator>? = null
+    private var validatorCache: MutableMap<String, Validator>? = null
 
-    private fun loadActive(): Map<String, Validator> {
-        val cached = activeCache
+    private fun loadAll(): Map<String, Validator> {
+        val cached = validatorCache
         if (cached != null) return cached.toMap()
-        val loaded =
-            repository.findByStatusNot(Status.WITHDRAWN).associateByTo(mutableMapOf()) { it.id }
-        activeCache = loaded
+        val loaded = repository.findAll().associateByTo(mutableMapOf()) { it.id }
+        validatorCache = loaded
         return loaded.toMap()
     }
 
     private fun updateCache(updates: List<Validator>) {
-        val cache = activeCache ?: return
-        updates.forEach { u ->
-            if (u.status == Status.WITHDRAWN) {
-                cache.remove(u.id)
-            } else {
-                cache[u.id] = u
-            }
+        val cache = validatorCache ?: return
+        updates.forEach { u -> cache[u.id] = u }
+    }
+
+    // -------- Scheduled transitions --------
+
+    /**
+     * The chain transitions `Active+ExitBlock → Exit` silently at the period boundary — no event is
+     * emitted. Detect it locally: any validator we have marked [Status.EXITING] whose `exitBlock`
+     * has been reached has crossed into [Status.EXITED]. The next walk will confirm (chain returns
+     * `status = 3`), but we apply it eagerly so mid-epoch reads see the right state and we don't
+     * depend on the walk's periodicity.
+     */
+    private fun applyScheduledTransitions(block: Block, working: MutableMap<String, Validator>) {
+        working.values.toList().forEach { v ->
+            if (v.status != Status.EXITING) return@forEach
+            val exitBlock = v.exitBlock ?: return@forEach
+            if (block.number < exitBlock) return@forEach
+            working[v.id] = v.copy(status = Status.EXITED)
         }
     }
 
@@ -194,18 +207,35 @@ open class ValidatorService(
     }
 
     /**
-     * Endorser pulled previously-cooled-down stake (post-`decreaseStake` / `signalExit`). Not a
-     * terminal-state signal — the validator can stay ACTIVE through this event. True terminal
-     * withdrawal is detected by [markMissingAsWithdrawn] in the epoch walk by diffing against the
-     * staker's on-chain validator list.
-     *
-     * Decrement the exiting buckets so the mid-epoch view stays accurate; the walk re-reads
-     * `exitingVET` from the chain each epoch and overwrites `exitingVetStaked`.
-     * `validatorExitingVetStaked` is only ever set by [ValidationSignaledExit] snapshots, so the
-     * `.max(BigDecimal.ZERO)` clamp keeps it sane when `withdrawStake` follows a bare
-     * `decreaseStake` (no prior signalExit).
+     * Endorser called `withdrawStake`. Two cases the chain handles distinctly:
+     * 1. **Queued → Exit.** When the validator is still [Status.QUEUED], the native side
+     *    transitions them straight to [Status.EXITED] and removes them from the queue. We mirror
+     *    that here using our cached status — no other field changes (queued stake has been zeroed
+     *    on the chain side, but that's the next walk's job to reconcile).
+     * 2. **Active / Exit refund.** For any other status, `withdrawStake` just pays out cooldown or
+     *    pending-unlock VET; the validator stays in whatever state they were in. Decrement the
+     *    exiting buckets so mid-epoch reads stay accurate; the walk re-reads `exitingVET` from the
+     *    chain each epoch and overwrites `exitingVetStaked`. `validatorExitingVetStaked` is only
+     *    ever set by [ValidationSignaledExit] snapshots, so the `.max(BigDecimal.ZERO)` clamp keeps
+     *    it sane when `withdrawStake` follows a bare `decreaseStake` (no prior signalExit).
      */
     private fun onValidationWithdrawn(current: Validator, ev: IndexedEvent): Validator {
+        if (current.status == Status.QUEUED) {
+            // Chain zeroes the validator's own `QueuedVET` and removes them from the queue;
+            // delegator queued stake is untouched. The walk won't revisit off-list validators,
+            // so clear queue-only fields here or the stale data will persist forever.
+            val ownQueued = current.validatorQueuedVetStaked ?: BigDecimal.ZERO
+            return current.copy(
+                status = Status.EXITED,
+                validatorQueuedVetStaked = BigDecimal.ZERO,
+                queuedVetStaked =
+                    (current.queuedVetStaked ?: BigDecimal.ZERO)
+                        .subtract(ownQueued)
+                        .max(BigDecimal.ZERO),
+                queuePosition = null,
+                availableStartBlock = null,
+            )
+        }
         val stakeVet = ev.params.getAsBigInteger("stake")?.let(NumberUtils::toVET) ?: return current
         return current.copy(
             exitingVetStaked =
@@ -302,7 +332,10 @@ open class ValidatorService(
 
         val proposers =
             working.values
-                .filter { it.status == Status.ACTIVE }
+                // EXITING validators are still in the staker's active list and producing blocks
+                // until `exitBlock`; include them so VRF-schedule reconstruction matches the
+                // chain's actual leader group.
+                .filter { it.status == Status.ACTIVE || it.status == Status.EXITING }
                 .map {
                     ThorSchedulerProcess.Proposer(
                         address = it.id,
@@ -356,7 +389,10 @@ open class ValidatorService(
 
     private fun isSoloLikeNetwork(working: Map<String, Validator>): Boolean {
         if (detectedNetwork != VeChainNetwork.CUSTOM) return false
-        return working.values.count { it.status == Status.ACTIVE } == 1
+        // EXITING is still actively producing until `exitBlock` — count it as part of the leader
+        // group, otherwise a solo validator that signals exit would lose attribution entirely.
+        return working.values.count { it.status == Status.ACTIVE || it.status == Status.EXITING } ==
+            1
     }
 
     private suspend fun parentTimestampFor(block: Block): Long {
@@ -375,7 +411,10 @@ open class ValidatorService(
      * 2. firstQueued → next → ... → 0x0 (queued set, in order)
      * 3. for each id: getValidation, getValidationPeriodDetails, getValidationTotals (batched)
      *
-     * Validators present in our working set but absent from both lists are treated as withdrawn.
+     * Validators present in our working set but absent from both lists are left untouched — they're
+     * either [Status.EXITED] (chain still tracks them via `getValidation`, just not in the iterator
+     * lists) or [Status.EXITING] waiting for their scheduled flip. Neither needs the walk's
+     * reconciliation.
      */
     private suspend fun walkStakerState(block: Block, working: MutableMap<String, Validator>) {
         val revision = BlockRevision.Id(block.id)
@@ -385,8 +424,6 @@ open class ValidatorService(
 
         if (onChainIds.isEmpty()) {
             logger.debug("Staker returned no validators at block {}", block.number)
-            // Anyone we knew about that's no longer on chain has been withdrawn.
-            markMissingAsWithdrawn(working, emptySet())
             return
         }
 
@@ -443,10 +480,16 @@ open class ValidatorService(
             val validatorVetStaked = (validation["stake"] as BigInteger)
             val lockedVet = (totals["lockedVET"] as BigInteger)
             val exitBlockRaw = (period["exitBlock"] as BigInteger).toLong()
+            val hasExitBlock = exitBlockRaw in 1L until MAX_UINT32_LONG
+            val rawStatus = Status.fromCode((validation["status"] as BigInteger).toInt())
+            // The chain has no `Exiting` enum value — it's `Active + ExitBlock!=nil`. Re-derive so
+            // the indexer's EXITING label survives the walk instead of being clobbered to ACTIVE.
+            val derivedStatus =
+                if (rawStatus == Status.ACTIVE && hasExitBlock) Status.EXITING else rawStatus
             working[validatorId] =
                 current.copy(
                     endorser = (validation["endorser"] as String).lowercase(),
-                    status = Status.fromCode((validation["status"] as BigInteger).toInt()),
+                    status = derivedStatus,
                     validatorVetStaked = NumberUtils.toVET(validatorVetStaked),
                     validatorLockedWeight = NumberUtils.toVET(validation["weight"] as BigInteger),
                     validatorQueuedVetStaked =
@@ -459,7 +502,7 @@ open class ValidatorService(
                         NumberUtils.toVET(totals["nextPeriodWeight"] as BigInteger),
                     cyclePeriodLength = (period["period"] as BigInteger).toLong(),
                     startBlock = (period["startBlock"] as BigInteger).toLong(),
-                    exitBlock = exitBlockRaw.takeIf { it in 1L until MAX_UINT32_LONG },
+                    exitBlock = exitBlockRaw.takeIf { hasExitBlock },
                     completedPeriods = (period["completedPeriods"] as BigInteger).toLong(),
                     queuePosition = queuePositionById[validatorId],
                     availableStartBlock = null,
@@ -485,20 +528,6 @@ open class ValidatorService(
                     else -> 0L
                 }
             working[validatorId] = current.copy(availableStartBlock = availableStart)
-        }
-
-        markMissingAsWithdrawn(working, onChainIds.toSet())
-    }
-
-    private fun markMissingAsWithdrawn(
-        working: MutableMap<String, Validator>,
-        onChainIds: Set<String>,
-    ) {
-        val snapshot = working.toMap()
-        snapshot.forEach { (id, doc) ->
-            if (id !in onChainIds && doc.status != Status.WITHDRAWN) {
-                working[id] = doc.copy(status = Status.WITHDRAWN)
-            }
         }
     }
 

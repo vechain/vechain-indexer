@@ -120,7 +120,7 @@ object ValidatorCalculator {
         status: Status,
         nextCycleStake: BigDecimal,
     ): Map<TokenLevel, BigDecimal> {
-        if (status == Status.EXITING || status == Status.EXITED || status == Status.WITHDRAWN) {
+        if (status == Status.EXITING || status == Status.EXITED) {
             return emptyMap()
         }
         return TokenLevel.entries
