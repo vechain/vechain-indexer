@@ -531,7 +531,7 @@
     "icon": "d1f646308d536866bc88dc1a885c45aa3fbfca20.png",
     "name": "WAN@vechain",
     "symbol": "WAN",
-    "totalSupply": "58922396500000000000"
+    "totalSupply": "59922396500000000000"
   },
   {
     "address": "0x82479149a14713733aa60c9bc90f3ecf1315f704",
@@ -570,7 +570,7 @@
     "icon": "0dc5e9031298774f5a0583b3c7bca9f00ab7cdf9.png",
     "name": "USDC@vechain",
     "symbol": "USDC",
-    "totalSupply": "35357505"
+    "totalSupply": "35457505"
   },
   {
     "address": "0x6e8b4a88d37897fc11f6ba12c805695f1c41f40e",
@@ -579,7 +579,7 @@
     "icon": "dcc6e7f09932a389a536fe74107cd73af445dd65.png",
     "name": "VOT3",
     "symbol": "VOT3",
-    "totalSupply": "15386077441379875722887465",
+    "totalSupply": "55714513899672185704879375",
     "website": "https://docs.vebetterdao.org/developer-guides/test-environmnet"
   },
   {
@@ -589,7 +589,7 @@
     "icon": "38b6a2fdff4c109128935762dc27853c773fef21.png",
     "name": "B3TR",
     "symbol": "B3TR",
-    "totalSupply": "958206164525356207331796276",
+    "totalSupply": "1000153052294372158932643612",
     "website": "https://docs.vebetterdao.org/developer-guides/test-environmnet"
   }
 ]

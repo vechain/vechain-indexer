@@ -155,7 +155,7 @@ dd-push: dd-push-pipeline dd-push-app-pipeline dd-push-waf-pipeline dd-push-dash
 
 # Token Registry
 refresh-token-registry: #@ Refresh bundled token registry files from vechain.github.io.
-	bash scripts/refresh_token_registry.sh
+	bash packages/api/scripts/refresh_token_registry.sh
 
 # Database
 DB_COMMAND=docker compose -f database/docker-compose-mongo.yaml
