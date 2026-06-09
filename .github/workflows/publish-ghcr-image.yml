@@ -164,18 +164,18 @@ jobs:
           STABLE: ${{ steps.version.outputs.stable }}
           MAJOR: ${{ steps.version.outputs.major }}
           MINOR: ${{ steps.version.outputs.minor }}
+          LATEST_TAG: ${{ env.latestTag }}
         run: |
           set -euo pipefail
 
-          copy_tag() {
-            local tag="$1"
-            docker buildx imagetools create -t "${DOCKERHUB_IMAGE}:${tag}" "${GHCR_IMAGE}:${tag}"
-          }
-
-          copy_tag "${FULL_VERSION}"
+          TAGS=("-t" "${DOCKERHUB_IMAGE}:${FULL_VERSION}")
           if [ "${STABLE}" = "true" ]; then
-            copy_tag "${MINOR}"
-            copy_tag "${MAJOR}"
-            copy_tag "latest"
+            TAGS+=("-t" "${DOCKERHUB_IMAGE}:${MINOR}")
+            TAGS+=("-t" "${DOCKERHUB_IMAGE}:${MAJOR}")
+            TAGS+=("-t" "${DOCKERHUB_IMAGE}:${LATEST_TAG}")
           fi
+
+          # Single invocation so every Docker Hub tag is published atomically
+          # from the already-pushed GHCR full-version manifest.
+          docker buildx imagetools create "${TAGS[@]}" "${GHCR_IMAGE}:${FULL_VERSION}"
 
