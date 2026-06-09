@@ -94,9 +94,9 @@ jobs:
       matrix:
         include:
           - packageName: api
-            dockerHubImage: vechain/vechain-indexer-api
+            dockerHubImage: vechain/indexer-api
           - packageName: indexer
-            dockerHubImage: vechain/vechain-indexer
+            dockerHubImage: vechain/indexer
 
     steps:
       - name: Download digests
