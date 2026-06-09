@@ -23,6 +23,7 @@ env:
   versionTag: ${{ inputs.version || github.ref_name }}
   latestTag: 'latest'
   registry: ghcr.io
+  dockerHubRegistry: docker.io
 
 jobs:
   build:
@@ -91,7 +92,11 @@ jobs:
     needs: build
     strategy:
       matrix:
-        packageName: ["api", "indexer"]
+        include:
+          - packageName: api
+            dockerHubImage: vechain/indexer-api
+          - packageName: indexer
+            dockerHubImage: vechain/indexer
 
     steps:
       - name: Download digests
@@ -110,6 +115,13 @@ jobs:
           registry: ${{ env.registry }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ${{ env.dockerHubRegistry }}
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Extract version tags
         id: version
@@ -143,4 +155,27 @@ jobs:
           docker buildx imagetools create \
             $TAGS \
             $(printf '${{ env.IMAGE }}@sha256:%s ' *)
+
+      - name: Mirror manifest from GHCR to Docker Hub
+        env:
+          GHCR_IMAGE: ${{ env.registry }}/${{ github.repository }}/${{ matrix.packageName }}
+          DOCKERHUB_IMAGE: ${{ env.dockerHubRegistry }}/${{ matrix.dockerHubImage }}
+          FULL_VERSION: ${{ steps.version.outputs.full }}
+          STABLE: ${{ steps.version.outputs.stable }}
+          MAJOR: ${{ steps.version.outputs.major }}
+          MINOR: ${{ steps.version.outputs.minor }}
+          LATEST_TAG: ${{ env.latestTag }}
+        run: |
+          set -euo pipefail
+
+          TAGS=("-t" "${DOCKERHUB_IMAGE}:${FULL_VERSION}")
+          if [ "${STABLE}" = "true" ]; then
+            TAGS+=("-t" "${DOCKERHUB_IMAGE}:${MINOR}")
+            TAGS+=("-t" "${DOCKERHUB_IMAGE}:${MAJOR}")
+            TAGS+=("-t" "${DOCKERHUB_IMAGE}:${LATEST_TAG}")
+          fi
+
+          # Single invocation so every Docker Hub tag is published atomically
+          # from the already-pushed GHCR full-version manifest.
+          docker buildx imagetools create "${TAGS[@]}" "${GHCR_IMAGE}:${FULL_VERSION}"
 
