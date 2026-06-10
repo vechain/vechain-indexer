@@ -141,7 +141,7 @@ enabled_nets:
       cpu: 8192
       memory: 16384
       enabled: true
-      spring_profile: indexer,nfts,transactions,transfers,history,vevote-results,stargate,b3tr,explorer,validator,validator-reward,token-reward,accounts,vevote-historic-proposals,contracts,safe
+      spring_profile: indexer,nfts,transactions,transfers,vevote-results,nft-holders-by-block,nft-owner-balance,vet-delegated-by-block,vet-staked-by-block,vtho-claimed-by-account,vtho-claimed-by-block,vtho-generated-by-block,b3tr,explorer,validator,validator-reward,accounts,vevote-historic-proposals,contracts,safe
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       logging:
         app-log-level: "INFO"
@@ -215,7 +215,7 @@ enabled_nets:
         stargate-nft-holders-by-block: "9"
         stargate-nft-owner-balance: "3"
         stargate-vet-staked-by-block: "9"
-        stargate-vet-delegated-by-block: "13"
+        stargate-vet-delegated-by-block: "14"
         b3tr-proposal-comments: "3"
         b3tr-proposal-results: "8"
         b3tr-challenges: "5"
@@ -234,11 +234,11 @@ enabled_nets:
         block-usage: "2"
         average-fees-per-user: "4"
         historic-proposals: "4"
-        validator: "13"
-        validator-rewards: "9"
+        validator: "14"
+        validator-rewards: "10"
         stargate-token: "13"
         token-rewards: "10"
-        delegation: "16"
+        delegation: "17"
         account-totals-series: "3"
         account-overview: "7"
         b3tr-balance: "6"
