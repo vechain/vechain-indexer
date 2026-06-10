@@ -117,7 +117,7 @@ enabled_nets:
       cpu: 2048
       memory: 4096
       enabled: true
-      spring_profile: indexer,transactions,transfers,history,stargate,validator,nfts,token-reward,contracts
+      spring_profile: indexer,transactions,transfers,stargate,validator,validator-reward,nfts,contracts
       ecr_common_repo: 951789968977.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       logging:
         app-log-level: 'INFO'
@@ -192,7 +192,7 @@ enabled_nets:
         stargate-nft-holders-by-block: '7'
         stargate-nft-owner-balance: '1'
         stargate-vet-staked-by-block: '8'
-        stargate-vet-delegated-by-block: '8'
+        stargate-vet-delegated-by-block: '9'
         b3tr-proposal-comments: '6'
         b3tr-proposal-results: '8'
         b3tr-challenges: '3'
@@ -212,11 +212,11 @@ enabled_nets:
         block-usage: '4'
         average-fees-per-user: '2'
         historic-proposals:          '6'
-        validator: '9'
-        validator-rewards: '7'
-        stargate-token: '6'
+        validator: '10'
+        validator-rewards: '8'
+        stargate-token: '7'
         token-rewards: '6'
-        delegation: '8'
+        delegation: '9'
         account-totals-series: '1'
         account-overview: '2'
         b3tr-balance: '4'
