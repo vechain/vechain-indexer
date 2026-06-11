@@ -39,7 +39,10 @@ open class TransactionProcessor(
         }
 
         if (entry.block.transactions.isNotEmpty()) {
-            transactionService.processBlockTransactions(events = entry.events, block = entry.block)
+            val records = transactionService.processBlock(entry.block, entry.events)
+            if (records.isNotEmpty()) {
+                transactionService.save(records)
+            }
         }
     }
 }

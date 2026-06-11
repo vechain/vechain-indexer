@@ -79,8 +79,10 @@ internal class TransactionProcessorTest {
     fun `process - should call service when transactions are present`() {
         val events = emptyList<IndexedEvent>()
         val block = BlockFixtures.BLOCK_SINGLE_CLAUSE
+        val records = listOf(mockk<IndexedTransaction>())
 
-        every { transactionService.processBlockTransactions(events, block) } just Runs
+        every { transactionService.processBlock(block, events) } returns records
+        every { transactionService.save(records) } just Runs
 
         runBlocking {
             transactionProcessor.process(
@@ -88,15 +90,18 @@ internal class TransactionProcessorTest {
             )
         }
 
-        verify { transactionService.processBlockTransactions(events, block) }
+        verify { transactionService.processBlock(block, events) }
+        verify { transactionService.save(records) }
     }
 
     @Test
     fun `process - should call service when transactions and events are present`() {
         val events = INDEXED_EVENTS_BLACKLIST
         val block = BlockFixtures.BLOCK_SINGLE_CLAUSE
+        val records = listOf(mockk<IndexedTransaction>())
 
-        every { transactionService.processBlockTransactions(events, block) } just Runs
+        every { transactionService.processBlock(block, events) } returns records
+        every { transactionService.save(records) } just Runs
 
         runBlocking {
             transactionProcessor.process(
@@ -104,6 +109,24 @@ internal class TransactionProcessorTest {
             )
         }
 
-        verify { transactionService.processBlockTransactions(events, block) }
+        verify { transactionService.processBlock(block, events) }
+        verify { transactionService.save(records) }
+    }
+
+    @Test
+    fun `process - should skip save when processBlock yields no records`() {
+        val events = emptyList<IndexedEvent>()
+        val block = BlockFixtures.BLOCK_SINGLE_CLAUSE
+
+        every { transactionService.processBlock(block, events) } returns emptyList()
+
+        runBlocking {
+            transactionProcessor.process(
+                IndexingResult.BlockResult(block, events, emptyList(), Status.FULLY_SYNCED)
+            )
+        }
+
+        verify { transactionService.processBlock(block, events) }
+        verify(exactly = 0) { transactionService.save(any()) }
     }
 }

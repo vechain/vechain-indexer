@@ -222,7 +222,6 @@ data class ValidatorV2Response(
             if (
                 v.status != Status.EXITING &&
                     v.status != Status.EXITED &&
-                    v.status != Status.WITHDRAWN &&
                     nextPeriodWeight != null &&
                     totalNextPeriodWeight > BigDecimal.ZERO &&
                     startBlock != null &&

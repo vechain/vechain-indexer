@@ -8,8 +8,6 @@ import org.vechain.indexer.BaseIndexedRepository
 @Profile("validator", "stargate-token", "history")
 @Repository
 interface ValidatorRepository : BaseIndexedRepository<Validator, String> {
-    @Query("{ 'status': { '\$ne': ?0 } }") fun findByStatusNot(status: Status): List<Validator>
-
     @Query("{ 'status': ?0 }") fun findByStatus(status: Status): List<Validator>
 
     @Query("{ 'status': { '\$in': ?0 } }")

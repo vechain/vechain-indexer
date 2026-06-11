@@ -50,6 +50,11 @@ management:
       group:
         liveness:
           include: ping
+  metrics:
+    data:
+      repository:
+        autotime:
+          enabled: false
   datadog:
     metrics:
       export:
@@ -66,6 +71,7 @@ spring.data:
 
 thor:
   url: ${THOR_URL:https://testnet.vechain.org}
+  rate-limit-bypass-key: ${THOR_RATE_LIMIT_BYPASS_KEY:}
 
 # vechain.energy `PriceFeedOracle`. Each deployment configures the values matching its target
 # network in terraform (mainnet for mainnet/devnet deployments, testnet for testnet). The
@@ -155,6 +161,9 @@ cache:
     price_feed_value:
       max-size: ${CACHE_PRICE_FEED_VALUE_MAX_SIZE:16}
       ttl-seconds: ${CACHE_PRICE_FEED_VALUE_TTL_SECONDS:30}
+    validator_chain_wide_aggregates:
+      max-size: ${CACHE_VALIDATOR_CHAIN_WIDE_AGGREGATES_MAX_SIZE:1}
+      ttl-seconds: ${CACHE_VALIDATOR_CHAIN_WIDE_AGGREGATES_TTL_SECONDS:30}
   warmers:
     enabled: ${CACHE_WARMERS_ENABLED:true}
     tick-interval-ms: ${CACHE_WARMERS_TICK_INTERVAL_MS:60000}

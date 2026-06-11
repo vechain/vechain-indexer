@@ -204,7 +204,7 @@ open class StargateService(
      * @notice Retrieves the number of Stargate NFT holders at a block.
      * @dev Returns a DTO; if no record exists, a zeroed default object is returned.
      */
-    open fun getNftHolders(blockNumber: Long?): NftHoldersByBlockDto {
+    open fun getNftHolders(blockNumber: Long?): NftHoldersDto {
         val response =
             if (blockNumber != null) {
                 nftHoldersByBlockRepository.findLatestBeforeOrAtBlockNumber(blockNumber)
@@ -213,22 +213,10 @@ open class StargateService(
             }
 
         if (response == null) {
-            return NftHoldersByBlockDto(
-                blockId = "ignoredanyway",
-                blockNumber = 0,
-                blockTimestamp = 0,
-                total = 0L,
-                byLevel = emptyMap(),
-            )
+            return NftHoldersDto(total = 0L, byLevel = emptyMap())
         }
 
-        return NftHoldersByBlockDto(
-            blockId = response.blockId,
-            blockNumber = response.blockNumber,
-            blockTimestamp = response.blockTimestamp,
-            total = response.total,
-            byLevel = response.byLevel,
-        )
+        return NftHoldersDto(total = response.total, byLevel = response.byLevel)
     }
 
     /**
@@ -287,9 +275,6 @@ open class StargateService(
 
         if (response == null) {
             return TotalByBlockDto(
-                blockId = "ignoredanyway",
-                blockNumber = 0,
-                blockTimestamp = 0,
                 total = BigInteger.ZERO,
                 byLevel = emptyMap(),
                 totalNftCount = 0,
@@ -298,9 +283,6 @@ open class StargateService(
         }
 
         return TotalByBlockDto(
-            blockId = response.blockId,
-            blockNumber = response.blockNumber,
-            blockTimestamp = response.blockTimestamp,
             total = response.total,
             byLevel = response.byLevel,
             totalNftCount = response.totalNftCount,
@@ -317,7 +299,7 @@ open class StargateService(
      * @dev Granularity depends on timeRange; DAILY → block-level, WEEK/MONTH/YEAR → rolled periods
      *   only.
      */
-    open fun getTotalVetDelegated(blockNumber: Long?): TotalByBlockDto? {
+    open fun getTotalVetDelegated(blockNumber: Long?): TotalByBlockDto {
         val response =
             if (blockNumber != null) {
                 vetDelegatedByBlockRepository.findLatestBeforeOrAtBlockNumber(blockNumber)
@@ -327,9 +309,6 @@ open class StargateService(
 
         if (response == null) {
             return TotalByBlockDto(
-                blockId = "ignoredanyway",
-                blockNumber = 0,
-                blockTimestamp = 0,
                 total = BigInteger.ZERO,
                 byLevel = emptyMap(),
                 totalNftCount = 0,
@@ -338,9 +317,6 @@ open class StargateService(
         }
 
         return TotalByBlockDto(
-            blockId = response.blockId,
-            blockNumber = response.blockNumber,
-            blockTimestamp = response.blockTimestamp,
             total = response.total,
             byLevel = response.byLevel,
             totalNftCount = response.totalNftCount,

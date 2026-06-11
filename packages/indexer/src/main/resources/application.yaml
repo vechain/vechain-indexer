@@ -54,6 +54,10 @@ management:
     tags:
       indexer-id: ${METRICS_ID:local-indexer}
       deployment_scope: ${DEPLOYMENT_SCOPE:${METRICS_ID:local-indexer}}
+    data:
+      repository:
+        autotime:
+          enabled: false
   datadog:
     metrics:
       export:
@@ -76,6 +80,7 @@ spring.data:
 
 thor:
   url: ${THOR_URL:https://mainnet.vechain.org}
+  rate-limit-bypass-key: ${THOR_RATE_LIMIT_BYPASS_KEY:}
 
 vechain:
   forks:

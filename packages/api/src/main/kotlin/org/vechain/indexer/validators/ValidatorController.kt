@@ -24,6 +24,7 @@ import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.utils.PaginationUtils.toPageable
+import org.vechain.indexer.utils.PaginationUtils.withIdTieBreaker
 import org.vechain.indexer.utils.SortFieldUtils
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
@@ -122,7 +123,7 @@ open class ValidatorController(private val service: ValidatorService) {
         @RequestParam(required = false, defaultValue = "validatorTvl") sortBy: String,
     ): PaginatedResponse<ValidatorResponse> {
         val sortField = SortFieldUtils.getSortFieldValidator(sortBy)
-        val pageable = toPageable(page, size, direction, sortField)
+        val pageable = withIdTieBreaker(toPageable(page, size, direction, sortField))
 
         val results =
             service.getValidators(

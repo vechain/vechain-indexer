@@ -16,20 +16,28 @@ class TransactionServiceTest {
     @MockK lateinit var mongoTemplate: MongoTemplate
 
     @Test
-    fun `processBlockTransactions stores canonical transaction indexes`() {
-        val transactionsSlot = slot<List<IndexedTransaction>>()
-        every {
-            mongoTemplate.insert(capture(transactionsSlot), IndexedTransaction::class.java)
-        } returns emptyList<IndexedTransaction>()
+    fun `processBlock builds canonical transaction indexes`() {
         val block = BlockFixtures.BLOCK_MULTIPLE_TXS
 
-        TransactionService(mongoTemplate).processBlockTransactions(emptyList(), block)
+        val indexedTransactions = TransactionService(mongoTemplate).processBlock(block, emptyList())
 
-        val indexedTransactions = transactionsSlot.captured
         assertEquals(block.transactions.map { it.id }, indexedTransactions.map { it.id })
         assertEquals(
             block.transactions.indices.map { it.toLong() },
             indexedTransactions.map { it.transactionIndex },
         )
+    }
+
+    @Test
+    fun `save persists the provided records via mongoTemplate`() {
+        val recordsSlot = slot<List<IndexedTransaction>>()
+        every { mongoTemplate.insert(capture(recordsSlot), IndexedTransaction::class.java) } returns
+            emptyList<IndexedTransaction>()
+        val service = TransactionService(mongoTemplate)
+        val records = service.processBlock(BlockFixtures.BLOCK_MULTIPLE_TXS, emptyList())
+
+        service.save(records)
+
+        assertEquals(records, recordsSlot.captured)
     }
 }

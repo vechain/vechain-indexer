@@ -40,7 +40,7 @@ class ValidatorServiceTest {
                 totalNextPeriodWeight = BigDecimal.ZERO,
                 totalActiveVetStaked = BigDecimal.ZERO,
                 totalActiveNextCycleVetStaked = BigDecimal.ZERO,
-                delegationsByValidator = emptyMap(),
+                delegationFacetsByValidator = emptyMap(),
             )
     }
     private val priceFeedService: PriceFeedService = mockk {

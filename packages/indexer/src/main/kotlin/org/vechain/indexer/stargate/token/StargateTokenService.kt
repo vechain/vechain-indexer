@@ -59,10 +59,7 @@ open class StargateTokenService(
         val validatorsRefreshed =
             validatorIndexerActive && (!activeValidatorsLoaded || isEpochBoundary(block.number))
         if (validatorsRefreshed) {
-            activeValidators =
-                validatorRepository.findByStatusNot(Status.WITHDRAWN).associateBy {
-                    it.id.lowercase()
-                }
+            activeValidators = validatorRepository.findAll().associateBy { it.id.lowercase() }
             activeValidatorsLoaded = true
         }
 
@@ -332,9 +329,7 @@ open class StargateTokenService(
     /** Extract validator IDs from validator lifecycle events. */
     private fun findValidatorLifecycleEvents(events: List<IndexedEvent>): Set<String> =
         events
-            .filter {
-                it.eventType == "ValidationSignaledExit" || it.eventType == "ValidationWithdrawn"
-            }
+            .filter { it.eventType == "ValidationSignaledExit" }
             .mapNotNull { it.params.getAsString("validator")?.lowercase() }
             .toSet()
 
