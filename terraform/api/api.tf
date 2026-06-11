@@ -331,6 +331,10 @@ module "ecs-lb-service-api" {
       value = each.value.thor_url
     },
     {
+      name  = "THOR_RATE_LIMIT_BYPASS_KEY"
+      value = data.aws_secretsmanager_secret_version.thor_rate_limit_bypass_token.secret_string
+    },
+    {
       name  = "PRICE_ORACLE_THOR_URL"
       value = each.value.api.pricing.oracle.thor-url
     },
@@ -429,6 +433,10 @@ module "ecs-backend-service" {
     },
     { name  = "THOR_URL"
       value = each.value.thor_url
+    },
+    {
+      name  = "THOR_RATE_LIMIT_BYPASS_KEY"
+      value = data.aws_secretsmanager_secret_version.thor_rate_limit_bypass_token.secret_string
     },
     {
       name  = "APP_LOG_LEVEL"
@@ -1141,6 +1149,16 @@ data "aws_secretsmanager_secret_version" "waf_rate_limit_bypass_token" {
   count      = startswith(local.env.environment, "prod") ? 1 : 0
   secret_id  = local.waf_bypass_secret_name
   depends_on = [null_resource.ensure_waf_bypass_secret]
+}
+
+################################################################################
+# Thor Upstream Rate Limit Bypass Token
+# Secret value is provided by the Thor node operator out-of-band and must be
+# pre-created in AWS Secrets Manager before applying this stack.
+################################################################################
+
+data "aws_secretsmanager_secret_version" "thor_rate_limit_bypass_token" {
+  secret_id = "/prod/veworld/thor-rate-limit-bypass-token"
 }
 
 data "aws_security_groups" "ecs_sg_list" {

@@ -80,6 +80,7 @@ spring.data:
 
 thor:
   url: ${THOR_URL:https://mainnet.vechain.org}
+  rate-limit-bypass-key: ${THOR_RATE_LIMIT_BYPASS_KEY:}
 
 vechain:
   forks:

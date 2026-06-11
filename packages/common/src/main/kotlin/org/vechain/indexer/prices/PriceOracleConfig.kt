@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.vechain.indexer.config.CachingThorClient
+import org.vechain.indexer.config.thorClientHeaders
 import org.vechain.indexer.thor.client.ThorClient
 
 /**
@@ -26,6 +27,7 @@ open class PriceOracleConfig {
 
     @Bean
     open fun priceOracleThorClient(
-        @Value("\${pricing.oracle.thor-url}") thorUrl: String
-    ): ThorClient = CachingThorClient(thorUrl, Pair("X-Project-Id", "veworld-indexer"))
+        @Value("\${pricing.oracle.thor-url}") thorUrl: String,
+        @Value("\${thor.rate-limit-bypass-key:}") rateLimitBypassKey: String,
+    ): ThorClient = CachingThorClient(thorUrl, *thorClientHeaders(rateLimitBypassKey))
 }
