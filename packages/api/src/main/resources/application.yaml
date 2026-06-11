@@ -71,6 +71,7 @@ spring.data:
 
 thor:
   url: ${THOR_URL:https://testnet.vechain.org}
+  rate-limit-bypass-key: ${THOR_RATE_LIMIT_BYPASS_KEY:}
 
 # vechain.energy `PriceFeedOracle`. Each deployment configures the values matching its target
 # network in terraform (mainnet for mainnet/devnet deployments, testnet for testnet). The

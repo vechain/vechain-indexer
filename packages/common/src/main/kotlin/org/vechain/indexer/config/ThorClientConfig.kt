@@ -30,6 +30,8 @@ open class ThorClientConfig {
     @Bean
     @Primary
     @ConditionalOnMissingBean(name = ["thorClient"])
-    open fun thorClient(@Value("\${thor.url}") thorUrl: String): ThorClient =
-        CachingThorClient(thorUrl, Pair("X-Project-Id", "veworld-indexer"))
+    open fun thorClient(
+        @Value("\${thor.url}") thorUrl: String,
+        @Value("\${thor.rate-limit-bypass-key:}") rateLimitBypassKey: String,
+    ): ThorClient = CachingThorClient(thorUrl, *thorClientHeaders(rateLimitBypassKey))
 }
