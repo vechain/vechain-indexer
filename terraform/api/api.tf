@@ -333,7 +333,7 @@ module "ecs-lb-service-api" {
     {
       name  = "THOR_RATE_LIMIT_BYPASS_KEY"
       value = startswith(local.env.environment, "prod") ? data.aws_secretsmanager_secret_version.thor_rate_limit_bypass_token[0].secret_string : ""
-    }
+    },
     {
       name  = "PRICE_ORACLE_THOR_URL"
       value = each.value.api.pricing.oracle.thor-url
@@ -437,7 +437,7 @@ module "ecs-backend-service" {
     {
       name  = "THOR_RATE_LIMIT_BYPASS_KEY"
       value = startswith(local.env.environment, "prod") ? data.aws_secretsmanager_secret_version.thor_rate_limit_bypass_token[0].secret_string : ""
-    }
+    },
     {
       name  = "APP_LOG_LEVEL"
       value = each.value.indexer.logging.app-log-level
