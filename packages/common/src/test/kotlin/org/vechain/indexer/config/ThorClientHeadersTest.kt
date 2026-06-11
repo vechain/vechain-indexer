@@ -21,7 +21,7 @@ class ThorClientHeadersTest {
 
     @Test
     fun `appends bypass header when key is non-blank`() {
-        val headers = thorClientHeaders("secret-key").toList()
+        val headers = thorClientHeaders(" secret-key\n").toList()
 
         assertEquals(
             listOf<Pair<String, Any>>(

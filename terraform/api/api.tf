@@ -332,8 +332,8 @@ module "ecs-lb-service-api" {
     },
     {
       name  = "THOR_RATE_LIMIT_BYPASS_KEY"
-      value = data.aws_secretsmanager_secret_version.thor_rate_limit_bypass_token.secret_string
-    },
+      value = startswith(local.env.environment, "prod") ? data.aws_secretsmanager_secret_version.thor_rate_limit_bypass_token[0].secret_string : ""
+    }
     {
       name  = "PRICE_ORACLE_THOR_URL"
       value = each.value.api.pricing.oracle.thor-url
@@ -436,8 +436,8 @@ module "ecs-backend-service" {
     },
     {
       name  = "THOR_RATE_LIMIT_BYPASS_KEY"
-      value = data.aws_secretsmanager_secret_version.thor_rate_limit_bypass_token.secret_string
-    },
+      value = startswith(local.env.environment, "prod") ? data.aws_secretsmanager_secret_version.thor_rate_limit_bypass_token[0].secret_string : ""
+    }
     {
       name  = "APP_LOG_LEVEL"
       value = each.value.indexer.logging.app-log-level
@@ -1156,9 +1156,13 @@ data "aws_secretsmanager_secret_version" "waf_rate_limit_bypass_token" {
 # Secret value is provided by the Thor node operator out-of-band and must be
 # pre-created in AWS Secrets Manager before applying this stack.
 ################################################################################
+locals {
+  thor_rate_limit_bypass_secret_name = "/prod/${var.project}/thor-rate-limit-bypass-token"
+}
 
 data "aws_secretsmanager_secret_version" "thor_rate_limit_bypass_token" {
-  secret_id = "/prod/veworld/thor-rate-limit-bypass-token"
+  count     = startswith(local.env.environment, "prod") ? 1 : 0
+  secret_id = local.thor_rate_limit_bypass_secret_name
 }
 
 data "aws_security_groups" "ecs_sg_list" {
