@@ -13,7 +13,7 @@ RUN --mount=type=cache,target=/root/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=1 GOTOOLCHAIN=auto go build -trimpath -o /out/thor-scheduler .
 
-FROM amazoncorretto:21-alpine3.22 AS builder
+FROM amazoncorretto:21-alpine3.23 AS builder
 
 ARG PACKAGE_NAME
 ARG APP_VERSION
@@ -54,7 +54,7 @@ RUN --mount=type=cache,target=/root/.gradle/caches \
     --mount=type=secret,id=gradle_props,target=/root/.gradle/gradle.properties,required=false \
     ./gradlew packages:$PACKAGE_NAME:build -x test
 
-FROM amazoncorretto:21-alpine3.22 AS prod
+FROM amazoncorretto:21-alpine3.23 AS prod
 
 ARG PACKAGE_NAME
 ARG APP_VERSION
