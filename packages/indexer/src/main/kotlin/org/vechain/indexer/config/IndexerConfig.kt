@@ -11,6 +11,7 @@ open class IndexerConfig() {
     @Bean
     open fun thorClient(
         @Value("\${thor.url}") thorUrl: String,
+        @Value("\${thor.rate-limit-bypass-key:}") rateLimitBypassKey: String,
         metrics: ThorClientMetrics,
-    ): ThorClient = MonitoredThorClient(metrics, thorUrl, Pair("X-Project-Id", "veworld-indexer"))
+    ): ThorClient = MonitoredThorClient(metrics, thorUrl, *thorClientHeaders(rateLimitBypassKey))
 }
