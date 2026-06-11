@@ -13,7 +13,7 @@ RUN --mount=type=cache,target=/root/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=1 GOTOOLCHAIN=auto go build -trimpath -o /out/thor-scheduler .
 
-FROM amazoncorretto:21.0.11-alpine3.20
+FROM amazoncorretto:21.0.11-alpine3.23
 RUN apk update && apk upgrade && apk add --no-cache curl
 ARG PACKAGE_NAME
 ARG APP_VERSION
