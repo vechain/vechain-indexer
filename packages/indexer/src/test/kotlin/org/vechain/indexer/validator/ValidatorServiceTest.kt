@@ -103,7 +103,10 @@ class ValidatorServiceTest {
 
         val (updates, _) = runBlocking { service.processBlock(midEpochBlock(), listOf(event)) }
 
-        val updated = updates.single()
+        // `updates` also contains an entry for the block.signer (created via newDoc by the
+        // signer-credit path) — that's not what this test is about, so filter to the validator
+        // the event targets.
+        val updated = updates.single { it.id == VALIDATOR_ID }
         // Exiting buckets decremented by the withdrawn stake
         assertEquals(0, updated.exitingVetStaked!!.compareTo(BigDecimal("15000000")))
         assertEquals(0, updated.validatorExitingVetStaked!!.compareTo(BigDecimal("5000000")))
@@ -136,7 +139,10 @@ class ValidatorServiceTest {
 
         val (updates, _) = runBlocking { service.processBlock(midEpochBlock(), listOf(event)) }
 
-        val updated = updates.single()
+        // `updates` also contains an entry for the block.signer (created via newDoc by the
+        // signer-credit path) — that's not what this test is about, so filter to the validator
+        // the event targets.
+        val updated = updates.single { it.id == VALIDATOR_ID }
         assertEquals(0, updated.exitingVetStaked!!.compareTo(BigDecimal.ZERO))
         assertEquals(0, updated.validatorExitingVetStaked!!.compareTo(BigDecimal.ZERO))
         expectThat(updated).get { status }.isEqualTo(Status.ACTIVE)
