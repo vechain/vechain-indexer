@@ -32,7 +32,7 @@ allprojects {
     configurations.all {
         resolutionStrategy {
             force(
-                "com.google.protobuf:protobuf-java:3.25.5",
+                "com.google.protobuf:protobuf-java:3.25.9",
                 "org.java-websocket:Java-WebSocket:1.5.3",
             )
         }
