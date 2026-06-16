@@ -1,6 +1,6 @@
 certifi==2026.5.20
 charset-normalizer==3.4.4
-idna==3.15
+idna==3.18
 python-dotenv==1.2.2
 requests==2.33.0
 urllib3==2.7.0
