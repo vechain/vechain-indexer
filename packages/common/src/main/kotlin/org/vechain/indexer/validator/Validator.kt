@@ -63,6 +63,11 @@ data class Validator(
     val missedSlots: Long = 0,
     val lastProposedBlockNumber: Long? = null,
     val lastMissedBlockNumber: Long? = null,
+    // Mirror of the chain's `getValidation().offlineBlock`: the block at which the validator was
+    // last marked offline by thor (cleared when they next sign a block). Used as the baseline for
+    // detecting new misses — we increment `missedSlots` when chain `offlineBlock` advances past
+    // the value stored here.
+    val offlineBlock: Long? = null,
     @JsonIgnore override val version: Int = 0,
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = id

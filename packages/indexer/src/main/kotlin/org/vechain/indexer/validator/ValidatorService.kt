@@ -27,8 +27,6 @@ import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.utils.NumberUtils
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
-import org.vechain.indexer.validator.scheduler.EpochSeedProvider
-import org.vechain.indexer.validator.scheduler.ThorSchedulerProcess
 
 @Profile("validator", "stargate-token", "history")
 @Service
@@ -37,8 +35,6 @@ open class ValidatorService(
     private val thorClient: ThorClient,
     private val mongoTemplate: MongoTemplate,
     private val inlineVersioningProperties: InlineVersioningProperties,
-    private val epochSeedProvider: EpochSeedProvider,
-    private val thorScheduler: ThorSchedulerProcess,
     private val networkDetectionService: NetworkDetectionService,
     @param:Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
     private val stakerAddress: String,
@@ -286,27 +282,33 @@ open class ValidatorService(
         }
     }
 
-    // -------- Liveness from block headers --------
+    // -------- Liveness from chain truth --------
 
     /**
-     * Cumulative liveness counters derived from block headers alone — no state reads.
+     * Maintains the per-validator liveness counters by reading what thor itself wrote into the
+     * staker contract — no schedule reconstruction.
      *
-     * On a custom single-proposer network (Thor solo) we credit the lone signer with one
-     * scheduled-and-proposed slot per block — no VRF schedule exists to reconstruct.
+     * Two signals from chain truth drive everything:
+     * 1. `block.signer` directly tells us who proposed this block.
+     * 2. `getValidation(addr).offlineBlock` is set by thor's PoS scheduler (see
+     *    `thor/packer/pos_scheduler.go`) whenever a validator scheduled before the proposer's slot
+     *    is skipped, and cleared when a previously-offline validator next signs a block.
      *
-     * Otherwise, if [epochSeedProvider] yields a seed we reconstruct the deterministic PoS schedule
-     * and attribute scheduled / proposed / missed slots precisely. Without a seed (current default,
-     * until Beta extraction via VRF Verify is implemented), we fall back to bumping only
-     * `proposedBlocks` for the actual signer; `scheduledSlots` and `missedSlots` stay at zero so
-     * the reader can tell attribution wasn't running.
+     * Algorithm:
+     * - The signer just signed, so they're online: credit `proposedBlocks++`, `scheduledSlots++`,
+     *   clear our cached `offlineBlock` (chain cleared theirs).
+     * - If `slotsElapsed == 1` (clean block), no misses are possible — done.
+     * - If `slotsElapsed > 1`, thor wrote new `offlineBlock` values for every validator scheduled
+     *   in the skipped slots. Batch-read `offlineBlock` for the active set; whenever the chain
+     *   value moved past what we have cached, attribute a miss.
+     *
+     * The invariant `scheduledSlots == missedSlots + proposedBlocks` holds by construction.
      */
     private suspend fun updateLiveness(block: Block, working: MutableMap<String, Validator>) {
         val signer = block.signer.lowercase()
 
-        // Thor solo (and any custom single-proposer network) has no VRF schedule to
-        // reconstruct: the sole ACTIVE validator is the scheduled proposer for every block.
-        // Credit one scheduled-and-proposed slot to the signer so liveness reflects reality
-        // instead of being stuck at the seed-missing fallback (scheduledSlots = 0).
+        // Thor solo (and any custom single-proposer network) has no scheduler complexity to deal
+        // with: the sole ACTIVE validator signs every block and never misses a slot.
         if (isSoloLikeNetwork(working)) {
             val current = working[signer] ?: return
             working[signer] =
@@ -314,71 +316,74 @@ open class ValidatorService(
                     scheduledSlots = current.scheduledSlots + 1,
                     proposedBlocks = current.proposedBlocks + 1,
                     lastProposedBlockNumber = block.number,
+                    offlineBlock = null,
                 )
             return
         }
 
-        val seed = epochSeedProvider.seedFor(block)
-
-        if (seed == null) {
-            val current = working[signer] ?: return
+        // Signer credit: they just signed, so they're online and they proposed this block. The
+        // chain cleared their OfflineBlock during block production, so mirror that locally.
+        working[signer]?.let { current ->
             working[signer] =
                 current.copy(
+                    scheduledSlots = current.scheduledSlots + 1,
                     proposedBlocks = current.proposedBlocks + 1,
                     lastProposedBlockNumber = block.number,
+                    offlineBlock = null,
                 )
-            return
         }
-
-        val proposers =
-            working.values
-                // EXITING validators are still in the staker's active list and producing blocks
-                // until `exitBlock`; include them so VRF-schedule reconstruction matches the
-                // chain's actual leader group.
-                .filter { it.status == Status.ACTIVE || it.status == Status.EXITING }
-                .map {
-                    ThorSchedulerProcess.Proposer(
-                        address = it.id,
-                        weight = (it.validatorLockedWeight ?: BigDecimal.ZERO).toLong(),
-                        active = true,
-                    )
-                }
-        if (proposers.isEmpty()) return
-
-        val schedule =
-            thorScheduler.schedule(
-                seedHex = "0x" + seed.joinToString("") { "%02x".format(it) },
-                parentBlockNumber = block.number - 1,
-                proposers = proposers,
-            )
-        if (schedule.isEmpty()) return
 
         val parentTimestamp = parentTimestampFor(block)
         val slotsElapsed = ((block.timestamp - parentTimestamp) / BLOCK_INTERVAL_SECONDS).toInt()
-        if (slotsElapsed <= 0) return
+        // slotsElapsed <= 1: signer at the only slot, nobody could have missed.
+        if (slotsElapsed <= 1) return
 
-        repeat(slotsElapsed) { k ->
-            val scheduledId = schedule[k % schedule.size]
-            val isActualSlot = k == slotsElapsed - 1
-            if (isActualSlot) {
-                val scheduled = working[scheduledId]
-                if (scheduled != null) {
-                    working[scheduledId] =
-                        scheduled.copy(scheduledSlots = scheduled.scheduledSlots + 1)
-                }
-                // Trust block.signer over the reconstructed schedule for proposal attribution;
-                // they can diverge if our active-set view lags the chain.
-                val proposerId = if (working.containsKey(signer)) signer else scheduledId
-                val proposer = working[proposerId] ?: return@repeat
-                working[proposerId] =
-                    proposer.copy(
-                        proposedBlocks = proposer.proposedBlocks + 1,
-                        lastProposedBlockNumber = block.number,
-                    )
-            } else {
-                val current = working[scheduledId] ?: return@repeat
-                working[scheduledId] =
+        attributeMissesFromChain(block, working, signer)
+    }
+
+    /**
+     * Gap-block path: at least one validator was scheduled before the signer's slot and got
+     * skipped. Thor wrote their new `OfflineBlock` to the staker contract; read it back and
+     * attribute a miss to every validator whose chain `offlineBlock` advanced past what we have
+     * cached.
+     */
+    private suspend fun attributeMissesFromChain(
+        block: Block,
+        working: MutableMap<String, Validator>,
+        signer: String,
+    ) {
+        val candidates =
+            working.values.filter {
+                (it.status == Status.ACTIVE || it.status == Status.EXITING) && it.id != signer
+            }
+        if (candidates.isEmpty()) return
+
+        val revision = BlockRevision.Id(block.id)
+        val validationAbi = getAbi("getValidation")
+        val clauses =
+            candidates.map { v ->
+                ContractUtils.createClause(
+                    stakerAddress,
+                    validationAbi,
+                    AddressUtils.toBigInt(v.id),
+                )
+            }
+        val responses = thorClient.inspectClauses(clauses, revision)
+        requireStakerResponseCount("liveness offlineBlock scan", responses, clauses.size, block)
+
+        candidates.forEachIndexed { index, current ->
+            val decoded =
+                decodeStakerResponse("getValidation", responses[index], validationAbi, block)
+            val freshRaw = (decoded["offlineBlock"] as BigInteger).toLong()
+            val fresh = freshRaw.takeIf { it > 0L }
+            // A miss happens iff chain OfflineBlock has advanced past our cached value. Coming
+            // back online (chain → null) without us seeing a new miss is also possible, but
+            // the only way that happens between gap blocks is via signing — and the signer
+            // branch above already handled that case. So here we only care about advances.
+            if (fresh != null && fresh != current.offlineBlock) {
+                working[current.id] =
                     current.copy(
+                        offlineBlock = fresh,
                         scheduledSlots = current.scheduledSlots + 1,
                         missedSlots = current.missedSlots + 1,
                         lastMissedBlockNumber = block.number,
@@ -481,6 +486,11 @@ open class ValidatorService(
             val lockedVet = (totals["lockedVET"] as BigInteger)
             val exitBlockRaw = (period["exitBlock"] as BigInteger).toLong()
             val hasExitBlock = exitBlockRaw in 1L until MAX_UINT32_LONG
+            // Chain returns offlineBlock = 0 when the validator is online (the underlying
+            // Validation.OfflineBlock pointer is nil); any value > 0 is the block at which thor
+            // last marked them offline.
+            val offlineBlockRaw = (validation["offlineBlock"] as BigInteger).toLong()
+            val offlineBlock = offlineBlockRaw.takeIf { it > 0L }
             val rawStatus = Status.fromCode((validation["status"] as BigInteger).toInt())
             // The chain has no `Exiting` enum value — it's `Active + ExitBlock!=nil`. Re-derive so
             // the indexer's EXITING label survives the walk instead of being clobbered to ACTIVE.
@@ -506,6 +516,7 @@ open class ValidatorService(
                     completedPeriods = (period["completedPeriods"] as BigInteger).toLong(),
                     queuePosition = queuePositionById[validatorId],
                     availableStartBlock = null,
+                    offlineBlock = offlineBlock,
                 )
         }
 

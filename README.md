@@ -19,7 +19,6 @@
 
 - Docker
 - Java (v21)
-- Go (>= 1.26) — required to build `tools/thor-scheduler`, the Go co-process used by the Validator indexer for PoS schedule reconstruction. `make build` invokes `tools/thor-scheduler/Makefile`, which looks for `go` on `PATH`, then under `~/sdk/go*/bin/go` (the `golang.org/dl/goX.Y` SDK layout), then `/opt/homebrew/bin/go`, then `/usr/local/go/bin/go`. Override with `GO=/path/to/go` if needed. Docker-only workflows (`make start`, `make build-image`, `make test-e2e`) do **not** require a local Go install — the multi-stage Dockerfile builds the binary inside `golang:1.26-alpine`.
 
 ### GitHub Packages Authentication (optional)
 
