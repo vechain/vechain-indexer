@@ -180,12 +180,17 @@ open class DelegationService(
      * [Delegation.transitionAtBlock] from the row's own initiation block — not the current indexer
      * block. The chain locks each delegation at the first housekeep boundary at or after its
      * initiation, regardless of when the indexer first observes the validator as active. Anchoring
-     * to `d.blockNumber` keeps the indexer aligned with the chain across backfills and across the
-     * up-to-180-block window between chain activation and the validator indexer's next epoch walk.
+     * to [Delegation.initiatedAtBlock] keeps the indexer aligned with the chain across backfills,
+     * across the up-to-180-block window between chain activation and the validator indexer's next
+     * epoch walk, and across intervening mutations (e.g. NFT `Transfer`) that re-stamp the
+     * versioned [Delegation.blockNumber].
      *
      * If that boundary has already passed (the row's housekeep block is `<=` the current block),
      * mirror the chain by flipping the row directly to [DelegationStatus.ACTIVE] in this pass —
      * [applyScheduledTransitions] can't catch a boundary that's already in the rear-view.
+     *
+     * Legacy rows persisted before `initiatedAtBlock` existed fall back to `blockNumber`. That
+     * matches the pre-fix behaviour, so legacy data doesn't regress on upgrade.
      */
     private fun refreshZeroCycle(
         block: Block,
@@ -195,7 +200,8 @@ open class DelegationService(
         working.values.toList().forEach { d ->
             if (d.status != DelegationStatus.QUEUED) return@forEach
             if (d.transitionAtBlock != null) return@forEach
-            val next = nextCycleStart(d.validator, d.blockNumber, validators) ?: return@forEach
+            val initiationBlock = d.initiatedAtBlock ?: d.blockNumber
+            val next = nextCycleStart(d.validator, initiationBlock, validators) ?: return@forEach
             working[d.id] =
                 if (next > block.number) {
                     d.copy(transitionAtBlock = next)
@@ -301,6 +307,7 @@ open class DelegationService(
                 totalRewardsClaimed = BigInteger.ZERO,
                 txId = ev.txId,
                 transitionAtBlock = transitionAt,
+                initiatedAtBlock = block.number,
                 blockId = block.id,
                 blockNumber = block.number,
                 blockTimestamp = block.timestamp,
