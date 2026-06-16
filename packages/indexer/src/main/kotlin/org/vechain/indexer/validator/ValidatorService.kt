@@ -356,9 +356,21 @@ open class ValidatorService(
         working: MutableMap<String, Validator>,
         signer: String,
     ) {
+        // On epoch boundary blocks, thor's Housekeep runs BEFORE proposer selection (see
+        // packer/packer.go: SyncPOS → Housekeep → LeaderGroup → NewPoSScheduler), so a validator
+        // that transitions QUEUED → ACTIVE at this block IS in the leader group and can miss.
+        // Our cache still shows them as QUEUED until walkStakerState runs (which happens later in
+        // processBlock). Include QUEUED in the candidates filter on epoch boundary blocks so we
+        // don't lose the miss-at-activation case. Off-boundary, QUEUED validators are never
+        // scheduled and don't need to be queried.
+        val includeQueued = isEpochBoundary(block.number)
         val candidates =
             working.values.filter {
-                (it.status == Status.ACTIVE || it.status == Status.EXITING) && it.id != signer
+                val eligible =
+                    it.status == Status.ACTIVE ||
+                        it.status == Status.EXITING ||
+                        (includeQueued && it.status == Status.QUEUED)
+                eligible && it.id != signer
             }
         if (candidates.isEmpty()) return
 
