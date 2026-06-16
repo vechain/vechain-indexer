@@ -44,6 +44,17 @@ data class Delegation(
      * (zero-cycle), or the delegation is in a terminal state.
      */
     @JsonIgnore val transitionAtBlock: Long? = null,
+    /**
+     * Block at which `DelegationInitiated` fired for this row — the chain's authoritative
+     * initiation timestamp. Set once on creation and never updated thereafter. Distinct from
+     * [blockNumber], which is versioned-document metadata that re-stamps to the current block on
+     * every persisted change (e.g. owner transfer, rewards claim). Cycle-boundary math anchored on
+     * [blockNumber] would drift across such updates; this field is the stable anchor.
+     *
+     * Nullable for backward compatibility with rows persisted before this field existed — consumers
+     * must fall back to [blockNumber] when null. New rows always populate it.
+     */
+    @JsonIgnore val initiatedAtBlock: Long? = null,
     @JsonIgnore override val blockId: String,
     @JsonIgnore override val blockNumber: Long,
     @JsonIgnore override val blockTimestamp: Long,

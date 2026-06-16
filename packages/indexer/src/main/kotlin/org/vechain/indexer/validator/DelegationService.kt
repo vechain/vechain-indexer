@@ -176,8 +176,21 @@ open class DelegationService(
 
     /**
      * Zero-cycle delegations are those waiting on a validator that hadn't yet been activated when
-     * the delegation was created. Once the validator gains a non-zero `startBlock`, re-derive
-     * [Delegation.transitionAtBlock] so the next scheduled-transition pass can flip the status.
+     * the delegation was created. Once the validator becomes active, re-derive
+     * [Delegation.transitionAtBlock] from the row's own initiation block — not the current indexer
+     * block. The chain locks each delegation at the first housekeep boundary at or after its
+     * initiation, regardless of when the indexer first observes the validator as active. Anchoring
+     * to [Delegation.initiatedAtBlock] keeps the indexer aligned with the chain across backfills,
+     * across the up-to-180-block window between chain activation and the validator indexer's next
+     * epoch walk, and across intervening mutations (e.g. NFT `Transfer`) that re-stamp the
+     * versioned [Delegation.blockNumber].
+     *
+     * If that boundary has already passed (the row's housekeep block is `<=` the current block),
+     * mirror the chain by flipping the row directly to [DelegationStatus.ACTIVE] in this pass —
+     * [applyScheduledTransitions] can't catch a boundary that's already in the rear-view.
+     *
+     * Legacy rows persisted before `initiatedAtBlock` existed fall back to `blockNumber`. That
+     * matches the pre-fix behaviour, so legacy data doesn't regress on upgrade.
      */
     private fun refreshZeroCycle(
         block: Block,
@@ -187,10 +200,14 @@ open class DelegationService(
         working.values.toList().forEach { d ->
             if (d.status != DelegationStatus.QUEUED) return@forEach
             if (d.transitionAtBlock != null) return@forEach
-            val next = nextCycleStart(d.validator, block.number, validators) ?: return@forEach
-            if (next > block.number) {
-                working[d.id] = d.copy(transitionAtBlock = next)
-            }
+            val initiationBlock = d.initiatedAtBlock ?: d.blockNumber
+            val next = nextCycleStart(d.validator, initiationBlock, validators) ?: return@forEach
+            working[d.id] =
+                if (next > block.number) {
+                    d.copy(transitionAtBlock = next)
+                } else {
+                    d.copy(status = DelegationStatus.ACTIVE, transitionAtBlock = null)
+                }
         }
     }
 
@@ -290,6 +307,7 @@ open class DelegationService(
                 totalRewardsClaimed = BigInteger.ZERO,
                 txId = ev.txId,
                 transitionAtBlock = transitionAt,
+                initiatedAtBlock = block.number,
                 blockId = block.id,
                 blockNumber = block.number,
                 blockTimestamp = block.timestamp,
@@ -403,10 +421,14 @@ open class DelegationService(
         val start = v.startBlock ?: return null
         val period = v.cyclePeriodLength ?: return null
         if (period <= 0L) return null
-        if (blockNumber < start) return start
-        val offset = blockNumber - start
+        // Delegations initiated before activation still transition at the validator's first
+        // housekeep boundary (`start + period`), not at activation itself. Clamping `blockNumber`
+        // up to `start` keeps the cycle math correct for the pre-activation case now that
+        // [refreshZeroCycle] calls this with the delegation's own initiation block.
+        val effective = maxOf(blockNumber, start)
+        val offset = effective - start
         val positionInCycle = offset % period
-        val currentCycleStart = blockNumber - positionInCycle
+        val currentCycleStart = effective - positionInCycle
         return currentCycleStart + period
     }
 

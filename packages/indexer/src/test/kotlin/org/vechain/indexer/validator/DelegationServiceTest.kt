@@ -73,6 +73,152 @@ class DelegationServiceTest {
         expectThat(archive).hasSize(0)
     }
 
+    /**
+     * Regression: a zero-cycle row whose actual chain-housekeep boundary lies in the indexer's past
+     * (because the validator became active in mongo only after that boundary — typical of a
+     * backfill, or of the up-to-180-block lag between chain activation and the validator indexer's
+     * next epoch walk) must be flipped directly to ACTIVE, not scheduled for the *next* boundary.
+     * Before the fix, `refreshZeroCycle` would set `transitionAtBlock` to the next housekeep and
+     * the row would stay QUEUED for an entire extra cycle while the chain already had it locked.
+     *
+     * Also exercises the immutable `initiatedAtBlock` anchor: `blockNumber` is set to a value
+     * bumped past the chain housekeep (simulating an NFT `Transfer` re-stamp) while
+     * `initiatedAtBlock` correctly reflects the original chain initiation block. The cycle math
+     * must use the immutable field, not `blockNumber`.
+     */
+    @Test
+    fun `refreshZeroCycle flips QUEUED to ACTIVE when row's housekeep boundary is already in the past`() {
+        val existing =
+            Delegation(
+                id = "1",
+                validator = VALIDATOR_ID,
+                tokenId = "4",
+                owner = "0xowner",
+                status = DelegationStatus.QUEUED,
+                tokenLevel = TokenLevel.Dawn,
+                stakedAmount = "0",
+                totalRewardsClaimed = java.math.BigInteger.ZERO,
+                txId = "0xtx",
+                transitionAtBlock = null,
+                // initiation block well before the validator's first housekeep boundary (90)
+                initiatedAtBlock = 10,
+                blockId = "0xblock-prev",
+                // blockNumber has been re-stamped (e.g. NFT Transfer) past the housekeep; the
+                // immutable initiatedAtBlock is what drives the cycle math now.
+                blockNumber = 200,
+                blockTimestamp = 2000,
+            )
+        every { repository.findByTransitionAtBlockAndStatusIn(any(), any()) } returns emptyList()
+        every {
+            repository.findByTransitionAtBlockIsNullAndStatusIn(listOf(DelegationStatus.QUEUED))
+        } returns listOf(existing)
+        every { repository.findByTokenIdIn(any()) } returns emptyList()
+        every { repository.findByValidatorIn(any()) } returns emptyList()
+        every { validatorRepository.findAllById(any<Iterable<String>>()) } returns
+            listOf(soloGenesisValidator(VALIDATOR_ID))
+
+        // processing block 500 — long past `start(0) + period(90) = 90`, the chain housekeep
+        // boundary that locked this delegation. Indexer must catch up rather than schedule for 540.
+        val (updates, _) = runBlocking { service.processBlock(block(number = 500), emptyList()) }
+
+        expectThat(updates).hasSize(1).first().and {
+            get { id }.isEqualTo("1")
+            get { status }.isEqualTo(DelegationStatus.ACTIVE)
+            get { transitionAtBlock }.isEqualTo(null)
+        }
+    }
+
+    /**
+     * Anchor the cycle math to `initiatedAtBlock`, not `blockNumber`. Here the immutable initiation
+     * block (10) puts the chain housekeep at block 90, in the past relative to the processing block
+     * (150) — so the row must flip to ACTIVE. If the math used `blockNumber` (re-stamped to 200)
+     * instead, it would compute boundary 270 and schedule the row for the future, leaving it QUEUED
+     * for an entire extra cycle. Guards the case where a `blockNumber` re-stamp (e.g. NFT
+     * `Transfer`) precedes refresh of a zero-cycle row.
+     */
+    @Test
+    fun `refreshZeroCycle anchors cycle math to initiatedAtBlock not blockNumber`() {
+        val existing =
+            Delegation(
+                id = "1",
+                validator = VALIDATOR_ID,
+                tokenId = "4",
+                owner = "0xowner",
+                status = DelegationStatus.QUEUED,
+                tokenLevel = TokenLevel.Dawn,
+                stakedAmount = "0",
+                totalRewardsClaimed = java.math.BigInteger.ZERO,
+                txId = "0xtx",
+                transitionAtBlock = null,
+                initiatedAtBlock = 10,
+                blockId = "0xblock-prev",
+                blockNumber = 200,
+                blockTimestamp = 2000,
+            )
+        every { repository.findByTransitionAtBlockAndStatusIn(any(), any()) } returns emptyList()
+        every {
+            repository.findByTransitionAtBlockIsNullAndStatusIn(listOf(DelegationStatus.QUEUED))
+        } returns listOf(existing)
+        every { repository.findByTokenIdIn(any()) } returns emptyList()
+        every { repository.findByValidatorIn(any()) } returns emptyList()
+        every { validatorRepository.findAllById(any<Iterable<String>>()) } returns
+            listOf(soloGenesisValidator(VALIDATOR_ID))
+
+        // processing block 150 — past the chain housekeep (90) anchored on initiatedAtBlock, but
+        // before the spurious 270 boundary that a blockNumber-anchored computation would yield.
+        val (updates, _) = runBlocking { service.processBlock(block(number = 150), emptyList()) }
+
+        expectThat(updates).hasSize(1).first().and {
+            get { id }.isEqualTo("1")
+            get { status }.isEqualTo(DelegationStatus.ACTIVE)
+            get { transitionAtBlock }.isEqualTo(null)
+        }
+    }
+
+    /**
+     * Legacy rows persisted before `initiatedAtBlock` existed deserialize with `null`. To avoid
+     * regressing such rows on upgrade, the cycle math falls back to `blockNumber`. This matches
+     * pre-fix behaviour for legacy data; new rows always populate `initiatedAtBlock`.
+     */
+    @Test
+    fun `refreshZeroCycle falls back to blockNumber when initiatedAtBlock is null (legacy row)`() {
+        val existing =
+            Delegation(
+                id = "1",
+                validator = VALIDATOR_ID,
+                tokenId = "4",
+                owner = "0xowner",
+                status = DelegationStatus.QUEUED,
+                tokenLevel = TokenLevel.Dawn,
+                stakedAmount = "0",
+                totalRewardsClaimed = java.math.BigInteger.ZERO,
+                txId = "0xtx",
+                transitionAtBlock = null,
+                initiatedAtBlock = null,
+                blockId = "0xblock-prev",
+                blockNumber = 30,
+                blockTimestamp = 300,
+            )
+        every { repository.findByTransitionAtBlockAndStatusIn(any(), any()) } returns emptyList()
+        every {
+            repository.findByTransitionAtBlockIsNullAndStatusIn(listOf(DelegationStatus.QUEUED))
+        } returns listOf(existing)
+        every { repository.findByTokenIdIn(any()) } returns emptyList()
+        every { repository.findByValidatorIn(any()) } returns emptyList()
+        every { validatorRepository.findAllById(any<Iterable<String>>()) } returns
+            listOf(soloGenesisValidator(VALIDATOR_ID))
+
+        // processing block 40 — between blockNumber(30) and the first housekeep (90) computed via
+        // the fallback path.
+        val (updates, _) = runBlocking { service.processBlock(block(number = 40), emptyList()) }
+
+        expectThat(updates).hasSize(1).first().and {
+            get { id }.isEqualTo("1")
+            get { status }.isEqualTo(DelegationStatus.QUEUED)
+            get { transitionAtBlock }.isEqualTo(90L)
+        }
+    }
+
     @Test
     fun `applyScheduledTransitions flips QUEUED to ACTIVE at scheduled transitionAtBlock`() {
         val existing =
