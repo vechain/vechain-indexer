@@ -35,14 +35,18 @@ jobs:
               - '**/*.kt'
               - '**/*.kts'
               - '**/*.java'
+              - '**/*.go'
+              - '**/go.mod'
+              - '**/go.sum'
               - 'packages/**'
+              - 'tools/**'
               - 'build.gradle'
               - 'build.gradle.kts'
               - 'settings.gradle'
               - 'settings.gradle.kts'
               - 'gradle/**'
               - 'Makefile'
-              - 'Dockerfile'
+              - '**/Dockerfile*'
 
   check-formatting:
     name: Check Formatting
