@@ -323,15 +323,19 @@ open class ValidatorService(
 
         // Signer credit: they just signed, so they're online and they proposed this block. The
         // chain cleared their OfflineBlock during block production, so mirror that locally.
-        working[signer]?.let { current ->
-            working[signer] =
-                current.copy(
-                    scheduledSlots = current.scheduledSlots + 1,
-                    proposedBlocks = current.proposedBlocks + 1,
-                    lastProposedBlockNumber = block.number,
-                    offlineBlock = null,
-                )
-        }
+        //
+        // Create the doc if it doesn't exist yet (cold start: `existing` was empty, walk hasn't
+        // run yet). The walkStakerState that follows on cold-start / epoch-boundary blocks fills
+        // in static fields (status, stake, weight, ...) without touching counters, so the
+        // proposedBlocks/scheduledSlots bump we apply here survives.
+        val current = working[signer] ?: newDoc(signer, block)
+        working[signer] =
+            current.copy(
+                scheduledSlots = current.scheduledSlots + 1,
+                proposedBlocks = current.proposedBlocks + 1,
+                lastProposedBlockNumber = block.number,
+                offlineBlock = null,
+            )
 
         val parentTimestamp = parentTimestampFor(block)
         val slotsElapsed = ((block.timestamp - parentTimestamp) / BLOCK_INTERVAL_SECONDS).toInt()
