@@ -16,7 +16,7 @@ dependencies {
 
     // Caffeine cache
     implementation("org.springframework.boot:spring-boot-starter-cache:3.5.15")
-    implementation("com.github.ben-manes.caffeine:caffeine:3.1.7")
+    implementation("com.github.ben-manes.caffeine:caffeine:3.2.4")
 
     testImplementation("de.flapdoodle.embed:de.flapdoodle.embed.mongo.spring3x:4.23.0")
 }
