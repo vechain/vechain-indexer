@@ -251,7 +251,7 @@ allprojects {
         implementation("org.web3j:contracts:4.9.8")
         implementation("org.bouncycastle:bcprov-jdk15on:1.70")
         implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.3")
-        implementation("commons-codec:commons-codec:1.15")
+        implementation("commons-codec:commons-codec:1.22.0")
 
         // Monitoring dependencies
         implementation("io.micrometer:micrometer-registry-prometheus:1.14.5")
