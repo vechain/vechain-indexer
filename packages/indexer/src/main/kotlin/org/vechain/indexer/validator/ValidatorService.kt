@@ -376,11 +376,13 @@ open class ValidatorService(
                 decodeStakerResponse("getValidation", responses[index], validationAbi, block)
             val freshRaw = (decoded["offlineBlock"] as BigInteger).toLong()
             val fresh = freshRaw.takeIf { it > 0L }
-            // A miss happens iff chain OfflineBlock has advanced past our cached value. Coming
-            // back online (chain → null) without us seeing a new miss is also possible, but
-            // the only way that happens between gap blocks is via signing — and the signer
-            // branch above already handled that case. So here we only care about advances.
-            if (fresh != null && fresh != current.offlineBlock) {
+            // A miss happens iff chain OfflineBlock has *advanced past* our cached value. Strict
+            // `>` (rather than `!=`) defends against rare regressions — e.g. a stale cache or a
+            // post-rollback observation where `fresh` lands below what we have. Treating that as
+            // a new miss would over-count; leave the cache alone until chain moves forward again.
+            // Coming back online (chain → null) is only observed via signing, handled above.
+            val cached = current.offlineBlock
+            if (fresh != null && (cached == null || fresh > cached)) {
                 working[current.id] =
                     current.copy(
                         offlineBlock = fresh,
