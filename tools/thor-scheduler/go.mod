@@ -37,5 +37,5 @@ require (
 
 replace (
 	github.com/ethereum/go-ethereum => github.com/vechain/go-ethereum v1.8.15-0.20260324060835-4fc778eca93e
-	github.com/syndtr/goleveldb => github.com/vechain/goleveldb v1.0.1-0.20220809091043-51eb019c8655
+	github.com/syndtr/goleveldb => github.com/vechain/goleveldb v1.0.1-0.20210819030439-cc5203594725
 )
