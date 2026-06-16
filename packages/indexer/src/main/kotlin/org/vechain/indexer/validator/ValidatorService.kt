@@ -305,6 +305,13 @@ open class ValidatorService(
      * The invariant `scheduledSlots == missedSlots + proposedBlocks` holds by construction.
      */
     private suspend fun updateLiveness(block: Block, working: MutableMap<String, Validator>) {
+        // Genesis (block 0) is a chain-init artifact — no PoS schedule, no proposer set, no
+        // parent block to compute slotsElapsed against (its parentID is the 0xffffffff…
+        // sentinel which thor cannot resolve). The signer field is not a real validator. Skip
+        // liveness entirely; the cold-start walkStakerState that follows still populates the
+        // initial validator set from chain truth.
+        if (block.number == 0L) return
+
         val signer = block.signer.lowercase()
 
         // Thor solo (and any custom single-proposer network) has no scheduler complexity to deal
