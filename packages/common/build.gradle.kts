@@ -7,7 +7,7 @@ dependencies {
     implementation("com.github.vechain:thor-devkit.java:v1.0.0")
     implementation("org.web3j:utils:4.12.1")
 
-    testImplementation("de.flapdoodle.embed:de.flapdoodle.embed.mongo.spring3x:4.23.0")
+    testImplementation("de.flapdoodle.embed:de.flapdoodle.embed.mongo.spring3x:4.33.0")
 }
 
 tasks.getByName<BootJar>("bootJar") { enabled = false }

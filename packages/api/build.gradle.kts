@@ -18,7 +18,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-cache:3.5.15")
     implementation("com.github.ben-manes.caffeine:caffeine:3.1.7")
 
-    testImplementation("de.flapdoodle.embed:de.flapdoodle.embed.mongo.spring3x:4.23.0")
+    testImplementation("de.flapdoodle.embed:de.flapdoodle.embed.mongo.spring3x:4.33.0")
 }
 
 tasks.getByName<BootJar>("bootJar") {
