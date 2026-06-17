@@ -13,8 +13,6 @@ import org.vechain.indexer.thor.AddressUtils
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.ContractUtils
-import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeValidators
-import org.vechain.indexer.validator.domain.ValidatorDecoder.listOf
 import org.vechain.indexer.validator.logic.ValidatorCalculator.calculateNextCycleStart
 
 @Profile("delegation", "stargate-token", "history")
@@ -117,40 +115,14 @@ class ValidatorDelegationService(
                         response[0].data,
                         getDelegationsAbiFunctions("getValidationPeriodDetails").outputs,
                     )
-                (decoded["exitBlock"] as BigInteger).toLong()
+                // Thor serialises a nil ExitBlock pointer as MaxUint32 (see
+                // thor/builtin/staker_native.go). Collapse the sentinel to 0 so callers writing
+                // this value into delegation state never persist 4,294,967,295 as a real block.
+                // 0 matches the snapshot path, which gets the same value via
+                // `Validator.exitBlock ?: 0L` in HistoryService.loadValidatorSnapshots.
+                val exitBlockRaw = (decoded["exitBlock"] as BigInteger).toLong()
+                exitBlockRaw.takeIf { it in 1L until MAX_UINT32_LONG } ?: 0L
             }
-
-    /**
-     * Decodes validator snapshots from chain responses.
-     *
-     * Parses masters, staking period lengths, start blocks, and exit blocks.
-     *
-     * @param callResponses Chain responses from the staking contract.
-     * @return Map of validatorId → [ValidatorSnapshot].
-     */
-    fun decodeValidatorSnapshots(
-        callResponses: List<InspectionResult>
-    ): Map<String, ValidatorSnapshot> {
-        val decoded = decodeValidators(callResponses, getDelegationsAbiFunctions("getValidators"))
-        if (decoded.isEmpty()) return emptyMap()
-
-        val masters = decoded.listOf<String>("masters")
-        val periods = decoded.listOf<BigInteger>("stakingPeriodLengths")
-        val starts = decoded.listOf<BigInteger>("startBlocks")
-        val exits = decoded.listOf<BigInteger>("exitBlocks")
-
-        return masters
-            .mapIndexed { i, id ->
-                id to
-                    ValidatorSnapshot(
-                        validatorId = id,
-                        stakingPeriodLength = periods[i].toLong(),
-                        startBlock = starts[i].toLong(),
-                        exitBlock = exits[i].toLong(),
-                    )
-            }
-            .toMap()
-    }
 
     /**
      * Fetches validation period details for a list of validators.
@@ -217,4 +189,8 @@ class ValidatorDelegationService(
                 cachedGetDelegationAbi[name] = abi
                 abi
             }
+
+    private companion object {
+        private const val MAX_UINT32_LONG = 4_294_967_295L
+    }
 }
