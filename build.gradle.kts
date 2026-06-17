@@ -33,7 +33,7 @@ allprojects {
         resolutionStrategy {
             force(
                 "com.google.protobuf:protobuf-java:3.25.9",
-                "org.java-websocket:Java-WebSocket:1.5.3",
+                "org.java-websocket:Java-WebSocket:1.6.0",
             )
         }
     }
