@@ -367,6 +367,71 @@ class ValidatorServiceTest {
     }
 
     @Test
+    fun `gap block does not attribute misses when chain reports the MaxUint32 sentinel`() {
+        // Regression for the PR #1412 bug: thor serialises a nil OfflineBlock pointer as
+        // math.MaxUint32 (see thor/builtin/staker_native.go), i.e. "this validator is online /
+        // has never been marked offline". An earlier `value > 0` filter let that sentinel
+        // through, so on the first gap block every currently-online candidate was credited a
+        // bogus miss at block 4,294,967,295. Confirmed against mainnet block 25,010,538:
+        // the indexer attributed 29 misses to that block, but querying the staker contract
+        // directly at the same revision showed exactly 1 validator with a non-sentinel
+        // offlineBlock — the other 100 all returned MaxUint32.
+        val a = activeValidator(VID_A, weight = 100)
+        val b = activeValidator(VID_B, weight = 100)
+        val c = activeValidator(VID_C, weight = 100)
+        val signer = activeValidator(VID_D, weight = 100)
+        every { repository.findAll() } returns listOf(a, b, c, signer)
+        stubParentTimestamp(LIVENESS_TIMESTAMP - 20L)
+
+        stubOfflineBlockResponse(
+            mapOf(
+                VID_A to OFFLINE_BLOCK_SENTINEL,
+                VID_B to OFFLINE_BLOCK_SENTINEL,
+                VID_C to OFFLINE_BLOCK_SENTINEL,
+            )
+        )
+
+        val (updates, _) =
+            runBlocking { service.processBlock(livenessBlock(signer = VID_D), emptyList()) }
+
+        // Only the signer should move; A/B/C are all online per the chain.
+        expectThat(updates.map { it.id }.toSet()).isEqualTo(setOf(VID_D))
+        expectThat(updates.single()) {
+            get { proposedBlocks }.isEqualTo(1L)
+            get { scheduledSlots }.isEqualTo(1L)
+            get { missedSlots }.isEqualTo(0L)
+        }
+    }
+
+    @Test
+    fun `lastMissedBlockNumber records the chain offlineBlock, not the processing block`() {
+        // Regression for the PR #1412 bug: when a validator's first observation after a gap
+        // shows them already offline at some past block X (e.g. cold start, catch-up, or the
+        // surrounding 100-validator scan only catches them now), the indexer used to record
+        // lastMissedBlockNumber = block.number rather than X. X is authoritative: thor writes
+        // parent.Header.Number()+1 into OfflineBlock at the block where the slot was skipped
+        // (see thor/packer/pos_scheduler.go), so honouring the chain value preserves the
+        // miss-block accuracy through arbitrary indexer lag.
+        val pastMissBlock = LIVENESS_BLOCK_NUMBER - 500L
+        val missed = activeValidator(VID_A, weight = 100)
+        val signer = activeValidator(VID_B, weight = 100)
+        every { repository.findAll() } returns listOf(missed, signer)
+        stubParentTimestamp(LIVENESS_TIMESTAMP - 20L)
+
+        stubOfflineBlockResponse(mapOf(VID_A to pastMissBlock))
+
+        val (updates, _) =
+            runBlocking { service.processBlock(livenessBlock(signer = VID_B), emptyList()) }
+
+        val updatedA = updates.single { it.id == VID_A }
+        expectThat(updatedA) {
+            get { missedSlots }.isEqualTo(1L)
+            get { offlineBlock }.isEqualTo(pastMissBlock)
+            get { lastMissedBlockNumber }.isEqualTo(pastMissBlock)
+        }
+    }
+
+    @Test
     fun `solo network credits signer scheduled+proposed regardless of slotsElapsed`() {
         val service = newSoloService()
         val solo = activeValidator(VID_A, weight = 100)
@@ -564,5 +629,8 @@ class ValidatorServiceTest {
         const val LIVENESS_BLOCK_NUMBER = 23414401L
         const val LIVENESS_TIMESTAMP = 1760000100L
         const val DEFAULT_BLOCK_TIMESTAMP = 1760000000L
+
+        // Thor encodes a nil OfflineBlock pointer as math.MaxUint32 over the wire.
+        const val OFFLINE_BLOCK_SENTINEL = 4_294_967_295L
     }
 }

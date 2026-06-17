@@ -397,13 +397,13 @@ open class ValidatorService(
         candidates.forEachIndexed { index, current ->
             val decoded =
                 decodeStakerResponse("getValidation", responses[index], validationAbi, block)
-            val freshRaw = (decoded["offlineBlock"] as BigInteger).toLong()
-            val fresh = freshRaw.takeIf { it > 0L }
+            val fresh = decodeOfflineBlock(decoded)
             // A miss happens iff chain OfflineBlock has *advanced past* our cached value. Strict
             // `>` (rather than `!=`) defends against rare regressions — e.g. a stale cache or a
             // post-rollback observation where `fresh` lands below what we have. Treating that as
             // a new miss would over-count; leave the cache alone until chain moves forward again.
-            // Coming back online (chain → null) is only observed via signing, handled above.
+            // Coming back online (chain encodes nil as MaxUint32) is only observed via signing,
+            // handled above; decodeOfflineBlock collapses the sentinel back to null.
             val cached = current.offlineBlock
             if (fresh != null && (cached == null || fresh > cached)) {
                 working[current.id] =
@@ -411,7 +411,7 @@ open class ValidatorService(
                         offlineBlock = fresh,
                         scheduledSlots = current.scheduledSlots + 1,
                         missedSlots = current.missedSlots + 1,
-                        lastMissedBlockNumber = block.number,
+                        lastMissedBlockNumber = fresh,
                     )
             }
         }
@@ -511,11 +511,10 @@ open class ValidatorService(
             val lockedVet = (totals["lockedVET"] as BigInteger)
             val exitBlockRaw = (period["exitBlock"] as BigInteger).toLong()
             val hasExitBlock = exitBlockRaw in 1L until MAX_UINT32_LONG
-            // Chain returns offlineBlock = 0 when the validator is online (the underlying
-            // Validation.OfflineBlock pointer is nil); any value > 0 is the block at which thor
-            // last marked them offline.
-            val offlineBlockRaw = (validation["offlineBlock"] as BigInteger).toLong()
-            val offlineBlock = offlineBlockRaw.takeIf { it > 0L }
+            // Chain serialises a nil OfflineBlock pointer as MaxUint32 (see
+            // thor/builtin/staker_native.go); any value in [1, MaxUint32) is the block at which
+            // thor last marked them offline.
+            val offlineBlock = decodeOfflineBlock(validation)
             val rawStatus = Status.fromCode((validation["status"] as BigInteger).toInt())
             // The chain has no `Exiting` enum value — it's `Active + ExitBlock!=nil`. Re-derive so
             // the indexer's EXITING label survives the walk instead of being clobbered to ACTIVE.
@@ -689,6 +688,20 @@ open class ValidatorService(
             AbiLoader.loadFunctions("abis/stargate", listOf(name)).firstOrNull { it.name == name }
                 ?: throw IllegalStateException("Function '$name' not found in staker ABI")
         }
+
+    /**
+     * Map a decoded `getValidation.offlineBlock` field to a meaningful nullable value.
+     *
+     * Thor stores OfflineBlock as `*uint32` and serialises `nil` as `math.MaxUint32` on the wire
+     * (see `thor/builtin/staker_native.go`). A naive `value > 0` filter lets that sentinel through
+     * and the indexer would interpret an online validator as having missed block 4,294,967,295.
+     * Collapse the sentinel back to null here so the caller's `cached < fresh` comparison only
+     * fires on real chain-recorded misses.
+     */
+    private fun decodeOfflineBlock(decoded: Map<String, Any?>): Long? {
+        val raw = (decoded["offlineBlock"] as BigInteger).toLong()
+        return raw.takeIf { it in 1L until MAX_UINT32_LONG }
+    }
 
     // -------- Diff & versioning --------
 
