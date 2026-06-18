@@ -47,6 +47,17 @@ open class StargateTokenCollectionConfig(
                     StargateToken::validatorId.name to Sort.Direction.ASC,
                     StargateToken::blockNumber.name to Sort.Direction.ASC,
                 ),
+                // Matches the default pagination sort tuple
+                // (DEFAULT_SORT_FIELDS = blockNumber, txId, _id, all DESC) used by
+                // GET /tokens without filters. Without it the planner does an in-memory
+                // sort of the whole collection on every cold call. txId is null on every
+                // StargateToken doc but must stay in the key so the index shape matches
+                // the requested sort exactly — otherwise it can't satisfy the sort stage.
+                buildIndex(
+                    IndexedDocument::blockNumber.name to Sort.Direction.DESC,
+                    "txId" to Sort.Direction.DESC,
+                    "_id" to Sort.Direction.DESC,
+                ),
             )
         )
     }
