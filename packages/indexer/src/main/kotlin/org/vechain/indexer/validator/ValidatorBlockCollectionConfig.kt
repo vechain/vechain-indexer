@@ -73,6 +73,12 @@ open class ValidatorBlockCollectionConfig(
                     ValidatorBlock::validator.name to Sort.Direction.ASC,
                     IndexedDocument::blockTimestamp.name to Sort.Direction.ASC,
                 ),
+                buildIndex(
+                    ValidatorBlock::isHourly.name to Sort.Direction.ASC,
+                    ValidatorBlock::status.name to Sort.Direction.ASC,
+                    ValidatorBlock::validator.name to Sort.Direction.ASC,
+                    IndexedDocument::blockTimestamp.name to Sort.Direction.ASC,
+                ),
                 // For block-rewards queries filtered by validator + status, sorted by blockNumber
                 buildIndex(
                     ValidatorBlock::validator.name to Sort.Direction.ASC,
