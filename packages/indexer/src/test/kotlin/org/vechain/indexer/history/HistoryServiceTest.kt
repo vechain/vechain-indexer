@@ -129,6 +129,18 @@ class HistoryServiceTest {
             assertThat(exitRequest.delegationLifecycleNextCycle)
                 .isEqualTo(exitResult.block.number + 5L)
             assertThat(exitRequest.delegationLifecycleCycleLength).isEqualTo(5L)
+            assertThat(exitRequest.involvedAddresses)
+                .isNotNull
+                .containsExactlyInAnyOrderElementsOf(
+                    listOfNotNull(
+                            exitRequest.origin,
+                            exitRequest.gasPayer,
+                            exitRequest.to,
+                            exitRequest.from,
+                            exitRequest.owner,
+                        )
+                        .distinct()
+                )
         }
 
     @Test
@@ -142,6 +154,13 @@ class HistoryServiceTest {
             assertThat(records.map { it.eventName }).containsOnly(HistoryEventName.UNKNOWN_TX)
             assertThat(records.map { it.txId })
                 .containsExactlyInAnyOrderElementsOf(block.transactions.map { it.id })
+            records.forEach { record ->
+                assertThat(record.involvedAddresses)
+                    .isNotNull
+                    .containsExactlyInAnyOrderElementsOf(
+                        listOfNotNull(record.origin, record.gasPayer).distinct()
+                    )
+            }
         }
 
     @Test
@@ -173,8 +192,14 @@ class HistoryServiceTest {
             val records = historyService.processBlock(listOf(event), block)
 
             assertThat(records).hasSize(1)
-            assertThat(records.single().eventName).isEqualTo(HistoryEventName.TRANSFER_VET)
-            assertThat(records.single().txId).isEqualTo(transaction.id)
+            val record = records.single()
+            assertThat(record.eventName).isEqualTo(HistoryEventName.TRANSFER_VET)
+            assertThat(record.txId).isEqualTo(transaction.id)
+            assertThat(record.involvedAddresses)
+                .isNotNull
+                .containsExactlyInAnyOrderElementsOf(
+                    listOfNotNull(record.origin, record.gasPayer, record.from, record.to).distinct()
+                )
         }
 
     private suspend fun captureIndexerResults(

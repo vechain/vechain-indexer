@@ -63,6 +63,7 @@ constructor(
     @JsonIgnore val delegationLifecycleCycleLength: Long? = null,
     @JsonIgnore val delegationLifecycleForceExit: Boolean? = null,
     @JsonIgnore val delegationLifecycleOrder: Int? = null,
+    @JsonIgnore val involvedAddresses: List<String>? = null,
 ) : IndexedDocument {
     companion object {
         const val DELEGATION_LIFECYCLE_STATUS_FIELD = "delegationLifecycleStatus"
@@ -70,6 +71,18 @@ constructor(
         const val DELEGATION_LIFECYCLE_CYCLE_LENGTH_FIELD = "delegationLifecycleCycleLength"
         const val DELEGATION_LIFECYCLE_FORCE_EXIT_FIELD = "delegationLifecycleForceExit"
         const val DELEGATION_LIFECYCLE_ORDER_FIELD = "delegationLifecycleOrder"
+        const val INVOLVED_ADDRESSES_FIELD = "involvedAddresses"
+
+        // Denormalized union of the address-bearing fields, indexed multikey so the
+        // API account-history query is a single equality instead of a 5-way $or.
+        fun involvedAddressesOf(
+            origin: String?,
+            gasPayer: String?,
+            to: String?,
+            from: String?,
+            owner: String?,
+        ): List<String>? =
+            listOfNotNull(origin, gasPayer, to, from, owner).distinct().takeIf { it.isNotEmpty() }
 
         fun getAppVotes(appIds: Any?, voteWeights: Any?): List<AppVote>? {
             // Ensure both are non-null and cast to List<String>

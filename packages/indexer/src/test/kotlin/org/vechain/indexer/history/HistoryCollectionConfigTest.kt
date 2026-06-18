@@ -50,6 +50,14 @@ class HistoryCollectionConfigTest {
 
         assertTrue(
             capturedIndexes.any {
+                it.indexKeys["involvedAddresses"] == 1 &&
+                    it.indexKeys["blockTimestamp"] == -1 &&
+                    it.indexKeys["eventName"] == 1 &&
+                    it.indexOptions["name"] == "involvedAddresses_1_blockTimestamp_-1_eventName_1"
+            }
+        )
+        assertTrue(
+            capturedIndexes.any {
                 it.indexKeys["origin"] == 1 &&
                     it.indexKeys["blockTimestamp"] == -1 &&
                     it.indexOptions["name"] == "origin_1_blockTimestamp_-1"

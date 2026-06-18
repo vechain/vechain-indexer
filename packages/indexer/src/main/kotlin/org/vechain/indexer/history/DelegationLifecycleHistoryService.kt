@@ -456,6 +456,14 @@ class DelegationLifecycleHistoryService(
             delegationLifecycleCycleLength = state.cycleLength,
             delegationLifecycleForceExit = state.forceExit,
             delegationLifecycleOrder = order,
+            involvedAddresses =
+                IndexedHistoryEvent.involvedAddressesOf(
+                    origin = state.owner,
+                    gasPayer = null,
+                    to = null,
+                    from = null,
+                    owner = state.owner,
+                ),
         )
 
     private fun IndexedHistoryEvent?.withLifecycleState(

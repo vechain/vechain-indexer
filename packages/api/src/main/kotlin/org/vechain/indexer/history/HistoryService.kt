@@ -72,13 +72,9 @@ open class HistoryService(
                 *searchFields.map { Criteria.where(it).`is`(account) }.toTypedArray()
             )
         } else if (!account.isNullOrBlank()) {
-            criteria.orOperator(
-                Criteria.where(IndexedHistoryEvent::origin.name).`is`(account),
-                Criteria.where(IndexedHistoryEvent::gasPayer.name).`is`(account),
-                Criteria.where(IndexedHistoryEvent::to.name).`is`(account),
-                Criteria.where(IndexedHistoryEvent::from.name).`is`(account),
-                Criteria.where(IndexedHistoryEvent::owner.name).`is`(account),
-            )
+            // Single multikey equality replaces a 5-way $or over the address fields.
+            // Backed by the involvedAddresses index in HistoryCollectionConfig.
+            criteria.and(IndexedHistoryEvent.INVOLVED_ADDRESSES_FIELD).`is`(account)
         } else {
             criteria.and(IndexedHistoryEvent::tokenId.name).`is`(tokenId)
         }
