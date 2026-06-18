@@ -192,6 +192,8 @@ open class HistoryService(
         for (i in tokenIds.indices) {
             val contractAddress =
                 event.address ?: error("No contract address in event ${event.txId}")
+            val transferFrom = event.params.getAsString("from")
+            val transferTo = event.params.getAsString("to")
             indexedHistoryEvents.add(
                 IndexedHistoryEvent(
                     id = DigestUtils.sha1Hex("${event.id}-$i"),
@@ -203,14 +205,22 @@ open class HistoryService(
                     origin = event.origin,
                     eventName = HistoryEventName.TRANSFER_SF,
                     gasPayer = event.gasPayer,
-                    from = event.params.getAsString("from"),
-                    to = event.params.getAsString("to"),
+                    from = transferFrom,
+                    to = transferTo,
                     value = values.getOrNull(i)?.toString(),
                     tokenId = tokenIds.getOrNull(i)?.toString(),
                     isBlacklisted =
                         blacklistClient.isBlacklisted(
                             contractAddress,
                             BlockDetails(event.blockId, event.blockNumber, event.blockTimestamp),
+                        ),
+                    involvedAddresses =
+                        IndexedHistoryEvent.involvedAddressesOf(
+                            origin = event.origin,
+                            gasPayer = event.gasPayer,
+                            to = transferTo,
+                            from = transferFrom,
+                            owner = null,
                         ),
                 )
             )
@@ -303,6 +313,8 @@ open class HistoryService(
                 else -> event.params.getAsString("to")
             }
 
+        val ownerParam = event.params.getAsString("owner")
+
         return IndexedHistoryEvent(
             id = DigestUtils.sha1Hex(event.id),
             blockId = event.blockId,
@@ -341,7 +353,7 @@ open class HistoryService(
             outputToken = event.params.getAsString("outputToken"),
             inputValue = event.params.getAsString("inputValue"),
             outputValue = event.params.getAsString("outputValue"),
-            owner = event.params.getAsString("owner"),
+            owner = ownerParam,
             delegationRewards = event.params.getAsString("delegationRewards"),
             vetGeneratedVthoRewards = event.params.getAsString("vetGeneratedVthoRewards"),
             migrated = event.params.getAsBoolean("migrated"),
@@ -353,6 +365,14 @@ open class HistoryService(
             periodClaimed = event.params.getAsLong("periodClaimed"),
             boostedBlocks = event.params.getAsString("boostedBlocks"),
             isBlacklisted = isBlacklisted,
+            involvedAddresses =
+                IndexedHistoryEvent.involvedAddressesOf(
+                    origin = event.origin,
+                    gasPayer = event.gasPayer,
+                    to = to,
+                    from = from,
+                    owner = ownerParam,
+                ),
         )
     }
 
@@ -374,6 +394,14 @@ open class HistoryService(
                     origin = tx.origin,
                     eventName = HistoryEventName.UNKNOWN_TX,
                     gasPayer = tx.gasPayer,
+                    involvedAddresses =
+                        IndexedHistoryEvent.involvedAddressesOf(
+                            origin = tx.origin,
+                            gasPayer = tx.gasPayer,
+                            to = null,
+                            from = null,
+                            owner = null,
+                        ),
                 )
             }
 }

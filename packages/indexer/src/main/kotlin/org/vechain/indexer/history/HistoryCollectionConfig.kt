@@ -35,27 +35,13 @@ open class HistoryCollectionConfig(
         ensureIndexes(
             listOf(
                 buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),
-                // Core account history queries fan out across these fields with blockTimestamp
-                // sort.
+                // Collapses the 5-way $or over origin/gasPayer/to/from/owner in the API
+                // account-history query into a single multikey equality. Keyed for the
+                // blockTimestamp DESC sort and the eventName $in filter that ride along.
                 buildIndex(
-                    IndexedHistoryEvent::origin.name to Sort.Direction.ASC,
+                    IndexedHistoryEvent.INVOLVED_ADDRESSES_FIELD to Sort.Direction.ASC,
                     IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
-                ),
-                buildIndex(
-                    IndexedHistoryEvent::from.name to Sort.Direction.ASC,
-                    IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
-                ),
-                buildIndex(
-                    IndexedHistoryEvent::to.name to Sort.Direction.ASC,
-                    IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
-                ),
-                buildIndex(
-                    IndexedHistoryEvent::gasPayer.name to Sort.Direction.ASC,
-                    IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
-                ),
-                buildIndex(
-                    IndexedHistoryEvent::owner.name to Sort.Direction.ASC,
-                    IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
+                    IndexedHistoryEvent::eventName.name to Sort.Direction.ASC,
                 ),
                 buildIndex(
                     IndexedHistoryEvent::tokenId.name to Sort.Direction.ASC,

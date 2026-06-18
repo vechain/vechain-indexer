@@ -268,6 +268,7 @@ class DelegationLifecycleHistoryServiceTest {
             assertThat(synthetic.first().eventName)
                 .isEqualTo(HistoryEventName.STARGATE_DELEGATION_EXITED_VALIDATOR)
             assertThat(synthetic.first().txId).isEqualTo("tx-request")
+            assertThat(synthetic.first().involvedAddresses).containsExactly("0xOWNER")
         }
 
     @Test
