@@ -56,13 +56,21 @@ class HistoryCollectionConfigTest {
                     it.indexOptions["name"] == "involvedAddresses_1_blockTimestamp_-1_eventName_1"
             }
         )
-        assertTrue(
-            capturedIndexes.any {
-                it.indexKeys["origin"] == 1 &&
-                    it.indexKeys["blockTimestamp"] == -1 &&
-                    it.indexOptions["name"] == "origin_1_blockTimestamp_-1"
+        // Per-address $or-fanout indexes were replaced by the involvedAddresses multikey above.
+        // removeStaleIndexes drops these from Mongo once they're no longer registered here.
+        listOf(
+                "origin_1_blockTimestamp_-1",
+                "from_1_blockTimestamp_-1",
+                "to_1_blockTimestamp_-1",
+                "gasPayer_1_blockTimestamp_-1",
+                "owner_1_blockTimestamp_-1",
+            )
+            .forEach { name ->
+                assertFalse(
+                    capturedIndexes.any { it.indexOptions["name"] == name },
+                    "$name should no longer be registered",
+                )
             }
-        )
         assertTrue(
             capturedIndexes.any {
                 it.indexKeys["tokenId"] == 1 &&

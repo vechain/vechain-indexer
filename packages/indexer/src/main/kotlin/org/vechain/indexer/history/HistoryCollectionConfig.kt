@@ -43,28 +43,6 @@ open class HistoryCollectionConfig(
                     IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
                     IndexedHistoryEvent::eventName.name to Sort.Direction.ASC,
                 ),
-                // Core account history queries fan out across these fields with blockTimestamp
-                // sort.
-                buildIndex(
-                    IndexedHistoryEvent::origin.name to Sort.Direction.ASC,
-                    IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
-                ),
-                buildIndex(
-                    IndexedHistoryEvent::from.name to Sort.Direction.ASC,
-                    IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
-                ),
-                buildIndex(
-                    IndexedHistoryEvent::to.name to Sort.Direction.ASC,
-                    IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
-                ),
-                buildIndex(
-                    IndexedHistoryEvent::gasPayer.name to Sort.Direction.ASC,
-                    IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
-                ),
-                buildIndex(
-                    IndexedHistoryEvent::owner.name to Sort.Direction.ASC,
-                    IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
-                ),
                 buildIndex(
                     IndexedHistoryEvent::tokenId.name to Sort.Direction.ASC,
                     IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
