@@ -43,6 +43,23 @@ open class HistoryCollectionConfig(
                     IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
                     IndexedHistoryEvent::eventName.name to Sort.Direction.ASC,
                 ),
+                // Per-address indexes for the GET /history?searchBy=... path, which builds a
+                // $or over caller-specified fields (ValidSearchBy: to, from, origin, gasPayer)
+                // and CAN'T use involvedAddresses (semantics differ — searchBy lets callers
+                // restrict to a single source field). `to` is covered by the wider
+                // to+eventName+blockTimestamp index below; `owner` isn't in ValidSearchBy.
+                buildIndex(
+                    IndexedHistoryEvent::origin.name to Sort.Direction.ASC,
+                    IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    IndexedHistoryEvent::from.name to Sort.Direction.ASC,
+                    IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
+                ),
+                buildIndex(
+                    IndexedHistoryEvent::gasPayer.name to Sort.Direction.ASC,
+                    IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
+                ),
                 buildIndex(
                     IndexedHistoryEvent::tokenId.name to Sort.Direction.ASC,
                     IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,

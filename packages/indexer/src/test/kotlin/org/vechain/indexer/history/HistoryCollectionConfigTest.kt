@@ -56,21 +56,27 @@ class HistoryCollectionConfigTest {
                     it.indexOptions["name"] == "involvedAddresses_1_blockTimestamp_-1_eventName_1"
             }
         )
-        // Per-address $or-fanout indexes were replaced by the involvedAddresses multikey above.
-        // removeStaleIndexes drops these from Mongo once they're no longer registered here.
+        // Per-address indexes for GET /history?searchBy=... — origin/from/gasPayer are
+        // needed because that path builds a $or over caller-specified fields and can't use
+        // involvedAddresses. `to` is covered by to_1_eventName_1_blockTimestamp_-1; `owner`
+        // isn't in ValidSearchBy.
         listOf(
                 "origin_1_blockTimestamp_-1",
                 "from_1_blockTimestamp_-1",
-                "to_1_blockTimestamp_-1",
                 "gasPayer_1_blockTimestamp_-1",
-                "owner_1_blockTimestamp_-1",
             )
             .forEach { name ->
-                assertFalse(
+                assertTrue(
                     capturedIndexes.any { it.indexOptions["name"] == name },
-                    "$name should no longer be registered",
+                    "$name should be registered to serve searchBy=$name queries",
                 )
             }
+        listOf("to_1_blockTimestamp_-1", "owner_1_blockTimestamp_-1").forEach { name ->
+            assertFalse(
+                capturedIndexes.any { it.indexOptions["name"] == name },
+                "$name should not be registered — covered by wider indexes or not in ValidSearchBy",
+            )
+        }
         assertTrue(
             capturedIndexes.any {
                 it.indexKeys["tokenId"] == 1 &&
