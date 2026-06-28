@@ -74,7 +74,7 @@ thor:
   rate-limit-bypass-key: ${THOR_RATE_LIMIT_BYPASS_KEY:}
 
 # vechain.energy `PriceFeedOracle`. Each deployment configures the values matching its target
-# network in terraform (mainnet for mainnet/devnet deployments, testnet for testnet). The
+# network in terraform (mainnet for mainnet deployments, testnet for testnet). The
 # defaults below are mainnet because that's the safest fallback for local dev or anywhere the
 # env vars aren't set — the oracle is not deployed on solo / custom networks.
 pricing:
