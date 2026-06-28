@@ -39,8 +39,8 @@ When adding a new feature indexer and endpoint, prefer copying an existing imple
 - `packages/indexer/src/main/resources/application.yaml`:
   - Add `indexer.start-block.<key>`, `indexer.sync-block-batch-size.<key>`, `indexer.version.<key>`.
 - Terraform:
-  - Add env vars in `terraform/api/api.tf` and `terraform/devnet/api.tf`.
-  - Add the new keys and Spring profiles in `terraform/api/environments/*.yml` and `terraform/devnet/environments/devnet.yml`.
+  - Add env vars in `terraform/api/api.tf`.
+  - Add the new keys and Spring profiles in `terraform/api/environments/*.yml`.
 
 ### Triggering an Indexer Resync
 To force an indexer to drop its collection and re-index from the start block, increment its deployed version number only in:

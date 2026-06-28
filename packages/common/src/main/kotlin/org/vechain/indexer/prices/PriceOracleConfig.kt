@@ -15,8 +15,8 @@ import org.vechain.indexer.thor.client.ThorClient
  * addresses), and the USD prices it returns describe the assets themselves rather than the network
  * being observed. Each deployment therefore configures the Thor REST base URL and contract address
  * for its target oracle explicitly in terraform: mainnet deployments point at the mainnet oracle,
- * testnet at the testnet oracle. Solo / devnet / custom networks have no oracle deployed and should
- * point at the mainnet one as a fallback.
+ * testnet at the testnet oracle. Solo / custom networks have no oracle deployed and should point at
+ * the mainnet one as a fallback.
  *
  * Defaults in `application.yaml` are mainnet so local dev "just works" without env vars; the Thor
  * REST base URL and contract address are env-var overridable.
