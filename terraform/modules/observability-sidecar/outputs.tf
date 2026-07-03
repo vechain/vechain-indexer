@@ -29,11 +29,23 @@ output "container_definition" {
 }
 
 output "amp_remote_write_statement" {
-  description = "Entry to append to the ECS task role's `extra_statements` list. Grants aps:RemoteWrite on the AMP workspace."
+  description = "Entry to append to a module's `extra_statements` list (aws_iam_policy_document statement shape)."
   value = {
     sid       = "AMPRemoteWrite${title(var.service_name)}"
     effect    = "Allow"
     actions   = ["aps:RemoteWrite"]
     resources = [var.amp_workspace_arn]
   }
+}
+
+output "amp_remote_write_policy_json" {
+  description = "Ready-to-use JSON policy for aws_iam_role_policy consumers that attach the statement directly."
+  value = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["aps:RemoteWrite"]
+      Resource = var.amp_workspace_arn
+    }]
+  })
 }

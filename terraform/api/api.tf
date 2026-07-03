@@ -126,6 +126,7 @@ module "ecs-lb-service-api" {
   alb_sg                    = [aws_security_group.alb-sg.id]
   namespace_id              = aws_service_discovery_private_dns_namespace.ns.id
   https_tg_healthcheck_path = "/actuator/health"
+  additional_containers     = local.observability_sidecar_enabled ? [module.observability_sidecar_api[each.key].container_definition] : []
   environment_variables = [
     {
       name  = "APPLICATION_NAME"
