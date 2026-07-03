@@ -20,7 +20,7 @@ resource "grafana_data_source" "amp" {
   json_data_encoded = jsonencode({
     httpMethod     = "POST"
     sigV4Auth      = true
-    sigV4AuthType  = "default"
+    sigV4AuthType  = "workspace-iam-role"
     sigV4Region    = data.aws_region.current.name
     prometheusType = "Prometheus"
   })
