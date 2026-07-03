@@ -5,11 +5,11 @@
   "links": [],
   "refresh": "30s",
   "schemaVersion": 39,
-  "tags": ["observability", "veworld"],
+  "tags": ["observability", "vechain"],
   "time": { "from": "now-1h", "to": "now" },
   "timezone": "",
-  "title": "VeWorld — indexer & API",
-  "uid": "veworld-observability",
+  "title": "VeChain — indexer & API",
+  "uid": "vechain-observability",
   "templating": {
     "list": [
       {

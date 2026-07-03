@@ -1,6 +1,6 @@
 locals {
   dashboards = {
-    veworld-observability = "${path.module}/dashboards/veworld-observability.json"
+    vechain-observability = "${path.module}/dashboards/vechain-observability.json"
   }
 }
 
