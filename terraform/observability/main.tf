@@ -116,7 +116,7 @@ data "aws_iam_policy_document" "grafana_amp_alerts" {
 
 resource "aws_iam_role_policy" "grafana_amp_alerts" {
   name   = "${local.name_prefix}-grafana-amp-alerts"
-  role   = aws_iam_role.grafana_workspace.id
+  role   = aws_iam_role.grafana_workspace.name
   policy = data.aws_iam_policy_document.grafana_amp_alerts.json
 }
 
