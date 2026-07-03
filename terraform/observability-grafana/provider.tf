@@ -43,6 +43,6 @@ data "terraform_remote_state" "observability" {
   config = {
     bucket = "veworld-indexer-terraform-state-prod"
     key    = "workspaces/${terraform.workspace}/veworld-indexer-observability.tfstate"
-    region = "eu-west-1"
+    region = local.env.region
   }
 }
