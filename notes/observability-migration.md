@@ -21,8 +21,10 @@ Status: Phase 0 — this document. Subsequent phases are scoped below and will e
 
 ## Current state
 
-- Metrics: Datadog agent sidecar on ECS tasks, `DD_HOST_TAG = "${env}-${network}"`. No metrics from the API service.
-- Logs: three Datadog log pipelines (app, WAF, general) plus CloudWatch metric filters defined per-service in terraform.
+- Metrics: Micrometer's Datadog registry runs inside each Spring Boot JVM and pushes to `api.datadoghq.eu` every 10s. No sidecar container, no DD agent. Driven by `management.datadog.metrics.export.enabled` in each service's `application.yaml` and by `DD_METRICS_ENABLED` / `DD_API_KEY` / `DD_HOST_TAG` env vars set in terraform (`DD_HOST_TAG = "${env}-${network}"`).
+- Indexer already exposes `/actuator/prometheus` in parallel (`PROMETHEUS_METRICS_ENABLED` defaults to `true`). The endpoint is live today; nothing scrapes it in prod.
+- API has no exported metrics: `management.datadog.metrics.export.enabled` is pinned false, `management.prometheus.metrics.export.enabled` is pinned false, and `management.endpoints.web.exposure.include` only lists `health`. The Micrometer libraries are on the classpath (added at root `build.gradle.kts`), so enabling metrics is a config change, not a dependency change.
+- Logs: a Datadog Forwarder Lambda (deployed by a shared `datadog` terraform module as a CloudFormation stack) reads from CloudWatch log groups and forwards to DD. Log pipelines (app, WAF, general) and monitor definitions live inside Datadog itself; the JSON in `metrics/datadog/` is what's exported/replicated locally.
 - Dashboards: one large Datadog dashboard checked in at `metrics/datadog/dashboard.json`.
 - Local dev: `metrics/compose.yaml` spins up Prometheus + Grafana against the indexer's `/actuator/prometheus` endpoint. Not used by anyone in a while.
 - CloudWatch: a hand-maintained dashboard and alarm set in `terraform/api/cloudwatch_dashboard.tf` and `terraform/api/cwalarms.tf`. These stay for now.
@@ -86,16 +88,17 @@ Each phase is one PR unless noted. Rollback path is called out where non-trivial
 ### P2 — indexer sidecar (per-colour rollout)
 
 - New terraform module for the ADOT sidecar container definition and the IAM policy granting `aps:RemoteWrite` on the AMP workspace.
-- Attach to indexer task on the dead colour.
+- No app-side code work — the indexer already exposes `/actuator/prometheus`. The sidecar scrapes `localhost:8080/actuator/prometheus` and remote-writes to AMP with SigV4 signing.
+- The existing in-process Micrometer Datadog push stays on. AMP and DD run in parallel until P7.
+- Attach the sidecar to the indexer task on the dead colour.
 - Verify series arrive in AMP with the correct labels via a scratch Grafana panel. Observe for one warm-up window.
 - DNS switch. Apply sidecar terraform to the now-dead colour.
 - Rollback: revert task definition on the affected colour.
 
 ### P3 — API instrumentation + sidecar
 
-- Add `micrometer-registry-prometheus` to `packages/api/build.gradle.kts`.
-- Enable `management.endpoints.web.exposure.include=health,prometheus` and configure common tags (`service=api`, others via sidecar labels).
-- Ship a tight starter metric set: RED per endpoint, JVM basics, MongoDB driver pool. Nothing custom yet.
+- Config-only change: flip `management.prometheus.metrics.export.enabled: true`, add `prometheus` to `management.endpoints.web.exposure.include`, and configure common tags (`service=api`, others come from sidecar labels). The Micrometer Prometheus registry is already on the classpath.
+- Ship a tight starter metric set: HTTP RED (with URI templating enforced), JVM basics, MongoDB driver pool. Nothing custom yet.
 - Attach the sidecar to the API task via the same per-colour rollout as P2.
 - Rollback: revert image + task definition on the affected colour.
 
@@ -122,7 +125,9 @@ Each phase is one PR unless noted. Rollback path is called out where non-trivial
 
 ### P7 — remove Datadog
 
-- Rip out DD env vars, secrets, terraform data sources, `DD_*` references in application code.
+- Turn off the in-process Micrometer Datadog push: set `management.datadog.metrics.export.enabled: false` in the indexer's `application.yaml` (already off in the API).
+- Drop the `micrometer-registry-datadog` dependency from root `build.gradle.kts`.
+- Rip out DD env vars, secrets, terraform data sources, DD Forwarder Lambda / CloudFormation stack, and `DD_*` references in application code.
 - Delete `metrics/datadog/`, `metrics/grafana/`, `metrics/prometheus/`, `metrics/compose.yaml`.
 - Remove `make dd-refresh-generated` and the CI checks that depend on it.
 - Update `CLAUDE.md` and `AGENTS.md` to strike the Datadog sections.
