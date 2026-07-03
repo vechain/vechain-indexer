@@ -1,6 +1,6 @@
 # Observability Migration Plan
 
-Migrate the veworld-indexer observability stack off Datadog onto AWS-hosted Prometheus (AMP) and Grafana (AMG). Primary goal: cost reduction. Secondary: add API-service metrics we currently lack, and simplify a stack whose surface area has grown organically.
+Migrate the VeWorld Indexer observability stack off Datadog onto AWS-hosted Prometheus (AMP) and Grafana (AMG). Primary goal: cost reduction. Secondary: add API-service metrics we currently lack, and simplify a stack whose surface area has grown organically.
 
 Status: Phase 0 — this document. Phase 1 (cull) and everything after are scoped below and will each land as their own PR.
 
@@ -50,7 +50,7 @@ Every series carries the following external labels, either from the sidecar conf
 | `task_id`    | ECS detector    | ECS task ARN suffix                     |
 | `container`  | ECS detector    | container name inside the task          |
 
-Grafana dashboards template on `$env`, `$deployment`, `$network` so a single dashboard covers all four permutations and the blue/green switcher is a dropdown.
+Grafana dashboards are templated on `$env`, `$deployment`, `$network` so a single dashboard covers all four permutations and the blue/green switcher is a dropdown.
 
 ## Testing strategy — blue/green as canary
 
