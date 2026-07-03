@@ -131,10 +131,6 @@ enabled_nets:
         oracle:
           thor-url: "https://mainnet.vechain.org"
           contract-address: "0x49eC7192BF804Abc289645ca86F1eD01a6C17713"
-      log_metric_filters:
-        - name: "AppUnhealthy"
-          pattern: "Application is UNHEALTHY"
-          threshold: 2
     indexer:
       cpu: 8192
       memory: 16384
@@ -271,13 +267,6 @@ enabled_nets:
           # Set when SafeTxEmitter and SafeProxyFactory are deployed on mainnet, then add `safe` to spring_profile.
           SAFE_EMITTER_CONTRACT: "0x9D39E32D2022901A2f22B77b6b0aA7bB05bD20d0"
           SAFE_PROXY_FACTORY_CONTRACT: "0x1131C98FdDFbC4897De4adA20595C80DF1b4766a"
-      log_metric_filters:
-        - name: "AppUnhealthy"
-          pattern: "Application is UNHEALTHY"
-          threshold: 2
-        - name: "REORG"
-          pattern: "REORG Detected"
-          threshold: 1
     comments:
       min-length: 10
       language:
@@ -385,10 +374,6 @@ enabled_nets:
         oracle:
           thor-url: "https://testnet.vechain.org"
           contract-address: "0xdcCAaBd81B38e0dEEf4c202bC7F1261A4D9192C6"
-      log_metric_filters:
-        - name: "AppUnhealthy"
-          pattern: "Application is UNHEALTHY"
-          threshold: 2
     indexer:
       cpu: 4096
       memory: 8192
@@ -525,13 +510,6 @@ enabled_nets:
           # Set when SafeTxEmitter and SafeProxyFactory are deployed on testnet, then add `safe` to spring_profile.
           SAFE_EMITTER_CONTRACT: "0xF8384342e57B556662ea2E356b4f4d0E64170a3a"
           SAFE_PROXY_FACTORY_CONTRACT: "0x83CED5D33517bFc4580BD452C1759074251CCEee"
-      log_metric_filters:
-        - name: "AppUnhealthy"
-          pattern: "Application is UNHEALTHY"
-          threshold: 2
-        - name: "REORG"
-          pattern: "REORG Detected"
-          threshold: 1
     comments:
       min-length: 10
       language:

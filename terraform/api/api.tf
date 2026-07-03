@@ -368,10 +368,7 @@ module "ecs-lb-service-api" {
       value = tostring(local.observability_sidecar_enabled)
     }
   ]
-  log_metric_filters = [for filter in each.value.api.log_metric_filters : {
-    name    = filter.name
-    pattern = filter.pattern
-  }]
+  log_metric_filters = []
 
   ####### enable autoscailing #######
   enable_ecs_cpu_based_autoscaling    = true
@@ -417,10 +414,7 @@ module "ecs-backend-service" {
   health_check_grace_period_seconds  = 300
   additional_containers              = local.observability_sidecar_enabled ? [module.observability_sidecar_indexer[each.key].container_definition] : []
   extra_statements                   = local.observability_sidecar_enabled ? [module.observability_sidecar_indexer[each.key].amp_remote_write_statement] : []
-  log_metric_filters = [for filter in each.value.indexer.log_metric_filters : {
-    name    = filter.name
-    pattern = filter.pattern
-  }]
+  log_metric_filters                 = []
   healthcheck = {
     command     = ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health/liveness"]
     start_delay = 120
