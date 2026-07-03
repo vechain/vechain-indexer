@@ -21,6 +21,6 @@ terraform apply
 
 ## Provider auth
 
-The Grafana provider authenticates against the AMG workspace using the service-account token minted by `terraform/observability/`. That token is written to Secrets Manager and its ARN is exposed as a `terraform_remote_state` output.
+The Grafana provider authenticates against the AMG workspace using the service-account token minted by `terraform/observability/`. That token is written to Secrets Manager and its ARN is exposed as a `terraform_remote_state` output. This stack reads the current secret value at plan/apply time via `aws_secretsmanager_secret_version`, so it always sees whatever the parent last wrote.
 
-The token has a 30-day TTL and is rotated every 25 days by `time_rotating` in the parent stack — so this stack must be `terraform apply`'d again within 30 days of every parent apply, or the SA token in state goes stale and the provider fails to authenticate. See the "Operational notes" section of `terraform/observability/README.md` for the workflow story.
+The token has a 30-day TTL and is rotated by `time_rotating` in the parent stack. If the parent isn't `terraform apply`'d within 30 days, the token in Secrets Manager expires and the Grafana provider here will fail to authenticate on the next apply. See the "Operational notes" section of `terraform/observability/README.md` for the workflow story.

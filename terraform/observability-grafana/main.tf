@@ -1,5 +1,14 @@
 data "aws_region" "current" {}
 
+resource "terraform_data" "workspace_guard" {
+  lifecycle {
+    precondition {
+      condition     = contains(["prod"], terraform.workspace)
+      error_message = "Use workspace 'prod' only (not default). Example: terraform workspace select -or-create prod"
+    }
+  }
+}
+
 # AMP datasource — SigV4-signed queries against the workspace created
 # by terraform/observability/. The AMG workspace role already has
 # AmazonPrometheusQueryAccess plus the alerting scope (see main.tf in
