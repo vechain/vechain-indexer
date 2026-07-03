@@ -15,30 +15,81 @@ permissions:
   id-token: write   # This is required for requesting the JWT
   contents: read    # This is required for actions/checkout
 
-jobs:
-  deploy:
-    name: Plan/deploy ${{ matrix.stack }} - prod
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      # Order matters on apply — the grafana stack reads
-      # terraform_remote_state from the observability stack, so it must
-      # not run before observability. max-parallel keeps them sequential.
-      max-parallel: 1
-      matrix:
-        stack:
-          - observability
-          - observability-grafana
-    concurrency:
-      group: terraform-${{ matrix.stack }}-${{ github.ref }}
-      cancel-in-progress: false
-    env:
-      TERRAFORM_ENV: prod
+# One group across both stacks so concurrent runs on the same ref serialise
+# cleanly. observability-grafana reads terraform_remote_state from
+# observability, so overlapping runs on the same ref would race.
+concurrency:
+  group: terraform-observability-${{ github.ref }}
+  cancel-in-progress: false
 
+env:
+  TERRAFORM_ENV: prod
+
+jobs:
+  deploy-observability:
+    name: Plan/deploy observability - prod
+    runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: terraform/${{ matrix.stack }}
+        working-directory: terraform/observability
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+
+      # Required for Terraform to source modules from other vechain repositories
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.13.5
+          terraform_wrapper: true
+
+      - name: Terraform Format
+        id: fmt
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+
+      - name: Terraform Initialize
+        id: init
+        run: terraform init -reconfigure -backend-config="environments/${{ env.TERRAFORM_ENV }}.config"
+
+      - name: Terraform Workspace
+        id: workspace
+        run: terraform workspace select -or-create ${{ env.TERRAFORM_ENV }}
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -out "apply.plan"
+
+      - name: Terraform Apply
+        if: github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/v.')
+        id: apply
+        run: terraform apply "apply.plan"
+
+  deploy-observability-grafana:
+    name: Plan/deploy observability-grafana - prod
+    runs-on: ubuntu-latest
+    # observability-grafana reads terraform_remote_state from observability;
+    # if observability apply fails, skip the datasource stack so we don't
+    # apply against stale parent outputs.
+    needs: deploy-observability
+    defaults:
+      run:
+        working-directory: terraform/observability-grafana
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
