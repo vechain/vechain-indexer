@@ -21,6 +21,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      # Order matters on apply — the grafana stack reads
+      # terraform_remote_state from the observability stack, so it must
+      # not run before observability. max-parallel keeps them sequential.
+      max-parallel: 1
       matrix:
         stack:
           - observability
