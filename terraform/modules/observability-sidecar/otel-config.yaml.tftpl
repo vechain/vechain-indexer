@@ -34,30 +34,34 @@ processors:
   # `resource` actions to shape the labels before resource_to_telemetry_conversion
   # promotes them at export time. Extract task_id from the task ARN,
   # rename container name to `container`, and drop everything else the
-  # ecs detector + awsecscontainermetrics receiver add.
+  # ecs detector + awsecscontainermetrics receiver add. `container.name`
+  # is the semconv key the receiver sets; the ecs detector does not emit
+  # it, so /actuator/prometheus scrapes get an empty `container` label.
   resource:
     attributes:
       - key: aws.ecs.task.arn
         pattern: ^.+/(?P<task_id>[^/]+)$
         action: extract
       - key: container
-        from_attribute: aws.ecs.container.name
+        from_attribute: container.name
         action: insert
       - key: aws.ecs.task.arn
+        action: delete
+      - key: aws.ecs.task.id
         action: delete
       - key: aws.ecs.task.family
         action: delete
       - key: aws.ecs.task.revision
         action: delete
+      - key: aws.ecs.task.version
+        action: delete
       - key: aws.ecs.task.known_status
+        action: delete
+      - key: aws.ecs.task.launch_type
         action: delete
       - key: aws.ecs.task.pull_started_at
         action: delete
       - key: aws.ecs.task.pull_stopped_at
-        action: delete
-      - key: aws.ecs.taskdefinition.family
-        action: delete
-      - key: aws.ecs.taskdefinition.revision
         action: delete
       - key: aws.ecs.cluster.arn
         action: delete
@@ -65,11 +69,14 @@ processors:
         action: delete
       - key: aws.ecs.launchtype
         action: delete
-      - key: aws.ecs.container.arn
+      - key: aws.ecs.service.name
         action: delete
-      - key: aws.ecs.container.name
-        action: delete
-      - key: aws.ecs.container.knownstatus
+      # Upstream ADOT (opentelemetry-collector-contrib) emits this attribute
+      # as `know_status` — note the missing trailing `n`. Do not "fix" the
+      # key name here; the receiver would then leak the attribute as a
+      # label. See receiver/awsecscontainermetricsreceiver/internal/
+      # awsecscontainermetrics/constant.go.
+      - key: aws.ecs.container.know_status
         action: delete
       - key: aws.ecs.container.created_at
         action: delete
@@ -82,6 +89,8 @@ processors:
       - key: aws.ecs.container.image.id
         action: delete
       - key: aws.ecs.docker.name
+        action: delete
+      - key: container.name
         action: delete
       - key: container.id
         action: delete
