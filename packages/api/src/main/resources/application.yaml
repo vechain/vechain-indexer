@@ -62,7 +62,7 @@ management:
   prometheus:
     metrics:
       export:
-        enabled: ${PROMETHEUS_METRICS_ENABLED:true}
+        enabled: ${PROMETHEUS_METRICS_ENABLED:false}
 
 spring.data:
   mongodb:

@@ -362,6 +362,10 @@ module "ecs-lb-service-api" {
     {
       name  = "APP_LOGGER"
       value = "CloudWatch"
+    },
+    {
+      name  = "PROMETHEUS_METRICS_ENABLED"
+      value = tostring(local.observability_sidecar_enabled)
     }
   ]
   log_metric_filters = [for filter in each.value.api.log_metric_filters : {
