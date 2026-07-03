@@ -3,7 +3,7 @@
 The Alertmanager template renders the SNS Message as the final Slack body —
 this Lambda just forwards it to the webhook URL (with the placeholder
 gate, secret cache, and raise-on-failure SNS retry behaviour). See
-docs/observability-infra.md.
+terraform/observability/README.md.
 """
 
 import json
