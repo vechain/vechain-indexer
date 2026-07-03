@@ -29,29 +29,6 @@ tasks.getByName<Jar>("jar") {
     enabled = false
 }
 
-// Exclude the openapi generation test from the normal test task
-tasks.test {
-    useJUnitPlatform { excludeTags("openapi") }
-}
-
-tasks.register<Test>("generateOpenApiSpec") {
-    description = "Boot the API with embedded MongoDB and export the OpenAPI spec"
-    group = "documentation"
-    useJUnitPlatform { includeTags("openapi") }
-    testLogging.showStandardStreams = true
-    systemProperty(
-        "openapi.output.path",
-        providers
-            .gradleProperty("openapiOutputPath")
-            .orElse(rootProject.file("metrics/datadog/api-docs.json").absolutePath)
-            .get(),
-    )
-    providers
-        .gradleProperty("openapiProfiles")
-        .orNull
-        ?.let { profiles -> systemProperty("openapi.profiles", profiles) }
-}
-
 dependencyLocking {
     lockAllConfigurations()
 }
