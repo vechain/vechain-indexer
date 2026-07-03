@@ -76,6 +76,7 @@ Each phase is one PR unless noted. Rollback path is called out where non-trivial
 
 - Commit this plan.
 - Produce a keep/kill list from `metrics/datadog/dashboard.json`, the DD monitors, `terraform/api/cwalarms.tf`, and the log pipelines. Anything nobody has looked at or that has not paged should not be migrated.
+- Enumerate every DD monitor / dashboard panel that references custom indexer metric names, so P2 knows which monitors must be updated when metrics are renamed.
 - Confirm the final answers on open decisions (see below).
 
 ### P1 — AMP + AMG workspaces (shared, single apply)
@@ -85,49 +86,67 @@ Each phase is one PR unless noted. Rollback path is called out where non-trivial
 - No dashboards, no scrape targets. Empty workspaces.
 - Rollback: `terraform destroy` on the module. Nothing else references it yet.
 
-### P2 — indexer sidecar (per-colour rollout)
+### P2 — indexer metrics cleanup (code-only)
+
+Fix the existing custom metrics in `packages/indexer/src/main/kotlin/org/vechain/indexer/config/metrics/` before we start scraping. Doing this before P3 means dashboards and alerts get built against clean names first time, and the AMP series count stays bounded from day one.
+
+Concrete work:
+
+- **Rename to Prometheus conventions.** Drop the `_gauge` suffix (`indexer_current_block_gauge` → `indexer_current_block`, `thor_best_block_number_gauge` → `thor_best_block_number`, etc.). `_total` is reserved for counters; `indexer_blocks_processed_total` already uses it correctly and stays.
+- **Dedupe sync-status metrics.** Today emitted three ways: `indexer_sync_status_gauge` (one-hot per enum), `indexer_sync_status_code_gauge` (numeric code), plus a duplicate `status_readable` tag. Keep the one-hot as the canonical form; drop the code gauge and the readable tag.
+- **Delete derivable gauges.** `indexer_blocks_per_second_gauge` is `rate(indexer_blocks_processed_total[1m])` — remove it and the per-tick computation in `IndexerMetricsReporter`. `indexer_sync_gap_gauge` is `thor_best_block_number - indexer_current_block` — remove it, keep the two source gauges.
+- **Add histogram buckets to timers.** `ProcessorMetrics` and `ThorClientMetrics` currently emit `Timer` without `publishPercentileHistogram(true)`, so p95/p99 in Grafana won't work. Enable histograms on the timers we care about.
+- **Add a processor-level error counter.** `ThorClient` counts response codes, but processor-side failures only exist in logs. Add `indexer_processor_errors_total` tagged by indexer_name and error class.
+
+DD compatibility: renames will break any DD dashboard panel or monitor that references old names. P0 audit output enumerates the DD monitors; the P2 PR updates any monitor that references a renamed metric so we don't lose alert coverage while DD is still authoritative. DD dashboard panels are allowed to break — we're retiring them.
+
+Rollback: revert the PR. Metric names return to the current state.
+
+### P3 — indexer sidecar (per-colour rollout)
 
 - New terraform module for the ADOT sidecar container definition and the IAM policy granting `aps:RemoteWrite` on the AMP workspace.
 - No app-side code work — the indexer already exposes `/actuator/prometheus`. The sidecar scrapes `localhost:8080/actuator/prometheus` and remote-writes to AMP with SigV4 signing.
-- The existing in-process Micrometer Datadog push stays on. AMP and DD run in parallel until P7.
+- The existing in-process Micrometer Datadog push stays on for now. It gets turned off at the end of P4 once both services have proven the scrape path.
 - Attach the sidecar to the indexer task on the dead colour.
 - Verify series arrive in AMP with the correct labels via a scratch Grafana panel. Observe for one warm-up window.
 - DNS switch. Apply sidecar terraform to the now-dead colour.
 - Rollback: revert task definition on the affected colour.
 
-### P3 — API instrumentation + sidecar
+### P4 — API instrumentation + sidecar
 
 - Config-only change: flip `management.prometheus.metrics.export.enabled: true`, add `prometheus` to `management.endpoints.web.exposure.include`, and configure common tags (`service=api`, others come from sidecar labels). The Micrometer Prometheus registry is already on the classpath.
-- Ship a tight starter metric set: HTTP RED (with URI templating enforced), JVM basics, MongoDB driver pool. Nothing custom yet.
-- Attach the sidecar to the API task via the same per-colour rollout as P2.
-- Rollback: revert image + task definition on the affected colour.
+- Apply the same review discipline as P2 to the API starter set: don't emit anything computable in PromQL, use Prometheus naming conventions, keep tag cardinality tight (URI templating enforced on HTTP metrics).
+- Starter set: HTTP RED, JVM basics, MongoDB driver pool. Custom API-side counters get added in follow-ups, not this PR.
+- Attach the sidecar to the API task via the same per-colour rollout as P3.
+- **End-of-phase step (rollout option B): turn off the in-process Micrometer Datadog push.** With both indexer and API scrape paths proven on both colours, drop `DD_METRICS_ENABLED=true` from terraform (making the yaml default of `false` win) and remove the associated `DD_*` env vars from the indexer task definition. DD still receives nothing else worth having at this point; the JVM push is the last live producer.
+- Rollback: revert image + task definition on the affected colour; re-enable `DD_METRICS_ENABLED` if the JVM-push cutover step is what regressed.
 
-### P4 — core dashboards as code
+### P5 — core dashboards as code
 
 - Grafana provider provisions dashboards from JSON checked in under `metrics/grafana-amg/` (path TBD).
 - Target ~6–10 dashboards, one per audience: indexer sync, indexer per-task health, API RED, MongoDB, JVM, business KPIs.
 - All dashboards templated on `$env`, `$deployment`, `$network`.
 - Rollback: remove dashboard files, re-apply.
 
-### P5 — alarms migration
+### P6 — alarms migration
 
 - Port the paging alarms first. `terraform/api/cwalarms.tf` stays until each alarm is replaced upstream.
 - AMP recording/alerting rules for anything metric-based; Grafana Alerting for anything log-based or multi-source.
 - Route to the same paging sinks Datadog uses today.
 - Rollback: leave the CloudWatch alarms in place until each replacement has fired at least once in anger.
 
-### P6 — logs
+### P7 — logs
 
 - Keep logs in CloudWatch. Add Grafana's CloudWatch Logs datasource.
-- Retire log-based metric filters wherever an equivalent Micrometer counter now exists (from P3).
+- Retire log-based metric filters wherever an equivalent Micrometer counter now exists (from P4).
 - Retire the Datadog log pipelines.
 - Rollback: log pipelines are declarative; re-apply the previous state.
 
-### P7 — remove Datadog
+### P8 — remove Datadog
 
-- Turn off the in-process Micrometer Datadog push: set `management.datadog.metrics.export.enabled: false` in the indexer's `application.yaml` (already off in the API).
-- Drop the `micrometer-registry-datadog` dependency from root `build.gradle.kts`.
-- Rip out DD env vars, secrets, terraform data sources, DD Forwarder Lambda / CloudFormation stack, and `DD_*` references in application code.
+- JVM push is already off from end of P4. This phase completes the removal:
+- Drop the `micrometer-registry-datadog` dependency from root `build.gradle.kts` and the `management.datadog` block from both `application.yaml` files.
+- Rip out DD env vars, secrets, terraform data sources, DD Forwarder Lambda / CloudFormation stack, and any lingering `DD_*` references in application code.
 - Delete `metrics/datadog/`, `metrics/grafana/`, `metrics/prometheus/`, `metrics/compose.yaml`.
 - Remove `make dd-refresh-generated` and the CI checks that depend on it.
 - Update `CLAUDE.md` and `AGENTS.md` to strike the Datadog sections.
@@ -145,7 +164,7 @@ Captured here so we don't lose them; each will be resolved before the phase it b
 
 ## Risks
 
-- **Cardinality blow-up.** Adding `task_id` as a label multiplies series count by the number of tasks over time. Micrometer default tags on HTTP endpoints can also explode if URIs are not templated. Mitigation: strict allowlist of metric tags in the API config, review AMP active-series count after P3 and again after P4.
+- **Cardinality blow-up.** Adding `task_id` as a label multiplies series count by the number of tasks over time. Micrometer default tags on HTTP endpoints can also explode if URIs are not templated. Mitigation: strict allowlist of metric tags in the API config, review AMP active-series count after P4 and again after P5.
 - **First-time AMP/AMG creation is not covered by blue/green canary.** Mitigation: empty-workspace creation is low-risk; verify with terraform plan review before P1 apply.
 - **Alarm gaps during migration.** For each paging alarm being ported, keep the CloudWatch/DD source of truth live until the replacement has demonstrably fired for a real condition. No silent windows.
 - **CloudFront / WAF changes remain uncovered.** Unchanged from today. Out of scope; called out for clarity.
