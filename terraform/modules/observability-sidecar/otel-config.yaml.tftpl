@@ -16,6 +16,13 @@ receivers:
           static_configs:
             - targets:
                 - "localhost:${app_port}"
+  # Emits per-task and per-container cgroup CPU/memory (ecs_task_cpu_*,
+  # ecs_task_memory_*, container_cpu_*, container_memory_*). Reads from
+  # the ECS task metadata endpoint, so no IAM change; works only on
+  # Fargate / EC2 tasks. Cardinality: 2 containers per task (app +
+  # sidecar), acceptable at current task counts.
+  awsecscontainermetrics:
+    collection_interval: 20s
 
 processors:
   resourcedetection:
@@ -27,7 +34,7 @@ processors:
   # `resource` actions to shape the labels before resource_to_telemetry_conversion
   # promotes them at export time. Extract task_id from the task ARN,
   # rename container name to `container`, and drop everything else the
-  # ecs detector adds.
+  # ecs detector + awsecscontainermetrics receiver add.
   resource:
     attributes:
       - key: aws.ecs.task.arn
@@ -42,13 +49,45 @@ processors:
         action: delete
       - key: aws.ecs.task.revision
         action: delete
+      - key: aws.ecs.task.known_status
+        action: delete
+      - key: aws.ecs.task.pull_started_at
+        action: delete
+      - key: aws.ecs.task.pull_stopped_at
+        action: delete
+      - key: aws.ecs.taskdefinition.family
+        action: delete
+      - key: aws.ecs.taskdefinition.revision
+        action: delete
       - key: aws.ecs.cluster.arn
+        action: delete
+      - key: aws.ecs.cluster.name
         action: delete
       - key: aws.ecs.launchtype
         action: delete
       - key: aws.ecs.container.arn
         action: delete
       - key: aws.ecs.container.name
+        action: delete
+      - key: aws.ecs.container.knownstatus
+        action: delete
+      - key: aws.ecs.container.created_at
+        action: delete
+      - key: aws.ecs.container.started_at
+        action: delete
+      - key: aws.ecs.container.finished_at
+        action: delete
+      - key: aws.ecs.container.exit_code
+        action: delete
+      - key: aws.ecs.container.image.id
+        action: delete
+      - key: aws.ecs.docker.name
+        action: delete
+      - key: container.id
+        action: delete
+      - key: container.image.name
+        action: delete
+      - key: container.image.tag
         action: delete
       - key: aws.log.group.names
         action: delete
@@ -98,7 +137,7 @@ service:
   extensions: [sigv4auth, health_check]
   pipelines:
     metrics:
-      receivers: [prometheus]
+      receivers: [prometheus, awsecscontainermetrics]
       processors: [resourcedetection, resource, batch/metrics]
       exporters: [prometheusremotewrite]
   telemetry:
