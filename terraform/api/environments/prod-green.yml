@@ -47,7 +47,7 @@ datadog:
   indexer:
     api_key_arn: arn:aws:secretsmanager:eu-west-1:905964754131:secret:/prod/indexer/datadog-api-key-YHxcKv
 
-observability_sidecar_enabled: false
+observability_sidecar_enabled: true
 
 enabled_nets:
   main:
