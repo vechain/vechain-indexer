@@ -51,7 +51,9 @@ datadog:
 # rollout — flip to true on the dead colour first, observe in AMP for a
 # warm-up window, DNS switch, then set the same flag on the now-dead
 # (previously-live) colour and re-apply.
-observability_sidecar_enabled: false
+# Blue is currently the dead colour, so enabled here first for the
+# canary observation window.
+observability_sidecar_enabled: true
 
 enabled_nets:
   main:
