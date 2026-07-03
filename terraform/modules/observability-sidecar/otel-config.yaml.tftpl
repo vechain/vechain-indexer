@@ -18,9 +18,6 @@ receivers:
                 - "localhost:${app_port}"
 
 processors:
-  # ECS resource detection stamps aws.ecs.task.arn, aws.ecs.task.family,
-  # aws.ecs.container.name and related on every metric. The subsequent
-  # transform lifts those into stable label names.
   resourcedetection:
     detectors: [ecs, env]
     timeout: 5s
@@ -45,10 +42,7 @@ exporters:
       authenticator: sigv4auth
     resource_to_telemetry_conversion:
       enabled: true
-    # Static external labels — the single source of truth for these
-    # dimensions. The app must not emit its own service/env/deployment/
-    # network labels (see notes/observability-migration.md, Labelling
-    # model), otherwise both sources conflict at remote-write time.
+    # Sole source of truth for these labels; the app must not emit them.
     external_labels:
       service: ${service_name}
       env: ${env}

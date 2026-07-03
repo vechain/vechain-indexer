@@ -47,10 +47,6 @@ datadog:
   indexer:
     api_key_arn: arn:aws:secretsmanager:eu-west-1:905964754131:secret:/prod/indexer/datadog-api-key-YHxcKv
 
-# Attach the ADOT metrics sidecar to the indexer task. Per-colour
-# rollout — flip to true on the dead colour first, observe in AMP for a
-# warm-up window, DNS switch, then set the same flag on the now-dead
-# (previously-live) colour and re-apply.
 observability_sidecar_enabled: false
 
 enabled_nets:

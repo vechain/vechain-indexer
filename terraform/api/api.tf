@@ -410,10 +410,8 @@ module "ecs-backend-service" {
   deployment_maximum_percent         = 100
   namespace_id                       = aws_service_discovery_private_dns_namespace.ns.id
   health_check_grace_period_seconds  = 300
-  # Observability sidecar — gated per colour via
-  # environments/<workspace>.yml. Empty list when disabled.
-  additional_containers = local.observability_sidecar_enabled ? [module.observability_sidecar_indexer[each.key].container_definition] : []
-  extra_statements      = local.observability_sidecar_enabled ? [module.observability_sidecar_indexer[each.key].amp_remote_write_statement] : null
+  additional_containers              = local.observability_sidecar_enabled ? [module.observability_sidecar_indexer[each.key].container_definition] : []
+  extra_statements                   = local.observability_sidecar_enabled ? [module.observability_sidecar_indexer[each.key].amp_remote_write_statement] : null
   log_metric_filters = [for filter in each.value.indexer.log_metric_filters : {
     name    = filter.name
     pattern = filter.pattern

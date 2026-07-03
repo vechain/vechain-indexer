@@ -4,7 +4,7 @@ variable "service_name" {
 }
 
 variable "env" {
-  description = "Value of the `env` external label. Typically `prod` — the deployment colour is a separate label."
+  description = "Value of the `env` external label. Typically `prod`."
   type        = string
 }
 

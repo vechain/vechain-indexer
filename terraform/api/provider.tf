@@ -80,9 +80,7 @@ data "terraform_remote_state" "vpc" {
   }
 }
 
-# Import outputs from the observability stack (AMP + AMG workspaces).
-# The blue and green colours share a single observability workspace, so
-# the workspace key here is always `prod`.
+# Import outputs from the observability module
 data "terraform_remote_state" "observability" {
   backend = "s3"
   config = {

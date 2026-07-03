@@ -1,15 +1,8 @@
 output "container_definition" {
-  description = "Entry to append to the ECS task's `additional_containers` list. Sidecar is essential=false so a crash does not restart the app task."
-  # Shape is aligned to the vechain/terraform_infrastructure_modules
-  # ecs-backend-service `additional_containers` object type
-  # (name/image/cpu/memory/environment/command/secrets/portMappings/
-  # healthCheck/dependsOn only). The upstream schema does not declare
-  # logConfiguration on additional_containers, so ADOT's own operational
-  # logs (warn-level stderr) do not go to CloudWatch today. Sidecar
-  # self-metrics still reach AMP because ADOT exports its own
-  # `otelcol_*` counters via the same remote_write path. Follow-up:
-  # extend the upstream module to accept logConfiguration on additional
-  # containers, then plumb it through here.
+  # Shape matches the upstream ecs-backend-service `additional_containers`
+  # object type — no logConfiguration field, so ADOT stderr does not
+  # reach CloudWatch. Sidecar self-metrics still flow via remote_write.
+  description = "Entry to append to the ECS task's additional_containers list."
   value = {
     name    = "adot-metrics"
     image   = "public.ecr.aws/aws-observability/aws-otel-collector:${var.adot_image_tag}"
@@ -23,9 +16,8 @@ output "container_definition" {
     ]
     secrets      = []
     portMappings = []
-    # ADOT image is FROM scratch (no shell), so CMD-SHELL healthchecks
-    # exit before running. AWS ships a `/healthcheck` binary that probes
-    # the health_check extension on :13133 internally.
+    # ADOT image is FROM scratch — CMD-SHELL exits before running; use
+    # the shipped `/healthcheck` binary instead.
     healthCheck = {
       command     = ["CMD", "/healthcheck"]
       interval    = 30
