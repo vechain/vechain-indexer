@@ -11,6 +11,11 @@
     {
       "matchUpdateTypes": ["major", "minor", "patch", "pin", "digest"],
       "addLabels": ["increment:patch"]
+    },
+    {
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["amazoncorretto"],
+      "allowedVersions": "/^21\\./"
     }
   ]
 }
