@@ -1,0 +1,267 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 1,
+  "links": [],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["observability", "api"],
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "",
+  "title": "API — RED",
+  "uid": "api-red",
+  "templating": {
+    "list": [
+      {
+        "name": "env",
+        "label": "Env",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "amp" },
+        "query": { "query": "label_values(http_server_requests_seconds_count, env)", "refId": "env" },
+        "refresh": 2,
+        "sort": 1,
+        "multi": false,
+        "includeAll": false
+      },
+      {
+        "name": "deployment",
+        "label": "Deployment",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "amp" },
+        "query": { "query": "label_values(http_server_requests_seconds_count{env=~\"$env\"}, deployment)", "refId": "deployment" },
+        "refresh": 2,
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*"
+      },
+      {
+        "name": "network",
+        "label": "Network",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "amp" },
+        "query": { "query": "label_values(http_server_requests_seconds_count{env=~\"$env\", deployment=~\"$deployment\"}, network)", "refId": "network" },
+        "refresh": 2,
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*"
+      },
+      {
+        "name": "uri",
+        "label": "URI (regex)",
+        "type": "textbox",
+        "current": { "value": ".*", "text": ".*" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Rate",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "panels": []
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Requests / sec by outcome",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (outcome) (rate(http_server_requests_seconds_count{env=~\"$env\", deployment=~\"$deployment\", network=~\"$network\", service=\"api\", uri=~\"$uri\"}[1m]))",
+          "legendFormat": "{{outcome}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps", "min": 0 } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "mean", "max"] } }
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Top URIs by rate",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(10, sum by (uri) (rate(http_server_requests_seconds_count{env=~\"$env\", deployment=~\"$deployment\", network=~\"$network\", service=\"api\", uri=~\"$uri\"}[5m])))",
+          "legendFormat": "{{uri}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps", "min": 0 } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "mean"] } }
+    },
+    {
+      "id": 2,
+      "type": "row",
+      "title": "Errors",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "panels": []
+    },
+    {
+      "id": 20,
+      "type": "timeseries",
+      "title": "5xx rate by URI",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (uri, status) (rate(http_server_requests_seconds_count{env=~\"$env\", deployment=~\"$deployment\", network=~\"$network\", service=\"api\", uri=~\"$uri\", outcome=\"SERVER_ERROR\"}[5m]))",
+          "legendFormat": "{{uri}} {{status}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps", "min": 0 } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+    },
+    {
+      "id": 21,
+      "type": "timeseries",
+      "title": "4xx rate by URI",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (uri, status) (rate(http_server_requests_seconds_count{env=~\"$env\", deployment=~\"$deployment\", network=~\"$network\", service=\"api\", uri=~\"$uri\", outcome=\"CLIENT_ERROR\"}[5m]))",
+          "legendFormat": "{{uri}} {{status}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps", "min": 0 } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+    },
+    {
+      "id": 3,
+      "type": "row",
+      "title": "Duration",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
+      "panels": []
+    },
+    {
+      "id": 30,
+      "type": "timeseries",
+      "title": "p50 latency by URI",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 19 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum by (uri, le) (rate(http_server_requests_seconds_bucket{env=~\"$env\", deployment=~\"$deployment\", network=~\"$network\", service=\"api\", uri=~\"$uri\"}[5m])))",
+          "legendFormat": "{{uri}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0 } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+    },
+    {
+      "id": 31,
+      "type": "timeseries",
+      "title": "p95 latency by URI",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 19 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (uri, le) (rate(http_server_requests_seconds_bucket{env=~\"$env\", deployment=~\"$deployment\", network=~\"$network\", service=\"api\", uri=~\"$uri\"}[5m])))",
+          "legendFormat": "{{uri}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0 } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+    },
+    {
+      "id": 32,
+      "type": "timeseries",
+      "title": "p99 latency by URI",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 19 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.99, sum by (uri, le) (rate(http_server_requests_seconds_bucket{env=~\"$env\", deployment=~\"$deployment\", network=~\"$network\", service=\"api\", uri=~\"$uri\"}[5m])))",
+          "legendFormat": "{{uri}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0 } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+    },
+    {
+      "id": 4,
+      "type": "row",
+      "title": "Resources",
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 },
+      "panels": [
+        {
+          "id": 40,
+          "type": "timeseries",
+          "title": "CPU utilised — per task",
+          "description": "Task cgroup CPU / reserved × 100. Dashed line = 80%.",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+          "datasource": { "type": "prometheus", "uid": "amp" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "(ecs_task_cpu_utilized_None{env=~\"$env\", deployment=~\"$deployment\", network=~\"$network\", service=\"api\"} / ecs_task_cpu_reserved_None{env=~\"$env\", deployment=~\"$deployment\", network=~\"$network\", service=\"api\"}) * 100",
+              "legendFormat": "{{task_id}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "custom": { "thresholdsStyle": { "mode": "dashed" } },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "orange", "value": 80 }
+                ]
+              }
+            }
+          },
+          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+        },
+        {
+          "id": 41,
+          "type": "timeseries",
+          "title": "Memory utilised — per task",
+          "description": "Task cgroup RSS / reserved × 100. Dashed line = 80%.",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+          "datasource": { "type": "prometheus", "uid": "amp" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "(ecs_task_memory_utilized_Megabytes{env=~\"$env\", deployment=~\"$deployment\", network=~\"$network\", service=\"api\"} / ecs_task_memory_reserved_Megabytes{env=~\"$env\", deployment=~\"$deployment\", network=~\"$network\", service=\"api\"}) * 100",
+              "legendFormat": "{{task_id}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "custom": { "thresholdsStyle": { "mode": "dashed" } },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "orange", "value": 80 }
+                ]
+              }
+            }
+          },
+          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+        }
+      ]
+    }
+  ]
+}

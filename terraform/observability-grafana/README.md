@@ -4,10 +4,25 @@ Terraform stack that provisions AMG data sources and (eventually) dashboards, on
 
 ## What this stack contains
 
-- **AMP data source** — Prometheus with SigV4 auth against the workspace in `terraform/observability/`.
-- **CloudWatch data source** — for log-based diagnostics and any CW-native metrics we keep.
+- **AMP data source** — Prometheus with SigV4 auth against the workspace in `terraform/observability/`. UID `amp`.
+- **CloudWatch data source** — for log-based diagnostics and any CW-native metrics we keep. UID `cloudwatch`.
+- **Dashboards** — JSON files under `dashboards/`, iterated by `dashboards.tf` via `for_each`.
 
-Dashboards land in follow-up PRs.
+## Adding a dashboard
+
+1. Drop the JSON file under `dashboards/`. Author it in Grafana UI, then export via *Share → Export → Save to file*. Or hand-write from an existing file — the shape is small.
+2. Reference the AMP data source by UID `amp` (or `cloudwatch` for CW). No terraform templating in the JSON — the `dashboards.tf` uses `file()`, not `templatefile()`, so JSON is portable and can be re-imported into Grafana for iteration.
+3. Add an entry to `local.dashboards` in `dashboards.tf`. The key is the terraform resource key; the dashboard's `uid` field (in the JSON) controls the URL slug.
+
+### Template variables convention
+
+All dashboards use the same three top-level variables so panels can be reused between them:
+
+- `env` — single-select, defaults to the only value in AMP (`prod` today).
+- `deployment` — multi-select with `All` (`blue` / `green`).
+- `network` — multi-select with `All` (`mainnet` / `testnet`).
+
+Panels filter with `env=~"$env", deployment=~"$deployment", network=~"$network"` so the same expression works whether one or many values are selected.
 
 ## Usage
 
