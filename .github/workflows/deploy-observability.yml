@@ -71,13 +71,21 @@ jobs:
         id: validate
         run: terraform validate
 
+      # SLACK_WEBHOOK_URL is optional. If unset the observability stack writes
+      # a `placeholder` sentinel to Secrets Manager and the sns_to_slack
+      # Lambda no-ops on delivery. Populate the repo secret when you're ready
+      # to switch alert delivery on.
       - name: Terraform Plan
         id: plan
+        env:
+          TF_VAR_slack_webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: terraform plan -out "apply.plan"
 
       - name: Terraform Apply
         if: github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/v.')
         id: apply
+        env:
+          TF_VAR_slack_webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: terraform apply "apply.plan"
 
   deploy-observability-grafana:

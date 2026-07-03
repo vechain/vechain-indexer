@@ -9,8 +9,17 @@ Amazon Managed Prometheus (AMP) + Amazon Managed Grafana (AMG) workspaces for th
 - Workspace IAM role that lets AMG read AMP and CloudWatch (metrics + logs) and manage silences.
 - Terraform-provider service account with an admin token in Secrets Manager, rotated every 25 days.
 - Okta SAML configuration — gated on `okta_saml_metadata_url` being non-empty. Empty by default until the Okta app is registered.
+- **Alerting** — AMP rule groups + Alertmanager definition, delivered to Slack via SNS → bridge Lambda. See `alerts.tf` and `locals.tf` for rules and the alertmanager template. Ported from `agent-marketplace/infra/terraform/observability-aws`.
 
-Deliberately not in this stack (yet): dashboards, alert rules, scrape targets. Those land in later phases as separate stacks that read the outputs here via `terraform_remote_state`.
+Deliberately not in this stack (yet): dashboards, scrape targets, recording rules. Dashboards live in `terraform/observability-grafana`.
+
+## Alert delivery
+
+Pipeline: **AMP Alertmanager → SNS (`aws_sns_topic.alerts`) → `sns_to_slack` Lambda → Slack webhook**.
+
+Slack webhook value comes in via `TF_VAR_slack_webhook_url` (marked sensitive). While unset, the secret holds the literal string `placeholder` and the Lambda no-ops, so the plumbing can apply before the webhook exists. Populate the workflow secret and reapply to switch delivery on.
+
+Alert rules are stamped without an explicit `env`/`deployment`/`network`/`service` label — those come through from the underlying series' external_labels (set by the sidecar). Aggregating alerts (e.g. `sum by (...) rate(...)`) must include those labels in the `by` clause or Alertmanager `.CommonLabels` will drop them.
 
 ## Usage
 

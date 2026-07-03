@@ -27,3 +27,8 @@ output "amg_sa_token_secret_arn" {
   description = "Secrets Manager ARN holding the Grafana admin SA token. Downstream stacks read the value through a secretsmanager data source at apply time."
   value       = aws_secretsmanager_secret.amg_sa_token.arn
 }
+
+output "alerts_topic_arn" {
+  description = "SNS topic AMP Alertmanager publishes to. Exposed so downstream tests / bridges can subscribe."
+  value       = aws_sns_topic.alerts.arn
+}

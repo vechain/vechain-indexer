@@ -3,3 +3,10 @@ variable "project" {
   type        = string
   default     = "veworld-indexer"
 }
+
+variable "slack_webhook_url" {
+  description = "Slack incoming-webhook URL for AMP alert delivery. Empty string writes a `placeholder` sentinel to Secrets Manager and the bridge Lambda no-ops."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
