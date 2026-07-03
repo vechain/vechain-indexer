@@ -1,0 +1,67 @@
+extensions:
+  sigv4auth:
+    region: ${aws_region}
+    service: aps
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+receivers:
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: app
+          scrape_interval: 15s
+          scrape_timeout: 10s
+          metrics_path: /actuator/prometheus
+          static_configs:
+            - targets:
+                - "localhost:${app_port}"
+
+processors:
+  # ECS resource detection stamps aws.ecs.task.arn, aws.ecs.task.family,
+  # aws.ecs.container.name and related on every metric. The subsequent
+  # transform lifts those into stable label names.
+  resourcedetection:
+    detectors: [ecs, env]
+    timeout: 5s
+    override: false
+
+  transform/promote_ecs_attrs:
+    metric_statements:
+      - context: resource
+        statements:
+          - set(attributes["task_id"], Substring(attributes["aws.ecs.task.arn"], LastIndexOf(attributes["aws.ecs.task.arn"], "/") + 1, Len(attributes["aws.ecs.task.arn"]) - LastIndexOf(attributes["aws.ecs.task.arn"], "/") - 1)) where attributes["aws.ecs.task.arn"] != nil
+          - set(attributes["container"], attributes["aws.ecs.container.name"]) where attributes["aws.ecs.container.name"] != nil
+
+  batch/metrics:
+    send_batch_size: 1000
+    send_batch_max_size: 1000
+    timeout: 10s
+
+exporters:
+  prometheusremotewrite:
+    endpoint: ${amp_endpoint}api/v1/remote_write
+    auth:
+      authenticator: sigv4auth
+    resource_to_telemetry_conversion:
+      enabled: true
+    # Static external labels — the single source of truth for these
+    # dimensions. The app must not emit its own service/env/deployment/
+    # network labels (see notes/observability-migration.md, Labelling
+    # model), otherwise both sources conflict at remote-write time.
+    external_labels:
+      service: ${service_name}
+      env: ${env}
+      deployment: ${deployment}
+      network: ${network}
+
+service:
+  extensions: [sigv4auth, health_check]
+  pipelines:
+    metrics:
+      receivers: [prometheus]
+      processors: [resourcedetection, transform/promote_ecs_attrs, batch/metrics]
+      exporters: [prometheusremotewrite]
+  telemetry:
+    logs:
+      level: warn

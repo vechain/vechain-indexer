@@ -80,6 +80,18 @@ data "terraform_remote_state" "vpc" {
   }
 }
 
+# Import outputs from the observability stack (AMP + AMG workspaces).
+# The blue and green colours share a single observability workspace, so
+# the workspace key here is always `prod`.
+data "terraform_remote_state" "observability" {
+  backend = "s3"
+  config = {
+    bucket = "veworld-indexer-terraform-state${startswith(local.env.environment, "prod-") ? "-prod" : ""}"
+    key    = "workspaces/${startswith(local.env.environment, "prod-") ? "prod" : local.env.environment}/veworld-indexer-observability.tfstate"
+    region = "eu-west-1"
+  }
+}
+
 variable "network" {
   type        = string
   description = "The network to deploy to (optional). Allowed values are 'mainnet' or 'testnet' or 'both'. This variable is required."
