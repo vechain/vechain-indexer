@@ -23,12 +23,57 @@ processors:
     timeout: 5s
     override: false
 
-  transform/promote_ecs_attrs:
-    metric_statements:
-      - context: datapoint
-        statements:
-          - set(attributes["task_id"], Substring(resource.attributes["aws.ecs.task.arn"], LastIndexOf(resource.attributes["aws.ecs.task.arn"], "/") + 1, Len(resource.attributes["aws.ecs.task.arn"]) - LastIndexOf(resource.attributes["aws.ecs.task.arn"], "/") - 1)) where resource.attributes["aws.ecs.task.arn"] != nil
-          - set(attributes["container"], resource.attributes["aws.ecs.container.name"]) where resource.attributes["aws.ecs.container.name"] != nil
+  # ADOT v0.46 doesn't ship the OTTL `transform` processor, so we use
+  # `resource` actions to shape the labels before resource_to_telemetry_conversion
+  # promotes them at export time. Extract task_id from the task ARN,
+  # rename container name to `container`, and drop everything else the
+  # ecs detector adds.
+  resource:
+    attributes:
+      - key: aws.ecs.task.arn
+        pattern: ^.+/(?P<task_id>[^/]+)$
+        action: extract
+      - key: container
+        from_attribute: aws.ecs.container.name
+        action: insert
+      - key: aws.ecs.task.arn
+        action: delete
+      - key: aws.ecs.task.family
+        action: delete
+      - key: aws.ecs.task.revision
+        action: delete
+      - key: aws.ecs.cluster.arn
+        action: delete
+      - key: aws.ecs.launchtype
+        action: delete
+      - key: aws.ecs.container.arn
+        action: delete
+      - key: aws.ecs.container.name
+        action: delete
+      - key: aws.log.group.names
+        action: delete
+      - key: aws.log.group.arns
+        action: delete
+      - key: aws.log.stream.names
+        action: delete
+      - key: aws.log.stream.arns
+        action: delete
+      - key: cloud.provider
+        action: delete
+      - key: cloud.platform
+        action: delete
+      - key: cloud.region
+        action: delete
+      - key: cloud.account.id
+        action: delete
+      - key: cloud.availability_zone
+        action: delete
+      - key: service.name
+        action: delete
+      - key: service.instance.id
+        action: delete
+      - key: service.version
+        action: delete
 
   batch/metrics:
     send_batch_size: 1000
@@ -41,7 +86,7 @@ exporters:
     auth:
       authenticator: sigv4auth
     resource_to_telemetry_conversion:
-      enabled: false
+      enabled: true
     # Sole source of truth for these labels; the app must not emit them.
     external_labels:
       service: ${service_name}
@@ -54,7 +99,7 @@ service:
   pipelines:
     metrics:
       receivers: [prometheus]
-      processors: [resourcedetection, transform/promote_ecs_attrs, batch/metrics]
+      processors: [resourcedetection, resource, batch/metrics]
       exporters: [prometheusremotewrite]
   telemetry:
     logs:
