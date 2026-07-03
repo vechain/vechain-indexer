@@ -2,6 +2,8 @@
 
 Local terraform module that produces the container definition and IAM statement needed to attach an ADOT (AWS Distro for OpenTelemetry Collector) sidecar to an ECS task, scraping the app's `/actuator/prometheus` endpoint and remote-writing to Amazon Managed Prometheus.
 
+Two receivers feed the pipeline: the app's Prometheus endpoint (application metrics) and `awsecscontainermetrics` (per-task and per-container cgroup CPU/memory, `ecs_task_*` and `container_*` series).
+
 Consumed by the same-account observability workspace created in `terraform/observability/`. Phase 4 of the migration plan attaches this to the indexer task; phase 5 attaches it to the API task.
 
 ## Outputs
