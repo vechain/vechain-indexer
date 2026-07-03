@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'terraform/observability/**'
+      - 'terraform/observability-grafana/**'
       - '.github/workflows/deploy-observability.yml'
   workflow_dispatch:
 
@@ -14,20 +15,25 @@ permissions:
   id-token: write   # This is required for requesting the JWT
   contents: read    # This is required for actions/checkout
 
-concurrency:
-  group: terraform-observability-${{ github.ref }}
-  cancel-in-progress: false
-
 jobs:
   deploy:
-    name: Plan/deploy observability terraform - prod
+    name: Plan/deploy ${{ matrix.stack }} - prod
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        stack:
+          - observability
+          - observability-grafana
+    concurrency:
+      group: terraform-${{ matrix.stack }}-${{ github.ref }}
+      cancel-in-progress: false
     env:
       TERRAFORM_ENV: prod
 
     defaults:
       run:
-        working-directory: terraform/observability
+        working-directory: terraform/${{ matrix.stack }}
 
     steps:
       - name: Checkout
@@ -62,7 +68,7 @@ jobs:
 
       # Plain `select` (not `select -or-create`) so PR plan runs cannot
       # silently create the prod workspace in S3. Bootstrap is a one-time
-      # local operation per terraform/observability/README.md.
+      # local operation.
       - name: Terraform Workspace
         id: workspace
         run: terraform workspace select ${{ env.TERRAFORM_ENV }}
