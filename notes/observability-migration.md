@@ -100,7 +100,9 @@ DD monitors / alerts: leave in place for this cull PR. Each individual monitor g
 
 Log pipelines: the checked-in JSON at `metrics/datadog/app-pipeline.json`, `pipeline.json`, and `waf-pipeline.json` gets audited for keep/drop; log-based metric filters in `terraform/api/cwalarms.tf` similarly. Culled pipelines are removed in this PR; the rest wait for P8 (logs).
 
-Rollback: DD dashboard is exportable; culled sections can be restored from git history if we regret it.
+Local dev stack: delete `metrics/compose.yaml`, `metrics/prometheus/`, and `metrics/grafana/`. The indexer's `/actuator/prometheus` endpoint stays live for anyone who wants to `curl` it directly; there is no reason to run a separate local Prometheus + Grafana pair to visualise it. Removing this now keeps the stack from drifting further out of sync while the migration is in flight.
+
+Rollback: DD dashboard is exportable; culled sections and the local stack can both be restored from git history if we regret it.
 
 ### P2 — AMP + AMG workspaces (shared, single apply)
 
@@ -170,7 +172,7 @@ Rollback: revert the PR. Metric names return to the current state.
 - JVM push is already off from end of P5. This phase completes the removal:
 - Drop the `micrometer-registry-datadog` dependency from root `build.gradle.kts` and the `management.datadog` block from both `application.yaml` files.
 - Rip out DD env vars, secrets, terraform data sources, DD Forwarder Lambda / CloudFormation stack, and any lingering `DD_*` references in application code.
-- Delete `metrics/datadog/`, `metrics/grafana/`, `metrics/prometheus/`, `metrics/compose.yaml`.
+- Delete `metrics/datadog/` (the local Prometheus + Grafana stack in `metrics/compose.yaml`, `metrics/prometheus/`, and `metrics/grafana/` is already gone from P1).
 - Remove `make dd-refresh-generated` and the CI checks that depend on it.
 - Update `CLAUDE.md` and `AGENTS.md` to strike the Datadog sections.
 - Rollback: revert the PR. Datadog account and secrets stay unchanged until this ships successfully.
