@@ -139,6 +139,7 @@ net.bytebuddy:byte-buddy:1.17.8=testCompileClasspath,testImplementationDependenc
 net.java.dev.jna:jna-platform:5.17.0=testCompileClasspath,testImplementationDependenciesMetadata,testRuntimeClasspath
 net.java.dev.jna:jna:5.17.0=testCompileClasspath,testImplementationDependenciesMetadata,testRuntimeClasspath
 net.jcip:jcip-annotations:1.0=aggregateCodeCoverageReportResults,productionRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
+net.logstash.logback:logstash-logback-encoder:8.0=aggregateCodeCoverageReportResults,compileClasspath,implementationDependenciesMetadata,productionRuntimeClasspath,runtimeClasspath,testCompileClasspath,testImplementationDependenciesMetadata,testRuntimeClasspath
 net.minidev:accessors-smart:2.5.2=testCompileClasspath,testImplementationDependenciesMetadata,testRuntimeClasspath
 net.minidev:json-smart:2.5.2=testCompileClasspath,testImplementationDependenciesMetadata,testRuntimeClasspath
 org.apache.commons:commons-compress:1.28.0=testCompileClasspath,testImplementationDependenciesMetadata,testRuntimeClasspath
