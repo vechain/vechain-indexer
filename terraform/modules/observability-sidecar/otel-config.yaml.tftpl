@@ -25,10 +25,10 @@ processors:
 
   transform/promote_ecs_attrs:
     metric_statements:
-      - context: resource
+      - context: datapoint
         statements:
-          - set(attributes["task_id"], Substring(attributes["aws.ecs.task.arn"], LastIndexOf(attributes["aws.ecs.task.arn"], "/") + 1, Len(attributes["aws.ecs.task.arn"]) - LastIndexOf(attributes["aws.ecs.task.arn"], "/") - 1)) where attributes["aws.ecs.task.arn"] != nil
-          - set(attributes["container"], attributes["aws.ecs.container.name"]) where attributes["aws.ecs.container.name"] != nil
+          - set(attributes["task_id"], Substring(resource.attributes["aws.ecs.task.arn"], LastIndexOf(resource.attributes["aws.ecs.task.arn"], "/") + 1, Len(resource.attributes["aws.ecs.task.arn"]) - LastIndexOf(resource.attributes["aws.ecs.task.arn"], "/") - 1)) where resource.attributes["aws.ecs.task.arn"] != nil
+          - set(attributes["container"], resource.attributes["aws.ecs.container.name"]) where resource.attributes["aws.ecs.container.name"] != nil
 
   batch/metrics:
     send_batch_size: 1000
@@ -41,7 +41,7 @@ exporters:
     auth:
       authenticator: sigv4auth
     resource_to_telemetry_conversion:
-      enabled: true
+      enabled: false
     # Sole source of truth for these labels; the app must not emit them.
     external_labels:
       service: ${service_name}

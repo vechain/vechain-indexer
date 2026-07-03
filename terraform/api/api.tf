@@ -411,7 +411,7 @@ module "ecs-backend-service" {
   namespace_id                       = aws_service_discovery_private_dns_namespace.ns.id
   health_check_grace_period_seconds  = 300
   additional_containers              = local.observability_sidecar_enabled ? [module.observability_sidecar_indexer[each.key].container_definition] : []
-  extra_statements                   = local.observability_sidecar_enabled ? [module.observability_sidecar_indexer[each.key].amp_remote_write_statement] : null
+  extra_statements                   = local.observability_sidecar_enabled ? [module.observability_sidecar_indexer[each.key].amp_remote_write_statement] : []
   log_metric_filters = [for filter in each.value.indexer.log_metric_filters : {
     name    = filter.name
     pattern = filter.pattern

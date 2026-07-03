@@ -6,7 +6,7 @@ output "container_definition" {
   value = {
     name    = "adot-metrics"
     image   = "public.ecr.aws/aws-observability/aws-otel-collector:${var.adot_image_tag}"
-    memory  = var.memory_reservation
+    memory  = var.memory_limit_mib
     command = ["--config=env:CONFIG_CONTENT"]
     environment = [
       {

@@ -11,7 +11,10 @@ module "observability_sidecar_indexer" {
   service_name      = "indexer"
   env               = local.observability_env
   deployment        = local.observability_deployment
-  network           = each.key == "main" ? "mainnet" : "testnet"
+  network = {
+    main = "mainnet"
+    test = "testnet"
+  }[each.key]
   aws_region        = local.env.region
   amp_endpoint      = data.terraform_remote_state.observability.outputs.amp_endpoint
   amp_workspace_arn = data.terraform_remote_state.observability.outputs.amp_workspace_arn

@@ -32,8 +32,12 @@ variable "aws_region" {
 }
 
 variable "amp_endpoint" {
-  description = "AMP workspace endpoint (base URL). Sidecar remote-writes to <endpoint>api/v1/remote_write."
+  description = "AMP workspace endpoint (base URL, trailing slash required). Sidecar remote-writes to <endpoint>api/v1/remote_write."
   type        = string
+  validation {
+    condition     = endswith(var.amp_endpoint, "/")
+    error_message = "amp_endpoint must end with a trailing slash."
+  }
 }
 
 variable "amp_workspace_arn" {
@@ -53,8 +57,8 @@ variable "adot_image_tag" {
   default     = "v0.46.0"
 }
 
-variable "memory_reservation" {
-  description = "Soft memory reservation (MiB) for the sidecar."
+variable "memory_limit_mib" {
+  description = "Hard memory limit (MiB) for the sidecar container."
   type        = number
   default     = 128
 }
