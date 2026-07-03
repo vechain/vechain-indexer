@@ -79,11 +79,13 @@ resource "aws_iam_role" "grafana_workspace" {
 
 resource "aws_iam_role_policy_attachment" "grafana_cloudwatch" {
   role = aws_iam_role.grafana_workspace.name
-  # `AmazonGrafanaCloudWatchAccess` is not an AWS-managed policy — the
-  # name is a common assumption (mirror of `AmazonPrometheusQueryAccess`)
-  # but IAM returns NoSuchEntity for that ARN. AMG's own docs build the
-  # CloudWatch data-source role from the generic read policy instead.
-  policy_arn = "arn:aws:iam::aws:policy/CloudWatchReadOnlyAccess"
+  # `AmazonGrafanaCloudWatchAccess` lives under the `service-role/` path
+  # in IAM; using the top-level `arn:aws:iam::aws:policy/…` prefix (without
+  # `service-role/`) returns NoSuchEntity, which is easy to mistake for
+  # "the policy doesn't exist". It does — and it's exactly the scope AMG's
+  # CloudWatch datasource contract expects, tighter than the generic
+  # `CloudWatchReadOnlyAccess` (which also covers RUM / Synthetics / X-Ray).
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonGrafanaCloudWatchAccess"
 }
 
 resource "aws_iam_role_policy_attachment" "grafana_prometheus" {

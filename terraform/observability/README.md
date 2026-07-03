@@ -35,3 +35,19 @@ terraform apply
 ## AMP retention
 
 AMP caps metric retention at 150 days. If a longer window is needed for compliance or archival we introduce an S3 snapshot sidecar (out of scope for this stack).
+
+## Operational notes
+
+### Apply cadence
+
+`time_rotating.grafana_sa_token` only advances during a `terraform apply` on this stack. AMG service-account tokens have a hard 30-day TTL. If nobody applies for 30 days the token in Secrets Manager becomes invalid and any downstream stack that reads it (e.g. the dashboards-as-code stack in a later phase) will fail authentication.
+
+Nothing reads the token today, so short-term drift is harmless — the next apply mints a new token and `create_before_destroy` swaps the secret value in place. Before we land a stack that consumes the token, we should either add a scheduled `terraform apply` workflow (~every 20 days) or lower the `rotation_days` value in step with the actual apply cadence.
+
+### Sensitive state
+
+`aws_grafana_workspace_service_account_token.terraform.key` and `aws_secretsmanager_secret_version.amg_sa_token.secret_string` are both stored in plaintext in the terraform state file, per how the terraform state model works. This matches how every other secret this repo manages via terraform is stored (MongoDB Atlas passwords, Datadog API keys, WAF bypass tokens). The mitigation is at the state-backend layer: read access to `s3://veworld-indexer-terraform-state-prod` is scoped to the deploy OIDC role. Anyone with access to the bucket effectively has access to those secrets.
+
+## Backend locking
+
+The S3 backend uses `use_lockfile = true` (native S3 conditional-write locking, GA in terraform 1.11). No DynamoDB table required. This is stricter than the sibling stacks in this repo (`terraform/api`, `terraform/vpc`) which currently rely on human coordination — worth aligning them in a follow-up.
