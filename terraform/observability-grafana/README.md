@@ -9,24 +9,14 @@ Terraform stack that provisions AMG data sources and (eventually) dashboards, on
 
 Dashboards land in follow-up PRs.
 
-## Bootstrap (one-time, local)
-
-The CI workflow uses `terraform workspace select prod` (without `-or-create`) so PR plans can't silently create the prod workspace in S3. First-time setup is a manual local step:
-
-```bash
-cd terraform/observability-grafana
-terraform init -backend-config=environments/prod.config
-terraform workspace new prod
-```
-
 ## Usage
 
-After bootstrap, subsequent plans/applies happen through the `Plan or Apply Observability Terraform` workflow. Local use:
+Plans/applies happen through the `Plan or Apply Observability Terraform` workflow. Local use:
 
 ```bash
 cd terraform/observability-grafana
 terraform init -backend-config=environments/prod.config
-terraform workspace select prod
+terraform workspace select -or-create prod
 terraform plan
 terraform apply
 ```
