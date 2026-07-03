@@ -16,13 +16,12 @@ Terraform stack that provisions AMG data sources and (eventually) dashboards, on
 
 ### Template variables convention
 
-All dashboards use the same three top-level variables so panels can be reused between them:
+All dashboards use the same top-level variables so panels can be reused between them:
 
-- `env` — single-select, defaults to the only value in AMP (`prod` today).
 - `deployment` — multi-select with `All` (`blue` / `green`).
 - `network` — multi-select with `All` (`mainnet` / `testnet`).
 
-Panels filter with `env=~"$env", deployment=~"$deployment", network=~"$network"` so the same expression works whether one or many values are selected.
+Panels filter with `deployment=~"$deployment", network=~"$network"` so the same expression works whether one or many values are selected. `env` is not templated — the AMP workspace only holds `prod`, so a picker with a single option adds noise.
 
 ## Usage
 
