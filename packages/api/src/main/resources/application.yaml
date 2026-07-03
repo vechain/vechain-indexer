@@ -43,7 +43,7 @@ management:
     web:
       base-path: /actuator
       exposure:
-        include: 'health'
+        include: 'health,prometheus'
   endpoint:
     health:
       show-details: always
@@ -62,7 +62,7 @@ management:
   prometheus:
     metrics:
       export:
-        enabled: false
+        enabled: ${PROMETHEUS_METRICS_ENABLED:false}
 
 spring.data:
   mongodb:

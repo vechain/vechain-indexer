@@ -126,6 +126,7 @@ module "ecs-lb-service-api" {
   alb_sg                    = [aws_security_group.alb-sg.id]
   namespace_id              = aws_service_discovery_private_dns_namespace.ns.id
   https_tg_healthcheck_path = "/actuator/health"
+  additional_containers     = local.observability_sidecar_enabled ? [module.observability_sidecar_api[each.key].container_definition] : []
   environment_variables = [
     {
       name  = "APPLICATION_NAME"
@@ -361,6 +362,10 @@ module "ecs-lb-service-api" {
     {
       name  = "APP_LOGGER"
       value = "CloudWatch"
+    },
+    {
+      name  = "PROMETHEUS_METRICS_ENABLED"
+      value = tostring(local.observability_sidecar_enabled)
     }
   ]
   log_metric_filters = [for filter in each.value.api.log_metric_filters : {
@@ -387,7 +392,7 @@ module "ecs-lb-service-api" {
 module "ecs-backend-service" {
   depends_on                         = [module.ecs-cluster]
   for_each                           = local.env.enabled_nets
-  source                             = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.3.1.28"
+  source                             = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.3.2.1"
   vpc_id                             = data.terraform_remote_state.vpc.outputs.vpc_id
   region                             = local.env.region
   cluster                            = module.ecs-cluster.name

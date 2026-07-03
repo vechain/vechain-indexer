@@ -45,6 +45,11 @@ variable "amp_workspace_arn" {
   type        = string
 }
 
+variable "log_group_name" {
+  description = "CloudWatch log group the sidecar writes stderr to."
+  type        = string
+}
+
 variable "app_port" {
   description = "Port the app container exposes /actuator/prometheus on. Sidecar scrapes localhost:<app_port>/actuator/prometheus."
   type        = number
