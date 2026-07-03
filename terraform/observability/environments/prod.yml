@@ -6,13 +6,14 @@ region: eu-west-1
 # (150-day maximum).
 log_retention_days: 30
 
-# Okta SAML for Grafana. Leave blank until the Okta app is registered;
-# while empty the SAML resource is not created and no one can SSO. The
-# terraform-provider service-account token still works because tokens
-# are independent of the SAML provider.
-okta_saml_metadata_url: ""
+# Okta SAML for Grafana. IdP metadata is public (endpoints + signing
+# cert), not a secret. While empty the SAML resource is not created and
+# no one can SSO; the terraform-provider service-account token works
+# regardless since tokens are independent of the SAML provider.
+okta_saml_metadata_url: "https://vechaineu.okta.com/app/exky8a92ekvR6c9LC417/sso/saml/metadata"
 
-# Okta group names that map to Grafana Admin / Editor roles once SAML
-# is enabled. Populated at the same time as okta_saml_metadata_url.
-grafana_admin_okta_groups: []
-grafana_editor_okta_groups: []
+# Okta group names that map to Grafana Admin / Editor roles. Must match
+# the group names emitted in the Okta app's `role` attribute exactly
+# (case-sensitive) or SSO users fall back to Viewer.
+grafana_admin_okta_groups: ["APP_AMG_Indexer_Admin"]
+grafana_editor_okta_groups: ["APP_AMG_Indexer_Editor"]
