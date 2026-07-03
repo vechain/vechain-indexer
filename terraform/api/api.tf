@@ -145,10 +145,6 @@ module "ecs-lb-service-api" {
       value = each.value.api.logging.app-log-level
     },
     {
-      name  = "APP_LOGGER"
-      value = "CloudWatch"
-    },
-    {
       name  = "TIMING_WARN_THRESHOLD_MS"
       value = each.value.api.timing.warn-threshold-ms
     },
@@ -452,10 +448,6 @@ module "ecs-backend-service" {
     {
       name  = "APP_LOG_LEVEL"
       value = each.value.indexer.logging.app-log-level
-    },
-    {
-      name  = "APP_LOGGER"
-      value = "CloudWatch"
     },
     {
       name  = "TIMING_LOG_LEVEL"
