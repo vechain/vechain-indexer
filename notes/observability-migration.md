@@ -21,7 +21,7 @@ Status: Phase 0 — this document. Phase 1 (cull) and everything after are scope
 
 ## Current state
 
-- Metrics: Micrometer's Datadog registry runs inside each Spring Boot JVM and pushes to `api.datadoghq.eu` every 10s. No sidecar container, no DD agent. Driven by `management.datadog.metrics.export.enabled` in each service's `application.yaml` and by `DD_METRICS_ENABLED` / `DD_API_KEY` / `DD_HOST_TAG` env vars set in terraform (`DD_HOST_TAG = "${env}-${network}"`).
+- Metrics: only the indexer pushes to Datadog. Micrometer's Datadog registry runs inside the indexer JVM and posts to `api.datadoghq.eu` every 10s. No sidecar container, no DD agent. Driven by `management.datadog.metrics.export.enabled` in `packages/indexer/src/main/resources/application.yaml` and by `DD_METRICS_ENABLED` / `DD_API_KEY` / `DD_HOST_TAG` env vars set on the `ecs-backend-service` (indexer) module in `terraform/api/api.tf` (`DD_HOST_TAG = "${env}-${network}"`). The API task definition does not set these env vars, and the API's yaml pins the DD export to `false` — see the next bullet.
 - Indexer already exposes `/actuator/prometheus` in parallel (`PROMETHEUS_METRICS_ENABLED` defaults to `true`). The endpoint is live today; nothing scrapes it in prod.
 - API has no exported metrics: `management.datadog.metrics.export.enabled` is pinned false, `management.prometheus.metrics.export.enabled` is pinned false, and `management.endpoints.web.exposure.include` only lists `health`. The Micrometer libraries are on the classpath (added at root `build.gradle.kts`), so enabling metrics is a config change, not a dependency change.
 - Logs: a Datadog Forwarder Lambda (deployed by a shared `datadog` terraform module as a CloudFormation stack) reads from CloudWatch log groups and forwards to DD. Log pipelines (app, WAF, general) and monitor definitions live inside Datadog itself; the JSON in `metrics/datadog/` is what's exported/replicated locally.
@@ -98,7 +98,7 @@ Cull (delete from DD, do not migrate):
 
 DD monitors / alerts: leave in place for this cull PR. Each individual monitor gets a keep/migrate/drop decision in P7 (alarms migration) rather than up front. The one thing this PR must produce is a list of every DD monitor that references custom indexer metric names, so P3 (metrics cleanup) knows which monitors need updating when metrics are renamed.
 
-Log pipelines: the checked-in JSON at `metrics/datadog/app-pipeline.json`, `pipeline.json`, and `waf-pipeline.json` gets audited for keep/drop; log-based metric filters in `terraform/api/cwalarms.tf` similarly. Culled pipelines are removed in this PR; the rest wait for P8 (logs).
+Log pipelines: the checked-in JSON at `metrics/datadog/app-pipeline.json`, `metrics/datadog/pipeline.json`, and `metrics/datadog/waf-pipeline.json` gets audited for keep/drop; log-based metric filters in `terraform/api/cwalarms.tf` similarly. Culled pipelines are removed in this PR; the rest wait for P8 (logs).
 
 Local dev stack: delete `metrics/compose.yaml`, `metrics/prometheus/`, and `metrics/grafana/`. The indexer's `/actuator/prometheus` endpoint stays live for anyone who wants to `curl` it directly; there is no reason to run a separate local Prometheus + Grafana pair to visualise it. Removing this now keeps the stack from drifting further out of sync while the migration is in flight.
 
@@ -139,7 +139,8 @@ Rollback: revert the PR. Metric names return to the current state.
 
 ### P5 — API instrumentation + sidecar
 
-- Config-only change: flip `management.prometheus.metrics.export.enabled: true`, add `prometheus` to `management.endpoints.web.exposure.include`, and configure common tags (`service=api`, others come from sidecar labels). The Micrometer Prometheus registry is already on the classpath.
+- Config-only change: flip `management.prometheus.metrics.export.enabled: true` and add `prometheus` to `management.endpoints.web.exposure.include`. The Micrometer Prometheus registry is already on the classpath.
+- Do not emit `service`, `env`, `deployment`, or `network` as Micrometer common tags. These are infra-level labels and are owned by the sidecar exclusively; having Micrometer also set them invites drift and depends on the collector's `honor_labels` behaviour at remote-write time. Micrometer emits metric names + app-specific tags only (e.g. `endpoint`, `status`).
 - Apply the same review discipline as P3 to the API starter set: don't emit anything computable in PromQL, use Prometheus naming conventions, keep tag cardinality tight (URI templating enforced on HTTP metrics).
 - Starter set: HTTP RED, JVM basics, MongoDB driver pool. Custom API-side counters get added in follow-ups, not this PR.
 - Attach the sidecar to the API task via the same per-colour rollout as P4.
