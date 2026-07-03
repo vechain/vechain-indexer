@@ -5,7 +5,8 @@ on:
     branches:
       - main
     paths:
-      - 'terraform/**'
+      - 'terraform/api/**'
+      - '.github/workflows/plan-or-apply-terraform.yml'
   workflow_dispatch:
     inputs:
       environment:
