@@ -48,9 +48,10 @@ output "amp_remote_write_policy_json" {
   value = jsonencode({
     Version = "2012-10-17"
     Statement = [{
+      Sid      = "AMPRemoteWrite${title(var.service_name)}"
       Effect   = "Allow"
       Action   = ["aps:RemoteWrite"]
-      Resource = var.amp_workspace_arn
+      Resource = [var.amp_workspace_arn]
     }]
   })
 }
