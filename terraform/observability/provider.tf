@@ -1,8 +1,4 @@
 terraform {
-  # `use_lockfile = true` on the S3 backend below is S3-native locking
-  # (conditional writes); GA in terraform 1.11.
-  required_version = ">= 1.11"
-
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -14,12 +10,16 @@ terraform {
     }
   }
 
+  # State locking is deliberately omitted here to match terraform/api and
+  # terraform/vpc, which the repo's CI (setup-terraform pinned to 1.9.8
+  # in .github/workflows/) currently expects. `use_lockfile = true` is
+  # S3-native locking (GA in terraform 1.11) — worth adopting across the
+  # repo once the toolchain is bumped, but out of scope for this stack.
   backend "s3" {
     key                  = "veworld-indexer-observability.tfstate"
     region               = "eu-west-1"
     workspace_key_prefix = "workspaces"
     encrypt              = true
-    use_lockfile         = true
   }
 }
 

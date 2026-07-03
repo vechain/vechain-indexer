@@ -50,4 +50,4 @@ Nothing reads the token today, so short-term drift is harmless — the next appl
 
 ## Backend locking
 
-The S3 backend uses `use_lockfile = true` (native S3 conditional-write locking, GA in terraform 1.11). No DynamoDB table required. This is stricter than the sibling stacks in this repo (`terraform/api`, `terraform/vpc`) which currently rely on human coordination — worth aligning them in a follow-up.
+Not enabled. Aligns with `terraform/api` and `terraform/vpc`, which the repo's CI setup-terraform step pins to 1.9.8 — `use_lockfile` requires 1.11+. Concurrent applies rely on human coordination for now. Worth revisiting across the repo once the toolchain gets bumped: `use_lockfile = true` (S3-native, no DynamoDB) is the cheap next step.
