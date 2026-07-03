@@ -55,10 +55,6 @@ management:
       repository:
         autotime:
           enabled: false
-  datadog:
-    metrics:
-      export:
-        enabled: false
   prometheus:
     metrics:
       export:

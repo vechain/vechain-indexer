@@ -58,16 +58,6 @@ management:
       repository:
         autotime:
           enabled: false
-  datadog:
-    metrics:
-      export:
-        enabled: ${DD_METRICS_ENABLED:false}
-        apiKey: ${DD_API_KEY:#{null}}
-        uri: ${DD_API_URL:https://api.datadoghq.eu}
-        # how often to send metrics
-        step: 10s
-        # make this unique like prod-green-indexer, etc.
-        hostTag: ${DD_HOST_TAG:#{null}}
   prometheus:
     metrics:
       export:
