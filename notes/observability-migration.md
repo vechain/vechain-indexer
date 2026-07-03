@@ -50,7 +50,7 @@ Every series carries the following external labels, either from the sidecar conf
 | `task_id`    | ECS detector    | ECS task ARN suffix                     |
 | `container`  | ECS detector    | container name inside the task          |
 
-Grafana dashboards are templated on `$env`, `$deployment`, `$network` so a single dashboard covers all four permutations and the blue/green switcher is a dropdown.
+Grafana dashboards are templated on `$env`, `$deployment`, `$network` so a single dashboard covers every env / deployment / network combination and the blue/green switcher is a dropdown.
 
 ## Testing strategy — blue/green as canary
 
