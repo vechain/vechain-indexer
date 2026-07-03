@@ -1,0 +1,380 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 1,
+  "links": [],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["observability"],
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "",
+  "title": "Indexer & API",
+  "uid": "overview",
+  "templating": {
+    "list": [
+      {
+        "name": "deployment",
+        "label": "Deployment",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "amp" },
+        "query": { "query": "label_values(indexer_current_block, deployment)", "refId": "deployment" },
+        "refresh": 2,
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*"
+      },
+      {
+        "name": "network",
+        "label": "Network",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "amp" },
+        "query": { "query": "label_values(indexer_current_block{deployment=~\"$deployment\"}, network)", "refId": "network" },
+        "refresh": 2,
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*"
+      },
+      {
+        "name": "indexer_name",
+        "label": "Indexer",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "amp" },
+        "query": { "query": "label_values(indexer_current_block{deployment=~\"$deployment\", network=~\"$network\"}, indexer_name)", "refId": "indexer_name" },
+        "refresh": 2,
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*"
+      },
+      {
+        "name": "uri",
+        "label": "URI (regex)",
+        "type": "textbox",
+        "current": { "value": ".*", "text": ".*" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Sync",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "panels": []
+    },
+    {
+      "id": 10,
+      "type": "piechart",
+      "title": "Indexers by sync status",
+      "description": "count by (status) of indexers where indexer_sync_status == 1.",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count by (status) (indexer_sync_status{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\", service=\"indexer\"} == 1)",
+          "legendFormat": "{{status}}",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "mappings": []
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "FULLY_SYNCED" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+          { "matcher": { "id": "byName", "options": "SYNCING" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "blue" } }] },
+          { "matcher": { "id": "byName", "options": "FAST_SYNCING" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "light-blue" } }] },
+          { "matcher": { "id": "byName", "options": "READY_TO_SYNC" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }] },
+          { "matcher": { "id": "byName", "options": "READY_TO_FAST_SYNC" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }] },
+          { "matcher": { "id": "byName", "options": "NOT_INITIALISED" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
+          { "matcher": { "id": "byName", "options": "SHUT_DOWN" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] }
+        ]
+      },
+      "options": {
+        "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" },
+        "pieType": "donut",
+        "tooltip": { "mode": "single" },
+        "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] },
+        "displayLabels": ["name", "value"]
+      }
+    },
+    {
+      "id": 20,
+      "type": "bargauge",
+      "title": "Sync gap — blocks behind Thor best",
+      "description": "max(thor_best) − max(indexer_current) per indexer, clamped to ≥ 0. Bars sorted descending; > 100 orange, > 500 red.",
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "clamp_min(max by (deployment, network) (thor_best_block_number{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}) - on(deployment, network) group_right() max by (deployment, network, indexer_name) (indexer_current_block{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\", service=\"indexer\"}), 0)",
+          "legendFormat": "{{indexer_name}} · {{deployment}}/{{network}}",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 100 },
+              { "color": "red", "value": 500 }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" },
+        "valueMode": "color",
+        "sortBy": "Value",
+        "sortDirection": "desc"
+      }
+    },
+    {
+      "id": 21,
+      "type": "timeseries",
+      "title": "Blocks / sec",
+      "description": "rate(indexer_blocks_processed_total[1m]) per indexer.",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (indexer_name) (rate(indexer_blocks_processed_total{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\"}[1m]))",
+          "legendFormat": "{{indexer_name}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ops", "min": 0 } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "mean", "max"] } }
+    },
+    {
+      "id": 22,
+      "type": "timeseries",
+      "title": "Processor duration — p95",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (indexer_name, le) (rate(processor_duration_seconds_bucket{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\"}[5m])))",
+          "legendFormat": "{{indexer_name}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0 } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+    },
+    {
+      "id": 23,
+      "type": "timeseries",
+      "title": "Thor client — p95 by endpoint",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (endpoint, le) (rate(thor_client_request_duration_seconds_bucket{deployment=~\"$deployment\", network=~\"$network\"}[5m])))",
+          "legendFormat": "{{endpoint}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0 } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+    },
+    {
+      "id": 4,
+      "type": "row",
+      "title": "API",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 17 },
+      "panels": []
+    },
+    {
+      "id": 41,
+      "type": "timeseries",
+      "title": "Top URIs by rate",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(10, sum by (uri) (rate(http_server_requests_seconds_count{deployment=~\"$deployment\", network=~\"$network\", service=\"api\", uri=~\"$uri\"}[5m])))",
+          "legendFormat": "{{uri}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps", "min": 0 } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "mean"] } }
+    },
+    {
+      "id": 42,
+      "type": "timeseries",
+      "title": "API — avg latency by URI",
+      "description": "rate(sum) / rate(count). Real p95 needs percentile histograms enabled server-side (management.metrics.distribution.percentiles-histogram.http.server.requests=true).",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(10, sum by (uri) (rate(http_server_requests_seconds_sum{deployment=~\"$deployment\", network=~\"$network\", service=\"api\", uri=~\"$uri\"}[5m])) / sum by (uri) (rate(http_server_requests_seconds_count{deployment=~\"$deployment\", network=~\"$network\", service=\"api\", uri=~\"$uri\"}[5m])))",
+          "legendFormat": "{{uri}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0 } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+    },
+    {
+      "id": 5,
+      "type": "row",
+      "title": "Errors",
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 26 },
+      "panels": [
+        {
+          "id": 50,
+          "type": "timeseries",
+          "title": "API 5xx rate by URI",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 27 },
+          "datasource": { "type": "prometheus", "uid": "amp" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (uri, status) (rate(http_server_requests_seconds_count{deployment=~\"$deployment\", network=~\"$network\", service=\"api\", uri=~\"$uri\", outcome=\"SERVER_ERROR\"}[5m]))",
+              "legendFormat": "{{uri}} {{status}}"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "reqps", "min": 0 } },
+          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+        },
+        {
+          "id": 51,
+          "type": "timeseries",
+          "title": "API 4xx rate by URI",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 27 },
+          "datasource": { "type": "prometheus", "uid": "amp" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (uri, status) (rate(http_server_requests_seconds_count{deployment=~\"$deployment\", network=~\"$network\", service=\"api\", uri=~\"$uri\", outcome=\"CLIENT_ERROR\"}[5m]))",
+              "legendFormat": "{{uri}} {{status}}"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "reqps", "min": 0 } },
+          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+        },
+        {
+          "id": 52,
+          "type": "timeseries",
+          "title": "Thor client 5xx rate",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 35 },
+          "datasource": { "type": "prometheus", "uid": "amp" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (endpoint, code) (rate(thor_client_response_codes_total{deployment=~\"$deployment\", network=~\"$network\", code=~\"5..\"}[5m]))",
+              "legendFormat": "{{endpoint}} {{code}}"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "ops", "min": 0 } },
+          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+        },
+        {
+          "id": 53,
+          "type": "timeseries",
+          "title": "Thor client 4xx rate",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 35 },
+          "datasource": { "type": "prometheus", "uid": "amp" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (endpoint, code) (rate(thor_client_response_codes_total{deployment=~\"$deployment\", network=~\"$network\", code=~\"4..\"}[5m]))",
+              "legendFormat": "{{endpoint}} {{code}}"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "ops", "min": 0 } },
+          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "row",
+      "title": "Resources",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 },
+      "panels": []
+    },
+    {
+      "id": 60,
+      "type": "timeseries",
+      "title": "CPU utilised — per task",
+      "description": "ecs_task_cpu_utilized / ecs_task_cpu_reserved × 100 for indexer + api. Dashed line = 80%.",
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 28 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(ecs_task_cpu_utilized_None{deployment=~\"$deployment\", network=~\"$network\", service=~\"indexer|api\"} / ecs_task_cpu_reserved_None{deployment=~\"$deployment\", network=~\"$network\", service=~\"indexer|api\"}) * 100",
+          "legendFormat": "{{service}} — {{task_id}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "custom": { "thresholdsStyle": { "mode": "dashed" } },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 80 }
+            ]
+          }
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+    },
+    {
+      "id": 61,
+      "type": "timeseries",
+      "title": "Memory utilised — per task",
+      "description": "ecs_task_memory_utilized / ecs_task_memory_reserved × 100 for indexer + api. Dashed line = 80%.",
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 28 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(ecs_task_memory_utilized_Megabytes{deployment=~\"$deployment\", network=~\"$network\", service=~\"indexer|api\"} / ecs_task_memory_reserved_Megabytes{deployment=~\"$deployment\", network=~\"$network\", service=~\"indexer|api\"}) * 100",
+          "legendFormat": "{{service}} — {{task_id}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "custom": { "thresholdsStyle": { "mode": "dashed" } },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 80 }
+            ]
+          }
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+    }
+  ]
+}
