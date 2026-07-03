@@ -2,7 +2,7 @@
 
 Migrate the veworld-indexer observability stack off Datadog onto AWS-hosted Prometheus (AMP) and Grafana (AMG). Primary goal: cost reduction. Secondary: add API-service metrics we currently lack, and simplify a stack whose surface area has grown organically.
 
-Status: Phase 0 — this document. Subsequent phases are scoped below and will each land as their own PR.
+Status: Phase 0 — this document. Phase 1 (cull) and everything after are scoped below and will each land as their own PR.
 
 ## Goals
 
@@ -72,23 +72,46 @@ Operational note: the dead colour must be warm during the observation window. If
 
 Each phase is one PR unless noted. Rollback path is called out where non-trivial.
 
-### P0 — audit and cull (this doc + follow-up)
+### P0 — this plan doc
 
-- Commit this plan.
-- Produce a keep/kill list from `metrics/datadog/dashboard.json`, the DD monitors, `terraform/api/cwalarms.tf`, and the log pipelines. Anything nobody has looked at or that has not paged should not be migrated.
-- Enumerate every DD monitor / dashboard panel that references custom indexer metric names, so P2 knows which monitors must be updated when metrics are renamed.
-- Confirm the final answers on open decisions (see below).
+- Commit this plan. No infra or code changes.
+- Confirm the final answers on open decisions (see below) as they get resolved.
 
-### P1 — AMP + AMG workspaces (shared, single apply)
+### P1 — cull
+
+Reduce the DD footprint before we start migrating. Deleting things costs less than porting them.
+
+Keep (in scope for migration):
+
+- Indexer Sync & Processing — actively used.
+- API Performance — actively used.
+- Thor Client Metrics — used recently for troubleshooting.
+- Resource Utilization — important; we will extend this in later phases to cover the API service and pivot to task level.
+- MongoDB Metrics — nice to have.
+- JVM Metrics — nice to have.
+
+Cull (delete from DD, do not migrate):
+
+- Traffic & CDN section.
+- Origin & Security section.
+- Top-level widgets sitting outside any group: reviewed case-by-case in the PR — anything duplicating a kept panel or referencing a culled section is dropped.
+
+DD monitors / alerts: leave in place for this cull PR. Each individual monitor gets a keep/migrate/drop decision in P7 (alarms migration) rather than up front. The one thing this PR must produce is a list of every DD monitor that references custom indexer metric names, so P3 (metrics cleanup) knows which monitors need updating when metrics are renamed.
+
+Log pipelines: the checked-in JSON at `metrics/datadog/app-pipeline.json`, `pipeline.json`, and `waf-pipeline.json` gets audited for keep/drop; log-based metric filters in `terraform/api/cwalarms.tf` similarly. Culled pipelines are removed in this PR; the rest wait for P8 (logs).
+
+Rollback: DD dashboard is exportable; culled sections can be restored from git history if we regret it.
+
+### P2 — AMP + AMG workspaces (shared, single apply)
 
 - New terraform module for AMP workspace, AMG workspace with `CUSTOMER_MANAGED` role, log group for AMP ingestion, rotating service-account token stored in Secrets Manager.
 - Okta SAML: gated on the metadata URL being populated. Ships wired but disabled if the Okta app isn't ready yet.
 - No dashboards, no scrape targets. Empty workspaces.
 - Rollback: `terraform destroy` on the module. Nothing else references it yet.
 
-### P2 — indexer metrics cleanup (code-only)
+### P3 — indexer metrics cleanup (code-only)
 
-Fix the existing custom metrics in `packages/indexer/src/main/kotlin/org/vechain/indexer/config/metrics/` before we start scraping. Doing this before P3 means dashboards and alerts get built against clean names first time, and the AMP series count stays bounded from day one.
+Fix the existing custom metrics in `packages/indexer/src/main/kotlin/org/vechain/indexer/config/metrics/` before we start scraping. Doing this before P4 means dashboards and alerts get built against clean names first time, and the AMP series count stays bounded from day one.
 
 Concrete work:
 
@@ -98,53 +121,53 @@ Concrete work:
 - **Add histogram buckets to timers.** `ProcessorMetrics` and `ThorClientMetrics` currently emit `Timer` without `publishPercentileHistogram(true)`, so p95/p99 in Grafana won't work. Enable histograms on the timers we care about.
 - **Add a processor-level error counter.** `ThorClient` counts response codes, but processor-side failures only exist in logs. Add `indexer_processor_errors_total` tagged by indexer_name and error class.
 
-DD compatibility: renames will break any DD dashboard panel or monitor that references old names. P0 audit output enumerates the DD monitors; the P2 PR updates any monitor that references a renamed metric so we don't lose alert coverage while DD is still authoritative. DD dashboard panels are allowed to break — we're retiring them.
+DD compatibility: renames will break any DD dashboard panel or monitor that references old names. P1 cull output enumerates the DD monitors; the P3 PR updates any monitor that references a renamed metric so we don't lose alert coverage while DD is still authoritative. DD dashboard panels are allowed to break — we're retiring them.
 
 Rollback: revert the PR. Metric names return to the current state.
 
-### P3 — indexer sidecar (per-colour rollout)
+### P4 — indexer sidecar (per-colour rollout)
 
 - New terraform module for the ADOT sidecar container definition and the IAM policy granting `aps:RemoteWrite` on the AMP workspace.
 - No app-side code work — the indexer already exposes `/actuator/prometheus`. The sidecar scrapes `localhost:8080/actuator/prometheus` and remote-writes to AMP with SigV4 signing.
-- The existing in-process Micrometer Datadog push stays on for now. It gets turned off at the end of P4 once both services have proven the scrape path.
+- The existing in-process Micrometer Datadog push stays on for now. It gets turned off at the end of P5 once both services have proven the scrape path.
 - Attach the sidecar to the indexer task on the dead colour.
 - Verify series arrive in AMP with the correct labels via a scratch Grafana panel. Observe for one warm-up window.
 - DNS switch. Apply sidecar terraform to the now-dead colour.
 - Rollback: revert task definition on the affected colour.
 
-### P4 — API instrumentation + sidecar
+### P5 — API instrumentation + sidecar
 
 - Config-only change: flip `management.prometheus.metrics.export.enabled: true`, add `prometheus` to `management.endpoints.web.exposure.include`, and configure common tags (`service=api`, others come from sidecar labels). The Micrometer Prometheus registry is already on the classpath.
-- Apply the same review discipline as P2 to the API starter set: don't emit anything computable in PromQL, use Prometheus naming conventions, keep tag cardinality tight (URI templating enforced on HTTP metrics).
+- Apply the same review discipline as P3 to the API starter set: don't emit anything computable in PromQL, use Prometheus naming conventions, keep tag cardinality tight (URI templating enforced on HTTP metrics).
 - Starter set: HTTP RED, JVM basics, MongoDB driver pool. Custom API-side counters get added in follow-ups, not this PR.
-- Attach the sidecar to the API task via the same per-colour rollout as P3.
+- Attach the sidecar to the API task via the same per-colour rollout as P4.
 - **End-of-phase step (rollout option B): turn off the in-process Micrometer Datadog push.** With both indexer and API scrape paths proven on both colours, drop `DD_METRICS_ENABLED=true` from terraform (making the yaml default of `false` win) and remove the associated `DD_*` env vars from the indexer task definition. DD still receives nothing else worth having at this point; the JVM push is the last live producer.
 - Rollback: revert image + task definition on the affected colour; re-enable `DD_METRICS_ENABLED` if the JVM-push cutover step is what regressed.
 
-### P5 — core dashboards as code
+### P6 — core dashboards as code
 
 - Grafana provider provisions dashboards from JSON checked in under `metrics/grafana-amg/` (path TBD).
 - Target ~6–10 dashboards, one per audience: indexer sync, indexer per-task health, API RED, MongoDB, JVM, business KPIs.
 - All dashboards templated on `$env`, `$deployment`, `$network`.
 - Rollback: remove dashboard files, re-apply.
 
-### P6 — alarms migration
+### P7 — alarms migration
 
 - Port the paging alarms first. `terraform/api/cwalarms.tf` stays until each alarm is replaced upstream.
 - AMP recording/alerting rules for anything metric-based; Grafana Alerting for anything log-based or multi-source.
 - Route to the same paging sinks Datadog uses today.
 - Rollback: leave the CloudWatch alarms in place until each replacement has fired at least once in anger.
 
-### P7 — logs
+### P8 — logs
 
 - Keep logs in CloudWatch. Add Grafana's CloudWatch Logs datasource.
-- Retire log-based metric filters wherever an equivalent Micrometer counter now exists (from P4).
+- Retire log-based metric filters wherever an equivalent Micrometer counter now exists (from P5).
 - Retire the Datadog log pipelines.
 - Rollback: log pipelines are declarative; re-apply the previous state.
 
-### P8 — remove Datadog
+### P9 — remove Datadog
 
-- JVM push is already off from end of P4. This phase completes the removal:
+- JVM push is already off from end of P5. This phase completes the removal:
 - Drop the `micrometer-registry-datadog` dependency from root `build.gradle.kts` and the `management.datadog` block from both `application.yaml` files.
 - Rip out DD env vars, secrets, terraform data sources, DD Forwarder Lambda / CloudFormation stack, and any lingering `DD_*` references in application code.
 - Delete `metrics/datadog/`, `metrics/grafana/`, `metrics/prometheus/`, `metrics/compose.yaml`.
@@ -158,14 +181,14 @@ Captured here so we don't lose them; each will be resolved before the phase it b
 
 1. **Log backend.** Recommended: CloudWatch Logs Insights via AMG's datasource. No new component. Loki stays out of scope unless we hit query pain that Insights cannot solve.
 2. **Okta SAML for AMG.** Ship AMG with SAML gated off (empty `okta_saml_metadata_url`) if the Okta app isn't ready — service-account token still works for terraform provisioning. Flip on once the Okta app is registered.
-3. **P0 audit ownership.** Requires Datadog UI access to see what's actually looked at and what has fired. Needs a human with the DD console. Propose: keep/kill list drafted from the checked-in JSON + `cwalarms.tf`, validated against DD by whoever has access.
+3. **P1 cull ownership.** Requires Datadog UI access to execute the cull and enumerate monitors referencing custom metrics. Needs a human with the DD console. Propose: keep/kill list drafted from the checked-in JSON + `cwalarms.tf`, validated against DD by whoever has access.
 4. **Sidecar sizing.** Start with a soft memory reservation of 128 MiB, revisit once real cardinality is known. If AMP series counts blow past expected budgets, sample or drop before scaling the sidecar.
 5. **AMP retention.** AMP caps at 150 days. If any current DD retention exceeds that (unlikely for anything actionable), we need an S3 snapshot side-channel. Assume no for now.
 
 ## Risks
 
 - **Cardinality blow-up.** Adding `task_id` as a label multiplies series count by the number of tasks over time. Micrometer default tags on HTTP endpoints can also explode if URIs are not templated. Mitigation: strict allowlist of metric tags in the API config, review AMP active-series count after P4 and again after P5.
-- **First-time AMP/AMG creation is not covered by blue/green canary.** Mitigation: empty-workspace creation is low-risk; verify with terraform plan review before P1 apply.
+- **First-time AMP/AMG creation is not covered by blue/green canary.** Mitigation: empty-workspace creation is low-risk; verify with terraform plan review before P2 apply.
 - **Alarm gaps during migration.** For each paging alarm being ported, keep the CloudWatch/DD source of truth live until the replacement has demonstrably fired for a real condition. No silent windows.
 - **CloudFront / WAF changes remain uncovered.** Unchanged from today. Out of scope; called out for clarity.
 - **Cost during dual-run.** Blue/green canary means only the dead colour dual-emits, so the DD bill increment is bounded. We do not run both metric backends on live traffic for long.
