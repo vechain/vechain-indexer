@@ -190,3 +190,75 @@ jobs:
     secrets:
       AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
       VECHAINCI_SSH_PRIVATE_KEYS: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
+
+  publish-release:
+    name: Publish draft release for switched version
+    runs-on: ubuntu-latest
+    needs: [deploy-vpc-stack, apply-vpc-stack]
+    # Only try to publish when both networks were switched together. For
+    # per-network switches, the draft may still be valid for the network
+    # that didn't flip, so leave it alone. Version-mismatch and
+    # missing-draft cases are handled inside the job as no-ops.
+    if: >-
+      ${{ needs.apply-vpc-stack.result == 'success'
+      && github.event.inputs.network == 'all' }}
+    permissions:
+      id-token: write
+      contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+
+      - name: Read live version tags from ECS
+        id: versions
+        env:
+          MAIN_LIVE: ${{ needs.deploy-vpc-stack.outputs.live_color_mainnet }}
+          TEST_LIVE: ${{ needs.deploy-vpc-stack.outputs.live_color_testnet }}
+        run: |
+          set -euo pipefail
+          read_tag() {
+            aws ecs describe-task-definition --task-definition "$1" \
+              --query "taskDefinition.containerDefinitions[0].image" \
+              --output text 2>/dev/null \
+              | awk -F: 'NF>1 {print $NF}'
+          }
+          mainnet_tag=$(read_tag "${MAIN_LIVE}-veworld-main-api" || true)
+          testnet_tag=$(read_tag "${TEST_LIVE}-veworld-test-api" || true)
+          echo "mainnet_tag=$mainnet_tag" >> "$GITHUB_OUTPUT"
+          echo "testnet_tag=$testnet_tag" >> "$GITHUB_OUTPUT"
+          echo "Live mainnet tag: ${mainnet_tag:-<none>}"
+          echo "Live testnet tag: ${testnet_tag:-<none>}"
+
+      - name: Publish matching draft release
+        env:
+          MAINNET_TAG: ${{ steps.versions.outputs.mainnet_tag }}
+          TESTNET_TAG: ${{ steps.versions.outputs.testnet_tag }}
+        run: |
+          set -euo pipefail
+          if [ -z "$MAINNET_TAG" ] || [ -z "$TESTNET_TAG" ]; then
+            echo "::notice::Could not resolve live version tags (mainnet='$MAINNET_TAG' testnet='$TESTNET_TAG') — skipping release publish."
+            exit 0
+          fi
+          if [ "$MAINNET_TAG" != "$TESTNET_TAG" ]; then
+            echo "::notice::Live mainnet ($MAINNET_TAG) and testnet ($TESTNET_TAG) versions differ — no unambiguous release to publish."
+            exit 0
+          fi
+          state=$(gh release view "$MAINNET_TAG" --json isDraft --jq '.isDraft' 2>/dev/null || echo "missing")
+          case "$state" in
+            true)
+              echo "Publishing draft release $MAINNET_TAG as latest"
+              gh release edit "$MAINNET_TAG" --draft=false --latest
+              ;;
+            false)
+              echo "::notice::Release $MAINNET_TAG is already published — nothing to do."
+              ;;
+            *)
+              echo "::notice::No draft release found for $MAINNET_TAG — nothing to publish."
+              ;;
+          esac
