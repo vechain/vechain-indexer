@@ -255,6 +255,7 @@ allprojects {
 
         // Monitoring dependencies
         implementation("io.micrometer:micrometer-registry-prometheus:1.14.5")
+        implementation("net.logstash.logback:logstash-logback-encoder:8.0")
 
         // Core indexer dependency
         implementation("org.vechain:indexer-core:11.0.0")
