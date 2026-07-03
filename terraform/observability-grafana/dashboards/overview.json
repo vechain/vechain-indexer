@@ -303,6 +303,66 @@
           ],
           "fieldConfig": { "defaults": { "unit": "ops", "min": 0 } },
           "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+        },
+        {
+          "id": 54,
+          "type": "logs",
+          "title": "API — recent error log lines",
+          "description": "CloudWatch Logs Insights against the four api log groups (blue/green × mainnet/testnet), filtered to lines matching (?i)error|exception. Deployment variable narrows via @log regex.",
+          "gridPos": { "h": 10, "w": 24, "x": 0, "y": 43 },
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "options": {
+            "showTime": true,
+            "showLabels": false,
+            "showCommonLabels": false,
+            "wrapLogMessage": true,
+            "dedupStrategy": "none",
+            "sortOrder": "Descending"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "queryMode": "Logs",
+              "region": "default",
+              "logGroupNames": [
+                "veworld-prod-blue-main-api",
+                "veworld-prod-blue-test-api",
+                "veworld-prod-green-main-api",
+                "veworld-prod-green-test-api"
+              ],
+              "expression": "fields @timestamp, @log, @message\n| filter @log like /prod-(${deployment:pipe})-/\n| filter @message like /(?i)error|exception/\n| sort @timestamp desc, @ptr desc\n| limit 200"
+            }
+          ]
+        },
+        {
+          "id": 55,
+          "type": "logs",
+          "title": "Indexer — recent error log lines",
+          "description": "Same shape as the API panel, over the four indexer log groups.",
+          "gridPos": { "h": 10, "w": 24, "x": 0, "y": 53 },
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "options": {
+            "showTime": true,
+            "showLabels": false,
+            "showCommonLabels": false,
+            "wrapLogMessage": true,
+            "dedupStrategy": "none",
+            "sortOrder": "Descending"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "queryMode": "Logs",
+              "region": "default",
+              "logGroupNames": [
+                "veworld-prod-blue-main-indexer",
+                "veworld-prod-blue-test-indexer",
+                "veworld-prod-green-main-indexer",
+                "veworld-prod-green-test-indexer"
+              ],
+              "expression": "fields @timestamp, @log, @message\n| filter @log like /prod-(${deployment:pipe})-/\n| filter @message like /(?i)error|exception/\n| sort @timestamp desc, @ptr desc\n| limit 200"
+            }
+          ]
         }
       ]
     },
