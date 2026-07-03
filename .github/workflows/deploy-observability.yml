@@ -60,9 +60,12 @@ jobs:
         id: init
         run: terraform init -reconfigure -backend-config="environments/${{ env.TERRAFORM_ENV }}.config"
 
+      # Plain `select` (not `select -or-create`) so PR plan runs cannot
+      # silently create the prod workspace in S3. Bootstrap is a one-time
+      # local operation per terraform/observability/README.md.
       - name: Terraform Workspace
         id: workspace
-        run: terraform workspace select -or-create ${{ env.TERRAFORM_ENV }}
+        run: terraform workspace select ${{ env.TERRAFORM_ENV }}
 
       - name: Terraform Validate
         id: validate
