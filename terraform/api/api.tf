@@ -1096,32 +1096,8 @@ module "ecs-backend-service" {
     {
       name  = "DEPLOYMENT_SCOPE"
       value = "${local.env.environment}-${each.key}"
-    },
-    {
-      name  = "DD_HOST_TAG"
-      value = "${local.env.environment}-${each.key}"
-    },
-    {
-      name  = "DD_METRICS_ENABLED"
-      value = "true"
-    },
-    {
-      name  = "DD_API_KEY"
-      value = data.aws_secretsmanager_secret_version.dd_api_key.secret_string
-    },
-    {
-      name  = "DD_API_URL"
-      value = "https://api.datadoghq.eu"
     }
   ]
-}
-
-################################################################################
-# Datadog Secrets
-################################################################################
-
-data "aws_secretsmanager_secret_version" "dd_api_key" {
-  secret_id = local.env.datadog.indexer.api_key_arn
 }
 
 ################################################################################
