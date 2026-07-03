@@ -1,7 +1,4 @@
 output "container_definition" {
-  # Shape matches the upstream ecs-backend-service `additional_containers`
-  # object type — no logConfiguration field, so ADOT stderr does not
-  # reach CloudWatch. Sidecar self-metrics still flow via remote_write.
   description = "Entry to append to the ECS task's additional_containers list."
   value = {
     name    = "adot-metrics"
@@ -16,6 +13,14 @@ output "container_definition" {
     ]
     secrets      = []
     portMappings = []
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        "awslogs-group"         = var.log_group_name
+        "awslogs-region"        = var.aws_region
+        "awslogs-stream-prefix" = "adot-sidecar"
+      }
+    }
     # ADOT image is FROM scratch — CMD-SHELL exits before running; use
     # the shipped `/healthcheck` binary instead.
     healthCheck = {

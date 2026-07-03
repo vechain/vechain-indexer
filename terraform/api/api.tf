@@ -388,7 +388,7 @@ module "ecs-lb-service-api" {
 module "ecs-backend-service" {
   depends_on                         = [module.ecs-cluster]
   for_each                           = local.env.enabled_nets
-  source                             = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.3.1.28"
+  source                             = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=main"
   vpc_id                             = data.terraform_remote_state.vpc.outputs.vpc_id
   region                             = local.env.region
   cluster                            = module.ecs-cluster.name

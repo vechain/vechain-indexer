@@ -20,6 +20,7 @@ module "observability_sidecar_indexer" {
   aws_region        = local.env.region
   amp_endpoint      = data.terraform_remote_state.observability.outputs.amp_endpoint
   amp_workspace_arn = data.terraform_remote_state.observability.outputs.amp_workspace_arn
+  log_group_name    = lower("${var.project}-${local.env.environment}-${each.key}-indexer")
   app_port          = 8080
 }
 
@@ -34,6 +35,7 @@ module "observability_sidecar_api" {
   aws_region        = local.env.region
   amp_endpoint      = data.terraform_remote_state.observability.outputs.amp_endpoint
   amp_workspace_arn = data.terraform_remote_state.observability.outputs.amp_workspace_arn
+  log_group_name    = lower("${var.project}-${local.env.environment}-${each.key}-api")
   app_port          = 8080
 }
 
