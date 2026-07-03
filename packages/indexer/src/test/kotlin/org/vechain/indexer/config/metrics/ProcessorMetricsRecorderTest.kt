@@ -37,7 +37,7 @@ class ProcessorMetricsRecorderTest {
         recorder.recordEvents(5)
 
         val counter =
-            registry.find("processor_events_counter").tag("indexer_name", INDEXER_NAME).counter()
+            registry.find("processor_events_total").tag("indexer_name", INDEXER_NAME).counter()
 
         assertEquals(5.0, counter!!.count())
     }

@@ -84,48 +84,7 @@ class IndexerMetricsReporterTest {
     }
 
     @Test
-    fun `setBlocksPerSecond is called when block advances`() {
-        val indexer = createBlockIndexer("test-indexer", 100L)
-        stubBestBlock(1000L)
-
-        val reporter =
-            IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
-        reporter.reportMetrics()
-
-        every { indexer.getCurrentBlockNumber() } returns 200L
-        reporter.reportMetrics()
-
-        verify { metrics.setBlocksPerSecond("test-indexer", match { it > 0.0 }) }
-    }
-
-    @Test
-    fun `setBlocksPerSecond is zero on first tick`() {
-        val indexer = createBlockIndexer("test-indexer", 100L)
-        stubBestBlock(1000L)
-
-        val reporter =
-            IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
-        reporter.reportMetrics()
-
-        verify { metrics.setBlocksPerSecond("test-indexer", 0.0) }
-    }
-
-    @Test
-    fun `setBlocksPerSecond is zero when block does not advance`() {
-        val indexer = createBlockIndexer("test-indexer", 100L)
-        stubBestBlock(1000L)
-
-        val reporter =
-            IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
-        reporter.reportMetrics()
-        reporter.reportMetrics()
-
-        // 3 calls: 1 from gauge init + 2 from report ticks
-        verify(exactly = 3) { metrics.setBlocksPerSecond("test-indexer", 0.0) }
-    }
-
-    @Test
-    fun `READY_TO_SYNC indexer reports zero blocks per second even when block number changes`() {
+    fun `READY_TO_SYNC indexer does not increment blocks processed even when block number changes`() {
         val indexer = createBlockIndexer("test-indexer", 0L)
         every { indexer.getStatus() } returns Status.READY_TO_SYNC
         stubBestBlock(1000L)
@@ -138,12 +97,10 @@ class IndexerMetricsReporterTest {
         reporter.reportMetrics()
 
         verify(exactly = 0) { metrics.incrementBlocksProcessed(any(), any()) }
-        // 3 calls: 1 from gauge init + 2 from report ticks
-        verify(exactly = 3) { metrics.setBlocksPerSecond("test-indexer", 0.0) }
     }
 
     @Test
-    fun `FULLY_SYNCED indexer reports blocks per second when block advances`() {
+    fun `FULLY_SYNCED indexer increments blocks processed when block advances`() {
         val indexer = createBlockIndexer("test-indexer", 1000L)
         every { indexer.getStatus() } returns Status.FULLY_SYNCED
         stubBestBlock(1010L)
@@ -156,11 +113,10 @@ class IndexerMetricsReporterTest {
         reporter.reportMetrics()
 
         verify { metrics.incrementBlocksProcessed("test-indexer", 5.0) }
-        verify { metrics.setBlocksPerSecond("test-indexer", match { it > 0.0 }) }
     }
 
     @Test
-    fun `transition from READY_TO_SYNC to SYNCING does not spike blocks per second`() {
+    fun `transition from READY_TO_SYNC to SYNCING does not spike blocks processed`() {
         val indexer = createBlockIndexer("test-indexer", 0L)
         every { indexer.getStatus() } returns Status.READY_TO_SYNC
         stubBestBlock(1_000_000L)
@@ -169,19 +125,17 @@ class IndexerMetricsReporterTest {
             IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
         reporter.reportMetrics()
 
-        // Indexer transitions to SYNCING and has caught up significantly
+        // Indexer transitions to SYNCING and has caught up significantly. The first
+        // processing tick has no previous processing-state data, so no delta is emitted.
         every { indexer.getStatus() } returns Status.SYNCING
         every { indexer.getCurrentBlockNumber() } returns 500_000L
         reporter.reportMetrics()
 
-        // Should not spike: first processing tick has no previous processing-state data
         verify(exactly = 0) { metrics.incrementBlocksProcessed(any(), any()) }
-        // 3 calls: 1 from gauge init + 1 from READY_TO_SYNC tick + 1 from first SYNCING tick
-        verify(exactly = 3) { metrics.setBlocksPerSecond("test-indexer", 0.0) }
     }
 
     @Test
-    fun `transition from READY_TO_SYNC to SYNCING reports BPS on second syncing tick`() {
+    fun `transition from READY_TO_SYNC to SYNCING increments on second syncing tick`() {
         val indexer = createBlockIndexer("test-indexer", 0L)
         every { indexer.getStatus() } returns Status.READY_TO_SYNC
         stubBestBlock(1_000_000L)
@@ -190,17 +144,14 @@ class IndexerMetricsReporterTest {
             IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
         reporter.reportMetrics()
 
-        // Indexer transitions to SYNCING
         every { indexer.getStatus() } returns Status.SYNCING
         every { indexer.getCurrentBlockNumber() } returns 500_000L
         reporter.reportMetrics()
 
-        // Block advances while still SYNCING — now BPS should be reported
         every { indexer.getCurrentBlockNumber() } returns 600_000L
         reporter.reportMetrics()
 
         verify { metrics.incrementBlocksProcessed("test-indexer", 100_000.0) }
-        verify { metrics.setBlocksPerSecond("test-indexer", match { it > 0.0 }) }
     }
 
     @Test
@@ -224,8 +175,6 @@ class IndexerMetricsReporterTest {
 
         verify { metrics.incrementBlocksProcessed("indexer-a", 50.0) }
         verify { metrics.incrementBlocksProcessed("indexer-b", 200.0) }
-        verify { metrics.setBlocksPerSecond("indexer-a", match { it > 0.0 }) }
-        verify { metrics.setBlocksPerSecond("indexer-b", match { it > 0.0 }) }
     }
 
     @Test
@@ -241,7 +190,7 @@ class IndexerMetricsReporterTest {
     }
 
     @Test
-    fun `NOT_INITIALISED indexer does not publish current block or sync gap`() {
+    fun `NOT_INITIALISED indexer does not publish current block`() {
         val indexer = createBlockIndexer("test-indexer", 0L)
         every { indexer.getStatus() } returns Status.NOT_INITIALISED
         stubBestBlock(1000L)
@@ -251,7 +200,6 @@ class IndexerMetricsReporterTest {
         reporter.reportMetrics()
 
         verify(exactly = 0) { metrics.setIndexerCurrentBlock(any(), any()) }
-        verify(exactly = 0) { metrics.setIndexerSyncGap(any(), any()) }
     }
 
     @Test
@@ -261,7 +209,7 @@ class IndexerMetricsReporterTest {
 
         val reporter =
             IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
-        // First SYNCING tick — populates previousBlockNumbers/previousReportTimes.
+        // First SYNCING tick — populates previousBlockNumbers.
         reporter.reportMetrics()
 
         // Indexer drops back to NOT_INITIALISED — should clear stale baseline.

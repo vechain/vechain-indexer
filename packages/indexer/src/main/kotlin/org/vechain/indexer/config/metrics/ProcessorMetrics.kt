@@ -41,7 +41,7 @@ class ProcessorMetrics(private val registry: MeterRegistry) {
     fun incrementEventsCounter(indexerName: String, count: Double) {
         eventsCounters
             .computeIfAbsent(indexerName) {
-                Counter.builder("processor_events_counter")
+                Counter.builder("processor_events_total")
                     .description("Count of events processed")
                     .tag("indexer_name", indexerName)
                     .register(registry)

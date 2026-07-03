@@ -17,7 +17,7 @@ class ApplicationHealthMetrics(private val registry: MeterRegistry) {
             .computeIfAbsent(key) {
                 val ref = AtomicReference(0.0)
                 registry.gauge(
-                    "component_health_status_gauge",
+                    "component_health_status",
                     listOf(Tag.of("name", name), Tag.of("type", type)),
                     ref,
                 ) {
