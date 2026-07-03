@@ -13,13 +13,10 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
 
     private val componentHealthGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
     private val syncStatusGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
-    private val syncStatusCodeGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
     private val currentBlockGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
     private val bestBlockGauge = AtomicReference(0.0)
     private var bestBlockGaugeInitialized = false
-    private val syncGapGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
     private val blocksProcessedCounters = ConcurrentHashMap<String, Counter>()
-    private val blocksPerSecondGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
 
     fun setComponentHealth(name: String, type: String, value: Double) {
         val key = "$name:$type"
@@ -27,7 +24,7 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
             .computeIfAbsent(key) {
                 val ref = AtomicReference(0.0)
                 registry.gauge(
-                    "component_health_status_gauge",
+                    "component_health_status",
                     listOf(Tag.of("name", name), Tag.of("type", type)),
                     ref,
                 ) {
@@ -38,11 +35,8 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
             .set(value)
     }
 
+    // Emit a stable one-hot gauge set so dashboards can select the current status by tag.
     fun setIndexerSyncStatus(indexerName: String, syncStatus: Status) {
-        // Code gauge: keyed by indexer_name only (no status_readable tag)
-        getOrCreateSyncStatusCodeGauge(indexerName).set(syncStatus.toStatusCode())
-
-        // Emit a stable one-hot gauge set so dashboards can sum current status safely.
         Status.entries.forEach { status ->
             val value = if (status == syncStatus) 1.0 else 0.0
             getOrCreateSyncStatusGauge(indexerName, status).set(value)
@@ -56,11 +50,7 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
     private fun getOrCreateCurrentBlockGauge(indexerName: String): AtomicReference<Double> {
         return currentBlockGauges.computeIfAbsent(indexerName) { name ->
             val ref = AtomicReference(Double.NaN)
-            registry.gauge(
-                "indexer_current_block_gauge",
-                listOf(Tag.of("indexer_name", name)),
-                ref,
-            ) {
+            registry.gauge("indexer_current_block", listOf(Tag.of("indexer_name", name)), ref) {
                 it.get()
             }
             ref
@@ -73,29 +63,10 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
     ): AtomicReference<Double> {
         val key = "$indexerName:${status.name}"
         return syncStatusGauges.computeIfAbsent(key) {
-            val statusReadable = status.name.toReadableEnumLabel()
             val ref = AtomicReference(0.0)
             registry.gauge(
-                "indexer_sync_status_gauge",
-                listOf(
-                    Tag.of("indexer_name", indexerName),
-                    Tag.of("status", status.name),
-                    Tag.of("status_readable", statusReadable),
-                ),
-                ref,
-            ) {
-                it.get()
-            }
-            ref
-        }
-    }
-
-    private fun getOrCreateSyncStatusCodeGauge(indexerName: String): AtomicReference<Double> {
-        return syncStatusCodeGauges.computeIfAbsent(indexerName) { name ->
-            val ref = AtomicReference(Double.NaN)
-            registry.gauge(
-                "indexer_sync_status_code_gauge",
-                listOf(Tag.of("indexer_name", name)),
+                "indexer_sync_status",
+                listOf(Tag.of("indexer_name", indexerName), Tag.of("status", status.name)),
                 ref,
             ) {
                 it.get()
@@ -106,26 +77,10 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
 
     fun setBestBlockNumber(blockNumber: Long) {
         if (!bestBlockGaugeInitialized) {
-            registry.gauge("thor_best_block_number_gauge", bestBlockGauge) { it.get() }
+            registry.gauge("thor_best_block_number", bestBlockGauge) { it.get() }
             bestBlockGaugeInitialized = true
         }
         bestBlockGauge.set(blockNumber.toDouble())
-    }
-
-    fun setIndexerSyncGap(indexerName: String, gap: Long) {
-        syncGapGauges
-            .computeIfAbsent(indexerName) { name ->
-                val ref = AtomicReference(0.0)
-                registry.gauge(
-                    "indexer_sync_gap_gauge",
-                    listOf(Tag.of("indexer_name", name)),
-                    ref,
-                ) {
-                    it.get()
-                }
-                ref
-            }
-            .set(gap.toDouble())
     }
 
     fun incrementBlocksProcessed(indexerName: String, count: Double) {
@@ -138,21 +93,5 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
                         .register(registry)
                 }
         counter.increment(count)
-    }
-
-    fun setBlocksPerSecond(indexerName: String, blocksPerSecond: Double) {
-        blocksPerSecondGauges
-            .computeIfAbsent(indexerName) { name ->
-                val ref = AtomicReference(0.0)
-                registry.gauge(
-                    "indexer_blocks_per_second_gauge",
-                    listOf(Tag.of("indexer_name", name)),
-                    ref,
-                ) {
-                    it.get()
-                }
-                ref
-            }
-            .set(blocksPerSecond)
     }
 }

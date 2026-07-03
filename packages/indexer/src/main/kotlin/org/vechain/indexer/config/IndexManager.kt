@@ -199,7 +199,6 @@ open class IndexManager(
 
         if (indexer is BlockIndexer) {
             metrics.setIndexerCurrentBlock(indexer.name, indexer.getCurrentBlockNumber())
-            metrics.setBlocksPerSecond(indexer.name, 0.0)
         }
     }
 }

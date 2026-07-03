@@ -30,16 +30,9 @@ class IndexerMetricsReporter(
 
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val previousBlockNumbers = ConcurrentHashMap<String, Long>()
-    private val previousReportTimes = ConcurrentHashMap<String, Long>()
-    private var gaugesInitialized = false
 
     @Scheduled(fixedDelayString = "\${indexer.healthcheck.report-interval-ms:10000}")
     fun reportMetrics() {
-        if (!gaugesInitialized) {
-            initializeGauges()
-            gaugesInitialized = true
-        }
-
         val bestBlockNumber = fetchBestBlockNumber()
 
         indexers.forEach { indexer ->
@@ -47,14 +40,6 @@ class IndexerMetricsReporter(
 
             if (indexer is BlockIndexer) {
                 reportBlockIndexerMetrics(indexer, bestBlockNumber)
-            }
-        }
-    }
-
-    private fun initializeGauges() {
-        indexers.forEach { indexer ->
-            if (indexer is BlockIndexer) {
-                metrics.setBlocksPerSecond(indexer.name, 0.0)
             }
         }
     }
@@ -90,31 +75,26 @@ class IndexerMetricsReporter(
                 HealthStatus.UNKNOWN -> -1.0
             },
         )
-        val syncStatus = indexer.getStatus()
-        metrics.setIndexerSyncStatus(indexer.name, syncStatus)
+        metrics.setIndexerSyncStatus(indexer.name, indexer.getStatus())
     }
 
+    // Sync gap is intentionally not emitted as its own gauge: it's just
+    // `thor_best_block_number - indexer_current_block` in PromQL, and
+    // blocks-per-second is `rate(indexer_blocks_processed_total[1m])`.
+    // We keep the counter increment here so those rate() queries work.
     private fun reportBlockIndexerMetrics(indexer: BlockIndexer, bestBlockNumber: Long?) {
         val status = indexer.getStatus()
         if (status == Status.NOT_INITIALISED) {
             previousBlockNumbers.remove(indexer.name)
-            previousReportTimes.remove(indexer.name)
             return
         }
         val currentBlockNumber = indexer.getCurrentBlockNumber()
         metrics.setIndexerCurrentBlock(indexer.name, currentBlockNumber)
 
-        if (bestBlockNumber != null) {
-            metrics.setIndexerSyncGap(indexer.name, maxOf(0L, bestBlockNumber - currentBlockNumber))
-        }
-
         val isProcessing =
             status == Status.SYNCING ||
                 status == Status.FAST_SYNCING ||
                 status == Status.FULLY_SYNCED
-
-        val now = System.nanoTime()
-        var blocksPerSecond: Double? = null
 
         if (isProcessing) {
             val previousBlock = previousBlockNumbers[indexer.name]
@@ -124,30 +104,9 @@ class IndexerMetricsReporter(
                     (currentBlockNumber - previousBlock).toDouble(),
                 )
             }
-            blocksPerSecond =
-                computeBlocksPerSecond(indexer.name, currentBlockNumber, previousBlock, now)
             previousBlockNumbers[indexer.name] = currentBlockNumber
-            previousReportTimes[indexer.name] = now
         } else {
             previousBlockNumbers.remove(indexer.name)
-            previousReportTimes.remove(indexer.name)
         }
-
-        metrics.setBlocksPerSecond(indexer.name, blocksPerSecond ?: 0.0)
-    }
-
-    private fun computeBlocksPerSecond(
-        indexerName: String,
-        currentBlockNumber: Long,
-        previousBlock: Long?,
-        now: Long,
-    ): Double? {
-        val previousTime = previousReportTimes[indexerName] ?: return null
-        if (previousBlock == null || currentBlockNumber <= previousBlock) return null
-
-        val elapsedSeconds = (now - previousTime) / 1_000_000_000.0
-        if (elapsedSeconds <= 0) return null
-
-        return (currentBlockNumber - previousBlock) / elapsedSeconds
     }
 }

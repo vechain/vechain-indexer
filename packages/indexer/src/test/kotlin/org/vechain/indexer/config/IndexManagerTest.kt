@@ -82,7 +82,6 @@ class IndexManagerTest {
         verify { metrics.setComponentHealth("test-indexer", "indexer", 0.0) }
         verify { metrics.setIndexerSyncStatus("test-indexer", Status.SHUT_DOWN) }
         verify { metrics.setIndexerCurrentBlock("test-indexer", 1234L) }
-        verify { metrics.setBlocksPerSecond("test-indexer", 0.0) }
     }
 
     @Test

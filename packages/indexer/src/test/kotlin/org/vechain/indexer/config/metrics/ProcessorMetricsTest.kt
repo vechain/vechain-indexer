@@ -56,7 +56,7 @@ class ProcessorMetricsTest {
         metrics.incrementEventsCounter("test-indexer", 5.0)
 
         val counter =
-            registry.find("processor_events_counter").tag("indexer_name", "test-indexer").counter()
+            registry.find("processor_events_total").tag("indexer_name", "test-indexer").counter()
 
         assertThat(counter).isNotNull
         assertThat(counter!!.count()).isEqualTo(5.0)

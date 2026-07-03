@@ -67,117 +67,7 @@ class IndexerHealthMetricsTest {
         assertThat(counterB!!.count()).isEqualTo(3.0)
     }
 
-    @Test
-    fun `setBlocksPerSecond creates gauge and sets value`() {
-        metrics.setBlocksPerSecond("test-indexer", 15.5)
-
-        val gauge =
-            registry
-                .find("indexer_blocks_per_second_gauge")
-                .tag("indexer_name", "test-indexer")
-                .gauge()
-
-        assertThat(gauge).isNotNull
-        assertThat(gauge!!.value()).isEqualTo(15.5)
-    }
-
-    @Test
-    fun `setBlocksPerSecond updates value on subsequent calls`() {
-        metrics.setBlocksPerSecond("test-indexer", 15.5)
-        metrics.setBlocksPerSecond("test-indexer", 20.0)
-
-        val gauge =
-            registry
-                .find("indexer_blocks_per_second_gauge")
-                .tag("indexer_name", "test-indexer")
-                .gauge()
-
-        assertThat(gauge).isNotNull
-        assertThat(gauge!!.value()).isEqualTo(20.0)
-    }
-
-    @Test
-    fun `setBlocksPerSecond creates separate gauges per indexer`() {
-        metrics.setBlocksPerSecond("indexer-a", 10.0)
-        metrics.setBlocksPerSecond("indexer-b", 20.0)
-
-        val gaugeA =
-            registry
-                .find("indexer_blocks_per_second_gauge")
-                .tag("indexer_name", "indexer-a")
-                .gauge()
-        val gaugeB =
-            registry
-                .find("indexer_blocks_per_second_gauge")
-                .tag("indexer_name", "indexer-b")
-                .gauge()
-
-        assertThat(gaugeA!!.value()).isEqualTo(10.0)
-        assertThat(gaugeB!!.value()).isEqualTo(20.0)
-    }
-
-    // --- indexer_sync_status_code_gauge tests ---
-
-    @Test
-    fun `setIndexerSyncStatus creates status code gauge keyed by indexer_name only`() {
-        metrics.setIndexerSyncStatus("test-indexer", Status.SYNCING)
-
-        val gauge =
-            registry
-                .find("indexer_sync_status_code_gauge")
-                .tag("indexer_name", "test-indexer")
-                .gauge()
-
-        assertThat(gauge).describedAs("gauge should exist").isNotNull
-        assertThat(gauge!!.value()).isEqualTo(2.0)
-    }
-
-    @Test
-    fun `setIndexerSyncStatus switching status updates code gauge in place without duplicates`() {
-        metrics.setIndexerSyncStatus("test-indexer", Status.SYNCING)
-        metrics.setIndexerSyncStatus("test-indexer", Status.FULLY_SYNCED)
-
-        val gauges =
-            registry
-                .find("indexer_sync_status_code_gauge")
-                .tag("indexer_name", "test-indexer")
-                .gauges()
-
-        assertThat(gauges).hasSize(1)
-        assertThat(gauges.first().value()).isEqualTo(6.0)
-    }
-
-    @Test
-    fun `setIndexerSyncStatus status code values match expected mapping`() {
-        val expectedCodes =
-            mapOf(
-                Status.NOT_INITIALISED to 0.0,
-                Status.READY_TO_FAST_SYNC to 1.0,
-                Status.SYNCING to 2.0,
-                Status.FAST_SYNCING to 3.0,
-                Status.SHUT_DOWN to 5.0,
-                Status.FULLY_SYNCED to 6.0,
-                Status.READY_TO_SYNC to 7.0,
-            )
-
-        expectedCodes.forEach { (status, expectedCode) ->
-            val localRegistry = SimpleMeterRegistry()
-            val localMetrics = IndexerHealthMetrics(localRegistry)
-            localMetrics.setIndexerSyncStatus("test-indexer", status)
-
-            val gauge =
-                localRegistry
-                    .find("indexer_sync_status_code_gauge")
-                    .tag("indexer_name", "test-indexer")
-                    .gauge()
-
-            assertThat(gauge!!.value())
-                .describedAs("status code for ${status.name}")
-                .isEqualTo(expectedCode)
-        }
-    }
-
-    // --- indexer_sync_status_gauge tests ---
+    // --- indexer_sync_status one-hot gauge tests ---
 
     @Test
     fun `setIndexerSyncStatus creates sync status gauges for all statuses`() {
@@ -186,7 +76,7 @@ class IndexerHealthMetricsTest {
         Status.entries.forEach { status ->
             val gauge =
                 registry
-                    .find("indexer_sync_status_gauge")
+                    .find("indexer_sync_status")
                     .tag("indexer_name", "test-indexer")
                     .tag("status", status.name)
                     .gauge()
@@ -204,7 +94,7 @@ class IndexerHealthMetricsTest {
         Status.entries.forEach { status ->
             val gauge =
                 registry
-                    .find("indexer_sync_status_gauge")
+                    .find("indexer_sync_status")
                     .tag("indexer_name", "test-indexer")
                     .tag("status", status.name)
                     .gauge()
@@ -223,14 +113,14 @@ class IndexerHealthMetricsTest {
 
         val syncingGauge =
             registry
-                .find("indexer_sync_status_gauge")
+                .find("indexer_sync_status")
                 .tag("indexer_name", "test-indexer")
                 .tag("status", Status.SYNCING.name)
                 .gauge()
 
         val fullySyncedGauge =
             registry
-                .find("indexer_sync_status_gauge")
+                .find("indexer_sync_status")
                 .tag("indexer_name", "test-indexer")
                 .tag("status", Status.FULLY_SYNCED.name)
                 .gauge()
@@ -239,14 +129,28 @@ class IndexerHealthMetricsTest {
         assertThat(fullySyncedGauge!!.value()).isEqualTo(1.0)
     }
 
-    // --- indexer_current_block_gauge tests ---
+    @Test
+    fun `setIndexerSyncStatus does not emit status_readable tag`() {
+        metrics.setIndexerSyncStatus("test-indexer", Status.FAST_SYNCING)
+
+        val gauge =
+            registry
+                .find("indexer_sync_status")
+                .tag("indexer_name", "test-indexer")
+                .tag("status", Status.FAST_SYNCING.name)
+                .gauge()
+
+        assertThat(gauge!!.id.getTag("status_readable")).isNull()
+    }
+
+    // --- indexer_current_block gauge tests ---
 
     @Test
     fun `setIndexerCurrentBlock creates gauge with indexer_name tag`() {
         metrics.setIndexerCurrentBlock("test-indexer", 1000L)
 
         val gauge =
-            registry.find("indexer_current_block_gauge").tag("indexer_name", "test-indexer").gauge()
+            registry.find("indexer_current_block").tag("indexer_name", "test-indexer").gauge()
 
         assertThat(gauge).isNotNull
         assertThat(gauge!!.value()).isEqualTo(1000.0)
@@ -258,45 +162,38 @@ class IndexerHealthMetricsTest {
         metrics.setIndexerCurrentBlock("test-indexer", 2000L)
 
         val gauges =
-            registry
-                .find("indexer_current_block_gauge")
-                .tag("indexer_name", "test-indexer")
-                .gauges()
+            registry.find("indexer_current_block").tag("indexer_name", "test-indexer").gauges()
 
         assertThat(gauges).hasSize(1)
         assertThat(gauges.first().value()).isEqualTo(2000.0)
     }
 
-    // --- status_readable tag format tests ---
+    // --- thor_best_block_number gauge tests ---
 
     @Test
-    fun `status_readable tag converts enum names to title case`() {
-        metrics.setIndexerSyncStatus("test-indexer", Status.FAST_SYNCING)
+    fun `setBestBlockNumber creates gauge with no tags and sets value`() {
+        metrics.setBestBlockNumber(12345L)
+
+        val gauge = registry.find("thor_best_block_number").gauge()
+
+        assertThat(gauge).isNotNull
+        assertThat(gauge!!.value()).isEqualTo(12345.0)
+    }
+
+    // --- component_health_status gauge tests ---
+
+    @Test
+    fun `setComponentHealth creates gauge tagged by name and type`() {
+        metrics.setComponentHealth("test-indexer", "indexer", 1.0)
 
         val gauge =
             registry
-                .find("indexer_sync_status_gauge")
-                .tag("indexer_name", "test-indexer")
-                .tag("status", Status.FAST_SYNCING.name)
+                .find("component_health_status")
+                .tag("name", "test-indexer")
+                .tag("type", "indexer")
                 .gauge()
 
-        assertThat(gauge!!.id.getTag("status_readable")).isEqualTo("Fast Syncing")
-    }
-
-    // --- separate gauges per indexer tests ---
-
-    @Test
-    fun `setIndexerSyncStatus creates separate code gauges per indexer`() {
-        metrics.setIndexerSyncStatus("indexer-a", Status.SYNCING)
-        metrics.setIndexerSyncStatus("indexer-b", Status.FULLY_SYNCED)
-
-        val aGauge =
-            registry.find("indexer_sync_status_code_gauge").tag("indexer_name", "indexer-a").gauge()
-
-        val bGauge =
-            registry.find("indexer_sync_status_code_gauge").tag("indexer_name", "indexer-b").gauge()
-
-        assertThat(aGauge!!.value()).isEqualTo(2.0)
-        assertThat(bGauge!!.value()).isEqualTo(6.0)
+        assertThat(gauge).isNotNull
+        assertThat(gauge!!.value()).isEqualTo(1.0)
     }
 }
