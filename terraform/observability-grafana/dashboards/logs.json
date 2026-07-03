@@ -1,0 +1,113 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 0,
+  "links": [],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["observability", "logs"],
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "browser",
+  "title": "Logs",
+  "uid": "logs",
+  "templating": {
+    "list": [
+      {
+        "name": "deployment",
+        "label": "Deployment",
+        "description": "Blue/green colour(s) to include. Multi-select; \"All\" covers both.",
+        "type": "custom",
+        "query": "blue,green",
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "options": [
+          { "text": "blue", "value": "blue", "selected": false },
+          { "text": "green", "value": "green", "selected": false }
+        ],
+        "current": { "text": "All", "value": ["$__all"], "selected": true }
+      },
+      {
+        "name": "service",
+        "label": "Service",
+        "description": "ECS service(s) to include. Multi-select; \"All\" covers every service.",
+        "type": "custom",
+        "query": "api,indexer",
+        "multi": true,
+        "includeAll": true,
+        "allValue": "api|indexer",
+        "options": [
+          { "text": "api", "value": "api", "selected": false },
+          { "text": "indexer", "value": "indexer", "selected": false }
+        ],
+        "current": { "text": "All", "value": ["$__all"], "selected": true }
+      },
+      {
+        "name": "level",
+        "label": "Level",
+        "description": "Errors only (default) filters to lines matching error/fatal/exception. Switch to All to see non-error lines.",
+        "type": "custom",
+        "query": "Errors only : (?i)(error|fatal|exception),All : .",
+        "multi": false,
+        "includeAll": false,
+        "options": [
+          {
+            "text": "Errors only",
+            "value": "(?i)(error|fatal|exception)",
+            "selected": true
+          },
+          { "text": "All", "value": ".", "selected": false }
+        ],
+        "current": {
+          "text": "Errors only",
+          "value": "(?i)(error|fatal|exception)",
+          "selected": true
+        }
+      },
+      {
+        "name": "filter",
+        "label": "Filter (regex, case-insensitive)",
+        "description": "Extra free-text regex applied to @message on top of the level filter.",
+        "type": "textbox",
+        "current": { "text": "", "value": "" },
+        "query": ""
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "logs",
+      "title": "Logs — $service · $level",
+      "description": "Single view over every ECS service log group. Default = errors across all services and deployments. Narrow with the dropdowns and switch Level to All to see non-error lines. @log column identifies the source log group (which encodes deployment/network/service).",
+      "gridPos": { "h": 30, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryMode": "Logs",
+          "region": "default",
+          "logGroupNames": [
+            "veworld-prod-blue-main-api",
+            "veworld-prod-blue-test-api",
+            "veworld-prod-green-main-api",
+            "veworld-prod-green-test-api",
+            "veworld-prod-blue-main-indexer",
+            "veworld-prod-blue-test-indexer",
+            "veworld-prod-green-main-indexer",
+            "veworld-prod-green-test-indexer"
+          ],
+          "expression": "fields @timestamp, @log, @message\n| filter @log like /prod-(${deployment:pipe})-/\n| filter @log like /-(${service:pipe})$/\n| filter @message like /${level:raw}/\n| filter @message like /(?i)${filter:raw}/\n| sort @timestamp desc, @ptr desc\n| limit 500"
+        }
+      ]
+    }
+  ]
+}
