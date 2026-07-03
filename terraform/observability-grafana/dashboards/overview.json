@@ -77,7 +77,8 @@
           "refId": "A",
           "expr": "count by (status) (indexer_sync_status{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\", service=\"indexer\"} == 1)",
           "legendFormat": "{{status}}",
-          "instant": true
+          "instant": true,
+          "range": false
         }
       ],
       "fieldConfig": {
