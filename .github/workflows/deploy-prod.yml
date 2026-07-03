@@ -269,25 +269,6 @@ jobs:
             exit 1
           fi
 
-  check-existing-release:
-    name: Check Existing Releases
-    runs-on: ubuntu-latest
-    needs: [define-env-vars]
-    if: ${{ inputs.network == 'mainnet' || inputs.network == 'both' }}
-    outputs:
-      NEW_RELEASE: ${{ steps.check-release.outputs.NEW_RELEASE }}
-    steps:
-      - name: Check if deployment version already exists
-        id: check-release
-        env:
-          VERSION: ${{ needs.define-env-vars.outputs.MAINNET_VERSION }}
-        run: |
-          VERSION=${{ env.VERSION }}
-          RELEASES=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            https://api.github.com/repos/${{ github.repository }}/releases)
-          NEW_RELEASE=$(echo "$RELEASES" | jq -e ".[] | select(.tag_name==\"$VERSION\")" > /dev/null && echo "false" || echo "true")
-          echo "NEW_RELEASE=${NEW_RELEASE}" >> $GITHUB_OUTPUT
-
   deploy-env:
     needs: [define-env-vars, promote-to-ecr]
     name: Run Deployment - ${{ inputs.network}}
@@ -327,29 +308,82 @@ jobs:
     steps:
       - run: echo "Live mainnet environment is ${{ needs.identify-live-color.outputs.mainnet_live_color }}"
 
-  create-release:
+  manage-release:
+    name: Refresh draft or publish release
     runs-on: ubuntu-latest
-    needs: [check-existing-release, define-env-vars, deploy-env]
-    if: ${{ needs.check-existing-release.outputs.NEW_RELEASE == 'true' }}
+    needs: [define-env-vars, deploy-env]
+    if: >-
+      ${{ needs.deploy-env.result == 'success'
+      && (inputs.network == 'mainnet' || inputs.network == 'both') }}
     permissions:
       contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ needs.define-env-vars.outputs.MAINNET_VERSION }}
+      INPUT_ENV: ${{ inputs.environment }}
     steps:
-      - name: Create release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          tag: ${{ needs.define-env-vars.outputs.MAINNET_VERSION }}
-          INPUT_ENV: ${{ inputs.environment }}
+      - name: Check existing release state for tag
+        id: check
         run: |
-          latest_release=$(curl -s -H "Authorization: token $GH_TOKEN" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r '.tag_name')
-          echo "Latest release: ${latest_release}"
-          prerelease_flag=""
-          if [ "$INPUT_ENV" == "dead" ]; then
-            prerelease_flag="--prerelease"
+          set -euo pipefail
+          state=$(gh release view "$TAG" --json isDraft --jq '.isDraft' 2>/dev/null || echo "missing")
+          echo "state=$state" >> "$GITHUB_OUTPUT"
+          echo "Existing release state for $TAG: $state"
+
+      - name: Resolve previous published release tag
+        if: steps.check.outputs.state != 'false'
+        id: prev
+        run: |
+          set -euo pipefail
+          prev=$(gh release list --exclude-drafts --exclude-pre-releases \
+                   --limit 1 --json tagName --jq '.[0].tagName // empty')
+          echo "previous=$prev" >> "$GITHUB_OUTPUT"
+          echo "Previous published tag: ${prev:-<none>}"
+
+      - name: Delete stale draft releases (dead deploy)
+        if: steps.check.outputs.state != 'false' && env.INPUT_ENV == 'dead'
+        run: |
+          set -euo pipefail
+          # Keep exactly one draft — the one representing the tag just staged
+          # on the dead colour. switch-live-dns.yml publishes it when both
+          # networks flip to that version.
+          mapfile -t drafts < <(gh release list --limit 50 \
+                                  --json tagName,isDraft \
+                                  --jq '.[] | select(.isDraft) | .tagName')
+          if [ "${#drafts[@]}" -eq 0 ]; then
+            echo "No existing drafts."
+          else
+            for d in "${drafts[@]}"; do
+              echo "Deleting draft: $d"
+              gh release delete "$d" --yes
+            done
           fi
-          gh release create "${tag}" \
-              --repo="${{ github.repository }}" \
-              --title="Release ${tag}" \
-              $prerelease_flag \
-              --generate-notes \
-              --notes-start-tag "${latest_release}"
+
+      - name: Create draft release (dead deploy)
+        if: steps.check.outputs.state != 'false' && env.INPUT_ENV == 'dead'
+        env:
+          PREVIOUS: ${{ steps.prev.outputs.previous }}
+        run: |
+          set -euo pipefail
+          args=(--draft --title "Release $TAG" --generate-notes)
+          [ -n "$PREVIOUS" ] && args+=(--notes-start-tag "$PREVIOUS")
+          gh release create "$TAG" "${args[@]}"
+          echo "Draft release $TAG created (baseline: ${PREVIOUS:-<none>})."
+
+      - name: Publish release (live deploy)
+        if: steps.check.outputs.state != 'false' && env.INPUT_ENV == 'live'
+        env:
+          PREVIOUS: ${{ steps.prev.outputs.previous }}
+          STATE: ${{ steps.check.outputs.state }}
+        run: |
+          set -euo pipefail
+          if [ "$STATE" = "true" ]; then
+            echo "Publishing existing draft $TAG as latest"
+            gh release edit "$TAG" --draft=false --latest
+          else
+            args=(--title "Release $TAG" --generate-notes --latest)
+            [ -n "$PREVIOUS" ] && args+=(--notes-start-tag "$PREVIOUS")
+            gh release create "$TAG" "${args[@]}"
+            echo "Published release $TAG (baseline: ${PREVIOUS:-<none>})."
+          fi
