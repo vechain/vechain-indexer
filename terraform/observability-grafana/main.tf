@@ -17,10 +17,15 @@ resource "grafana_data_source" "amp" {
   uid  = "amp"
   url  = data.terraform_remote_state.observability.outputs.amp_endpoint
 
+  # sigV4AuthType = "default" (SDK credential chain, resolves to the
+  # workspace's role_arn) — required because the parent AMG workspace is
+  # permission_type = "CUSTOMER_MANAGED". "workspace-iam-role" is rejected
+  # by the workspace with "non-allowed auth method" and is only valid for
+  # SERVICE_MANAGED workspaces.
   json_data_encoded = jsonencode({
     httpMethod     = "POST"
     sigV4Auth      = true
-    sigV4AuthType  = "workspace-iam-role"
+    sigV4AuthType  = "default"
     sigV4Region    = data.aws_region.current.name
     prometheusType = "Prometheus"
   })
