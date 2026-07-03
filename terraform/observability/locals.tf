@@ -57,8 +57,8 @@ locals {
       default.tmpl: |
         {{ define "sns.default.message" -}}
         *[{{ .CommonLabels.env }}/{{ .CommonLabels.deployment }}/{{ .CommonLabels.network }}] {{ .CommonLabels.service }}: {{ if .CommonAnnotations.title }}{{ .CommonAnnotations.title }}{{ else }}{{ .CommonLabels.alertname }}{{ end }}*{{ if eq .Status "resolved" }} — resolved{{ else }}{{ if or (gt (len .Alerts.Firing) 1) (gt (len .Alerts.Resolved) 0) }} — {{ len .Alerts.Firing }} firing{{ if gt (len .Alerts.Resolved) 0 }}, {{ len .Alerts.Resolved }} recovered{{ end }}{{ end }}
-        {{ .CommonAnnotations.summary }}{{ if (index .Alerts.Firing 0).Labels.task_id }}
-        Tasks: {{ range $i, $a := .Alerts.Firing }}{{ if $i }}, {{ end }}{{ printf "%.8s" $a.Labels.task_id }}{{ end }}{{ end }}{{ end }}
+        {{ .CommonAnnotations.summary }}{{ with .Alerts.Firing }}{{ if (index . 0).Labels.task_id }}
+        Tasks: {{ range $i, $a := . }}{{ if $i }}, {{ end }}{{ printf "%.8s" $a.Labels.task_id }}{{ end }}{{ end }}{{ end }}{{ end }}
         {{- end }}
     alertmanager_config: |
       templates:
