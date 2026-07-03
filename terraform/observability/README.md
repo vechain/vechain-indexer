@@ -55,7 +55,7 @@ Nothing reads the token today, so short-term drift is harmless — the next appl
 
 ### Sensitive state
 
-`aws_grafana_workspace_service_account_token.terraform.key` and `aws_secretsmanager_secret_version.amg_sa_token.secret_string` are both stored in plaintext in the terraform state file, per how the terraform state model works. This matches how every other secret this repo manages via terraform is stored (MongoDB Atlas passwords, Datadog API keys, WAF bypass tokens). The mitigation is at the state-backend layer: read access to `s3://veworld-indexer-terraform-state-prod` is scoped to the deploy OIDC role. Anyone with access to the bucket effectively has access to those secrets.
+`aws_grafana_workspace_service_account_token.terraform.key` and `aws_secretsmanager_secret_version.amg_sa_token.secret_string` are both stored in plaintext in the terraform state file, per how the terraform state model works. This matches how every other secret this repo manages via terraform is stored (MongoDB Atlas passwords, WAF bypass tokens). The mitigation is at the state-backend layer: read access to `s3://veworld-indexer-terraform-state-prod` is scoped to the deploy OIDC role. Anyone with access to the bucket effectively has access to those secrets.
 
 ## Backend locking
 

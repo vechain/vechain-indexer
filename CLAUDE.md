@@ -8,12 +8,11 @@
 
 ## Required Pre-Commit Scripts
 
-Always run these two scripts before committing or pushing any change, and commit any resulting file updates. CI enforces both and will fail if the generated files drift.
+Always run this script before committing or pushing any change, and commit any resulting file updates. CI enforces it and will fail if the generated files drift.
 
-- `make dd-refresh-generated` — regenerates `metrics/datadog/*.json` from the live OpenAPI spec.
 - `bash packages/api/scripts/refresh_token_registry.sh` — refreshes `packages/api/src/main/resources/token-registry/main.json` and `test.json` from the upstream registry.
 
-If either script updates tracked files, include those updates in the same commit (or a follow-up `chore:` commit on the same branch) before pushing.
+If the script updates tracked files, include those updates in the same commit (or a follow-up `chore:` commit on the same branch) before pushing.
 
 ## Dependencies
 
@@ -26,7 +25,6 @@ Whenever a controller exposes a `@RequestParam` filter backed by an enum or a cu
 - Source of truth for history filters: `HistoryEventName` (`packages/common/src/main/kotlin/org/vechain/indexer/history/HistoryEventName.kt`).
 - When entries are added, removed, or renamed in such an enum, audit every annotation in `packages/api/src/main/kotlin/org/vechain/indexer/docs/` that lists `allowableValues` (e.g. `EventNameParameter`, `TokenEventNameParameter`, `NftHistoryEventNameParameter`, `StargateTokenHistoryEventNameParameter`) and update them to match.
 - Curated-subset annotations (Token / NFT / Stargate) only enumerate values relevant to that endpoint; only add a new value if it belongs to that subset.
-- After updating Swagger annotations, run `make dd-refresh-generated` and commit the regenerated `metrics/datadog/*.json` (covered by the "Required Pre-Commit Scripts" section above).
 
 ## Project Guidelines
 

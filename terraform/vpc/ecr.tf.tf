@@ -21,15 +21,3 @@ module "ecr-indexer" {
   encryption_type      = "KMS"
   max_image_count      = 50
 }
-
-# ECR Repository for datadog agent
-
-module "ecr-datadog" {
-  source               = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecr?ref=v.3.1.21"
-  project              = local.env.application
-  app_name             = "datadog-agent"
-  image_tag_mutability = "MUTABLE"
-  scan_on_push         = false
-  encryption_type      = "KMS"
-  max_image_count      = 2
-}
