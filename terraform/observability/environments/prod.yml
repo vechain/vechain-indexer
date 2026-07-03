@@ -1,0 +1,18 @@
+region: eu-west-1
+
+# AMP ingestion log retention (days). AMP writes its own operational
+# logs (scrape / rule evaluation failures) to CloudWatch — this does
+# not affect metric-data retention, which is controlled by AMP itself
+# (150-day maximum).
+log_retention_days: 30
+
+# Okta SAML for Grafana. Leave blank until the Okta app is registered;
+# while empty the SAML resource is not created and no one can SSO. The
+# terraform-provider service-account token still works because tokens
+# are independent of the SAML provider.
+okta_saml_metadata_url: ""
+
+# Okta group names that map to Grafana Admin / Editor roles once SAML
+# is enabled. Populated at the same time as okta_saml_metadata_url.
+grafana_admin_okta_groups: []
+grafana_editor_okta_groups: []
