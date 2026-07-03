@@ -50,4 +50,4 @@ Nothing reads the token today, so short-term drift is harmless — the next appl
 
 ## Backend locking
 
-Not enabled. Aligns with `terraform/api` and `terraform/vpc`, which the repo's CI setup-terraform step pins to 1.9.8 — `use_lockfile` requires 1.11+. Concurrent applies rely on human coordination for now. Worth revisiting across the repo once the toolchain gets bumped: `use_lockfile = true` (S3-native, no DynamoDB) is the cheap next step.
+Enabled via `use_lockfile = true` on the S3 backend (S3-native locking, no DynamoDB). Matches `terraform/api` and `terraform/vpc` after the repo-wide toolchain bump to terraform 1.13.5.

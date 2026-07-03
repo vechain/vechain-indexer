@@ -17,6 +17,8 @@ terraform {
     key                  = "veworld-indexer-api.tfstate"
     region               = "eu-west-1"
     workspace_key_prefix = "workspaces"
+    encrypt              = true
+    use_lockfile         = true
   }
 }
 
