@@ -96,7 +96,7 @@ Cull (delete from DD, do not migrate):
 - Origin & Security section.
 - Top-level widgets sitting outside any group: reviewed case-by-case in the PR — anything duplicating a kept panel or referencing a culled section is dropped.
 
-DD monitors / alerts: leave in place for this cull PR. Each individual monitor gets a keep/migrate/drop decision in P7 (alarms migration) rather than up front. The one thing this PR must produce is a list of every DD monitor that references custom indexer metric names, so P3 (metrics cleanup) knows which monitors need updating when metrics are renamed.
+DD monitors / alerts: leave in place for this cull PR. Each individual monitor gets a keep/migrate/drop decision in P7 (alarms migration) rather than up front. We deliberately do not enumerate monitors that reference custom indexer metric names — if a monitor breaks silently in P3 because a metric was renamed, that is acceptable given the migration horizon. Paging coverage during the migration comes from CloudWatch alarms in `terraform/api/cwalarms.tf`, not DD.
 
 Log pipelines: the checked-in JSON at `metrics/datadog/app-pipeline.json`, `metrics/datadog/pipeline.json`, and `metrics/datadog/waf-pipeline.json` gets audited for keep/drop; log-based metric filters in `terraform/api/cwalarms.tf` similarly. Culled pipelines are removed in this PR; the rest wait for P8 (logs).
 
@@ -123,7 +123,7 @@ Concrete work:
 - **Add histogram buckets to timers.** `ProcessorMetrics` and `ThorClientMetrics` currently emit `Timer` without `publishPercentileHistogram(true)`, so p95/p99 in Grafana won't work. Enable histograms on the timers we care about.
 - **Add a processor-level error counter.** `ThorClient` counts response codes, but processor-side failures only exist in logs. Add `indexer_processor_errors_total` tagged by indexer_name and error class.
 
-DD compatibility: renames will break any DD dashboard panel or monitor that references old names. P1 cull output enumerates the DD monitors; the P3 PR updates any monitor that references a renamed metric so we don't lose alert coverage while DD is still authoritative. DD dashboard panels are allowed to break — we're retiring them.
+DD compatibility: renames will break any DD dashboard panel or monitor that references old names. Both are allowed to break — we're retiring them. Paging coverage during the migration comes from CloudWatch alarms, not DD.
 
 Rollback: revert the PR. Metric names return to the current state.
 

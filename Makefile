@@ -8,7 +8,7 @@ format: #@ Format the code with Spotless.
 	$(MAKE) format-json
 
 format-json: #@ Format JSON dashboard files with jq.
-	@for f in metrics/datadog/*.json metrics/grafana/provisioning/dashboards/*.json; do \
+	@for f in metrics/datadog/*.json; do \
 		if [ -f "$$f" ]; then \
 			jq -S '.' "$$f" > "$$f.tmp" && mv "$$f.tmp" "$$f"; \
 		fi; \
@@ -109,22 +109,6 @@ app-down: #@ Stop the application.
 	docker compose down
 app-logs: #@ Attach to the application logs.
 	docker compose logs -f
-
-# Metrics
-METRICS_COMMAND=docker compose -f metrics/compose.yaml
-
-metrics-up: #@ Start Prometheus and Grafana.
-	$(METRICS_COMMAND) up -d --wait
-	@echo "Prometheus: http://localhost:9090"
-	@echo "Grafana: http://localhost:3000 (admin/admin)"
-metrics-down: #@ Stop Prometheus and Grafana.
-	$(METRICS_COMMAND) down
-metrics-clean: #@ Stop and remove all metrics data.
-	$(METRICS_COMMAND) down -v --remove-orphans
-metrics-logs: #@ Attach to the metrics logs.
-	$(METRICS_COMMAND) logs -f
-metrics-restart-grafana: #@ Restart only Grafana service.
-	docker kill grafana; docker rm grafana; docker volume rm metrics_grafana_data; make metrics-up
 
 # Datadog
 DD_SCRIPT=python3 metrics/datadog/scripts/manage_pipeline.py

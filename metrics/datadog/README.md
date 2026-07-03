@@ -12,12 +12,10 @@ All metrics are consolidated into a single `dashboard.json` file — the "Vechai
 |---------|-------------|
 | Health & SLOs | SLO status, uptime monitors |
 | Indexer Sync & Processing | Sync status, block processing, events, per-indexer overview |
-| Traffic & CDN | CDN request rates, cache hit ratios |
 | MongoDB Metrics | MongoDB driver and Spring Data repository metrics |
 | JVM Metrics | JVM memory, threads, garbage collection metrics |
 | API Performance | API request/response metrics |
 | Resource Utilization | CPU, memory, disk usage |
-| Origin & Security | Origin server and security metrics |
 | Thor Client Metrics | Thor client HTTP request/response metrics |
 
 ## Pipeline & Dashboard Management
