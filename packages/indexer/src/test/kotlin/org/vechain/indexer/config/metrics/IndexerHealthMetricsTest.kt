@@ -130,6 +130,56 @@ class IndexerHealthMetricsTest {
     }
 
     @Test
+    fun `setIndexerSyncStatus never exposes two statuses at 1 during concurrent backward transitions`() {
+        // Regression: backward transitions (later enum index → earlier index) used to expose a
+        // window where a concurrent scrape observed both statuses at 1, because the new gauge was
+        // raised at its enum index before the old gauge was cleared at a later index. Verifies
+        // the clear-first-then-set-target ordering by racing a reader against toggling writers.
+        val indexerName = "race-indexer"
+        val duration = java.time.Duration.ofMillis(300)
+        val stopAt = System.nanoTime() + duration.toNanos()
+        val executor = java.util.concurrent.Executors.newFixedThreadPool(2)
+
+        val doubleOnes = java.util.concurrent.atomic.AtomicInteger(0)
+        try {
+            val writer =
+                executor.submit {
+                    var toggle = false
+                    while (System.nanoTime() < stopAt) {
+                        // FULLY_SYNCED (index 5) → SYNCING (index 4) is a backward transition.
+                        val next = if (toggle) Status.SYNCING else Status.FULLY_SYNCED
+                        metrics.setIndexerSyncStatus(indexerName, next)
+                        toggle = !toggle
+                    }
+                }
+            val reader =
+                executor.submit {
+                    while (System.nanoTime() < stopAt) {
+                        val onesNow =
+                            Status.entries.count { status ->
+                                val gauge =
+                                    registry
+                                        .find("indexer_sync_status")
+                                        .tag("indexer_name", indexerName)
+                                        .tag("status", status.name)
+                                        .gauge()
+                                gauge != null && gauge.value() == 1.0
+                            }
+                        if (onesNow > 1) doubleOnes.incrementAndGet()
+                    }
+                }
+            writer.get()
+            reader.get()
+        } finally {
+            executor.shutdownNow()
+        }
+
+        assertThat(doubleOnes.get())
+            .describedAs("observed a scrape where more than one status gauge was 1")
+            .isZero()
+    }
+
+    @Test
     fun `setIndexerSyncStatus does not emit status_readable tag`() {
         metrics.setIndexerSyncStatus("test-indexer", Status.FAST_SYNCING)
 

@@ -36,11 +36,15 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
     }
 
     // Emit a stable one-hot gauge set so dashboards can select the current status by tag.
+    // Clear non-target gauges before raising the target to 1 — a concurrent scrape during a
+    // backward transition (later enum index → earlier index) would otherwise observe two 1s.
     fun setIndexerSyncStatus(indexerName: String, syncStatus: Status) {
         Status.entries.forEach { status ->
-            val value = if (status == syncStatus) 1.0 else 0.0
-            getOrCreateSyncStatusGauge(indexerName, status).set(value)
+            if (status != syncStatus) {
+                getOrCreateSyncStatusGauge(indexerName, status).set(0.0)
+            }
         }
+        getOrCreateSyncStatusGauge(indexerName, syncStatus).set(1.0)
     }
 
     fun setIndexerCurrentBlock(indexerName: String, blockNumber: Long) {
