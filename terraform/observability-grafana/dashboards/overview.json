@@ -259,17 +259,48 @@
       "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
     },
     {
+      "id": 43,
+      "type": "piechart",
+      "title": "Requests by X-Project-Id",
+      "description": "sum by (project) of api_requests_by_project_total increases over the dashboard time range. `unknown` = header missing; `other` = header set but not on the KNOWN_PROJECT_IDS whitelist (raw value logged); the rest are known callers.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 26 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (project) (increase(api_requests_by_project_total{service=\"api\", deployment=~\"$deployment\", network=~\"$network\"}[$__range]))",
+          "legendFormat": "{{project}}",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "mappings": [] },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "unknown" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
+          { "matcher": { "id": "byName", "options": "other" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] }
+        ]
+      },
+      "options": {
+        "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" },
+        "pieType": "donut",
+        "tooltip": { "mode": "single" },
+        "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] },
+        "displayLabels": ["name", "percent"]
+      }
+    },
+    {
       "id": 5,
       "type": "row",
       "title": "Errors",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 26 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 34 },
       "panels": [
         {
           "id": 50,
           "type": "timeseries",
           "title": "API 5xx rate by URI",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 27 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 35 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -285,7 +316,7 @@
           "id": 51,
           "type": "timeseries",
           "title": "API 4xx rate by URI",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 27 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 35 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -301,7 +332,7 @@
           "id": 52,
           "type": "timeseries",
           "title": "Thor client 5xx rate",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 35 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 43 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -317,7 +348,7 @@
           "id": 53,
           "type": "timeseries",
           "title": "Thor client 4xx rate",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 35 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 43 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -336,7 +367,7 @@
       "type": "row",
       "title": "Resources",
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 35 },
       "panels": []
     },
     {
@@ -344,7 +375,7 @@
       "type": "timeseries",
       "title": "CPU utilised — per task",
       "description": "ecs_task_cpu_utilized / ecs_task_cpu_reserved × 100 for indexer + api. Dashed line = 80%.",
-      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 28 },
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 36 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -375,7 +406,7 @@
       "type": "timeseries",
       "title": "Memory utilised — per task",
       "description": "ecs_task_memory_utilized / ecs_task_memory_reserved × 100 for indexer + api. Dashed line = 80%.",
-      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 28 },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 36 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -406,14 +437,14 @@
       "type": "row",
       "title": "MongoDB · Indexer",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 38 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 46 },
       "panels": [
         {
           "id": 70,
           "type": "timeseries",
           "title": "Pool size vs checked-out",
           "description": "mongodb_driver_pool_size vs mongodb_driver_pool_checkedout. Sustained checkedout ≈ size means the pool is saturated — either bump the pool or fix a slow query.",
-          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 39 },
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 47 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -435,7 +466,7 @@
           "type": "timeseries",
           "title": "Wait-queue depth",
           "description": "mongodb_driver_pool_waitqueuesize — connections waiting for a pool slot. Anything > 0 sustained means the pool is under-sized for the workload.",
-          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 39 },
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 47 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -466,7 +497,7 @@
           "type": "timeseries",
           "title": "Command rate by status",
           "description": "rate(mongodb_driver_commands_seconds_count[5m]) by status. FAILED > 0 means Mongo is rejecting commands (auth, write conflict, timeout, …).",
-          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 39 },
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 47 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -483,7 +514,7 @@
           "type": "timeseries",
           "title": "Command rate — top 10 by command",
           "description": "topk(10, rate by command) — expect insert/update/find to dominate on the indexer.",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 47 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 55 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -500,7 +531,7 @@
           "type": "timeseries",
           "title": "Avg command latency by command",
           "description": "rate(sum)/rate(count) by command — proxy for average latency per command type. Real p95 needs management.metrics.distribution.percentiles-histogram.mongodb.driver.commands=true.",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 47 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 55 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -517,7 +548,7 @@
           "type": "timeseries",
           "title": "Command rate — top 10 by collection",
           "description": "topk(10, rate by collection) — which collections are being hit hardest.",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 55 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 63 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -534,7 +565,7 @@
           "type": "timeseries",
           "title": "Slowest commands — max latency",
           "description": "max over 5m of mongodb_driver_commands_seconds_max by (command, collection). Spike hunter — surfaces single slow calls the avg smooths away.",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 55 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 63 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -553,14 +584,14 @@
       "type": "row",
       "title": "MongoDB · API",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 63 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 71 },
       "panels": [
         {
           "id": 80,
           "type": "timeseries",
           "title": "Pool size vs checked-out",
           "description": "mongodb_driver_pool_size vs mongodb_driver_pool_checkedout. Sustained checkedout ≈ size means the pool is saturated — either bump the pool or fix a slow query.",
-          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 64 },
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 72 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -582,7 +613,7 @@
           "type": "timeseries",
           "title": "Wait-queue depth",
           "description": "mongodb_driver_pool_waitqueuesize — API requests waiting for a pool slot. Anything > 0 sustained will surface as user-visible latency.",
-          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 64 },
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 72 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -613,7 +644,7 @@
           "type": "timeseries",
           "title": "Command rate by status",
           "description": "rate(mongodb_driver_commands_seconds_count[5m]) by status. FAILED > 0 means Mongo is rejecting API requests before they reach the response path.",
-          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 64 },
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 72 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -630,7 +661,7 @@
           "type": "timeseries",
           "title": "Command rate — top 10 by command",
           "description": "topk(10, rate by command) — expect find/aggregate to dominate on the API.",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 72 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 80 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -647,7 +678,7 @@
           "type": "timeseries",
           "title": "Avg command latency by command",
           "description": "rate(sum)/rate(count) by command — proxy for average latency per command type. Real p95 needs management.metrics.distribution.percentiles-histogram.mongodb.driver.commands=true.",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 72 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 80 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -664,7 +695,7 @@
           "type": "timeseries",
           "title": "Command rate — top 10 by collection",
           "description": "topk(10, rate by collection) — which collections API traffic hits hardest; cross-reference with the Top URIs panel above.",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 80 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 88 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -681,7 +712,7 @@
           "type": "timeseries",
           "title": "Slowest commands — max latency",
           "description": "max over 5m of mongodb_driver_commands_seconds_max by (command, collection). Spike hunter — surfaces single slow queries the avg smooths away.",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 80 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 88 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
