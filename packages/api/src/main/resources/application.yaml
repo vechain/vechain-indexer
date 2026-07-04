@@ -60,6 +60,10 @@ management:
       export:
         enabled: ${PROMETHEUS_METRICS_ENABLED:false}
 
+metrics:
+  project-ids:
+    whitelist: ${ALLOWED_PROJECT_IDS:stargate,block-explorer,veworld-mobile,veworld-extension,veworld,b3tr-governor,evearn,bitgo}
+
 spring.data:
   mongodb:
     auto-index-creation: false
