@@ -65,5 +65,5 @@ variable "adot_image_tag" {
 variable "memory_limit_mib" {
   description = "Hard memory limit (MiB) for the sidecar container."
   type        = number
-  default     = 128
+  default     = 256
 }
