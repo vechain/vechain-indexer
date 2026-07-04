@@ -152,6 +152,50 @@ class IndexerHealthMetricsTest {
     }
 
     @Test
+    fun `setIndexerSyncStatus preserves the one-hot invariant under concurrent writes for the same indexer`() {
+        // Regression: the scheduled reporter and the ContextClosedEvent shutdown path run on
+        // different threads and both call setIndexerSyncStatus for the same indexer. Without
+        // per-key serialisation, interleaved put/clear/set can strand two gauges at 1.
+        val indexerName = "concurrent-writer"
+        val barrier = java.util.concurrent.CyclicBarrier(2)
+        val executor = java.util.concurrent.Executors.newFixedThreadPool(2)
+        val iterations = 200
+
+        try {
+            repeat(iterations) {
+                metrics.setIndexerSyncStatus(indexerName, Status.READY_TO_SYNC)
+                val t1 =
+                    executor.submit {
+                        barrier.await()
+                        metrics.setIndexerSyncStatus(indexerName, Status.SYNCING)
+                    }
+                val t2 =
+                    executor.submit {
+                        barrier.await()
+                        metrics.setIndexerSyncStatus(indexerName, Status.SHUT_DOWN)
+                    }
+                t1.get()
+                t2.get()
+
+                val ones =
+                    Status.entries.count { status ->
+                        registry
+                            .find("indexer_sync_status")
+                            .tag("indexer_name", indexerName)
+                            .tag("status", status.name)
+                            .gauge()
+                            ?.value() == 1.0
+                    }
+                assertThat(ones)
+                    .describedAs("after concurrent writes, exactly one gauge must be at 1")
+                    .isEqualTo(1)
+            }
+        } finally {
+            executor.shutdownNow()
+        }
+    }
+
+    @Test
     fun `setIndexerSyncStatus does not emit status_readable tag`() {
         metrics.setIndexerSyncStatus("test-indexer", Status.FAST_SYNCING)
 

@@ -37,17 +37,19 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
     }
 
     // Emit a stable one-hot gauge set so dashboards can select the current status by tag.
-    // Clear only the previously-active gauge before raising the target to 1: preserves the
-    // one-hot invariant (a scrape never observes two 1s) with the shortest possible window
-    // where no gauge is 1, and skips six no-op writes per steady-state report cycle.
+    // Serialise clear-then-set per indexer via compute() so the @Scheduled reporter and the
+    // ContextClosedEvent shutdown path (different threads) can't interleave and strand two
+    // gauges at 1.
     fun setIndexerSyncStatus(indexerName: String, syncStatus: Status) {
-        val previous = currentSyncStatus.put(indexerName, syncStatus)
-        when {
-            previous == null ->
-                Status.entries.forEach { getOrCreateSyncStatusGauge(indexerName, it) }
-            previous != syncStatus -> getOrCreateSyncStatusGauge(indexerName, previous).set(0.0)
+        currentSyncStatus.compute(indexerName) { _, previous ->
+            when {
+                previous == null ->
+                    Status.entries.forEach { getOrCreateSyncStatusGauge(indexerName, it) }
+                previous != syncStatus -> getOrCreateSyncStatusGauge(indexerName, previous).set(0.0)
+            }
+            getOrCreateSyncStatusGauge(indexerName, syncStatus).set(1.0)
+            syncStatus
         }
-        getOrCreateSyncStatusGauge(indexerName, syncStatus).set(1.0)
     }
 
     fun setIndexerCurrentBlock(indexerName: String, blockNumber: Long) {
