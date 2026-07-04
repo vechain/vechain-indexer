@@ -2,6 +2,15 @@ name: Destroy Dead Environment
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "How to tear down the dead environment. `pause` preserves Atlas clusters (and their backups) by pausing them; `destroy` removes everything."
+        required: true
+        type: choice
+        options:
+          - pause
+          - destroy
+        default: pause
 
 # Prevent parallel deploy/destroy of the node cluster infrastructure in the same workspace
 concurrency: 1
@@ -25,9 +34,57 @@ jobs:
     secrets:
       AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
 
+  pause-atlas:
+    name: Pause Dead Prod Atlas Clusters
+    if: inputs.mode == 'pause'
+    needs: [identify-live-color]
+    runs-on: ubuntu-latest
+    environment: prod
+    env:
+      dead_color: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}
+    steps:
+      - name: Check mainnet and testnet on same colour
+        run: |
+          if [ "${{ needs.identify-live-color.outputs.mainnet_dead_color }}" != "${{ needs.identify-live-color.outputs.testnet_dead_color }}" ]; then
+            echo "Mainnet and Testnet colours are not the same, aborting."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Install Atlas CLI
+        env:
+          ATLAS_CLI_VERSION: "1.56.0"
+        run: |
+          set -euo pipefail
+          case "$(uname -m)" in
+            x86_64) arch="x86_64" ;;
+            aarch64) arch="arm64" ;;
+            *) echo "Unsupported arch: $(uname -m)" >&2; exit 1 ;;
+          esac
+          tarball="mongodb-atlas-cli_${ATLAS_CLI_VERSION}_linux_${arch}.tar.gz"
+          url="https://github.com/mongodb/mongodb-atlas-cli/releases/download/atlascli/v${ATLAS_CLI_VERSION}/${tarball}"
+          curl --fail --silent --show-error --location "${url}" -o "/tmp/${tarball}"
+          tar -xzf "/tmp/${tarball}" -C /tmp
+          sudo install -m 0755 "/tmp/mongodb-atlas-cli_${ATLAS_CLI_VERSION}_linux_${arch}/bin/atlas" /usr/local/bin/atlas
+          atlas --version
+
+      - name: Pause dead-prod Atlas clusters
+        env:
+          ACTION: pause
+          MONGODB_ATLAS_PUBLIC_API_KEY: ${{ secrets.MONGO_PUBLIC_KEY }}
+          MONGODB_ATLAS_PRIVATE_API_KEY: ${{ secrets.MONGO_PRIVATE_KEY }}
+          MONGODB_ATLAS_ORG_ID: ${{ secrets.MONGO_ORG_ID }}
+          MONGODB_ATLAS_PROJECT_ID: ${{ secrets.MONGO_PROJECT_ID }}
+          MAIN_CLUSTER: ${{ env.dead_color }}-Mainnet
+          TEST_CLUSTER: ${{ env.dead_color }}-Testnet
+        run: bash .github/workflows/scripts/set_dead_prod_atlas_state.sh
+
   destroy-lingering-resources:
     name: Destroy Lingering Resources
-    needs: [identify-live-color]
+    needs: [identify-live-color, pause-atlas]
+    if: always() && (needs.pause-atlas.result == 'success' || needs.pause-atlas.result == 'skipped')
     runs-on: ubuntu-latest
     env:
       dead_color: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}
@@ -102,8 +159,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - name: Show dead color
-        run: echo "destroying dead environment - ${{ env.dead_color }}"
+      - name: Show dead color and mode
+        env:
+          DEAD_COLOR: ${{ env.dead_color }}
+          MODE: ${{ inputs.mode }}
+        run: echo "destroying dead environment - $DEAD_COLOR (mode=$MODE)"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
@@ -141,6 +201,19 @@ jobs:
           echo "Removing S3 lifecycle configurations from Terraform state..."
           terraform state rm 'module.ecs-lb-service-api["main"].aws_s3_bucket_lifecycle_configuration.lb_logs' || true
           terraform state rm 'module.ecs-lb-service-api["test"].aws_s3_bucket_lifecycle_configuration.lb_logs' || true
+
+      - name: Remove Atlas resources from Terraform state (pause mode)
+        if: inputs.mode == 'pause'
+        run: |
+          for resource in \
+            'mongodbatlas_advanced_cluster.main_net[0]' \
+            'mongodbatlas_advanced_cluster.test_net[0]' \
+            'mongodbatlas_database_user.api_db_user[0]' \
+            'mongodbatlas_database_user.indexer_db_user[0]' \
+            'mongodbatlas_cloud_backup_schedule.main_net[0]' \
+            'mongodbatlas_cloud_backup_schedule.test_net[0]'; do
+            terraform state rm "$resource" || true
+          done
 
       - name: Show resources to be destroyed
         run: terraform state list
