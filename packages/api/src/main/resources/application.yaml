@@ -60,6 +60,10 @@ management:
       export:
         enabled: ${PROMETHEUS_METRICS_ENABLED:false}
 
+metrics:
+  project-ids:
+    whitelist: ${KNOWN_PROJECT_IDS:}
+
 spring.data:
   mongodb:
     auto-index-creation: false
