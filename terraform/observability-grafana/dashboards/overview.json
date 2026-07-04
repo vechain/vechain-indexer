@@ -109,13 +109,13 @@
       "id": 20,
       "type": "bargauge",
       "title": "Sync gap — blocks behind Thor best",
-      "description": "max(thor_best) − max(indexer_current) per indexer, clamped to ≥ 0. Bars sorted by gap desc, indexer name asc as tiebreaker; > 100 orange, > 500 red.",
+      "description": "max(thor_best) − max(indexer_current) per indexer, clamped to ≥ 0 and forced to 0 when the indexer reports FULLY_SYNCED (raw block-number diff can drift 1–3 blocks from sampling timing even when caught up). Bars sorted by gap desc, indexer name asc as tiebreaker; > 100 orange, > 500 red.",
       "gridPos": { "h": 8, "w": 16, "x": 8, "y": 1 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
           "refId": "A",
-          "expr": "clamp_min(max by (deployment, network) (thor_best_block_number{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}) - on(deployment, network) group_right() max by (deployment, network, indexer_name) (indexer_current_block{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\", service=\"indexer\"}), 0)",
+          "expr": "clamp_min((max by (deployment, network) (thor_best_block_number{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}) - on(deployment, network) group_right() max by (deployment, network, indexer_name) (indexer_current_block{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\", service=\"indexer\"})) * on(deployment, network, indexer_name) group_left() (1 - max by (deployment, network, indexer_name) (indexer_sync_status{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\", status=\"FULLY_SYNCED\", service=\"indexer\"})), 0)",
           "legendFormat": "{{indexer_name}} · {{deployment}}/{{network}}",
           "instant": true
         }
