@@ -94,7 +94,7 @@
       "id": 1,
       "type": "logs",
       "title": "Logs — $network · $service · $level",
-      "description": "Single view over every ECS service log group. The parsed `message` field is placed first in `fields` so Grafana's Logs panel picks it as the log body; `level` and `logger_name` (parsed from the LogstashEncoder JSON) surface as labels, and `stack_trace` is available on row-expand when the log carried a throwable. Deployment/network/service narrow via @log regex; level via the parsed field; filter regex runs against message and stack_trace.",
+      "description": "Single view over every ECS service log group. The parsed `message` field appears before other string fields in `fields` so Grafana's Logs panel picks it as the log body (it uses the first non-timestamp string field); `level` and `logger_name` (parsed from the LogstashEncoder JSON) surface as labels, and `stack_trace` is available on row-expand when the log carried a throwable. Deployment/network/service narrow via @log regex; level via the parsed field; filter regex runs against message and stack_trace.",
       "gridPos": { "h": 30, "w": 24, "x": 0, "y": 0 },
       "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
       "options": {
