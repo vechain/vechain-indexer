@@ -160,7 +160,10 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Show dead color and mode
-        run: echo "destroying dead environment - ${{ env.dead_color }} (mode=${{ inputs.mode }})"
+        env:
+          DEAD_COLOR: ${{ env.dead_color }}
+          MODE: ${{ inputs.mode }}
+        run: echo "destroying dead environment - $DEAD_COLOR (mode=$MODE)"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0

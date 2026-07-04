@@ -11,12 +11,23 @@ clusters=("${main_cluster}" "${test_cluster}")
 
 cluster_state() {
   local name="${1:?cluster name required}"
-  local describe_json
-  describe_json="$(atlas clusters describe "${name}" --projectId "${project_id}" --output json 2>/dev/null || true)"
-  if [[ -z "${describe_json}" ]]; then
-    printf 'MISSING\n'
-    return 0
+  local stderr_file describe_json exit_code=0
+  stderr_file="$(mktemp)"
+
+  describe_json="$(atlas clusters describe "${name}" --projectId "${project_id}" --output json 2>"${stderr_file}")" || exit_code=$?
+
+  if [[ "${exit_code}" -ne 0 ]]; then
+    if grep -qiE '(cluster_not_found|not[_ ]found|does not exist)' "${stderr_file}"; then
+      rm -f "${stderr_file}"
+      printf 'MISSING\n'
+      return 0
+    fi
+    echo "atlas clusters describe ${name} failed (exit ${exit_code}):" >&2
+    cat "${stderr_file}" >&2
+    rm -f "${stderr_file}"
+    return "${exit_code}"
   fi
+  rm -f "${stderr_file}"
 
   local paused state_name
   paused="$(printf '%s\n' "${describe_json}" | jq -r '.paused // false')"
