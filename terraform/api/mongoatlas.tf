@@ -36,7 +36,6 @@ resource "mongodbatlas_advanced_cluster" "main_net" {
     ignore_changes = [
       replication_specs[0].region_configs[0].electable_specs.disk_size_gb,
       replication_specs[0].region_configs[0].electable_specs.instance_size,
-      paused,
     ]
   }
 }
@@ -75,7 +74,6 @@ resource "mongodbatlas_advanced_cluster" "test_net" {
     ignore_changes = [
       replication_specs[0].region_configs[0].electable_specs.disk_size_gb,
       replication_specs[0].region_configs[0].electable_specs.instance_size,
-      paused,
     ]
   }
 }
@@ -93,7 +91,7 @@ resource "mongodbatlas_cloud_backup_schedule" "main_net" {
   reference_minute_of_hour = 0
   restore_window_days      = 1
 
-  auto_export_enabled                      = true
+  auto_export_enabled                  = true
   use_org_and_group_names_in_export_prefix = true
 
   policy_item_daily {
@@ -129,7 +127,7 @@ resource "mongodbatlas_cloud_backup_schedule" "test_net" {
   reference_minute_of_hour = 0
   restore_window_days      = 1
 
-  auto_export_enabled                      = true
+  auto_export_enabled                  = true
   use_org_and_group_names_in_export_prefix = true
 
   policy_item_daily {
