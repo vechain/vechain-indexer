@@ -109,7 +109,7 @@
       "id": 20,
       "type": "bargauge",
       "title": "Sync gap — blocks behind Thor best",
-      "description": "max(thor_best) − max(indexer_current) per indexer, clamped to ≥ 0. Bars sorted descending; > 100 orange, > 500 red.",
+      "description": "max(thor_best) − max(indexer_current) per indexer, clamped to ≥ 0. Bars sorted by gap desc, indexer name asc as tiebreaker; > 100 orange, > 500 red.",
       "gridPos": { "h": 8, "w": 16, "x": 8, "y": 1 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
@@ -118,6 +118,30 @@
           "expr": "clamp_min(max by (deployment, network) (thor_best_block_number{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}) - on(deployment, network) group_right() max by (deployment, network, indexer_name) (indexer_current_block{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\", service=\"indexer\"}), 0)",
           "legendFormat": "{{indexer_name}} · {{deployment}}/{{network}}",
           "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "reducers": ["lastNotNull"],
+            "mode": "seriesToRows",
+            "includeTimeField": false
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [{ "field": "Field", "desc": false }]
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [{ "field": "Last *", "desc": true }]
+          }
         }
       ],
       "fieldConfig": {
@@ -132,17 +156,16 @@
               { "color": "red", "value": 500 }
             ]
           },
-          "color": { "mode": "thresholds" }
+          "color": { "mode": "thresholds" },
+          "displayName": "${__data.fields.Field}"
         }
       },
       "options": {
         "orientation": "horizontal",
         "displayMode": "gradient",
         "showUnfilled": true,
-        "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" },
-        "valueMode": "color",
-        "sortBy": "Value",
-        "sortDirection": "desc"
+        "reduceOptions": { "values": true, "calcs": [], "fields": "" },
+        "valueMode": "color"
       }
     },
     {
