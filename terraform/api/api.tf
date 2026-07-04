@@ -373,7 +373,7 @@ module "ecs-lb-service-api" {
   ####### enable autoscailing #######
   enable_ecs_cpu_based_autoscaling    = true
   enable_ecs_memory_based_autoscaling = true
-  min_capacity                        = 1
+  min_capacity                        = each.value.api.min_capacity
   max_capacity                        = each.value.api.max_capacity
   target_cpu_value                    = 70
   target_memory_value                 = 70
