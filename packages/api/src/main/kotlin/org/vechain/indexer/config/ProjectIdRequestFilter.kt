@@ -17,7 +17,8 @@ class ProjectIdRequestFilter(
 ) : OncePerRequestFilter() {
 
     private val log = LoggerFactory.getLogger(javaClass)
-    private val whitelist: Set<String> = properties.whitelist.map { it.lowercase() }.toSet()
+    private val whitelist: Set<String> =
+        properties.whitelist.map { it.trim().lowercase() }.filter { it.isNotEmpty() }.toSet()
     private val counters = ConcurrentHashMap<String, Counter>()
 
     override fun shouldNotFilter(request: HttpServletRequest): Boolean =

@@ -6,11 +6,6 @@ variable "app_name" {
   default = ""
 }
 
-variable "known_project_ids" {
-  type    = string
-  default = ""
-}
-
 resource "aws_service_discovery_private_dns_namespace" "ns" {
   name = "${local.env.environment}.${var.project}"
   vpc  = data.terraform_remote_state.vpc.outputs.vpc_id
@@ -379,7 +374,7 @@ module "ecs-lb-service-api" {
     },
     {
       name  = "KNOWN_PROJECT_IDS"
-      value = var.known_project_ids
+      value = try(data.aws_secretsmanager_secret_version.known_project_ids[0].secret_string, "")
     }
   ]
   log_metric_filters = []
@@ -1140,6 +1135,40 @@ data "aws_secretsmanager_secret_version" "waf_rate_limit_bypass_token" {
   count      = startswith(local.env.environment, "prod") ? 1 : 0
   secret_id  = local.waf_bypass_secret_name
   depends_on = [null_resource.ensure_waf_bypass_secret]
+}
+
+################################################################################
+# Known Project IDs
+# Comma-separated whitelist of X-Project-Id header values recognised by the API,
+# kept out of the repo so the caller list isn't public. Shared across blue/green.
+################################################################################
+
+locals {
+  known_project_ids_secret_name = "/prod/${var.project}/known-project-ids"
+}
+
+resource "null_resource" "ensure_known_project_ids_secret" {
+  count = startswith(local.env.environment, "prod") ? 1 : 0
+
+  triggers = {
+    secret_name = local.known_project_ids_secret_name
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      aws secretsmanager describe-secret --secret-id "${local.known_project_ids_secret_name}" --region ${local.env.region} 2>/dev/null || \
+      aws secretsmanager create-secret \
+        --name "${local.known_project_ids_secret_name}" \
+        --secret-string "" \
+        --region ${local.env.region}
+    EOT
+  }
+}
+
+data "aws_secretsmanager_secret_version" "known_project_ids" {
+  count      = startswith(local.env.environment, "prod") ? 1 : 0
+  secret_id  = local.known_project_ids_secret_name
+  depends_on = [null_resource.ensure_known_project_ids_secret]
 }
 
 ################################################################################

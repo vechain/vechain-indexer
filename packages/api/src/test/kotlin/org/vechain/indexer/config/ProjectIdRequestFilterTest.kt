@@ -62,6 +62,21 @@ internal class ProjectIdRequestFilterTest {
         expectThat(count("veworld")).isEqualTo(3.0)
     }
 
+    @Test
+    fun `trims whitespace and drops empty entries in the whitelist`() {
+        val registry = SimpleMeterRegistry()
+        val filter =
+            ProjectIdRequestFilter(
+                registry,
+                ProjectIdsProperties(whitelist = listOf(" stargate", "veworld ", "", "  ")),
+            )
+        val req = MockHttpServletRequest("GET", "/accounts/0xabc")
+        req.addHeader("X-Project-Id", "veworld")
+        filter.doFilter(req, MockHttpServletResponse(), MockFilterChain())
+        expectThat(registry.counter("api_requests_by_project_total", "project", "veworld").count())
+            .isEqualTo(1.0)
+    }
+
     private fun invoke(header: String?, uri: String = "/accounts/0xabc") {
         val req = MockHttpServletRequest("GET", uri)
         if (header != null) req.addHeader("X-Project-Id", header)

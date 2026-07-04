@@ -72,7 +72,6 @@ jobs:
     environment: ${{ inputs.environment || needs.identify-live-color.outputs.mainnet_live_color }}
     env:
       ENVIRONMENT: ${{ inputs.environment || needs.identify-live-color.outputs.mainnet_live_color }}
-      TF_VAR_known_project_ids: ${{ vars.KNOWN_PROJECT_IDS }}
 
     defaults:
       run:
