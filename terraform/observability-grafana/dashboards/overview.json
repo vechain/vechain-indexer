@@ -70,13 +70,13 @@
       "id": 10,
       "type": "piechart",
       "title": "Indexers by sync status",
-      "description": "count by (status) of indexers where indexer_sync_status == 1.",
+      "description": "count by (status) of indexers where indexer_sync_status == 1. Deduped across task_id — deployment/network are kept in the inner max so a shared indexer_name across networks isn't collapsed — and constrained to the last 45s so post-deploy stale series drop out before the default 5m lookback.",
       "gridPos": { "h": 8, "w": 8, "x": 0, "y": 1 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
           "refId": "A",
-          "expr": "count by (status) (indexer_sync_status{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\", service=\"indexer\"} == 1)",
+          "expr": "count by (status) (max by (indexer_name, status, deployment, network) (last_over_time(indexer_sync_status{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\", service=\"indexer\"}[45s])) == 1)",
           "legendFormat": "{{status}}",
           "instant": true,
           "range": false

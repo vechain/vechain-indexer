@@ -13,6 +13,7 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
 
     private val componentHealthGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
     private val syncStatusGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
+    private val currentSyncStatus = ConcurrentHashMap<String, Status>()
     private val currentBlockGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
     private val bestBlockGauge = AtomicReference(0.0)
     private var bestBlockGaugeInitialized = false
@@ -36,10 +37,18 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
     }
 
     // Emit a stable one-hot gauge set so dashboards can select the current status by tag.
+    // Serialise clear-then-set per indexer via compute() so the @Scheduled reporter and the
+    // ContextClosedEvent shutdown path (different threads) can't interleave and strand two
+    // gauges at 1.
     fun setIndexerSyncStatus(indexerName: String, syncStatus: Status) {
-        Status.entries.forEach { status ->
-            val value = if (status == syncStatus) 1.0 else 0.0
-            getOrCreateSyncStatusGauge(indexerName, status).set(value)
+        currentSyncStatus.compute(indexerName) { _, previous ->
+            when {
+                previous == null ->
+                    Status.entries.forEach { getOrCreateSyncStatusGauge(indexerName, it) }
+                previous != syncStatus -> getOrCreateSyncStatusGauge(indexerName, previous).set(0.0)
+            }
+            getOrCreateSyncStatusGauge(indexerName, syncStatus).set(1.0)
+            syncStatus
         }
     }
 
