@@ -28,6 +28,21 @@
         "current": { "text": "All", "value": ["$__all"], "selected": true }
       },
       {
+        "name": "network",
+        "label": "Network",
+        "description": "VeChain network(s) to include. Multi-select; defaults to mainnet.",
+        "type": "custom",
+        "query": "main,test",
+        "multi": true,
+        "includeAll": true,
+        "allValue": "main|test",
+        "options": [
+          { "text": "main", "value": "main", "selected": true },
+          { "text": "test", "value": "test", "selected": false }
+        ],
+        "current": { "text": "main", "value": ["main"], "selected": true }
+      },
+      {
         "name": "service",
         "label": "Service",
         "description": "ECS service(s) to include. Multi-select; \"All\" covers every service.",
@@ -78,8 +93,8 @@
     {
       "id": 1,
       "type": "logs",
-      "title": "Logs — $service · $level",
-      "description": "Single view over every ECS service log group. @message is placed first in `fields` so Grafana's Logs panel picks it as the log body; `level` and `logger_name` (parsed from the LogstashEncoder JSON) surface as labels. Deployment/service narrow via @log regex; level via the parsed field; filter regex runs against message and stack_trace.",
+      "title": "Logs — $network · $service · $level",
+      "description": "Single view over every ECS service log group. The parsed `message` field is placed first in `fields` so Grafana's Logs panel picks it as the log body; `level` and `logger_name` (parsed from the LogstashEncoder JSON) surface as labels, and `stack_trace` is available on row-expand when the log carried a throwable. Deployment/network/service narrow via @log regex; level via the parsed field; filter regex runs against message and stack_trace.",
       "gridPos": { "h": 30, "w": 24, "x": 0, "y": 0 },
       "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
       "options": {
@@ -105,7 +120,7 @@
             "veworld-prod-green-main-indexer",
             "veworld-prod-green-test-indexer"
           ],
-          "expression": "fields @timestamp, @message, level, logger_name\n| filter @log like /prod-(${deployment:pipe})-/\n| filter @log like /-(${service:pipe})$/\n| filter level like /${level:pipe}/\n| filter (message like /(?i)${filter:raw}/) or (stack_trace like /(?i)${filter:raw}/)\n| sort @timestamp desc, @ptr desc\n| limit 500"
+          "expression": "fields @timestamp, message, level, logger_name, stack_trace\n| filter @log like /prod-(${deployment:pipe})-/\n| filter @log like /-(${network:pipe})-/\n| filter @log like /-(${service:pipe})$/\n| filter level like /${level:pipe}/\n| filter (message like /(?i)${filter:raw}/) or (stack_trace like /(?i)${filter:raw}/)\n| sort @timestamp desc, @ptr desc\n| limit 500"
         }
       ]
     }

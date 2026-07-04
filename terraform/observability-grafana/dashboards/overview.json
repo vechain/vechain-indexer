@@ -34,7 +34,8 @@
         "sort": 1,
         "multi": true,
         "includeAll": true,
-        "allValue": ".*"
+        "allValue": ".*",
+        "current": { "text": "main", "value": ["main"], "selected": true }
       },
       {
         "name": "indexer_name",
