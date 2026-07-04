@@ -6,6 +6,11 @@ variable "app_name" {
   default = ""
 }
 
+variable "known_project_ids" {
+  type    = string
+  default = ""
+}
+
 resource "aws_service_discovery_private_dns_namespace" "ns" {
   name = "${local.env.environment}.${var.project}"
   vpc  = data.terraform_remote_state.vpc.outputs.vpc_id
@@ -371,6 +376,10 @@ module "ecs-lb-service-api" {
     {
       name  = "PROMETHEUS_METRICS_ENABLED"
       value = tostring(local.observability_sidecar_enabled)
+    },
+    {
+      name  = "KNOWN_PROJECT_IDS"
+      value = var.known_project_ids
     }
   ]
   log_metric_filters = []
