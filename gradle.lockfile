@@ -1,6 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
+# To regenerate this file, run: ./gradlew :dependencies --write-locks
 ch.qos.logback:logback-classic:1.5.34=aggregateCodeCoverageReportResults,compileClasspath,implementationDependenciesMetadata,productionRuntimeClasspath,runtimeClasspath,testCompileClasspath,testImplementationDependenciesMetadata,testRuntimeClasspath
 ch.qos.logback:logback-core:1.5.34=aggregateCodeCoverageReportResults,compileClasspath,implementationDependenciesMetadata,productionRuntimeClasspath,runtimeClasspath,testCompileClasspath,testImplementationDependenciesMetadata,testRuntimeClasspath
 com.christophsturm:filepeek:0.1.3=testRuntimeClasspath
@@ -183,10 +184,10 @@ org.hamcrest:hamcrest-core:3.0=testRuntimeClasspath
 org.hamcrest:hamcrest:3.0=testCompileClasspath,testImplementationDependenciesMetadata,testRuntimeClasspath
 org.hdrhistogram:HdrHistogram:2.2.2=aggregateCodeCoverageReportResults,productionRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
 org.hibernate.validator:hibernate-validator:8.0.3.Final=testRuntimeClasspath
-org.jacoco:org.jacoco.agent:0.8.13=jacocoAgent,jacocoAnt
-org.jacoco:org.jacoco.ant:0.8.13=jacocoAnt
-org.jacoco:org.jacoco.core:0.8.13=jacocoAnt
-org.jacoco:org.jacoco.report:0.8.13=jacocoAnt
+org.jacoco:org.jacoco.agent:0.8.14=jacocoAgent,jacocoAnt
+org.jacoco:org.jacoco.ant:0.8.14=jacocoAnt
+org.jacoco:org.jacoco.core:0.8.14=jacocoAnt
+org.jacoco:org.jacoco.report:0.8.14=jacocoAnt
 org.java-websocket:Java-WebSocket:1.5.3=aggregateCodeCoverageReportResults,compileClasspath,implementationDependenciesMetadata,productionRuntimeClasspath,runtimeClasspath,testCompileClasspath,testImplementationDependenciesMetadata,testRuntimeClasspath
 org.jboss.logging:jboss-logging:3.6.3.Final=testRuntimeClasspath
 org.jetbrains.intellij.deps:trove4j:1.0.20200330=kotlinBuildToolsApiClasspath,kotlinCompilerClasspath,kotlinKlibCommonizerClasspath
@@ -218,7 +219,7 @@ org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.6.3=testRuntimeClasspath
 org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.3=testRuntimeClasspath
 org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.6.3=testRuntimeClasspath
 org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3=testRuntimeClasspath
-org.jetbrains:annotations:13.0=apiDependenciesMetadata,compileClasspath,implementationDependenciesMetadata,kotlinBuildToolsApiClasspath,kotlinCompilerClasspath,kotlinCompilerPluginClasspathMain,kotlinCompilerPluginClasspathTest,kotlinKlibCommonizerClasspath,testCompileClasspath,testImplementationDependenciesMetadata
+org.jetbrains:annotations:13.0=compileClasspath,kotlinBuildToolsApiClasspath,kotlinCompilerClasspath,kotlinCompilerPluginClasspathMain,kotlinCompilerPluginClasspathTest,kotlinKlibCommonizerClasspath,testCompileClasspath
 org.jetbrains:annotations:23.0.0=aggregateCodeCoverageReportResults,productionRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
 org.jspecify:jspecify:1.0.0=testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-api:5.11.4=testCompileClasspath,testImplementationDependenciesMetadata,testRuntimeClasspath
@@ -241,13 +242,13 @@ org.opentest4j:opentest4j:1.3.0=testCompileClasspath,testImplementationDependenc
 org.ow2.asm:asm-analysis:5.0.3=testRuntimeClasspath
 org.ow2.asm:asm-analysis:9.2=aggregateCodeCoverageReportResults,compileClasspath,implementationDependenciesMetadata,productionRuntimeClasspath,runtimeClasspath,testCompileClasspath,testImplementationDependenciesMetadata
 org.ow2.asm:asm-commons:9.10=aggregateCodeCoverageReportResults,compileClasspath,implementationDependenciesMetadata,productionRuntimeClasspath,runtimeClasspath,testCompileClasspath,testImplementationDependenciesMetadata,testRuntimeClasspath
-org.ow2.asm:asm-commons:9.8=jacocoAnt
+org.ow2.asm:asm-commons:9.9=jacocoAnt
 org.ow2.asm:asm-tree:9.10=aggregateCodeCoverageReportResults,compileClasspath,implementationDependenciesMetadata,productionRuntimeClasspath,runtimeClasspath,testCompileClasspath,testImplementationDependenciesMetadata,testRuntimeClasspath
-org.ow2.asm:asm-tree:9.8=jacocoAnt
+org.ow2.asm:asm-tree:9.9=jacocoAnt
 org.ow2.asm:asm-util:5.0.3=testRuntimeClasspath
 org.ow2.asm:asm-util:9.2=aggregateCodeCoverageReportResults,compileClasspath,implementationDependenciesMetadata,productionRuntimeClasspath,runtimeClasspath,testCompileClasspath,testImplementationDependenciesMetadata
 org.ow2.asm:asm:9.10=aggregateCodeCoverageReportResults,compileClasspath,implementationDependenciesMetadata,productionRuntimeClasspath,runtimeClasspath,testCompileClasspath,testImplementationDependenciesMetadata,testRuntimeClasspath
-org.ow2.asm:asm:9.8=jacocoAnt
+org.ow2.asm:asm:9.9=jacocoAnt
 org.reactivestreams:reactive-streams:1.0.4=aggregateCodeCoverageReportResults,compileClasspath,implementationDependenciesMetadata,productionRuntimeClasspath,runtimeClasspath,testCompileClasspath,testImplementationDependenciesMetadata,testRuntimeClasspath
 org.skyscreamer:jsonassert:1.5.3=testCompileClasspath,testImplementationDependenciesMetadata,testRuntimeClasspath
 org.slf4j:jul-to-slf4j:2.0.18=aggregateCodeCoverageReportResults,compileClasspath,implementationDependenciesMetadata,productionRuntimeClasspath,runtimeClasspath,testCompileClasspath,testImplementationDependenciesMetadata,testRuntimeClasspath
