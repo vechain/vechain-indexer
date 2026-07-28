@@ -6,8 +6,6 @@ action="${ACTION:?ACTION is required}"
 dead_color="${DEAD_COLOR:?DEAD_COLOR is required}"
 ecs_cluster="${ECS_CLUSTER:?ECS_CLUSTER is required}"
 
-# Directory holding the Terraform env files (prod-blue.yml / prod-green.yml).
-# These are the source of truth for each API service's autoscaling floor.
 env_file_dir="${ENV_FILE_DIR:-terraform/api/environments}"
 
 services=(
@@ -31,10 +29,7 @@ is_autoscaled() {
   return 1
 }
 
-# Resolve the configured autoscaling minimum for an API service from the
-# Terraform env file, so starting the dead color restores its real floor
-# (e.g. mainnet API = 2) instead of a hardcoded 1. Falls back to 1 if the
-# value cannot be resolved.
+# Reads min_capacity from the env yaml; falls back to 1 if unresolved.
 configured_min_capacity() {
   local service="${1:?service is required}"
   local net
@@ -296,9 +291,7 @@ update_services() {
 
   for service in "${services[@]}"; do
     local service_desired="${desired_count}"
-    # When starting, bring autoscaled API services up to their configured floor
-    # so we never start the dead color below its autoscaling minimum. Stopping
-    # (desired_count=0) applies uniformly to every service.
+    # On start, autoscaled services use their configured floor rather than the shared count.
     if [[ "${desired_count}" != "0" ]] && is_autoscaled "${service}"; then
       service_desired="$(configured_min_capacity "${service}")"
     fi

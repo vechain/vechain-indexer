@@ -380,11 +380,7 @@ module "ecs-lb-service-api" {
   log_metric_filters = []
 
   ####### enable autoscailing #######
-  # Pin the service's desired count to the autoscaling floor so every apply
-  # re-asserts min_capacity. Application Auto Scaling is still free to scale up
-  # to max_capacity between applies; the next apply simply resets the baseline to
-  # the floor (never below it), guaranteeing the service can't drift under
-  # min_capacity the way it did when desired_count was hardcoded to 1 upstream.
+  # Pin to the autoscaling floor so applies never leave desired_count below min_capacity.
   desired_count                       = each.value.api.min_capacity
   enable_ecs_cpu_based_autoscaling    = true
   enable_ecs_memory_based_autoscaling = true
