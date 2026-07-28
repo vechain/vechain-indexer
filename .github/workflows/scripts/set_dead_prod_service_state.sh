@@ -29,7 +29,7 @@ is_autoscaled() {
   return 1
 }
 
-# Reads min_capacity from the env yaml; falls back to 1 if unresolved.
+# Reads min_capacity from the env yaml. Exits if the floor cannot be resolved.
 configured_min_capacity() {
   local service="${1:?service is required}"
   local net
@@ -37,22 +37,28 @@ configured_min_capacity() {
     *-main-api-service) net="main" ;;
     *-test-api-service) net="test" ;;
     *)
-      echo "1"
-      return 0
+      echo "configured_min_capacity: no floor configured for '${service}'" >&2
+      exit 1
       ;;
   esac
 
   local env_file="${env_file_dir}/${dead_color}.yml"
-  local min=""
-  if [[ -f "${env_file}" ]] && command -v yq >/dev/null 2>&1; then
-    min="$(yq eval ".enabled_nets.${net}.api.min_capacity" "${env_file}" 2>/dev/null || true)"
+  if [[ ! -f "${env_file}" ]]; then
+    echo "configured_min_capacity: env file '${env_file}' not found" >&2
+    exit 1
+  fi
+  if ! command -v yq >/dev/null 2>&1; then
+    echo "configured_min_capacity: yq is required" >&2
+    exit 1
   fi
 
+  local min
+  min="$(yq eval ".enabled_nets.${net}.api.min_capacity" "${env_file}")"
   if [[ -z "${min}" || "${min}" == "null" ]]; then
-    echo "1"
-  else
-    echo "${min}"
+    echo "configured_min_capacity: .enabled_nets.${net}.api.min_capacity is unset in ${env_file}" >&2
+    exit 1
   fi
+  echo "${min}"
 }
 
 cluster_exists() {
