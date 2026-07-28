@@ -3,7 +3,7 @@
     "address": [
       "0xc5213085d3fc19b6a883a92a5703f7733360f063",
       "0xeb0c565f69557481c6c7fa347cae273128a0996e",
-      "0xbfe2122a82c0aea091514f57c7713c3118101eda"
+      "0xd5210f9ad1161166c599baaf0c649e9bf4db57f4"
     ],
     "contractAddress": [
       "0x0000000000000000000000000000456e65726779",
@@ -52,7 +52,40 @@
     ],
     "validator": [
       "0xdb71c5c9a5cd407313139978aa8990347d141918"
-    ]
+    ],
+    "origin": [
+      "0xeb0c565f69557481c6c7fa347cae273128a0996e"
+    ],
+    "owner": [
+      "0xd5210f9ad1161166c599baaf0c649e9bf4db57f4"
+    ],
+    "wallet": [
+      "0xc5213085d3fc19b6a883a92a5703f7733360f063"
+    ],
+    "delegator": [
+      "0xc5213085d3fc19b6a883a92a5703f7733360f063"
+    ],
+    "txId": [
+      "0x84e688e126bdd5b232d6c768a1e358d5816d203c7483bbe6816b17aba4c865b3"
+    ],
+    "txHash": [
+      "0x84e688e126bdd5b232d6c768a1e358d5816d203c7483bbe6816b17aba4c865b3"
+    ],
+    "roundId": [30],
+    "challengeId": [91],
+    "navigatorId": [
+      "0x9d3be3deec483340e8da1d6d56171b618a7aaf10"
+    ],
+    "navigator": [
+      "0x9d3be3deec483340e8da1d6d56171b618a7aaf10"
+    ],
+    "citizen": [
+      "0x5990245f8258be01c364ae48d93002340c9b443b"
+    ],
+    "endorser": [
+      "0xa73ceca38f932f56b753bd9f355678e9d3f7678d"
+    ],
+    "category": ["EMISSION"]
   },
   "path_overrides": {
     "/api/v1/contracts/{address}": {
@@ -76,6 +109,15 @@
     },
     "/api/v1/transfers/latest": {
       "ignore_paths": ["root.data", "root.pagination.cursor"]
+    },
+    "/api/v1/transactions": {
+      "direction": ["ASC"]
+    },
+    "/api/v1/transactions/contract": {
+      "direction": ["ASC"]
+    },
+    "/api/v1/transactions/delegated": {
+      "direction": ["ASC"]
     },
     "/api/v1/accounts/overview/{address}": {
       "ignore_paths": [
@@ -151,20 +193,16 @@
       "account": ["0x925741a20b9ca2e3beab1204ea92d693132ba6ac"]
     },
     "/api/v1/stargate/total-vtho-claimed/historic/{range}": {
-      "range": ["1-day"],
-      "ignore_paths": ["root[*].timestamp"]
+      "range": ["1-week"]
     },
     "/api/v1/stargate/total-vet-staked/historic/{range}": {
-      "range": ["1-day"],
-      "ignore_paths": ["root[*].timestamp"]
+      "range": ["1-week"]
     },
     "/api/v1/stargate/total-vtho-generated/historic/{range}": {
-      "range": ["1-day"],
-      "ignore_paths": ["root[*].timestamp"]
+      "range": ["1-week"]
     },
     "/api/v1/stargate/nft-holders/historic/{range}": {
-      "range": ["1-day"],
-      "ignore_paths": ["root[*].timestamp"]
+      "range": ["1-week"]
     },
     "/api/v1/stargate/total-vtho-generated": {
       "blockNumber": [
@@ -200,10 +238,38 @@
       "account": ["0xc5213085d3fc19b6a883a92a5703f7733360f063"]
     },
     "/api/v2/history/token/{tokenId}": {
+      "tokenId": ["100"],
       "eventName": ["STARGATE_CLAIM_REWARDS"]
+    },
+    "/api/v1/stargate/tokens/{tokenId}/history": {
+      "tokenId": ["100"],
+      "eventName": ["STARGATE_CLAIM_REWARDS"]
+    },
+    "/api/v1/stargate/token-rewards/{tokenId}": {
+      "tokenId": ["100"]
     },
     "/api/v1/nfts": {
       "address": ["0xd5210f9ad1161166c599baaf0c649e9bf4db57f4"]
+    },
+    "/api/v1/nfts/contracts": {
+      "owner": ["0xd5210f9ad1161166c599baaf0c649e9bf4db57f4"]
+    },
+    "/api/v1/nfts/history": {
+      "contractAddress": ["0xe6d94d45f10130eb50f150741d653be8646cab3d"],
+      "tokenId": ["6547"],
+      "eventName": ["TRANSFER_NFT"]
+    },
+    "/api/v1/b3tr/actions/leaderboards/apps": {
+      "roundId": [30]
+    },
+    "/api/v1/b3tr/actions/leaderboards/apps/{appId}": {
+      "roundId": [30]
+    },
+    "/api/v1/b3tr/actions/leaderboards/users": {
+      "roundId": [30]
+    },
+    "/api/v1/b3tr/treasury/transfers": {
+      "category": ["EMISSION", "GRANT"]
     },
     "/api/v1/transfers": {
       "eventType": ["VET"]
