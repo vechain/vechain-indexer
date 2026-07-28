@@ -199,5 +199,74 @@ class CompareJsonToleranceTest(unittest.TestCase):
         self.assertEqual(len(diffs), 1)
 
 
+class WildcardIgnorePathTest(unittest.TestCase):
+    def _compare(self, a, b, ignored):
+        diffs = []
+        MODULE.compare_json(a, b, diffs=diffs, ignored_paths=set(ignored))
+        return diffs
+
+    def test_exact_prefix_still_works_without_wildcard(self):
+        # Regression: the legacy no-wildcard behaviour must be preserved.
+        diffs = self._compare(
+            {"data": {"x": 1, "y": 2}},
+            {"data": {"x": 9, "y": 8}},
+            ignored=["root.data.x"],
+        )
+        paths = {p for p, _ in diffs}
+        self.assertNotIn("root.data.x", paths)
+        self.assertIn("root.data.y", paths)
+
+    def test_wildcard_matches_any_list_index(self):
+        # root.data[*].balance must silence balance drift on every element.
+        baseline = {"data": [{"balance": "1"}, {"balance": "2"}, {"balance": "3"}]}
+        candidate = {"data": [{"balance": "10"}, {"balance": "20"}, {"balance": "30"}]}
+        diffs = self._compare(baseline, candidate, ignored=["root.data[*].balance"])
+        self.assertEqual(diffs, [])
+
+    def test_wildcard_still_reports_other_fields(self):
+        baseline = {"data": [{"balance": "1", "rank": 1}]}
+        candidate = {"data": [{"balance": "10", "rank": 2}]}
+        diffs = self._compare(baseline, candidate, ignored=["root.data[*].balance"])
+        paths = {p for p, _ in diffs}
+        self.assertNotIn("root.data[0].balance", paths)
+        self.assertIn("root.data[0].rank", paths)
+
+    def test_wildcard_matches_root_level_list(self):
+        # root[*].timestamp — the historic-bucket endpoint pattern.
+        baseline = [{"timestamp": 100, "value": 5}, {"timestamp": 200, "value": 6}]
+        candidate = [{"timestamp": 110, "value": 5}, {"timestamp": 210, "value": 6}]
+        diffs = self._compare(baseline, candidate, ignored=["root[*].timestamp"])
+        self.assertEqual(diffs, [])
+
+    def test_wildcard_ignores_present_only_in_one_side(self):
+        # If a wildcarded leaf appears on only one side, it must still be silenced.
+        baseline = {"data": [{"balance": "1", "extra": "x"}]}
+        candidate = {"data": [{"balance": "10"}]}
+        diffs = self._compare(baseline, candidate, ignored=["root.data[*].balance", "root.data[*].extra"])
+        self.assertEqual(diffs, [])
+
+    def test_matches_ignored_helper(self):
+        # Direct helper coverage.
+        self.assertTrue(MODULE.path_matches_ignored("root.data[0].balance", "root.data[*].balance"))
+        self.assertTrue(MODULE.path_matches_ignored("root.data[42].balance", "root.data[*].balance"))
+        self.assertFalse(MODULE.path_matches_ignored("root.data[0].rank", "root.data[*].balance"))
+        # descendants of a wildcarded path also match
+        self.assertTrue(MODULE.path_matches_ignored("root.data[0].nested.field", "root.data[*].nested"))
+        # multiple wildcards
+        self.assertTrue(
+            MODULE.path_matches_ignored(
+                "root.data[0].events[3].topic", "root.data[*].events[*].topic"
+            )
+        )
+
+    def test_wildcard_regex_is_cached_across_calls(self):
+        # The compiled regex must be reused rather than rebuilt per invocation,
+        # since compare_json calls this helper for every JSON node.
+        pattern = "root.data[*].balance"
+        first = MODULE._compile_wildcard_pattern(pattern)
+        second = MODULE._compile_wildcard_pattern(pattern)
+        self.assertIs(first, second)
+
+
 if __name__ == "__main__":
     unittest.main()

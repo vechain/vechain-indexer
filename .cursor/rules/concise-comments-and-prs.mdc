@@ -1,0 +1,18 @@
+---
+description: Keep code comments and PR descriptions concise; don't over-explain
+alwaysApply: true
+---
+
+# Concise comments and PR descriptions
+
+Prefer self-explanatory code over commentary. Only comment non-obvious intent,
+trade-offs, or constraints that the code itself can't convey.
+
+- Don't add comments that restate what the code does.
+- Don't narrate the change or the decisions that led to it in comments.
+- If the code is self-explanatory, leave it uncommented.
+
+PR descriptions are for human reviewers — a short, high-level sense of the change.
+
+- Don't enumerate every code change or walk through the diff.
+- A brief summary plus the "why" is enough.

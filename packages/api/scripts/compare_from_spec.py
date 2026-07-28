@@ -103,6 +103,10 @@ class TestCase:
     headers: Dict[str, str] = field(default_factory=dict)
     body: Optional[Any] = None
     label: str = ""
+    # Endpoint-specific JSON paths to ignore during comparison. Supports the
+    # same [*] wildcard as global --ignore-path. Populated from
+    # ``path_overrides[path].ignore_paths`` in test_values.json.
+    extra_ignore_paths: List[str] = field(default_factory=list)
 
     @property
     def resolved_path(self) -> str:
@@ -538,16 +542,37 @@ def generate_body(
 # Test-case generation
 # ---------------------------------------------------------------------------
 
+def _normalize_ignore_paths(raw: Any) -> List[str]:
+    """Coerce a ``ignore_paths`` config value into a list of pattern strings.
+
+    JSON authors may reasonably write a single string instead of a list. Without
+    this guard, ``list("root.data")`` would silently split it into characters
+    and produce nonsense ignore patterns. Non-strings and empty entries are
+    dropped so a stray null or 0 can't slip through.
+    """
+    if raw is None:
+        return []
+    if isinstance(raw, str):
+        return [raw]
+    if not isinstance(raw, list):
+        return []
+    return [item for item in raw if isinstance(item, str) and item]
+
+
 def generate_test_cases(
     op: Operation, test_values: Dict, spec: Dict
 ) -> List[TestCase]:
     path_overrides = test_values.get("path_overrides", {}).get(op.path, {})
+    extra_ignore_paths = _normalize_ignore_paths(path_overrides.get("ignore_paths"))
 
     path_params: Dict[str, Any] = {}
     query_params: Dict[str, Any] = {}
     headers: Dict[str, str] = {}
 
     for param in op.parameters:
+        if param.name == "ignore_paths":
+            # Reserved meta-key; not an OpenAPI parameter.
+            continue
         if param.name in path_overrides:
             v = path_overrides[param.name]
             if v is None:
@@ -595,6 +620,7 @@ def generate_test_cases(
         headers=headers,
         body=body,
         label=label,
+        extra_ignore_paths=list(extra_ignore_paths),
     )
     cases = [base_case]
 
@@ -602,6 +628,8 @@ def generate_test_cases(
     multi: Dict[str, Tuple[str, List[Any]]] = {}
     for param in op.parameters:
         name = param.name
+        if name == "ignore_paths":
+            continue
         if name in path_overrides:
             source = path_overrides[name]
         else:
@@ -618,6 +646,7 @@ def generate_test_cases(
                 headers=dict(headers),
                 body=body,
                 label=f"{label} [{pname}={val}]",
+                extra_ignore_paths=list(extra_ignore_paths),
             )
             if loc == "path":
                 extra.path_params[pname] = val
@@ -738,10 +767,11 @@ def execute_test_case(
                 pair_diffs.append(
                     ("status", f"status code mismatch: {status_codes.get(n1)} != {status_codes.get(n2)}")
                 )
+            combined_ignored = set(ignored_paths) | set(tc.extra_ignore_paths)
             effective_ignored_paths = ignored_paths_for_matching_error_statuses(
                 status_codes.get(n1, 0),
                 status_codes.get(n2, 0),
-                ignored_paths,
+                combined_ignored,
             )
             pair_diffs.extend(
                 compare_json(

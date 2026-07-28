@@ -303,5 +303,184 @@ class ToleratedDriftTest(unittest.TestCase):
         self.assertFalse(result.effective_pass)
 
 
+class PerEndpointIgnorePathsTest(unittest.TestCase):
+    """path_overrides[endpoint].ignore_paths flows from JSON into compare_json."""
+
+    def test_generate_test_cases_carries_ignore_paths(self) -> None:
+        op = MODULE.Operation(path="/api/v1/transactions/count", method="GET")
+        test_values = {
+            "path_overrides": {
+                "/api/v1/transactions/count": {
+                    "ignore_paths": ["root.totalTransactions", "root.totalClauses"],
+                }
+            }
+        }
+        cases = MODULE.generate_test_cases(op, test_values, {})
+        self.assertEqual(len(cases), 1)
+        self.assertEqual(
+            cases[0].extra_ignore_paths,
+            ["root.totalTransactions", "root.totalClauses"],
+        )
+
+    def test_ignore_paths_key_is_not_treated_as_a_parameter(self) -> None:
+        # Reserved meta-key: even if an operation had a param named ignore_paths,
+        # generate_test_cases must not send it as a query/path/header value.
+        param = MODULE.Parameter(name="ignore_paths", location="query")
+        op = MODULE.Operation(
+            path="/api/v1/whatever", method="GET", parameters=[param]
+        )
+        test_values = {
+            "path_overrides": {
+                "/api/v1/whatever": {"ignore_paths": ["root.foo"]}
+            }
+        }
+        cases = MODULE.generate_test_cases(op, test_values, {})
+        self.assertEqual(cases[0].query_params, {})
+        self.assertEqual(cases[0].extra_ignore_paths, ["root.foo"])
+
+    def test_execute_test_case_applies_extra_ignore_paths(self) -> None:
+        # End-to-end: known-drift fields on transactions/count must be silenced
+        # by the per-endpoint override.
+        op = MODULE.Operation(path="/api/v1/transactions/count", method="GET")
+        tc = MODULE.TestCase(
+            operation=op,
+            label="GET /api/v1/transactions/count",
+            extra_ignore_paths=[
+                "root.totalTransactions",
+                "root.totalClauses",
+            ],
+        )
+        baseline = {
+            "totalTransactions": "157134427",
+            "totalClauses": "587555970",
+            "totalRevertedTransactions": "20281900",
+            "totalRevertedClauses": "21849300",
+        }
+        candidate = {
+            "totalTransactions": "157134443",
+            "totalClauses": "587555986",
+            "totalRevertedTransactions": "20281900",
+            "totalRevertedClauses": "21849300",
+        }
+        with patch.object(MODULE, "fetch_json", side_effect=[baseline, candidate]):
+            result = MODULE.execute_test_case(
+                tc,
+                endpoints=[
+                    ("baseline", "https://baseline.example.com"),
+                    ("candidate", "https://candidate.example.com"),
+                ],
+                common_headers={},
+                timeout=5,
+                insecure=False,
+                cafile=None,
+                ignored_paths=set(),
+                unordered_lists=False,
+            )
+        self.assertTrue(result.all_match)
+        self.assertFalse(result.has_mismatch)
+
+    def test_wildcard_ignore_path_silences_richlist_balance_drift(self) -> None:
+        op = MODULE.Operation(path="/api/v1/b3tr/richlist", method="GET")
+        tc = MODULE.TestCase(
+            operation=op,
+            label="GET /api/v1/b3tr/richlist",
+            extra_ignore_paths=["root.data[*].balance"],
+        )
+        baseline = {
+            "data": [
+                {"address": "0xaaa", "balance": "100", "rank": 1},
+                {"address": "0xbbb", "balance": "50", "rank": 2},
+            ]
+        }
+        candidate = {
+            "data": [
+                {"address": "0xaaa", "balance": "101", "rank": 1},
+                {"address": "0xbbb", "balance": "51", "rank": 2},
+            ]
+        }
+        with patch.object(MODULE, "fetch_json", side_effect=[baseline, candidate]):
+            result = MODULE.execute_test_case(
+                tc,
+                endpoints=[
+                    ("baseline", "https://baseline.example.com"),
+                    ("candidate", "https://candidate.example.com"),
+                ],
+                common_headers={},
+                timeout=5,
+                insecure=False,
+                cafile=None,
+                ignored_paths=set(),
+                unordered_lists=False,
+            )
+        self.assertTrue(result.all_match)
+
+    def test_ignore_paths_as_string_is_wrapped_not_split(self) -> None:
+        # If a JSON author writes ignore_paths as a single string instead of a
+        # list, we must wrap it — not fall into list("root.data") which would
+        # yield a list of characters and silently produce nonsense patterns.
+        op = MODULE.Operation(path="/api/v1/transactions/count", method="GET")
+        test_values = {
+            "path_overrides": {
+                "/api/v1/transactions/count": {"ignore_paths": "root.totalTransactions"}
+            }
+        }
+        cases = MODULE.generate_test_cases(op, test_values, {})
+        self.assertEqual(cases[0].extra_ignore_paths, ["root.totalTransactions"])
+
+    def test_ignore_paths_drops_non_string_and_empty_entries(self) -> None:
+        op = MODULE.Operation(path="/api/v1/transactions/count", method="GET")
+        test_values = {
+            "path_overrides": {
+                "/api/v1/transactions/count": {
+                    "ignore_paths": ["root.a", None, "", 0, "root.b"]
+                }
+            }
+        }
+        cases = MODULE.generate_test_cases(op, test_values, {})
+        self.assertEqual(cases[0].extra_ignore_paths, ["root.a", "root.b"])
+
+    def test_ignore_paths_none_yields_empty_list(self) -> None:
+        op = MODULE.Operation(path="/api/v1/transactions/count", method="GET")
+        test_values = {
+            "path_overrides": {
+                "/api/v1/transactions/count": {"ignore_paths": None}
+            }
+        }
+        cases = MODULE.generate_test_cases(op, test_values, {})
+        self.assertEqual(cases[0].extra_ignore_paths, [])
+
+    def test_non_ignored_field_still_fails_alongside_wildcard_ignore(self) -> None:
+        # If wildcard silences balance but ranks disagree, we must still fail.
+        op = MODULE.Operation(path="/api/v1/b3tr/richlist", method="GET")
+        tc = MODULE.TestCase(
+            operation=op,
+            label="GET /api/v1/b3tr/richlist",
+            extra_ignore_paths=["root.data[*].balance"],
+        )
+        baseline = {"data": [{"balance": "100", "rank": 1}]}
+        candidate = {"data": [{"balance": "101", "rank": 2}]}
+        with patch.object(MODULE, "fetch_json", side_effect=[baseline, candidate]):
+            result = MODULE.execute_test_case(
+                tc,
+                endpoints=[
+                    ("baseline", "https://baseline.example.com"),
+                    ("candidate", "https://candidate.example.com"),
+                ],
+                common_headers={},
+                timeout=5,
+                insecure=False,
+                cafile=None,
+                ignored_paths=set(),
+                unordered_lists=False,
+            )
+        self.assertTrue(result.has_mismatch)
+        rank_diffs = [
+            (p, m)
+            for p, m in result.diffs["baseline vs candidate"]
+            if p == "root.data[0].rank"
+        ]
+        self.assertEqual(len(rank_diffs), 1)
+
+
 if __name__ == "__main__":
     unittest.main()
