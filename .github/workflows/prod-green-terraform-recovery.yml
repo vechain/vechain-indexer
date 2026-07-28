@@ -114,6 +114,49 @@ jobs:
           import_if_missing "aws_secretsmanager_secret.api_db_user_secret" "${API_SECRET_ARN}"
           import_if_missing "aws_secretsmanager_secret.indexer_db_user_secret" "${INDEXER_SECRET_ARN}"
 
+      - name: Detect missing API load balancers
+        id: albs
+        shell: bash
+        run: |
+          # A failed "Destroy Dead Environment" run can delete the API ALBs (and
+          # their listeners / log buckets) out-of-band while leaving the rest of
+          # the stack in state. When that happens the ALBs must be recreated before
+          # the full plan runs, because the WAF module associates a regional web ACL
+          # with each ALB via for_each over the ALB ARNs — and those ARNs are unknown
+          # at plan time while the ALBs are being (re)created, which fails the whole
+          # plan with "Invalid for_each argument".
+          missing=false
+          for name in prod-green-main-api-veworld-alb prod-green-test-api-veworld-alb; do
+            if aws elbv2 describe-load-balancers --names "$name" >/dev/null 2>&1; then
+              echo "ALB present: $name"
+            else
+              echo "ALB missing: $name"
+              missing=true
+            fi
+          done
+          echo "missing=${missing}" >> "$GITHUB_OUTPUT"
+
+      - name: Recreate load balancers first (targeted apply)
+        # Recreate only the load-balanced service (ALBs, listeners, listener rules,
+        # log buckets) with the WAF module pruned from the graph, so the ALB ARNs
+        # become known before the full plan evaluates the WAF association. This is a
+        # no-op once the ALBs already exist. Requires apply_after_plan so a plan-only
+        # dry run never mutates infrastructure.
+        if: steps.albs.outputs.missing == 'true' && inputs.apply_after_plan
+        shell: bash
+        run: |
+          terraform apply -no-color -auto-approve \
+            -target='module.ecs-lb-service-api["main"]' \
+            -target='module.ecs-lb-service-api["test"]'
+
+      - name: Warn if load balancers still missing on a plan-only run
+        if: steps.albs.outputs.missing == 'true' && !inputs.apply_after_plan
+        shell: bash
+        run: |
+          echo "::warning::API load balancers are missing. The full plan below will"
+          echo "::warning::fail on the WAF for_each until the ALBs are recreated."
+          echo "::warning::Re-run this workflow with apply_after_plan=true to recover them."
+
       - name: Terraform Plan
         shell: bash
         run: |
