@@ -12,11 +12,10 @@ gradle/docker.gradle.properties
 !system.properties
 !third_party/
 
-# Source packages (needed by both Dockerfiles)
-!packages/
-
-# Exclude test-only package
-packages/e2e/
+# Source packages shipped in the image (e2e is intentionally omitted)
+!packages/api/
+!packages/indexer/
+!packages/common/
 
 # Exclude test source dirs
 packages/**/src/test/
