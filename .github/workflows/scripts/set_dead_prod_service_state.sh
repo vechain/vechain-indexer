@@ -6,6 +6,10 @@ action="${ACTION:?ACTION is required}"
 dead_color="${DEAD_COLOR:?DEAD_COLOR is required}"
 ecs_cluster="${ECS_CLUSTER:?ECS_CLUSTER is required}"
 
+# Directory holding the Terraform env files (prod-blue.yml / prod-green.yml).
+# These are the source of truth for each API service's autoscaling floor.
+env_file_dir="${ENV_FILE_DIR:-terraform/api/environments}"
+
 services=(
   "${dead_color}-veworld-main-api-service"
   "${dead_color}-veworld-main-indexer-service"
@@ -17,6 +21,44 @@ autoscaled_services=(
   "${dead_color}-veworld-main-api-service"
   "${dead_color}-veworld-test-api-service"
 )
+
+is_autoscaled() {
+  local candidate="${1:?service is required}"
+  local service
+  for service in "${autoscaled_services[@]}"; do
+    [[ "${service}" == "${candidate}" ]] && return 0
+  done
+  return 1
+}
+
+# Resolve the configured autoscaling minimum for an API service from the
+# Terraform env file, so starting the dead color restores its real floor
+# (e.g. mainnet API = 2) instead of a hardcoded 1. Falls back to 1 if the
+# value cannot be resolved.
+configured_min_capacity() {
+  local service="${1:?service is required}"
+  local net
+  case "${service}" in
+    *-main-api-service) net="main" ;;
+    *-test-api-service) net="test" ;;
+    *)
+      echo "1"
+      return 0
+      ;;
+  esac
+
+  local env_file="${env_file_dir}/${dead_color}.yml"
+  local min=""
+  if [[ -f "${env_file}" ]] && command -v yq >/dev/null 2>&1; then
+    min="$(yq eval ".enabled_nets.${net}.api.min_capacity" "${env_file}" 2>/dev/null || true)"
+  fi
+
+  if [[ -z "${min}" || "${min}" == "null" ]]; then
+    echo "1"
+  else
+    echo "${min}"
+  fi
+}
 
 cluster_exists() {
   local cluster_arn
@@ -125,9 +167,11 @@ configure_autoscaling_for_stop() {
 
 configure_autoscaling_for_start() {
   local service
+  local min
 
   for service in "${autoscaled_services[@]}"; do
-    ensure_autoscaling_state "${service}" 1 false
+    min="$(configured_min_capacity "${service}")"
+    ensure_autoscaling_state "${service}" "${min}" false
   done
 }
 
@@ -251,11 +295,19 @@ update_services() {
   fi
 
   for service in "${services[@]}"; do
-    echo "Setting ${service} desired count to ${desired_count}"
+    local service_desired="${desired_count}"
+    # When starting, bring autoscaled API services up to their configured floor
+    # so we never start the dead color below its autoscaling minimum. Stopping
+    # (desired_count=0) applies uniformly to every service.
+    if [[ "${desired_count}" != "0" ]] && is_autoscaled "${service}"; then
+      service_desired="$(configured_min_capacity "${service}")"
+    fi
+
+    echo "Setting ${service} desired count to ${service_desired}"
     aws ecs update-service \
       --cluster "${ecs_cluster}" \
       --service "${service}" \
-      --desired-count "${desired_count}" \
+      --desired-count "${service_desired}" \
       >/dev/null
   done
 
