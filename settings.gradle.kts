@@ -19,4 +19,4 @@ rootProject.name = "vechain-indexer"
 include("packages:api")
 include("packages:indexer")
 include("packages:common")
-include("packages:e2e")
+if (file("packages/e2e").isDirectory) include("packages:e2e")
