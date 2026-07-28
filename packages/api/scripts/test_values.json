@@ -63,6 +63,87 @@
         "0xDf94739bd169C84fe6478D8420Bb807F1f47b135"
       ]
     },
+    "/api/v1/transactions/count": {
+      "ignore_paths": [
+        "root.totalTransactions",
+        "root.totalClauses",
+        "root.totalRevertedTransactions",
+        "root.totalRevertedClauses"
+      ]
+    },
+    "/api/v1/transactions/latest": {
+      "ignore_paths": ["root.data", "root.pagination.cursor"]
+    },
+    "/api/v1/transfers/latest": {
+      "ignore_paths": ["root.data", "root.pagination.cursor"]
+    },
+    "/api/v1/accounts/overview/{address}": {
+      "ignore_paths": [
+        "root.lastSeen",
+        "root.transactionsSent",
+        "root.clausesSent",
+        "root.vthoBurned",
+        "root.gasUsed",
+        "root.vetSent",
+        "root.vetReceived",
+        "root.vetBalance",
+        "root.vthoBlockRewards",
+        "root.vthoPassiveGeneration",
+        "root.vthoClaimedStargate",
+        "root.vthoEarnedTotal"
+      ]
+    },
+    "/api/v1/b3tr/richlist": {
+      "ignore_paths": [
+        "root.data[*].balance",
+        "root.data[*].rank",
+        "root.pagination.cursor"
+      ]
+    },
+    "/api/v1/b3tr/richlist/{address}": {
+      "ignore_paths": [
+        "root.balance",
+        "root.rank",
+        "root.totalHolders",
+        "root.topPercentage"
+      ]
+    },
+    "/api/v1/validators/{validatorId}": {
+      "ignore_paths": [
+        "root.blockProbability",
+        "root.blocksPerEpoch",
+        "root.blocksPerYear",
+        "root.completedPeriods",
+        "root.offlineBlocks",
+        "root.percentageOffline",
+        "root.online",
+        "root.tvlBasedYield",
+        "root.validatorYield",
+        "root.avgDelegatorYield",
+        "root.nextCycleAvgDelegatorYield",
+        "root.nextCycleTvlBasedYield",
+        "root.nextCycleValidatorYield",
+        "root.nftYields",
+        "root.nftYieldsIfDelegatedNextCycle"
+      ]
+    },
+    "/api/v2/validators/{validatorId}": {
+      "ignore_paths": [
+        "root.blockProbability",
+        "root.blocksPerYear",
+        "root.blocksPerEpoch",
+        "root.completedPeriods",
+        "root.scheduledSlots",
+        "root.proposedBlocks",
+        "root.missedSlots",
+        "root.missedSlotsPercentage",
+        "root.lastProposedBlockNumber",
+        "root.lastMissedBlockNumber",
+        "root.validatorLockedWeight",
+        "root.totalNextPeriodWeight",
+        "root.totalWeight"
+      ]
+    },
     "/api/v1/stargate/total-vtho-claimed/{account}": {
       "account": ["0x925741a20b9ca2e3beab1204ea92d693132ba6ac"]
     },
@@ -70,10 +151,20 @@
       "account": ["0x925741a20b9ca2e3beab1204ea92d693132ba6ac"]
     },
     "/api/v1/stargate/total-vtho-claimed/historic/{range}": {
-      "range": ["1-day"]
+      "range": ["1-day"],
+      "ignore_paths": ["root[*].timestamp"]
     },
     "/api/v1/stargate/total-vet-staked/historic/{range}": {
-      "range": ["1-day"]
+      "range": ["1-day"],
+      "ignore_paths": ["root[*].timestamp"]
+    },
+    "/api/v1/stargate/total-vtho-generated/historic/{range}": {
+      "range": ["1-day"],
+      "ignore_paths": ["root[*].timestamp"]
+    },
+    "/api/v1/stargate/nft-holders/historic/{range}": {
+      "range": ["1-day"],
+      "ignore_paths": ["root[*].timestamp"]
     },
     "/api/v1/stargate/total-vtho-generated": {
       "blockNumber": [
@@ -83,9 +174,6 @@
         24138348,
         24147348
       ]
-    },
-    "/api/v1/stargate/total-vtho-generated/historic/{range}": {
-      "range": ["1-day"]
     },
     "/api/v1/stargate/total-vet-staked": {
       "blockNumber": [
@@ -104,9 +192,6 @@
         24138348,
         24147348
       ]
-    },
-    "/api/v1/stargate/nft-holders/historic/{range}": {
-      "range": ["1-day"]
     },
     "/api/v1/history/{account}": {
       "account": ["0xc5213085d3fc19b6a883a92a5703f7733360f063"]
@@ -131,9 +216,45 @@
     },
     "/api/v1/validators": {
       "status": ["ACTIVE", "QUEUED", "EXITING", "EXITED"],
-      "endorser": null
+      "endorser": null,
+      "ignore_paths": [
+        "root.data[*].blockProbability",
+        "root.data[*].blocksPerEpoch",
+        "root.data[*].blocksPerYear",
+        "root.data[*].completedPeriods",
+        "root.data[*].offlineBlocks",
+        "root.data[*].percentageOffline",
+        "root.data[*].online",
+        "root.data[*].tvlBasedYield",
+        "root.data[*].validatorYield",
+        "root.data[*].avgDelegatorYield",
+        "root.data[*].nextCycleAvgDelegatorYield",
+        "root.data[*].nextCycleTvlBasedYield",
+        "root.data[*].nextCycleValidatorYield",
+        "root.data[*].nftYields",
+        "root.data[*].nftYieldsIfDelegatedNextCycle"
+      ]
     },
-    "/api/v1/validators/{validatorId}": {},
+    "/api/v2/validators": {
+      "ignore_paths": [
+        "root.data[*].blockProbability",
+        "root.data[*].blocksPerYear",
+        "root.data[*].blocksPerEpoch",
+        "root.data[*].completedPeriods",
+        "root.data[*].scheduledSlots",
+        "root.data[*].proposedBlocks",
+        "root.data[*].missedSlots",
+        "root.data[*].missedSlotsPercentage",
+        "root.data[*].lastProposedBlockNumber",
+        "root.data[*].lastMissedBlockNumber",
+        "root.data[*].validatorLockedWeight",
+        "root.data[*].totalNextPeriodWeight",
+        "root.data[*].totalWeight"
+      ]
+    },
+    "/api/v1/validators/blocks/missed": {
+      "ignore_paths": ["root.startBlock", "root.endBlock", "root.validators"]
+    },
     "/api/v1/validators/blocks/historic/{validator}": {}
   }
 }

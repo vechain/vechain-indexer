@@ -30,6 +30,7 @@ Exit codes:
 
 import argparse
 import json
+import re
 import sys
 import urllib.request
 import urllib.error
@@ -126,6 +127,24 @@ def normalize_ignored_paths(paths: List[str]) -> Set[Path]:
     return out
 
 
+def path_matches_ignored(path: Path, pattern: Path) -> bool:
+    """Return True if *path* is *pattern* itself or a descendant of it.
+
+    ``[*]`` in the pattern is a wildcard for any list index — e.g.
+    ``root.data[*].balance`` matches ``root.data[0].balance`` and
+    ``root.data[17].balance`` alike. Without wildcards the check reduces to
+    the previous exact/prefix behaviour.
+    """
+    if "[*]" not in pattern:
+        return (
+            path == pattern
+            or path.startswith(pattern + ".")
+            or path.startswith(pattern + "[")
+        )
+    regex = re.escape(pattern).replace(re.escape("[*]"), r"\[\d+\]")
+    return re.match(f"^{regex}(\\.|\\[|$)", path) is not None
+
+
 def ignored_paths_for_matching_error_statuses(
     status1: int,
     status2: int,
@@ -201,7 +220,7 @@ def compare_json(
     if ignored_paths is None:
         ignored_paths = set()
 
-    if path in ignored_paths:
+    if any(path_matches_ignored(path, ip) for ip in ignored_paths):
         return diffs
 
     if type(a) != type(b):
@@ -218,15 +237,15 @@ def compare_json(
         only_b = sorted(bkeys - akeys)
         for k in only_a:
             p = path_child(path, k)
-            if p not in ignored_paths and path not in ignored_paths:
+            if not any(path_matches_ignored(p, ip) for ip in ignored_paths):
                 diffs.append((p, "present only in first JSON"))
         for k in only_b:
             p = path_child(path, k)
-            if p not in ignored_paths and path not in ignored_paths:
+            if not any(path_matches_ignored(p, ip) for ip in ignored_paths):
                 diffs.append((p, "present only in second JSON"))
         for k in sorted(akeys & bkeys):
             p = path_child(path, k)
-            if any(p == ip or p.startswith(ip + ".") or p.startswith(ip + "[") for ip in ignored_paths):
+            if any(path_matches_ignored(p, ip) for ip in ignored_paths):
                 continue
             compare_json(
                 a[k],
@@ -267,7 +286,7 @@ def compare_json(
         n = min(len(a), len(b))
         for i in range(n):
             p = path_child(path, i)
-            if any(p == ip or p.startswith(ip + ".") or p.startswith(ip + "[") for ip in ignored_paths):
+            if any(path_matches_ignored(p, ip) for ip in ignored_paths):
                 continue
             compare_json(
                 a[i],

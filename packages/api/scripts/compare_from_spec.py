@@ -103,6 +103,10 @@ class TestCase:
     headers: Dict[str, str] = field(default_factory=dict)
     body: Optional[Any] = None
     label: str = ""
+    # Endpoint-specific JSON paths to ignore during comparison. Supports the
+    # same [*] wildcard as global --ignore-path. Populated from
+    # ``path_overrides[path].ignore_paths`` in test_values.json.
+    extra_ignore_paths: List[str] = field(default_factory=list)
 
     @property
     def resolved_path(self) -> str:
@@ -542,12 +546,16 @@ def generate_test_cases(
     op: Operation, test_values: Dict, spec: Dict
 ) -> List[TestCase]:
     path_overrides = test_values.get("path_overrides", {}).get(op.path, {})
+    extra_ignore_paths = list(path_overrides.get("ignore_paths", []) or [])
 
     path_params: Dict[str, Any] = {}
     query_params: Dict[str, Any] = {}
     headers: Dict[str, str] = {}
 
     for param in op.parameters:
+        if param.name == "ignore_paths":
+            # Reserved meta-key; not an OpenAPI parameter.
+            continue
         if param.name in path_overrides:
             v = path_overrides[param.name]
             if v is None:
@@ -595,6 +603,7 @@ def generate_test_cases(
         headers=headers,
         body=body,
         label=label,
+        extra_ignore_paths=list(extra_ignore_paths),
     )
     cases = [base_case]
 
@@ -602,6 +611,8 @@ def generate_test_cases(
     multi: Dict[str, Tuple[str, List[Any]]] = {}
     for param in op.parameters:
         name = param.name
+        if name == "ignore_paths":
+            continue
         if name in path_overrides:
             source = path_overrides[name]
         else:
@@ -618,6 +629,7 @@ def generate_test_cases(
                 headers=dict(headers),
                 body=body,
                 label=f"{label} [{pname}={val}]",
+                extra_ignore_paths=list(extra_ignore_paths),
             )
             if loc == "path":
                 extra.path_params[pname] = val
@@ -738,10 +750,11 @@ def execute_test_case(
                 pair_diffs.append(
                     ("status", f"status code mismatch: {status_codes.get(n1)} != {status_codes.get(n2)}")
                 )
+            combined_ignored = set(ignored_paths) | set(tc.extra_ignore_paths)
             effective_ignored_paths = ignored_paths_for_matching_error_statuses(
                 status_codes.get(n1, 0),
                 status_codes.get(n2, 0),
-                ignored_paths,
+                combined_ignored,
             )
             pair_diffs.extend(
                 compare_json(
