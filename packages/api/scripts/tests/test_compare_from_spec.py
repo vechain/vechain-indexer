@@ -414,6 +414,41 @@ class PerEndpointIgnorePathsTest(unittest.TestCase):
             )
         self.assertTrue(result.all_match)
 
+    def test_ignore_paths_as_string_is_wrapped_not_split(self) -> None:
+        # If a JSON author writes ignore_paths as a single string instead of a
+        # list, we must wrap it — not fall into list("root.data") which would
+        # yield a list of characters and silently produce nonsense patterns.
+        op = MODULE.Operation(path="/api/v1/transactions/count", method="GET")
+        test_values = {
+            "path_overrides": {
+                "/api/v1/transactions/count": {"ignore_paths": "root.totalTransactions"}
+            }
+        }
+        cases = MODULE.generate_test_cases(op, test_values, {})
+        self.assertEqual(cases[0].extra_ignore_paths, ["root.totalTransactions"])
+
+    def test_ignore_paths_drops_non_string_and_empty_entries(self) -> None:
+        op = MODULE.Operation(path="/api/v1/transactions/count", method="GET")
+        test_values = {
+            "path_overrides": {
+                "/api/v1/transactions/count": {
+                    "ignore_paths": ["root.a", None, "", 0, "root.b"]
+                }
+            }
+        }
+        cases = MODULE.generate_test_cases(op, test_values, {})
+        self.assertEqual(cases[0].extra_ignore_paths, ["root.a", "root.b"])
+
+    def test_ignore_paths_none_yields_empty_list(self) -> None:
+        op = MODULE.Operation(path="/api/v1/transactions/count", method="GET")
+        test_values = {
+            "path_overrides": {
+                "/api/v1/transactions/count": {"ignore_paths": None}
+            }
+        }
+        cases = MODULE.generate_test_cases(op, test_values, {})
+        self.assertEqual(cases[0].extra_ignore_paths, [])
+
     def test_non_ignored_field_still_fails_alongside_wildcard_ignore(self) -> None:
         # If wildcard silences balance but ranks disagree, we must still fail.
         op = MODULE.Operation(path="/api/v1/b3tr/richlist", method="GET")

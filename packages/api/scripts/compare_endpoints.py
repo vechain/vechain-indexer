@@ -29,6 +29,7 @@ Exit codes:
 """
 
 import argparse
+import functools
 import json
 import re
 import sys
@@ -127,6 +128,17 @@ def normalize_ignored_paths(paths: List[str]) -> Set[Path]:
     return out
 
 
+@functools.lru_cache(maxsize=None)
+def _compile_wildcard_pattern(pattern: Path) -> "re.Pattern[str]":
+    """Build the regex for a wildcard ignore pattern once and cache it.
+
+    ``path_matches_ignored`` runs in the hot path of every JSON comparison,
+    so recomputing ``re.escape``/``re.compile`` on each node adds up quickly.
+    """
+    regex = re.escape(pattern).replace(re.escape("[*]"), r"\[\d+\]")
+    return re.compile(f"^{regex}(\\.|\\[|$)")
+
+
 def path_matches_ignored(path: Path, pattern: Path) -> bool:
     """Return True if *path* is *pattern* itself or a descendant of it.
 
@@ -141,8 +153,7 @@ def path_matches_ignored(path: Path, pattern: Path) -> bool:
             or path.startswith(pattern + ".")
             or path.startswith(pattern + "[")
         )
-    regex = re.escape(pattern).replace(re.escape("[*]"), r"\[\d+\]")
-    return re.match(f"^{regex}(\\.|\\[|$)", path) is not None
+    return _compile_wildcard_pattern(pattern).match(path) is not None
 
 
 def ignored_paths_for_matching_error_statuses(

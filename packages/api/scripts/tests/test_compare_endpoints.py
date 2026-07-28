@@ -259,6 +259,14 @@ class WildcardIgnorePathTest(unittest.TestCase):
             )
         )
 
+    def test_wildcard_regex_is_cached_across_calls(self):
+        # The compiled regex must be reused rather than rebuilt per invocation,
+        # since compare_json calls this helper for every JSON node.
+        pattern = "root.data[*].balance"
+        first = MODULE._compile_wildcard_pattern(pattern)
+        second = MODULE._compile_wildcard_pattern(pattern)
+        self.assertIs(first, second)
+
 
 if __name__ == "__main__":
     unittest.main()
