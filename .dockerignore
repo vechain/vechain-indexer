@@ -22,4 +22,5 @@ packages/**/src/test/
 
 # Exclude build outputs (except pre-built JARs for Dockerfile.prebuilt)
 packages/*/build/**
-!packages/*/build/libs/**
+!packages/api/build/libs/**
+!packages/indexer/build/libs/**
