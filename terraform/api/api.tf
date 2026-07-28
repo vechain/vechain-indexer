@@ -380,6 +380,8 @@ module "ecs-lb-service-api" {
   log_metric_filters = []
 
   ####### enable autoscailing #######
+  # Pin to the autoscaling floor so applies never leave desired_count below min_capacity.
+  desired_count                       = each.value.api.min_capacity
   enable_ecs_cpu_based_autoscaling    = true
   enable_ecs_memory_based_autoscaling = true
   min_capacity                        = each.value.api.min_capacity

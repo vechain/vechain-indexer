@@ -6,6 +6,8 @@ action="${ACTION:?ACTION is required}"
 dead_color="${DEAD_COLOR:?DEAD_COLOR is required}"
 ecs_cluster="${ECS_CLUSTER:?ECS_CLUSTER is required}"
 
+env_file_dir="${ENV_FILE_DIR:-terraform/api/environments}"
+
 services=(
   "${dead_color}-veworld-main-api-service"
   "${dead_color}-veworld-main-indexer-service"
@@ -17,6 +19,47 @@ autoscaled_services=(
   "${dead_color}-veworld-main-api-service"
   "${dead_color}-veworld-test-api-service"
 )
+
+is_autoscaled() {
+  local candidate="${1:?service is required}"
+  local service
+  for service in "${autoscaled_services[@]}"; do
+    [[ "${service}" == "${candidate}" ]] && return 0
+  done
+  return 1
+}
+
+# Reads min_capacity from the env yaml. Exits if the floor cannot be resolved.
+configured_min_capacity() {
+  local service="${1:?service is required}"
+  local net
+  case "${service}" in
+    *-main-api-service) net="main" ;;
+    *-test-api-service) net="test" ;;
+    *)
+      echo "configured_min_capacity: no floor configured for '${service}'" >&2
+      exit 1
+      ;;
+  esac
+
+  local env_file="${env_file_dir}/${dead_color}.yml"
+  if [[ ! -f "${env_file}" ]]; then
+    echo "configured_min_capacity: env file '${env_file}' not found" >&2
+    exit 1
+  fi
+  if ! command -v yq >/dev/null 2>&1; then
+    echo "configured_min_capacity: yq is required" >&2
+    exit 1
+  fi
+
+  local min
+  min="$(yq eval ".enabled_nets.${net}.api.min_capacity" "${env_file}")"
+  if [[ -z "${min}" || "${min}" == "null" ]]; then
+    echo "configured_min_capacity: .enabled_nets.${net}.api.min_capacity is unset in ${env_file}" >&2
+    exit 1
+  fi
+  echo "${min}"
+}
 
 cluster_exists() {
   local cluster_arn
@@ -125,9 +168,11 @@ configure_autoscaling_for_stop() {
 
 configure_autoscaling_for_start() {
   local service
+  local min
 
   for service in "${autoscaled_services[@]}"; do
-    ensure_autoscaling_state "${service}" 1 false
+    min="$(configured_min_capacity "${service}")"
+    ensure_autoscaling_state "${service}" "${min}" false
   done
 }
 
@@ -251,11 +296,17 @@ update_services() {
   fi
 
   for service in "${services[@]}"; do
-    echo "Setting ${service} desired count to ${desired_count}"
+    local service_desired="${desired_count}"
+    # On start, autoscaled services use their configured floor rather than the shared count.
+    if [[ "${desired_count}" != "0" ]] && is_autoscaled "${service}"; then
+      service_desired="$(configured_min_capacity "${service}")"
+    fi
+
+    echo "Setting ${service} desired count to ${service_desired}"
     aws ecs update-service \
       --cluster "${ecs_cluster}" \
       --service "${service}" \
-      --desired-count "${desired_count}" \
+      --desired-count "${service_desired}" \
       >/dev/null
   done
 
