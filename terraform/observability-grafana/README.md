@@ -16,12 +16,13 @@ Terraform stack that provisions AMG data sources and (eventually) dashboards, on
 
 ### Template variables convention
 
-Dashboards share `deployment` (`blue`/`green`) and `network` (`main`/`test`), both multi-select with `All`, and filter with `deployment=~"$deployment", network=~"$network"`. `env` is not templated — the AMP workspace only holds `prod`.
+Dashboards share `deployment` (`blue`/`green`) and `network`, both multi-select with `All`, and filter with `deployment=~"$deployment", network=~"$network"`. `env` is not templated — the AMP workspace only holds `prod`.
 
 Invariants worth knowing before editing:
 
-- Both are `custom`, not `label_values`. Query-variable options vanish when the backing series briefly disappears (no testnet `indexer_current_block` mid-deploy), taking dependent panels with them.
-- `network`'s `allValue` must be `main|test`, not `.*` — the Edge mapping variables interpolate it into a regex.
+- **`network` values differ by datasource.** Metrics carry `mainnet`/`testnet` (the `network_label` map in `terraform/api/observability.tf`, emitted as an external label by the sidecar); log group names use `main`/`test`. `overview` uses the former, `logs` the latter. That is why the Logs dashboard link sets `includeVars: false` — carrying the value across would silently match nothing.
+- Both are `custom`, not `label_values`. Query-variable options vanish when the backing series briefly disappears (no testnet `indexer_current_block` mid-deploy), taking dependent panels with them. The trade is that the values are now hardcoded, so they must track the sidecar's external labels.
+- `network`'s `allValue` must be an explicit alternation (`mainnet|testnet`), not `.*` — the Edge mapping variables interpolate it into a regex.
 - Prometheus-side ad-hoc filtering goes through the `filters` variable, not per-label textboxes. Ad-hoc filters only apply to their own datasource, so they never reach the CloudWatch panels.
 
 ### Edge row (CloudFront + WAF)
