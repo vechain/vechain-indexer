@@ -32,14 +32,6 @@ One collapsed row per network, with the distribution ids and WebACL names hardco
 - Keep both rows collapsed — collapsed rows don't execute their queries, so the CloudWatch calls only happen when someone opens a row.
 - Adding a network means duplicating a row. That duplication is deliberate, and cheaper than the alternative.
 
-#### `Traffic by country` geomap
-
-`stats count(*) as requests by httpRequest.country` over the WAF log groups (`aws-waf-logs-veworld-cloudfront` / `aws-waf-logs-veworld-testnet-cloudfront`, both `us-east-1`), on a markers layer via `public/gazetteer/countries.json`.
-
-- Log scan, not a metric — billed per GB and re-run on every panel load. The collapsed row is the cost control; don't move it onto an auto-refreshing dashboard.
-- Retention caps the useful range at 7 days mainnet / 3 days testnet. Longer selections return the retained slice with no warning.
-- Counts cache hits and WAF-blocked requests, so it will never reconcile with an origin-side API metric.
-
 ## Usage
 
 Plans/applies happen through the `Plan or Apply Observability Terraform` workflow. Local use:
