@@ -71,10 +71,10 @@ jobs:
       - name: "Disable Load Balancer Deletion Protection"
         run: |
           for lb_name in "${{ env.dead_color }}-main-api-veworld-alb" "${{ env.dead_color }}-test-api-veworld-alb"; do
-            lb_arn=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(LoadBalancerName, '${lb_name}')].LoadBalancerArn" --output text) || true
+            lb_arn=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?LoadBalancerName=='${lb_name}'].LoadBalancerArn" --output text) || true
             if [ ! -z "$lb_arn" ]; then
               echo "Disabling deletion protection for ${lb_name}..."
-              aws elbv2 modify-load-balancer-attributes --load-balancer-arn $lb_arn --attributes Key=deletion_protection.enabled,Value=false || true
+              aws elbv2 modify-load-balancer-attributes --load-balancer-arn "$lb_arn" --attributes Key=deletion_protection.enabled,Value=false || true
             fi
           done
 
@@ -149,10 +149,10 @@ jobs:
         if: success()
         run: |
           for lb_name in "${{ env.dead_color }}-main-api-veworld-alb" "${{ env.dead_color }}-test-api-veworld-alb"; do
-            lb_arn=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(LoadBalancerName, '${lb_name}')].LoadBalancerArn" --output text) || true
+            lb_arn=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?LoadBalancerName=='${lb_name}'].LoadBalancerArn" --output text) || true
             if [ ! -z "$lb_arn" ]; then
               echo "Deleting leftover load balancer ${lb_name}..."
-              aws elbv2 modify-load-balancer-attributes --load-balancer-arn $lb_arn --attributes Key=deletion_protection.enabled,Value=false || true
-              aws elbv2 delete-load-balancer --load-balancer-arn $lb_arn || true
+              aws elbv2 modify-load-balancer-attributes --load-balancer-arn "$lb_arn" --attributes Key=deletion_protection.enabled,Value=false || true
+              aws elbv2 delete-load-balancer --load-balancer-arn "$lb_arn" || true
             fi
           done
