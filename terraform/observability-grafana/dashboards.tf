@@ -2,7 +2,6 @@ locals {
   dashboards = {
     overview = "${path.module}/dashboards/overview.json"
     logs     = "${path.module}/dashboards/logs.json"
-    edge     = "${path.module}/dashboards/edge.json"
   }
 }
 

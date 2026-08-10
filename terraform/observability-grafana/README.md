@@ -6,7 +6,7 @@ Terraform stack that provisions AMG data sources and (eventually) dashboards, on
 
 - **AMP data source** — Prometheus with SigV4 auth against the workspace in `terraform/observability/`. UID `amp`.
 - **CloudWatch data source** — for log-based diagnostics and any CW-native metrics we keep. UID `cloudwatch`.
-- **Dashboards** — JSON files under `dashboards/`, iterated by `dashboards.tf` via `for_each`.
+- **Dashboards** — JSON files under `dashboards/`, iterated by `dashboards.tf` via `for_each`. `overview` covers indexer sync, API, errors, ECS resources, MongoDB and the CloudFront/WAF edge row; `logs` is a single Logs Insights view over every ECS service log group.
 
 ## Adding a dashboard
 
@@ -16,12 +16,21 @@ Terraform stack that provisions AMG data sources and (eventually) dashboards, on
 
 ### Template variables convention
 
-All dashboards use the same top-level variables so panels can be reused between them:
+Dashboards share `deployment` (`blue`/`green`) and `network` (`main`/`test`), both multi-select with `All`, and filter with `deployment=~"$deployment", network=~"$network"`. `env` is not templated — the AMP workspace only holds `prod`.
 
-- `deployment` — multi-select with `All` (`blue` / `green`).
-- `network` — multi-select with `All` (`mainnet` / `testnet`).
+Invariants worth knowing before editing:
 
-Panels filter with `deployment=~"$deployment", network=~"$network"` so the same expression works whether one or many values are selected. `env` is not templated — the AMP workspace only holds `prod`, so a picker with a single option adds noise.
+- Both are `custom`, not `label_values`. Query-variable options vanish when the backing series briefly disappears (no testnet `indexer_current_block` mid-deploy), taking dependent panels with them.
+- `network`'s `allValue` must be `main|test`, not `.*` — the Edge mapping variables interpolate it into a regex.
+- Prometheus-side ad-hoc filtering goes through the `filters` variable, not per-label textboxes. Ad-hoc filters only apply to their own datasource, so they never reach the CloudWatch panels.
+
+### Edge row (CloudFront + WAF)
+
+CloudFront and WAF aren't in this repo's terraform, and their CloudWatch dimensions (`DistributionId`, `WebACL`) can't be derived from `$network` — the mainnet WebACL carries no network token. Hidden `cf_distribution` / `waf_acl` variables hold `network:resource` pairs and capture the resource via `regex: /^(?:${network:pipe}):(.*)$/`.
+
+- Leave their `allValue` unset and `current` on `$__all`. Pinning specific values means a network switch falls back to the first option, silently dropping the second distribution.
+- Edge panels are not blue/green scoped; `$deployment` has no effect on them.
+- Keep the row collapsed — collapsed rows don't execute their queries.
 
 ## Usage
 
