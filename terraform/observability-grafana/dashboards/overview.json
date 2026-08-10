@@ -329,6 +329,89 @@
                                              "calcs": ["last", "mean", "max"]
                                            }
                                }
+                  },
+                  {
+                    "id": 105,
+                    "type": "geomap",
+                    "title": "Traffic by country",
+                    "description": "Viewer country from the `httpRequest.country` field of the shared-veworld-cloudfront-waf logs (log group aws-waf-logs-veworld-cloudfront, us-east-1). WAF evaluates at the viewer-request stage, so this counts every request that reached the edge — including cache hits the origin never saw and requests the WAF went on to block. That makes it a wider count than any origin-side API metric. Bubble size and colour are both request count over the dashboard time range. Fixed to this network and unaffected by the Network or Deployment pickers. Two caveats: the log group has 7-day retention, so a range older than that silently returns only the retained slice; and this is a Logs Insights scan (billed per GB scanned, ~22 GB per full 7 days) rather than a metric, which is why it sits in a collapsed row — the query only runs when someone opens it.",
+                    "gridPos": {"h": 10, "w": 24, "x": 0, "y": 17},
+                    "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                    "targets": [
+                                 {
+                                   "refId": "A",
+                                   "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                                   "queryMode": "Logs",
+                                   "region": "us-east-1",
+                                   "logGroupNames": ["aws-waf-logs-veworld-cloudfront"],
+                                   "expression": "stats count(*) as requests by httpRequest.country\n| sort requests desc\n| limit 250"
+                                 }
+                               ],
+                    "transformations": [
+                                         {
+                                           "id": "organize",
+                                           "options": {"renameByName": {"httpRequest.country": "country"}}
+                                         }
+                                       ],
+                    "fieldConfig": {
+                                     "defaults": {
+                                                   "unit": "short",
+                                                   "min": 0,
+                                                   "color": {"mode": "continuous-blues"}
+                                                 },
+                                     "overrides": []
+                                   },
+                    "options": {
+                                 "view": {"id": "zero", "lat": 0, "lon": 0, "zoom": 1},
+                                 "controls": {
+                                               "showZoom": true,
+                                               "mouseWheelZoom": false,
+                                               "showAttribution": true,
+                                               "showScale": false,
+                                               "showMeasure": false,
+                                               "showDebug": false
+                                             },
+                                 "basemap": {"type": "default", "name": "Basemap", "config": {}},
+                                 "tooltip": {"mode": "details"},
+                                 "layers": [
+                                             {
+                                               "type": "markers",
+                                               "name": "Requests by country",
+                                               "tooltip": true,
+                                               "location": {
+                                                             "mode": "lookup",
+                                                             "lookup": "country",
+                                                             "gazetteer": "public/gazetteer/countries.json"
+                                                           },
+                                               "config": {
+                                                           "showLegend": true,
+                                                           "style": {
+                                                                      "size": {
+                                                                                "field": "requests",
+                                                                                "fixed": 5,
+                                                                                "min": 4,
+                                                                                "max": 28
+                                                                              },
+                                                                      "color": {"field": "requests", "fixed": "dark-blue"},
+                                                                      "opacity": 0.6,
+                                                                      "symbol": {
+                                                                                  "mode": "fixed",
+                                                                                  "fixed": "img/icons/marker/circle.svg"
+                                                                                },
+                                                                      "symbolAlign": {"horizontal": "center", "vertical": "center"},
+                                                                      "textConfig": {
+                                                                                      "fontSize": 12,
+                                                                                      "textAlign": "center",
+                                                                                      "textBaseline": "middle",
+                                                                                      "offsetX": 0,
+                                                                                      "offsetY": 0
+                                                                                    },
+                                                                      "rotation": {"mode": "mod", "fixed": 0, "max": 360, "min": -360}
+                                                                    }
+                                                         }
+                                             }
+                                           ]
+                               }
                   }
                 ]
     },
@@ -581,6 +664,89 @@
                                              "placement": "bottom",
                                              "calcs": ["last", "mean", "max"]
                                            }
+                               }
+                  },
+                  {
+                    "id": 115,
+                    "type": "geomap",
+                    "title": "Traffic by country",
+                    "description": "Viewer country from the `httpRequest.country` field of the shared-veworld-testnet-cloudfront-waf logs (log group aws-waf-logs-veworld-testnet-cloudfront, us-east-1). WAF evaluates at the viewer-request stage, so this counts every request that reached the edge — including cache hits the origin never saw and requests the WAF went on to block. Bubble size and colour are both request count over the dashboard time range. Fixed to this network and unaffected by the Network or Deployment pickers. Note the testnet log group retains only 3 days (vs 7 on mainnet), so a longer range silently returns just the retained slice. Logs Insights scan, not a metric — the collapsed row keeps the query from running unless someone opens it.",
+                    "gridPos": {"h": 10, "w": 24, "x": 0, "y": 18},
+                    "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                    "targets": [
+                                 {
+                                   "refId": "A",
+                                   "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                                   "queryMode": "Logs",
+                                   "region": "us-east-1",
+                                   "logGroupNames": ["aws-waf-logs-veworld-testnet-cloudfront"],
+                                   "expression": "stats count(*) as requests by httpRequest.country\n| sort requests desc\n| limit 250"
+                                 }
+                               ],
+                    "transformations": [
+                                         {
+                                           "id": "organize",
+                                           "options": {"renameByName": {"httpRequest.country": "country"}}
+                                         }
+                                       ],
+                    "fieldConfig": {
+                                     "defaults": {
+                                                   "unit": "short",
+                                                   "min": 0,
+                                                   "color": {"mode": "continuous-blues"}
+                                                 },
+                                     "overrides": []
+                                   },
+                    "options": {
+                                 "view": {"id": "zero", "lat": 0, "lon": 0, "zoom": 1},
+                                 "controls": {
+                                               "showZoom": true,
+                                               "mouseWheelZoom": false,
+                                               "showAttribution": true,
+                                               "showScale": false,
+                                               "showMeasure": false,
+                                               "showDebug": false
+                                             },
+                                 "basemap": {"type": "default", "name": "Basemap", "config": {}},
+                                 "tooltip": {"mode": "details"},
+                                 "layers": [
+                                             {
+                                               "type": "markers",
+                                               "name": "Requests by country",
+                                               "tooltip": true,
+                                               "location": {
+                                                             "mode": "lookup",
+                                                             "lookup": "country",
+                                                             "gazetteer": "public/gazetteer/countries.json"
+                                                           },
+                                               "config": {
+                                                           "showLegend": true,
+                                                           "style": {
+                                                                      "size": {
+                                                                                "field": "requests",
+                                                                                "fixed": 5,
+                                                                                "min": 4,
+                                                                                "max": 28
+                                                                              },
+                                                                      "color": {"field": "requests", "fixed": "dark-blue"},
+                                                                      "opacity": 0.6,
+                                                                      "symbol": {
+                                                                                  "mode": "fixed",
+                                                                                  "fixed": "img/icons/marker/circle.svg"
+                                                                                },
+                                                                      "symbolAlign": {"horizontal": "center", "vertical": "center"},
+                                                                      "textConfig": {
+                                                                                      "fontSize": 12,
+                                                                                      "textAlign": "center",
+                                                                                      "textBaseline": "middle",
+                                                                                      "offsetX": 0,
+                                                                                      "offsetY": 0
+                                                                                    },
+                                                                      "rotation": {"mode": "mod", "fixed": 0, "max": 360, "min": -360}
+                                                                    }
+                                                         }
+                                             }
+                                           ]
                                }
                   }
                 ]
