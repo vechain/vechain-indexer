@@ -81,7 +81,7 @@
     {
       "id": 9,
       "type": "row",
-      "title": "Edge · Mainnet — CloudFront + WAF (not blue/green scoped)",
+      "title": "Edge · Mainnet",
       "collapsed": true,
       "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
       "panels": [
@@ -335,7 +335,7 @@
     {
       "id": 90,
       "type": "row",
-      "title": "Edge · Testnet — CloudFront + WAF (not blue/green scoped)",
+      "title": "Edge · Testnet",
       "collapsed": true,
       "gridPos": {"h": 1, "w": 24, "x": 0, "y": 1},
       "panels": [
