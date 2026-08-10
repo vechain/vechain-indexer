@@ -8,11 +8,11 @@
       "title": "Logs",
       "tags": ["logs"],
       "asDropdown": false,
-      "includeVars": true,
+      "includeVars": false,
       "keepTime": true,
       "targetBlank": false,
       "icon": "external link",
-      "tooltip": "Logs dashboard, carrying the current deployment/network selection and time range.",
+      "tooltip": "Logs dashboard, carrying the current time range. Variables are not carried — logs filters on log-group tokens (main/test), not the metric `network` label (mainnet/testnet).",
       "url": ""
     }
   ],
@@ -43,17 +43,17 @@
       {
         "name": "network",
         "label": "Network",
-        "description": "VeChain network(s) to include. Multi-select; defaults to main. Drives both the Prometheus panels (via the `network` label) and the CloudWatch Edge panels (via the hidden cf_distribution / waf_acl mapping variables).",
+        "description": "VeChain network(s) to include. Values match the `network` external label emitted by the ADOT sidecar (terraform/api/observability.tf network_label map) — `mainnet`/`testnet`, not the `main`/`test` tokens used in log group names. Drives both the Prometheus panels and the CloudWatch Edge panels (via the hidden cf_distribution / waf_acl mapping variables).",
         "type": "custom",
-        "query": "main,test",
+        "query": "mainnet,testnet",
         "multi": true,
         "includeAll": true,
-        "allValue": "main|test",
+        "allValue": "mainnet|testnet",
         "options": [
-          { "text": "main", "value": "main", "selected": true },
-          { "text": "test", "value": "test", "selected": false }
+          { "text": "mainnet", "value": "mainnet", "selected": true },
+          { "text": "testnet", "value": "testnet", "selected": false }
         ],
-        "current": { "text": "main", "value": ["main"], "selected": true }
+        "current": { "text": "mainnet", "value": ["mainnet"], "selected": true }
       },
       {
         "name": "indexer_name",
@@ -78,10 +78,10 @@
       {
         "name": "cf_distribution",
         "label": "CloudFront distributions",
-        "description": "Hidden network→resource mapping. Options are `network:DistributionId` pairs; the regex keeps only the pairs whose prefix matches the selected network(s) and captures the id. main = E15Q64MS368TL (primary) + E1LMOFNZTMWN6R (spare); test = E1M1PCQ9GH0M5O (primary) + E2C4KPZEYCS5KZ (spare). These distributions are not managed by this repo's terraform, so the ids are hardcoded here.",
+        "description": "Hidden network→resource mapping. Options are `network:DistributionId` pairs; the regex keeps only the pairs whose prefix matches the selected network(s) and captures the id. mainnet = E15Q64MS368TL (primary) + E1LMOFNZTMWN6R (spare); testnet = E1M1PCQ9GH0M5O (primary) + E2C4KPZEYCS5KZ (spare). These distributions are not managed by this repo's terraform, so the ids are hardcoded here.",
         "type": "custom",
         "hide": 2,
-        "query": "main:E15Q64MS368TL,main:E1LMOFNZTMWN6R,test:E1M1PCQ9GH0M5O,test:E2C4KPZEYCS5KZ",
+        "query": "mainnet:E15Q64MS368TL,mainnet:E1LMOFNZTMWN6R,testnet:E1M1PCQ9GH0M5O,testnet:E2C4KPZEYCS5KZ",
         "regex": "/^(?:${network:pipe}):(.*)$/",
         "multi": true,
         "includeAll": true,
@@ -93,7 +93,7 @@
         "description": "Hidden network→resource mapping, same shape as cf_distribution. Note the naming is asymmetric — the mainnet ACL carries no network token — so the name cannot be derived from $network and has to be listed explicitly.",
         "type": "custom",
         "hide": 2,
-        "query": "main:shared-veworld-cloudfront-waf,test:shared-veworld-testnet-cloudfront-waf",
+        "query": "mainnet:shared-veworld-cloudfront-waf,testnet:shared-veworld-testnet-cloudfront-waf",
         "regex": "/^(?:${network:pipe}):(.*)$/",
         "multi": true,
         "includeAll": true,
