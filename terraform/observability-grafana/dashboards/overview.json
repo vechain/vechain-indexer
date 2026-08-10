@@ -28,7 +28,7 @@
       {
         "name": "deployment",
         "label": "Deployment",
-        "description": "Blue/green colour(s) to include. Multi-select; \"All\" covers both. Has no effect on the Edge row — CloudFront and WAF sit in front of both colours.",
+        "description": "Blue/green colour(s) to include. Multi-select; \"All\" covers both. Has no effect on the Edge rows — CloudFront and WAF sit in front of both colours.",
         "type": "custom",
         "query": "blue,green",
         "multi": true,
@@ -43,7 +43,7 @@
       {
         "name": "network",
         "label": "Network",
-        "description": "VeChain network(s) to include. Values match the `network` external label emitted by the ADOT sidecar (terraform/api/observability.tf network_label map) — `mainnet`/`testnet`, not the `main`/`test` tokens used in log group names. Drives both the Prometheus panels and the CloudWatch Edge panels (via the hidden cf_distribution / waf_acl mapping variables).",
+        "description": "VeChain network(s) to include. Values match the `network` external label emitted by the ADOT sidecar (terraform/api/observability.tf network_label map) — `mainnet`/`testnet`, not the `main`/`test` tokens used in log group names. Applies to the Prometheus panels only; the Edge rows are per-network and fixed.",
         "type": "custom",
         "query": "mainnet,testnet",
         "multi": true,
@@ -70,34 +70,10 @@
       {
         "name": "filters",
         "label": "Filters",
-        "description": "Ad-hoc label filters applied to every AMP (Prometheus) panel — uri, status, task_id, collection, command, endpoint, … Replaces the old URI textbox. Does not apply to the CloudWatch Edge row, which is a different datasource.",
+        "description": "Ad-hoc label filters applied to every AMP (Prometheus) panel — uri, status, task_id, collection, command, endpoint, … Replaces the old URI textbox. Does not apply to the CloudWatch Edge rows, which are a different datasource.",
         "type": "adhoc",
         "datasource": { "type": "prometheus", "uid": "amp" },
         "filters": []
-      },
-      {
-        "name": "cf_distribution",
-        "label": "CloudFront distributions",
-        "description": "Hidden network→resource mapping. Options are `network:DistributionId` pairs; the regex keeps only the pairs whose prefix matches the selected network(s) and captures the id. mainnet = E15Q64MS368TL (primary) + E1LMOFNZTMWN6R (spare); testnet = E1M1PCQ9GH0M5O (primary) + E2C4KPZEYCS5KZ (spare). These distributions are not managed by this repo's terraform, so the ids are hardcoded here.",
-        "type": "custom",
-        "hide": 2,
-        "query": "mainnet:E15Q64MS368TL,mainnet:E1LMOFNZTMWN6R,testnet:E1M1PCQ9GH0M5O,testnet:E2C4KPZEYCS5KZ",
-        "regex": "/^(?:${network:pipe}):(.*)$/",
-        "multi": true,
-        "includeAll": true,
-        "current": { "text": "All", "value": ["$__all"], "selected": true }
-      },
-      {
-        "name": "waf_acl",
-        "label": "WAF WebACLs",
-        "description": "Hidden network→resource mapping, same shape as cf_distribution. Note the naming is asymmetric — the mainnet ACL carries no network token — so the name cannot be derived from $network and has to be listed explicitly.",
-        "type": "custom",
-        "hide": 2,
-        "query": "mainnet:shared-veworld-cloudfront-waf,testnet:shared-veworld-testnet-cloudfront-waf",
-        "regex": "/^(?:${network:pipe}):(.*)$/",
-        "multi": true,
-        "includeAll": true,
-        "current": { "text": "All", "value": ["$__all"], "selected": true }
       }
     ]
   },
@@ -105,223 +81,516 @@
     {
       "id": 9,
       "type": "row",
-      "title": "Edge — CloudFront + WAF · shared, not blue/green scoped",
+      "title": "Edge · Mainnet — CloudFront + WAF (not blue/green scoped)",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
       "panels": [
-        {
-          "id": 100,
-          "type": "timeseries",
-          "title": "CloudFront requests",
-          "description": "AWS/CloudFront Requests (Sum) across the distributions fronting indexer.<network>.vechain.org, selected by $network via the hidden cf_distribution variable. $deployment does not apply — the edge fronts whichever colour DNS currently points at. CloudFront metrics are 1-minute granularity and publish with a few minutes of lag, so the right-hand edge of this panel trails the Prometheus panels below.",
-          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 1 },
-          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
-          "targets": [
-            {
-              "refId": "A",
-              "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
-              "namespace": "AWS/CloudFront",
-              "metricName": "Requests",
-              "statistic": "Sum",
-              "dimensions": {
-                "DistributionId": ["$cf_distribution"],
-                "Region": "Global"
-              },
-              "region": "us-east-1",
-              "period": "60",
-              "matchExact": true,
-              "metricEditorMode": 0,
-              "metricQueryType": 0,
-              "label": "${PROP('Dim.DistributionId')}"
-            }
-          ],
-          "fieldConfig": { "defaults": { "unit": "short", "min": 0 } },
-          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "mean", "max"] } }
-        },
-        {
-          "id": 101,
-          "type": "timeseries",
-          "title": "Cache hit rate",
-          "description": "AWS/CloudFront CacheHitRate (Average, %) for the $network distributions. Higher = more edge hits, less origin load. The indexer API is largely uncacheable so expect low double digits at best; drops toward zero on cache invalidation or a hot-path change.",
-          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 1 },
-          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
-          "targets": [
-            {
-              "refId": "A",
-              "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
-              "namespace": "AWS/CloudFront",
-              "metricName": "CacheHitRate",
-              "statistic": "Average",
-              "dimensions": {
-                "DistributionId": ["$cf_distribution"],
-                "Region": "Global"
-              },
-              "region": "us-east-1",
-              "period": "300",
-              "matchExact": true,
-              "metricEditorMode": 0,
-              "metricQueryType": 0,
-              "label": "${PROP('Dim.DistributionId')}"
-            }
-          ],
-          "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 } },
-          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "mean"] } }
-        },
-        {
-          "id": 102,
-          "type": "timeseries",
-          "title": "CloudFront error rate — 4xx / 5xx",
-          "description": "AWS/CloudFront 4xxErrorRate + 5xxErrorRate (Average, %) for the $network distributions — percentage of viewer requests returning 4xx/5xx at the edge. Cross-reference with the API 4xx/5xx panels in the Errors row: edge errors the origin never saw are WAF blocks or CloudFront-level failures.",
-          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 1 },
-          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
-          "targets": [
-            {
-              "refId": "A",
-              "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
-              "namespace": "AWS/CloudFront",
-              "metricName": "4xxErrorRate",
-              "statistic": "Average",
-              "dimensions": {
-                "DistributionId": ["$cf_distribution"],
-                "Region": "Global"
-              },
-              "region": "us-east-1",
-              "period": "300",
-              "matchExact": true,
-              "metricEditorMode": 0,
-              "metricQueryType": 0,
-              "label": "4xx · ${PROP('Dim.DistributionId')}"
-            },
-            {
-              "refId": "B",
-              "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
-              "namespace": "AWS/CloudFront",
-              "metricName": "5xxErrorRate",
-              "statistic": "Average",
-              "dimensions": {
-                "DistributionId": ["$cf_distribution"],
-                "Region": "Global"
-              },
-              "region": "us-east-1",
-              "period": "300",
-              "matchExact": true,
-              "metricEditorMode": 0,
-              "metricQueryType": 0,
-              "label": "5xx · ${PROP('Dim.DistributionId')}"
-            }
-          ],
-          "fieldConfig": { "defaults": { "unit": "percent", "min": 0 } },
-          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "mean", "max"] } }
-        },
-        {
-          "id": 103,
-          "type": "timeseries",
-          "title": "WAF — allowed vs blocked",
-          "description": "AWS/WAFV2 AllowedRequests + BlockedRequests (Sum, Rule=ALL) for the $network WebACL. Aggregate across the whole ACL. With both networks selected you get one Allowed and one Blocked series per ACL.",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 9 },
-          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
-          "targets": [
-            {
-              "refId": "A",
-              "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
-              "namespace": "AWS/WAFV2",
-              "metricName": "AllowedRequests",
-              "statistic": "Sum",
-              "dimensions": {
-                "WebACL": ["$waf_acl"],
-                "Rule": "ALL"
-              },
-              "region": "us-east-1",
-              "period": "60",
-              "matchExact": true,
-              "metricEditorMode": 0,
-              "metricQueryType": 0,
-              "label": "Allowed · ${PROP('Dim.WebACL')}"
-            },
-            {
-              "refId": "B",
-              "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
-              "namespace": "AWS/WAFV2",
-              "metricName": "BlockedRequests",
-              "statistic": "Sum",
-              "dimensions": {
-                "WebACL": ["$waf_acl"],
-                "Rule": "ALL"
-              },
-              "region": "us-east-1",
-              "period": "60",
-              "matchExact": true,
-              "metricEditorMode": 0,
-              "metricQueryType": 0,
-              "label": "Blocked · ${PROP('Dim.WebACL')}"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": { "unit": "short", "min": 0 },
-            "overrides": [
-              { "matcher": { "id": "byRegexp", "options": "/^Allowed/" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
-              { "matcher": { "id": "byRegexp", "options": "/^Blocked/" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] }
-            ]
-          },
-          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "mean", "max"] } }
-        },
-        {
-          "id": 104,
-          "type": "timeseries",
-          "title": "WAF — blocked requests by rule",
-          "description": "AWS/WAFV2 BlockedRequests (Sum) for the $network WebACL, split by Rule. Rule = the CloudWatch metric name from VisibilityConfig.MetricName. The rule list is the union across both networks — testnet has no python-user-agent rate-limit rule, so that series is simply empty there. Spike hunters: rate-based rule (a customer being throttled), block-ip-set (specific IP blocked), block-get-options-swagger (non-GET/OPTIONS request rejected).",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 9 },
-          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
-          "targets": [
-            {
-              "refId": "A",
-              "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
-              "namespace": "AWS/WAFV2",
-              "metricName": "BlockedRequests",
-              "statistic": "Sum",
-              "dimensions": {
-                "WebACL": ["$waf_acl"],
-                "Rule": [
-                  "Imperva-Imperva-IP-Reputation",
-                  "waf--custom-AWS-block-ip-set",
-                  "waf--managed-AWS-AWSManagedRulesAmazonIpReputationList",
-                  "waf--managed-AWS-AWSManagedRulesCommonRuleSet",
-                  "waf--managed-AWS-AWSManagedRulesKnownBadInputsRuleSet",
-                  "waf--managed-AWS-AWSManagedRulesSQLiRuleSet",
-                  "waf--custom-AWS-AWS-Rate-Based-Rule",
-                  "block-get-options-swagger",
-                  "waf--custom-AWS-rate-limit-User-agent-python",
-                  "waf--custom-AWS-block-health-check-endpoints"
+                  {
+                    "id": 100,
+                    "type": "timeseries",
+                    "title": "CloudFront requests",
+                    "description": "AWS/CloudFront Requests (Sum) across the two distributions fronting indexer.mainnet.vechain.org (E15Q64MS368TL primary, E1LMOFNZTMWN6R spare/replica). Fixed to this network and not affected by the Network or Deployment pickers — CloudFront and WAF are shared across both blue/green colours and are not templated. CloudFront metrics are 1-minute granularity and publish with a few minutes of lag, so this trails the Prometheus panels below.",
+                    "gridPos": {"h": 8, "w": 8, "x": 0, "y": 1},
+                    "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                    "targets": [
+                                 {
+                                   "refId": "A",
+                                   "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                                   "namespace": "AWS/CloudFront",
+                                   "metricName": "Requests",
+                                   "statistic": "Sum",
+                                   "dimensions": {
+                                                   "DistributionId": ["E15Q64MS368TL", "E1LMOFNZTMWN6R"],
+                                                   "Region": "Global"
+                                                 },
+                                   "region": "us-east-1",
+                                   "period": "60",
+                                   "matchExact": true,
+                                   "metricEditorMode": 0,
+                                   "metricQueryType": 0,
+                                   "label": "${PROP('Dim.DistributionId')}"
+                                 }
+                               ],
+                    "fieldConfig": {"defaults": {"unit": "short", "min": 0}},
+                    "options": {
+                                 "legend": {
+                                             "displayMode": "table",
+                                             "placement": "bottom",
+                                             "calcs": ["last", "mean", "max"]
+                                           }
+                               }
+                  },
+                  {
+                    "id": 101,
+                    "type": "timeseries",
+                    "title": "Cache hit rate",
+                    "description": "AWS/CloudFront CacheHitRate (Average, %). Higher = more edge hits, less origin load. The indexer API is largely uncacheable so expect low double digits at best; drops toward zero on cache invalidation or a hot-path change.",
+                    "gridPos": {"h": 8, "w": 8, "x": 8, "y": 1},
+                    "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                    "targets": [
+                                 {
+                                   "refId": "A",
+                                   "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                                   "namespace": "AWS/CloudFront",
+                                   "metricName": "CacheHitRate",
+                                   "statistic": "Average",
+                                   "dimensions": {
+                                                   "DistributionId": ["E15Q64MS368TL", "E1LMOFNZTMWN6R"],
+                                                   "Region": "Global"
+                                                 },
+                                   "region": "us-east-1",
+                                   "period": "300",
+                                   "matchExact": true,
+                                   "metricEditorMode": 0,
+                                   "metricQueryType": 0,
+                                   "label": "${PROP('Dim.DistributionId')}"
+                                 }
+                               ],
+                    "fieldConfig": {"defaults": {"unit": "percent", "min": 0, "max": 100}},
+                    "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["last", "mean"]}}
+                  },
+                  {
+                    "id": 102,
+                    "type": "timeseries",
+                    "title": "CloudFront error rate — 4xx / 5xx",
+                    "description": "AWS/CloudFront 4xxErrorRate + 5xxErrorRate (Average, %) — percentage of viewer requests returning 4xx/5xx at the edge. Cross-reference with the API panels in the Errors row: edge errors the origin never saw are WAF blocks or CloudFront-level failures.",
+                    "gridPos": {"h": 8, "w": 8, "x": 16, "y": 1},
+                    "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                    "targets": [
+                                 {
+                                   "refId": "A",
+                                   "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                                   "namespace": "AWS/CloudFront",
+                                   "metricName": "4xxErrorRate",
+                                   "statistic": "Average",
+                                   "dimensions": {
+                                                   "DistributionId": ["E15Q64MS368TL", "E1LMOFNZTMWN6R"],
+                                                   "Region": "Global"
+                                                 },
+                                   "region": "us-east-1",
+                                   "period": "300",
+                                   "matchExact": true,
+                                   "metricEditorMode": 0,
+                                   "metricQueryType": 0,
+                                   "label": "4xx · ${PROP('Dim.DistributionId')}"
+                                 },
+                                 {
+                                   "refId": "B",
+                                   "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                                   "namespace": "AWS/CloudFront",
+                                   "metricName": "5xxErrorRate",
+                                   "statistic": "Average",
+                                   "dimensions": {
+                                                   "DistributionId": ["E15Q64MS368TL", "E1LMOFNZTMWN6R"],
+                                                   "Region": "Global"
+                                                 },
+                                   "region": "us-east-1",
+                                   "period": "300",
+                                   "matchExact": true,
+                                   "metricEditorMode": 0,
+                                   "metricQueryType": 0,
+                                   "label": "5xx · ${PROP('Dim.DistributionId')}"
+                                 }
+                               ],
+                    "fieldConfig": {"defaults": {"unit": "percent", "min": 0}},
+                    "options": {
+                                 "legend": {
+                                             "displayMode": "table",
+                                             "placement": "bottom",
+                                             "calcs": ["last", "mean", "max"]
+                                           }
+                               }
+                  },
+                  {
+                    "id": 103,
+                    "type": "timeseries",
+                    "title": "WAF — allowed vs blocked",
+                    "description": "AWS/WAFV2 AllowedRequests + BlockedRequests (Sum, Rule=ALL). Aggregate across the whole shared-veworld-cloudfront-waf WebACL.",
+                    "gridPos": {"h": 8, "w": 12, "x": 0, "y": 9},
+                    "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                    "targets": [
+                                 {
+                                   "refId": "A",
+                                   "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                                   "namespace": "AWS/WAFV2",
+                                   "metricName": "AllowedRequests",
+                                   "statistic": "Sum",
+                                   "dimensions": {"WebACL": "shared-veworld-cloudfront-waf", "Rule": "ALL"},
+                                   "region": "us-east-1",
+                                   "period": "60",
+                                   "matchExact": true,
+                                   "metricEditorMode": 0,
+                                   "metricQueryType": 0,
+                                   "label": "Allowed"
+                                 },
+                                 {
+                                   "refId": "B",
+                                   "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                                   "namespace": "AWS/WAFV2",
+                                   "metricName": "BlockedRequests",
+                                   "statistic": "Sum",
+                                   "dimensions": {"WebACL": "shared-veworld-cloudfront-waf", "Rule": "ALL"},
+                                   "region": "us-east-1",
+                                   "period": "60",
+                                   "matchExact": true,
+                                   "metricEditorMode": 0,
+                                   "metricQueryType": 0,
+                                   "label": "Blocked"
+                                 }
+                               ],
+                    "fieldConfig": {
+                                     "defaults": {"unit": "short", "min": 0},
+                                     "overrides": [
+                                                    {
+                                                      "matcher": {"id": "byName", "options": "Allowed"},
+                                                      "properties": [
+                                                                      {
+                                                                        "id": "color",
+                                                                        "value": {
+                                                                                   "mode": "fixed",
+                                                                                   "fixedColor": "green"
+                                                                                 }
+                                                                      }
+                                                                    ]
+                                                    },
+                                                    {
+                                                      "matcher": {"id": "byName", "options": "Blocked"},
+                                                      "properties": [
+                                                                      {
+                                                                        "id": "color",
+                                                                        "value": {
+                                                                                   "mode": "fixed",
+                                                                                   "fixedColor": "red"
+                                                                                 }
+                                                                      }
+                                                                    ]
+                                                    }
+                                                  ]
+                                   },
+                    "options": {
+                                 "legend": {
+                                             "displayMode": "table",
+                                             "placement": "bottom",
+                                             "calcs": ["last", "mean", "max"]
+                                           }
+                               }
+                  },
+                  {
+                    "id": 104,
+                    "type": "timeseries",
+                    "title": "WAF — blocked requests by rule",
+                    "description": "AWS/WAFV2 BlockedRequests (Sum) split by Rule. Rule = the CloudWatch metric name from VisibilityConfig.MetricName. Spike hunters: rate-based rule (a customer being throttled), block-ip-set (specific IP blocked), block-get-options-swagger (non-GET/OPTIONS request rejected).",
+                    "gridPos": {"h": 8, "w": 12, "x": 12, "y": 9},
+                    "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                    "targets": [
+                                 {
+                                   "refId": "A",
+                                   "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                                   "namespace": "AWS/WAFV2",
+                                   "metricName": "BlockedRequests",
+                                   "statistic": "Sum",
+                                   "dimensions": {
+                                                   "WebACL": "shared-veworld-cloudfront-waf",
+                                                   "Rule": [
+                                                             "Imperva-Imperva-IP-Reputation",
+                                                             "waf--custom-AWS-block-ip-set",
+                                                             "waf--managed-AWS-AWSManagedRulesAmazonIpReputationList",
+                                                             "waf--managed-AWS-AWSManagedRulesCommonRuleSet",
+                                                             "waf--managed-AWS-AWSManagedRulesKnownBadInputsRuleSet",
+                                                             "waf--managed-AWS-AWSManagedRulesSQLiRuleSet",
+                                                             "waf--custom-AWS-AWS-Rate-Based-Rule",
+                                                             "block-get-options-swagger",
+                                                             "waf--custom-AWS-rate-limit-User-agent-python",
+                                                             "waf--custom-AWS-block-health-check-endpoints"
+                                                           ]
+                                                 },
+                                   "region": "us-east-1",
+                                   "period": "60",
+                                   "matchExact": true,
+                                   "metricEditorMode": 0,
+                                   "metricQueryType": 0,
+                                   "label": "${PROP('Dim.Rule')}"
+                                 }
+                               ],
+                    "fieldConfig": {
+                                     "defaults": {
+                                                   "unit": "short",
+                                                   "min": 0,
+                                                   "custom": {
+                                                               "fillOpacity": 30,
+                                                               "stacking": {"mode": "normal", "group": "A"}
+                                                             }
+                                                 }
+                                   },
+                    "options": {
+                                 "legend": {
+                                             "displayMode": "table",
+                                             "placement": "bottom",
+                                             "calcs": ["last", "mean", "max"]
+                                           }
+                               }
+                  }
                 ]
-              },
-              "region": "us-east-1",
-              "period": "60",
-              "matchExact": true,
-              "metricEditorMode": 0,
-              "metricQueryType": 0,
-              "label": "${PROP('Dim.Rule')}"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "short",
-              "min": 0,
-              "custom": {
-                "fillOpacity": 30,
-                "stacking": { "mode": "normal", "group": "A" }
-              }
-            }
-          },
-          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "mean", "max"] } }
-        }
-      ]
+    },
+    {
+      "id": 90,
+      "type": "row",
+      "title": "Edge · Testnet — CloudFront + WAF (not blue/green scoped)",
+      "collapsed": true,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 1},
+      "panels": [
+                  {
+                    "id": 110,
+                    "type": "timeseries",
+                    "title": "CloudFront requests",
+                    "description": "AWS/CloudFront Requests (Sum) across the two distributions fronting indexer.testnet.vechain.org (E1M1PCQ9GH0M5O primary, E2C4KPZEYCS5KZ spare/replica). Fixed to this network and not affected by the Network or Deployment pickers — CloudFront and WAF are shared across both blue/green colours and are not templated. CloudFront metrics are 1-minute granularity and publish with a few minutes of lag, so this trails the Prometheus panels below.",
+                    "gridPos": {"h": 8, "w": 8, "x": 0, "y": 2},
+                    "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                    "targets": [
+                                 {
+                                   "refId": "A",
+                                   "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                                   "namespace": "AWS/CloudFront",
+                                   "metricName": "Requests",
+                                   "statistic": "Sum",
+                                   "dimensions": {
+                                                   "DistributionId": ["E1M1PCQ9GH0M5O", "E2C4KPZEYCS5KZ"],
+                                                   "Region": "Global"
+                                                 },
+                                   "region": "us-east-1",
+                                   "period": "60",
+                                   "matchExact": true,
+                                   "metricEditorMode": 0,
+                                   "metricQueryType": 0,
+                                   "label": "${PROP('Dim.DistributionId')}"
+                                 }
+                               ],
+                    "fieldConfig": {"defaults": {"unit": "short", "min": 0}},
+                    "options": {
+                                 "legend": {
+                                             "displayMode": "table",
+                                             "placement": "bottom",
+                                             "calcs": ["last", "mean", "max"]
+                                           }
+                               }
+                  },
+                  {
+                    "id": 111,
+                    "type": "timeseries",
+                    "title": "Cache hit rate",
+                    "description": "AWS/CloudFront CacheHitRate (Average, %). Higher = more edge hits, less origin load. The indexer API is largely uncacheable so expect low double digits at best; drops toward zero on cache invalidation or a hot-path change.",
+                    "gridPos": {"h": 8, "w": 8, "x": 8, "y": 2},
+                    "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                    "targets": [
+                                 {
+                                   "refId": "A",
+                                   "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                                   "namespace": "AWS/CloudFront",
+                                   "metricName": "CacheHitRate",
+                                   "statistic": "Average",
+                                   "dimensions": {
+                                                   "DistributionId": ["E1M1PCQ9GH0M5O", "E2C4KPZEYCS5KZ"],
+                                                   "Region": "Global"
+                                                 },
+                                   "region": "us-east-1",
+                                   "period": "300",
+                                   "matchExact": true,
+                                   "metricEditorMode": 0,
+                                   "metricQueryType": 0,
+                                   "label": "${PROP('Dim.DistributionId')}"
+                                 }
+                               ],
+                    "fieldConfig": {"defaults": {"unit": "percent", "min": 0, "max": 100}},
+                    "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["last", "mean"]}}
+                  },
+                  {
+                    "id": 112,
+                    "type": "timeseries",
+                    "title": "CloudFront error rate — 4xx / 5xx",
+                    "description": "AWS/CloudFront 4xxErrorRate + 5xxErrorRate (Average, %) — percentage of viewer requests returning 4xx/5xx at the edge. Cross-reference with the API panels in the Errors row: edge errors the origin never saw are WAF blocks or CloudFront-level failures.",
+                    "gridPos": {"h": 8, "w": 8, "x": 16, "y": 2},
+                    "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                    "targets": [
+                                 {
+                                   "refId": "A",
+                                   "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                                   "namespace": "AWS/CloudFront",
+                                   "metricName": "4xxErrorRate",
+                                   "statistic": "Average",
+                                   "dimensions": {
+                                                   "DistributionId": ["E1M1PCQ9GH0M5O", "E2C4KPZEYCS5KZ"],
+                                                   "Region": "Global"
+                                                 },
+                                   "region": "us-east-1",
+                                   "period": "300",
+                                   "matchExact": true,
+                                   "metricEditorMode": 0,
+                                   "metricQueryType": 0,
+                                   "label": "4xx · ${PROP('Dim.DistributionId')}"
+                                 },
+                                 {
+                                   "refId": "B",
+                                   "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                                   "namespace": "AWS/CloudFront",
+                                   "metricName": "5xxErrorRate",
+                                   "statistic": "Average",
+                                   "dimensions": {
+                                                   "DistributionId": ["E1M1PCQ9GH0M5O", "E2C4KPZEYCS5KZ"],
+                                                   "Region": "Global"
+                                                 },
+                                   "region": "us-east-1",
+                                   "period": "300",
+                                   "matchExact": true,
+                                   "metricEditorMode": 0,
+                                   "metricQueryType": 0,
+                                   "label": "5xx · ${PROP('Dim.DistributionId')}"
+                                 }
+                               ],
+                    "fieldConfig": {"defaults": {"unit": "percent", "min": 0}},
+                    "options": {
+                                 "legend": {
+                                             "displayMode": "table",
+                                             "placement": "bottom",
+                                             "calcs": ["last", "mean", "max"]
+                                           }
+                               }
+                  },
+                  {
+                    "id": 113,
+                    "type": "timeseries",
+                    "title": "WAF — allowed vs blocked",
+                    "description": "AWS/WAFV2 AllowedRequests + BlockedRequests (Sum, Rule=ALL). Aggregate across the whole shared-veworld-testnet-cloudfront-waf WebACL.",
+                    "gridPos": {"h": 8, "w": 12, "x": 0, "y": 10},
+                    "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                    "targets": [
+                                 {
+                                   "refId": "A",
+                                   "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                                   "namespace": "AWS/WAFV2",
+                                   "metricName": "AllowedRequests",
+                                   "statistic": "Sum",
+                                   "dimensions": {"WebACL": "shared-veworld-testnet-cloudfront-waf", "Rule": "ALL"},
+                                   "region": "us-east-1",
+                                   "period": "60",
+                                   "matchExact": true,
+                                   "metricEditorMode": 0,
+                                   "metricQueryType": 0,
+                                   "label": "Allowed"
+                                 },
+                                 {
+                                   "refId": "B",
+                                   "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                                   "namespace": "AWS/WAFV2",
+                                   "metricName": "BlockedRequests",
+                                   "statistic": "Sum",
+                                   "dimensions": {"WebACL": "shared-veworld-testnet-cloudfront-waf", "Rule": "ALL"},
+                                   "region": "us-east-1",
+                                   "period": "60",
+                                   "matchExact": true,
+                                   "metricEditorMode": 0,
+                                   "metricQueryType": 0,
+                                   "label": "Blocked"
+                                 }
+                               ],
+                    "fieldConfig": {
+                                     "defaults": {"unit": "short", "min": 0},
+                                     "overrides": [
+                                                    {
+                                                      "matcher": {"id": "byName", "options": "Allowed"},
+                                                      "properties": [
+                                                                      {
+                                                                        "id": "color",
+                                                                        "value": {
+                                                                                   "mode": "fixed",
+                                                                                   "fixedColor": "green"
+                                                                                 }
+                                                                      }
+                                                                    ]
+                                                    },
+                                                    {
+                                                      "matcher": {"id": "byName", "options": "Blocked"},
+                                                      "properties": [
+                                                                      {
+                                                                        "id": "color",
+                                                                        "value": {
+                                                                                   "mode": "fixed",
+                                                                                   "fixedColor": "red"
+                                                                                 }
+                                                                      }
+                                                                    ]
+                                                    }
+                                                  ]
+                                   },
+                    "options": {
+                                 "legend": {
+                                             "displayMode": "table",
+                                             "placement": "bottom",
+                                             "calcs": ["last", "mean", "max"]
+                                           }
+                               }
+                  },
+                  {
+                    "id": 114,
+                    "type": "timeseries",
+                    "title": "WAF — blocked requests by rule",
+                    "description": "AWS/WAFV2 BlockedRequests (Sum) split by Rule. Rule = the CloudWatch metric name from VisibilityConfig.MetricName. Testnet does not have the python-user-agent rate-limit rule that mainnet does.",
+                    "gridPos": {"h": 8, "w": 12, "x": 12, "y": 10},
+                    "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                    "targets": [
+                                 {
+                                   "refId": "A",
+                                   "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                                   "namespace": "AWS/WAFV2",
+                                   "metricName": "BlockedRequests",
+                                   "statistic": "Sum",
+                                   "dimensions": {
+                                                   "WebACL": "shared-veworld-testnet-cloudfront-waf",
+                                                   "Rule": [
+                                                             "Imperva-Imperva-IP-Reputation",
+                                                             "waf--managed-AWS-AWSManagedRulesAmazonIpReputationList",
+                                                             "waf--managed-AWS-AWSManagedRulesCommonRuleSet",
+                                                             "waf--managed-AWS-AWSManagedRulesKnownBadInputsRuleSet",
+                                                             "waf--managed-AWS-AWSManagedRulesSQLiRuleSet",
+                                                             "waf--custom-AWS-AWS-Rate-Based-Rule",
+                                                             "block-get-options-swagger",
+                                                             "waf--custom-AWS-block-ip-set",
+                                                             "waf--custom-AWS-block-health-check-endpoints"
+                                                           ]
+                                                 },
+                                   "region": "us-east-1",
+                                   "period": "60",
+                                   "matchExact": true,
+                                   "metricEditorMode": 0,
+                                   "metricQueryType": 0,
+                                   "label": "${PROP('Dim.Rule')}"
+                                 }
+                               ],
+                    "fieldConfig": {
+                                     "defaults": {
+                                                   "unit": "short",
+                                                   "min": 0,
+                                                   "custom": {
+                                                               "fillOpacity": 30,
+                                                               "stacking": {"mode": "normal", "group": "A"}
+                                                             }
+                                                 }
+                                   },
+                    "options": {
+                                 "legend": {
+                                             "displayMode": "table",
+                                             "placement": "bottom",
+                                             "calcs": ["last", "mean", "max"]
+                                           }
+                               }
+                  }
+                ]
     },
     {
       "id": 1,
       "type": "row",
       "title": "Sync",
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 1 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 2 },
       "panels": []
     },
     {
@@ -329,7 +598,7 @@
       "type": "piechart",
       "title": "Indexers by sync status",
       "description": "count by (status) of indexers where indexer_sync_status == 1. Deduped across task_id — deployment/network are kept in the inner max so a shared indexer_name across networks isn't collapsed — and constrained to the last 45s so post-deploy stale series drop out before the default 5m lookback.",
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 2 },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 3 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -368,7 +637,7 @@
       "type": "bargauge",
       "title": "Sync gap — blocks behind Thor best",
       "description": "max(thor_best) − max(indexer_current) per indexer, clamped to ≥ 0 and forced to 0 when the indexer reports FULLY_SYNCED (raw block-number diff can drift 1–3 blocks from sampling timing even when caught up). Bars sorted by gap desc, indexer name asc as tiebreaker; > 100 orange, > 500 red.",
-      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 2 },
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 3 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -431,7 +700,7 @@
       "type": "timeseries",
       "title": "Blocks / sec",
       "description": "rate(indexer_blocks_processed_total[1m]) per indexer.",
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 10 },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 11 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -447,7 +716,7 @@
       "id": 22,
       "type": "timeseries",
       "title": "Processor duration — p95",
-      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 10 },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 11 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -463,7 +732,7 @@
       "id": 23,
       "type": "timeseries",
       "title": "Thor client — p95 by endpoint",
-      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 10 },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 11 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -480,7 +749,7 @@
       "type": "row",
       "title": "API",
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 19 },
       "panels": []
     },
     {
@@ -488,7 +757,7 @@
       "type": "timeseries",
       "title": "Top URIs by rate",
       "description": "topk(10) of request rate by uri. Narrow to a single endpoint with the Filters bar at the top (uri = …).",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 19 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -505,7 +774,7 @@
       "type": "timeseries",
       "title": "API — avg latency by URI",
       "description": "rate(sum) / rate(count). Real p95 needs percentile histograms enabled server-side (management.metrics.distribution.percentiles-histogram.http.server.requests=true).",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 19 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -522,7 +791,7 @@
       "type": "piechart",
       "title": "Requests by X-Project-Id",
       "description": "sum by (project) of api_requests_by_project_total increases over the dashboard time range. `unknown` = header missing; `other` = header set but not on the KNOWN_PROJECT_IDS whitelist (raw value logged); the rest are known callers.",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 27 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -553,13 +822,13 @@
       "type": "row",
       "title": "Errors",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 35 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 },
       "panels": [
         {
           "id": 50,
           "type": "timeseries",
           "title": "API 5xx rate by URI",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 36 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 37 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -575,7 +844,7 @@
           "id": 51,
           "type": "timeseries",
           "title": "API 4xx rate by URI",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 36 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 37 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -591,7 +860,7 @@
           "id": 52,
           "type": "timeseries",
           "title": "Thor client 5xx rate",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 44 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 45 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -607,7 +876,7 @@
           "id": 53,
           "type": "timeseries",
           "title": "Thor client 4xx rate",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 44 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 45 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -626,14 +895,14 @@
       "type": "row",
       "title": "Resources",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 37 },
       "panels": [
         {
           "id": 60,
           "type": "timeseries",
           "title": "CPU utilised — per task",
           "description": "ecs_task_cpu_utilized / ecs_task_cpu_reserved × 100 for indexer + api. Dashed line = 80%.",
-          "gridPos": { "h": 10, "w": 12, "x": 0, "y": 37 },
+          "gridPos": { "h": 10, "w": 12, "x": 0, "y": 38 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -664,7 +933,7 @@
           "type": "timeseries",
           "title": "Memory utilised — per task",
           "description": "ecs_task_memory_utilized / ecs_task_memory_reserved × 100 for indexer + api. Dashed line = 80%.",
-          "gridPos": { "h": 10, "w": 12, "x": 12, "y": 37 },
+          "gridPos": { "h": 10, "w": 12, "x": 12, "y": 38 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -697,14 +966,14 @@
       "type": "row",
       "title": "MongoDB · Indexer",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 37 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 38 },
       "panels": [
         {
           "id": 70,
           "type": "timeseries",
           "title": "Pool size vs checked-out",
           "description": "mongodb_driver_pool_size vs mongodb_driver_pool_checkedout. Sustained checkedout ≈ size means the pool is saturated — either bump the pool or fix a slow query.",
-          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 38 },
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 39 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -726,7 +995,7 @@
           "type": "timeseries",
           "title": "Wait-queue depth",
           "description": "mongodb_driver_pool_waitqueuesize — connections waiting for a pool slot. Anything > 0 sustained means the pool is under-sized for the workload.",
-          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 38 },
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 39 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -757,7 +1026,7 @@
           "type": "timeseries",
           "title": "Command rate by status",
           "description": "rate(mongodb_driver_commands_seconds_count[5m]) by status. FAILED > 0 means Mongo is rejecting commands (auth, write conflict, timeout, …).",
-          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 38 },
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 39 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -774,7 +1043,7 @@
           "type": "timeseries",
           "title": "Command rate — top 10 by command",
           "description": "topk(10, rate by command) — expect insert/update/find to dominate on the indexer.",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 46 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 47 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -791,7 +1060,7 @@
           "type": "timeseries",
           "title": "Avg command latency by command",
           "description": "rate(sum)/rate(count) by command — proxy for average latency per command type. Real p95 needs management.metrics.distribution.percentiles-histogram.mongodb.driver.commands=true.",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 46 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 47 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -808,7 +1077,7 @@
           "type": "timeseries",
           "title": "Command rate — top 10 by collection",
           "description": "topk(10, rate by collection) — which collections are being hit hardest.",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 54 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 55 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -825,7 +1094,7 @@
           "type": "timeseries",
           "title": "Slowest commands — max latency",
           "description": "max over 5m of mongodb_driver_commands_seconds_max by (command, collection). Spike hunter — surfaces single slow calls the avg smooths away.",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 54 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 55 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -844,14 +1113,14 @@
       "type": "row",
       "title": "MongoDB · API",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 38 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 39 },
       "panels": [
         {
           "id": 80,
           "type": "timeseries",
           "title": "Pool size vs checked-out",
           "description": "mongodb_driver_pool_size vs mongodb_driver_pool_checkedout. Sustained checkedout ≈ size means the pool is saturated — either bump the pool or fix a slow query.",
-          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 39 },
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 40 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -873,7 +1142,7 @@
           "type": "timeseries",
           "title": "Wait-queue depth",
           "description": "mongodb_driver_pool_waitqueuesize — API requests waiting for a pool slot. Anything > 0 sustained will surface as user-visible latency.",
-          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 39 },
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 40 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -904,7 +1173,7 @@
           "type": "timeseries",
           "title": "Command rate by status",
           "description": "rate(mongodb_driver_commands_seconds_count[5m]) by status. FAILED > 0 means Mongo is rejecting API requests before they reach the response path.",
-          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 39 },
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 40 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -921,7 +1190,7 @@
           "type": "timeseries",
           "title": "Command rate — top 10 by command",
           "description": "topk(10, rate by command) — expect find/aggregate to dominate on the API.",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 47 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 48 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -938,7 +1207,7 @@
           "type": "timeseries",
           "title": "Avg command latency by command",
           "description": "rate(sum)/rate(count) by command — proxy for average latency per command type. Real p95 needs management.metrics.distribution.percentiles-histogram.mongodb.driver.commands=true.",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 47 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 48 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -955,7 +1224,7 @@
           "type": "timeseries",
           "title": "Command rate — top 10 by collection",
           "description": "topk(10, rate by collection) — which collections API traffic hits hardest; cross-reference with the Top URIs panel above.",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 55 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 56 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -972,7 +1241,7 @@
           "type": "timeseries",
           "title": "Slowest commands — max latency",
           "description": "max over 5m of mongodb_driver_commands_seconds_max by (command, collection). Spike hunter — surfaces single slow queries the avg smooths away.",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 55 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 56 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {

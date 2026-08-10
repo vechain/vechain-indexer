@@ -22,16 +22,15 @@ Invariants worth knowing before editing:
 
 - **`network` values differ by datasource.** Metrics carry `mainnet`/`testnet` (the `network_label` map in `terraform/api/observability.tf`, emitted as an external label by the sidecar); log group names use `main`/`test`. `overview` uses the former, `logs` the latter. That is why the Logs dashboard link sets `includeVars: false` — carrying the value across would silently match nothing.
 - Both are `custom`, not `label_values`. Query-variable options vanish when the backing series briefly disappears (no testnet `indexer_current_block` mid-deploy), taking dependent panels with them. The trade is that the values are now hardcoded, so they must track the sidecar's external labels.
-- `network`'s `allValue` must be an explicit alternation (`mainnet|testnet`), not `.*` — the Edge mapping variables interpolate it into a regex.
 - Prometheus-side ad-hoc filtering goes through the `filters` variable, not per-label textboxes. Ad-hoc filters only apply to their own datasource, so they never reach the CloudWatch panels.
 
-### Edge row (CloudFront + WAF)
+### Edge rows (CloudFront + WAF)
 
-CloudFront and WAF aren't in this repo's terraform, and their CloudWatch dimensions (`DistributionId`, `WebACL`) can't be derived from `$network` — the mainnet WebACL carries no network token. Hidden `cf_distribution` / `waf_acl` variables hold `network:resource` pairs and capture the resource via `regex: /^(?:${network:pipe}):(.*)$/`.
+One collapsed row per network, with the distribution ids and WebACL names hardcoded. Neither picker applies to them: CloudFront and WAF are shared across blue/green, and their CloudWatch dimensions can't be templated off `$network` — the ids are opaque and the mainnet WebACL carries no network token, so nothing is derivable.
 
-- Leave their `allValue` unset and `current` on `$__all`. Pinning specific values means a network switch falls back to the first option, silently dropping the second distribution.
-- Edge panels are not blue/green scoped; `$deployment` has no effect on them.
-- Keep the row collapsed — collapsed rows don't execute their queries.
+- **Don't try to drive these from `$network` with a hidden mapping variable.** Options of `network:resource` pairs filtered by `regex: /^(?:${network:pipe}):(.*)$/` looks right and deploys clean, but Grafana does not resolve it for `custom` variables — the panels silently get the unstripped `mainnet:E15Q…` as the dimension and return no data. Per-network rows are the working arrangement.
+- Keep both rows collapsed — collapsed rows don't execute their queries, so the CloudWatch calls only happen when someone opens a row.
+- Adding a network means duplicating a row. That duplication is deliberate, and cheaper than the alternative.
 
 ## Usage
 
