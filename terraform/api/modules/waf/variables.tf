@@ -106,8 +106,14 @@ variable "associate_waf" {
 
 variable "resource_arn" {
   type        = list(string)
-  description = "List of resource ARNs (ALBs, API Gateways, AppSync, etc.) to associate with the WAFv2 ACL. Used when associate_waf is true."
+  description = "List of resource ARNs (ALBs, API Gateways, AppSync, etc.) to associate with the WAFv2 ACL. Used when associate_waf is true. Prefer resource_arns."
   default     = []
+}
+
+variable "resource_arns" {
+  type        = map(string)
+  description = "Map of association name to resource ARN to associate with the WAFv2 ACL. Preferred over resource_arn/associated_alb_arns: the keys come from the caller, so plans expand even when the ARNs are not yet known. Takes precedence when set."
+  default     = {}
 }
 
 ########## Statement Rules

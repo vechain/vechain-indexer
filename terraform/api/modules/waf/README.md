@@ -1,5 +1,10 @@
 # WAF Module
 
+> **Vendored copy.** This module was copied from
+> `vechain/terraform_infrastructure_modules//waf` at tag `v.3.2.0` to remove the
+> remote git module dependency for the API stack. It diverges from upstream in
+> one place: the `resource_arns` input below.
+
 This module creates AWS WAFv2 Web ACLs for protecting CloudFront distributions (global) and regional resources like ALBs, API Gateways, and AppSync APIs.
 
 ## Features
@@ -36,8 +41,8 @@ module "waf" {
   
   # Enable WAF association with ALBs
   associate_waf         = true
-  resource_arn          = [aws_lb.my_alb.arn]
-  # Or use: associated_alb_arns = [aws_lb.my_alb.arn]
+  resource_arns         = { my_alb = aws_lb.my_alb.arn }
+  # Legacy, ARN-keyed: resource_arn = [aws_lb.my_alb.arn]
   
   rate_limit                   = 2000
   rate_limit_exception_list    = ["10.0.0.0/8"]
@@ -87,6 +92,18 @@ For existing implementations that previously created `aws_wafv2_web_acl_associat
 1. **Remove external associations**: Delete the external `aws_wafv2_web_acl_association` resource and let the module manage it by setting `associate_waf = true` and providing `resource_arn`.
 
 2. **Keep external associations**: Leave `associate_waf = false` (default) and continue managing associations externally. The module will continue to output the WAF ARN via `waf_limiter_arn`.
+
+### `resource_arns` vs `resource_arn`
+
+`resource_arn`/`associated_alb_arns` key each association on the ARN value, so any plan where the target is not yet in state fails with `Invalid for_each argument`. `resource_arns` keys on a caller-supplied name instead, which is always known at plan time.
+
+Switching inputs re-keys the association in state. Move it first to avoid a destroy/create cycle that would briefly leave the ALB unprotected:
+
+```
+terraform state mv \
+  'module.waf[0].aws_wafv2_web_acl_association.regional_association["arn:aws:elasticloadbalancing:..."]' \
+  'module.waf[0].aws_wafv2_web_acl_association.regional_association["main"]'
+```
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
@@ -145,7 +162,8 @@ No modules.
 | <a name="input_rate_limit_bypass_header_value"></a> [rate\_limit\_bypass\_header\_value](#input\_rate\_limit\_bypass\_header\_value) | Expected header value for rate limit bypass. Must be set together with rate\_limit\_bypass\_header\_name. Note: marked sensitive to redact from CLI output, but the value is still stored in plaintext in Terraform state and visible in the AWS WAF console. Treat it as a low-sensitivity token for controlling test traffic, not as a credential. | `string` | `""` | no |
 | <a name="input_rate_limit_exception_list"></a> [rate\_limit\_exception\_list](#input\_rate\_limit\_exception\_list) | List of IP CIDR addresses to exclude from rate limiting | `list(string)` | `[]` | no |
 | <a name="input_regional_rule"></a> [regional\_rule](#input\_regional\_rule) | Regional WAF Rules for ALB and API Gateway | `string` | `""` | no |
-| <a name="input_resource_arn"></a> [resource\_arn](#input\_resource\_arn) | List of resource ARNs (ALBs, API Gateways, AppSync, etc.) to associate with the WAFv2 ACL. Used when associate\_waf is true. | `list(string)` | `[]` | no |
+| <a name="input_resource_arn"></a> [resource\_arn](#input\_resource\_arn) | List of resource ARNs (ALBs, API Gateways, AppSync, etc.) to associate with the WAFv2 ACL. Used when associate\_waf is true. Prefer resource\_arns. | `list(string)` | `[]` | no |
+| <a name="input_resource_arns"></a> [resource\_arns](#input\_resource\_arns) | Map of association name to resource ARN to associate with the WAFv2 ACL. Preferred over resource\_arn/associated\_alb\_arns: the keys come from the caller, so plans expand even when the ARNs are not yet known. Takes precedence when set. | `map(string)` | `{}` | no |
 | <a name="input_scope"></a> [scope](#input\_scope) | The scope of this Web ACL. Valid options: CLOUDFRONT, REGIONAL(ALB). | `string` | n/a | yes |
 | <a name="input_search_string"></a> [search\_string](#input\_search\_string) | Search string | `string` | `"/charge"` | no |
 | <a name="input_waf_cloudfront_enable"></a> [waf\_cloudfront\_enable](#input\_waf\_cloudfront\_enable) | Enable WAF for Cloudfront distribution | `bool` | `false` | no |

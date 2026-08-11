@@ -8,6 +8,11 @@ locals {
     tolist(var.associated_alb_arns)
   ))
 
+  # Caller-supplied keys stay known at plan time even when the ARNs are not.
+  association_targets = length(var.resource_arns) > 0 ? var.resource_arns : {
+    for arn in local.all_resource_arns : arn => arn
+  }
+
   has_ip_exceptions = length(var.rate_limit_exception_list) > 0
   has_bypass_header = var.rate_limit_bypass_header_name != "" && var.rate_limit_bypass_header_value != ""
 }
@@ -281,7 +286,7 @@ resource "aws_wafv2_web_acl" "rate_limiter" {
 # Associate the regional WAF Web ACL with ALBs, API Gateways, or other supported resources
 # This uses for_each to support multiple resource associations
 resource "aws_wafv2_web_acl_association" "regional_association" {
-  for_each = var.waf_regional_enable && var.associate_waf ? local.all_resource_arns : toset([])
+  for_each = var.waf_regional_enable && var.associate_waf ? local.association_targets : {}
 
   resource_arn = each.value
   web_acl_arn  = aws_wafv2_web_acl.rate_limiter[0].arn

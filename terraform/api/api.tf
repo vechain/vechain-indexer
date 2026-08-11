@@ -1284,7 +1284,7 @@ module "waf" {
 
   # Associate WAF with all API ALBs
   associate_waf = true
-  resource_arn  = [for service in module.ecs-lb-service-api : service.alb_arn]
+  resource_arns = { for net, service in module.ecs-lb-service-api : net => service.alb_arn }
 
   # Rate limiting configuration (defaults to 2000 requests per 5 minutes per IP)
   rate_limit                     = local.env.alb.waf.waf_rate_limit
