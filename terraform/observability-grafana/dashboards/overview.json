@@ -756,7 +756,7 @@
       "id": 41,
       "type": "timeseries",
       "title": "Top URIs by rate",
-      "description": "topk(10) of request rate by uri. Narrow to a single endpoint with the Filters bar at the top (uri = …).",
+      "description": "topk(10) of request rate by uri, ranked per timestamp — a URI that goes quiet drops out of the top 10, so its line breaks into a gap rather than sitting at zero. Legend shows Max/Last only: Mean would average the bursts and ignore the gaps, which reads ~20x too high on spiky series like `/**`. For volume use 'Top URIs by total requests'. Narrow to a single endpoint with the Filters bar at the top (uri = …).",
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
@@ -767,7 +767,7 @@
         }
       ],
       "fieldConfig": { "defaults": { "unit": "reqps", "min": 0 } },
-      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "mean"] } }
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["max", "last"] } }
     },
     {
       "id": 42,
@@ -815,6 +815,43 @@
         "tooltip": { "mode": "single" },
         "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] },
         "displayLabels": ["name", "percent"]
+      }
+    },
+    {
+      "id": 44,
+      "type": "bargauge",
+      "title": "Top URIs by total requests",
+      "description": "topk(15) of sum by (uri) (increase(http_server_requests_seconds_count[$__range])) — absolute request counts over the dashboard time range, not a rate, so bursty and steady traffic are comparable. `/**` is Spring's catch-all pattern: every request whose path matched no controller mapping, i.e. all unmatched-path 404s aggregated into one bar. Actual paths are only recoverable from the WAF logs (aws-waf-logs-*-veworld-indexer, httpRequest.uri).",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(15, sum by (uri) (increase(http_server_requests_seconds_count{deployment=~\"$deployment\", network=~\"$network\", service=\"api\"}[$__range])))",
+          "legendFormat": "{{uri}}",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "transformations": [
+        { "id": "reduce", "options": { "reducers": ["lastNotNull"], "mode": "seriesToRows", "includeTimeField": false } },
+        { "id": "sortBy", "options": { "fields": {}, "sort": [{ "field": "Last *", "desc": true }] } }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "decimals": 0,
+          "color": { "mode": "continuous-BlPu" },
+          "displayName": "${__data.fields.Field}"
+        }
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "reduceOptions": { "values": true, "calcs": [], "fields": "" },
+        "valueMode": "color"
       }
     },
     {
