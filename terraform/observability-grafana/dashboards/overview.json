@@ -753,76 +753,11 @@
       "panels": []
     },
     {
-      "id": 41,
-      "type": "timeseries",
-      "title": "Top URIs by rate",
-      "description": "topk(10) of request rate by uri, ranked per timestamp — a URI that goes quiet drops out of the top 10, so its line breaks into a gap rather than sitting at zero. Legend shows Max/Last only: Mean would average the bursts and ignore the gaps, which reads ~20x too high on spiky series like `/**`. For volume use 'Top URIs by total requests'. Narrow to a single endpoint with the Filters bar at the top (uri = …).",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
-      "datasource": { "type": "prometheus", "uid": "amp" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "topk(10, sum by (uri) (rate(http_server_requests_seconds_count{deployment=~\"$deployment\", network=~\"$network\", service=\"api\"}[5m])))",
-          "legendFormat": "{{uri}}"
-        }
-      ],
-      "fieldConfig": { "defaults": { "unit": "reqps", "min": 0 } },
-      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["max", "last"] } }
-    },
-    {
-      "id": 42,
-      "type": "timeseries",
-      "title": "API — avg latency by URI",
-      "description": "rate(sum) / rate(count). Real p95 needs percentile histograms enabled server-side (management.metrics.distribution.percentiles-histogram.http.server.requests=true).",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
-      "datasource": { "type": "prometheus", "uid": "amp" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "topk(10, sum by (uri) (rate(http_server_requests_seconds_sum{deployment=~\"$deployment\", network=~\"$network\", service=\"api\"}[5m])) / sum by (uri) (rate(http_server_requests_seconds_count{deployment=~\"$deployment\", network=~\"$network\", service=\"api\"}[5m])))",
-          "legendFormat": "{{uri}}"
-        }
-      ],
-      "fieldConfig": { "defaults": { "unit": "s", "min": 0 } },
-      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
-    },
-    {
-      "id": 43,
-      "type": "piechart",
-      "title": "Requests by X-Project-Id",
-      "description": "sum by (project) of api_requests_by_project_total increases over the dashboard time range. `unknown` = header missing; `other` = header set but not on the KNOWN_PROJECT_IDS whitelist (raw value logged); the rest are known callers.",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
-      "datasource": { "type": "prometheus", "uid": "amp" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum by (project) (increase(api_requests_by_project_total{service=\"api\", deployment=~\"$deployment\", network=~\"$network\"}[$__range]))",
-          "legendFormat": "{{project}}",
-          "instant": true,
-          "range": false
-        }
-      ],
-      "fieldConfig": {
-        "defaults": { "unit": "short", "mappings": [] },
-        "overrides": [
-          { "matcher": { "id": "byName", "options": "unknown" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
-          { "matcher": { "id": "byName", "options": "other" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] }
-        ]
-      },
-      "options": {
-        "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" },
-        "pieType": "donut",
-        "tooltip": { "mode": "single" },
-        "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] },
-        "displayLabels": ["name", "percent"]
-      }
-    },
-    {
       "id": 44,
       "type": "bargauge",
       "title": "Top URIs by total requests",
       "description": "topk(15) of sum by (uri) (increase(http_server_requests_seconds_count[$__range])) — absolute request counts over the dashboard time range, not a rate, so bursty and steady traffic are comparable. `/**` is Spring's catch-all pattern: every request whose path matched no controller mapping, i.e. all unmatched-path 404s aggregated into one bar. Actual paths are only recoverable from the WAF logs (aws-waf-logs-*-veworld-indexer, httpRequest.uri).",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -852,6 +787,71 @@
         "showUnfilled": true,
         "reduceOptions": { "values": true, "calcs": [], "fields": "" },
         "valueMode": "color"
+      }
+    },
+    {
+      "id": 41,
+      "type": "timeseries",
+      "title": "Top URIs by rate",
+      "description": "topk(10) of request rate by uri, ranked per timestamp — a URI that goes quiet drops out of the top 10, so its line breaks into a gap rather than sitting at zero. Legend shows Max/Last only: Mean would average the bursts and ignore the gaps, which reads ~20x too high on spiky series like `/**`. For volume use 'Top URIs by total requests'. Narrow to a single endpoint with the Filters bar at the top (uri = …).",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(10, sum by (uri) (rate(http_server_requests_seconds_count{deployment=~\"$deployment\", network=~\"$network\", service=\"api\"}[5m])))",
+          "legendFormat": "{{uri}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps", "min": 0 } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["max", "last"] } }
+    },
+    {
+      "id": 42,
+      "type": "timeseries",
+      "title": "API — avg latency by URI",
+      "description": "rate(sum) / rate(count). Real p95 needs percentile histograms enabled server-side (management.metrics.distribution.percentiles-histogram.http.server.requests=true).",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(10, sum by (uri) (rate(http_server_requests_seconds_sum{deployment=~\"$deployment\", network=~\"$network\", service=\"api\"}[5m])) / sum by (uri) (rate(http_server_requests_seconds_count{deployment=~\"$deployment\", network=~\"$network\", service=\"api\"}[5m])))",
+          "legendFormat": "{{uri}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0 } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+    },
+    {
+      "id": 43,
+      "type": "piechart",
+      "title": "Requests by X-Project-Id",
+      "description": "sum by (project) of api_requests_by_project_total increases over the dashboard time range. `unknown` = header missing; `other` = header set but not on the KNOWN_PROJECT_IDS whitelist (raw value logged); the rest are known callers.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (project) (increase(api_requests_by_project_total{service=\"api\", deployment=~\"$deployment\", network=~\"$network\"}[$__range]))",
+          "legendFormat": "{{project}}",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "mappings": [] },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "unknown" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
+          { "matcher": { "id": "byName", "options": "other" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] }
+        ]
+      },
+      "options": {
+        "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" },
+        "pieType": "donut",
+        "tooltip": { "mode": "single" },
+        "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] },
+        "displayLabels": ["name", "percent"]
       }
     },
     {
