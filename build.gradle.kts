@@ -34,7 +34,19 @@ allprojects {
             force(
                 "com.google.protobuf:protobuf-java:3.25.9",
                 "org.java-websocket:Java-WebSocket:1.5.3",
+                "org.bouncycastle:bcprov-jdk18on:1.85.2",
+                "org.bouncycastle:bcpkix-jdk18on:1.85",
+                "org.bouncycastle:bcutil-jdk18on:1.85",
             )
+            dependencySubstitution {
+                // The jdk15on line ended at 1.70 and receives no security fixes.
+                substitute(module("org.bouncycastle:bcprov-jdk15on"))
+                    .using(module("org.bouncycastle:bcprov-jdk18on:1.85.2"))
+                substitute(module("org.bouncycastle:bcpkix-jdk15on"))
+                    .using(module("org.bouncycastle:bcpkix-jdk18on:1.85"))
+                substitute(module("org.bouncycastle:bcutil-jdk15on"))
+                    .using(module("org.bouncycastle:bcutil-jdk18on:1.85"))
+            }
         }
     }
 
@@ -249,7 +261,7 @@ allprojects {
 
         implementation("org.web3j:abi:4.9.8")
         implementation("org.web3j:contracts:4.9.8")
-        implementation("org.bouncycastle:bcprov-jdk15on:1.70")
+        implementation("org.bouncycastle:bcprov-jdk18on:1.85.2")
         implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.3")
         implementation("commons-codec:commons-codec:1.15")
 
