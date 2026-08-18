@@ -23,13 +23,13 @@ jobs:
     outputs:
       run-tests: ${{ steps.filter.outputs.code_changed }}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
 
       - id: filter
-        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         with:
           filters: |
             code_changed:
@@ -58,7 +58,7 @@ jobs:
         if: needs.detect-code-changes.outputs.run-tests != 'true'
         run: echo "No code changes detected; skipping formatting checks."
 
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: needs.detect-code-changes.outputs.run-tests == 'true'
         with:
           persist-credentials: false
@@ -70,7 +70,7 @@ jobs:
           distribution: "oracle"
           java-version: "21"
 
-      - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         if: needs.detect-code-changes.outputs.run-tests == 'true'
 
       - name: Gradle Spotless
@@ -93,7 +93,7 @@ jobs:
         if: needs.detect-code-changes.outputs.run-tests != 'true'
         run: echo "No code changes detected; skipping unit tests."
 
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: needs.detect-code-changes.outputs.run-tests == 'true'
         with:
           persist-credentials: false
@@ -105,7 +105,7 @@ jobs:
           distribution: 'oracle'
           java-version: '21'
 
-      - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         if: needs.detect-code-changes.outputs.run-tests == 'true'
 
       - name: Unit Test (${{ matrix.package }})
@@ -175,7 +175,7 @@ jobs:
         if: needs.detect-code-changes.outputs.run-tests != 'true'
         run: echo "No code changes detected; skipping E2E tests."
 
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: needs.detect-code-changes.outputs.run-tests == 'true'
         with:
           persist-credentials: false
@@ -187,7 +187,7 @@ jobs:
           distribution: 'oracle'
           java-version: '21'
 
-      - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         if: needs.detect-code-changes.outputs.run-tests == 'true'
 
       - name: Create gradle properties for Docker secrets
