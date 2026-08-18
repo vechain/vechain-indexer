@@ -1,9 +1,8 @@
 """SNS → Slack bridge for AMP Alertmanager and CloudWatch alarms.
 
-The Alertmanager template renders the SNS Message as the final Slack body, so
-that path is forwarded verbatim. CloudWatch publishes JSON, which is rendered
-here into the same shape. Both share the placeholder gate, secret cache, and
-raise-on-failure SNS retry behaviour. See terraform/observability/README.md.
+Alertmanager pre-renders its Slack body, so that path is forwarded verbatim.
+CloudWatch publishes JSON, which is rendered here into the same shape. See
+terraform/observability/README.md.
 """
 
 import json
@@ -25,11 +24,9 @@ _STATE_SUFFIX = {"OK": " — resolved", "INSUFFICIENT_DATA": " — insufficient 
 def _render_cloudwatch_alarm(message: str) -> str | None:
     """Render a CloudWatch alarm to match the Alertmanager template, or None if not one.
 
-    terraform/api/alarms.tf writes descriptions as "<header> — <summary>", where
-    <header> already carries the "[env/deployment/network] service: Title" prefix
-    the Alertmanager template builds from .CommonLabels — a CloudWatch payload has
-    no labels of its own to build it from. NewStateReason is dropped: it is machine
-    boilerplate and the AMP path has no equivalent.
+    terraform/api/alarms.tf writes descriptions as "<header> — <summary>"; the header
+    already carries the "[env/deployment/network] service: Title" prefix Alertmanager
+    builds from .CommonLabels, which a CloudWatch payload has no labels to build.
     """
     try:
         payload = json.loads(message)

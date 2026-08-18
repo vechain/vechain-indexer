@@ -92,10 +92,8 @@ module "ecs-cluster" {
   vpc_id  = data.terraform_remote_state.vpc.outputs.vpc_id
   cidr    = local.env.cidr
 
-  # Basic Container Insights, for the RunningTaskCount / DesiredTaskCount series the
-  # tasks-below-desired alarms in alarms.tf read. That is the only CloudWatch-side view of
-  # task health for the indexer services, which have no load balancer. Per-task CPU/memory
-  # still comes from the ADOT sidecar — that would need enhanced observability here.
+  # RunningTaskCount / DesiredTaskCount for the alarms in alarms.tf. Per-task CPU/memory still
+  # comes from the ADOT sidecar; that would need enhanced observability here.
   enable_container_insights = true
 }
 

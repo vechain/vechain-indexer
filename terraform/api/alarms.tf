@@ -1,18 +1,11 @@
-# CloudWatch alarms for task failures, published to the SNS topic the AMP Alertmanager
-# already uses. Deliberately a second source: every AMP rule is a threshold over a metric the
-# task reports about itself, so those series vanish rather than breach when a task dies. The
-# metrics below are published by ECS and the ALB, so they keep reporting when the task doesn't.
-#
-# Gated on the same flag as the sidecars — both need the observability stack applied for this
-# environment, and that stack owns the topic and the policy that lets CloudWatch publish to it.
+# AMP rules threshold metrics the tasks report about themselves, so those series go absent
+# rather than breach when a task dies. These read ECS and ALB metrics instead.
 locals {
   alarms_enabled    = local.observability_sidecar_enabled
   alerts_topic_arns = local.alarms_enabled ? [data.terraform_remote_state.observability.outputs.alerts_topic_arn] : []
   alarm_name_prefix = "${local.env.environment}-${var.project}"
 
-  # The Alertmanager template builds "[env/deployment/network] service: Title" out of
-  # .CommonLabels. CloudWatch payloads carry no labels, so the same prefix is baked into the
-  # alarm description and sns_to_slack.py splits it off the summary on the first " — ".
+  # Alarm descriptions are load-bearing: sns_to_slack.py splits them on the first " — ".
   alarm_headers = {
     for pair in setproduct(keys(local.env.enabled_nets), ["api", "indexer"]) :
     "${pair[0]}-${pair[1]}" => "[${local.observability_env}/${local.observability_deployment}/${local.network_label[pair[0]]}] ${pair[1]}"
@@ -31,13 +24,8 @@ locals {
   } : {}
 }
 
-# Ten consecutive breaching minutes, not two: the indexer services deploy at
-# deployment_minimum_healthy_percent = 0, so a rolling replacement legitimately sits at zero
-# running tasks for several minutes. The ALB alarms below are the fast path for the API.
-#
-# notBreaching because the expression only goes absent when Container Insights stops publishing
-# for the service, which means the service is gone — a terraform destroy, not an incident. A
-# service scaled to zero (the dead colour) still publishes, at desired = running = 0.
+# 10m window: the indexers deploy at deployment_minimum_healthy_percent = 0, so a rolling
+# replacement legitimately sits at zero running tasks for minutes.
 resource "aws_cloudwatch_metric_alarm" "ecs_tasks_below_desired" {
   for_each = local.alarm_ecs_services
 
@@ -83,10 +71,8 @@ resource "aws_cloudwatch_metric_alarm" "ecs_tasks_below_desired" {
   ok_actions    = local.alerts_topic_arns
 }
 
-# No HealthyHostCount-below-floor companion: the dead colour is scaled to zero out of band by
-# set_dead_prod_service_state.sh, and an empty target group is indistinguishable from a dead one
-# on that metric. UnHealthyHostCount only rises above zero while targets are registered and
-# failing; losing them all is covered by tasks-below-desired and the ELB 5xx alarm.
+# No HealthyHostCount companion: an empty target group (the dead colour) is indistinguishable
+# from a dead one on that metric.
 resource "aws_cloudwatch_metric_alarm" "alb_unhealthy_hosts" {
   for_each = local.alarm_albs
 
@@ -107,9 +93,7 @@ resource "aws_cloudwatch_metric_alarm" "alb_unhealthy_hosts" {
   ok_actions    = local.alerts_topic_arns
 }
 
-# 25 per 5m, not 0: idle_timeout on these ALBs is the module default of 60s, so a trickle of
-# 504s is expected on the slower query endpoints. Recalibrate off HTTPCode_ELB_5XX_Count once
-# there is a baseline, or raise idle_timeout.
+# Not 0: idle_timeout is the module default of 60s, so a trickle of 504s is expected.
 resource "aws_cloudwatch_metric_alarm" "alb_elb_5xx" {
   for_each = local.alarm_albs
 
@@ -130,8 +114,7 @@ resource "aws_cloudwatch_metric_alarm" "alb_elb_5xx" {
   ok_actions    = local.alerts_topic_arns
 }
 
-# 300 per 5m is the 1 req/s of the HighApi5xxRate AMP rule, measured at the load balancer so it
-# survives the task dying. Keep the two thresholds in step.
+# 300/5m is the 1 req/s of the HighApi5xxRate AMP rule; keep the two in step.
 resource "aws_cloudwatch_metric_alarm" "alb_target_5xx" {
   for_each = local.alarm_albs
 
@@ -152,8 +135,7 @@ resource "aws_cloudwatch_metric_alarm" "alb_target_5xx" {
   ok_actions    = local.alerts_topic_arns
 }
 
-# 10s matches the app's own timing.very-slow-threshold-ms, so a p95 there means most requests
-# are past the point the service already considers pathological.
+# 10s matches the app's own timing.very-slow-threshold-ms.
 resource "aws_cloudwatch_metric_alarm" "alb_target_latency" {
   for_each = local.alarm_albs
 

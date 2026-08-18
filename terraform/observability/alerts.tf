@@ -46,9 +46,8 @@ data "aws_iam_policy_document" "alerts_topic" {
     }
   }
 
-  # This policy replaces the topic's default account-owner policy, so an unlisted service
-  # principal is denied. The alarms live in the api stack and are named per colour and network,
-  # hence ArnLike over the whole account rather than named ARNs.
+  # This policy replaces the topic's default account-owner policy, so an unlisted principal is
+  # denied. ArnLike because the alarms live in the api stack, one set per colour and network.
   statement {
     sid    = "AllowCloudWatchAlarmPublish"
     effect = "Allow"
