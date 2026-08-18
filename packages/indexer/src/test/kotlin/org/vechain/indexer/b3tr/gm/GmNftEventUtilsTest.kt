@@ -96,7 +96,9 @@ class GmNftEventUtilsTest {
                     blockNumber = 10,
                     eventType = "B3TR_GmUpgrade",
                     params =
-                        AbiEventParameters(returnValues = mapOf("newLevel" to "1", "value" to "10")),
+                        AbiEventParameters(
+                            returnValues = mapOf("newLevel" to "1", "value" to "10")
+                        ),
                 )
 
             val exception =
@@ -144,7 +146,9 @@ class GmNftEventUtilsTest {
                     blockNumber = 101,
                     eventType = "B3TR_GmUpgrade",
                     params =
-                        AbiEventParameters(returnValues = mapOf("newLevel" to "1", "value" to "10")),
+                        AbiEventParameters(
+                            returnValues = mapOf("newLevel" to "1", "value" to "10")
+                        ),
                 )
 
             val exception =

@@ -214,18 +214,21 @@ internal class UserAllTimeActionSummaryServiceTest {
         val (updated, archived) = service.processEvents(listOf(event))
 
         assertEquals(3, updated.size)
-        val updatedUserRecord =
-            updated.first { it.entity == "user-1" && it.entityType == EntityType.USER }
+        val updatedUserRecord = updated.first {
+            it.entity == "user-1" && it.entityType == EntityType.USER
+        }
         assertEquals(6, updatedUserRecord.actionsRewarded)
         assertEquals(0, updatedUserRecord.totalRewardAmount.compareTo(BigDecimal("60")))
         assertEquals(2, updatedUserRecord.version)
-        val updatedAppRecord =
-            updated.first { it.entity == "app-1" && it.entityType == EntityType.APP }
+        val updatedAppRecord = updated.first {
+            it.entity == "app-1" && it.entityType == EntityType.APP
+        }
         assertEquals(11, updatedAppRecord.actionsRewarded)
         assertEquals(0, updatedAppRecord.totalRewardAmount.compareTo(BigDecimal("110")))
         assertEquals(3, updatedAppRecord.version)
-        val updatedGlobalRecord =
-            updated.first { it.entity == "GLOBAL" && it.entityType == EntityType.GLOBAL }
+        val updatedGlobalRecord = updated.first {
+            it.entity == "GLOBAL" && it.entityType == EntityType.GLOBAL
+        }
         assertEquals(21, updatedGlobalRecord.actionsRewarded)
         assertEquals(0, updatedGlobalRecord.totalRewardAmount.compareTo(BigDecimal("210")))
         assertEquals(4, updatedGlobalRecord.version)

@@ -73,11 +73,10 @@ open class VthoClaimedByAccountService(
         if (events.isEmpty()) return emptyList()
 
         val existingByAccount = existing.associateBy { it.account }
-        val groupedEvents =
-            events.groupBy {
-                it.params.getAsString("owner")
-                    ?: throw IllegalArgumentException("Missing 'owner' in event")
-            }
+        val groupedEvents = events.groupBy {
+            it.params.getAsString("owner")
+                ?: throw IllegalArgumentException("Missing 'owner' in event")
+        }
 
         val latestEvent = events.maxByOrNull { it.blockNumber } ?: return emptyList()
 
@@ -108,16 +107,15 @@ open class VthoClaimedByAccountService(
         if (events.isEmpty()) return emptyList()
 
         val existingByAccountTokenId = existing.associateBy { "${it.account}_${it.tokenId}" }
-        val groupedEvents =
-            events.groupBy {
-                val owner =
-                    it.params.getAsString("owner")
-                        ?: throw IllegalArgumentException("Missing 'owner' in event")
-                val tokenId =
-                    it.params.getAsString("tokenId")
-                        ?: throw IllegalArgumentException("Missing 'tokenId' parameter in event")
-                "${owner}_${tokenId}"
-            }
+        val groupedEvents = events.groupBy {
+            val owner =
+                it.params.getAsString("owner")
+                    ?: throw IllegalArgumentException("Missing 'owner' in event")
+            val tokenId =
+                it.params.getAsString("tokenId")
+                    ?: throw IllegalArgumentException("Missing 'tokenId' parameter in event")
+            "${owner}_${tokenId}"
+        }
 
         val latestEvent = events.maxByOrNull { it.blockNumber } ?: return emptyList()
 

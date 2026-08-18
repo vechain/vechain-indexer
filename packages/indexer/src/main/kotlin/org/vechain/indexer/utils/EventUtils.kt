@@ -163,11 +163,10 @@ object EventUtils {
 
         // Build (BlockDetails -> events) pairs. We derive number/timestamp from the first event in
         // each block.
-        val entries: List<Pair<BlockDetails, List<IndexedEvent>>> =
-            byId.map { (id, evs) ->
-                val first = evs.first()
-                BlockDetails(id, first.blockNumber, first.blockTimestamp) to evs
-            }
+        val entries: List<Pair<BlockDetails, List<IndexedEvent>>> = byId.map { (id, evs) ->
+            val first = evs.first()
+            BlockDetails(id, first.blockNumber, first.blockTimestamp) to evs
+        }
 
         // Sort by blockNumber and return as a LinkedHashMap to preserve order
         return entries.sortedBy { (details, _) -> details.blockNumber }.toMap(LinkedHashMap())
@@ -181,7 +180,9 @@ object EventUtils {
      *   contract.
      */
     fun groupByContractAddress(events: List<IndexedEvent>): Map<String, List<IndexedEvent>> =
-        events.groupBy { it.address ?: error("Event address is null for txId: ${it.txId}") }
+        events.groupBy {
+            it.address ?: error("Event address is null for txId: ${it.txId}")
+        }
 
     /** Determine if a delegation-related event should be processed based on its type and source. */
     fun shouldProcessDelegationEvent(ev: IndexedEvent, stakerSC: String): Boolean =

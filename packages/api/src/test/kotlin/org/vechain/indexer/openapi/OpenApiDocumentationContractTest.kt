@@ -152,10 +152,9 @@ class OpenApiDocumentationContractTest {
     fun `project id header is documented on public endpoints`() {
         val parameters = specParameters("/paths/~1api~1v1~1validators/get/parameters")
 
-        val projectIdHeader =
-            parameters.firstOrNull {
-                it.path("\$ref").asText() == "#/components/parameters/XProjectIdHeader"
-            }
+        val projectIdHeader = parameters.firstOrNull {
+            it.path("\$ref").asText() == "#/components/parameters/XProjectIdHeader"
+        }
 
         expectThat(projectIdHeader != null).isTrue()
     }

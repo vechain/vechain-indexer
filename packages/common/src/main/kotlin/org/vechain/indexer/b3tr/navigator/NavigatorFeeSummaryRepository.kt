@@ -6,5 +6,4 @@ import org.vechain.indexer.BaseIndexedRepository
 
 @Profile("b3tr", "b3tr-navigator", "b3tr-navigator-fee-summary")
 @Repository
-interface NavigatorFeeSummaryRepository :
-    BaseIndexedRepository<NavigatorFeeSummaryDocument, String>
+interface NavigatorFeeSummaryRepository : BaseIndexedRepository<NavigatorFeeSummaryDocument, String>

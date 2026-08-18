@@ -927,7 +927,8 @@ internal class XAllocResultServiceTest {
                                 "totalAmount" to BigInteger("1500000000000000000"), // 1.5
                                 "unallocatedAmount" to BigInteger("300000000000000000"), // 0.3
                                 "teamAllocationAmount" to BigInteger("400000000000000000"), // 0.4
-                                "rewardsAllocationAmount" to BigInteger("800000000000000000"), // 0.8
+                                "rewardsAllocationAmount" to
+                                    BigInteger("800000000000000000"), // 0.8
                             )
                     ),
             )

@@ -19,10 +19,9 @@ open class NftService(private val nftRepository: NftRepository) {
         pageable: Pageable,
     ): Slice<IndexedNft> {
         val excludeCollectionsList = excludeCollections?.map { it.value } ?: emptyList()
-        val parsedTokenId =
-            tokenId?.let {
-                if (it.isEmpty()) null else BigIntegerUtils.fromHexOrDecimal(it).toString(10)
-            }
+        val parsedTokenId = tokenId?.let {
+            if (it.isEmpty()) null else BigIntegerUtils.fromHexOrDecimal(it).toString(10)
+        }
         return if (contractAddress != null) {
             return if (!parsedTokenId.isNullOrEmpty()) {
                 nftRepository.findByOwnerAndContractAddressAndTokenId(

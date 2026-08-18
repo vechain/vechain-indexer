@@ -161,8 +161,9 @@ open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: Mo
             // implicitly excluded — adding an explicit exclusion would cause MongoDB
             // error 31254 ("Cannot do exclusion on field in inclusion projection").
             val fieldsObject = query.getFieldsObject()
-            val hasInclusionProjection =
-                fieldsObject.any { (key, value) -> key != "_id" && (value == 1 || value == true) }
+            val hasInclusionProjection = fieldsObject.any { (key, value) ->
+                key != "_id" && (value == 1 || value == true)
+            }
             if (!hasInclusionProjection) {
                 query.fields().exclude(PREVIOUS_VERSIONS_FIELD)
             }

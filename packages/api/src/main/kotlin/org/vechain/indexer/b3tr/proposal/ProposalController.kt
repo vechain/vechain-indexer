@@ -47,10 +47,9 @@ open class ProposalController(private val proposalService: ProposalService) {
         return if (states == null || states.isEmpty()) {
             paginatedResponse(proposalService.getAllProposalResults(pageable))
         } else {
-            val statesList =
-                states.mapNotNull { state ->
-                    ProposalState.entries.find { it.name.equals(state.trim(), ignoreCase = true) }
-                }
+            val statesList = states.mapNotNull { state ->
+                ProposalState.entries.find { it.name.equals(state.trim(), ignoreCase = true) }
+            }
             paginatedResponse(proposalService.getAllProposalResultsByStates(statesList, pageable))
         }
     }

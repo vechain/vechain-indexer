@@ -45,7 +45,8 @@ open class NavigatorCitizenCollectionConfig(
                 ),
                 buildIndex(
                     NavigatorCitizen::active.name to Sort.Direction.ASC,
-                    NavigatorCitizen::navigatorExitEffectiveDeadlineBlock.name to Sort.Direction.ASC,
+                    NavigatorCitizen::navigatorExitEffectiveDeadlineBlock.name to
+                        Sort.Direction.ASC,
                 ),
             )
         )

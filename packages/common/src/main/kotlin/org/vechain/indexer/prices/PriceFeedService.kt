@@ -72,14 +72,13 @@ open class PriceFeedService(
             )
         }
         val ordered = feeds.toList()
-        val clauses =
-            ordered.map { feed ->
-                ContractUtils.createClause(
-                    priceFeedOracleAddress,
-                    GET_LATEST_VALUE_ABI,
-                    feed.toBytes32(),
-                )
-            }
+        val clauses = ordered.map { feed ->
+            ContractUtils.createClause(
+                priceFeedOracleAddress,
+                GET_LATEST_VALUE_ABI,
+                feed.toBytes32(),
+            )
+        }
         val responses =
             try {
                 runBlocking { thorClient.inspectClauses(clauses, BlockRevision.Keyword.BEST) }

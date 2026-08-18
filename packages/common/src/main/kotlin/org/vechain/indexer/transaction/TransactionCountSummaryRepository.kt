@@ -6,5 +6,4 @@ import org.vechain.indexer.BaseIndexedRepository
 
 @Profile("transactions", "transaction-count")
 @Repository
-interface TransactionCountSummaryRepository :
-    BaseIndexedRepository<TransactionCountSummary, String>
+interface TransactionCountSummaryRepository : BaseIndexedRepository<TransactionCountSummary, String>

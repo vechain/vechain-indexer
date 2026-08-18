@@ -135,14 +135,13 @@ class ValidatorDelegationService(
     suspend fun fetchValidationPeriodDetails(validatorIds: List<String>): List<InspectionResult> {
         if (validatorIds.isEmpty()) return emptyList()
 
-        val clauses =
-            validatorIds.map { validatorId ->
-                ContractUtils.createClause(
-                    stakerSC,
-                    getDelegationsAbiFunctions("getValidationPeriodDetails"),
-                    AddressUtils.toBigInt(validatorId),
-                )
-            }
+        val clauses = validatorIds.map { validatorId ->
+            ContractUtils.createClause(
+                stakerSC,
+                getDelegationsAbiFunctions("getValidationPeriodDetails"),
+                AddressUtils.toBigInt(validatorId),
+            )
+        }
         val results = thorClient.inspectClauses(clauses)
         return results
     }

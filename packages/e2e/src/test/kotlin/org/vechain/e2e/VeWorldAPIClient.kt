@@ -130,8 +130,9 @@ object VeWorldAPIClient {
                     lastError = "No matching indexers found (requested: ${indexerNames.toList()})"
                     stableSince = null
                 } else {
-                    val laggards =
-                        tracked.filter { (it["currentBlock"]?.toLongOrNull() ?: -1L) < thorHead }
+                    val laggards = tracked.filter {
+                        (it["currentBlock"]?.toLongOrNull() ?: -1L) < thorHead
+                    }
                     if (laggards.isEmpty()) {
                         val now = System.currentTimeMillis()
                         if (stableSince == null) stableSince = now
