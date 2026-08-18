@@ -247,56 +247,57 @@ allprojects {
     dependencies {
 
         // Common dependencies
-        implementation("org.springframework.boot:spring-boot-starter:3.5.16")
-        implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.5.16")
-        implementation("org.springframework.boot:spring-boot-starter-webflux:3.5.16")
-        implementation("org.springframework.boot:spring-boot-starter-jetty:3.5.16")
+        implementation("org.springframework.boot:spring-boot-starter")
+        implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
+        implementation("org.springframework.boot:spring-boot-starter-webflux")
+        implementation("org.springframework.boot:spring-boot-starter-jetty")
         implementation("org.springframework:spring-webflux")
         implementation("org.springframework:spring-core")
         implementation("org.springframework:spring-web")
 
-        implementation("org.springframework.boot:spring-boot-starter-actuator:3.5.16")
+        implementation("org.springframework.boot:spring-boot-starter-actuator")
 
-        implementation("org.jetbrains.kotlin:kotlin-reflect:1.8.21")
+        implementation("org.jetbrains.kotlin:kotlin-reflect")
 
         implementation("org.web3j:abi:4.14.0")
         implementation("org.web3j:contracts:4.14.0")
         implementation("org.bouncycastle:bcprov-jdk18on:1.85.2")
-        implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.3")
+        implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
         implementation("commons-codec:commons-codec:1.22.1")
 
         // Monitoring dependencies
-        implementation("io.micrometer:micrometer-registry-prometheus:1.14.5")
+        implementation("io.micrometer:micrometer-registry-prometheus")
         implementation("net.logstash.logback:logstash-logback-encoder:8.1")
 
         // Core indexer dependency
         implementation("org.vechain:indexer-core:11.0.0")
 
         // Test dependencies
-        testImplementation("org.springframework.boot:spring-boot-starter-test:3.5.16")
-        testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.4")
+        testImplementation("org.springframework.boot:spring-boot-starter-test")
+        testImplementation("org.junit.jupiter:junit-jupiter-api")
         testImplementation("io.mockk:mockk:1.14.11")
         testImplementation("io.strikt:strikt-core:0.35.1")
-        testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.4")
+        testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 
-        // Ensure Netty Version Consistency
-        implementation("io.netty:netty-handler:4.1.118.Final")
-        implementation("io.netty:netty-codec-http:4.1.118.Final")
-        implementation("io.netty:netty-common:4.1.118.Final")
-        implementation("io.netty:netty-buffer:4.1.118.Final")
-        implementation("io.netty:netty-transport:4.1.118.Final")
-        implementation("io.netty:netty-resolver:4.1.118.Final")
-        implementation("io.netty:netty-codec:4.1.118.Final")
-        implementation("io.netty:netty-codec-http2:4.1.118.Final")
-        implementation("io.netty:netty-resolver-dns:4.1.118.Final")
-        implementation("io.netty:netty-resolver-dns-native-macos:4.1.118.Final")
-        implementation("io.netty:netty-transport-native-epoll:4.1.118.Final")
-        implementation("io.netty:netty-transport-native-unix-common:4.1.118.Final")
-        implementation("io.netty:netty-codec-dns:4.1.118.Final")
-        implementation("io.netty:netty-resolver-dns-classes-macos:4.1.118.Final")
-        implementation("io.netty:netty-handler-proxy:4.1.118.Final")
-        implementation("io.netty:netty-codec-socks:4.1.118.Final")
-        implementation("io.netty:netty-transport-classes-epoll:4.1.118.Final")
+        // Declared so the native transports stay on the runtime classpath; versions
+        // come from the Spring Boot BOM's netty.version so they cannot drift apart.
+        implementation("io.netty:netty-handler")
+        implementation("io.netty:netty-codec-http")
+        implementation("io.netty:netty-common")
+        implementation("io.netty:netty-buffer")
+        implementation("io.netty:netty-transport")
+        implementation("io.netty:netty-resolver")
+        implementation("io.netty:netty-codec")
+        implementation("io.netty:netty-codec-http2")
+        implementation("io.netty:netty-resolver-dns")
+        implementation("io.netty:netty-resolver-dns-native-macos")
+        implementation("io.netty:netty-transport-native-epoll")
+        implementation("io.netty:netty-transport-native-unix-common")
+        implementation("io.netty:netty-codec-dns")
+        implementation("io.netty:netty-resolver-dns-classes-macos")
+        implementation("io.netty:netty-handler-proxy")
+        implementation("io.netty:netty-codec-socks")
+        implementation("io.netty:netty-transport-classes-epoll")
 
         // Override the okhttp3 4.3.1 transitively pulled by web3j:core:5.0.0 (via
         // thor-devkit.java:v1.0.0). 4.3.1 has known CVEs (e.g. CVE-2021-0341, fixed in 4.9.2).
