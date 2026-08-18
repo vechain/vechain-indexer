@@ -1,9 +1,9 @@
-"""SNS → Slack bridge for AMP Alertmanager.
+"""SNS → Slack bridge for AMP Alertmanager and CloudWatch alarms.
 
-The Alertmanager template renders the SNS Message as the final Slack body —
-this Lambda just forwards it to the webhook URL (with the placeholder
-gate, secret cache, and raise-on-failure SNS retry behaviour). See
-terraform/observability/README.md.
+The Alertmanager template renders the SNS Message as the final Slack body, so
+that path is forwarded verbatim. CloudWatch publishes JSON, which is rendered
+here into the same shape. Both share the placeholder gate, secret cache, and
+raise-on-failure SNS retry behaviour. See terraform/observability/README.md.
 """
 
 import json
@@ -19,6 +19,29 @@ _secrets_client = boto3.client("secretsmanager")
 _webhook_cache: dict[str, float | str | None] = {"url": None, "fetched_at": 0.0}
 _CACHE_TTL_SECONDS = 300
 _PLACEHOLDER_SENTINEL = "placeholder"
+_STATE_SUFFIX = {"OK": " — resolved", "INSUFFICIENT_DATA": " — insufficient data"}
+
+
+def _render_cloudwatch_alarm(message: str) -> str | None:
+    """Render a CloudWatch alarm to match the Alertmanager template, or None if not one.
+
+    terraform/api/alarms.tf writes descriptions as "<header> — <summary>", where
+    <header> already carries the "[env/deployment/network] service: Title" prefix
+    the Alertmanager template builds from .CommonLabels — a CloudWatch payload has
+    no labels of its own to build it from. NewStateReason is dropped: it is machine
+    boilerplate and the AMP path has no equivalent.
+    """
+    try:
+        payload = json.loads(message)
+    except (ValueError, TypeError):
+        return None
+    if not isinstance(payload, dict) or "AlarmName" not in payload:
+        return None
+
+    description = (payload.get("AlarmDescription") or payload["AlarmName"]).strip()
+    header, _, summary = description.partition(" — ")
+    rendered = f"*{header.strip()}*{_STATE_SUFFIX.get(payload.get('NewStateValue', ''), '')}"
+    return f"{rendered}\n{summary.strip()}" if summary.strip() else rendered
 
 
 def _resolve_webhook_url() -> str | None:
@@ -82,4 +105,4 @@ def handler(event: dict, _context) -> None:
         if not text:
             print("SNS record missing Message; skipping")
             continue
-        _post_to_slack(webhook_url, text)
+        _post_to_slack(webhook_url, _render_cloudwatch_alarm(text) or text)

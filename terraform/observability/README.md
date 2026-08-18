@@ -10,16 +10,25 @@ Amazon Managed Prometheus (AMP) + Amazon Managed Grafana (AMG) workspaces for th
 - Terraform-provider service account with an admin token in Secrets Manager, rotated every 25 days.
 - Okta SAML configuration — gated on `okta_saml_metadata_url` being non-empty. Empty by default until the Okta app is registered.
 - **Alerting** — AMP rule groups + Alertmanager definition, delivered to Slack via SNS → bridge Lambda. See `alerts.tf` and `locals.tf` for rules and the alertmanager template. Ported from `agent-marketplace/infra/terraform/observability-aws`.
+- **SNS topic shared with CloudWatch** — the same topic receives the CloudWatch alarms defined in `terraform/api/alarms.tf`; the topic policy here grants `cloudwatch.amazonaws.com` publish rights.
 
 Deliberately not in this stack (yet): dashboards, scrape targets, recording rules. Dashboards live in `terraform/observability-grafana`.
 
 ## Alert delivery
 
-Pipeline: **AMP Alertmanager → SNS (`aws_sns_topic.alerts`) → `sns_to_slack` Lambda → Slack webhook**.
+Two producers, one pipeline: **AMP Alertmanager / CloudWatch alarms → SNS (`aws_sns_topic.alerts`) → `sns_to_slack` Lambda → Slack webhook**.
+
+AMP rules cover what the services report about themselves. Those series vanish rather than breach when a task dies, so the CloudWatch alarms in `terraform/api/alarms.tf` cover the same ground from ECS and ALB metrics AWS publishes on our behalf. The topic policy in `alerts.tf` must allow both principals — an unlisted service principal is denied, because the policy replaces the topic's default account-owner policy.
+
+Alertmanager pre-renders its Slack body and the Lambda forwards it verbatim. CloudWatch publishes JSON with no labels, so the alarm's `AlarmDescription` carries the whole thing as `"[env/deployment/network] service: Title — summary."` and `_render_cloudwatch_alarm` splits it on the first `" — "`. Keep that convention when adding alarms or the header renders as one long line.
 
 Slack webhook value comes in via `TF_VAR_slack_webhook_url` (marked sensitive). While unset, the secret holds the literal string `placeholder` and the Lambda no-ops, so the plumbing can apply before the webhook exists. Populate the workflow secret and reapply to switch delivery on.
 
 Alert rules are stamped without an explicit `env`/`deployment`/`network`/`service` label — those come through from the underlying series' external_labels (set by the sidecar). Aggregating alerts (e.g. `sum by (...) rate(...)`) must include those labels in the `by` clause or Alertmanager `.CommonLabels` will drop them.
+
+## Apply order
+
+`terraform/api` reads `alerts_topic_arn` from this stack's remote state and its alarms publish under this stack's topic policy. Apply this stack first when either changes; the api plan fails loudly if the output is missing.
 
 ## Usage
 

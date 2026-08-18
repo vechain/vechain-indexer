@@ -45,6 +45,30 @@ data "aws_iam_policy_document" "alerts_topic" {
       values   = [data.aws_caller_identity.current.account_id]
     }
   }
+
+  # This policy replaces the topic's default account-owner policy, so an unlisted service
+  # principal is denied. The alarms live in the api stack and are named per colour and network,
+  # hence ArnLike over the whole account rather than named ARNs.
+  statement {
+    sid    = "AllowCloudWatchAlarmPublish"
+    effect = "Allow"
+    principals {
+      type        = "Service"
+      identifiers = ["cloudwatch.amazonaws.com"]
+    }
+    actions   = ["sns:Publish"]
+    resources = [aws_sns_topic.alerts.arn]
+    condition {
+      test     = "ArnLike"
+      variable = "aws:SourceArn"
+      values   = ["arn:aws:cloudwatch:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:alarm:*"]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceAccount"
+      values   = [data.aws_caller_identity.current.account_id]
+    }
+  }
 }
 
 resource "aws_sns_topic_policy" "alerts" {
