@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended", "schedule:weekly"],
-  "prConcurrentLimit": 3,
+  "prConcurrentLimit": 5,
   "customManagers": [
     {
       "customType": "regex",
@@ -14,9 +14,31 @@
   ],
   "packageRules": [
     {
-      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
-      "groupName": "all non-major dependencies",
-      "groupSlug": "all-minor-patch"
+      "matchUpdateTypes": ["patch", "pin", "digest"],
+      "groupName": "all patch dependencies",
+      "groupSlug": "all-patch"
+    },
+    {
+      "matchUpdateTypes": ["minor"],
+      "groupName": "all minor dependencies",
+      "groupSlug": "all-minor"
+    },
+    {
+      "description": "The Kotlin plugin, the kotlinx libraries whose metadata version it gates, and Spotless (whose bundled ktfmt is compiled against a specific compiler) only work in lockstep, so they must not ride on an unrelated PR.",
+      "matchPackageNames": ["/^org\\.jetbrains\\.kotlin/", "/^com\\.diffplug\\.spotless/"],
+      "groupName": "kotlin toolchain",
+      "groupSlug": "kotlin-toolchain"
+    },
+    {
+      "description": "Matched by datasource because the wrapper manager reports depName 'gradle', not 'gradle-wrapper'.",
+      "matchDatasources": ["gradle-version"],
+      "groupName": "gradle build tooling",
+      "groupSlug": "gradle-tooling"
+    },
+    {
+      "matchPackageNames": ["gradle/actions"],
+      "groupName": "gradle build tooling",
+      "groupSlug": "gradle-tooling"
     },
     {
       "matchUpdateTypes": ["major", "minor", "patch", "pin", "digest"],
