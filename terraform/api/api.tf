@@ -92,10 +92,9 @@ module "ecs-cluster" {
   vpc_id  = data.terraform_remote_state.vpc.outputs.vpc_id
   cidr    = local.env.cidr
 
-  # Per-task CPU/memory comes from the ADOT sidecar, not CloudWatch: task-level
-  # CloudWatch metrics would need Container Insights with enhanced observability.
-  # Basic Container Insights only adds the cluster/service metrics we don't use.
-  enable_container_insights = false
+  # RunningTaskCount / DesiredTaskCount for the alarms in alarms.tf. Per-task CPU/memory still
+  # comes from the ADOT sidecar; that would need enhanced observability here.
+  enable_container_insights = true
 }
 
 ################################################################################

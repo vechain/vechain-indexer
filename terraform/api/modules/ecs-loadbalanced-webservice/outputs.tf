@@ -8,6 +8,16 @@ output "name" {
   value       = length(aws_alb.alb) > 0 ? aws_alb.alb.name : ""
 }
 
+output "alb_arn_suffix" {
+  description = "ALB ARN suffix — the `LoadBalancer` dimension on AWS/ApplicationELB metrics"
+  value       = aws_alb.alb.arn_suffix
+}
+
+output "alb_tg_arn_suffix" {
+  description = "Target group ARN suffix — the `TargetGroup` dimension on AWS/ApplicationELB metrics"
+  value       = length(aws_alb_target_group.alb_target_group_https) > 0 ? aws_alb_target_group.alb_target_group_https[0].arn_suffix : ""
+}
+
 output "alb_tg" {
   description = "The ARN of the ALB Target Group"
   value       = length(aws_alb_target_group.alb_target_group_https) > 0 ? aws_alb_target_group.alb_target_group_https[0].arn : ""
