@@ -27,7 +27,8 @@ open class B3trBalanceService(
     private val inlineVersioningProperties: InlineVersioningProperties,
     @Value("\${business-event.substitutions.B3TR_CONTRACT}")
     private val b3trContractAddress: String,
-    @Value("\${business-event.substitutions.VOT3_CONTRACT}") private val vot3ContractAddress: String,
+    @Value("\${business-event.substitutions.VOT3_CONTRACT}")
+    private val vot3ContractAddress: String,
 ) {
 
     /** Entry point when full block is available (IndexingResult.BlockResult). */

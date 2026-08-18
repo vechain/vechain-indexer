@@ -48,7 +48,9 @@ internal class SafeProxyServiceTest {
             address = factory,
             eventType = SafeProxyService.PROXY_CREATION,
             params =
-                AbiEventParameters(returnValues = mapOf("proxy" to proxy, "singleton" to singleton)),
+                AbiEventParameters(
+                    returnValues = mapOf("proxy" to proxy, "singleton" to singleton)
+                ),
         )
 
     @Test

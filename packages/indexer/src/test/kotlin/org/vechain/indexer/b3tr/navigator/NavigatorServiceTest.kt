@@ -344,7 +344,11 @@ internal class NavigatorServiceTest {
             listOf(
                 event(
                     "B3TR_ReportSubmitted",
-                    mapOf("navigator" to "0xnav1", "roundId" to "3", "reportURI" to "ipfs://report"),
+                    mapOf(
+                        "navigator" to "0xnav1",
+                        "roundId" to "3",
+                        "reportURI" to "ipfs://report",
+                    ),
                 )
             ),
             block,

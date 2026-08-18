@@ -234,11 +234,10 @@ object InlineVersionService {
                 // update: e.g. a doc updated at blocks 100/200/300/400, rolling back to 250 with
                 // previousVersions=[v3@300, v2@200, v1@100] must restore v2 (not v3@300, which is
                 // still in the rolled-back range).
-                val restoreIndex =
-                    previousVersions.indexOfFirst { entry ->
-                        val bn = (entry.get("blockNumber") as? Number)?.toLong()
-                        bn != null && bn < blockNumber
-                    }
+                val restoreIndex = previousVersions.indexOfFirst { entry ->
+                    val bn = (entry.get("blockNumber") as? Number)?.toLong()
+                    bn != null && bn < blockNumber
+                }
 
                 if (restoreIndex < 0) {
                     // No retained snapshot predates the target. Two sub-cases:

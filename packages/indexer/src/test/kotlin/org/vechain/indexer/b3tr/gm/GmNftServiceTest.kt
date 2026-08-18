@@ -47,7 +47,9 @@ internal class GmNftServiceTest {
                 blockNumber = 1L,
                 eventType = "B3TR_GmMinted",
                 params =
-                    AbiEventParameters(returnValues = mapOf("tokenId" to tokenId, "to" to "owner1")),
+                    AbiEventParameters(
+                        returnValues = mapOf("tokenId" to tokenId, "to" to "owner1")
+                    ),
             )
         val event2 =
             buildIndexedEvent(

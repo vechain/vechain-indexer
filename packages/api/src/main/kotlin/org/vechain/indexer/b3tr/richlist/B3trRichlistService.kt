@@ -55,14 +55,13 @@ open class B3trRichlistService(
         val firstBalance = scope.balanceFor(first)
         val startRank = b3trRichlistCountService.countBalancesGreaterThan(scope, firstBalance) + 1
 
-        val items =
-            page.mapIndexed { index, doc ->
-                B3trRichlistItem(
-                    address = doc.address,
-                    balance = scope.balanceFor(doc).toBigIntegerExact(),
-                    rank = startRank + index,
-                )
-            }
+        val items = page.mapIndexed { index, doc ->
+            B3trRichlistItem(
+                address = doc.address,
+                balance = scope.balanceFor(doc).toBigIntegerExact(),
+                rank = startRank + index,
+            )
+        }
 
         val nextCursor =
             CursorPaginationUtils.calculateNextCursor(

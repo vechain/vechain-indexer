@@ -190,8 +190,9 @@ data class ValidatorV2Response(
                 if (nextPeriodWeight != null && totalNextPeriodWeight > BigDecimal.ZERO) {
                     nextPeriodWeight.divide(totalNextPeriodWeight, 12, RoundingMode.HALF_UP)
                 } else null
-            val blocksPerYearNextCycle =
-                blockProbabilityNextCycle?.let { ValidatorCalculator.blocksPerYear(it) }
+            val blocksPerYearNextCycle = blockProbabilityNextCycle?.let {
+                ValidatorCalculator.blocksPerYear(it)
+            }
 
             var nextCycleValidatorYield: BigDecimal? = null
             var nextCycleTvlBasedYield: BigDecimal? = null

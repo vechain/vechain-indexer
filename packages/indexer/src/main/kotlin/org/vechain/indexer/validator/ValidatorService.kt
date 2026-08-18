@@ -383,14 +383,13 @@ open class ValidatorService(
 
         val revision = BlockRevision.Id(block.id)
         val validationAbi = getAbi("getValidation")
-        val clauses =
-            candidates.map { v ->
-                ContractUtils.createClause(
-                    stakerAddress,
-                    validationAbi,
-                    AddressUtils.toBigInt(v.id),
-                )
-            }
+        val clauses = candidates.map { v ->
+            ContractUtils.createClause(
+                stakerAddress,
+                validationAbi,
+                AddressUtils.toBigInt(v.id),
+            )
+        }
         val responses = thorClient.inspectClauses(clauses, revision)
         requireStakerResponseCount("liveness offlineBlock scan", responses, clauses.size, block)
 
@@ -461,26 +460,25 @@ open class ValidatorService(
 
         // Three clauses per validator: getValidation, getValidationPeriodDetails,
         // getValidationTotals.
-        val perValidatorClauses =
-            onChainIds.flatMap { validatorId ->
-                listOf(
-                    ContractUtils.createClause(
-                        stakerAddress,
-                        getAbi("getValidation"),
-                        AddressUtils.toBigInt(validatorId),
-                    ),
-                    ContractUtils.createClause(
-                        stakerAddress,
-                        getAbi("getValidationPeriodDetails"),
-                        AddressUtils.toBigInt(validatorId),
-                    ),
-                    ContractUtils.createClause(
-                        stakerAddress,
-                        getAbi("getValidationTotals"),
-                        AddressUtils.toBigInt(validatorId),
-                    ),
-                )
-            }
+        val perValidatorClauses = onChainIds.flatMap { validatorId ->
+            listOf(
+                ContractUtils.createClause(
+                    stakerAddress,
+                    getAbi("getValidation"),
+                    AddressUtils.toBigInt(validatorId),
+                ),
+                ContractUtils.createClause(
+                    stakerAddress,
+                    getAbi("getValidationPeriodDetails"),
+                    AddressUtils.toBigInt(validatorId),
+                ),
+                ContractUtils.createClause(
+                    stakerAddress,
+                    getAbi("getValidationTotals"),
+                    AddressUtils.toBigInt(validatorId),
+                ),
+            )
+        }
         val responses = thorClient.inspectClauses(perValidatorClauses, revision)
         requireStakerResponseCount(
             "validator state walk",

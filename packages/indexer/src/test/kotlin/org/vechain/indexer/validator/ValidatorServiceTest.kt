@@ -576,7 +576,9 @@ class ValidatorServiceTest {
             address = STAKER_ADDRESS,
             eventType = "ValidationWithdrawn",
             params =
-                AbiEventParameters(returnValues = mapOf("validator" to validator, "stake" to stake)),
+                AbiEventParameters(
+                    returnValues = mapOf("validator" to validator, "stake" to stake)
+                ),
         )
 
     // Off an epoch boundary (23414400 is one); a non-empty `existing` plus this block number

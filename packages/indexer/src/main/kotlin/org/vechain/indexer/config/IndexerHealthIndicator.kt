@@ -31,24 +31,23 @@ class IndexerHealthIndicator(
     override fun health(): Health {
         val key = "IndexersHealth"
 
-        val indexerHealths =
-            indexers.map { indexer ->
-                val (status, statusDetails) = indexerHealthService.getIndexerHealth(indexer)
+        val indexerHealths = indexers.map { indexer ->
+            val (status, statusDetails) = indexerHealthService.getIndexerHealth(indexer)
 
-                IndexerHealth(
-                    indexerName = indexer.name,
-                    status = status,
-                    statusDetails = statusDetails,
-                    syncStatus = indexer.getStatus(),
-                    currentBlock =
-                        if (indexer is BlockIndexer) {
-                            NumberFormat.getNumberInstance(Locale.US)
-                                .format(indexer.getCurrentBlockNumber())
-                        } else {
-                            "N/A"
-                        },
-                )
-            }
+            IndexerHealth(
+                indexerName = indexer.name,
+                status = status,
+                statusDetails = statusDetails,
+                syncStatus = indexer.getStatus(),
+                currentBlock =
+                    if (indexer is BlockIndexer) {
+                        NumberFormat.getNumberInstance(Locale.US)
+                            .format(indexer.getCurrentBlockNumber())
+                    } else {
+                        "N/A"
+                    },
+            )
+        }
 
         val badIndexers = indexerHealths.filter { it.status == HealthStatus.DOWN }
 

@@ -35,7 +35,8 @@ open class DelegationConfig {
         @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
         builtinStakerAddress: String,
         @Value("\${business-event.substitutions.STARGATE_CONTRACT}") stargateContract: String,
-        @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}") stargateNftContract: String,
+        @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
+        stargateNftContract: String,
     ): Indexer =
         IndexerFactory()
             .name(IndexerNames.DELEGATION.NAME)

@@ -48,11 +48,10 @@ class CustomB3trChallengeRepositoryImplTest {
         )
         assertEquals(true, firstMatchSerialized.contains("isCreator"))
         assertEquals(true, firstMatchSerialized.contains("participantStatus"))
-        val statusMatches =
-            pipeline.filter {
-                val m = it["\$match"] as? Map<*, *> ?: return@filter false
-                "challenge.status" in m.keys
-            }
+        val statusMatches = pipeline.filter {
+            val m = it["\$match"] as? Map<*, *> ?: return@filter false
+            "challenge.status" in m.keys
+        }
         assertEquals(1, statusMatches.size)
         val allowed =
             ((statusMatches.single()["\$match"] as Map<*, *>)["challenge.status"] as Map<*, *>)[
@@ -94,11 +93,13 @@ class CustomB3trChallengeRepositoryImplTest {
 
         val abandonedBranch = branches.map { it as Map<*, *> }.single { it.containsKey("\$and") }
         val abandonedClauses = (abandonedBranch["\$and"] as List<*>).map { it as Map<*, *> }
-        val isCreatorClause =
-            abandonedClauses.single { it.containsKey(B3trUserChallenge::isCreator.name) }
+        val isCreatorClause = abandonedClauses.single {
+            it.containsKey(B3trUserChallenge::isCreator.name)
+        }
         assertEquals(false, isCreatorClause[B3trUserChallenge::isCreator.name])
-        val statusClause =
-            abandonedClauses.single { it.containsKey(B3trUserChallenge::participantStatus.name) }
+        val statusClause = abandonedClauses.single {
+            it.containsKey(B3trUserChallenge::participantStatus.name)
+        }
         val statusValues =
             (statusClause[B3trUserChallenge::participantStatus.name] as Map<*, *>)["\$in"]
                 as List<*>
@@ -167,8 +168,9 @@ class CustomB3trChallengeRepositoryImplTest {
                 .map { branch ->
                     val andClauses = branch["\$and"] as List<*>
                     val clauses = andClauses.map { it as Map<*, *> }
-                    val kind =
-                        clauses.firstNotNullOfOrNull { it["challenge.kind"] as? ChallengeKind }
+                    val kind = clauses.firstNotNullOfOrNull {
+                        it["challenge.kind"] as? ChallengeKind
+                    }
                     val joined = clauses.any { it["participantStatus"] == ParticipantStatus.Joined }
                     val creator = clauses.any { it["isCreator"] == true }
                     Triple(kind, joined, creator)
@@ -244,7 +246,8 @@ class CustomB3trChallengeRepositoryImplTest {
             visibility = ChallengeVisibility.Public,
             status = ChallengeStatus.Pending,
             excludeChallengeIds = listOf(7L, 8L),
-            pageable = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "createdAtBlockTimestamp")),
+            pageable =
+                PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "createdAtBlockTimestamp")),
         )
 
         val queryDoc = query.captured.queryObject

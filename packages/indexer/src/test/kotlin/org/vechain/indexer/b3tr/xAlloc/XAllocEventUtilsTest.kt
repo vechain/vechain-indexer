@@ -215,7 +215,8 @@ class XAllocEventsUtilsTest {
             val wrongType =
                 buildIndexedEvent(
                     id = "weights-wrongtype",
-                    params = AbiEventParameters(returnValues = mapOf("voteWeights" to "not-a-list")),
+                    params =
+                        AbiEventParameters(returnValues = mapOf("voteWeights" to "not-a-list")),
                 )
             assertThrows(IllegalStateException::class.java) {
                 XAllocEventUtils.getWeights(wrongType)
@@ -436,7 +437,8 @@ class XAllocEventsUtilsTest {
             val e =
                 buildIndexedEvent(
                     id = "unalloc-big",
-                    params = AbiEventParameters(returnValues = mapOf("unallocatedAmount" to amount)),
+                    params =
+                        AbiEventParameters(returnValues = mapOf("unallocatedAmount" to amount)),
                 )
             assertEquals(amount, XAllocEventUtils.getUnallocatedAmount(e))
         }
@@ -586,7 +588,9 @@ class XAllocEventsUtilsTest {
                 buildIndexedEvent(
                     id = "rewards-number",
                     params =
-                        AbiEventParameters(returnValues = mapOf("rewardsAllocationAmount" to 1000L)),
+                        AbiEventParameters(
+                            returnValues = mapOf("rewardsAllocationAmount" to 1000L)
+                        ),
                 )
             assertEquals(BigInteger("1000"), XAllocEventUtils.getRewardsAllocationAmount(e))
         }
@@ -714,7 +718,8 @@ class XAllocEventsUtilsTest {
             val e =
                 buildIndexedEvent(
                     id = "unalloc-decimal",
-                    params = AbiEventParameters(returnValues = mapOf("unallocatedAmount" to amount)),
+                    params =
+                        AbiEventParameters(returnValues = mapOf("unallocatedAmount" to amount)),
                 )
             assertEquals(
                 BigDecimal("0.500000000000000000"),

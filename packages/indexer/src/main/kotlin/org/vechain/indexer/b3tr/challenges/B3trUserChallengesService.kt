@@ -316,15 +316,14 @@ open class B3trUserChallengesService(
         val actionsByWallet = linkedMapOf<String, BigInteger>()
 
         candidateWallets.chunked(PARTICIPANT_ACTIONS_BATCH_SIZE).forEach { batch ->
-            val clauses =
-                batch.map { wallet ->
-                    ContractUtils.createClause(
-                        challengesContractAddress,
-                        abi,
-                        BigInteger.valueOf(challengeId),
-                        AddressUtils.toBigInt(wallet),
-                    )
-                }
+            val clauses = batch.map { wallet ->
+                ContractUtils.createClause(
+                    challengesContractAddress,
+                    abi,
+                    BigInteger.valueOf(challengeId),
+                    AddressUtils.toBigInt(wallet),
+                )
+            }
             val responses = thorClient.inspectClauses(clauses, revision)
             batch.forEachIndexed { index, wallet ->
                 val response =

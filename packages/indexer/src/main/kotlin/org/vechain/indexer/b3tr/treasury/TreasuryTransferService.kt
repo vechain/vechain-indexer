@@ -42,23 +42,19 @@ open class TreasuryTransferService(
     open fun processEvents(events: List<IndexedEvent>): List<TreasuryTransfer> {
         if (events.isEmpty()) return emptyList()
 
-        val transferEvents =
-            events.filter {
-                it.eventType == "B3TR_TreasuryTransferIn" ||
-                    it.eventType == "B3TR_TreasuryTransferOut"
-            }
+        val transferEvents = events.filter {
+            it.eventType == "B3TR_TreasuryTransferIn" || it.eventType == "B3TR_TreasuryTransferOut"
+        }
         val upgradeEvents = events.filter { it.eventType == "B3TR_TreasuryGmUpgrade" }
 
-        val txIdToNewLevel: Map<String, GmLevelName> =
-            upgradeEvents.associate { ev ->
-                val newLevelStr =
-                    ev.params.getAsString("newLevel")
-                        ?: return@associate ev.txId to GmLevelName.EARTH
-                val level =
-                    runCatching { GmLevelName.map(BigInteger(newLevelStr)) }
-                        .getOrElse { GmLevelName.EARTH }
-                ev.txId to level
-            }
+        val txIdToNewLevel: Map<String, GmLevelName> = upgradeEvents.associate { ev ->
+            val newLevelStr =
+                ev.params.getAsString("newLevel") ?: return@associate ev.txId to GmLevelName.EARTH
+            val level =
+                runCatching { GmLevelName.map(BigInteger(newLevelStr)) }
+                    .getOrElse { GmLevelName.EARTH }
+            ev.txId to level
+        }
 
         val treasury = businessEventProperties.substitutions["TREASURY_CONTRACT"]?.lowercase() ?: ""
         val known = knownAddresses()

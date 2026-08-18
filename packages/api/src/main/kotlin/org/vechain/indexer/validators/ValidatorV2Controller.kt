@@ -111,8 +111,9 @@ open class ValidatorV2Controller(
         val vetPrice = prices.getValue(PriceFeed.VET_USD)
         val vthoPrice = prices.getValue(PriceFeed.VTHO_USD)
 
-        val mapped =
-            pageContent.map { ValidatorV2Response.from(it, aggregates, vetPrice, vthoPrice) }
+        val mapped = pageContent.map {
+            ValidatorV2Response.from(it, aggregates, vetPrice, vthoPrice)
+        }
         return paginatedResponse(SliceImpl(mapped, pageable, hasNext))
     }
 

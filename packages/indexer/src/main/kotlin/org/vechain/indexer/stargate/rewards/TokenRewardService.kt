@@ -254,35 +254,33 @@ open class TokenRewardService(
             return rewardsFromDb.toList()
         }
 
-        val newDocs =
-            missingDelegations.map { delegation ->
-                val rewardId = "$validatorId-${delegation.tokenId}"
-                val stake =
-                    delegation.tokenLevel.effectiveStake.multiply(weiMultiplier).toBigInteger()
+        val newDocs = missingDelegations.map { delegation ->
+            val rewardId = "$validatorId-${delegation.tokenId}"
+            val stake = delegation.tokenLevel.effectiveStake.multiply(weiMultiplier).toBigInteger()
 
-                TokenReward(
-                    id = rewardId,
-                    blockId = block.id,
-                    blockNumber = block.number,
-                    blockTimestamp = block.timestamp,
-                    tokenId = delegation.tokenId,
-                    cycle = currentCycle,
-                    validator = validatorId,
-                    rewards = BigInteger.ZERO,
-                    effectiveStake = stake,
-                    rewardPeriod = RewardPeriod.ALL,
-                    dayOfMonth = time.dayOfMonth.toLong(),
-                    weekOfYear = time.get(WeekFields.ISO.weekOfYear()).toLong(),
-                    month = time.monthValue.toLong(),
-                    year = time.year.toLong(),
-                    dayReward = null,
-                    weekReward = null,
-                    monthReward = null,
-                    yearReward = null,
-                    cycleReward = null,
-                    version = 1,
-                )
-            }
+            TokenReward(
+                id = rewardId,
+                blockId = block.id,
+                blockNumber = block.number,
+                blockTimestamp = block.timestamp,
+                tokenId = delegation.tokenId,
+                cycle = currentCycle,
+                validator = validatorId,
+                rewards = BigInteger.ZERO,
+                effectiveStake = stake,
+                rewardPeriod = RewardPeriod.ALL,
+                dayOfMonth = time.dayOfMonth.toLong(),
+                weekOfYear = time.get(WeekFields.ISO.weekOfYear()).toLong(),
+                month = time.monthValue.toLong(),
+                year = time.year.toLong(),
+                dayReward = null,
+                weekReward = null,
+                monthReward = null,
+                yearReward = null,
+                cycleReward = null,
+                version = 1,
+            )
+        }
 
         return rewardsFromDb + newDocs
     }

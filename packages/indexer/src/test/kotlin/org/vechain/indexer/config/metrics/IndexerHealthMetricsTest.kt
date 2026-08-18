@@ -164,16 +164,14 @@ class IndexerHealthMetricsTest {
         try {
             repeat(iterations) {
                 metrics.setIndexerSyncStatus(indexerName, Status.READY_TO_SYNC)
-                val t1 =
-                    executor.submit {
-                        barrier.await()
-                        metrics.setIndexerSyncStatus(indexerName, Status.SYNCING)
-                    }
-                val t2 =
-                    executor.submit {
-                        barrier.await()
-                        metrics.setIndexerSyncStatus(indexerName, Status.SHUT_DOWN)
-                    }
+                val t1 = executor.submit {
+                    barrier.await()
+                    metrics.setIndexerSyncStatus(indexerName, Status.SYNCING)
+                }
+                val t2 = executor.submit {
+                    barrier.await()
+                    metrics.setIndexerSyncStatus(indexerName, Status.SHUT_DOWN)
+                }
                 t1.get()
                 t2.get()
 

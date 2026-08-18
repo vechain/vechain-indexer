@@ -78,7 +78,9 @@ internal class SafeTxStateServiceTest {
             eventType = SafeTxStateService.APPROVE_HASH,
             address = safe,
             params =
-                AbiEventParameters(returnValues = mapOf("approvedHash" to txHash, "owner" to owner)),
+                AbiEventParameters(
+                    returnValues = mapOf("approvedHash" to txHash, "owner" to owner)
+                ),
         )
 
     private fun executionSuccessEvent(

@@ -108,22 +108,19 @@ class HistoryServiceTest {
                     )
                 )
 
-            val requestResult =
-                results.first { blockResult ->
-                    blockResult.events().any { it.eventType == "STARGATE_DELEGATE_REQUEST" }
-                }
-            val exitResult =
-                results.first { blockResult ->
-                    blockResult.events().any { it.eventType == "STARGATE_DELEGATION_EXIT_REQUEST" }
-                }
+            val requestResult = results.first { blockResult ->
+                blockResult.events().any { it.eventType == "STARGATE_DELEGATE_REQUEST" }
+            }
+            val exitResult = results.first { blockResult ->
+                blockResult.events().any { it.eventType == "STARGATE_DELEGATION_EXIT_REQUEST" }
+            }
 
             historyService.processBlock(requestResult.events(), requestResult.block)
             val exitRecords = historyService.processBlock(exitResult.events(), exitResult.block)
 
-            val exitRequest =
-                exitRecords.first {
-                    it.eventName == HistoryEventName.STARGATE_DELEGATE_EXIT_REQUEST
-                }
+            val exitRequest = exitRecords.first {
+                it.eventName == HistoryEventName.STARGATE_DELEGATE_EXIT_REQUEST
+            }
 
             assertThat(exitRequest.delegationLifecycleStatus).isEqualTo(Status.EXITING)
             assertThat(exitRequest.delegationLifecycleNextCycle)

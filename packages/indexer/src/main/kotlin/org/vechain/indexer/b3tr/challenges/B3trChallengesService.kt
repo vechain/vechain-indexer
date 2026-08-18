@@ -176,10 +176,9 @@ open class B3trChallengesService(
         state: ChallengeRuntimeState,
         events: List<IndexedEvent>,
     ): ChallengeRuntimeState {
-        val latestRoundEvent =
-            events.lastOrNull {
-                it.eventType == "EmissionDistributed" || it.eventType == "EmissionDistributedV2"
-            }
+        val latestRoundEvent = events.lastOrNull {
+            it.eventType == "EmissionDistributed" || it.eventType == "EmissionDistributedV2"
+        }
 
         return ChallengeRuntimeState(
             currentRound = latestRoundEvent?.let(ActionSummaryUtils::getCycle) ?: state.currentRound

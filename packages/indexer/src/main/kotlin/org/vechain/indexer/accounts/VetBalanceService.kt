@@ -30,7 +30,9 @@ open class VetBalanceService(private val repository: VetBalanceRepository) {
     }
 
     protected fun filterVetTransfers(events: List<IndexedEvent>): List<IndexedEvent> =
-        events.filter { it.eventType == "VET_TRANSFER" }
+        events.filter {
+            it.eventType == "VET_TRANSFER"
+        }
 
     protected fun computeDeltasByAddress(blockEvents: List<IndexedEvent>): Map<String, BigInteger> {
         val deltasByAddress = mutableMapOf<String, BigInteger>()

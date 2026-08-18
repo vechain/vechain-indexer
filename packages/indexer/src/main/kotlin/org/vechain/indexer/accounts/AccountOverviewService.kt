@@ -517,8 +517,9 @@ open class AccountOverviewService(
         address: String,
         events: List<IndexedEvent>,
     ): BigInteger {
-        val vthoTransfers =
-            events.filter { it.eventType == "Transfer" && it.address == VTHO_CONTRACT_ADDRESS }
+        val vthoTransfers = events.filter {
+            it.eventType == "Transfer" && it.address == VTHO_CONTRACT_ADDRESS
+        }
 
         var delta = BigInteger.ZERO
         vthoTransfers.forEach { event ->

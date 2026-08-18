@@ -139,8 +139,9 @@ abstract class CollectionConfig(
      * indexes don't collide on `IndexOptionsConflict` / `IndexKeySpecsConflict`).
      */
     fun removeStaleIndexes() {
-        val pendingByCollection =
-            pendingIndexes.groupBy { mongoTemplate.getCollectionName(it.entityClass) }
+        val pendingByCollection = pendingIndexes.groupBy {
+            mongoTemplate.getCollectionName(it.entityClass)
+        }
 
         ensuredIndexNamesByCollection.forEach { (collectionName, expectedNames) ->
             val pendingByName =
@@ -191,21 +192,20 @@ abstract class CollectionConfig(
         if (pendingIndexes.isEmpty()) return
 
         val existingByEntity = mutableMapOf<Class<*>, Map<String, IndexInfo>>()
-        val toCreate =
-            pendingIndexes.filter { pending ->
-                val existing =
-                    existingByEntity.getOrPut(pending.entityClass) {
-                        mongoTemplate.indexOps(pending.entityClass).indexInfo.associateBy {
-                            it.name
-                        }
+        val toCreate = pendingIndexes.filter { pending ->
+            val existing =
+                existingByEntity.getOrPut(pending.entityClass) {
+                    mongoTemplate.indexOps(pending.entityClass).indexInfo.associateBy {
+                        it.name
                     }
-                val match = existing[pending.name] ?: return@filter true
-                check(specMatches(pending, match)) {
-                    "Index ${pending.name} for ${pending.entityClass.simpleName} exists with " +
-                        "mismatched options; removeStaleIndexes should have dropped it"
                 }
-                false
+            val match = existing[pending.name] ?: return@filter true
+            check(specMatches(pending, match)) {
+                "Index ${pending.name} for ${pending.entityClass.simpleName} exists with " +
+                    "mismatched options; removeStaleIndexes should have dropped it"
             }
+            false
+        }
 
         if (toCreate.isEmpty()) {
             logger.debug(
