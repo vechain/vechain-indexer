@@ -2,7 +2,7 @@ import org.gradle.jvm.tasks.Jar
 import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
     // Required by ContractUtils for ABI encoding (createClause) and keccak signature derivation.
     implementation("com.github.vechain:thor-devkit.java:v1.0.0")
     implementation("org.web3j:utils:4.14.1")

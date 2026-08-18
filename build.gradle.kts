@@ -29,6 +29,12 @@ allprojects {
         plugin("com.diffplug.spotless")
     }
 
+    // These drive kotlinx-coroutines-bom and kotlinx-serialization-bom. Pinning the root
+    // artifact instead has no effect: its JVM variant is an available-at redirect to the
+    // -jvm sibling, whose version the BOM controls.
+    extra["kotlin-coroutines.version"] = "1.11.0"
+    extra["kotlin-serialization.version"] = "1.11.0"
+
     configurations.all {
         resolutionStrategy {
             force(
