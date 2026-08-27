@@ -9,6 +9,41 @@ locals {
   # WAF ARNs come from terraform/vpc, which owns these ACLs.
   waf_arn         = local.is_shared ? null : try(data.terraform_remote_state.vpc[0].outputs.cloudfront_waf_mainnet_arn, null)
   testnet_waf_arn = local.is_shared ? null : try(data.terraform_remote_state.vpc[0].outputs.cloudfront_waf_testnet_arn, null)
+
+  origin_verify_secret_name = "/prod/veworld/cloudfront-origin-verify-token"
+  origin_verify_header_name = try(local.env_config.origin_verify_header_name, "")
+
+  # Staging twins carry the same header, so enabling a continuous-deployment
+  # policy later cannot start failing at the origin.
+  origin_verify_headers = local.is_shared || local.origin_verify_header_name == "" ? {} : {
+    (local.origin_verify_header_name) = try(data.aws_secretsmanager_secret_version.origin_verify[0].secret_string, "")
+  }
+}
+
+# Same describe-or-create pattern as the WAF bypass token in terraform/api, so a
+# first apply does not need the secret to exist already.
+resource "null_resource" "ensure_origin_verify_secret" {
+  count = local.is_shared ? 0 : 1
+
+  triggers = {
+    secret_name = local.origin_verify_secret_name
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      aws secretsmanager describe-secret --secret-id "${local.origin_verify_secret_name}" --region ${local.env_config.region} 2>/dev/null || \
+      aws secretsmanager create-secret \
+        --name "${local.origin_verify_secret_name}" \
+        --secret-string "$(openssl rand -hex 32)" \
+        --region ${local.env_config.region}
+    EOT
+  }
+}
+
+data "aws_secretsmanager_secret_version" "origin_verify" {
+  count      = local.is_shared ? 0 : 1
+  secret_id  = local.origin_verify_secret_name
+  depends_on = [null_resource.ensure_origin_verify_secret]
 }
 
 # Mainnet CloudFront Distribution
@@ -17,10 +52,11 @@ module "mainnet_cloudfront" {
 
   source = "./modules/non-s3-distribution"
 
-  origin_domain   = try(local.env_config.mainnet_origin_domain, "")
-  certificate_arn = try(local.env_config.mainnet_certificate_arn, "")
-  cnames          = try(local.env_config.mainnet_cnames, [])
-  staging         = try(local.env_config.staging, false)
+  origin_domain         = try(local.env_config.mainnet_origin_domain, "")
+  certificate_arn       = try(local.env_config.mainnet_certificate_arn, "")
+  cnames                = try(local.env_config.mainnet_cnames, [])
+  staging               = try(local.env_config.staging, false)
+  origin_custom_headers = local.origin_verify_headers
 
   ordered_cache_behaviors = [
     for behavior in try(local.env_config.cache_behaviors, []) : {
@@ -50,10 +86,11 @@ module "testnet_cloudfront" {
 
   source = "./modules/non-s3-distribution"
 
-  origin_domain   = try(local.env_config.testnet_origin_domain, "")
-  certificate_arn = try(local.env_config.testnet_certificate_arn, "")
-  cnames          = try(local.env_config.testnet_cnames, [])
-  staging         = try(local.env_config.staging, false)
+  origin_domain         = try(local.env_config.testnet_origin_domain, "")
+  certificate_arn       = try(local.env_config.testnet_certificate_arn, "")
+  cnames                = try(local.env_config.testnet_cnames, [])
+  staging               = try(local.env_config.staging, false)
+  origin_custom_headers = local.origin_verify_headers
 
   ordered_cache_behaviors = [
     for behavior in try(local.env_config.cache_behaviors, []) : {

@@ -12,6 +12,8 @@ mainnet_origin_domain: "mainnet.live.prod.veworld.vechain.org"
 testnet_origin_domain: "testnet.live.prod.veworld.vechain.org"
 
 staging: false
+origin_verify_header_name: "x-origin-verify"
+
 # Default Policy IDs
 default_headers_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
 default_origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
