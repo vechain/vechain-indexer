@@ -59,3 +59,10 @@ variable "staging" {
   description = "continuous_deployment_policy_id"
   default     = false
 }
+
+variable "origin_custom_headers" {
+  type        = map(string)
+  description = "Headers CloudFront adds to every origin request. CloudFront overwrites any same-named header sent by the viewer."
+  default     = {}
+  sensitive   = true
+}

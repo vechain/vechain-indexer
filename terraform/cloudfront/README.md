@@ -21,6 +21,25 @@ ACLs since #1519, and this state still held them from an earlier apply; the
 `removed` blocks in `shared.tf` resolve that. The distributions take their WAF
 ARNs from `terraform/vpc` via remote state.
 
+## Origin verification
+
+Every distribution sends `x-origin-verify` to the origin, holding the value of the
+Secrets Manager secret `/prod/veworld/cloudfront-origin-verify-token` in
+`eu-west-1`. `null_resource.ensure_origin_verify_secret` creates the secret on
+first apply if it is missing, so whichever of `prod`/`staging` applies first wins
+and the other reuses the value.
+
+CloudFront overwrites any same-named header a viewer sends, so a client cannot
+forge it through the distribution. The ALB rejects requests that arrive without
+it, which is what stops someone pointing their own distribution at the origin —
+the CloudFront origin-facing prefix list on the ALB security group admits any
+distribution in any AWS account.
+
+**Apply order matters.** Both `prod` and `staging` must be applied here *before*
+`terraform/api` starts enforcing the header, or the ALB will reject live traffic.
+Rotating the value means updating the secret, applying both workspaces here, and
+only then letting `terraform/api` pick the new value up.
+
 ## 🏗️ Architecture Overview
 
 ### **Workspace Structure**

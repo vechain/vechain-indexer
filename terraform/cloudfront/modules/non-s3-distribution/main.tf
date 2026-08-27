@@ -18,6 +18,13 @@ resource "aws_cloudfront_distribution" "non_s3_distribution" {
   origin {
     domain_name = var.origin_domain
     origin_id   = "origin-${var.origin_domain}"
+    dynamic "custom_header" {
+      for_each = var.origin_custom_headers
+      content {
+        name  = custom_header.key
+        value = custom_header.value
+      }
+    }
     custom_origin_config {
       http_port                = 80
       https_port               = 443
