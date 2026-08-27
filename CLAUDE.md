@@ -20,6 +20,10 @@ If the script updates tracked files, include those updates in the same commit (o
 
 Write reviewer-facing prose at final length — don't draft long and trim. The budget is the target, not a limit to approach. See `AGENTS.md` "Commit & Pull Request Guidelines" for the full rules.
 
+## Shared Infra Needs a Manual Apply
+
+`terraform/vpc` is the colour-agnostic stack (VPC, Route53, ECR, CloudFront WAFs). Merging a change to it applies nothing. `.github/workflows/shared-infra.yml` blocks any PR touching `terraform/vpc/**` until the `shared-infra-ack` label is applied, and plans the change for review. After merge, run `.github/workflows/deploy-shared-infra.yml` — the only path that applies the stack in full; a DNS cutover applies Route53 records only. See `AGENTS.md` "Shared Infra Needs a Manual Apply".
+
 ## Dependencies
 
 - The `indexer-core` library (`org.vechain:indexer-core`) source code is at https://github.com/vechain/indexer-core. Refer to it for interfaces like `Indexer`, `BlockIndexer`, the `Status` enum, and other core types.

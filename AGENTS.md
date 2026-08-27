@@ -114,5 +114,14 @@ Write reviewer-facing prose at final length — don't draft long and trim. The b
 - **But keep visual/semantic bridges.** Mapping something observable to what it means ("dashed orange line = `EcsTaskCpuHigh` threshold (80%)") is real information, not padding.
 - **Design notes:** one to three sentences per phase or status entry. "Why X over Y" rationale belongs in the module README or `notes/`, not stacked above the code.
 
+### Shared Infra Needs a Manual Apply
+`terraform/vpc` is the colour-agnostic stack — VPC, Route53, ECR, Atlas access, the CloudFront WAFs. Unlike `terraform/api`, **merging a change to it applies nothing.** After merge, run [deploy-shared-infra.yml](.github/workflows/deploy-shared-infra.yml); it takes the live colours from DNS rather than operator input, so a cutover cannot be reverted by a stale value typed into a form.
+
+[shared-infra.yml](.github/workflows/shared-infra.yml) enforces this. Touch `terraform/vpc/**` and it blocks the PR until someone applies the `shared-infra-ack` label, posts a sticky comment naming the follow-up, and runs the `terraform plan` that no other check covers — read it in the job summary before approving.
+
+Applying the stack is scoped, because DNS records live in it and a cutover *is* a `terraform apply`. [deploy-colour-agnostic-infra.yml](.github/workflows/deploy-colour-agnostic-infra.yml) takes `scope`: `records` for a cutover (all four records — the dead pair must follow a swap), `dead-records` for a prod deploy, `full` only from `deploy-shared-infra.yml`. Leave a cutover untargeted and it applies every pending change in the stack as a side effect of switching DNS. Its apply job serializes on the `terraform-vpc-apply` concurrency group, so a queued run re-resolves colours instead of applying pre-cutover ones.
+
+The review-time plan needs an `AWS_ACC_ROLE_RO` secret — an OIDC-assumable **read-only** role, not the deploy role, because the plan executes PR-controlled Terraform. Without the secret the plan step skips rather than falling back to write credentials. The SSH agent for private module sources is still exposed to that code; keep module sources under review.
+
 ## Environment & Operations Tips
 Copy `.env.example` files inside each package when running outside IntelliJ; the defaults target Dockerized services on localhost. Use `make db-backup` and `make db-restore` to manage whole-database Mongo snapshots stored in `database/backups/`. For targeted collection-level copy between two live clusters, run `make db-copy-collections` (see `database/restore/README.md`).

@@ -187,6 +187,7 @@ jobs:
     uses: ./.github/workflows/deploy-colour-agnostic-infra.yml
     with:
       environment: prod
+      scope: records
       live_color_mainnet: ${{ needs.deploy-vpc-stack.outputs.live_color_mainnet }}
       live_color_testnet: ${{ needs.deploy-vpc-stack.outputs.live_color_testnet }}
     secrets:

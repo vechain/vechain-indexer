@@ -15,11 +15,11 @@ on:
         description: Desired live colour for testnet
         required: true
         type: string
-      dead_records_only:
-        description: Only target dead Route53 records in teraform apply
+      scope:
+        description: "How much of the stack to apply: full, records, or dead-records"
         required: false
-        type: boolean
-        default: false
+        type: string
+        default: full
     secrets:
       AWS_ACC_ROLE:
         description: "AWS IAM role ARN for OIDC authentication"
@@ -36,11 +36,18 @@ jobs:
   deploy-vpc-route53:
     name: Deploy Terraform VPC Route53
     runs-on: ubuntu-latest
+
+    # All callers funnel through this job, and queuing here re-resolves the
+    # colours: identify-live-color runs inside the queued run, not before it.
+    concurrency:
+      group: terraform-vpc-apply
+      cancel-in-progress: false
+
     env:
       TERRAFORM_ENV: ${{ inputs.environment }}
       LIVE_COLOR_MAINNET: ${{ inputs.live_color_mainnet }}
       LIVE_COLOR_TESTNET: ${{ inputs.live_color_testnet }}
-      DEAD_RECORDS_ONLY: ${{ inputs.dead_records_only }}
+      SCOPE: ${{ inputs.scope }}
 
     defaults:
       run:
@@ -78,12 +85,30 @@ jobs:
 
       - name: Terraform Plan
         run: |
-          if [ "${{ env.DEAD_RECORDS_ONLY }}" == "false" ]; then
-            terraform plan -out "apply.plan" --var=live_color_mainnet=${{ env.LIVE_COLOR_MAINNET }} --var=live_color_testnet=${{ env.LIVE_COLOR_TESTNET }}
-          else
-            echo "Only targeting dead Route53 records in teraform apply"
-            terraform plan -out "apply.plan" --var=live_color_mainnet=${{ env.LIVE_COLOR_MAINNET }} --var=live_color_testnet=${{ env.LIVE_COLOR_TESTNET }} -target=aws_route53_record.mainnet_dead -target=aws_route53_record.testnet_dead
-          fi
+          case "$SCOPE" in
+            full)
+              targets=()
+              ;;
+            records)
+              targets=(-target=aws_route53_record.mainnet_live \
+                       -target=aws_route53_record.testnet_live \
+                       -target=aws_route53_record.mainnet_dead \
+                       -target=aws_route53_record.testnet_dead)
+              ;;
+            dead-records)
+              targets=(-target=aws_route53_record.mainnet_dead \
+                       -target=aws_route53_record.testnet_dead)
+              ;;
+            *)
+              echo "::error::Unknown scope '$SCOPE' (expected full, records, or dead-records)"
+              exit 1
+              ;;
+          esac
+          echo "Applying scope: $SCOPE"
+          terraform plan -out "apply.plan" \
+            --var=live_color_mainnet="$LIVE_COLOR_MAINNET" \
+            --var=live_color_testnet="$LIVE_COLOR_TESTNET" \
+            "${targets[@]}"
 
       - name: Terraform Apply
         run: terraform apply "apply.plan"
