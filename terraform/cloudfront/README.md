@@ -12,8 +12,12 @@ All three workspaces are reconciled against live and plan clean:
 | `staging` | No changes |
 | `shared` | 0 to add, 0 to change, 0 to destroy (two forget-only actions) |
 
-There is no deploy workflow. Applies are manual, one workspace at a time, and
-`shared-infra.yml` plans all three at review time — read that before merging.
+[deploy-shared-infra.yml](../../.github/workflows/deploy-shared-infra.yml) applies
+the stack after the VPC one, `shared` then `staging` then `prod` — that order is a
+dependency chain, since the distributions consume `shared`'s cache policies and
+`prod`'s continuous-deployment policy reads `staging`'s domains. Each workspace's
+plan lands in the job summary before it applies. `shared-infra.yml` plans all
+three at review time — read that before merging.
 
 `shared`'s first apply discards Terraform's tracking of the two CLOUDFRONT-scope
 WAF ACLs without deleting them. `terraform/vpc/cloudfront_waf.tf` has owned those
@@ -76,7 +80,9 @@ terraform/cloudfront/
 
 ### **Workspaces**
 - **`shared`** - Cache policies, WAF rules (deployed first)
-- **`staging`** - Staging CloudFront distributions
+- **`staging`** - Continuous-deployment canary distributions. Same prod origins,
+  no aliases, and idle until a continuous-deployment policy routes to them, so
+  they must be applied alongside `prod` to stay a faithful copy of it
 - **`prod`** - Production CloudFront distributions + continuous deployment
 
 ## 🚀 Quick Start

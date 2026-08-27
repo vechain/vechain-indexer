@@ -101,8 +101,8 @@ jobs:
             fi
             if [ "$CLOUDFRONT_CHANGED" = "true" ]; then
               echo
-              echo '`terraform/cloudfront`: no deploy workflow yet - applied by hand per its README,'
-              echo 'one workspace at a time. Read the plan for every workspace below.'
+              printf '`terraform/cloudfront`: applied by [Deploy Shared Infra](%s), shared then staging\n' "$RUN_URL"
+              echo 'then prod, after the VPC stack. Read the plan for every workspace below.'
             fi
             printf '\nChanged files:\n'
             cat "$RUNNER_TEMP/files.md"
