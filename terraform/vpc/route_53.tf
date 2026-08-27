@@ -19,18 +19,22 @@ variable "live_color_testnet" {
 }
 
 locals {
-  blue_mainnet_lb  = data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet
-  green_mainnet_lb = data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet
-  blue_testnet_lb  = data.terraform_remote_state.api-blue.outputs.load_balancer_domain_testnet
-  green_testnet_lb = data.terraform_remote_state.api-green.outputs.load_balancer_domain_testnet
+  placeholder_lb = "place.holder.domain"
+
+  # try() has to sit here, not at the point of use: a torn-down colour makes the
+  # local itself fail, which a downstream try() cannot rescue.
+  blue_mainnet_lb  = try(data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet, local.placeholder_lb)
+  green_mainnet_lb = try(data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet, local.placeholder_lb)
+  blue_testnet_lb  = try(data.terraform_remote_state.api-blue.outputs.load_balancer_domain_testnet, local.placeholder_lb)
+  green_testnet_lb = try(data.terraform_remote_state.api-green.outputs.load_balancer_domain_testnet, local.placeholder_lb)
 
   # Desired records directly from the requested colours
   live_mainnet_lb = var.live_color_mainnet == "prod-blue" ? local.blue_mainnet_lb : local.green_mainnet_lb
   live_testnet_lb = var.live_color_testnet == "prod-blue" ? local.blue_testnet_lb : local.green_testnet_lb
 
   # Dead records are always the opposite colour (placeholder if environment not yet deployed)
-  dead_mainnet_lb = var.live_color_mainnet == "prod-blue" ? try(local.green_mainnet_lb, "place.holder.domain") : try(local.blue_mainnet_lb, "place.holder.domain")
-  dead_testnet_lb = var.live_color_testnet == "prod-blue" ? try(local.green_testnet_lb, "place.holder.domain") : try(local.blue_testnet_lb, "place.holder.domain")
+  dead_mainnet_lb = var.live_color_mainnet == "prod-blue" ? local.green_mainnet_lb : local.blue_mainnet_lb
+  dead_testnet_lb = var.live_color_testnet == "prod-blue" ? local.green_testnet_lb : local.blue_testnet_lb
 }
 
 resource "aws_route53_zone" "veworld_public_zone" {
@@ -52,6 +56,13 @@ resource "aws_route53_record" "mainnet_live" {
   type    = "CNAME"
   ttl     = 300
   records = [local.live_mainnet_lb]
+
+  lifecycle {
+    precondition {
+      condition     = local.live_mainnet_lb != local.placeholder_lb
+      error_message = "Live mainnet colour ${var.live_color_mainnet} has no load balancer in remote state; refusing to point live DNS at a placeholder."
+    }
+  }
 }
 
 resource "aws_route53_record" "testnet_live" {
@@ -60,6 +71,13 @@ resource "aws_route53_record" "testnet_live" {
   type    = "CNAME"
   ttl     = 300
   records = [local.live_testnet_lb]
+
+  lifecycle {
+    precondition {
+      condition     = local.live_testnet_lb != local.placeholder_lb
+      error_message = "Live testnet colour ${var.live_color_testnet} has no load balancer in remote state; refusing to point live DNS at a placeholder."
+    }
+  }
 }
 
 resource "aws_route53_record" "mainnet_dead" {
