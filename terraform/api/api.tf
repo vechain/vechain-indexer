@@ -126,11 +126,16 @@ module "ecs-lb-service-api" {
   container_port                    = 8080
   certificate_arn                   = local.env.certificate_arn
   ecs_sg                            = [aws_security_group.alb-sg.id]
-  rule_0_path_pattern               = ["/api/v*", "/api-docs", "/api-docs/*", "/swagger-ui/*"]
+  rule_0_path_pattern               = ["/", "/api/v*", "/api-docs", "/api-docs/*", "/swagger-ui/*"]
   alb_sg                            = [aws_security_group.alb-sg.id]
   namespace_id                      = aws_service_discovery_private_dns_namespace.ns.id
   https_tg_healthcheck_path         = "/actuator/health"
   health_check_grace_period_seconds = 300
+
+  # The module's rule 4 is a `/*` catch-all that would shadow this default.
+  is_rule_4_required = false
+  default_action     = "fixed-response"
+
   healthcheck = {
     command     = ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health/liveness"]
     start_delay = 120
