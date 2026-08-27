@@ -27,7 +27,7 @@ cloudwatch_alarms: true
 # ALB Configuration
 alb:
   # Set to x-origin-verify once terraform/cloudfront has been applied.
-  origin_verify_header_name: ""
+  origin_verify_header_name: "x-origin-verify"
   # True only across a token rotation; see terraform/cloudfront/README.md.
   origin_verify_accept_previous: false
   waf:
