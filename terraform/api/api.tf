@@ -1141,6 +1141,7 @@ locals {
   waf_bypass_secret_name = "/prod/${var.project}/waf-rate-limit-bypass-token"
 }
 
+# Consumed by terraform/vpc for the CloudFront WAF bypass header; created here.
 resource "null_resource" "ensure_waf_bypass_secret" {
   count = startswith(local.env.environment, "prod") ? 1 : 0
 
@@ -1159,11 +1160,6 @@ resource "null_resource" "ensure_waf_bypass_secret" {
   }
 }
 
-data "aws_secretsmanager_secret_version" "waf_rate_limit_bypass_token" {
-  count      = startswith(local.env.environment, "prod") ? 1 : 0
-  secret_id  = local.waf_bypass_secret_name
-  depends_on = [null_resource.ensure_waf_bypass_secret]
-}
 
 ################################################################################
 # Known Project IDs
@@ -1310,38 +1306,4 @@ data "aws_secretsmanager_secret_version" "origin_verify_previous" {
   count         = local.origin_verify_accept_previous ? 1 : 0
   secret_id     = "/prod/${var.project}/cloudfront-origin-verify-token"
   version_stage = "AWSPREVIOUS"
-}
-
-################################################################################
-# WAF for API Load Balancers
-################################################################################
-
-module "waf" {
-  count  = startswith(local.env.environment, "prod") ? 1 : 0
-  source = "./modules/waf"
-
-  env          = local.env.environment
-  project_name = "${var.project}-indexer"
-  scope        = "REGIONAL"
-
-  # Enable regional WAF for ALB protection
-  waf_regional_enable = true
-  logs_enable         = true
-  logs_retension      = 30
-
-  # Associate WAF with all API ALBs
-  associate_waf = true
-  resource_arns = { for net, service in module.ecs-lb-service-api : net => service.alb_arn }
-
-  # Rate limiting configuration (defaults to 2000 requests per 5 minutes per IP)
-  rate_limit                     = local.env.alb.waf.waf_rate_limit
-  rate_limit_exception_list      = local.env.alb.waf.waf_rate_limit_exception_list
-  rate_limit_bypass_header_name  = length(data.aws_secretsmanager_secret_version.waf_rate_limit_bypass_token) > 0 ? lookup(local.env.alb.waf, "waf_rate_limit_bypass_header_name", "") : ""
-  rate_limit_bypass_header_value = try(data.aws_secretsmanager_secret_version.waf_rate_limit_bypass_token[0].secret_string, "")
-
-  # Required variables
-  managed_rule_group_statement_rules = []
-  rate_based_statement_rules         = []
-
-  depends_on = [module.ecs-lb-service-api]
 }

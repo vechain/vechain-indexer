@@ -1,27 +1,6 @@
-# WAF blocked-request alarm. The rest of the previous CloudWatch alarm
-# set was either duplicated by the AMP alerts landed in P7 or fired on
-# routine blue/green teardown; only this one carries a unique signal
-# worth paging on.
+# Empty since the regional WAF went: see PR history for the retired alarm set.
 locals {
-  waf_alarms = { for k, v in module.waf : "${k}_blk_rq" => {
-    alarm_name          = "${local.env.environment}_WAF_blocked_requests_alarm"
-    comparison_operator = "GreaterThanOrEqualToThreshold"
-    evaluation_periods  = 1
-    threshold           = 1000
-    namespace           = "AWS/WAFV2"
-    period              = 180
-    statistic           = "Maximum"
-    metric_name         = "BlockedRequests"
-    alarm_description   = "Waf Blocked Request max count"
-    dimensions = {
-      Region = local.env.region
-      Rule   = "origin-rate-limiter"
-      WebACL = split("/", split(":", v.waf_limiter_arn)[5])[2]
-    }
-    }
-  }
-
-  simple_alarms_map     = local.waf_alarms
+  simple_alarms_map     = {}
   expression_alarms_map = {}
 }
 
