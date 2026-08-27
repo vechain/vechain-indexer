@@ -25,12 +25,15 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_api_paths"></a> [api\_paths](#input\_api\_paths) | list of api paths | `list(string)` | n/a | yes |
 | <a name="input_cache_policy_id"></a> [cache\_policy\_id](#input\_cache\_policy\_id) | ID of the cache policy | `string` | n/a | yes |
 | <a name="input_certificate_arn"></a> [certificate\_arn](#input\_certificate\_arn) | n/a | `string` | n/a | yes |
 | <a name="input_cnames"></a> [cnames](#input\_cnames) | List of additional alternate cnames for cache | `list(string)` | `[]` | no |
-| <a name="input_distribution_domain"></a> [distribution\_domain](#input\_distribution\_domain) | principal domain to cache | `string` | n/a | yes |
+| <a name="input_continuous_deployment_policy_id"></a> [continuous\_deployment\_policy\_id](#input\_continuous\_deployment\_policy\_id) | continuous\_deployment\_policy\_id | `string` | `null` | no |
 | <a name="input_headers_policy_id"></a> [headers\_policy\_id](#input\_headers\_policy\_id) | ID of the headers policy | `string` | n/a | yes |
+| <a name="input_ordered_cache_behaviors"></a> [ordered\_cache\_behaviors](#input\_ordered\_cache\_behaviors) | n/a | <pre>list(object({<br>    path_pattern             = string<br>    target_origin_id         = string<br>    cache_policy_id          = string<br>    headers_policy_id        = string<br>    origin_request_policy_id = string<br>    allowed_methods          = list(string)<br>    cached_methods           = list(string)<br>    viewer_protocol_policy   = string<br>  }))</pre> | `[]` | no |
+| <a name="input_origin_domain"></a> [origin\_domain](#input\_origin\_domain) | principal domain to cache | `string` | n/a | yes |
+| <a name="input_origin_request_policy_id"></a> [origin\_request\_policy\_id](#input\_origin\_request\_policy\_id) | ID of the request policy | `string` | n/a | yes |
+| <a name="input_staging"></a> [staging](#input\_staging) | continuous\_deployment\_policy\_id | `bool` | `false` | no |
 | <a name="input_waf_web_acl"></a> [waf\_web\_acl](#input\_waf\_web\_acl) | acl of attached waf | `string` | `""` | no |
 
 ## Outputs
@@ -39,4 +42,5 @@ No modules.
 |------|-------------|
 | <a name="output_distribution"></a> [distribution](#output\_distribution) | n/a |
 | <a name="output_distribution_arn"></a> [distribution\_arn](#output\_distribution\_arn) | n/a |
+| <a name="output_domain_name"></a> [domain\_name](#output\_domain\_name) | n/a |
 <!-- END_TF_DOCS -->
