@@ -537,8 +537,3 @@ cache_behaviors:
       - "GET"
       - "HEAD"
     viewer_protocol_policy: "redirect-to-https"
-# Module Source Configuration
-module_sources:
-  cloudfront_module_source: "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//cloudfront/non_s3_distribution?ref=cloudfront-changes"
-  policies_module_source: "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//cloudfront/policies?ref=cloudfront-changes"
-  waf_module_source: "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//waf?ref=cloudfront-changes"

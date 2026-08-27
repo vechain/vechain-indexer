@@ -15,7 +15,7 @@ locals {
 module "mainnet_cloudfront" {
   count = local.is_shared ? 0 : 1
 
-  source = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//cloudfront/non_s3_distribution?ref=cloudfront-changes"
+  source = "./modules/non-s3-distribution"
 
   origin_domain   = try(local.env_config.mainnet_origin_domain, "")
   certificate_arn = try(local.env_config.mainnet_certificate_arn, "")
@@ -48,7 +48,7 @@ module "mainnet_cloudfront" {
 module "testnet_cloudfront" {
   count = local.is_shared ? 0 : 1
 
-  source = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//cloudfront/non_s3_distribution?ref=cloudfront-changes"
+  source = "./modules/non-s3-distribution"
 
   origin_domain   = try(local.env_config.testnet_origin_domain, "")
   certificate_arn = try(local.env_config.testnet_certificate_arn, "")

@@ -5,7 +5,7 @@
 module "cache_policies_v1" {
   count = local.is_shared ? length(try(local.env_config.cache_policies_v1, [])) : 0
 
-  source = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//cloudfront/policies?ref=cloudfront-changes"
+  source = "./modules/policies"
 
   cache_policy          = try(local.env_config.cache_policies_v1[count.index].name, "")
   headers_policy        = null # Not creating header policies - using managed policy IDs
@@ -27,7 +27,7 @@ module "cache_policies_v1" {
 module "cache_policies_v2" {
   count = local.is_shared ? length(try(local.env_config.cache_policies_v2, [])) : 0
 
-  source = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//cloudfront/policies?ref=cloudfront-changes"
+  source = "./modules/policies"
 
   cache_policy          = try(local.env_config.cache_policies_v2[count.index].name, "")
   headers_policy        = null # Not creating header policies - using managed policy IDs
