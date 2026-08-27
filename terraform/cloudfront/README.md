@@ -35,10 +35,27 @@ someone pointing their own distribution at the origin — the CloudFront
 origin-facing prefix list on the ALB security group admits any distribution in
 any AWS account.
 
-Nothing checks the header yet: `terraform/api` adds the ALB condition separately,
-and it carries the rotation runbook. **Apply order matters.** Both `prod` and
-`staging` must be applied here *before* that check is switched on, or the ALB
-will reject live traffic.
+**Apply order matters.** Both `prod` and `staging` must be applied here *before*
+`terraform/api` starts enforcing the header, or the ALB will reject live traffic.
+
+Enforcement is off until `alb.origin_verify_header_name` is set in
+`terraform/api/environments/prod-{blue,green}.yml`; empty means the ALB adds no
+header condition. To switch it on: apply both workspaces here, confirm the header
+is reaching the origin, then set that key to `x-origin-verify` in both colour
+files.
+
+Rotation needs the ALB to accept both values while the distributions catch up —
+apply either side alone and the other is still sending, or still demanding, the
+value that no longer matches. `alb.origin_verify_accept_previous` adds the
+secret's `AWSPREVIOUS` alongside `AWSCURRENT` for that window:
+
+1. Update the secret. The old value becomes `AWSPREVIOUS`; nothing has switched.
+2. Set `origin_verify_accept_previous: true` in both colour files, apply
+   `terraform/api`. The ALB now takes either value.
+3. Apply `prod` and `staging` here. The distributions move to the new value.
+4. Set it back to `false`, apply `terraform/api`. The old value stops working.
+
+Step 2 reads `AWSPREVIOUS`, so it only works after step 1 has created one.
 
 ## 🏗️ Architecture Overview
 
