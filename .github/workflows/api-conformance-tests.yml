@@ -169,7 +169,7 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Enforce hard failures only
+      - name: Enforce conformance result
         if: always()
         run: |
           python3 - <<'PYEOF'
@@ -184,6 +184,15 @@ jobs:
 
           report = json.loads(report_path.read_text())
           summary = report["summary"]
+
+          # No results XML means the suite never ran; hard_issues would read 0.
+          if summary.get("missing_results_xml"):
+              exit_code = report["metadata"].get("schemathesis_exit_code")
+              print(
+                  f"No results XML (suite exit code {exit_code}); see run.log.",
+                  file=sys.stderr,
+              )
+              sys.exit(1)
 
           if summary.get("hard_issues", 0) > 0:
               print(f"Failing due to {summary['hard_issues']} hard conformance issue(s).", file=sys.stderr)
