@@ -1,0 +1,54 @@
+name: Deploy Shared Infra
+
+# Deliberate apply path for terraform/vpc. Without this the stack only ever
+# applies as a side effect of switch-live-dns.yml during a blue/green cutover.
+# Colours come from live DNS rather than operator input, so a run here cannot
+# move traffic — it reconciles everything else in the stack.
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Terraform workspace to target
+        required: true
+        type: choice
+        options:
+          - prod
+        default: prod
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-shared-infra
+  cancel-in-progress: false
+
+jobs:
+  identify-live-color:
+    name: Identify Live and Dead Colors
+    uses: ./.github/workflows/identify-live-color.yml
+    with:
+      dns_record_mainnet_name: mainnet.live.prod.veworld.vechain.org.
+      dns_record_testnet_name: testnet.live.prod.veworld.vechain.org.
+      hosted_zone_id: Z08093993BM56HB3DD4U4
+    permissions:
+      contents: read
+      id-token: write
+    secrets:
+      AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
+
+  apply:
+    name: Apply shared stack
+    needs: identify-live-color
+    uses: ./.github/workflows/deploy-colour-agnostic-infra.yml
+    with:
+      environment: ${{ inputs.environment }}
+      live_color_mainnet: ${{ needs.identify-live-color.outputs.mainnet_live_color }}
+      live_color_testnet: ${{ needs.identify-live-color.outputs.testnet_live_color }}
+    permissions:
+      contents: read
+      id-token: write
+    secrets:
+      AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
+      VECHAINCI_SSH_PRIVATE_KEYS: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}

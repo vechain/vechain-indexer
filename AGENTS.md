@@ -114,5 +114,12 @@ Write reviewer-facing prose at final length — don't draft long and trim. The b
 - **But keep visual/semantic bridges.** Mapping something observable to what it means ("dashed orange line = `EcsTaskCpuHigh` threshold (80%)") is real information, not padding.
 - **Design notes:** one to three sentences per phase or status entry. "Why X over Y" rationale belongs in the module README or `notes/`, not stacked above the code.
 
+### Shared Infra Needs a Manual Apply
+`terraform/vpc` is the colour-agnostic stack — VPC, Route53, ECR, Atlas access, the CloudFront WAFs. Unlike `terraform/api`, **merging a change to it applies nothing.** Its only automatic apply path is [switch-live-dns.yml](.github/workflows/switch-live-dns.yml), which would land your change as a side effect of the next blue/green DNS cutover. (`deploy-prod.yml` also calls the shared workflow, but with `dead_records_only: true`, so it only touches the two dead Route53 records.)
+
+[shared-infra.yml](.github/workflows/shared-infra.yml) enforces this. Touch `terraform/vpc/**` and it blocks the PR until someone applies the `shared-infra-ack` label, posts a sticky comment naming the follow-up, and runs the `terraform plan` that no other check covers — read it in the job summary before approving.
+
+After merge, run [deploy-shared-infra.yml](.github/workflows/deploy-shared-infra.yml). It resolves the live colours from DNS rather than taking them as input, so it reconciles the stack without moving traffic.
+
 ## Environment & Operations Tips
 Copy `.env.example` files inside each package when running outside IntelliJ; the defaults target Dockerized services on localhost. Use `make db-backup` and `make db-restore` to manage whole-database Mongo snapshots stored in `database/backups/`. For targeted collection-level copy between two live clusters, run `make db-copy-collections` (see `database/restore/README.md`).

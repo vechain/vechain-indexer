@@ -1,0 +1,196 @@
+name: Shared Infra
+
+# terraform/vpc is applied by switch-live-dns.yml during a cutover or by
+# deploy-shared-infra.yml on demand — never by merging. This gate makes that
+# visible at review time and plans the change, which no other check does.
+# `labeled`/`unlabeled` are load-bearing: without them the ack never re-runs.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+  workflow_dispatch:
+
+concurrency:
+  group: shared-infra-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ACK_LABEL: shared-infra-ack
+  WATCH_PATHS: terraform/vpc
+
+jobs:
+  guard:
+    name: Shared Infra Guard
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    outputs:
+      changed: ${{ steps.detect.outputs.changed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Detect shared infra changes
+        id: detect
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: origin/${{ github.event.pull_request.base.ref }}
+        run: |
+          files=$(git diff --name-only "$BASE_REF...HEAD" -- $WATCH_PATHS)
+          if [ -z "$files" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No $WATCH_PATHS changes."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            printf '%s\n' "$files" | sed 's/^/- `/; s/$/`/' > "$RUNNER_TEMP/files.md"
+            printf '%s\n' "$files"
+          fi
+
+      - name: Build reminder comment
+        id: body
+        if: steps.detect.outputs.changed == 'true'
+        env:
+          ACKED: ${{ contains(github.event.pull_request.labels.*.name, 'shared-infra-ack') && '1' || '0' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/deploy-shared-infra.yml
+        run: |
+          body="$RUNNER_TEMP/comment.md"
+          {
+            echo '<!-- shared-infra-guard -->'
+            echo '### Shared infra change - manual apply required after merge'
+            echo
+            echo 'This PR changes the colour-agnostic `terraform/vpc` stack. **Merging does not apply it.**'
+            echo 'The only automatic path is `switch-live-dns.yml`, which would apply these changes as a'
+            echo 'side effect of the next blue/green DNS cutover.'
+            printf '\nAfter merging, run [Deploy Shared Infra](%s) and read the plan before it applies.\n' "$RUN_URL"
+            printf '\nChanged files:\n'
+            cat "$RUNNER_TEMP/files.md"
+            if [ "$ACKED" = "1" ]; then
+              printf '\nAcknowledged via `%s`. The post-merge apply is still required.\n' "$ACK_LABEL"
+            else
+              printf '\nAdd the `%s` label to confirm you have read this.\n' "$ACK_LABEL"
+            fi
+          } > "$body"
+          echo "file=$body" >> "$GITHUB_OUTPUT"
+          cat "$body" >> "$GITHUB_STEP_SUMMARY"
+
+      # Sticky comment, edited in place; cleared once the stack changes are gone.
+      - name: Post reminder on the PR
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          BODY_FILE: ${{ steps.body.outputs.file }}
+          PAYLOAD: ${{ runner.temp }}/payload.json
+        run: |
+          existing=$(gh api --paginate "/repos/$REPO/issues/$PR/comments" \
+            --jq 'map(select(.body | startswith("<!-- shared-infra-guard -->"))) | (.[0].id // empty)')
+          existing=${existing%%$'\n'*}
+          if [ -n "$BODY_FILE" ] && [ -s "$BODY_FILE" ]; then
+            jq -Rs '{body: .}' < "$BODY_FILE" > "$PAYLOAD"
+          elif [ -n "$existing" ]; then
+            printf '%s\n\n%s\n' '<!-- shared-infra-guard -->' \
+              'No shared infra changes left in this PR.' | jq -Rs '{body: .}' > "$PAYLOAD"
+          else
+            echo "nothing to report"; exit 0
+          fi
+          if [ -n "$existing" ]; then
+            gh api -X PATCH "/repos/$REPO/issues/comments/$existing" --input "$PAYLOAD"
+          else
+            gh api -X POST "/repos/$REPO/issues/$PR/comments" --input "$PAYLOAD"
+          fi
+
+      - name: Require acknowledgement
+        if: steps.detect.outputs.changed == 'true'
+        env:
+          ACKED: ${{ contains(github.event.pull_request.labels.*.name, 'shared-infra-ack') && '1' || '0' }}
+        run: |
+          if [ "$ACKED" != "1" ]; then
+            echo "::error::This PR changes $WATCH_PATHS, which needs a manual apply after merge. Add the $ACK_LABEL label to confirm."
+            exit 1
+          fi
+          echo "Acknowledged via $ACK_LABEL."
+
+  identify-live-color:
+    name: Identify Live and Dead Colors
+    needs: guard
+    if: needs.guard.outputs.changed == 'true'
+    uses: ./.github/workflows/identify-live-color.yml
+    with:
+      dns_record_mainnet_name: mainnet.live.prod.veworld.vechain.org.
+      dns_record_testnet_name: testnet.live.prod.veworld.vechain.org.
+      hosted_zone_id: Z08093993BM56HB3DD4U4
+    permissions:
+      contents: read
+      id-token: write
+    secrets:
+      AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
+
+  plan:
+    name: Shared Infra Plan
+    needs: [guard, identify-live-color]
+    if: needs.guard.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: terraform/vpc
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+
+      # Required for Terraform to source modules from other vechain repositories
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.15.8
+          terraform_wrapper: false
+
+      - name: Terraform Initialize
+        run: terraform init -reconfigure -backend-config="environments/prod.config"
+
+      - name: Terraform Workspace
+        run: terraform workspace select prod
+
+      # -lock=false so a review-time plan cannot block a concurrent deploy.
+      - name: Terraform Plan
+        env:
+          LIVE_COLOR_MAINNET: ${{ needs.identify-live-color.outputs.mainnet_live_color }}
+          LIVE_COLOR_TESTNET: ${{ needs.identify-live-color.outputs.testnet_live_color }}
+        run: |
+          set -o pipefail
+          terraform plan -lock=false -input=false -no-color \
+            --var=live_color_mainnet="$LIVE_COLOR_MAINNET" \
+            --var=live_color_testnet="$LIVE_COLOR_TESTNET" \
+            2>&1 | tee "$RUNNER_TEMP/plan.txt"
+
+      - name: Publish plan summary
+        if: always()
+        run: |
+          {
+            echo '### Shared Infra Plan'
+            echo
+            echo '```terraform'
+            tail -c 200000 "$RUNNER_TEMP/plan.txt" 2>/dev/null || echo 'Plan produced no output.'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
