@@ -58,6 +58,9 @@ fi
 BASE_URL="${BASE_URL%/}"
 SCHEMA_URL="${BASE_URL}/api-docs"
 
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/cloudfront_only_guard.sh"
+reject_direct_origin BASE_URL "$BASE_URL"
+
 SCHEMATHESIS_BIN="${SCHEMATHESIS_BIN:-schemathesis}"
 MAX_RESPONSE_MILLISECONDS="${MAX_RESPONSE_MILLISECONDS:-2000}"
 HYPOTHESIS_MAX_EXAMPLES="${HYPOTHESIS_MAX_EXAMPLES:-200}"

@@ -32,6 +32,10 @@ TIMEOUT="${TIMEOUT:-30}"
 NUM_ABS_TOLERANCE="${NUM_ABS_TOLERANCE:-1}"
 NUM_REL_TOLERANCE="${NUM_REL_TOLERANCE:-0}"
 
+source "${SCRIPT_DIR}/cloudfront_only_guard.sh"
+reject_direct_origin BASELINE_URL "$BASELINE_URL"
+reject_direct_origin CANDIDATE_URL "$CANDIDATE_URL"
+
 # Create temporary endpoints config
 CONFIG_FILE=$(mktemp /tmp/regression-endpoints.XXXXXX.json)
 cat > "$CONFIG_FILE" <<EOF
