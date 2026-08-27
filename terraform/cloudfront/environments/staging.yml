@@ -1,0 +1,539 @@
+# Staging Environment Configuration
+# This file references the shared cloudfront.yml configuration
+
+environment: "staging"
+project_name: "veworld"
+region: "eu-west-1"
+
+# CloudFront Distribution Configuration
+enable_continuous_deployment: false
+mainnet_origin_domain: "mainnet.live.prod.veworld.vechain.org"
+testnet_origin_domain: "testnet.live.prod.veworld.vechain.org"
+
+staging: true
+# Default Policy IDs
+default_headers_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+default_origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+
+# Certificate ARNs
+mainnet_certificate_arn: "arn:aws:acm:us-east-1:905964754131:certificate/392c3bd4-5a0d-43b0-a204-1307fc140749"
+testnet_certificate_arn: "arn:aws:acm:us-east-1:905964754131:certificate/8b66d985-6d28-46fe-9a31-c4160c736fed"
+
+# CNAMEs (empty for staging)
+mainnet_cnames: []
+testnet_cnames: []
+
+# Cache Behavior Configuration
+cache_behaviors:
+  - name: "stargate-nft-holders-historic-1-hour"
+    path_pattern: "/api/v1/stargate/nft-holders/historic/1-hour"
+    cache_policy_name: "hourly"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+      - "PUT"
+      - "POST"
+      - "PATCH"
+      - "DELETE"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "stargate-nft-holders-historic-1-day"
+    path_pattern: "/api/v1/stargate/nft-holders/historic/1-day"
+    cache_policy_name: "day"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "stargate-nft-holders-historic-1-week"
+    path_pattern: "/api/v1/stargate/nft-holders/historic/1-week"
+    cache_policy_name: "weekly"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "stargate-nft-holders-historic-1-month"
+    path_pattern: "/api/v1/stargate/nft-holders/historic/1-month"
+    cache_policy_name: "monthly"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "b3tr-actions-global-overview"
+    path_pattern: "/api/v1/b3tr/actions/global/overview"
+    cache_policy_name: "day"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "b3tr-actions-apps-*"
+    path_pattern: "/api/v1/b3tr/actions/apps/*"
+    cache_policy_name: "hourly"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "b3tr-actions-users-*-app-*-overview"
+    path_pattern: "/api/v1/b3tr/actions/users/*/app/*/overview"
+    cache_policy_name: "default"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "b3tr-actions-users-*"
+    path_pattern: "/api/v1/b3tr/actions/users/*"
+    cache_policy_name: "hourly"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "b3tr-galaxy-members-level-overview"
+    path_pattern: "/api/v1/b3tr/galaxy-members/level-overview"
+    cache_policy_name: "hourly"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "b3tr-proposals-*-results"
+    path_pattern: "/api/v1/b3tr/proposals/*/results"
+    cache_policy_name: "10-minutes"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "b3tr-xallocations-*-results"
+    path_pattern: "/api/v1/b3tr/xallocations/*/results"
+    cache_policy_name: "10-minutes"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "b3tr-xallocations-earnings"
+    path_pattern: "/api/v1/b3tr/xallocations/earnings"
+    cache_policy_name: "10-minutes"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "b3tr-actions-leaderboards-*"
+    path_pattern: "/api/v1/b3tr/actions/leaderboards/*"
+    cache_policy_name: "hourly"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "api-docs"
+    path_pattern: "/api-docs"
+    cache_policy_name: "hourly"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "stargate-vtho-generated-*"
+    path_pattern: "/api/v1/stargate/vtho-generated/*"
+    cache_policy_name: "10-minutes"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "stargate-vtho-claimed-*"
+    path_pattern: "/api/v1/stargate/vtho-claimed/*"
+    cache_policy_name: "10-minutes"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "stargate-vet-staked-*"
+    path_pattern: "/api/v1/stargate/vet-staked/*"
+    cache_policy_name: "10-minutes"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "stargate-vet-delegated-*"
+    path_pattern: "/api/v1/stargate/vet-delegated/*"
+    cache_policy_name: "10-minutes"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "stargate-total-vtho-generated-historic-1-day"
+    path_pattern: "/api/v1/stargate/total-vtho-generated/historic/1-day"
+    cache_policy_name: "10-minutes"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "stargate-total-vet-staked-historic-1-day"
+    path_pattern: "/api/v1/stargate/total-vet-staked/historic/1-day"
+    cache_policy_name: "10-minutes"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "stargate-total-vtho-claimed-historic-1-day"
+    path_pattern: "/api/v1/stargate/total-vtho-claimed/historic/1-day"
+    cache_policy_name: "10-minutes"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "stargate-total-vtho-generated-historic-1-week"
+    path_pattern: "/api/v1/stargate/total-vtho-generated/historic/1-week"
+    cache_policy_name: "hourly"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "stargate-total-vet-staked-historic-1-week"
+    path_pattern: "/api/v1/stargate/total-vet-staked/historic/1-week"
+    cache_policy_name: "hourly"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "stargate-total-vtho-claimed-historic-1-week"
+    path_pattern: "/api/v1/stargate/total-vtho-claimed/historic/1-week"
+    cache_policy_name: "hourly"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "stargate-total-vtho-generated-historic-1-month"
+    path_pattern: "/api/v1/stargate/total-vtho-generated/historic/1-month"
+    cache_policy_name: "day"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "stargate-total-vet-staked-historic-1-month"
+    path_pattern: "/api/v1/stargate/total-vet-staked/historic/1-month"
+    cache_policy_name: "day"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "stargate-total-vtho-claimed-historic-1-month"
+    path_pattern: "/api/v1/stargate/total-vtho-claimed/historic/1-month"
+    cache_policy_name: "day"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "stargate-total-vtho-generated-historic-1-year"
+    path_pattern: "/api/v1/stargate/total-vtho-generated/historic/1-year"
+    cache_policy_name: "day"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "stargate-total-vet-staked-historic-1-year"
+    path_pattern: "/api/v1/stargate/total-vet-staked/historic/1-year"
+    cache_policy_name: "day"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "stargate-total-vtho-claimed-historic-1-year"
+    path_pattern: "/api/v1/stargate/total-vtho-claimed/historic/1-year"
+    cache_policy_name: "day"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "validators-blocks-missed"
+    path_pattern: "/api/v1/validators/blocks/missed"
+    cache_policy_name: "10-minutes"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "transactions-count"
+    path_pattern: "/api/v1/transactions/count"
+    cache_policy_name: "10-minutes"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "transactions-latest"
+    path_pattern: "/api/v1/transactions/latest"
+    cache_policy_name: "default"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "transactions-delegated"
+    path_pattern: "/api/v1/transactions/delegated"
+    cache_policy_name: "default"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "transactions-contract"
+    path_pattern: "/api/v1/transactions/contract"
+    cache_policy_name: "default"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+  - name: "transactions-*"
+    path_pattern: "/api/v1/transactions/*"
+    cache_policy_name: "day"
+    header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+# Module Source Configuration
+module_sources:
+  cloudfront_module_source: "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//cloudfront/non_s3_distribution?ref=cloudfront-changes"
+  policies_module_source: "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//cloudfront/policies?ref=cloudfront-changes"
+  waf_module_source: "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//waf?ref=cloudfront-changes"
