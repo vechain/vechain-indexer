@@ -55,6 +55,7 @@ sample-data
 node_modules/
 lambda.zip
 apply.plan
+*.tfplan
 dist/
 
 database/backups/
