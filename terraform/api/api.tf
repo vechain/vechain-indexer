@@ -26,20 +26,6 @@ resource "aws_security_group" "alb-sg" {
   }
 
   ingress {
-    cidr_blocks = ["0.0.0.0/0"]
-    from_port   = 80
-    protocol    = "tcp"
-    to_port     = 80
-  }
-
-  ingress {
-    cidr_blocks = ["0.0.0.0/0"]
-    from_port   = 443
-    protocol    = "tcp"
-    to_port     = 443
-  }
-
-  ingress {
     from_port = 0
     protocol  = "-1"
     to_port   = 0
@@ -51,6 +37,34 @@ resource "aws_security_group" "alb-sg" {
     Name        = "${local.env.environment}-${var.project}-sg-alb"
   }
   vpc_id = data.terraform_remote_state.vpc.outputs.vpc_id
+}
+
+######################
+# ALB Public Ingress Security Group
+######################
+
+data "aws_ec2_managed_prefix_list" "cloudfront_origin_facing" {
+  name = "com.amazonaws.global.cloudfront.origin-facing"
+}
+
+# Separate from alb-sg because the prefix list weighs its max entries against
+# the 60-rule quota, and because alb-sg is also attached to the ECS tasks.
+resource "aws_security_group" "alb_cloudfront_ingress" {
+  description = "CloudFront origin-facing ingress for the API load balancers"
+  name        = "${local.env.environment}-${var.project}-sg-alb-cloudfront"
+  vpc_id      = data.terraform_remote_state.vpc.outputs.vpc_id
+
+  ingress {
+    from_port       = 443
+    protocol        = "tcp"
+    to_port         = 443
+    prefix_list_ids = [data.aws_ec2_managed_prefix_list.cloudfront_origin_facing.id]
+  }
+
+  tags = {
+    Environment = local.env.environment
+    Name        = "${local.env.environment}-${var.project}-sg-alb-cloudfront"
+  }
 }
 
 ######################
@@ -127,7 +141,7 @@ module "ecs-lb-service-api" {
   certificate_arn                   = local.env.certificate_arn
   ecs_sg                            = [aws_security_group.alb-sg.id]
   rule_0_path_pattern               = ["/", "/api/v*", "/api-docs", "/api-docs/*", "/swagger-ui/*"]
-  alb_sg                            = [aws_security_group.alb-sg.id]
+  alb_sg                            = [aws_security_group.alb-sg.id, aws_security_group.alb_cloudfront_ingress.id]
   namespace_id                      = aws_service_discovery_private_dns_namespace.ns.id
   https_tg_healthcheck_path         = "/actuator/health"
   health_check_grace_period_seconds = 300
