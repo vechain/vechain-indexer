@@ -1,9 +1,9 @@
 name: Deploy Shared Infra
 
 # Deliberate apply path for terraform/vpc. Without this the stack only ever
-# applies as a side effect of switch-live-dns.yml during a blue/green cutover.
-# Colours come from live DNS rather than operator input, so a run here cannot
-# move traffic — it reconciles everything else in the stack.
+# applies during a blue/green cutover. Colours come from live DNS, not operator
+# input, and the apply job serializes on terraform-vpc-apply, so a run queued
+# behind a cutover re-resolves them instead of reverting it.
 
 on:
   workflow_dispatch:
@@ -44,6 +44,7 @@ jobs:
     uses: ./.github/workflows/deploy-colour-agnostic-infra.yml
     with:
       environment: ${{ inputs.environment }}
+      scope: full
       live_color_mainnet: ${{ needs.identify-live-color.outputs.mainnet_live_color }}
       live_color_testnet: ${{ needs.identify-live-color.outputs.testnet_live_color }}
     permissions:

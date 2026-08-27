@@ -22,7 +22,7 @@ Write reviewer-facing prose at final length — don't draft long and trim. The b
 
 ## Shared Infra Needs a Manual Apply
 
-`terraform/vpc` is the colour-agnostic stack (VPC, Route53, ECR, CloudFront WAFs). Merging a change to it applies nothing — its only automatic path is `switch-live-dns.yml` during a blue/green cutover. `.github/workflows/shared-infra.yml` blocks any PR touching `terraform/vpc/**` until the `shared-infra-ack` label is applied, and plans the change for review. After merge, run `.github/workflows/deploy-shared-infra.yml`. See `AGENTS.md` "Shared Infra Needs a Manual Apply".
+`terraform/vpc` is the colour-agnostic stack (VPC, Route53, ECR, CloudFront WAFs). Merging a change to it applies nothing. `.github/workflows/shared-infra.yml` blocks any PR touching `terraform/vpc/**` until the `shared-infra-ack` label is applied, and plans the change for review. After merge, run `.github/workflows/deploy-shared-infra.yml` — the only path that applies the stack in full; a DNS cutover applies Route53 records only. See `AGENTS.md` "Shared Infra Needs a Manual Apply".
 
 ## Dependencies
 

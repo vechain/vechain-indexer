@@ -1,8 +1,8 @@
 name: Shared Infra
 
-# terraform/vpc is applied by switch-live-dns.yml during a cutover or by
-# deploy-shared-infra.yml on demand — never by merging. This gate makes that
-# visible at review time and plans the change, which no other check does.
+# terraform/vpc applies via deploy-shared-infra.yml, or as records-only during a
+# cutover — never by merging. This gate makes that visible at review time and
+# plans the change, which no other check does.
 # `labeled`/`unlabeled` are load-bearing: without them the ack never re-runs.
 
 on:
@@ -27,6 +27,7 @@ jobs:
       pull-requests: write
     outputs:
       changed: ${{ steps.detect.outputs.changed }}
+      ro_role: ${{ steps.ro_role.outputs.configured }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -48,6 +49,23 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
             printf '%s\n' "$files" | sed 's/^/- `/; s/$/`/' > "$RUNNER_TEMP/files.md"
             printf '%s\n' "$files"
+          fi
+
+      # The plan runs PR-controlled Terraform, so it gets a read-only role rather
+      # than the deploy role. Until that secret exists the plan is skipped, not
+      # silently run with write credentials.
+      - name: Check read-only role is configured
+        id: ro_role
+        if: steps.detect.outputs.changed == 'true'
+        env:
+          RO_ROLE: ${{ secrets.AWS_ACC_ROLE_RO }}
+        run: |
+          if [ -z "$RO_ROLE" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::AWS_ACC_ROLE_RO is not set - skipping the plan. Review this change against a local plan."
+            echo '> **Plan skipped:** `AWS_ACC_ROLE_RO` is not configured.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build reminder comment
@@ -119,7 +137,7 @@ jobs:
   identify-live-color:
     name: Identify Live and Dead Colors
     needs: guard
-    if: needs.guard.outputs.changed == 'true'
+    if: needs.guard.outputs.changed == 'true' && needs.guard.outputs.ro_role == 'true'
     uses: ./.github/workflows/identify-live-color.yml
     with:
       dns_record_mainnet_name: mainnet.live.prod.veworld.vechain.org.
@@ -129,12 +147,12 @@ jobs:
       contents: read
       id-token: write
     secrets:
-      AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
+      AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE_RO }}
 
   plan:
     name: Shared Infra Plan
     needs: [guard, identify-live-color]
-    if: needs.guard.outputs.changed == 'true'
+    if: needs.guard.outputs.changed == 'true' && needs.guard.outputs.ro_role == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -152,7 +170,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
         with:
           aws-region: eu-west-1
-          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE_RO }}
 
       # Required for Terraform to source modules from other vechain repositories
       - name: Set up SSH agent
