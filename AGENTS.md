@@ -102,5 +102,17 @@ When making API changes or changes that could affect performance, run the API co
 ## Commit & Pull Request Guidelines
 Follow the existing history: concise, imperative titles with optional type prefixes (e.g., `refactor: migrate to new indexer-core interface`) and reference the PR number in parentheses when applicable. Describe problem, solution, and verification in the PR body, link tracking issues, and attach screenshots or logs when they clarify API or UI changes. Ensure formatters and tests pass locally before requesting review.
 
+### Prose Bloat Is a Merge Blocker
+[.github/workflows/pr-bloat.yml](.github/workflows/pr-bloat.yml) fails a PR on a description over 240 words (or under 10), a tool-attribution trailer, or a comment block that outweighs the code it documents (>1:1 against attached added-code lines; 10 lines absolute; a top-of-file header measures against the whole file). Comment density and long markdown paragraphs are advisory; `**/*.md` never blocks. `make check-pr-bloat` runs it locally. Bypass is the `verbose-ok` label, which anyone including the author may apply. Thresholds are env-overridable in [check_pr_bloat.py](.github/workflows/scripts/check_pr_bloat.py).
+
+Write reviewer-facing prose at final length — don't draft long and trim. The budget is the target, not a limit to approach.
+
+- **PR descriptions:** what changed and why, in two or three sentences. Skip `## Summary` / `## Test plan` scaffolding unless there is genuinely something new to test. No tool-attribution trailers.
+- **Comments:** add one only where the WHY is non-obvious — a hidden constraint, an invariant, a workaround. A comment must not outweigh the code it documents; on a one-line field addition, that means no comment. KDoc counts.
+- Don't restate what the code does, what a technical term already implies (a reader who knows `checkpoint` doesn't need "marks progress"), or what a linked design doc already says.
+- Don't explain what something does _not_ do, or where data does _not_ flow. State what is; the reader can see the absence.
+- **But keep visual/semantic bridges.** Mapping something observable to what it means ("dashed orange line = `EcsTaskCpuHigh` threshold (80%)") is real information, not padding.
+- **Design notes:** one to three sentences per phase or status entry. "Why X over Y" rationale belongs in the module README or `notes/`, not stacked above the code.
+
 ## Environment & Operations Tips
 Copy `.env.example` files inside each package when running outside IntelliJ; the defaults target Dockerized services on localhost. Use `make db-backup` and `make db-restore` to manage whole-database Mongo snapshots stored in `database/backups/`. For targeted collection-level copy between two live clusters, run `make db-copy-collections` (see `database/restore/README.md`).

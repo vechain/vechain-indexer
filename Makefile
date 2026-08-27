@@ -6,6 +6,9 @@ help:
 format: #@ Format the code with Spotless.
 	./gradlew spotlessApply
 
+check-pr-bloat: #@ Check the branch for bloated PR prose and comment blocks (same guard as CI).
+	BASE_REF=origin/main HEAD_REF=WORKTREE python3 .github/workflows/scripts/check_pr_bloat.py
+
 # Dependency Locking
 update-locks: #@ Refresh Gradle lockfiles (root + all subprojects) after a dependency change.
 	./gradlew resolveAndLockAll --write-locks

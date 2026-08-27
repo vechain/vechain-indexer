@@ -14,6 +14,12 @@ Always run this script before committing or pushing any change, and commit any r
 
 If the script updates tracked files, include those updates in the same commit (or a follow-up `chore:` commit on the same branch) before pushing.
 
+## Prose Bloat Is a Merge Blocker
+
+`.github/workflows/pr-bloat.yml` fails a PR on a description over 240 words (or under 10), a tool-attribution trailer, or a comment block that outweighs the code it documents (>1:1 against attached added-code lines; 10 lines absolute; a top-of-file header measures against the whole file). Comment density and long markdown paragraphs are advisory; `**/*.md` never blocks. Run `make check-pr-bloat` locally. Bypass is the `verbose-ok` label, which anyone including the author may apply. Thresholds are env-overridable in `.github/workflows/scripts/check_pr_bloat.py`.
+
+Write reviewer-facing prose at final length — don't draft long and trim. The budget is the target, not a limit to approach. See `AGENTS.md` "Commit & Pull Request Guidelines" for the full rules.
+
 ## Dependencies
 
 - The `indexer-core` library (`org.vechain:indexer-core`) source code is at https://github.com/vechain/indexer-core. Refer to it for interfaces like `Indexer`, `BlockIndexer`, the `Status` enum, and other core types.
