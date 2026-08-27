@@ -27,15 +27,16 @@ slack_alert_workspace:           T03L3PQD8GK
 mongoatlas_project_id:           64d6337acba67e1132a3a4e1
 mongodb_secret_arn:              arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
 
-# Keep enable_rate_limit_exemptions false until the ACLs are imported; it adds
-# the scope_down that stops exempt CIDRs counting toward the rate rule.
 cloudfront_waf:
   mainnet:
     rate_limit:                  4000
-    enable_rate_limit_exemptions: false
+    enable_rate_limit_exemptions: true
     rate_limit_exempt_ipv4:      []
-    rate_limit_exempt_ipv6:      []
-    rate_limit_bypass_header_name: x-rate-limit-bypass
+    # Trusted internal callers. WAF aggregates IPv6 coarser than /128, so use /56.
+    rate_limit_exempt_ipv6:
+      -                          2a05:d018:12e6:f100::/56
+    # Populating this makes the apply read the bypass token from Secrets Manager.
+    rate_limit_bypass_header_name: ""
   testnet:
     rate_limit:                  2000
     enable_rate_limit_exemptions: false
