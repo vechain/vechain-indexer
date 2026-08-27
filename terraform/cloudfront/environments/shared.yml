@@ -27,7 +27,11 @@ cache_policies_v1:
     max_ttl_seconds: 3600
     min_ttl_seconds: 3600
     query_string_behavior: "all"
-    header_behavior: "none"
+    header_behavior: "whitelist"
+    header_items:
+      - "Origin"
+      - "Access-Control-Request-Method"
+      - "Access-Control-Request-Headers"
     cookie_behavior: "none"
     enable_gzip: true
     enable_brotli: true
@@ -40,7 +44,11 @@ cache_policies_v1:
     max_ttl_seconds: 86400
     min_ttl_seconds: 86400
     query_string_behavior: "all"
-    header_behavior: "none"
+    header_behavior: "whitelist"
+    header_items:
+      - "Origin"
+      - "Access-Control-Request-Method"
+      - "Access-Control-Request-Headers"
     cookie_behavior: "none"
     enable_gzip: true
     enable_brotli: true
@@ -79,7 +87,11 @@ cache_policies_v1:
     max_ttl_seconds: 600
     min_ttl_seconds: 600
     query_string_behavior: "all"
-    header_behavior: "none"
+    header_behavior: "whitelist"
+    header_items:
+      - "Origin"
+      - "Access-Control-Request-Method"
+      - "Access-Control-Request-Headers"
     cookie_behavior: "none"
     enable_gzip: true
     enable_brotli: true 
@@ -162,48 +174,3 @@ cache_policies_v2:
     enable_brotli: false
     
 # WAF Configuration - Shared base configuration
-waf:
-  enable_waf: true
-  waf_cloudfront_enable: true
-  waf_logs_enable: false
-  waf_logs_s3_enable: false
-  waf_logs_retention: 30
-  waf_scope: "CLOUDFRONT"
-  waf_associate: true
-  waf_rate_limit: 5000
-  waf_rate_limit_exceptions: []
-
-# WAF Managed Rules Configuration
-waf_managed_rules:
-  - name: "AWS-AWSManagedRulesAmazonIpReputationList"
-    priority: 1
-    override_action: "none"
-    rule_group_name: "AWSManagedRulesAmazonIpReputationList"
-    vendor_name: "AWS"
-    excluded_rules: []
-  
-  - name: "AWS-AWSManagedRulesCommonRuleSet"
-    priority: 2
-    override_action: "none"
-    rule_group_name: "AWSManagedRulesCommonRuleSet"
-    vendor_name: "AWS"
-    excluded_rules: []
-    rule_action_override:
-      - name: "SizeRestrictions_QUERYSTRING"
-        action_to_use:
-          allow: true
-  
-  - name: "AWS-AWSManagedRulesKnownBadInputsRuleSet"
-    priority: 3
-    override_action: "none"
-    rule_group_name: "AWSManagedRulesKnownBadInputsRuleSet"
-    vendor_name: "AWS"
-    excluded_rules: []
-  
-  - name: "AWS-AWSManagedRulesSQLiRuleSet"
-    priority: 4
-    override_action: "none"
-    rule_group_name: "AWSManagedRulesSQLiRuleSet"
-    vendor_name: "AWS"
-    excluded_rules: []
-    

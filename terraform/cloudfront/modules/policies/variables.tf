@@ -51,6 +51,12 @@ variable "header_behavior" {
   default     = "none"
 }
 
+variable "header_items" {
+  type        = list(string)
+  description = "Headers in the cache key. Required when header_behavior is whitelist."
+  default     = []
+}
+
 variable "query_string_behavior" {
   type        = string
   description = "query string behavior"

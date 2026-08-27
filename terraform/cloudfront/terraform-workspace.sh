@@ -149,7 +149,7 @@ destroy_deployment() {
 deploy_all() {
     print_status "Starting full deployment process..."
 
-    # shared carries unreviewed drift, so it is never applied unattended.
+    # shared is colour-agnostic, so it is never applied unattended.
     print_warning "Skipping 'shared' - plan and apply it explicitly (see README)"
 
     # Deploy staging environment

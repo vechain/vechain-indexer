@@ -33,6 +33,7 @@ No modules.
 | <a name="input_enable_brotli"></a> [enable\_brotli](#input\_enable\_brotli) | n/a | `bool` | `false` | no |
 | <a name="input_enable_gzip"></a> [enable\_gzip](#input\_enable\_gzip) | n/a | `bool` | `false` | no |
 | <a name="input_header_behavior"></a> [header\_behavior](#input\_header\_behavior) | header behavior | `string` | `"none"` | no |
+| <a name="input_header_items"></a> [header\_items](#input\_header\_items) | Headers in the cache key. Required when header\_behavior is whitelist. | `list(string)` | `[]` | no |
 | <a name="input_headers_policy"></a> [headers\_policy](#input\_headers\_policy) | Name of the headers policy | `string` | `"default_headers_policy"` | no |
 | <a name="input_max_ttl"></a> [max\_ttl](#input\_max\_ttl) | Max cache policy time to live | `number` | n/a | yes |
 | <a name="input_min_ttl"></a> [min\_ttl](#input\_min\_ttl) | Min cache policy time to live | `number` | n/a | yes |

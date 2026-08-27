@@ -102,7 +102,7 @@ jobs:
             if [ "$CLOUDFRONT_CHANGED" = "true" ]; then
               echo
               echo '`terraform/cloudfront`: no deploy workflow yet - applied by hand per its README,'
-              echo 'one workspace at a time. The `shared` workspace must not be applied.'
+              echo 'one workspace at a time. Read the plan for every workspace below.'
             fi
             printf '\nChanged files:\n'
             cat "$RUNNER_TEMP/files.md"

@@ -2,29 +2,24 @@
 
 This directory contains a unified Terraform configuration that uses workspaces to manage multiple environments (shared, staging, prod) from a single codebase.
 
-## ⚠️ Workspace apply status
+## Workspace apply status
 
-| Workspace | Plan | Safe to apply |
-|---|---|---|
-| `prod` | No changes | Yes |
-| `staging` | No changes | Yes |
-| `shared` | 5 to change | **No** |
+All three workspaces are reconciled against live and plan clean:
 
-`prod` and `staging` were reconciled against live and plan clean. **Do not apply
-`shared`** — `deploy-all` skips it for that reason. Its plan carries unreviewed
-drift:
+| Workspace | Plan |
+|---|---|
+| `prod` | No changes |
+| `staging` | No changes |
+| `shared` | 0 to add, 0 to change, 0 to destroy (two forget-only actions) |
 
-- Three cache policies (`hourly`, `day`, `10-minutes`) would drop `Origin` and the
-  two `Access-Control-Request-*` headers from the cache key. The `policies` module
-  cannot express a header whitelist, so `shared.yml` cannot describe what is live.
-- `module.waf` / `module.testnet_waf` manage the two CLOUDFRONT-scope ACLs that
-  `terraform/vpc/cloudfront_waf.tf` also owns (same ACL IDs). This state records
-  4 rules; live has 10. Applying would strip the Imperva group, IP block list,
-  rate limiter, GET/OPTIONS restriction, python-UA limiter and `/actuator` block.
+There is no deploy workflow. Applies are manual, one workspace at a time, and
+`shared-infra.yml` plans all three at review time — read that before merging.
 
-Both predate this stack landing on `main`. The WAF modules and their outputs are
-still declared here but no longer feed the distributions — `local.waf_arn` and
-`local.testnet_waf_arn` read the ARNs from `terraform/vpc` instead.
+`shared`'s first apply discards Terraform's tracking of the two CLOUDFRONT-scope
+WAF ACLs without deleting them. `terraform/vpc/cloudfront_waf.tf` has owned those
+ACLs since #1519, and this state still held them from an earlier apply; the
+`removed` blocks in `shared.tf` resolve that. The distributions take their WAF
+ARNs from `terraform/vpc` via remote state.
 
 ## 🏗️ Architecture Overview
 
@@ -64,14 +59,15 @@ cd terraform/cloudfront
 
 ### **2. Deploy All Environments**
 ```bash
-# Deploy staging → prod. Skips shared; see the apply status above.
+# Deploy staging → prod. shared is left to an explicit apply.
 ./terraform-workspace.sh deploy-all
 ```
 
 ### **3. Deploy Individual Workspaces**
 ```bash
-# Review the shared plan. Do not apply it — see the apply status above.
+# Deploy shared resources only
 ./terraform-workspace.sh plan shared
+./terraform-workspace.sh apply shared
 
 # Deploy staging environment
 ./terraform-workspace.sh plan staging  
