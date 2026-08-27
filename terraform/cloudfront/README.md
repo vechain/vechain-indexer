@@ -11,7 +11,8 @@ This directory contains a unified Terraform configuration that uses workspaces t
 | `shared` | 5 to change | **No** |
 
 `prod` and `staging` were reconciled against live and plan clean. **Do not apply
-`shared`, and do not use `deploy-all`.** Its plan carries unreviewed drift:
+`shared`** — `deploy-all` skips it for that reason. Its plan carries unreviewed
+drift:
 
 - Three cache policies (`hourly`, `day`, `10-minutes`) would drop `Origin` and the
   two `Access-Control-Request-*` headers from the cache key. The `policies` module
@@ -63,15 +64,14 @@ cd terraform/cloudfront
 
 ### **2. Deploy All Environments**
 ```bash
-# Deploy everything in correct order (shared → staging → prod)
+# Deploy staging → prod. Skips shared; see the apply status above.
 ./terraform-workspace.sh deploy-all
 ```
 
 ### **3. Deploy Individual Workspaces**
 ```bash
-# Deploy shared resources only
+# Review the shared plan. Do not apply it — see the apply status above.
 ./terraform-workspace.sh plan shared
-./terraform-workspace.sh apply shared
 
 # Deploy staging environment
 ./terraform-workspace.sh plan staging  
@@ -201,7 +201,7 @@ data "terraform_remote_state" "shared" {
   backend = "s3"
   config = {
     bucket = "veworld-indexer-terraform-state-prod"
-    key    = "cloudfront/env:/shared/terraform.tfstate"
+    key    = "cloudfront/shared/cloudfront/terraform.tfstate"
     region = "eu-west-1"
   }
 }
@@ -233,9 +233,9 @@ The GitHub workflow uses AWS role assumption:
 ### **State File Organization**
 ```
 S3 Bucket: veworld-indexer-terraform-state-prod
-├── cloudfront/env:/shared/terraform.tfstate      # Shared resources
-├── cloudfront/env:/staging/terraform.tfstate     # Staging environment  
-└── cloudfront/env:/prod/terraform.tfstate        # Production environment
+├── cloudfront/shared/cloudfront/terraform.tfstate    # Shared resources
+├── cloudfront/staging/cloudfront/terraform.tfstate   # Staging environment
+└── cloudfront/prod/cloudfront/terraform.tfstate      # Production environment
 ```
 
 ### **Workspace Commands**

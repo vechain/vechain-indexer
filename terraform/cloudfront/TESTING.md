@@ -8,6 +8,22 @@ This guide provides instructions and commands for testing the CloudFront staging
 - **Staging Header:** `aws-cf-cd-staging: testnet`
 - **Purpose:** Routes traffic to staging CloudFront distribution for testing
 
+### Prerequisite: continuous deployment must be routing
+
+The header only reaches staging while the continuous deployment policy is
+enabled. `environments/prod.yml` ships `continuous_deployment_enabled: false`,
+so by default **these requests hit the production distribution.** Set it to
+`true` and apply the `prod` workspace before testing, and check what you got:
+
+```bash
+# Staging responses carry a different x-amz-cf-id and ETag than production.
+curl -sI -H "aws-cf-cd-staging: testnet" \
+  "https://indexer.testnet.vechain.org/api/v1/b3tr/actions/global/overview" \
+  | grep -i "x-amz-cf-id\|etag"
+```
+
+Set it back to `false` when you are done.
+
 ## Quick Start
 
 ### Option 1: Run the Full Test Suite
@@ -28,62 +44,62 @@ Use the individual curl commands below for manual testing:
 
 ## Individual Test Commands
 
-### 1. 1-Hour Cache Behavior (Hourly Cache Policy - 5 min TTL)
+### 1. 1-Hour Cache Behavior (Hourly Cache Policy - 1 h TTL)
 ```bash
 curl -I -H "aws-cf-cd-staging: testnet" \
   "https://indexer.testnet.vechain.org/api/v1/stargate/nft-holders/historic/1-hour"
 ```
 
-### 2. 1-Day Cache Behavior (Day Cache Policy - 5 min TTL)
+### 2. 1-Day Cache Behavior (Day Cache Policy - 24 h TTL)
 ```bash
 curl -I -H "aws-cf-cd-staging: testnet" \
   "https://indexer.testnet.vechain.org/api/v1/stargate/nft-holders/historic/1-day"
 ```
 
-### 3. 1-Week Cache Behavior (Weekly Cache Policy - 5 min TTL)
+### 3. 1-Week Cache Behavior (Weekly Cache Policy - 24 h TTL)
 ```bash
 curl -I -H "aws-cf-cd-staging: testnet" \
   "https://indexer.testnet.vechain.org/api/v1/stargate/nft-holders/historic/1-week"
 ```
 
-### 4. 1-Month Cache Behavior (Monthly Cache Policy - 5 min TTL)
+### 4. 1-Month Cache Behavior (Monthly Cache Policy - 24 h TTL)
 ```bash
 curl -I -H "aws-cf-cd-staging: testnet" \
   "https://indexer.testnet.vechain.org/api/v1/stargate/nft-holders/historic/1-month"
 ```
 
-### 5. B3TR Global Overview (Day Cache Policy - 5 min TTL)
+### 5. B3TR Global Overview (Day Cache Policy - 24 h TTL)
 ```bash
 curl -I -H "aws-cf-cd-staging: testnet" \
   "https://indexer.testnet.vechain.org/api/v1/b3tr/actions/global/overview"
 ```
 
-### 6. B3TR Apps Overview (Hourly Cache Policy - 5 min TTL)
+### 6. B3TR Apps Overview (Hourly Cache Policy - 1 h TTL)
 ```bash
 # Replace 'example-app' with actual app ID
 curl -I -H "aws-cf-cd-staging: testnet" \
   "https://indexer.testnet.vechain.org/api/v1/b3tr/actions/apps/example-app/overview"
 ```
 
-### 7. B3TR Galaxy Members Overview (Hourly Cache Policy - 5 min TTL)
+### 7. B3TR Galaxy Members Overview (Hourly Cache Policy - 1 h TTL)
 ```bash
 curl -I -H "aws-cf-cd-staging: testnet" \
   "https://indexer.testnet.vechain.org/api/v1/b3tr/galaxy-members/level-overview"
 ```
 
-### 8. Stargate Total VTHO Claimed Historic (Hourly Cache Policy - 5 min TTL)
+### 8. Stargate Total VTHO Claimed Historic (Hourly Cache Policy - 1 h TTL)
 ```bash
 curl -I -H "aws-cf-cd-staging: testnet" \
   "https://indexer.testnet.vechain.org/api/v1/stargate/total-vtho-claimed/historic/1-day"
 ```
 
-### 9. Stargate Total VET Staked Historic (Hourly Cache Policy - 5 min TTL)
+### 9. Stargate Total VET Staked Historic (Hourly Cache Policy - 1 h TTL)
 ```bash
 curl -I -H "aws-cf-cd-staging: testnet" \
   "https://indexer.testnet.vechain.org/api/v1/stargate/total-vet-staked/historic/1-day"
 ```
 
-### 10. B3TR Proposal Results (Hourly Cache Policy - 5 min TTL)
+### 10. B3TR Proposal Results (Hourly Cache Policy - 1 h TTL)
 ```bash
 # Replace 'example-proposal' with actual proposal ID
 curl -I -H "aws-cf-cd-staging: testnet" \
@@ -105,7 +121,7 @@ curl -I -H "aws-cf-cd-staging: testnet" \
 
 3. **cache-control**
    - Shows cache directives from origin
-   - Example: `cache-control: max-age=300` means 5 minutes cache
+   - Example: `cache-control: max-age=3600` means 1 hour cache
 
 4. **x-amz-cf-id**
    - CloudFront request ID
@@ -126,7 +142,7 @@ curl -I -H "aws-cf-cd-staging: testnet" \
 
 ### Second Run (Cache HIT Expected)
 ```bash
-# Run the same endpoint within 5 minutes - should see "Hit from cloudfront"
+# Run the same endpoint within the policy TTL - should see "Hit from cloudfront"
 curl -I -H "aws-cf-cd-staging: testnet" \
   "https://indexer.testnet.vechain.org/api/v1/stargate/nft-holders/historic/1-hour"
 ```
@@ -160,7 +176,7 @@ curl -H "aws-cf-cd-staging: testnet" \
 **Solution:**
 1. Wait a few seconds between requests
 2. Use the exact same URL (query parameters matter!)
-3. Check if the cache policy TTL has expired (5 minutes for most staging endpoints)
+3. Check if the cache policy TTL has expired (1 hour for `hourly`, 24 hours for `day`, `weekly` and `monthly`)
 
 ### Issue: 404 Not Found
 **Solution:**
@@ -172,16 +188,16 @@ curl -H "aws-cf-cd-staging: testnet" \
 
 | Cache Behavior | Path Pattern | Cache Policy | TTL (Staging) |
 |----------------|-------------|--------------|---------------|
-| 1-hour | `/api/v1/stargate/nft-holders/historic/1-hour` | hourly | 5 minutes |
-| 1-day | `/api/v1/stargate/nft-holders/historic/1-day` | day | 5 minutes |
-| 1-week | `/api/v1/stargate/nft-holders/historic/1-week` | weekly | 5 minutes |
-| 1-month | `/api/v1/stargate/nft-holders/historic/1-month` | monthly | 5 minutes |
-| B3TR Global | `/api/v1/b3tr/actions/global/overview` | day | 5 minutes |
-| B3TR Apps | `/api/v1/b3tr/actions/apps/*/overview` | hourly | 5 minutes |
-| B3TR Galaxy | `/api/v1/b3tr/galaxy-members/level-overview` | hourly | 5 minutes |
-| VTHO Claimed | `/api/v1/stargate/total-vtho-claimed/historic/*` | hourly | 5 minutes |
-| VET Staked | `/api/v1/stargate/total-vet-staked/historic/*` | hourly | 5 minutes |
-| Proposals | `/api/v1/b3tr/proposals/*/results` | hourly | 5 minutes |
+| 1-hour | `/api/v1/stargate/nft-holders/historic/1-hour` | hourly | 1 hour |
+| 1-day | `/api/v1/stargate/nft-holders/historic/1-day` | day | 24 hours |
+| 1-week | `/api/v1/stargate/nft-holders/historic/1-week` | weekly | 24 hours |
+| 1-month | `/api/v1/stargate/nft-holders/historic/1-month` | monthly | 24 hours |
+| B3TR Global | `/api/v1/b3tr/actions/global/overview` | day | 24 hours |
+| B3TR Apps | `/api/v1/b3tr/actions/apps/*/overview` | hourly | 1 hour |
+| B3TR Galaxy | `/api/v1/b3tr/galaxy-members/level-overview` | hourly | 1 hour |
+| VTHO Claimed | `/api/v1/stargate/total-vtho-claimed/historic/*` | hourly | 1 hour |
+| VET Staked | `/api/v1/stargate/total-vet-staked/historic/*` | hourly | 1 hour |
+| Proposals | `/api/v1/b3tr/proposals/*/results` | hourly | 1 hour |
 
 ## Monitoring in AWS Console
 

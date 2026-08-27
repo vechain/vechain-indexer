@@ -19,6 +19,7 @@ BASE_URL="https://indexer.testnet.vechain.org"
 STAGING_HEADER="aws-cf-cd-staging: testnet"
 OUTPUT_DIR="./test-results"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+FAILURES=0
 
 # Create output directory
 mkdir -p "$OUTPUT_DIR"
@@ -38,6 +39,7 @@ print_success() {
 }
 
 print_error() {
+    FAILURES=$((FAILURES + 1))
     echo -e "${RED}✗ $1${NC}"
 }
 
@@ -80,13 +82,13 @@ test_endpoint() {
         print_error "Request NOT served by CloudFront"
     fi
     
-    # Check cache status
-    if echo "$response" | grep -qi "x-cache.*Hit"; then
+    # Check cache status. RefreshHit first: it also matches the broader Hit pattern.
+    if echo "$response" | grep -qi "x-cache.*RefreshHit"; then
+        print_info "Cache REFRESH HIT - Cached content revalidated"
+    elif echo "$response" | grep -qi "x-cache.*Hit"; then
         print_success "Cache HIT - Content served from cache"
     elif echo "$response" | grep -qi "x-cache.*Miss"; then
         print_info "Cache MISS - Content fetched from origin (expected on first request)"
-    elif echo "$response" | grep -qi "x-cache.*RefreshHit"; then
-        print_info "Cache REFRESH HIT - Cached content revalidated"
     else
         print_info "Cache status: Unknown"
     fi
@@ -122,63 +124,63 @@ echo "" | tee -a "$LOG_FILE"
 test_endpoint \
     "1-hour NFT Holders" \
     "/api/v1/stargate/nft-holders/historic/1-hour" \
-    "hourly (5 min TTL)"
+    "hourly (1 h TTL)"
 
 # Test 2: 1-day cache behavior
 test_endpoint \
     "1-day NFT Holders" \
     "/api/v1/stargate/nft-holders/historic/1-day" \
-    "day (5 min TTL)"
+    "day (24 h TTL)"
 
 # Test 3: 1-week cache behavior
 test_endpoint \
     "1-week NFT Holders" \
     "/api/v1/stargate/nft-holders/historic/1-week" \
-    "weekly (5 min TTL)"
+    "weekly (24 h TTL)"
 
 # Test 4: 1-month cache behavior
 test_endpoint \
     "1-month NFT Holders" \
     "/api/v1/stargate/nft-holders/historic/1-month" \
-    "monthly (5 min TTL)"
+    "monthly (24 h TTL)"
 
 # Test 5: B3TR Global Overview
 test_endpoint \
     "B3TR Global Overview" \
     "/api/v1/b3tr/actions/global/overview" \
-    "day (5 min TTL)"
+    "day (24 h TTL)"
 
 # Test 6: B3TR Apps Overview (with wildcard)
 # Note: Replace * with an actual app ID for testing
 test_endpoint \
     "B3TR Apps Overview" \
     "/api/v1/b3tr/actions/apps/example-app/overview" \
-    "hourly (5 min TTL)"
+    "hourly (1 h TTL)"
 
 # Test 7: B3TR Galaxy Members Overview
 test_endpoint \
     "B3TR Galaxy Members Overview" \
     "/api/v1/b3tr/galaxy-members/level-overview" \
-    "hourly (5 min TTL)"
+    "hourly (1 h TTL)"
 
 # Test 8: Stargate Total VTHO Claimed Historic (with wildcard)
 test_endpoint \
     "Stargate VTHO Claimed 1-day" \
     "/api/v1/stargate/total-vtho-claimed/historic/1-day" \
-    "hourly (5 min TTL)"
+    "hourly (1 h TTL)"
 
 # Test 9: Stargate Total VET Staked Historic (with wildcard)
 test_endpoint \
     "Stargate VET Staked 1-day" \
     "/api/v1/stargate/total-vet-staked/historic/1-day" \
-    "hourly (5 min TTL)"
+    "hourly (1 h TTL)"
 
 # Test 10: B3TR Proposal Results (with wildcard)
 # Note: Replace * with an actual proposal ID for testing
 test_endpoint \
     "B3TR Proposal Results" \
     "/api/v1/b3tr/proposals/example-proposal/results" \
-    "hourly (5 min TTL)"
+    "hourly (1 h TTL)"
 
 # Additional test: Default behavior (uncached endpoint)
 print_header "Testing: Default Behavior (Uncached)"
@@ -209,6 +211,11 @@ echo "  1. Replace wildcard paths (*/example-app, */example-proposal) with actua
 echo "  2. Ensure your API endpoints are returning valid data"
 echo "  3. Monitor CloudFront metrics in AWS Console"
 echo ""
+
+if [ "$FAILURES" -gt 0 ]; then
+    echo -e "${RED}✗ Test suite finished with $FAILURES failure(s)${NC}"
+    exit 1
+fi
 
 print_success "Test suite execution complete!"
 

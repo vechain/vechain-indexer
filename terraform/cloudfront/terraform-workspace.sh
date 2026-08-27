@@ -6,6 +6,9 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# Saved plans hold resolved values, so keep them out of the tracked tree.
+PLAN_DIR=".terraform/plans"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -43,7 +46,7 @@ show_usage() {
     echo "  show <workspace>         - Show current workspace state"
     echo "  select <workspace>       - Select a workspace"
     echo "  validate                 - Validate configuration in current workspace"
-    echo "  deploy-all               - Deploy all environments in order (shared -> staging -> prod)"
+    echo "  deploy-all               - Deploy staging then prod (skips shared)"
     echo ""
     echo "Workspaces:"
     echo "  shared                   - Shared resources (cache policies, WAF)"
@@ -74,9 +77,10 @@ init_terraform() {
         fi
     done
     
-    # Switch back to default workspace
-    terraform workspace select default
-    print_success "Terraform initialization complete!"
+    # provider.tf reads environments/<workspace>.yml and there is no
+    # default.yml, so leave a configured workspace selected.
+    terraform workspace select staging
+    print_success "Terraform initialization complete! Active workspace: staging"
 }
 
 # Function to validate workspace name
@@ -96,7 +100,8 @@ plan_deployment() {
     
     print_status "Planning deployment for workspace: $workspace"
     terraform workspace select "$workspace"
-    terraform plan -out="$workspace.tfplan"
+    mkdir -p "$PLAN_DIR"
+    terraform plan -out="$PLAN_DIR/$workspace.tfplan"
     print_success "Plan completed for $workspace"
 }
 
@@ -105,17 +110,20 @@ apply_deployment() {
     local workspace=$1
     validate_workspace "$workspace"
     
+    local plan_file="$PLAN_DIR/$workspace.tfplan"
+
+    # Only ever apply a plan someone has reviewed.
+    if [ ! -f "$plan_file" ]; then
+        print_error "No saved plan at $plan_file"
+        print_error "Run '$0 plan $workspace', review the output, then apply"
+        exit 1
+    fi
+
     print_status "Applying deployment for workspace: $workspace"
     terraform workspace select "$workspace"
-    
-    if [ -f "$workspace.tfplan" ]; then
-        terraform apply "$workspace.tfplan"
-        rm "$workspace.tfplan"
-    else
-        print_warning "No plan file found, running apply without plan..."
-        terraform apply -auto-approve
-    fi
-    
+    terraform apply "$plan_file"
+    rm "$plan_file"
+
     print_success "Deployment completed for $workspace"
 }
 
@@ -140,19 +148,17 @@ destroy_deployment() {
 # Function to deploy all environments in order
 deploy_all() {
     print_status "Starting full deployment process..."
-    
-    # Deploy shared resources first
-    print_status "Step 1/3: Deploying shared resources..."
-    plan_deployment "shared"
-    apply_deployment "shared"
-    
+
+    # shared carries unreviewed drift, so it is never applied unattended.
+    print_warning "Skipping 'shared' - plan and apply it explicitly (see README)"
+
     # Deploy staging environment
-    print_status "Step 2/3: Deploying staging environment..."
+    print_status "Step 1/2: Deploying staging environment..."
     plan_deployment "staging"
     apply_deployment "staging"
-    
+
     # Deploy production environment
-    print_status "Step 3/3: Deploying production environment..."
+    print_status "Step 2/2: Deploying production environment..."
     plan_deployment "prod"
     print_warning "Production deployment requires manual approval"
     read -p "Deploy to production? (type 'yes' to confirm): " confirm

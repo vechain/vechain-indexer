@@ -28,8 +28,8 @@ terraform {
     key    = "cloudfront/terraform.tfstate"
     region = "eu-west-1"
 
-    # Workspace support - state files will be stored as:
-    # cloudfront/env:/workspace-name/terraform.tfstate
+    # Workspace support - non-default state files are stored as:
+    # cloudfront/<workspace>/cloudfront/terraform.tfstate
     workspace_key_prefix = "cloudfront"
   }
 }

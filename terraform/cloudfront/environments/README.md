@@ -6,9 +6,10 @@ This directory contains environment-specific configuration files for the CloudFr
 
 ```
 environments/
+├── shared.yml        # Cache policies and WAF, deployed once
 ├── prod.yml          # Production environment configuration
 ├── staging.yml       # Staging environment configuration
-└── README.md        # This documentation file
+└── README.md         # This documentation file
 ```
 
 ## Configuration Files
@@ -29,46 +30,36 @@ Contains staging-specific values with:
 
 ## Usage
 
-These YAML files serve as documentation and reference for environment-specific values. You can use them in several ways:
-
-### 1. Manual Terraform Variables
-Copy values from the YAML files into your `terraform.tfvars` files:
-
-```hcl
-# terraform.tfvars
-environment = "prod"
-project_name = "veworld"
-mainnet_origin_domain = "mainnet.live.prod.veworld.vechain.org"
-# ... other variables
-```
-
-### 2. Direct YAML Integration
-Each environment folder has a simple `environment.tf` file that reads the YAML directly:
+These files are runtime inputs, not reference material. The selected Terraform
+workspace picks the file, so there is one file per workspace and no
+`terraform.tfvars`. From `provider.tf`:
 
 ```hcl
-# In prod/environment.tf
 locals {
-  env = yamldecode(file("../environments/prod.yml"))
+  workspace  = terraform.workspace
+  env_config = yamldecode(file("environments/${local.workspace}.yml"))
 }
 
-# In staging/environment.tf  
-locals {
-  env = yamldecode(file("../environments/staging.yml"))
-}
-
-# Access nested values in cloudfront.tf like:
-# local.env.cache_policies.default_cache_policy_name
-# local.env.waf.waf_rate_limit
+# Read throughout the stack as:
+# local.env_config.mainnet_origin_domain
+# local.env_config.waf.waf_rate_limit
 ```
 
-### 3. Environment Validation
-Compare your current Terraform configuration against these reference files to ensure consistency.
+Because the lookup is unconditional, every workspace needs a matching file and
+Terraform must never sit in the `default` workspace — there is no
+`default.yml`. Select a workspace before running any command:
+
+```bash
+terraform workspace select staging
+```
+
+Adding a workspace means adding `environments/<workspace>.yml` alongside it.
 
 ## Key Differences Between Environments
 
 | Configuration | Production | Staging |
 |---------------|------------|---------|
-| TTL Values | 60-300 seconds | 30-60 seconds |
+| TTL Values | Shared policies (`hourly` 3600s, `day`/`weekly`/`monthly` 86400s) | Same shared policies |
 | WAF Rate Limit | 5,000 req/5min | 10,000 req/5min |
 | WAF Logging | Disabled | Enabled |
 | Log Retention | 30 days | 7 days |
