@@ -184,6 +184,8 @@ No modules.
 | <a name="input_region"></a> [region](#input\_region) | n/a | `string` | n/a | yes |
 | <a name="input_replace_cert"></a> [replace\_cert](#input\_replace\_cert) | n/a | `bool` | `false` | no |
 | <a name="input_rule_0_path_pattern"></a> [rule\_0\_path\_pattern](#input\_rule\_0\_path\_pattern) | rule\_1\_path\_pattern ['/api','/api/*'] | `list(string)` | `null` | no |
+| <a name="input_rule_0_required_header_name"></a> [rule\_0\_required\_header\_name](#input\_rule\_0\_required\_header\_name) | Header rule 0 requires, on top of its path patterns. Empty disables the check. | `string` | `""` | no |
+| <a name="input_rule_0_required_header_values"></a> [rule\_0\_required\_header\_values](#input\_rule\_0\_required\_header\_values) | Values rule\_0\_required\_header\_name may carry; any one matches. More than one covers a token rotation. | `list(string)` | `[]` | no |
 | <a name="input_rule_1_path_pattern"></a> [rule\_1\_path\_pattern](#input\_rule\_1\_path\_pattern) | rule\_1\_path\_pattern ['/api','/api/*'] | `list(string)` | `null` | no |
 | <a name="input_rule_2_path_pattern"></a> [rule\_2\_path\_pattern](#input\_rule\_2\_path\_pattern) | rule\_2\_path\_pattern ['/api','/api/*'] | `list(string)` | `null` | no |
 | <a name="input_rule_3_path_pattern"></a> [rule\_3\_path\_pattern](#input\_rule\_3\_path\_pattern) | rule\_3\_path\_pattern ['/api','/api/*'] | `list(string)` | `null` | no |

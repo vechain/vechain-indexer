@@ -267,7 +267,10 @@ locals {
   rule_0_requires_header = var.rule_0_required_header_name != ""
 
   # A rule caps at 5 condition values, one spent per header value, so paths spill over.
-  rule_0_chunks = chunklist(var.rule_0_path_pattern, 5 - length(var.rule_0_required_header_values))
+  rule_0_chunks = chunklist(var.rule_0_path_pattern == null ? [] : var.rule_0_path_pattern, 5 - length(var.rule_0_required_header_values))
+
+  # Rule 0 can span several rules, so the fixed priorities below start after it.
+  rule_0_span = max(1, length(local.rule_0_chunks))
 }
 
 resource "aws_alb_listener_rule" "listener_rule" {
@@ -305,7 +308,7 @@ resource "aws_alb_listener_rule" "listener_rule" {
 
 resource "aws_alb_listener_rule" "listener_rule_1" {
 
-  priority = 2
+  priority = local.rule_0_span + 1
   count    = var.is_rule_1_required && var.load_balancer_type == "application" ? 1 : 0
 
   listener_arn = aws_alb_listener.alb_listener_https[0].arn
@@ -347,7 +350,7 @@ resource "aws_alb_listener_rule" "listener_rule_2" {
 
   count        = var.is_rule_2_required && var.load_balancer_type == "application" ? 1 : 0
   listener_arn = aws_alb_listener.alb_listener_https[0].arn
-  priority     = 3
+  priority     = local.rule_0_span + 2
   condition {
     path_pattern {
       values = var.rule_2_path_pattern
@@ -379,7 +382,7 @@ resource "aws_alb_listener_rule" "listener_rule_2" {
 
 resource "aws_alb_listener_rule" "listener_rule_3" {
 
-  priority = 4
+  priority = local.rule_0_span + 3
   count    = var.is_rule_3_required && var.load_balancer_type == "application" ? 1 : 0
 
   listener_arn = aws_alb_listener.alb_listener_https[0].arn
@@ -399,7 +402,7 @@ resource "aws_alb_listener_rule" "listener_rule_3" {
 
 resource "aws_alb_listener_rule" "listener_rule_4" {
   count        = var.is_rule_4_required && var.load_balancer_type == "application" ? 1 : 0
-  priority     = 5
+  priority     = local.rule_0_span + 4
   listener_arn = aws_alb_listener.alb_listener_https[0].arn
   action {
     type             = "forward"
