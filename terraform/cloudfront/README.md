@@ -30,15 +30,15 @@ first apply if it is missing, so whichever of `prod`/`staging` applies first win
 and the other reuses the value.
 
 CloudFront overwrites any same-named header a viewer sends, so a client cannot
-forge it through the distribution. The ALB rejects requests that arrive without
-it, which is what stops someone pointing their own distribution at the origin —
-the CloudFront origin-facing prefix list on the ALB security group admits any
-distribution in any AWS account.
+forge it through the distribution. Once the ALB requires it, that is what stops
+someone pointing their own distribution at the origin — the CloudFront
+origin-facing prefix list on the ALB security group admits any distribution in
+any AWS account.
 
-**Apply order matters.** Both `prod` and `staging` must be applied here *before*
-`terraform/api` starts enforcing the header, or the ALB will reject live traffic.
-Rotating the value means updating the secret, applying both workspaces here, and
-only then letting `terraform/api` pick the new value up.
+Nothing checks the header yet: `terraform/api` adds the ALB condition separately,
+and it carries the rotation runbook. **Apply order matters.** Both `prod` and
+`staging` must be applied here *before* that check is switched on, or the ALB
+will reject live traffic.
 
 ## 🏗️ Architecture Overview
 
