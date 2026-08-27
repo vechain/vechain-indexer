@@ -150,6 +150,9 @@ module "ecs-lb-service-api" {
   is_rule_4_required = false
   default_action     = "fixed-response"
 
+  rule_0_required_header_name   = local.origin_verify_header_name
+  rule_0_required_header_values = local.origin_verify_header_values
+
   healthcheck = {
     command     = ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health/liveness"]
     start_delay = 120
@@ -1281,6 +1284,32 @@ module "vpc-endpoints" {
       }
     }
   ] : []
+}
+
+# Origin verification. Empty until terraform/cloudfront is applied; see its README.
+locals {
+  origin_verify_header_name = startswith(local.env.environment, "prod") ? try(local.env.alb.origin_verify_header_name, "") : ""
+
+  # Rotation window only, and needs an AWSPREVIOUS; see the cloudfront README.
+  origin_verify_accept_previous = local.origin_verify_header_name != "" && try(local.env.alb.origin_verify_accept_previous, false)
+
+  # distinct: both stages can report one string, and the ALB rejects a repeated value.
+  origin_verify_header_values = distinct(compact([
+    try(data.aws_secretsmanager_secret_version.origin_verify[0].secret_string, ""),
+    try(data.aws_secretsmanager_secret_version.origin_verify_previous[0].secret_string, ""),
+  ]))
+}
+
+# count-gated: plans shouldn't need GetSecretValue until the check is switched on.
+data "aws_secretsmanager_secret_version" "origin_verify" {
+  count     = local.origin_verify_header_name != "" ? 1 : 0
+  secret_id = "/prod/${var.project}/cloudfront-origin-verify-token"
+}
+
+data "aws_secretsmanager_secret_version" "origin_verify_previous" {
+  count         = local.origin_verify_accept_previous ? 1 : 0
+  secret_id     = "/prod/${var.project}/cloudfront-origin-verify-token"
+  version_stage = "AWSPREVIOUS"
 }
 
 ################################################################################

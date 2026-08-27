@@ -263,10 +263,24 @@ resource "aws_alb_target_group" "tg_2" {
     Project = var.project
   }
 }
-resource "aws_alb_listener_rule" "listener_rule" {
-  count = var.is_rule_0_required && var.load_balancer_type == "application" ? 1 : 0
+locals {
+  rule_0_requires_header = var.rule_0_required_header_name != ""
 
-  priority     = 1
+  # A rule caps at 5 condition values, one spent per header value, so paths spill over.
+  rule_0_chunks = chunklist(var.rule_0_path_pattern, 5 - length(var.rule_0_required_header_values))
+}
+
+resource "aws_alb_listener_rule" "listener_rule" {
+  count = var.is_rule_0_required && var.load_balancer_type == "application" ? length(local.rule_0_chunks) : 0
+
+  lifecycle {
+    precondition {
+      condition     = (var.rule_0_required_header_name == "") == (length(var.rule_0_required_header_values) == 0)
+      error_message = "rule_0_required_header_name and rule_0_required_header_values must both be set or both be empty."
+    }
+  }
+
+  priority     = count.index + 1
   listener_arn = aws_alb_listener.alb_listener_https[0].arn
   action {
     type             = "forward"
@@ -274,7 +288,17 @@ resource "aws_alb_listener_rule" "listener_rule" {
   }
   condition {
     path_pattern {
-      values = var.rule_0_path_pattern
+      values = local.rule_0_chunks[count.index]
+    }
+  }
+
+  dynamic "condition" {
+    for_each = local.rule_0_requires_header ? [1] : []
+    content {
+      http_header {
+        http_header_name = var.rule_0_required_header_name
+        values           = var.rule_0_required_header_values
+      }
     }
   }
 }

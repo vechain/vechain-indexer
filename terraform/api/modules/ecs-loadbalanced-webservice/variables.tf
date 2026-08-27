@@ -749,3 +749,21 @@ variable "readonly_root_filesystem" {
   type        = bool
   default     = false
 }
+
+variable "rule_0_required_header_name" {
+  type        = string
+  description = "Header rule 0 requires, on top of its path patterns. Empty disables the check."
+  default     = ""
+}
+
+variable "rule_0_required_header_values" {
+  type        = list(string)
+  description = "Values rule_0_required_header_name may carry; any one matches. More than one covers a token rotation."
+  default     = []
+  sensitive   = true
+
+  validation {
+    condition     = length(var.rule_0_required_header_values) <= 4
+    error_message = "A rule caps at 5 condition values and rule 0 needs at least one path, so at most 4 header values fit."
+  }
+}
