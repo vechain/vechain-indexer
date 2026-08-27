@@ -16,7 +16,7 @@ concurrency:
 
 env:
   ACK_LABEL: shared-infra-ack
-  WATCH_PATHS: terraform/vpc
+  WATCH_PATHS: terraform/vpc terraform/cloudfront
 
 jobs:
   guard:
@@ -27,6 +27,8 @@ jobs:
       pull-requests: write
     outputs:
       changed: ${{ steps.detect.outputs.changed }}
+      vpc_changed: ${{ steps.detect.outputs.vpc_changed }}
+      cloudfront_changed: ${{ steps.detect.outputs.cloudfront_changed }}
       ro_role: ${{ steps.ro_role.outputs.configured }}
     steps:
       - name: Checkout
@@ -42,6 +44,14 @@ jobs:
           BASE_REF: origin/${{ github.event.pull_request.base.ref }}
         run: |
           files=$(git diff --name-only "$BASE_REF...HEAD" -- $WATCH_PATHS)
+          # Each stack plans separately: only vpc needs the live-colour lookup.
+          for stack in vpc cloudfront; do
+            if printf '%s\n' "$files" | grep -q "^terraform/$stack/"; then
+              echo "${stack}_changed=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "${stack}_changed=false" >> "$GITHUB_OUTPUT"
+            fi
+          done
           if [ -z "$files" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No $WATCH_PATHS changes."
@@ -74,16 +84,26 @@ jobs:
         env:
           ACKED: ${{ contains(github.event.pull_request.labels.*.name, 'shared-infra-ack') && '1' || '0' }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/deploy-shared-infra.yml
+          VPC_CHANGED: ${{ steps.detect.outputs.vpc_changed }}
+          CLOUDFRONT_CHANGED: ${{ steps.detect.outputs.cloudfront_changed }}
         run: |
           body="$RUNNER_TEMP/comment.md"
           {
             echo '<!-- shared-infra-guard -->'
             echo '### Shared infra change - manual apply required after merge'
             echo
-            echo 'This PR changes the colour-agnostic `terraform/vpc` stack. **Merging does not apply it.**'
-            echo 'The only automatic path is `switch-live-dns.yml`, which would apply these changes as a'
-            echo 'side effect of the next blue/green DNS cutover.'
-            printf '\nAfter merging, run [Deploy Shared Infra](%s) and read the plan before it applies.\n' "$RUN_URL"
+            echo 'This PR changes colour-agnostic infrastructure. **Merging does not apply it.**'
+            if [ "$VPC_CHANGED" = "true" ]; then
+              echo
+              echo '`terraform/vpc`: the only automatic path is `switch-live-dns.yml`, which would apply'
+              echo 'these changes as a side effect of the next blue/green DNS cutover.'
+              printf 'After merging, run [Deploy Shared Infra](%s) and read the plan before it applies.\n' "$RUN_URL"
+            fi
+            if [ "$CLOUDFRONT_CHANGED" = "true" ]; then
+              echo
+              echo '`terraform/cloudfront`: no deploy workflow yet - applied by hand per its README,'
+              echo 'one workspace at a time. The `shared` workspace must not be applied.'
+            fi
             printf '\nChanged files:\n'
             cat "$RUNNER_TEMP/files.md"
             if [ "$ACKED" = "1" ]; then
@@ -137,7 +157,7 @@ jobs:
   identify-live-color:
     name: Identify Live and Dead Colors
     needs: guard
-    if: needs.guard.outputs.changed == 'true' && needs.guard.outputs.ro_role == 'true'
+    if: needs.guard.outputs.vpc_changed == 'true' && needs.guard.outputs.ro_role == 'true'
     uses: ./.github/workflows/identify-live-color.yml
     with:
       dns_record_mainnet_name: mainnet.live.prod.veworld.vechain.org.
@@ -152,7 +172,7 @@ jobs:
   plan:
     name: Shared Infra Plan
     needs: [guard, identify-live-color]
-    if: needs.guard.outputs.changed == 'true' && needs.guard.outputs.ro_role == 'true'
+    if: needs.guard.outputs.vpc_changed == 'true' && needs.guard.outputs.ro_role == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -211,4 +231,67 @@ jobs:
             echo '```terraform'
             tail -c 200000 "$RUNNER_TEMP/plan.txt" 2>/dev/null || echo 'Plan produced no output.'
             echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  plan-cloudfront:
+    name: CloudFront Plan
+    needs: guard
+    if: needs.guard.outputs.cloudfront_changed == 'true' && needs.guard.outputs.ro_role == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: terraform/cloudfront
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE_RO }}
+
+      # shared.tf still sources the WAF modules over SSH.
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.15.8
+          terraform_wrapper: false
+
+      - name: Terraform Initialize
+        run: terraform init -reconfigure -input=false
+
+      # All three workspaces, so a reviewer sees which ones a merge leaves dirty.
+      # -lock=false so a review-time plan cannot block a concurrent deploy.
+      - name: Terraform Plan
+        run: |
+          set -o pipefail
+          for workspace in shared staging prod; do
+            terraform workspace select "$workspace"
+            terraform plan -lock=false -input=false -no-color \
+              2>&1 | tee "$RUNNER_TEMP/plan-$workspace.txt"
+          done
+
+      - name: Publish plan summary
+        if: always()
+        run: |
+          {
+            echo '### CloudFront Plan'
+            for workspace in shared staging prod; do
+              echo
+              echo "#### \`$workspace\` workspace"
+              echo '```terraform'
+              tail -c 60000 "$RUNNER_TEMP/plan-$workspace.txt" 2>/dev/null || echo 'Plan did not run.'
+              echo '```'
+            done
           } >> "$GITHUB_STEP_SUMMARY"

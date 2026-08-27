@@ -7,19 +7,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-    awscc = {
-      source  = "hashicorp/awscc"
-      version = "~> 0.70.0"
-    }
-    github = {
-      source  = "integrations/github"
-      version = "~> 5.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.4"
+      version = "~> 6.0"
     }
   }
 
@@ -75,14 +63,6 @@ provider "aws" {
     }
   }
 }
-
-provider "awscc" {
-  region = local.env_config.region
-}
-
-provider "github" {}
-
-provider "random" {}
 
 # Data sources
 data "aws_caller_identity" "current" {}
