@@ -22,19 +22,6 @@ output "cache_policy_map" {
   } : null
 }
 
-# WAF Outputs (Shared workspace only)
-output "waf_arn" {
-  description = "ARN of the WAF Web ACL"
-  value       = local.is_shared && length(module.waf) > 0 ? module.waf[0].waf_arn : null
-}
-
-output "testnet_waf_arn" {
-  description = "ARN of the WAF Web ACL"
-  value       = local.is_shared && length(module.testnet_waf) > 0 ? module.testnet_waf[0].waf_arn : null
-}
-
-
-
 output "testnet_cloudfront_domain_name" {
   description = "Domain name of the testnet CloudFront distribution"
   value       = local.is_shared ? null : (length(data.aws_cloudfront_distribution.testnet_distribution) > 0 ? data.aws_cloudfront_distribution.testnet_distribution[0].domain_name : null)

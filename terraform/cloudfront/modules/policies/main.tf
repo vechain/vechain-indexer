@@ -24,6 +24,13 @@ resource "aws_cloudfront_cache_policy" "cache_policy" {
     }
     headers_config {
       header_behavior = var.header_behavior
+
+      dynamic "headers" {
+        for_each = length(var.header_items) > 0 ? [1] : []
+        content {
+          items = var.header_items
+        }
+      }
     }
     query_strings_config {
       query_string_behavior = var.query_string_behavior

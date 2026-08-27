@@ -2,7 +2,7 @@
 # This configuration supports multiple workspaces: shared, staging, prod
 
 terraform {
-  required_version = ">= 1.5"
+  required_version = ">= 1.7"
 
   required_providers {
     aws = {
