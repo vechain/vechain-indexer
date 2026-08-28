@@ -61,9 +61,7 @@ jobs:
             printf '%s\n' "$files"
           fi
 
-      # A role ARN is not sensitive, so it lives in a variable, as elsewhere in
-      # the org. Unset skips the plan rather than falling back to a deploy role,
-      # since this is PR-controlled Terraform.
+      # Unset skips the plan rather than falling back to the deploy role.
       - name: Check plan role is configured
         id: plan_role
         if: steps.detect.outputs.changed == 'true'
