@@ -32,3 +32,7 @@ output "atlas_export_bucket_id" {
   description = "The S3 bucket ID for use in backup schedule export blocks"
   value       = local.env.environment == "prod" ? mongodbatlas_cloud_backup_snapshot_export_bucket.main[0].export_bucket_id : ""
 }
+output "github_actions_plan_role_arn" {
+  description = "Role ARN for the AWS_OIDC_ROLE_ARN variable that shared-infra.yml plans with"
+  value       = local.env.environment == "prod" ? aws_iam_role.github_actions_plan[0].arn : ""
+}

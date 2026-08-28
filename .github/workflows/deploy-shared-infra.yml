@@ -53,3 +53,51 @@ jobs:
     secrets:
       AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
       VECHAINCI_SSH_PRIVATE_KEYS: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
+
+  # After the VPC stack: the distributions read their WAF ARNs from its remote
+  # state. Workspace order is a dependency chain — staging and prod consume
+  # shared's cache policies, and prod's continuous-deployment policy reads
+  # staging's distribution domains.
+  apply-cloudfront:
+    name: Apply CloudFront stack
+    needs: apply
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: terraform/cloudfront
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.15.8
+          terraform_wrapper: false
+
+      - name: Terraform Initialize
+        run: terraform init -reconfigure -input=false
+
+      - name: Plan and apply each workspace
+        run: |
+          for workspace in shared staging prod; do
+            terraform workspace select "$workspace"
+            terraform plan -input=false -no-color -out="$workspace.tfplan" | tee "$workspace.plan"
+            {
+              printf '### %s\n\n```\n' "$workspace"
+              tail -c 40000 "$workspace.plan"
+              printf '\n```\n'
+            } >> "$GITHUB_STEP_SUMMARY"
+            terraform apply -input=false -no-color -auto-approve "$workspace.tfplan"
+          done

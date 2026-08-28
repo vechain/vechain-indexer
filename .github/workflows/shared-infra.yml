@@ -29,7 +29,7 @@ jobs:
       changed: ${{ steps.detect.outputs.changed }}
       vpc_changed: ${{ steps.detect.outputs.vpc_changed }}
       cloudfront_changed: ${{ steps.detect.outputs.cloudfront_changed }}
-      ro_role: ${{ steps.ro_role.outputs.configured }}
+      plan_role: ${{ steps.plan_role.outputs.configured }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -61,19 +61,17 @@ jobs:
             printf '%s\n' "$files"
           fi
 
-      # The plan runs PR-controlled Terraform, so it gets a read-only role rather
-      # than the deploy role. Until that secret exists the plan is skipped, not
-      # silently run with write credentials.
-      - name: Check read-only role is configured
-        id: ro_role
+      # Unset skips the plan rather than falling back to the deploy role.
+      - name: Check plan role is configured
+        id: plan_role
         if: steps.detect.outputs.changed == 'true'
         env:
-          RO_ROLE: ${{ secrets.AWS_ACC_ROLE_RO }}
+          PLAN_ROLE: ${{ vars.AWS_OIDC_ROLE_ARN }}
         run: |
-          if [ -z "$RO_ROLE" ]; then
+          if [ -z "$PLAN_ROLE" ]; then
             echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::AWS_ACC_ROLE_RO is not set - skipping the plan. Review this change against a local plan."
-            echo '> **Plan skipped:** `AWS_ACC_ROLE_RO` is not configured.' >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::AWS_OIDC_ROLE_ARN is not set - skipping the plan. Review this change against a local plan."
+            echo '> **Plan skipped:** `AWS_OIDC_ROLE_ARN` is not configured.' >> "$GITHUB_STEP_SUMMARY"
           else
             echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
@@ -101,8 +99,8 @@ jobs:
             fi
             if [ "$CLOUDFRONT_CHANGED" = "true" ]; then
               echo
-              echo '`terraform/cloudfront`: no deploy workflow yet - applied by hand per its README,'
-              echo 'one workspace at a time. Read the plan for every workspace below.'
+              printf '`terraform/cloudfront`: applied by [Deploy Shared Infra](%s), shared then staging\n' "$RUN_URL"
+              echo 'then prod, after the VPC stack. Read the plan for every workspace below.'
             fi
             printf '\nChanged files:\n'
             cat "$RUNNER_TEMP/files.md"
@@ -157,7 +155,7 @@ jobs:
   identify-live-color:
     name: Identify Live and Dead Colors
     needs: guard
-    if: needs.guard.outputs.vpc_changed == 'true' && needs.guard.outputs.ro_role == 'true'
+    if: needs.guard.outputs.vpc_changed == 'true' && needs.guard.outputs.plan_role == 'true'
     uses: ./.github/workflows/identify-live-color.yml
     with:
       dns_record_mainnet_name: mainnet.live.prod.veworld.vechain.org.
@@ -167,12 +165,12 @@ jobs:
       contents: read
       id-token: write
     secrets:
-      AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE_RO }}
+      AWS_ACC_ROLE: ${{ vars.AWS_OIDC_ROLE_ARN }}
 
   plan:
     name: Shared Infra Plan
     needs: [guard, identify-live-color]
-    if: needs.guard.outputs.vpc_changed == 'true' && needs.guard.outputs.ro_role == 'true'
+    if: needs.guard.outputs.vpc_changed == 'true' && needs.guard.outputs.plan_role == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -190,7 +188,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
         with:
           aws-region: eu-west-1
-          role-to-assume: ${{ secrets.AWS_ACC_ROLE_RO }}
+          role-to-assume: ${{ vars.AWS_OIDC_ROLE_ARN }}
 
       # Required for Terraform to source modules from other vechain repositories
       - name: Set up SSH agent
@@ -236,7 +234,7 @@ jobs:
   plan-cloudfront:
     name: CloudFront Plan
     needs: guard
-    if: needs.guard.outputs.cloudfront_changed == 'true' && needs.guard.outputs.ro_role == 'true'
+    if: needs.guard.outputs.cloudfront_changed == 'true' && needs.guard.outputs.plan_role == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -254,7 +252,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
         with:
           aws-region: eu-west-1
-          role-to-assume: ${{ secrets.AWS_ACC_ROLE_RO }}
+          role-to-assume: ${{ vars.AWS_OIDC_ROLE_ARN }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
