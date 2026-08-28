@@ -10,7 +10,7 @@ All three workspaces are reconciled against live and plan clean:
 |---|---|
 | `prod` | No changes |
 | `staging` | No changes |
-| `shared` | 0 to add, 0 to change, 0 to destroy (two forget-only actions) |
+| `shared` | No changes |
 
 [deploy-shared-infra.yml](../../.github/workflows/deploy-shared-infra.yml) applies
 the stack after the VPC one, `shared` then `staging` then `prod` — that order is a
@@ -19,11 +19,11 @@ dependency chain, since the distributions consume `shared`'s cache policies and
 plan lands in the job summary before it applies. `shared-infra.yml` plans all
 three at review time — read that before merging.
 
-`shared`'s first apply discards Terraform's tracking of the two CLOUDFRONT-scope
-WAF ACLs without deleting them. `terraform/vpc/cloudfront_waf.tf` has owned those
-ACLs since #1519, and this state still held them from an earlier apply; the
-`removed` blocks in `shared.tf` resolve that. The distributions take their WAF
-ARNs from `terraform/vpc` via remote state.
+`shared` now tracks only the cache policies. It once held the two CLOUDFRONT-scope
+WAF ACLs that `terraform/vpc/cloudfront_waf.tf` has owned since #1519; the
+`removed` blocks in `shared.tf` forgot them rather than destroying them, and
+having been applied, those blocks are spent and can go. The distributions take
+their WAF ARNs from `terraform/vpc` via remote state.
 
 ## Origin verification
 
