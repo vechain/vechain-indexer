@@ -31,7 +31,10 @@ cloudfront_waf:
   mainnet:
     rate_limit:                  4000
     enable_rate_limit_exemptions: true
-    rate_limit_exempt_ipv4:      []
+    # Block-explorer proxy NAT egress, eu-west-1a and eu-west-1b.
+    rate_limit_exempt_ipv4:
+      -                          52.213.246.242/32
+      -                          34.254.77.248/32
     # Trusted internal callers. WAF aggregates IPv6 coarser than /128, so use /56.
     rate_limit_exempt_ipv6:
       -                          2a05:d018:12e6:f100::/56
@@ -42,4 +45,5 @@ cloudfront_waf:
     enable_rate_limit_exemptions: false
     rate_limit_exempt_ipv4:      []
     rate_limit_exempt_ipv6:      []
-    rate_limit_bypass_header_name: x-rate-limit-bypass
+    # Nullified while enable_rate_limit_exemptions is false; set the two together.
+    rate_limit_bypass_header_name: ""

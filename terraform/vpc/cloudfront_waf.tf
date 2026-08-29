@@ -106,8 +106,7 @@ module "cloudfront_waf_testnet" {
   rate_limit_bypass_header_value = local.env.cloudfront_waf.testnet.enable_rate_limit_exemptions ? try(data.aws_secretsmanager_secret_version.waf_rate_limit_bypass_token[0].secret_string, "") : ""
 }
 
-# Same token the regional ALB ACLs match on, so one value covers both layers.
-# count-gated: plans shouldn't need GetSecretValue until a bypass is configured.
+# Created by terraform/api; #1531 left CloudFront the only layer matching it.
 data "aws_secretsmanager_secret_version" "waf_rate_limit_bypass_token" {
   count = local.cloudfront_waf_needs_bypass_token ? 1 : 0
 

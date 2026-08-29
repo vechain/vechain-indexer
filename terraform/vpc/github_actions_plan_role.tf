@@ -37,8 +37,7 @@ resource "aws_iam_role_policy_attachment" "github_actions_plan_read_only" {
   policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
 }
 
-# ReadOnlyAccess stops at Describe*/List*. The WAF bypass token is omitted on
-# purpose: its data source is count-gated and no colour configures one.
+# ReadOnlyAccess stops at Describe*/List*, so plan-time secrets are granted here.
 resource "aws_iam_role_policy" "github_actions_plan_secrets" {
   count = local.env.environment == "prod" ? 1 : 0
   name  = "plan-secret-reads"
@@ -52,6 +51,8 @@ resource "aws_iam_role_policy" "github_actions_plan_secrets" {
       Resource = [
         local.env.mongodb_secret_arn,
         "arn:aws:secretsmanager:${local.env.region}:${data.aws_caller_identity.current.account_id}:secret:/prod/veworld/cloudfront-origin-verify-token-*",
+        # Tracks the secret_id built in cloudfront_waf.tf.
+        "arn:aws:secretsmanager:${local.env.region}:${data.aws_caller_identity.current.account_id}:secret:/prod/${var.project}/waf-rate-limit-bypass-token-*",
       ]
     }]
   })
