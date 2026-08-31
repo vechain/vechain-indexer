@@ -753,11 +753,34 @@
       "panels": []
     },
     {
+      "id": 46,
+      "type": "stat",
+      "title": "Total requests",
+      "description": "Every request the API served over the dashboard time range — the denominator the two topk panels beside it hide. `increase()` is summed per step rather than taken over `$__range` in one shot so the sparkline has a shape; the step is floored at 1m because the sidecar scrapes at 15s and a shorter window can hold too few samples for `increase()` to return anything. Counts what reached the API, so it sits below the Edge row's 'CloudFront requests': cache hits and WAF blocks never arrive here.",
+      "gridPos": { "h": 8, "w": 4, "x": 0, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "interval": "1m",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(http_server_requests_seconds_count{deployment=~\"$deployment\", network=~\"$network\", service=\"api\"}[$__interval]))",
+          "legendFormat": "Requests"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0 } },
+      "options": {
+        "reduceOptions": { "values": false, "calcs": ["sum"], "fields": "" },
+        "colorMode": "none",
+        "graphMode": "area",
+        "textMode": "auto"
+      }
+    },
+    {
       "id": 45,
       "type": "bargauge",
       "title": "Top URIs by total origin time",
       "description": "topk(15) of sum by (uri) (increase(http_server_requests_seconds_sum[$__range])) — total seconds of server time each endpoint consumed over the dashboard time range, i.e. request count × mean latency. This is the panel to act on: an endpoint can be the busiest by count and cost almost nothing here (the usual shape for cheap per-user lookups), while a low-volume endpoint with a slow query can dominate. Pair with 'API — avg latency by URI' to see which of the two factors drives a bar.",
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 20 },
+      "gridPos": { "h": 8, "w": 10, "x": 4, "y": 20 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -794,7 +817,7 @@
       "type": "bargauge",
       "title": "Top URIs by total requests",
       "description": "topk(15) of sum by (uri) (increase(http_server_requests_seconds_count[$__range])) — absolute request counts over the dashboard time range, not a rate, so bursty and steady traffic are comparable. Ranks by count, not by cost: a path can top this panel and still be near-free, so check 'Top URIs by total origin time' before acting on a bar here. `/**` is Spring's catch-all pattern: every request whose path matched no controller mapping, i.e. all unmatched-path 404s aggregated into one bar. The `uri` label is the matched Spring pattern with the query string stripped, so every parameter shape of one endpoint shares a bar. Full paths and query strings come from the ALB access logs in S3 (prod-{blue,green}-veworld-{main,test}-api-ecs-lb-bucket, prefix veworld-lb/). The mainnet WAF log group logs BLOCKed requests only (logging_filter_block_only), so it is not a traffic census; testnet's logs everything.",
-      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 20 },
+      "gridPos": { "h": 8, "w": 10, "x": 14, "y": 20 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -825,23 +848,6 @@
         "reduceOptions": { "values": true, "calcs": [], "fields": "" },
         "valueMode": "color"
       }
-    },
-    {
-      "id": 41,
-      "type": "timeseries",
-      "title": "Top URIs by rate",
-      "description": "topk(10) of request rate by uri, ranked per timestamp — a URI that goes quiet drops out of the top 10, so its line breaks into a gap rather than sitting at zero. Legend shows Max/Last only: Mean would average the bursts and ignore the gaps, which reads ~20x too high on spiky series like `/**`. For volume use 'Top URIs by total requests'. Narrow to a single endpoint with the Filters bar at the top (uri = …).",
-      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 20 },
-      "datasource": { "type": "prometheus", "uid": "amp" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "topk(10, sum by (uri) (rate(http_server_requests_seconds_count{deployment=~\"$deployment\", network=~\"$network\", service=\"api\"}[5m])))",
-          "legendFormat": "{{uri}}"
-        }
-      ],
-      "fieldConfig": { "defaults": { "unit": "reqps", "min": 0 } },
-      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["max", "last"] } }
     },
     {
       "id": 42,
@@ -892,11 +898,28 @@
       }
     },
     {
+      "id": 41,
+      "type": "timeseries",
+      "title": "Top URIs by rate",
+      "description": "topk(10) of request rate by uri, ranked per timestamp — a URI that goes quiet drops out of the top 10, so its line breaks into a gap rather than sitting at zero. Legend shows Max/Last only: Mean would average the bursts and ignore the gaps, which reads ~20x too high on spiky series like `/**`. For volume use 'Top URIs by total requests'. Narrow to a single endpoint with the Filters bar at the top (uri = …).",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 36 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(10, sum by (uri) (rate(http_server_requests_seconds_count{deployment=~\"$deployment\", network=~\"$network\", service=\"api\"}[5m])))",
+          "legendFormat": "{{uri}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps", "min": 0 } },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["max", "last"] } }
+    },
+    {
       "id": 5,
       "type": "row",
       "title": "Errors",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 44 },
       "panels": [
         {
           "id": 50,
@@ -969,14 +992,94 @@
       "type": "row",
       "title": "Resources",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 37 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 45 },
       "panels": [
+        {
+          "id": 62,
+          "type": "timeseries",
+          "title": "API tasks running against desired",
+          "description": "A gap that outlasts a rolling deploy is a stuck deploy or a placement failure; the `*-api-tasks-below-desired` alarm fires on the same two metrics. API services only: the indexers deploy at deployment_minimum_healthy_percent = 0, so a rolling replacement legitimately sits at zero running tasks for minutes and a gap there says nothing. Service-level counts come from ECS itself, so a dead task reads as a drop to zero — the ADOT per-task series behind the two panels below just go absent instead. CloudWatch dimensions cannot be templated, so both colours and both networks are hardcoded here and neither picker applies.",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 46 },
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+              "queryMode": "Metrics",
+              "metricQueryType": 0,
+              "metricEditorMode": 0,
+              "region": "default",
+              "namespace": "ECS/ContainerInsights",
+              "metricName": "RunningTaskCount",
+              "dimensions": {
+                "ClusterName": ["prod-blue-veworld-cluster", "prod-green-veworld-cluster"],
+                "ServiceName": [
+                  "prod-blue-veworld-main-api-service",
+                  "prod-blue-veworld-test-api-service",
+                  "prod-green-veworld-main-api-service",
+                  "prod-green-veworld-test-api-service"
+                ]
+              },
+              "statistic": "Average",
+              "period": "60",
+              "matchExact": true,
+              "label": "${PROP('Dim.ServiceName')} running"
+            },
+            {
+              "refId": "B",
+              "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+              "queryMode": "Metrics",
+              "metricQueryType": 0,
+              "metricEditorMode": 0,
+              "region": "default",
+              "namespace": "ECS/ContainerInsights",
+              "metricName": "DesiredTaskCount",
+              "dimensions": {
+                "ClusterName": ["prod-blue-veworld-cluster", "prod-green-veworld-cluster"],
+                "ServiceName": [
+                  "prod-blue-veworld-main-api-service",
+                  "prod-blue-veworld-test-api-service",
+                  "prod-green-veworld-main-api-service",
+                  "prod-green-veworld-test-api-service"
+                ]
+              },
+              "statistic": "Average",
+              "period": "60",
+              "matchExact": true,
+              "label": "${PROP('Dim.ServiceName')} desired"
+            }
+          ],
+          "transformations": [
+            {
+              "id": "renameByRegex",
+              "options": {
+                "regex": "prod-(blue|green)-veworld-(main|test)-api-service (running|desired)",
+                "renamePattern": "$1 · $2 · $3"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "min": 0,
+              "decimals": 0,
+              "custom": { "lineWidth": 2, "fillOpacity": 0, "showPoints": "never" }
+            },
+            "overrides": [
+              {
+                "matcher": { "id": "byRegexp", "options": ".* · desired" },
+                "properties": [{ "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [8, 4] } }]
+              }
+            ]
+          },
+          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "min"] }, "tooltip": { "mode": "multi" } }
+        },
         {
           "id": 60,
           "type": "timeseries",
           "title": "CPU utilised — per task",
           "description": "ecs_task_cpu_utilized / ecs_task_cpu_reserved × 100 for indexer + api. Dashed line = 80%.",
-          "gridPos": { "h": 10, "w": 12, "x": 0, "y": 38 },
+          "gridPos": { "h": 10, "w": 12, "x": 0, "y": 54 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -1007,7 +1110,7 @@
           "type": "timeseries",
           "title": "Memory utilised — per task",
           "description": "ecs_task_memory_utilized / ecs_task_memory_reserved × 100 for indexer + api. Dashed line = 80%.",
-          "gridPos": { "h": 10, "w": 12, "x": 12, "y": 38 },
+          "gridPos": { "h": 10, "w": 12, "x": 12, "y": 54 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -1040,7 +1143,7 @@
       "type": "row",
       "title": "MongoDB · Indexer",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 38 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 46 },
       "panels": [
         {
           "id": 70,
@@ -1187,7 +1290,7 @@
       "type": "row",
       "title": "MongoDB · API",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 39 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 47 },
       "panels": [
         {
           "id": 80,
@@ -1326,6 +1429,240 @@
           ],
           "fieldConfig": { "defaults": { "unit": "s", "min": 0 } },
           "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "row",
+      "title": "WAF request detail · Mainnet — Logs Insights, runs only while expanded",
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 48 },
+      "panels": [
+        {
+          "id": 120,
+          "type": "stat",
+          "title": "Flagged traffic over the range",
+          "description": "The denominator for the two tables below, from the WAF log group in us-east-1 (CLOUDFRONT-scope ACLs log there, not eu-west-1). This group carries BLOCKed requests only — logging_filter_block_only is on for mainnet — so it is a rejection census, not a traffic one; total edge volume is 'CloudFront requests' in the Edge · Mainnet row. Where clients and paths run to thousands, the top 20 rows below are the head of a long tail rather than its bulk.",
+          "gridPos": { "h": 4, "w": 24, "x": 0, "y": 49 },
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+              "queryMode": "Logs",
+              "region": "us-east-1",
+              "logGroupNames": ["aws-waf-logs-veworld-cloudfront"],
+              "expression": "filter terminatingRuleId != \"Default_Action\" or ispresent(nonTerminatingMatchingRules.0.ruleId)\n| stats count(*) as flagged, count_distinct(httpRequest.clientIp) as clients, count_distinct(httpRequest.uri) as paths"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short", "decimals": 0 } },
+          "options": {
+            "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" },
+            "orientation": "horizontal",
+            "colorMode": "none",
+            "graphMode": "none",
+            "textMode": "value_and_name"
+          }
+        },
+        {
+          "id": 121,
+          "type": "table",
+          "title": "Flagged clients",
+          "description": "Who tripped a rule, by source IP. `flagged` counts that client's matched requests, never its whole traffic. `rule` is the WebACL rule name, the same vocabulary as the Rule dimension in 'WAF — blocked requests by rule'. `action` reads BLOCK throughout while no rule runs in Count mode (the managed groups use override_action none); ALLOW would mean a count-mode dry run that was still served. A cloud scraper spreads itself over a range, so one actor arrives here as many small rows — the totals above are its real size.",
+          "gridPos": { "h": 11, "w": 12, "x": 0, "y": 53 },
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+              "queryMode": "Logs",
+              "region": "us-east-1",
+              "logGroupNames": ["aws-waf-logs-veworld-cloudfront"],
+              "expression": "fields httpRequest.clientIp as clientIp, httpRequest.country as country, httpRequest.uri as path, coalesce(nonTerminatingMatchingRules.0.ruleId, terminatingRuleId, labels.0.name) as rule\n| filter terminatingRuleId != \"Default_Action\" or ispresent(nonTerminatingMatchingRules.0.ruleId)\n| stats count(*) as flagged, count_distinct(path) as paths, count_distinct(rule) as rules by clientIp, country, action\n| sort flagged desc\n| limit 20"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": { "custom": { "align": "auto", "filterable": true } },
+            "overrides": [
+              {
+                "matcher": { "id": "byName", "options": "flagged" },
+                "properties": [
+                  { "id": "unit", "value": "short" },
+                  { "id": "custom.cellOptions", "value": { "type": "gauge", "mode": "gradient" } }
+                ]
+              },
+              {
+                "matcher": { "id": "byName", "options": "action" },
+                "properties": [
+                  { "id": "custom.width", "value": 90 },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "ALLOW": { "text": "ALLOW", "color": "green", "index": 0 },
+                          "BLOCK": { "text": "BLOCK", "color": "red", "index": 1 }
+                        }
+                      }
+                    ]
+                  },
+                  { "id": "custom.cellOptions", "value": { "type": "color-text" } }
+                ]
+              }
+            ]
+          },
+          "options": { "showHeader": true, "sortBy": [{ "displayName": "flagged", "desc": true }] }
+        },
+        {
+          "id": 122,
+          "type": "table",
+          "title": "Flagged paths",
+          "description": "What those requests asked for. Indexer API routes mean real callers behind a flagged IP range; probe paths — wp-login, .env, phpmyadmin — mean the rule is earning its place. `clients` is how many distinct sources asked for that path. Paths are full request URIs, so one endpoint spreads across many rows here where 'Top URIs by total requests' collapses it into one Spring pattern.",
+          "gridPos": { "h": 11, "w": 12, "x": 12, "y": 53 },
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+              "queryMode": "Logs",
+              "region": "us-east-1",
+              "logGroupNames": ["aws-waf-logs-veworld-cloudfront"],
+              "expression": "fields httpRequest.uri as path, httpRequest.httpMethod as method, httpRequest.clientIp as clientIp, coalesce(nonTerminatingMatchingRules.0.ruleId, terminatingRuleId, labels.0.name) as rule\n| filter terminatingRuleId != \"Default_Action\" or ispresent(nonTerminatingMatchingRules.0.ruleId)\n| stats count(*) as flagged, count_distinct(clientIp) as clients by path, method, rule\n| sort flagged desc\n| limit 20"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": { "custom": { "align": "auto", "filterable": true } },
+            "overrides": [
+              {
+                "matcher": { "id": "byName", "options": "flagged" },
+                "properties": [
+                  { "id": "unit", "value": "short" },
+                  { "id": "custom.cellOptions", "value": { "type": "gauge", "mode": "gradient" } }
+                ]
+              },
+              { "matcher": { "id": "byName", "options": "method" }, "properties": [{ "id": "custom.width", "value": 80 }] }
+            ]
+          },
+          "options": { "showHeader": true, "sortBy": [{ "displayName": "flagged", "desc": true }] }
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "type": "row",
+      "title": "WAF request detail · Testnet — Logs Insights, runs only while expanded",
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 49 },
+      "panels": [
+        {
+          "id": 130,
+          "type": "stat",
+          "title": "Flagged traffic over the range",
+          "description": "The denominator for the two tables below, from the WAF log group in us-east-1 (CLOUDFRONT-scope ACLs log there, not eu-west-1). Testnet has no logging filter, so this group carries every inspected request; the query keeps only those a rule matched, which is what makes these panels read the same as their mainnet twins. Total edge volume is 'CloudFront requests' in the Edge · Testnet row.",
+          "gridPos": { "h": 4, "w": 24, "x": 0, "y": 50 },
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+              "queryMode": "Logs",
+              "region": "us-east-1",
+              "logGroupNames": ["aws-waf-logs-veworld-testnet-cloudfront"],
+              "expression": "filter terminatingRuleId != \"Default_Action\" or ispresent(nonTerminatingMatchingRules.0.ruleId)\n| stats count(*) as flagged, count_distinct(httpRequest.clientIp) as clients, count_distinct(httpRequest.uri) as paths"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short", "decimals": 0 } },
+          "options": {
+            "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" },
+            "orientation": "horizontal",
+            "colorMode": "none",
+            "graphMode": "none",
+            "textMode": "value_and_name"
+          }
+        },
+        {
+          "id": 131,
+          "type": "table",
+          "title": "Flagged clients",
+          "description": "Who tripped a rule, by source IP. `flagged` counts that client's matched requests, never its whole traffic. `rule` is the WebACL rule name, the same vocabulary as the Rule dimension in 'WAF — blocked requests by rule'. `action` reads BLOCK throughout while no rule runs in Count mode (the managed groups use override_action none); ALLOW would mean a count-mode dry run that was still served. Testnet traffic is a fraction of mainnet's, so expect single-digit rows.",
+          "gridPos": { "h": 11, "w": 12, "x": 0, "y": 54 },
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+              "queryMode": "Logs",
+              "region": "us-east-1",
+              "logGroupNames": ["aws-waf-logs-veworld-testnet-cloudfront"],
+              "expression": "fields httpRequest.clientIp as clientIp, httpRequest.country as country, httpRequest.uri as path, coalesce(nonTerminatingMatchingRules.0.ruleId, terminatingRuleId, labels.0.name) as rule\n| filter terminatingRuleId != \"Default_Action\" or ispresent(nonTerminatingMatchingRules.0.ruleId)\n| stats count(*) as flagged, count_distinct(path) as paths, count_distinct(rule) as rules by clientIp, country, action\n| sort flagged desc\n| limit 20"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": { "custom": { "align": "auto", "filterable": true } },
+            "overrides": [
+              {
+                "matcher": { "id": "byName", "options": "flagged" },
+                "properties": [
+                  { "id": "unit", "value": "short" },
+                  { "id": "custom.cellOptions", "value": { "type": "gauge", "mode": "gradient" } }
+                ]
+              },
+              {
+                "matcher": { "id": "byName", "options": "action" },
+                "properties": [
+                  { "id": "custom.width", "value": 90 },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "ALLOW": { "text": "ALLOW", "color": "green", "index": 0 },
+                          "BLOCK": { "text": "BLOCK", "color": "red", "index": 1 }
+                        }
+                      }
+                    ]
+                  },
+                  { "id": "custom.cellOptions", "value": { "type": "color-text" } }
+                ]
+              }
+            ]
+          },
+          "options": { "showHeader": true, "sortBy": [{ "displayName": "flagged", "desc": true }] }
+        },
+        {
+          "id": 132,
+          "type": "table",
+          "title": "Flagged paths",
+          "description": "What those requests asked for. Indexer API routes mean real callers behind a flagged IP range; probe paths — wp-login, .env, phpmyadmin — mean the rule is earning its place. `clients` is how many distinct sources asked for that path. Paths are full request URIs, so one endpoint spreads across many rows here where 'Top URIs by total requests' collapses it into one Spring pattern.",
+          "gridPos": { "h": 11, "w": 12, "x": 12, "y": 54 },
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+              "queryMode": "Logs",
+              "region": "us-east-1",
+              "logGroupNames": ["aws-waf-logs-veworld-testnet-cloudfront"],
+              "expression": "fields httpRequest.uri as path, httpRequest.httpMethod as method, httpRequest.clientIp as clientIp, coalesce(nonTerminatingMatchingRules.0.ruleId, terminatingRuleId, labels.0.name) as rule\n| filter terminatingRuleId != \"Default_Action\" or ispresent(nonTerminatingMatchingRules.0.ruleId)\n| stats count(*) as flagged, count_distinct(clientIp) as clients by path, method, rule\n| sort flagged desc\n| limit 20"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": { "custom": { "align": "auto", "filterable": true } },
+            "overrides": [
+              {
+                "matcher": { "id": "byName", "options": "flagged" },
+                "properties": [
+                  { "id": "unit", "value": "short" },
+                  { "id": "custom.cellOptions", "value": { "type": "gauge", "mode": "gradient" } }
+                ]
+              },
+              { "matcher": { "id": "byName", "options": "method" }, "properties": [{ "id": "custom.width", "value": 80 }] }
+            ]
+          },
+          "options": { "showHeader": true, "sortBy": [{ "displayName": "flagged", "desc": true }] }
         }
       ]
     }

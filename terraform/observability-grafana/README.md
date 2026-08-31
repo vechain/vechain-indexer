@@ -6,7 +6,7 @@ Terraform stack that provisions AMG data sources and (eventually) dashboards, on
 
 - **AMP data source** — Prometheus with SigV4 auth against the workspace in `terraform/observability/`. UID `amp`.
 - **CloudWatch data source** — for log-based diagnostics and any CW-native metrics we keep. UID `cloudwatch`.
-- **Dashboards** — JSON files under `dashboards/`, iterated by `dashboards.tf` via `for_each`. `overview` covers indexer sync, API, errors, ECS resources, MongoDB and the CloudFront/WAF edge row; `logs` is a single Logs Insights view over every ECS service log group.
+- **Dashboards** — JSON files under `dashboards/`, iterated by `dashboards.tf` via `for_each`. `overview` covers indexer sync, API, errors, ECS resources, MongoDB, the CloudFront/WAF edge rows and the per-network WAF request detail rows; `logs` is a single Logs Insights view over every ECS service log group.
 
 ## Adding a dashboard
 
@@ -31,6 +31,18 @@ One collapsed row per network, with the distribution ids and WebACL names hardco
 - **Don't try to drive these from `$network` with a hidden mapping variable.** Options of `network:resource` pairs filtered by `regex: /^(?:${network:pipe}):(.*)$/` looks right and deploys clean, but Grafana does not resolve it for `custom` variables — the panels silently get the unstripped `mainnet:E15Q…` as the dimension and return no data. Per-network rows are the working arrangement.
 - Keep both rows collapsed — collapsed rows don't execute their queries, so the CloudWatch calls only happen when someone opens a row.
 - Adding a network means duplicating a row. That duplication is deliberate, and cheaper than the alternative.
+
+### WAF request detail rows (Logs Insights)
+
+One collapsed row per network, over `aws-waf-logs-veworld-cloudfront` and `aws-waf-logs-veworld-testnet-cloudfront`. Both live in **us-east-1** — CLOUDFRONT-scope ACLs log there, not in the stack's own region — so the targets set `region` explicitly rather than `default`.
+
+- Logs Insights bills per byte scanned, and the mainnet group is the largest log group in the account. Keep the rows collapsed; that is what stops the queries running on every dashboard load.
+- **The two groups do not hold the same thing.** Mainnet runs `logging_filter_block_only`, so it carries BLOCKed requests only. Testnet has no filter and carries every inspected request. Every query therefore opens with `filter terminatingRuleId != "Default_Action" or ispresent(nonTerminatingMatchingRules.0.ruleId)` — a no-op on mainnet, the whole point on testnet, and what makes "flagged" mean the same on both.
+- The `rule` column coalesces to `terminatingRuleId` before `labels.0.name` so it reads as the WebACL rule name (`waf--managed-AWS-…`), matching the `Rule` dimension in the Edge rows' "WAF — blocked requests by rule". Preferring the label instead yields `awswaf:managed:aws:…`, which cross-references nothing.
+
+### ECS service task counts
+
+"API tasks running against desired" in the Resources row is CloudWatch, not AMP, and its cluster/service dimensions are hardcoded for both colours and both networks. Two reasons it cannot be AMP: `ECS/ContainerInsights` service-level counts have no AMP equivalent (the ADOT sidecar emits per-task metrics only), and a task that dies takes its own series with it, so an AMP-derived count goes absent rather than dropping to zero. Same reason `terraform/api/alarms.tf` reads these metrics directly.
 
 ## Usage
 
