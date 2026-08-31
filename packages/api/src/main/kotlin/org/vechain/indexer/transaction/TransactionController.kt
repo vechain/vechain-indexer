@@ -2,7 +2,10 @@ package org.vechain.indexer.transaction
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import java.time.Instant
 import org.springframework.context.annotation.Profile
+import org.springframework.http.HttpHeaders
+import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -20,6 +23,8 @@ import org.vechain.indexer.docs.PaginationSize
 import org.vechain.indexer.docs.TransactionIdParameter
 import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.rest.PaginatedResponse
+import org.vechain.indexer.rest.cacheControlFor
+import org.vechain.indexer.rest.gradedMaxAge
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.utils.PaginationUtils.toPageable
@@ -57,16 +62,30 @@ open class TransactionController(private val transactionService: TransactionServ
     }
 
     @GetMapping("{txId}")
-    @Operation(summary = "Get transaction by ID")
+    @Operation(
+        summary = "Get transaction by ID",
+        description =
+            """
+            A confirmed transaction never changes, so the response is cacheable for as long as it
+            has already been settled: `Cache-Control` grants the age of the containing block,
+            capped at a year. A transaction from moments ago is therefore barely cached, and a
+            reorg can only serve a dropped transaction for as long as it had been on chain.
+            """,
+    )
     @TransactionIdParameter
     @CommonApiResponses
     @ExpandedParameter
     open fun getTransactionById(
         @TransactionId @PathVariable txId: String,
         @RequestParam(required = false) expanded: Boolean = false,
-    ): IndexedTransaction {
-        return transactionService.findById(txId)
-            ?: throw ResourceNotFoundException("Transaction not found for txId $txId")
+    ): ResponseEntity<IndexedTransaction> {
+        val transaction =
+            transactionService.findById(txId)
+                ?: throw ResourceNotFoundException("Transaction not found for txId $txId")
+        val maxAge = gradedMaxAge(transaction.blockTimestamp, Instant.now().epochSecond)
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CACHE_CONTROL, cacheControlFor(maxAge))
+            .body(transaction)
     }
 
     @GetMapping

@@ -17,6 +17,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.SliceImpl
 import org.vechain.indexer.blocks.repository.BlockRepository
+import org.vechain.indexer.rest.MAX_CACHE_AGE_SECONDS
 
 @ExtendWith(MockKExtension::class)
 internal class BlockServiceTest {

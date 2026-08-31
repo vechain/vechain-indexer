@@ -8,10 +8,8 @@ import org.springframework.stereotype.Service
 import org.vechain.indexer.blocks.repository.BlockRepository
 import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
 import org.vechain.indexer.rest.PaginatedResponse
+import org.vechain.indexer.rest.gradedMaxAge
 import org.vechain.indexer.rest.paginatedResponse
-
-/** However deep a page sits, it never earns a longer TTL than this. */
-internal const val MAX_CACHE_AGE_SECONDS = 31_536_000L
 
 /** A page plus how long it may be cached, or null while an incoming block could change it. */
 data class BlockRange(val page: PaginatedResponse<IndexedBlock>, val maxAgeSeconds: Long?)
@@ -59,7 +57,7 @@ open class BlockService(private val repository: BlockRepository) {
         val newest = data.firstOrNull() ?: return null
         if (newest.blockNumber != from) return null
         if (newest.blockNumber - data.last().blockNumber + 1 != data.size.toLong()) return null
-        return (nowEpochSeconds - newest.blockTimestamp).coerceIn(0L, MAX_CACHE_AGE_SECONDS)
+        return gradedMaxAge(newest.blockTimestamp, nowEpochSeconds)
     }
 
     /** The next `from`: the bound is inclusive, so step one block below the last row. */

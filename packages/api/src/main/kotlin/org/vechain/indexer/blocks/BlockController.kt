@@ -15,10 +15,10 @@ import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationSize
 import org.vechain.indexer.rest.PaginatedResponse
+import org.vechain.indexer.rest.VOLATILE_CACHE_CONTROL
+import org.vechain.indexer.rest.cacheControlFor
 import org.vechain.indexer.validation.ValidNonNegativeLong
 import org.vechain.indexer.validation.ValidPageSize
-
-internal const val HEAD_CACHE_CONTROL = "public, max-age=0, s-maxage=10"
 
 @Profile("blocks")
 @Tag(name = "Blocks", description = "VeChainThor block headers")
@@ -55,7 +55,7 @@ open class BlockController(private val blockService: BlockService) {
         @ValidPageSize @RequestParam(required = false) size: Int?,
     ): ResponseEntity<PaginatedResponse<IndexedBlock>> {
         val range = blockService.getBlocks(from, size)
-        val cacheControl = range.maxAgeSeconds?.let { "public, max-age=$it" } ?: HEAD_CACHE_CONTROL
+        val cacheControl = range.maxAgeSeconds?.let(::cacheControlFor) ?: VOLATILE_CACHE_CONTROL
         return ResponseEntity.ok().header(HttpHeaders.CACHE_CONTROL, cacheControl).body(range.page)
     }
 }
