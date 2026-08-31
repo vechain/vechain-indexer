@@ -40,12 +40,16 @@ test-ci: #@ Run all tests for CI (with caching, excludes e2e).
 	./gradlew test -x :packages:e2e:test
 test-e2e: ensure-gradle-props #@ Run all the end-to-end tests.
 	./gradlew :packages:e2e:test --stacktrace
+# cleanTest in its own invocation: the root `clean` override races the test task when parallel.
 test-api: #@ Run all the API tests.
-	./gradlew clean :package:api:test
+	./gradlew :packages:api:cleanTest
+	./gradlew :packages:api:test
 test-indexer: #@ Run all the indexer tests.
-	./gradlew :package:indexer:test
+	./gradlew :packages:indexer:cleanTest
+	./gradlew :packages:indexer:test
 test-common: #@ Run all the common tests.
-	./gradlew clean :package:common:test
+	./gradlew :packages:common:cleanTest
+	./gradlew :packages:common:test
 
 # API Schema Tests (Schemathesis via Docker)
 SCHEMA_TEST_BASE_URL ?= http://host.docker.internal:8080

@@ -94,7 +94,26 @@ cache_policies_v1:
       - "Access-Control-Request-Headers"
     cookie_behavior: "none"
     enable_gzip: true
-    enable_brotli: true 
+    enable_brotli: true
+
+  # The only policy with min_ttl != default_ttl != max_ttl, so the only one where CloudFront honours
+  # the origin's Cache-Control. Endpoints that vary their own TTL per response use this.
+  - id: "origin-controlled"
+    name: "veworld_origin_controlled_cache_policy"
+    create_header_policy: false
+    header_policy_id: 67f7725c-6f97-4210-82d7-5512b31e9d03
+    min_ttl_seconds: 0
+    default_ttl_seconds: 10
+    max_ttl_seconds: 31536000
+    query_string_behavior: "all"
+    header_behavior: "whitelist"
+    header_items:
+      - "Origin"
+      - "Access-Control-Request-Method"
+      - "Access-Control-Request-Headers"
+    cookie_behavior: "none"
+    enable_gzip: true
+    enable_brotli: true
 # Cache Policy Configuration V2 - Alternative configuration
 cache_policies_v2:
   - id: "default"

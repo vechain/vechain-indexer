@@ -136,6 +136,7 @@ class OpenApiDocumentationContractTest {
     fun `profile gated public routes are present in generated spec`() {
         val spec = fetchSpec()
 
+        expectThat(spec.at("/paths/~1api~1v1~1blocks/get").isMissingNode).isFalse()
         expectThat(spec.at("/paths/~1api~1v1~1transactions~1latest/get").isMissingNode).isFalse()
         expectThat(spec.at("/paths/~1api~1v1~1transfers~1latest/get").isMissingNode).isFalse()
         expectThat(spec.at("/paths/~1api~1v1~1validators").isMissingNode).isFalse()

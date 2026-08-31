@@ -6,6 +6,7 @@ const val API_VERSION = "/v1"
 const val API_PATH = "$API_ROOT$API_VERSION"
 
 // API PATHS
+const val BLOCKS_PATH = "$API_PATH/blocks"
 const val NFTS_PATH = "$API_PATH/nfts"
 const val TRANSACTIONS_PATH = "$API_PATH/transactions"
 const val HISTORY_PATH = "$API_PATH/history"

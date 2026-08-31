@@ -637,6 +637,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.safe-tx-proposals
     },
     {
+      name  = "INDEXER_START_BLOCK_BLOCKS"
+      value = each.value.indexer.start-block.blocks
+    },
+    {
       name  = "BLACKLIST_CONTRACT_ADDRESS"
       value = each.value.indexer.blacklist.contract-address
     },
@@ -995,6 +999,10 @@ module "ecs-backend-service" {
     {
       name  = "VERSION_VET_BALANCE"
       value = each.value.indexer.version.vet-balance
+    },
+    {
+      name  = "VERSION_BLOCKS"
+      value = each.value.indexer.version.blocks
     },
     {
       name  = "MIN_COMMENT_LEN"
