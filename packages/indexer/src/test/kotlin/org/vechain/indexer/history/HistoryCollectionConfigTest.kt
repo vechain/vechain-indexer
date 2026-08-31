@@ -56,6 +56,15 @@ class HistoryCollectionConfigTest {
                     it.indexOptions["name"] == "involvedAddresses_1_blockTimestamp_-1_eventName_1"
             }
         )
+        assertTrue(
+            capturedIndexes.any {
+                it.indexKeys["involvedAddresses"] == 1 &&
+                    it.indexKeys["eventName"] == 1 &&
+                    it.indexKeys["blockTimestamp"] == -1 &&
+                    it.indexOptions["name"] == "involvedAddresses_1_eventName_1_blockTimestamp_-1"
+            },
+            "eventName must precede blockTimestamp to bound the \$in-filtered account history query",
+        )
         // Per-address indexes for GET /history?searchBy=... — origin/from/gasPayer are
         // needed because that path builds a $or over caller-specified fields and can't use
         // involvedAddresses. `to` is covered by to_1_eventName_1_blockTimestamp_-1; `owner`

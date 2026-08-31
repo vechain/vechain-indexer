@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
+import org.springframework.http.HttpHeaders
+import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -23,6 +25,7 @@ import org.vechain.indexer.docs.SearchByParameter
 import org.vechain.indexer.docs.TokenEventNameParameter
 import org.vechain.indexer.docs.TokenIdParameter
 import org.vechain.indexer.rest.PaginatedResponse
+import org.vechain.indexer.rest.VOLATILE_CACHE_CONTROL
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.utils.PaginationUtils
@@ -98,7 +101,14 @@ open class HistoryController(private val historyService: HistoryService) {
     }
 
     @GetMapping("/v2/history/{account}")
-    @Operation(summary = "Get account history")
+    @Operation(
+        summary = "Get account history",
+        description =
+            """
+            An account's history can gain an event at any block, so shared caches may serve a
+            response up to one block old.
+            """,
+    )
     @SearchByParameter
     @EventNameParameter
     @AfterParameter
@@ -121,7 +131,7 @@ open class HistoryController(private val historyService: HistoryService) {
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int? = DEFAULT_PAGE_SIZE,
         @RequestParam(required = false) direction: String?,
-    ): PaginatedResponse<IndexedHistoryEvent> {
+    ): ResponseEntity<PaginatedResponse<IndexedHistoryEvent>> {
         TimeValidationUtils.validateTimestamps(after, before)
 
         val pageable =
@@ -132,17 +142,21 @@ open class HistoryController(private val historyService: HistoryService) {
                 IndexedHistoryEvent::blockTimestamp.name,
             )
 
-        return paginatedResponse(
-            historyService.findUserHistoryByFilters(
-                account = account.value,
-                eventNames = eventName,
-                searchFields = searchBy,
-                contractAddress = contractAddress,
-                before = before,
-                after = after,
-                pageable = pageable,
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CACHE_CONTROL, VOLATILE_CACHE_CONTROL)
+            .body(
+                paginatedResponse(
+                    historyService.findUserHistoryByFilters(
+                        account = account.value,
+                        eventNames = eventName,
+                        searchFields = searchBy,
+                        contractAddress = contractAddress,
+                        before = before,
+                        after = after,
+                        pageable = pageable,
+                    )
+                )
             )
-        )
     }
 
     @Deprecated(
@@ -175,7 +189,7 @@ open class HistoryController(private val historyService: HistoryService) {
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int? = DEFAULT_PAGE_SIZE,
         @RequestParam(required = false) direction: String?,
-    ): PaginatedResponse<IndexedHistoryEvent> {
+    ): ResponseEntity<PaginatedResponse<IndexedHistoryEvent>> {
         TimeValidationUtils.validateTimestamps(after, before)
 
         val pageable =
@@ -186,15 +200,19 @@ open class HistoryController(private val historyService: HistoryService) {
                 IndexedHistoryEvent::blockTimestamp.name,
             )
 
-        return paginatedResponse(
-            historyService.findTokenIdHistoryByFilters(
-                tokenId = tokenId,
-                eventNames = eventName,
-                contractAddress = contractAddress,
-                before = before,
-                after = after,
-                pageable = pageable,
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CACHE_CONTROL, VOLATILE_CACHE_CONTROL)
+            .body(
+                paginatedResponse(
+                    historyService.findTokenIdHistoryByFilters(
+                        tokenId = tokenId,
+                        eventNames = eventName,
+                        contractAddress = contractAddress,
+                        before = before,
+                        after = after,
+                        pageable = pageable,
+                    )
+                )
             )
-        )
     }
 }
