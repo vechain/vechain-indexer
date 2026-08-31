@@ -14,6 +14,7 @@ class OpenApiActiveProfilesResolver : ActiveProfilesResolver {
             listOf(
                     "accounts",
                     "b3tr",
+                    "blocks",
                     "contracts",
                     "delegation",
                     "explorer",

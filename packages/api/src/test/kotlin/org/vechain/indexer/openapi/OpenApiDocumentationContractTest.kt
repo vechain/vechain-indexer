@@ -136,6 +136,7 @@ class OpenApiDocumentationContractTest {
     fun `profile gated public routes are present in generated spec`() {
         val spec = fetchSpec()
 
+        expectThat(spec.at("/paths/~1api~1v1~1blocks/get").isMissingNode).isFalse()
         expectThat(spec.at("/paths/~1api~1v1~1transactions~1latest/get").isMissingNode).isFalse()
         expectThat(spec.at("/paths/~1api~1v1~1transfers~1latest/get").isMissingNode).isFalse()
         expectThat(spec.at("/paths/~1api~1v1~1validators").isMissingNode).isFalse()
@@ -204,6 +205,16 @@ class OpenApiDocumentationContractTest {
                     .at("/components/schemas/IndexedTransferEvent/properties/transferIndex")
                     .isMissingNode
             )
+            .isTrue()
+    }
+
+    @Test
+    fun `blocks route documents from and size and has no direction`() {
+        val parameters = specParameters("/paths/~1api~1v1~1blocks/get/parameters")
+
+        expectThat(findParameter(parameters, "from", "query").isMissingNode).isFalse()
+        expectThat(findParameter(parameters, "size", "query").isMissingNode).isFalse()
+        expectThat(parameters.firstOrNull { it.path("name").asText() == "direction" } == null)
             .isTrue()
     }
 

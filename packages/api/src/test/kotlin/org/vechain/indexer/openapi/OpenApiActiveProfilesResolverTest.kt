@@ -16,6 +16,7 @@ class OpenApiActiveProfilesResolverTest {
                 .containsExactly(
                     "accounts",
                     "b3tr",
+                    "blocks",
                     "contracts",
                     "delegation",
                     "explorer",

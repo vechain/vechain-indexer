@@ -17,6 +17,11 @@ object IndexerNames {
         const val COLLECTION = "b3tr_app_action_summaries_round"
     }
 
+    object BLOCKS {
+        const val NAME = "BlocksIndexer"
+        const val COLLECTION = "blocks"
+    }
+
     object BLOCK_USAGE {
         const val NAME = "BlockUsageIndexer"
         const val COLLECTION = "block_usage"

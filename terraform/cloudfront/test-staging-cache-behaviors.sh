@@ -182,6 +182,18 @@ test_endpoint \
     "/api/v1/b3tr/proposals/example-proposal/results" \
     "hourly (1 h TTL)"
 
+# Test 11: Blocks head range — origin sends s-maxage=10
+test_endpoint \
+    "Blocks Head Range" \
+    "/api/v1/blocks?size=5" \
+    "origin-controlled (origin sends s-maxage=10)"
+
+# Test 12: Blocks historical range — origin grades max-age by the age of the newest block
+test_endpoint \
+    "Blocks Historical Range" \
+    "/api/v1/blocks?from=1000&size=5" \
+    "origin-controlled (origin grades max-age by block age)"
+
 # Additional test: Default behavior (uncached endpoint)
 print_header "Testing: Default Behavior (Uncached)"
 echo "This tests an endpoint that doesn't match any specific cache behavior"
@@ -193,7 +205,7 @@ test_endpoint \
 
 # Summary
 print_header "Test Suite Complete"
-echo "Total tests completed: 11"
+echo "Total tests completed: 13"
 echo "Results saved to: $OUTPUT_DIR"
 echo "Log file: $LOG_FILE"
 echo ""
