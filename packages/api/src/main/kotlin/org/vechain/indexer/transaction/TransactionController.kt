@@ -23,6 +23,7 @@ import org.vechain.indexer.docs.PaginationSize
 import org.vechain.indexer.docs.TransactionIdParameter
 import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.rest.PaginatedResponse
+import org.vechain.indexer.rest.VOLATILE_CACHE_CONTROL
 import org.vechain.indexer.rest.cacheControlFor
 import org.vechain.indexer.rest.gradedMaxAge
 import org.vechain.indexer.rest.paginatedResponse
@@ -46,7 +47,8 @@ open class TransactionController(private val transactionService: TransactionServ
         description =
             """
             Returns latest transactions by block number descending and canonical transaction order
-            within each block.
+            within each block. The head of the chain moves every block, so shared caches may serve
+            a response up to one block old.
             """,
     )
     @CommonApiResponses
@@ -57,8 +59,10 @@ open class TransactionController(private val transactionService: TransactionServ
         @RequestParam(required = false) expanded: Boolean = false,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @ValidCursor @RequestParam(required = false) cursor: String?,
-    ): PaginatedResponse<IndexedTransaction> {
-        return transactionService.findLatest(size, cursor)
+    ): ResponseEntity<PaginatedResponse<IndexedTransaction>> {
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CACHE_CONTROL, VOLATILE_CACHE_CONTROL)
+            .body(transactionService.findLatest(size, cursor))
     }
 
     @GetMapping("{txId}")
@@ -138,7 +142,14 @@ open class TransactionController(private val transactionService: TransactionServ
     }
 
     @GetMapping("/contract")
-    @Operation(summary = "Get all transactions for a contract address")
+    @Operation(
+        summary = "Get all transactions for a contract address",
+        description =
+            """
+            A new transaction can arrive for any contract at any block, so shared caches may serve
+            a response up to one block old.
+            """,
+    )
     @AddressParameter(name = "contractAddress", required = true)
     @CommonApiResponses
     @ExpandedParameter
@@ -149,12 +160,16 @@ open class TransactionController(private val transactionService: TransactionServ
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
-    ): PaginatedResponse<IndexedTransaction> {
-        return paginatedResponse(
-            transactionService.findByContractAddress(
-                contractAddress,
-                toPageable(page, size, direction, "blockNumber", "_id"),
+    ): ResponseEntity<PaginatedResponse<IndexedTransaction>> {
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CACHE_CONTROL, VOLATILE_CACHE_CONTROL)
+            .body(
+                paginatedResponse(
+                    transactionService.findByContractAddress(
+                        contractAddress,
+                        toPageable(page, size, direction, "blockNumber", "_id"),
+                    )
+                )
             )
-        )
     }
 }

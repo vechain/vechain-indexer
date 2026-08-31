@@ -753,11 +753,48 @@
       "panels": []
     },
     {
+      "id": 45,
+      "type": "bargauge",
+      "title": "Top URIs by total origin time",
+      "description": "topk(15) of sum by (uri) (increase(http_server_requests_seconds_sum[$__range])) — total seconds of server time each endpoint consumed over the dashboard time range, i.e. request count × mean latency. This is the panel to act on: an endpoint can be the busiest by count and cost almost nothing here (the usual shape for cheap per-user lookups), while a low-volume endpoint with a slow query can dominate. Pair with 'API — avg latency by URI' to see which of the two factors drives a bar.",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(15, sum by (uri) (increase(http_server_requests_seconds_sum{deployment=~\"$deployment\", network=~\"$network\", service=\"api\"}[$__range])))",
+          "legendFormat": "{{uri}}",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "transformations": [
+        { "id": "reduce", "options": { "reducers": ["lastNotNull"], "mode": "seriesToRows", "includeTimeField": false } },
+        { "id": "sortBy", "options": { "fields": {}, "sort": [{ "field": "Last *", "desc": true }] } }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "decimals": 1,
+          "color": { "mode": "continuous-BlPu" },
+          "displayName": "${__data.fields.Field}"
+        }
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "reduceOptions": { "values": true, "calcs": [], "fields": "" },
+        "valueMode": "color"
+      }
+    },
+    {
       "id": 44,
       "type": "bargauge",
       "title": "Top URIs by total requests",
-      "description": "topk(15) of sum by (uri) (increase(http_server_requests_seconds_count[$__range])) — absolute request counts over the dashboard time range, not a rate, so bursty and steady traffic are comparable. `/**` is Spring's catch-all pattern: every request whose path matched no controller mapping, i.e. all unmatched-path 404s aggregated into one bar. Actual paths are only recoverable from the WAF logs (aws-waf-logs-*-veworld-indexer, httpRequest.uri).",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "description": "topk(15) of sum by (uri) (increase(http_server_requests_seconds_count[$__range])) — absolute request counts over the dashboard time range, not a rate, so bursty and steady traffic are comparable. Ranks by count, not by cost: a path can top this panel and still be near-free, so check 'Top URIs by total origin time' before acting on a bar here. `/**` is Spring's catch-all pattern: every request whose path matched no controller mapping, i.e. all unmatched-path 404s aggregated into one bar. The `uri` label is the matched Spring pattern with the query string stripped, so every parameter shape of one endpoint shares a bar. Full paths and query strings come from the ALB access logs in S3 (prod-{blue,green}-veworld-{main,test}-api-ecs-lb-bucket, prefix veworld-lb/). The mainnet WAF log group logs BLOCKed requests only (logging_filter_block_only), so it is not a traffic census; testnet's logs everything.",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 20 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -794,7 +831,7 @@
       "type": "timeseries",
       "title": "Top URIs by rate",
       "description": "topk(10) of request rate by uri, ranked per timestamp — a URI that goes quiet drops out of the top 10, so its line breaks into a gap rather than sitting at zero. Legend shows Max/Last only: Mean would average the bursts and ignore the gaps, which reads ~20x too high on spiky series like `/**`. For volume use 'Top URIs by total requests'. Narrow to a single endpoint with the Filters bar at the top (uri = …).",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 20 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {

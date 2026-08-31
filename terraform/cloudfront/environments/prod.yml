@@ -486,7 +486,7 @@ cache_behaviors:
 
   - name: "transactions-latest"
     path_pattern: "/api/v1/transactions/latest"
-    cache_policy_name: "default"
+    cache_policy_name: "origin-controlled"
     header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
     origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
     allowed_methods:
@@ -514,7 +514,7 @@ cache_behaviors:
 
   - name: "transactions-contract"
     path_pattern: "/api/v1/transactions/contract"
-    cache_policy_name: "default"
+    cache_policy_name: "origin-controlled"
     header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
     origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
     allowed_methods:
