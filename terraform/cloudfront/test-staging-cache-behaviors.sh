@@ -194,6 +194,13 @@ test_endpoint \
     "/api/v1/blocks?from=1000&size=5" \
     "origin-controlled (origin grades max-age by block age)"
 
+# Test 13: Transaction by ID — origin grades max-age by the containing block's age
+# Note: Replace the id with a real transaction to see a graded header rather than a 404.
+test_endpoint \
+    "Transaction By Id" \
+    "/api/v1/transactions/0x0000000000000000000000000000000000000000000000000000000000000000" \
+    "origin-controlled (origin grades max-age by block age)"
+
 # Additional test: Default behavior (uncached endpoint)
 print_header "Testing: Default Behavior (Uncached)"
 echo "This tests an endpoint that doesn't match any specific cache behavior"
@@ -205,7 +212,7 @@ test_endpoint \
 
 # Summary
 print_header "Test Suite Complete"
-echo "Total tests completed: 13"
+echo "Total tests completed: 14"
 echo "Results saved to: $OUTPUT_DIR"
 echo "Log file: $LOG_FILE"
 echo ""

@@ -9,8 +9,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.http.HttpHeaders
+import org.vechain.indexer.rest.MAX_CACHE_AGE_SECONDS
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.PaginationDetail
+import org.vechain.indexer.rest.VOLATILE_CACHE_CONTROL
 
 @ExtendWith(MockKExtension::class)
 internal class BlockControllerTest {
@@ -47,7 +49,7 @@ internal class BlockControllerTest {
 
     @Test
     fun `a page that can still change gets the short shared TTL`() {
-        assertEquals(HEAD_CACHE_CONTROL, cacheControl(null))
+        assertEquals(VOLATILE_CACHE_CONTROL, cacheControl(null))
     }
 
     @Test
