@@ -36,12 +36,20 @@ open class HistoryCollectionConfig(
             listOf(
                 buildIndex(IndexedDocument::blockNumber.name to Sort.Direction.DESC),
                 // Collapses the 5-way $or over origin/gasPayer/to/from/owner in the API
-                // account-history query into a single multikey equality. Keyed for the
-                // blockTimestamp DESC sort and the eventName $in filter that ride along.
+                // account-history query into a single multikey equality. blockTimestamp second
+                // serves the DESC sort; the eventName tail only filters, it cannot bound.
                 buildIndex(
                     IndexedHistoryEvent.INVOLVED_ADDRESSES_FIELD to Sort.Direction.ASC,
                     IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
                     IndexedHistoryEvent::eventName.name to Sort.Direction.ASC,
+                ),
+                // The same query with an eventName $in. eventName must precede blockTimestamp:
+                // an intervening range leaves it unbounded, so the scan walks the account's
+                // entire timeline to collect one page of a rare event.
+                buildIndex(
+                    IndexedHistoryEvent.INVOLVED_ADDRESSES_FIELD to Sort.Direction.ASC,
+                    IndexedHistoryEvent::eventName.name to Sort.Direction.ASC,
+                    IndexedHistoryEvent::blockTimestamp.name to Sort.Direction.DESC,
                 ),
                 // Per-address indexes for the GET /history?searchBy=... path, which builds a
                 // $or over caller-specified fields (ValidSearchBy: to, from, origin, gasPayer)
