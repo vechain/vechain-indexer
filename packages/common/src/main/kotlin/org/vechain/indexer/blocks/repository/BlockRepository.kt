@@ -16,7 +16,4 @@ interface BlockRepository : BaseIndexedRepository<IndexedBlock, String> {
 
     @Query(value = "{ 'blockNumber': { \$lte: ?0 } }", sort = "{ 'blockNumber': -1 }")
     fun findAtOrBelow(blockNumber: Long, pageable: Pageable): Slice<IndexedBlock>
-
-    @Query(value = "{ 'blockNumber': { \$gte: ?0 } }", sort = "{ 'blockNumber': 1 }")
-    fun findAtOrAbove(blockNumber: Long, pageable: Pageable): Slice<IndexedBlock>
 }

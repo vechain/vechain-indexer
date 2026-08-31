@@ -188,11 +188,11 @@ test_endpoint \
     "/api/v1/blocks?size=5" \
     "origin-controlled (origin sends s-maxage=10)"
 
-# Test 12: Blocks historical range — origin sends max-age=31536000, immutable
+# Test 12: Blocks historical range — origin grades max-age by the age of the newest block
 test_endpoint \
     "Blocks Historical Range" \
     "/api/v1/blocks?from=1000&size=5" \
-    "origin-controlled (origin sends max-age=31536000, immutable)"
+    "origin-controlled (origin grades max-age by block age)"
 
 # Additional test: Default behavior (uncached endpoint)
 print_header "Testing: Default Behavior (Uncached)"

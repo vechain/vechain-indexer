@@ -208,6 +208,16 @@ class OpenApiDocumentationContractTest {
             .isTrue()
     }
 
+    @Test
+    fun `blocks route documents from and size and has no direction`() {
+        val parameters = specParameters("/paths/~1api~1v1~1blocks/get/parameters")
+
+        expectThat(findParameter(parameters, "from", "query").isMissingNode).isFalse()
+        expectThat(findParameter(parameters, "size", "query").isMissingNode).isFalse()
+        expectThat(parameters.firstOrNull { it.path("name").asText() == "direction" } == null)
+            .isTrue()
+    }
+
     private fun specParameters(pointer: String): JsonNode = fetchSpec().at(pointer)
 
     private fun fetchSpec(): JsonNode {

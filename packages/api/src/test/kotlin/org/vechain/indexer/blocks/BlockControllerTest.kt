@@ -24,36 +24,41 @@ internal class BlockControllerTest {
         controller = BlockController(blockService)
     }
 
-    private fun response(hasNext: Boolean, cursor: String? = null) =
-        PaginatedResponse(emptyList<IndexedBlock>(), PaginationDetail(hasNext, cursor))
+    private fun range(maxAgeSeconds: Long?) =
+        BlockRange(
+            page = PaginatedResponse(emptyList<IndexedBlock>(), PaginationDetail(true, "999")),
+            maxAgeSeconds = maxAgeSeconds,
+        )
 
-    private fun cacheControl(from: Long?, hasNext: Boolean): String? {
-        every { blockService.getBlocks(from, any(), any()) } returns response(hasNext)
-        return controller.getBlocks(from, null, null).headers.getFirst(HttpHeaders.CACHE_CONTROL)
+    private fun cacheControl(maxAgeSeconds: Long?): String? {
+        every { blockService.getBlocks(any(), any()) } returns range(maxAgeSeconds)
+        return controller.getBlocks(1000L, null).headers.getFirst(HttpHeaders.CACHE_CONTROL)
     }
 
     @Test
-    fun `a full page from a numeric anchor is immutable`() {
-        assertEquals(IMMUTABLE_CACHE_CONTROL, cacheControl(from = 1000L, hasNext = true))
+    fun `a cacheable page carries the age the service graded it at`() {
+        assertEquals("public, max-age=3600", cacheControl(3600L))
     }
 
     @Test
-    fun `a head range gets the short shared TTL`() {
-        assertEquals(HEAD_CACHE_CONTROL, cacheControl(from = null, hasNext = true))
+    fun `deep history carries the capped age`() {
+        assertEquals("public, max-age=$MAX_CACHE_AGE_SECONDS", cacheControl(MAX_CACHE_AGE_SECONDS))
     }
 
     @Test
-    fun `the last page from a numeric anchor gets the short shared TTL`() {
-        assertEquals(HEAD_CACHE_CONTROL, cacheControl(from = 1000L, hasNext = false))
+    fun `a page that can still change gets the short shared TTL`() {
+        assertEquals(HEAD_CACHE_CONTROL, cacheControl(null))
     }
 
     @Test
-    fun `parameters are forwarded to the service unchanged`() {
-        every { blockService.getBlocks(1000L, 50, "DESC") } returns response(hasNext = false)
+    fun `the page is returned as the response body`() {
+        val expected = range(3600L)
+        every { blockService.getBlocks(1000L, 50) } returns expected
 
-        val result = controller.getBlocks(1000L, 50, "DESC")
+        val result = controller.getBlocks(1000L, 50)
 
-        verify(exactly = 1) { blockService.getBlocks(1000L, 50, "DESC") }
+        verify(exactly = 1) { blockService.getBlocks(1000L, 50) }
         assertEquals(200, result.statusCode.value())
+        assertEquals(expected.page, result.body)
     }
 }
