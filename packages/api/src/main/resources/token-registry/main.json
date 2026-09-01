@@ -113,7 +113,7 @@
     "icon": "bbe48eedf5b23a5e268672276ba889eea5d00256.png",
     "name": "HackenAI",
     "symbol": "HAI",
-    "totalSupply": "95816815525925808"
+    "totalSupply": "95813712943713438"
   },
   {
     "address": "0x1b44a9718e12031530604137f854160759677192",
@@ -189,7 +189,7 @@
     },
     "name": "WorldOfV",
     "symbol": "WoV",
-    "totalSupply": "198183705628738966527240837",
+    "totalSupply": "231715443979607022082795608",
     "website": "https://www.worldofv.art/",
     "whitePaper": "https://medium.com/@WorldofV/world-of-v-tokenomics-the-beginning-of-our-journey-together-d428907c22af"
   },
@@ -244,7 +244,7 @@
     },
     "name": "Veiled VET",
     "symbol": "VVET",
-    "totalSupply": "10978098044827638893548355"
+    "totalSupply": "6561726591867051953846245"
   },
   {
     "address": "0x8e57aadf0992afcc41f7843656c6c7129f738f7b",
@@ -374,7 +374,7 @@
     },
     "name": "VFoxToken",
     "symbol": "VFA",
-    "totalSupply": "9125360826245429556507234",
+    "totalSupply": "9125073606326240129579035",
     "website": "https://vfox-alliance.com/",
     "whitePaper": "https://medium.com/@vfox.alphice/tokenomics-vfa-f3ab4c4f0cf7"
   },
@@ -413,7 +413,7 @@
     },
     "name": "MVA Token",
     "symbol": "MVA",
-    "totalSupply": "9923869191203842402267143",
+    "totalSupply": "9918649099724641130917020",
     "website": "https://mvanfts.com/"
   },
   {
@@ -717,7 +717,7 @@
     },
     "name": "B3TR",
     "symbol": "B3TR",
-    "totalSupply": "416306443353533644800000000",
+    "totalSupply": "456011725780803846144000000",
     "website": "https://vebetter.com/",
     "whitePaper": "https://files.vebetter.com/vebetterdaocontainer/VeBetter_Whitepaper_v2-OCR.pdf"
   },
@@ -728,7 +728,7 @@
     "icon": "dcc6e7f09932a389a536fe74107cd73af445dd65.png",
     "name": "VOT3",
     "symbol": "VOT3",
-    "totalSupply": "271550574679592375315647184"
+    "totalSupply": "304809608636433149394119562"
   },
   {
     "address": "0x867bca2f3f187bb7bfb900ebcd3155746537a9a9",
@@ -766,7 +766,7 @@
     },
     "name": "veB3TR",
     "symbol": "veB3TR",
-    "totalSupply": "2672184321904776054047344",
+    "totalSupply": "3559051134988747628061884",
     "website": "https://veDelegate.vet/"
   },
   {
@@ -800,7 +800,7 @@
     "icon": "224beb94ff2071e6c8492e5fdc22bde36ac8ae52.png",
     "name": "NUTS",
     "symbol": "NUTS",
-    "totalSupply": "550000000000000000000000000"
+    "totalSupply": "1000000000000000000000000000"
   },
   {
     "address": "0xaac40a6e1adcf2acf172019e118b4278dd935760",
@@ -812,7 +812,7 @@
     },
     "name": "CarbonYears",
     "symbol": "CY",
-    "totalSupply": "210693407994493267514324",
+    "totalSupply": "211366602110570989093208",
     "website": "https://pauseyourcarbon.com/"
   },
   {
@@ -834,7 +834,7 @@
     },
     "name": "Better VET",
     "symbol": "BVET",
-    "totalSupply": "20616322575134600728933940",
+    "totalSupply": "19504608930251054408190338",
     "website": "https://www.betterswap.io/"
   },
   {
@@ -888,7 +888,7 @@
     },
     "name": "SOL@vechain",
     "symbol": "SOL",
-    "totalSupply": "1344939118",
+    "totalSupply": "1361179998",
     "website": "https://bridge.wanchain.org/AssetBridge"
   },
   {
@@ -906,7 +906,7 @@
     },
     "name": "ETH@vechain",
     "symbol": "ETH",
-    "totalSupply": "216272485095711357",
+    "totalSupply": "185499002129532987",
     "website": "https://bridge.wanchain.org/AssetBridge"
   },
   {
@@ -924,7 +924,7 @@
     },
     "name": "BTC@vechain",
     "symbol": "BTC",
-    "totalSupply": "975644",
+    "totalSupply": "1026452",
     "website": "https://bridge.wanchain.org/AssetBridge"
   },
   {
@@ -942,7 +942,7 @@
     },
     "name": "USDT@vechain",
     "symbol": "USDT",
-    "totalSupply": "5602600196",
+    "totalSupply": "4182668202",
     "website": "https://bridge.wanchain.org/AssetBridge"
   },
   {
@@ -960,7 +960,7 @@
     },
     "name": "USDC@vechain",
     "symbol": "USDC",
-    "totalSupply": "16515307114",
+    "totalSupply": "11964011084",
     "website": "https://bridge.wanchain.org/AssetBridge"
   },
   {
@@ -978,7 +978,7 @@
     },
     "name": "WAN@vechain",
     "symbol": "WAN",
-    "totalSupply": "8047940469423320901212",
+    "totalSupply": "8408513379865472361048",
     "website": "https://bridge.wanchain.org/AssetBridge"
   },
   {
@@ -996,7 +996,7 @@
     },
     "name": "XRP@vechain",
     "symbol": "XRP",
-    "totalSupply": "127110014",
+    "totalSupply": "163501212",
     "website": "https://bridge.wanchain.org/AssetBridge"
   },
   {
@@ -1035,7 +1035,17 @@
     },
     "name": "COMPOST Token",
     "symbol": "COMPOST",
-    "totalSupply": "1029121000000000000000000",
+    "totalSupply": "1117521000000000000000000",
     "website": "https://sproutlyrwa.com/"
+  },
+  {
+    "address": "0x2b22fe278205fb1b725b97010759a7d124df1ee6",
+    "decimals": 18,
+    "desc": "The official token of Dunn & Co.",
+    "icon": "b647ececf4fc6d764922cea52a2085e0e54a4196.png",
+    "name": "Dunn",
+    "symbol": "DUNN",
+    "totalSupply": "100000000000000000000000",
+    "website": "https://maisondunn.com/"
   }
 ]

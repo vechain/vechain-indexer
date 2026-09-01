@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.blocks.repository.BlockRepository
 import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.thor.model.Transaction
 
 @ExtendWith(MockKExtension::class)
@@ -25,14 +26,14 @@ class BlocksServiceTest {
         service = BlocksService(repository)
     }
 
-    private fun transaction(id: String) =
+    private fun transaction(id: String, clauses: Int = 0, paid: String = "0x1") =
         Transaction(
             id = id,
             type = 0L,
             chainTag = 1,
             blockRef = "0x00",
             expiration = 720,
-            clauses = emptyList(),
+            clauses = List(clauses) { Clause(to = "0xto", value = "0x0", data = "0x") },
             gasPriceCoef = 0,
             gas = 21000,
             origin = "0xorigin",
@@ -40,7 +41,7 @@ class BlocksServiceTest {
             size = 100,
             gasUsed = 21000,
             gasPayer = "0xpayer",
-            paid = "0x1",
+            paid = paid,
             reward = "0x1",
             reverted = false,
             outputs = emptyList(),
@@ -111,6 +112,31 @@ class BlocksServiceTest {
     @Test
     fun `processBlock leaves transactions empty for a block with no transactions`() {
         assertEquals(emptyList<String>(), service.processBlock(block()).transactions)
+    }
+
+    @Test
+    fun `processBlock sums clauses and paid across the block's transactions`() {
+        val indexed =
+            service.processBlock(
+                block(
+                    transactions =
+                        listOf(
+                            transaction("0xtx1", clauses = 2, paid = "0x0de0b6b3a7640000"),
+                            transaction("0xtx2", clauses = 3, paid = "0x0de0b6b3a7640000"),
+                        )
+                )
+            )
+
+        assertEquals(5, indexed.clauseCount)
+        assertEquals("0x1bc16d674ec80000", indexed.totalVthoPaid)
+    }
+
+    @Test
+    fun `processBlock zeroes the totals for a block with no transactions`() {
+        val indexed = service.processBlock(block())
+
+        assertEquals(0, indexed.clauseCount)
+        assertEquals("0x0", indexed.totalVthoPaid)
     }
 
     @Test

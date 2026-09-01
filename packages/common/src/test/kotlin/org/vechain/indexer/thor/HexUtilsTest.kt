@@ -139,4 +139,15 @@ internal class HexUtilsTest {
     fun `toHex throws when pad length is not positive`(padToLength: Int) {
         assertThrows<IllegalArgumentException> { HexUtils.toHex(10, padToLength) }
     }
+
+    @ParameterizedTest
+    @CsvSource(
+        "0, 0x0",
+        "10, 0xa",
+        "1000000000000000000, 0xde0b6b3a7640000",
+        "1000000000000000000000000000000, 0xc9f2c9cd04674edea40000000",
+    )
+    fun `toHex encodes a big integer past the Long range`(num: String, expected: String) {
+        expectThat(HexUtils.toHex(BigInteger(num))).isEqualTo(expected)
+    }
 }
