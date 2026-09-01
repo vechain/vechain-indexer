@@ -185,7 +185,7 @@ enabled_nets:
         inactive-threshold-not-syncing: "600"
         report-interval-ms: "10000"
       version:
-        blocks: "1"
+        blocks: "2"
         contracts: "6"
         vet-balance: "3"
         nfts: "6"
@@ -431,7 +431,7 @@ enabled_nets:
         inactive-threshold-not-syncing: "600"
         report-interval-ms: "10000"
       version:
-        blocks: "1"
+        blocks: "2"
         contracts: "6"
         vet-balance: "3"
         nfts: "6"

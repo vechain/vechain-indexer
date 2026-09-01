@@ -41,6 +41,8 @@ object HexUtils {
         return addPrefix(paddedHex)
     }
 
+    fun toHex(num: BigInteger): String = addPrefix(num.toString(16))
+
     /** Parse hex string to Int, handling optional 0x prefix */
     fun toInt(hex: String): Int {
         require(isValid(hex)) { "Invalid hex string: $hex" }

@@ -36,6 +36,9 @@ open class BlockController(private val blockService: BlockService) {
             walking backwards, or starting at the indexed head when `from` is omitted. Pass
             `pagination.cursor` straight back as `from` to fetch the next page.
 
+            Each block carries `clauseCount` and `totalVthoPaid` (hex wei), the totals over its
+            transactions, which Thor itself only exposes on an expanded block.
+
             `isTrunk` and `isFinalized` are omitted. Both are node-local, time-varying properties
             rather than block contents — `isTrunk` is a live comparison against the node's best
             chain, and finality lags the head by 360–540 blocks and is derived from validator
