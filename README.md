@@ -219,7 +219,9 @@ terraform-, workflow- or docs-only release does no Docker work at all, and a rel
 only the API leaves the indexer image alone.
 
 A deploy carries this through: it reads the tag each service is actually running on the target
-colour, hashes that tag's tree, and pins the service to it when the hash matches the release. Only
+colour — resolved through the ECS service, because a task definition family's latest revision may be
+one no rollout ever completed — hashes that tag's tree, and pins the service to it when the hash
+matches the release. Only
 services that changed are promoted to ECR and only their task definitions move, so the deploy has no
 diff for the rest. Terraform receives the four tags (net x service) as `image_version_override`
 rather than an in-place edit of the environment yaml. The step summary lists what was pinned and

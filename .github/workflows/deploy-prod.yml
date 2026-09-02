@@ -95,10 +95,25 @@ jobs:
         run: |
           set -euo pipefail
 
-          read_image_tag() {
+          # Via the service, since the family's latest may be a revision no
+          # rollout completed.
+          read_running_image() {
+            local colour="$1" net="$2" svc="$3"
+            local desc status task_def
+
+            desc=$(aws ecs describe-services \
+              --cluster "${colour}-veworld-cluster" \
+              --services "${colour}-veworld-${net}-${svc}-service" \
+              --query 'services[0].[status,taskDefinition]' \
+              --output text 2>/dev/null) || return 0
+
+            status=$(awk '{print $1}' <<<"$desc")
+            task_def=$(awk '{print $2}' <<<"$desc")
+            [ "$status" = "ACTIVE" ] && [ -n "$task_def" ] && [ "$task_def" != "None" ] || return 0
+
             aws ecs describe-task-definition \
-              --task-definition "$1" \
-              --query "taskDefinition.containerDefinitions[0].image" \
+              --task-definition "$task_def" \
+              --query 'taskDefinition.containerDefinitions[0].image' \
               --output text 2>/dev/null \
             | awk -F: 'NF>1 {print $NF}'
           }
@@ -110,10 +125,10 @@ jobs:
               test) fallback="$TESTNET_LIVE" ;;
             esac
             for svc in api indexer; do
-              tag=$(read_image_tag "${TARGET_COLOR}-veworld-${net}-${svc}")
+              tag=$(read_running_image "$TARGET_COLOR" "$net" "$svc")
               if [ -z "$tag" ]; then
-                echo "No ${TARGET_COLOR}-veworld-${net}-${svc}; reading ${fallback}"
-                tag=$(read_image_tag "${fallback}-veworld-${net}-${svc}")
+                echo "No running ${net}-${svc} service on ${TARGET_COLOR}; reading ${fallback}"
+                tag=$(read_running_image "$fallback" "$net" "$svc")
               fi
               [ -n "$tag" ] || continue
               deployed=$(jq -c --arg n "$net" --arg s "$svc" --arg t "$tag" \
