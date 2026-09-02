@@ -1,8 +1,8 @@
 name: Shared Infra
 
-# terraform/vpc applies via deploy-shared-infra.yml, or as records-only during a
-# cutover — never by merging. This gate makes that visible at review time and
-# plans the change, which no other check does.
+# terraform/vpc and terraform/cloudfront apply on the next deploy.yml run, never
+# by merging. This gate makes that visible at review time and plans the change,
+# which no other check does.
 # `labeled`/`unlabeled` are load-bearing: without them the ack never re-runs.
 
 on:
@@ -81,31 +81,31 @@ jobs:
         if: steps.detect.outputs.changed == 'true'
         env:
           ACKED: ${{ contains(github.event.pull_request.labels.*.name, 'shared-infra-ack') && '1' || '0' }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/deploy-shared-infra.yml
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/deploy.yml
           VPC_CHANGED: ${{ steps.detect.outputs.vpc_changed }}
           CLOUDFRONT_CHANGED: ${{ steps.detect.outputs.cloudfront_changed }}
         run: |
           body="$RUNNER_TEMP/comment.md"
           {
             echo '<!-- shared-infra-guard -->'
-            echo '### Shared infra change - manual apply required after merge'
+            echo '### Shared infra change - applied by the next deploy'
             echo
-            echo 'This PR changes colour-agnostic infrastructure. **Merging does not apply it.**'
+            echo 'This PR changes colour-agnostic infrastructure. **Merging does not apply it** —'
+            printf 'the next [Deploy](%s) run does, along with the application.\n' "$RUN_URL"
             if [ "$VPC_CHANGED" = "true" ]; then
               echo
-              echo '`terraform/vpc`: the only automatic path is `switch-live-dns.yml`, which would apply'
-              echo 'these changes as a side effect of the next blue/green DNS cutover.'
-              printf 'After merging, run [Deploy Shared Infra](%s) and read the plan before it applies.\n' "$RUN_URL"
+              echo '`terraform/vpc`: a blue/green cutover (`switch-live-dns.yml`) would also apply'
+              echo 'these changes as a side effect, records-only. Read the plan below before merging.'
             fi
             if [ "$CLOUDFRONT_CHANGED" = "true" ]; then
               echo
-              printf '`terraform/cloudfront`: applied by [Deploy Shared Infra](%s), shared then staging\n' "$RUN_URL"
-              echo 'then prod then dead, after the VPC stack. Read the plan for every workspace below.'
+              echo '`terraform/cloudfront`: applied shared then staging then prod then dead, after the'
+              echo 'VPC stack. Read the plan for every workspace below.'
             fi
             printf '\nChanged files:\n'
             cat "$RUNNER_TEMP/files.md"
             if [ "$ACKED" = "1" ]; then
-              printf '\nAcknowledged via `%s`. The post-merge apply is still required.\n' "$ACK_LABEL"
+              printf '\nAcknowledged via `%s`. A deploy is still required to apply it.\n' "$ACK_LABEL"
             else
               printf '\nAdd the `%s` label to confirm you have read this.\n' "$ACK_LABEL"
             fi

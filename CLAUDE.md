@@ -20,9 +20,11 @@ If the script updates tracked files, include those updates in the same commit (o
 
 Write reviewer-facing prose at final length — don't draft long and trim. The budget is the target, not a limit to approach. See `AGENTS.md` "Commit & Pull Request Guidelines" for the full rules.
 
-## Shared Infra Needs a Manual Apply
+## One Deploy Applies Every Stack
 
-`terraform/vpc` (VPC, Route53, ECR, CloudFront WAFs) and `terraform/cloudfront` (the CloudFront distributions) are the colour-agnostic stacks. Merging a change to either applies nothing. `.github/workflows/shared-infra.yml` blocks any PR touching `terraform/vpc/**` or `terraform/cloudfront/**` until the `shared-infra-ack` label is applied, and plans the affected stack for review. After merge, run `.github/workflows/deploy-shared-infra.yml` — the only path that applies `terraform/vpc` in full (a DNS cutover applies Route53 records only), and it then applies `terraform/cloudfront`'s `shared`, `staging`, `prod` and `dead` workspaces in that order — see `terraform/cloudfront/README.md`. See `AGENTS.md` "Shared Infra Needs a Manual Apply".
+`.github/workflows/deploy.yml` is the only apply path for a deployed environment. It applies `terraform/vpc` (full), `terraform/observability`, `terraform/observability-grafana`, `terraform/cloudfront` (`shared`, `staging`, `prod`, `dead`) and `terraform/api` for the target colour, then re-applies the dead Route53 records. Every stack runs on every deploy, so one with no change is a plain no-op.
+
+Merging still applies nothing. `.github/workflows/shared-infra.yml` blocks any PR touching `terraform/vpc/**` or `terraform/cloudfront/**` until the `shared-infra-ack` label is applied, and plans the affected stack for review — read that plan, because the next deploy applies it. See `AGENTS.md` "One Deploy Applies Every Stack" and `terraform/cloudfront/README.md`.
 
 ## Dependencies
 

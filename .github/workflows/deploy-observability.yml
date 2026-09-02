@@ -1,5 +1,6 @@
 name: Plan or Apply Observability Terraform
 
+# Applies only when deploy.yml calls it; the pull_request trigger plans for review.
 on:
   pull_request:
     branches:
@@ -8,7 +9,28 @@ on:
       - 'terraform/observability/**'
       - 'terraform/observability-grafana/**'
       - '.github/workflows/deploy-observability.yml'
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      environment:
+        description: Terraform workspace to target
+        required: false
+        type: string
+        default: prod
+      apply:
+        description: Apply the plan rather than only printing it
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      AWS_ACC_ROLE:
+        description: "AWS IAM role ARN for OIDC authentication"
+        required: true
+      VECHAINCI_SSH_PRIVATE_KEYS:
+        description: "SSH key for accessing vechain Terraform modules"
+        required: true
+      SLACK_WEBHOOK_URL:
+        description: "Alert delivery webhook; unset writes a placeholder sentinel"
+        required: false
 
 # Required for authentication through GitHub OIDC
 permissions:
@@ -23,11 +45,11 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  TERRAFORM_ENV: prod
+  TERRAFORM_ENV: ${{ inputs.environment || 'prod' }}
 
 jobs:
   deploy-observability:
-    name: Plan/deploy observability - prod
+    name: Plan/deploy observability - ${{ inputs.environment || 'prod' }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -84,14 +106,14 @@ jobs:
         run: terraform plan -out "apply.plan"
 
       - name: Terraform Apply
-        if: github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/v.')
+        if: inputs.apply
         id: apply
         env:
           TF_VAR_slack_webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: terraform apply "apply.plan"
 
   deploy-observability-grafana:
-    name: Plan/deploy observability-grafana - prod
+    name: Plan/deploy observability-grafana - ${{ inputs.environment || 'prod' }}
     runs-on: ubuntu-latest
     # observability-grafana reads terraform_remote_state from observability;
     # if observability apply fails, skip the datasource stack so we don't
@@ -146,6 +168,6 @@ jobs:
         run: terraform plan -out "apply.plan"
 
       - name: Terraform Apply
-        if: github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/v.')
+        if: inputs.apply
         id: apply
         run: terraform apply "apply.plan"
