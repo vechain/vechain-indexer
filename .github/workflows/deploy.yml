@@ -1,8 +1,19 @@
-name: Prod Deployment Workflow
+name: Deploy
 
+# The one apply path for a deployed environment: shared infra, observability,
+# the CloudFront distributions and the application, in dependency order. Every
+# stack is planned and applied on every run, so a stack with no change is a
+# no-op rather than something an operator has to remember to run.
 on:
   workflow_dispatch:
     inputs:
+      environment:
+        description: Which environment to deploy
+        required: true
+        type: choice
+        options:
+          - prod
+        default: prod
       network:
         description: Which network to deploy
         required: true
@@ -12,14 +23,18 @@ on:
           - mainnet
           - both
         default: both
-      environment:
-        description: Which color environment to deploy
+      colour:
+        description: Which colour of that environment to deploy
         required: true
         type: choice
         options:
           - live
           - dead
         default: dead
+
+run-name: >-
+  Deploy ${{ github.ref_name }} -> ${{ inputs.environment }}
+  ${{ inputs.colour }} (${{ inputs.network }})
 
 # Required for authentication through GitHub OIDC
 permissions:
@@ -28,7 +43,7 @@ permissions:
   packages: read # This is required for pulling images from GHCR
 
 concurrency:
-  group: deploy-prod-${{ github.ref }}
+  group: deploy-${{ inputs.environment }}
   cancel-in-progress: false
 
 jobs:
@@ -63,7 +78,7 @@ jobs:
         id: colour
         env:
           INPUT_NETWORK: ${{ inputs.network }}
-          INPUT_ENV: ${{ inputs.environment }}
+          INPUT_ENV: ${{ inputs.colour }}
           MAINNET_LIVE: ${{ needs.identify-live-color.outputs.mainnet_live_color }}
           MAINNET_DEAD: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}
           TESTNET_LIVE: ${{ needs.identify-live-color.outputs.testnet_live_color }}
@@ -310,10 +325,54 @@ jobs:
             exit 1
           fi
 
+  apply-shared:
+    name: Apply shared stack
+    needs: [identify-live-color]
+    uses: ./.github/workflows/deploy-colour-agnostic-infra.yml
+    with:
+      environment: ${{ inputs.environment }}
+      scope: full
+      live_color_mainnet: ${{ needs.identify-live-color.outputs.mainnet_live_color }}
+      live_color_testnet: ${{ needs.identify-live-color.outputs.testnet_live_color }}
+    permissions:
+      contents: read
+      id-token: write
+    secrets:
+      AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
+      VECHAINCI_SSH_PRIVATE_KEYS: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
+
+  apply-observability:
+    name: Apply observability stacks
+    uses: ./.github/workflows/deploy-observability.yml
+    with:
+      environment: ${{ inputs.environment }}
+      apply: true
+    permissions:
+      contents: read
+      id-token: write
+    secrets:
+      AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
+      VECHAINCI_SSH_PRIVATE_KEYS: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # Reads its WAF ARNs from the VPC stack's remote state, so it follows it.
+  # Independent of the application stack, hence not gated on it.
+  apply-cloudfront:
+    name: Apply CloudFront stack
+    needs: [apply-shared]
+    uses: ./.github/workflows/deploy-cloudfront.yml
+    permissions:
+      contents: read
+      id-token: write
+    secrets:
+      AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
+
   deploy-env:
-    needs: [deployed-state, plan-release, promote-to-ecr]
+    needs: [deployed-state, plan-release, promote-to-ecr, apply-shared, apply-observability]
     if: >-
       !cancelled() && needs.plan-release.result == 'success'
+      && needs.apply-shared.result == 'success'
+      && needs.apply-observability.result == 'success'
       && needs.promote-to-ecr.result != 'failure'
       && needs.promote-to-ecr.result != 'cancelled'
     name: Run Deployment - ${{ inputs.network }}
@@ -334,10 +393,10 @@ jobs:
   refresh-dead-dns:
     name: Refresh dead Route53 records
     needs: [identify-live-color, deploy-env]
-    if: ${{ needs.deploy-env.result == 'success' && inputs.environment == 'dead' }}
+    if: ${{ needs.deploy-env.result == 'success' && inputs.colour == 'dead' }}
     uses: ./.github/workflows/deploy-colour-agnostic-infra.yml
     with:
-      environment: prod
+      environment: ${{ inputs.environment }}
       scope: dead-records
       live_color_mainnet: ${{ needs.identify-live-color.outputs.mainnet_live_color }}
       live_color_testnet: ${{ needs.identify-live-color.outputs.testnet_live_color }}
@@ -365,7 +424,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
       TAG: ${{ needs.plan-release.outputs.VERSION }}
-      INPUT_ENV: ${{ inputs.environment }}
+      INPUT_ENV: ${{ inputs.colour }}
     steps:
       - name: Check existing release state for tag
         id: check

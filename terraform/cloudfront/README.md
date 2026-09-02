@@ -11,7 +11,7 @@ This directory contains a unified Terraform configuration that uses workspaces t
 | `shared` | No changes |
 | `dead` | Never applied — creates the dead-colour distributions on first run |
 
-[deploy-shared-infra.yml](../../.github/workflows/deploy-shared-infra.yml) applies
+[deploy.yml](../../.github/workflows/deploy.yml) applies
 the stack after the VPC one, `shared` then `staging` then `prod` then `dead` — that
 order is a dependency chain, since the distributions consume `shared`'s cache
 policies and `prod`'s continuous-deployment policy reads `staging`'s domains. Each

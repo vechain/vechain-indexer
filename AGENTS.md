@@ -116,14 +116,24 @@ Write reviewer-facing prose at final length — don't draft long and trim. The b
 - **But keep visual/semantic bridges.** Mapping something observable to what it means ("dashed orange line = `EcsTaskCpuHigh` threshold (80%)") is real information, not padding.
 - **Design notes:** one to three sentences per phase or status entry. "Why X over Y" rationale belongs in the module README or `notes/`, not stacked above the code.
 
-### Shared Infra Needs a Manual Apply
-`terraform/vpc` is the colour-agnostic stack — VPC, Route53, ECR, Atlas access, the CloudFront WAFs. Unlike `terraform/api`, **merging a change to it applies nothing.** After merge, run [deploy-shared-infra.yml](.github/workflows/deploy-shared-infra.yml); it takes the live colours from DNS rather than operator input, so a cutover cannot be reverted by a stale value typed into a form.
+### One Deploy Applies Every Stack
+[deploy.yml](.github/workflows/deploy.yml) is the single apply path for a deployed environment. It takes `environment` (only `prod` exists today), `network` and `colour`, and applies, in dependency order:
 
-[shared-infra.yml](.github/workflows/shared-infra.yml) enforces this. Touch `terraform/vpc/**` or `terraform/cloudfront/**` and it blocks the PR until someone applies the `shared-infra-ack` label, posts a sticky comment naming the follow-up, and runs the `terraform plan` that no other check covers — read it in the job summary before approving. Each stack plans separately, since only `terraform/vpc` needs the live-colour lookup.
+1. `terraform/vpc`, scope `full` — VPC, Route53, ECR, Atlas access, the CloudFront WAFs
+2. `terraform/observability` then `terraform/observability-grafana` — in parallel with the VPC stack; `terraform/api` reads both stacks' outputs
+3. `terraform/cloudfront` — `shared`, `staging`, `prod`, `dead`, which is a dependency chain
+4. `terraform/api` for the target colour, image tags resolved per service
+5. `terraform/vpc`, scope `dead-records` — after the application, so the dead records name the ALB it just moved
 
-`terraform/cloudfront` holds six CloudFront distributions across four workspaces (`shared`, `staging`, `prod`, `dead`) — two live, two idle continuous-deployment canaries against the same prod origins, and two fronting the dead colour for pre-cutover testing. [deploy-shared-infra.yml](.github/workflows/deploy-shared-infra.yml) applies all four after the VPC stack, in that order, printing each plan to the job summary first. The gate plans every workspace so you can see which a merge leaves dirty, planning one that does not exist yet against empty local state. [Its README](terraform/cloudfront/README.md) records the detail.
+Every stack plans and applies on every run, so one with no change is a no-op. This replaced the separate shared-infra and observability dispatches: no stack is left for an operator to remember.
 
-Applying the stack is scoped, because DNS records live in it and a cutover *is* a `terraform apply`. [deploy-colour-agnostic-infra.yml](.github/workflows/deploy-colour-agnostic-infra.yml) takes `scope`: `records` for a cutover (all four records — the dead pair must follow a swap), `dead-records` for a prod deploy, `full` only from `deploy-shared-infra.yml`. Leave a cutover untargeted and it applies every pending change in the stack as a side effect of switching DNS. Its apply job serializes on the `terraform-vpc-apply` concurrency group, so a queued run re-resolves colours instead of applying pre-cutover ones.
+Live colours still come from DNS rather than operator input, so a cutover cannot be reverted by a stale value typed into a form, and both VPC applies serialize on the `terraform-vpc-apply` concurrency group.
+
+**Merging still applies nothing.** [shared-infra.yml](.github/workflows/shared-infra.yml) enforces that for the colour-agnostic stacks. Touch `terraform/vpc/**` or `terraform/cloudfront/**` and it blocks the PR until someone applies the `shared-infra-ack` label, posts a sticky comment, and runs the `terraform plan` that no other check covers — read it in the job summary before approving, because the next deploy applies it. Each stack plans separately, since only `terraform/vpc` needs the live-colour lookup.
+
+`terraform/cloudfront` holds six CloudFront distributions across four workspaces — two live, two idle continuous-deployment canaries against the same prod origins, and two fronting the dead colour for pre-cutover testing. Each workspace's plan lands in the job summary before it applies. The gate plans every workspace so you can see which a merge leaves dirty, planning one that does not exist yet against empty local state. [Its README](terraform/cloudfront/README.md) records the detail.
+
+The VPC apply is scoped, because DNS records live in it and a cutover *is* a `terraform apply`. [deploy-colour-agnostic-infra.yml](.github/workflows/deploy-colour-agnostic-infra.yml) takes `scope`: `records` for a cutover (all four records — the dead pair must follow a swap), `dead-records` and `full` for the two passes a deploy makes. Leave a cutover untargeted and it applies every pending change in the stack as a side effect of switching DNS.
 
 The review-time plan needs the `AWS_OIDC_ROLE_ARN` variable, pointed at the **read-only** `veworld-indexer-github-actions-prod-plan` role that `terraform/vpc` declares — not the deploy role, because the plan executes PR-controlled Terraform. Unset, the plan step skips rather than falling back to write credentials. The SSH agent for private module sources is still exposed to that code; keep module sources under review.
 
