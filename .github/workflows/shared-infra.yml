@@ -2,7 +2,9 @@ name: Shared Infra
 
 # terraform/vpc and terraform/cloudfront apply on the next deploy.yml run, never
 # by merging. This gate makes that visible at review time and plans the change,
-# which no other check does.
+# which no other check does. Markdown under those paths is excluded: a doc edit
+# cannot change a plan, and asking for an ack on one only teaches people to
+# apply the label without reading.
 # `labeled`/`unlabeled` are load-bearing: without them the ack never re-runs.
 
 on:
@@ -43,7 +45,7 @@ jobs:
         env:
           BASE_REF: origin/${{ github.event.pull_request.base.ref }}
         run: |
-          files=$(git diff --name-only "$BASE_REF...HEAD" -- $WATCH_PATHS)
+          files=$(git diff --name-only "$BASE_REF...HEAD" -- $WATCH_PATHS ':(exclude)**/*.md')
           # Each stack plans separately: only vpc needs the live-colour lookup.
           for stack in vpc cloudfront; do
             if printf '%s\n' "$files" | grep -q "^terraform/$stack/"; then
@@ -95,12 +97,12 @@ jobs:
             if [ "$VPC_CHANGED" = "true" ]; then
               echo
               echo '`terraform/vpc`: a blue/green cutover (`switch-live-dns.yml`) would also apply'
-              echo 'these changes as a side effect, records-only. Read the plan below before merging.'
+              echo 'these changes as a side effect, records-only. Read its plan in the job summary.'
             fi
             if [ "$CLOUDFRONT_CHANGED" = "true" ]; then
               echo
               echo '`terraform/cloudfront`: applied shared then staging then prod then dead, after the'
-              echo 'VPC stack. Read the plan for every workspace below.'
+              echo 'VPC stack. Every workspace plans in the job summary.'
             fi
             printf '\nChanged files:\n'
             cat "$RUNNER_TEMP/files.md"
@@ -147,7 +149,7 @@ jobs:
           ACKED: ${{ contains(github.event.pull_request.labels.*.name, 'shared-infra-ack') && '1' || '0' }}
         run: |
           if [ "$ACKED" != "1" ]; then
-            echo "::error::This PR changes $WATCH_PATHS, which needs a manual apply after merge. Add the $ACK_LABEL label to confirm."
+            echo "::error::This PR changes $WATCH_PATHS, which the next deploy applies. Read the plan in the job summary, then add the $ACK_LABEL label to confirm."
             exit 1
           fi
           echo "Acknowledged via $ACK_LABEL."
