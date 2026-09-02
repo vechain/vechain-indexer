@@ -27,12 +27,17 @@ comma := ,
 GRADLE_PROPERTIES_FILE ?= gradle/docker.gradle.properties
 export GRADLE_PROPERTIES_FILE
 GRADLE_SECRET := $(if $(GRADLE_PROPERTIES_FILE),--secret id=gradle_props$(comma)src=$(GRADLE_PROPERTIES_FILE),)
+content-hash: #@ Print the content hash of each service's Docker build context.
+	@for pkg in api indexer; do \
+		printf '%-8s %s\n' "$$pkg" "$$(.github/workflows/scripts/content_hash.sh $$pkg)"; \
+	done
+
 build-image: build-image-indexer build-image-api #@ Build the application with Docker.
 	echo "Build completed."
 build-image-indexer: ensure-gradle-props #@ Build the application with Docker.
-	docker build $(GRADLE_SECRET) --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=indexer -t veworld-indexer .
+	docker build $(GRADLE_SECRET) --build-arg PACKAGE_NAME=indexer -t veworld-indexer .
 build-image-api: ensure-gradle-props #@ Build the application with Docker.
-	docker build $(GRADLE_SECRET) --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=api -t veworld-api .
+	docker build $(GRADLE_SECRET) --build-arg PACKAGE_NAME=api -t veworld-api .
 
 test: #@ Run all the tests (excluding e2e).
 	./gradlew cleanTest test -x :packages:e2e:test
