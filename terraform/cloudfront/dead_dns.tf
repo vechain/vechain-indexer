@@ -4,10 +4,11 @@
 
 locals {
   # Non-empty fallbacks: validate schema-checks these where their count is zero.
-  dead_zone_id      = try(data.aws_route53_zone.dead[0].zone_id, "ZUNUSED")
-  dead_zone_name    = try(local.env_config.hosted_zone_name, "unused.invalid.")
-  dead_mainnet_host = local.is_dead ? local.env_config.mainnet_cnames[0] : "unused.invalid"
-  dead_testnet_host = local.is_dead ? local.env_config.testnet_cnames[0] : "unused.invalid"
+  dead_zone_id            = try(data.aws_route53_zone.dead[0].zone_id, "ZUNUSED")
+  dead_zone_name          = try(local.env_config.hosted_zone_name, "unused.invalid.")
+  dead_certificate_domain = try(local.env_config.certificate_domain, "unused.invalid")
+  dead_mainnet_host       = local.is_dead ? local.env_config.mainnet_cnames[0] : "unused.invalid"
+  dead_testnet_host       = local.is_dead ? local.env_config.testnet_cnames[0] : "unused.invalid"
 
   # Hosted zone CloudFront alias targets always live in, not our own zone.
   cloudfront_hosted_zone_id = "Z2FDTNDATAQYW2"
@@ -25,14 +26,15 @@ data "aws_route53_zone" "dead" {
   name  = local.dead_zone_name
 }
 
-# One certificate covers both networks; CloudFront requires it in us-east-1.
+# Both hostnames are one label under dead.veworld, so a single wildcard covers
+# them, leaving one validation record whose count is known before the apply.
+# CloudFront requires the certificate in us-east-1.
 resource "aws_acm_certificate" "dead" {
   count    = local.is_dead ? 1 : 0
   provider = aws.us_east_1
 
-  domain_name               = local.dead_mainnet_host
-  subject_alternative_names = [local.dead_testnet_host]
-  validation_method         = "DNS"
+  domain_name       = local.dead_certificate_domain
+  validation_method = "DNS"
 
   lifecycle {
     create_before_destroy = true
@@ -40,15 +42,12 @@ resource "aws_acm_certificate" "dead" {
 }
 
 resource "aws_route53_record" "dead_cert_validation" {
-  for_each = {
-    for option in try(aws_acm_certificate.dead[0].domain_validation_options, []) :
-    option.domain_name => option
-  }
+  count = local.is_dead ? 1 : 0
 
   zone_id         = local.dead_zone_id
-  name            = each.value.resource_record_name
-  type            = each.value.resource_record_type
-  records         = [each.value.resource_record_value]
+  name            = one(aws_acm_certificate.dead[0].domain_validation_options).resource_record_name
+  type            = one(aws_acm_certificate.dead[0].domain_validation_options).resource_record_type
+  records         = [one(aws_acm_certificate.dead[0].domain_validation_options).resource_record_value]
   ttl             = 60
   allow_overwrite = true
 }

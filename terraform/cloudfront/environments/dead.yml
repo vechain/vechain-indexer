@@ -21,6 +21,7 @@ default_origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
 
 # dead_dns.tf issues the certificate and alias records into this zone.
 hosted_zone_name: "veworld.vechain.org."
+certificate_domain: "*.dead.veworld.vechain.org"
 
 mainnet_cnames:
   - "mainnet.dead.veworld.vechain.org"
