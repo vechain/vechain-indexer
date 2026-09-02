@@ -325,7 +325,8 @@ jobs:
     if: >-
       !cancelled() && needs.validate.outputs.publish == 'true'
       && needs.plan.result == 'success'
-      && needs.publish-content-tag.result != 'failure'
+      && (needs.plan.outputs.build_needed != 'true'
+          || needs.publish-content-tag.result == 'success')
     permissions:
       packages: write
       contents: read

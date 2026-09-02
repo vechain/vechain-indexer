@@ -202,9 +202,12 @@ jobs:
     name: Publish release tags - ${{ matrix.packageName }}
     runs-on: ubuntu-latest
     needs: [plan, publish-content-tag]
+    # publish-content-tag is skipped both when nothing needed building and when
+    # the build failed. Only the first may tag a release.
     if: >-
       !cancelled() && needs.plan.result == 'success'
-      && needs.publish-content-tag.result != 'failure'
+      && (needs.plan.outputs.build_needed != 'true'
+          || needs.publish-content-tag.result == 'success')
     strategy:
       matrix:
         include:
