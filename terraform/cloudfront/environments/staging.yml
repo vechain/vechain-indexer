@@ -215,7 +215,7 @@ cache_behaviors:
 
   - name: "api-docs"
     path_pattern: "/api-docs"
-    cache_policy_name: "hourly"
+    cache_policy_name: "10-minutes"
     header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
     origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
     allowed_methods:
@@ -230,7 +230,7 @@ cache_behaviors:
   # /api-docs itself is matched by the exact pattern above; this catches swagger-config.
   - name: "api-docs-*"
     path_pattern: "/api-docs/*"
-    cache_policy_name: "hourly"
+    cache_policy_name: "10-minutes"
     header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
     origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
     allowed_methods:
@@ -245,7 +245,7 @@ cache_behaviors:
   # Static webjar assets, only ever change with the springdoc version.
   - name: "swagger-ui-*"
     path_pattern: "/swagger-ui/*"
-    cache_policy_name: "day"
+    cache_policy_name: "hourly"
     header_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
     origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
     allowed_methods:
