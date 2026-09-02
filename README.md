@@ -218,6 +218,15 @@ re-tags the same manifest instead of building whenever that hash is already publ
 terraform-, workflow- or docs-only release does no Docker work at all, and a release that touched
 only the API leaves the indexer image alone.
 
+A deploy carries this through: it reads the tag each service is actually running on the target
+colour — resolved through the ECS service, because a task definition family's latest revision may be
+one no rollout ever completed — hashes that tag's tree, and pins the service to it when the hash
+matches the release. Only
+services that changed are promoted to ECR and only their task definitions move, so the deploy has no
+diff for the rest. Terraform receives the four tags (net x service) as `image_version_override`
+rather than an in-place edit of the environment yaml. The step summary lists what was pinned and
+why.
+
 `APP_VERSION` is therefore not baked into the image; it comes from the ECS task definition at
 runtime, so cutting a new version does not change image content. The trade-off is that a release
 reusing an image does not pick up new Alpine packages — the base image tag is in the hash, so a

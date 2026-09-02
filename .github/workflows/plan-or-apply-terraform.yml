@@ -19,12 +19,11 @@ on:
         description: Which environment to plan/deploy to
         required: true
         type: string
-      mainnet_version:
-        description: The version of this release
-        required: false
-        type: string
-      testnet_version:
-        description: The version of this release
+      image_versions:
+        description: >-
+          JSON map of the image tag to run per net and service, e.g.
+          {"main":{"api":"v.1.2.3","indexer":"v.1.2.2"}}. Omitted leaves the
+          environment yaml's own image_version in place.
         required: false
         type: string
       force:
@@ -117,21 +116,29 @@ jobs:
         id: validate
         run: terraform validate
 
-      - name: Update image_tag
-        id: update-image-tag
-        if: inputs.mainnet_version && inputs.testnet_version
+      # A tfvars file rather than an edit to the environment yaml: the yaml is
+      # the checked-in shape of the environment, and rewriting it in place made
+      # the deployed tag depend on key order within it.
+      - name: Write image version overrides
+        id: image-versions
+        if: inputs.image_versions
         env:
-          MAINNET_VERSION: ${{ inputs.mainnet_version }}
-          TESTNET_VERSION: ${{ inputs.testnet_version }}
+          IMAGE_VERSIONS: ${{ inputs.image_versions }}
         run: |
-          sed -i "/main:/,/image_version:/s/image_version:.*/image_version: $MAINNET_VERSION/" environments/${{ env.ENVIRONMENT }}.yml
-          sed -i "/test:/,/image_version:/s/image_version:.*/image_version: $TESTNET_VERSION/" environments/${{ env.ENVIRONMENT }}.yml
-          cat environments/${{ env.ENVIRONMENT }}.yml
-        continue-on-error: false
+          set -euo pipefail
+          jq -e 'type == "object"' <<<"$IMAGE_VERSIONS" >/dev/null
+          jq -n --argjson v "$IMAGE_VERSIONS" '{image_version_override: $v}' > override.tfvars.json
+          cat override.tfvars.json
 
       - name: Terraform Plan
         id: plan
-        run: terraform plan -out "apply.plan"
+        run: |
+          set -euo pipefail
+          args=()
+          if [ -f override.tfvars.json ]; then
+            args+=(-var-file=override.tfvars.json)
+          fi
+          terraform plan -out "apply.plan" ${args[@]+"${args[@]}"}
 
       - name: Should proceed with deployment? (PR builds will never deploy)
         if: github.ref == 'refs/heads/main' || inputs.force
@@ -158,8 +165,7 @@ jobs:
       - name: Tag deployed image in ECR to protect from lifecycle expiration
         if: steps.apply.outcome == 'success' && (env.ENVIRONMENT == 'prod-blue' || env.ENVIRONMENT == 'prod-green')
         env:
-          MAINNET_VERSION: ${{ inputs.mainnet_version }}
-          TESTNET_VERSION: ${{ inputs.testnet_version }}
+          IMAGE_VERSIONS: ${{ inputs.image_versions }}
         run: |
           set -euo pipefail
           PROTECTION_TAG="${{ env.ENVIRONMENT }}"
@@ -207,10 +213,22 @@ jobs:
               --image-tag "$target_tag" --image-manifest "$manifest" >/dev/null
           }
 
-          tag_image "veworld/api"     "$MAINNET_VERSION" "${PROTECTION_TAG}-mainnet"
-          tag_image "veworld/api"     "$TESTNET_VERSION" "${PROTECTION_TAG}-testnet"
-          tag_image "veworld/indexer" "$MAINNET_VERSION" "${PROTECTION_TAG}-mainnet"
-          tag_image "veworld/indexer" "$TESTNET_VERSION" "${PROTECTION_TAG}-testnet"
+          # Each service is protected at the version it actually runs, which a
+          # skipped redeploy leaves behind at an older tag than the release.
+          for net in main test; do
+            case "$net" in
+              main) suffix=mainnet ;;
+              test) suffix=testnet ;;
+            esac
+            for svc in api indexer; do
+              version=$(jq -r --arg n "$net" --arg s "$svc" '.[$n][$s] // empty' <<<"$IMAGE_VERSIONS")
+              if [ -z "$version" ]; then
+                echo "No image version for ${net}/${svc}; nothing to protect."
+                continue
+              fi
+              tag_image "veworld/${svc}" "$version" "${PROTECTION_TAG}-${suffix}"
+            done
+          done
 
           echo "Successfully tagged images with protection tag: ${PROTECTION_TAG}"
 
