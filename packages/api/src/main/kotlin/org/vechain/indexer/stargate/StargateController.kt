@@ -314,7 +314,7 @@ open class StargateController(
     @AddressParameter(name = "owner")
     @CommonApiResponses
     @PaginationParameters
-    @CacheFor(CachePolicy.MINUTE)
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getStargateTokens(
         @ValidTokenId @RequestParam(required = false) tokenId: String?,
         @ValidAddress @RequestParam(required = false) manager: Address?,

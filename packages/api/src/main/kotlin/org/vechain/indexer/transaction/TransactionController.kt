@@ -141,15 +141,15 @@ open class TransactionController(private val transactionService: TransactionServ
         summary = "Get all transactions for a contract address",
         description =
             """
-            A new transaction can arrive for any contract at any block, so shared caches may serve
-            a response up to one block old.
+            A new transaction can arrive for any contract at any block, so caches may serve a
+            response up to a minute old.
             """,
     )
     @AddressParameter(name = "contractAddress", required = true)
     @CommonApiResponses
     @ExpandedParameter
     @PaginationParameters
-    @CacheFor(CachePolicy.VOLATILE)
+    @CacheFor(CachePolicy.MINUTE)
     open fun getTransactionsByContract(
         @ValidAddress @RequestParam contractAddress: Address,
         @RequestParam(required = false) expanded: Boolean = false,

@@ -117,7 +117,7 @@ open class ValidatorController(private val service: ValidatorService) {
     @CommonApiResponses
     @PriceOracleUnavailableResponse
     @PaginationParameters
-    @CacheFor(CachePolicy.MINUTE)
+    @CacheFor(CachePolicy.HOURLY)
     open fun getValidators(
         @RequestParam(required = false) endorser: String?,
         @RequestParam(required = false) validatorId: String?,

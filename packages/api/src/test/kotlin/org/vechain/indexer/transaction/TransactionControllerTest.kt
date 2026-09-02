@@ -97,15 +97,15 @@ internal class TransactionControllerTest {
     }
 
     @Test
-    fun `the head-adjacent listings are cacheable for a block, not indefinitely`() {
-        // Both move with the head, so neither may outlive a single block in a shared cache.
+    fun `the head listing is cacheable for a block, not indefinitely`() {
+        // It moves with the head, so it may not outlive a single block in a shared cache.
         assertEquals(CachePolicy.VOLATILE, declaredCachePolicy("getLatestTransactions"))
-        assertEquals(CachePolicy.VOLATILE, declaredCachePolicy("getTransactionsByContract"))
     }
 
     @Test
-    fun `an address listing tolerates a stale minute`() {
+    fun `a transaction listing tolerates a stale minute, as account history does`() {
         assertEquals(CachePolicy.MINUTE, declaredCachePolicy("getTransactionsByOriginOrDelegator"))
+        assertEquals(CachePolicy.MINUTE, declaredCachePolicy("getTransactionsByContract"))
     }
 
     private fun declaredCachePolicy(method: String): CachePolicy? =

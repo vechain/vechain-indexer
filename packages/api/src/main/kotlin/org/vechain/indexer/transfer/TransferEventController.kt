@@ -261,7 +261,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     )
     @CommonApiResponses
     @PaginationParameters
-    @CacheFor(CachePolicy.MINUTE)
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getFungibleTokensContractsByAddress(
         @AddressParameter(
             description =
