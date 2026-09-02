@@ -132,7 +132,7 @@ module "ecs-lb-service-api" {
   assign_public_ip                  = false
   ecr_repo_uri                      = each.value.api.ecr_common_repo
   app_name                          = "${each.key}-api"
-  ecr_image_tag                     = each.value.image_version
+  ecr_image_tag                     = local.service_image_version[each.key].api
   project                           = var.project
   cpu                               = each.value.api.cpu
   memory                            = each.value.api.memory
@@ -162,6 +162,10 @@ module "ecs-lb-service-api" {
     {
       name  = "APPLICATION_NAME"
       value = "api"
+    },
+    {
+      name  = "APP_VERSION"
+      value = local.service_image_version[each.key].api
     },
     {
       name  = "ENVIRONMENT_NAME"
@@ -435,7 +439,7 @@ module "ecs-backend-service" {
   is_create_repo                     = false
   secrets_enable                     = false
   ecr_repo_uri                       = each.value.indexer.ecr_common_repo
-  ecr_image_tag                      = each.value.image_version
+  ecr_image_tag                      = local.service_image_version[each.key].indexer
   app_name                           = "${each.key}-indexer"
   project                            = var.project
   cpu                                = each.value.indexer.cpu
@@ -460,6 +464,10 @@ module "ecs-backend-service" {
     {
       name  = "APPLICATION_NAME"
       value = "indexer"
+    },
+    {
+      name  = "APP_VERSION"
+      value = local.service_image_version[each.key].indexer
     },
     {
       name  = "ENVIRONMENT_NAME"

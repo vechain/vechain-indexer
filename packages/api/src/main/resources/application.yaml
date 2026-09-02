@@ -1,3 +1,6 @@
+app:
+  version: ${APP_VERSION:UNKNOWN}
+
 server:
   port: ${SERVER_PORT:8080}
   error:

@@ -17,8 +17,11 @@ gradle/docker.gradle.properties
 !packages/indexer/
 !packages/common/
 
-# Exclude test source dirs
+# Exclude inputs the Gradle build never reads, so they stay out of the
+# content hash that decides whether an image needs rebuilding
 packages/**/src/test/
+packages/*/scripts/
+packages/*/.env.example*
 
 # Exclude build outputs (except pre-built JARs for Dockerfile.prebuilt)
 packages/*/build/**

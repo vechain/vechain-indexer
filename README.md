@@ -204,6 +204,26 @@ Recommended sequence:
 4. Run **Stop or Start Dead Prod Environment Services** with `start`.
 5. Run the schema or regression tests against the dead environment before switching traffic.
 
+## Content-Addressed Images
+
+An image's identity is the hash of its Docker build context, printed by `make content-hash`
+(`.github/workflows/scripts/content_hash.sh`). Each service is hashed separately over the shared
+build files plus `packages/common` and its own package, which is what `.dockerignore` lets into the
+context.
+
+The PR build resolves the hash with the **default branch's** copy of that script, so a branch cannot
+rename its own content into a tag a later release would reuse. It pushes `content.<hash>` to GHCR and
+points `pr.<n>.<sha>` at it. A release build
+re-tags the same manifest instead of building whenever that hash is already published — so a
+terraform-, workflow- or docs-only release does no Docker work at all, and a release that touched
+only the API leaves the indexer image alone.
+
+`APP_VERSION` is therefore not baked into the image; it comes from the ECS task definition at
+runtime, so cutting a new version does not change image content. The trade-off is that a release
+reusing an image does not pick up new Alpine packages — the base image tag is in the hash, so a
+Renovate base bump is what refreshes them. Dispatch the GHCR publish with `force_rebuild` to rebuild
+without one.
+
 ## Deployment & Testing
 
 The VeWorld Indexer can be deployed via two strategies: Regular or Blue/Green. To trigger a deployment, run the [Prod Deployment Workflow](https://github.com/vechain/veworld-indexer/actions/workflows/deploy-prod.yml). You will be prompted to select the deployment strategy and the version number. Please enter a version in the format `major.minor.patch` - this will be used to create a new release & tag. If in doubt about which environment is currently live, run the [Identify Live/Dead Environments](https://github.com/vechain/veworld-indexer/actions/workflows/identify-live-color.yml) workflow with the default arguments.

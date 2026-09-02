@@ -6,7 +6,6 @@ services:
       context: .
       args:
         PACKAGE_NAME: indexer
-        APP_VERSION: "v.0.0.1" # This is hardcode for the local env but will pick up the build tag version when building in the pipeline
       secrets:
         - gradle_props
     container_name: vechain-indexer
@@ -32,7 +31,6 @@ services:
       context: .
       args:
         PACKAGE_NAME: api
-        APP_VERSION: "v.0.0.1" # This is hardcode for the local env but will pick up the build tag version when building in the pipeline
       secrets:
         - gradle_props
     container_name: vechain-indexer-api
