@@ -352,6 +352,34 @@ resource "aws_wafv2_web_acl" "this" {
     }
   }
 
+  # Deliberately no scope_down: unlike the blanket rule this ignores the
+  # exemptions, so the dry run shows every concentrated source.
+  dynamic "rule" {
+    for_each = var.enable_high_rate_count_rule ? [1] : []
+    content {
+      name     = "waf--custom-AWS-count-high-rate-ip"
+      priority = lookup(var.rule_priorities, "high_rate_count", 0)
+
+      action {
+        count {}
+      }
+
+      statement {
+        rate_based_statement {
+          aggregate_key_type    = "IP"
+          limit                 = var.high_rate_count_limit
+          evaluation_window_sec = 300
+        }
+      }
+
+      visibility_config {
+        cloudwatch_metrics_enabled = true
+        metric_name                = "waf--custom-AWS-count-high-rate-ip"
+        sampled_requests_enabled   = true
+      }
+    }
+  }
+
   rule {
     name     = "waf--custom-AWS-block-health-check-endpoints"
     priority = var.rule_priorities["block_health_check"]
@@ -408,6 +436,15 @@ resource "aws_wafv2_web_acl_logging_configuration" "this" {
         condition {
           action_condition {
             action = "BLOCK"
+          }
+        }
+
+        dynamic "condition" {
+          for_each = var.logging_filter_include_count ? [1] : []
+          content {
+            action_condition {
+              action = "COUNT"
+            }
           }
         }
       }

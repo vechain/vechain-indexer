@@ -49,6 +49,24 @@ variable "python_ua_rate_limit" {
   default     = 50
 }
 
+variable "enable_high_rate_count_rule" {
+  type        = bool
+  description = "Add a COUNT-only rate rule flagging IPs above high_rate_count_limit. It never blocks — it measures what a tighter limit would catch."
+  default     = false
+}
+
+variable "high_rate_count_limit" {
+  type        = number
+  description = "Requests per evaluation window per IP before the COUNT-only rule flags them. Set well under rate_limit; that gap is what the dry run measures."
+  default     = 300
+}
+
+variable "logging_filter_include_count" {
+  type        = bool
+  description = "Also keep COUNT-matched requests in the WAF logs, not only BLOCKed ones. Every request from a flagged IP is logged, so read the counted volume before switching this on."
+  default     = false
+}
+
 variable "rule_priorities" {
   type        = map(number)
   description = "Rule key to WAF priority. Priorities differ between the mainnet and testnet ACLs; they are passed in rather than normalised so the import produces an empty plan."

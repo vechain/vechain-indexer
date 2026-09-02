@@ -40,6 +40,10 @@ cloudfront_waf:
       -                          2a05:d018:12e6:f100::/56
     # Populating this makes the apply read the bypass token from Secrets Manager.
     rate_limit_bypass_header_name: x-rate-limit-bypass
+    # Dry run for a tighter limit: flags IPs over this, blocks nothing.
+    high_rate_count_limit:       300
+    # Logs every request from a flagged IP. Read the counted volume first.
+    logging_filter_include_count: false
   testnet:
     rate_limit:                  2000
     enable_rate_limit_exemptions: false

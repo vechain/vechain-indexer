@@ -329,6 +329,50 @@
                                              "calcs": ["last", "mean", "max"]
                                            }
                                }
+                  },
+                  {
+                    "id": 133,
+                    "type": "timeseries",
+                    "title": "WAF — counted requests by rule (dry run)",
+                    "description": "AWS/WAFV2 CountedRequests (Sum) split by Rule. A COUNT rule flags a request and lets it through, so this is what a tighter limit would have caught — nothing here was blocked. waf--custom-AWS-count-high-rate-ip trips above high_rate_count_limit requests per IP per 5 min and carries none of the rate-limit exemptions, so the block-explorer proxy egress is counted too. Flat zero means no single IP is concentrated enough to cross the threshold, which is what would rule out an IP-based limit.",
+                    "gridPos": {"h": 8, "w": 24, "x": 0, "y": 17},
+                    "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                    "targets": [
+                                 {
+                                   "refId": "A",
+                                   "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                                   "namespace": "AWS/WAFV2",
+                                   "metricName": "CountedRequests",
+                                   "statistic": "Sum",
+                                   "dimensions": {
+                                                   "WebACL": "shared-veworld-cloudfront-waf",
+                                                   "Rule": ["waf--custom-AWS-count-high-rate-ip"]
+                                                 },
+                                   "region": "us-east-1",
+                                   "period": "60",
+                                   "matchExact": true,
+                                   "metricEditorMode": 0,
+                                   "metricQueryType": 0,
+                                   "label": "${PROP('Dim.Rule')}"
+                                 }
+                               ],
+                    "fieldConfig": {
+                                     "defaults": {
+                                                   "unit": "short",
+                                                   "min": 0,
+                                                   "custom": {
+                                                               "fillOpacity": 30,
+                                                               "stacking": {"mode": "normal", "group": "A"}
+                                                             }
+                                                 }
+                                   },
+                    "options": {
+                                 "legend": {
+                                             "displayMode": "table",
+                                             "placement": "bottom",
+                                             "calcs": ["last", "mean", "max"]
+                                           }
+                               }
                   }
                 ]
     },
