@@ -15,6 +15,8 @@ import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.exception.ResourceNotFoundException
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -37,6 +39,7 @@ open class ContractsController(private val contractsService: ContractsService) {
         description = "The address of the contract to retrieve.",
     )
     @CommonApiResponses
+    @CacheFor(CachePolicy.DAILY)
     open fun getContract(@ValidAddress @PathVariable address: Address): Contract =
         contractsService.getByAddress(address)
             ?: throw ResourceNotFoundException("Contract not found for address $address")
@@ -51,6 +54,7 @@ open class ContractsController(private val contractsService: ContractsService) {
     )
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.HOURLY)
     open fun getContractsByMaster(
         @ValidAddress @PathVariable address: Address,
         @RequestParam(required = false) page: Int?,

@@ -93,6 +93,21 @@ test_endpoint() {
         print_info "Cache status: Unknown"
     fi
     
+    # The endpoint owns the TTL, so the header it sent is what this suite is checking.
+    actual_cache_control=$(echo "$response" | grep -i "^cache-control:" | head -1 |
+        cut -d: -f2- | tr -d '\r' | sed 's/^ *//;s/ *$//')
+    if [ "$expected_cache_control" = "graded" ]; then
+        if echo "$actual_cache_control" | grep -qE "^public, max-age=[0-9]+$"; then
+            print_success "Cache-Control: $actual_cache_control (graded by content age)"
+        else
+            print_error "Cache-Control: '$actual_cache_control' is not a graded max-age"
+        fi
+    elif [ "$actual_cache_control" = "$expected_cache_control" ]; then
+        print_success "Cache-Control: $actual_cache_control"
+    else
+        print_error "Cache-Control: expected '$expected_cache_control', got '$actual_cache_control'"
+    fi
+
     # Check HTTP status
     status_code=$(echo "$response" | grep "HTTP" | head -1 | awk '{print $2}')
     if [ "$status_code" = "200" ]; then
@@ -120,95 +135,81 @@ echo ""
 echo "Starting tests at: $(date)" | tee -a "$LOG_FILE"
 echo "" | tee -a "$LOG_FILE"
 
-# Test 1: 1-hour cache behavior
+# Expectations are copied from each endpoint's @CacheFor; "graded" means max-age from content age.
 test_endpoint \
     "1-hour NFT Holders" \
     "/api/v1/stargate/nft-holders/historic/1-hour" \
-    "hourly (1 h TTL)"
+    "public, max-age=600"
 
-# Test 2: 1-day cache behavior
 test_endpoint \
     "1-day NFT Holders" \
     "/api/v1/stargate/nft-holders/historic/1-day" \
-    "day (24 h TTL)"
+    "public, max-age=600"
 
-# Test 3: 1-week cache behavior
 test_endpoint \
     "1-week NFT Holders" \
     "/api/v1/stargate/nft-holders/historic/1-week" \
-    "weekly (24 h TTL)"
+    "public, max-age=3600"
 
-# Test 4: 1-month cache behavior
 test_endpoint \
     "1-month NFT Holders" \
     "/api/v1/stargate/nft-holders/historic/1-month" \
-    "monthly (24 h TTL)"
+    "public, max-age=86400"
 
-# Test 5: B3TR Global Overview
 test_endpoint \
     "B3TR Global Overview" \
     "/api/v1/b3tr/actions/global/overview" \
-    "day (24 h TTL)"
+    "public, max-age=86400"
 
-# Test 6: B3TR Apps Overview (with wildcard)
-# Note: Replace * with an actual app ID for testing
+# Note: replace the app id with a real one for a 200.
 test_endpoint \
     "B3TR Apps Overview" \
     "/api/v1/b3tr/actions/apps/example-app/overview" \
-    "hourly (1 h TTL)"
+    "public, max-age=3600"
 
-# Test 7: B3TR Galaxy Members Overview
 test_endpoint \
     "B3TR Galaxy Members Overview" \
     "/api/v1/b3tr/galaxy-members/level-overview" \
-    "hourly (1 h TTL)"
+    "public, max-age=3600"
 
-# Test 8: Stargate Total VTHO Claimed Historic (with wildcard)
 test_endpoint \
     "Stargate VTHO Claimed 1-day" \
     "/api/v1/stargate/total-vtho-claimed/historic/1-day" \
-    "hourly (1 h TTL)"
+    "public, max-age=600"
 
-# Test 9: Stargate Total VET Staked Historic (with wildcard)
 test_endpoint \
     "Stargate VET Staked 1-day" \
     "/api/v1/stargate/total-vet-staked/historic/1-day" \
-    "hourly (1 h TTL)"
+    "public, max-age=600"
 
-# Test 10: B3TR Proposal Results (with wildcard)
-# Note: Replace * with an actual proposal ID for testing
+# Note: replace the proposal id with a real one for a 200.
 test_endpoint \
     "B3TR Proposal Results" \
     "/api/v1/b3tr/proposals/example-proposal/results" \
-    "hourly (1 h TTL)"
+    "public, max-age=600"
 
-# Test 11: Blocks head range — origin sends s-maxage=10
+# The head range never settles, so it falls back to the volatile tier.
 test_endpoint \
     "Blocks Head Range" \
     "/api/v1/blocks?size=5" \
-    "origin-controlled (origin sends s-maxage=10)"
+    "public, max-age=0, s-maxage=10"
 
-# Test 12: Blocks historical range — origin grades max-age by the age of the newest block
 test_endpoint \
     "Blocks Historical Range" \
     "/api/v1/blocks?from=1000&size=5" \
-    "origin-controlled (origin grades max-age by block age)"
+    "graded"
 
-# Test 13: Transaction by ID — origin grades max-age by the containing block's age
-# Note: Replace the id with a real transaction to see a graded header rather than a 404.
+# Note: replace the id with a real transaction to see a graded header rather than a 404.
 test_endpoint \
     "Transaction By Id" \
     "/api/v1/transactions/0x0000000000000000000000000000000000000000000000000000000000000000" \
-    "origin-controlled (origin grades max-age by block age)"
+    "graded"
 
-# Additional test: Default behavior (uncached endpoint)
-print_header "Testing: Default Behavior (Uncached)"
-echo "This tests an endpoint that doesn't match any specific cache behavior"
-echo ""
+# springdoc sends no header of its own, so the edge behaviour still picks this one.
 test_endpoint \
-    "Default Behavior Test" \
-    "/api/v1/health" \
-    "default (no cache)"
+    "API Docs" \
+    "/api-docs" \
+    ""
 
 # Summary
 print_header "Test Suite Complete"

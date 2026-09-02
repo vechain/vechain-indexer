@@ -3,7 +3,6 @@ package org.vechain.indexer.blocks
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
-import org.springframework.http.HttpHeaders
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
@@ -14,9 +13,10 @@ import org.vechain.indexer.constants.BLOCKS_PATH
 import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationSize
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
-import org.vechain.indexer.rest.VOLATILE_CACHE_CONTROL
-import org.vechain.indexer.rest.cacheControlFor
+import org.vechain.indexer.rest.cachedByAge
 import org.vechain.indexer.validation.ValidNonNegativeLong
 import org.vechain.indexer.validation.ValidPageSize
 
@@ -53,12 +53,12 @@ open class BlockController(private val blockService: BlockService) {
     )
     @PaginationSize
     @CommonApiResponses
+    @CacheFor(CachePolicy.VOLATILE)
     open fun getBlocks(
         @ValidNonNegativeLong @RequestParam(required = false) from: Long?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
     ): ResponseEntity<PaginatedResponse<IndexedBlock>> {
         val range = blockService.getBlocks(from, size)
-        val cacheControl = range.maxAgeSeconds?.let(::cacheControlFor) ?: VOLATILE_CACHE_CONTROL
-        return ResponseEntity.ok().header(HttpHeaders.CACHE_CONTROL, cacheControl).body(range.page)
+        return cachedByAge(range.settledAt, range.page)
     }
 }

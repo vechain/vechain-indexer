@@ -176,7 +176,7 @@ curl -H "aws-cf-cd-staging: testnet" \
 **Solution:**
 1. Wait a few seconds between requests
 2. Use the exact same URL (query parameters matter!)
-3. Check if the cache policy TTL has expired (1 hour for `hourly`, 24 hours for `day`, `weekly` and `monthly`)
+3. Check whether the TTL the endpoint sent has expired — read `cache-control` on the response
 
 ### Issue: 404 Not Found
 **Solution:**
@@ -184,20 +184,22 @@ curl -H "aws-cf-cd-staging: testnet" \
 2. Replace wildcard paths (*/example) with actual IDs
 3. Check that the backend service is running
 
-## Cache Policy Mapping
+## Where the TTLs Live
 
-| Cache Behavior | Path Pattern | Cache Policy | TTL (Staging) |
-|----------------|-------------|--------------|---------------|
-| 1-hour | `/api/v1/stargate/nft-holders/historic/1-hour` | hourly | 1 hour |
-| 1-day | `/api/v1/stargate/nft-holders/historic/1-day` | day | 24 hours |
-| 1-week | `/api/v1/stargate/nft-holders/historic/1-week` | weekly | 24 hours |
-| 1-month | `/api/v1/stargate/nft-holders/historic/1-month` | monthly | 24 hours |
-| B3TR Global | `/api/v1/b3tr/actions/global/overview` | day | 24 hours |
-| B3TR Apps | `/api/v1/b3tr/actions/apps/*/overview` | hourly | 1 hour |
-| B3TR Galaxy | `/api/v1/b3tr/galaxy-members/level-overview` | hourly | 1 hour |
-| VTHO Claimed | `/api/v1/stargate/total-vtho-claimed/historic/*` | hourly | 1 hour |
-| VET Staked | `/api/v1/stargate/total-vet-staked/historic/*` | hourly | 1 hour |
-| Proposals | `/api/v1/b3tr/proposals/*/results` | hourly | 1 hour |
+They are not in this stack. Each endpoint carries a `@CacheFor(CachePolicy.…)` beside its
+`@GetMapping`, the response says so in `cache-control`, and the default behaviour's
+`origin-controlled` policy obeys it. To find or change a TTL, open the controller — see
+AGENTS.md "Endpoints Own Their Cache TTL".
+
+`cache-control` on the response is therefore the thing to assert.
+`test-staging-cache-behaviors.sh` does exactly that, and its expectations are copied from
+the annotations.
+
+| Behaviour | Path Pattern | Cache Policy | Why it is still here |
+|---|---|---|---|
+| api-docs | `/api-docs`, `/api-docs/*` | 10-minutes | springdoc sends no `cache-control` |
+| swagger-ui | `/swagger-ui/*` | hourly | static webjars, versioned with springdoc |
+| actuator | `/actuator/*` | default | liveness must never be answered from a cache |
 
 ## Monitoring in AWS Console
 
@@ -214,7 +216,7 @@ curl -H "aws-cf-cd-staging: testnet" \
 1. **Verify Cache Hit Rates** - Should increase after initial requests
 2. **Test with Production Header** - Once confident, remove the staging header
 3. **Monitor Performance** - Check response times and cache hit rates in CloudFront metrics
-4. **Update TTLs** - Adjust cache policy TTLs in shared.yml if needed
+4. **Update TTLs** - Change the endpoint's `@CacheFor`; no Terraform apply is involved
 
 ---
 

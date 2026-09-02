@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
+import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.VALIDATORS_PATH
@@ -19,7 +20,10 @@ import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.PriceOracleUnavailableResponse
 import org.vechain.indexer.exception.ResourceNotFoundException
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
+import org.vechain.indexer.rest.cachedByAge
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.HexUtils
@@ -113,6 +117,7 @@ open class ValidatorController(private val service: ValidatorService) {
     @CommonApiResponses
     @PriceOracleUnavailableResponse
     @PaginationParameters
+    @CacheFor(CachePolicy.HOURLY)
     open fun getValidators(
         @RequestParam(required = false) endorser: String?,
         @RequestParam(required = false) validatorId: String?,
@@ -152,6 +157,7 @@ open class ValidatorController(private val service: ValidatorService) {
     )
     @CommonApiResponses
     @PriceOracleUnavailableResponse
+    @CacheFor(CachePolicy.MINUTE)
     open fun getValidatorById(@PathVariable @ValidAddress validatorId: Address): ValidatorResponse {
         val normalised = HexUtils.normalise(validatorId.value)
         return service.getValidatorById(normalised)
@@ -185,6 +191,7 @@ open class ValidatorController(private val service: ValidatorService) {
     )
     @PaginationParameters
     @CommonApiResponses
+    @CacheFor(CachePolicy.MINUTE)
     open fun getValidatorBlocks(
         @RequestParam(required = false) blockNumber: Long?,
         @ValidAddress @RequestParam(required = false) validator: Address?,
@@ -222,6 +229,7 @@ open class ValidatorController(private val service: ValidatorService) {
     )
     @PaginationParameters
     @CommonApiResponses
+    @CacheFor(CachePolicy.MINUTE)
     open fun getValidatorBlockRewards(
         @ValidAddress @RequestParam(required = false) validator: Address?,
         @RequestParam(required = false) blockNumber: Long?,
@@ -248,6 +256,7 @@ open class ValidatorController(private val service: ValidatorService) {
     )
     @AddressParameter(name = "validator", description = "Optional validator address to filter by")
     @CommonApiResponses
+    @CacheFor(CachePolicy.MINUTE)
     open fun getBlockByBlockNumber(
         @PathVariable blockNumber: Long,
         @ValidAddress @RequestParam(required = false) validator: Address?,
@@ -279,15 +288,19 @@ open class ValidatorController(private val service: ValidatorService) {
         required = true,
     )
     @CommonApiResponses
+    @CacheFor(CachePolicy.VOLATILE)
     open fun getHistoricValidatorRewardsRange(
         @PathVariable @ValidAddress validator: Address,
         @RequestParam startTimestamp: Long,
         @RequestParam endTimestamp: Long,
-    ): List<ValidatorBlock> =
-        service.getValidatorHistoricBlocks(
-            startTimestamp,
+    ): ResponseEntity<List<ValidatorBlock>> =
+        cachedByAge(
             endTimestamp,
-            validator.value.lowercase(),
+            service.getValidatorHistoricBlocks(
+                startTimestamp,
+                endTimestamp,
+                validator.value.lowercase(),
+            ),
         )
 
     // -- Deprecated: kept for client switch-over only. All legacy logic is inlined here so the
@@ -314,6 +327,7 @@ open class ValidatorController(private val service: ValidatorService) {
     )
     @AddressParameter(name = "validator", description = "Optional validator address to filter by")
     @CommonApiResponses
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getMissedBlocksPercentage(
         @RequestParam timeframe: MissedBlocksTimeframe,
         @ValidAddress @RequestParam(required = false) validator: Address?,

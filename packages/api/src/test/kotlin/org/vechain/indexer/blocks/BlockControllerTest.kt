@@ -4,15 +4,16 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.verify
+import java.time.Instant
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.http.HttpHeaders
-import org.vechain.indexer.rest.MAX_CACHE_AGE_SECONDS
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.PaginationDetail
-import org.vechain.indexer.rest.VOLATILE_CACHE_CONTROL
 
 @ExtendWith(MockKExtension::class)
 internal class BlockControllerTest {
@@ -26,35 +27,35 @@ internal class BlockControllerTest {
         controller = BlockController(blockService)
     }
 
-    private fun range(maxAgeSeconds: Long?) =
+    private fun range(settledAt: Long?) =
         BlockRange(
             page = PaginatedResponse(emptyList<IndexedBlock>(), PaginationDetail(true, "999")),
-            maxAgeSeconds = maxAgeSeconds,
+            settledAt = settledAt,
         )
 
-    private fun cacheControl(maxAgeSeconds: Long?): String? {
-        every { blockService.getBlocks(any(), any()) } returns range(maxAgeSeconds)
+    private fun cacheControl(settledAt: Long?): String? {
+        every { blockService.getBlocks(any(), any()) } returns range(settledAt)
         return controller.getBlocks(1000L, null).headers.getFirst(HttpHeaders.CACHE_CONTROL)
     }
 
     @Test
-    fun `a cacheable page carries the age the service graded it at`() {
-        assertEquals("public, max-age=3600", cacheControl(3600L))
-    }
+    fun `a settled page is cacheable for as long as it has been settled`() {
+        val anHourAgo = Instant.now().epochSecond - 3600
 
-    @Test
-    fun `deep history carries the capped age`() {
-        assertEquals("public, max-age=$MAX_CACHE_AGE_SECONDS", cacheControl(MAX_CACHE_AGE_SECONDS))
+        val maxAge = cacheControl(anHourAgo)?.substringAfter("max-age=")?.toLong()
+
+        // Wall-clock bound rather than exact: the age is computed against the real clock.
+        assertTrue(maxAge != null && maxAge in 3600L..3700L, "unexpected age: $maxAge")
     }
 
     @Test
     fun `a page that can still change gets the short shared TTL`() {
-        assertEquals(VOLATILE_CACHE_CONTROL, cacheControl(null))
+        assertEquals(CachePolicy.VOLATILE.headerValue, cacheControl(null))
     }
 
     @Test
     fun `the page is returned as the response body`() {
-        val expected = range(3600L)
+        val expected = range(1_700_000_000L)
         every { blockService.getBlocks(1000L, 50) } returns expected
 
         val result = controller.getBlocks(1000L, 50)

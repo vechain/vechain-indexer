@@ -10,14 +10,11 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.domain.Page
 import org.springframework.http.HttpHeaders
 import org.vechain.indexer.exception.ResourceNotFoundException
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.MAX_CACHE_AGE_SECONDS
-import org.vechain.indexer.rest.PaginatedResponse
-import org.vechain.indexer.rest.PaginationDetail
-import org.vechain.indexer.rest.VOLATILE_CACHE_CONTROL
-import org.vechain.indexer.thor.Address
 
 @ExtendWith(MockKExtension::class)
 internal class TransactionControllerTest {
@@ -100,28 +97,22 @@ internal class TransactionControllerTest {
     }
 
     @Test
-    fun `the latest transactions are cacheable for a block, not indefinitely`() {
-        every { transactionService.findLatest(any(), any()) } returns
-            PaginatedResponse(emptyList(), PaginationDetail(hasNext = false))
-
-        val result = controller.getLatestTransactions(size = null, cursor = null)
-
-        assertEquals(VOLATILE_CACHE_CONTROL, result.headers.getFirst(HttpHeaders.CACHE_CONTROL))
+    fun `the head listing is cacheable for a block, not indefinitely`() {
+        // It moves with the head, so it may not outlive a single block in a shared cache.
+        assertEquals(CachePolicy.VOLATILE, declaredCachePolicy("getLatestTransactions"))
     }
 
     @Test
-    fun `contract transactions are cacheable for a block, not indefinitely`() {
-        every { transactionService.findByContractAddress(any(), any()) } returns
-            Page.empty<IndexedTransaction>()
-
-        val result =
-            controller.getTransactionsByContract(
-                contractAddress = Address("0x0000000000000000000000000000000000000001"),
-                page = null,
-                size = null,
-                direction = null,
-            )
-
-        assertEquals(VOLATILE_CACHE_CONTROL, result.headers.getFirst(HttpHeaders.CACHE_CONTROL))
+    fun `a transaction listing tolerates a stale minute, as account history does`() {
+        assertEquals(CachePolicy.MINUTE, declaredCachePolicy("getTransactionsByOriginOrDelegator"))
+        assertEquals(CachePolicy.MINUTE, declaredCachePolicy("getTransactionsByContract"))
     }
+
+    private fun declaredCachePolicy(method: String): CachePolicy? =
+        TransactionController::class
+            .java
+            .methods
+            .single { it.name == method }
+            .getAnnotation(CacheFor::class.java)
+            ?.policy
 }

@@ -26,6 +26,18 @@ Write reviewer-facing prose at final length — don't draft long and trim. The b
 
 Merging still applies nothing. `.github/workflows/shared-infra.yml` blocks any PR touching `terraform/vpc/**` or `terraform/cloudfront/**` until the `shared-infra-ack` label is applied, and plans the affected stack for review — read that plan, because the next deploy applies it. See `AGENTS.md` "One Deploy Applies Every Stack" and `terraform/cloudfront/README.md`.
 
+## Endpoints Own Their Cache TTL
+
+Every endpoint declares its own reuse window with `@CacheFor(CachePolicy.X)` beside its
+`@GetMapping`; `CacheControlAdvice` turns that into the `Cache-Control` header, and
+CloudFront's default `origin-controlled` cache policy obeys it. No API TTL lives in
+Terraform. `CacheControlCoverageTest` fails the build on an endpoint without one.
+
+For a TTL only the response knows, use `cachedByAge(blockTimestamp, body)` (the content's
+own age) or `cachedFor(policy, body)` (a policy picked per request) — the annotation stays
+as the floor. See `AGENTS.md` "Endpoints Own Their Cache TTL" and
+`terraform/cloudfront/README.md`.
+
 ## Dependencies
 
 - The `indexer-core` library (`org.vechain:indexer-core`) source code is at https://github.com/vechain/indexer-core. Refer to it for interfaces like `Indexer`, `BlockIndexer`, the `Status` enum, and other core types.

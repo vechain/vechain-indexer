@@ -12,6 +12,7 @@ import org.springframework.data.mongodb.core.find
 import org.springframework.data.mongodb.core.findOne
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
+import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -28,7 +29,10 @@ import org.vechain.indexer.docs.PriceOracleUnavailableResponse
 import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.prices.PriceFeed
 import org.vechain.indexer.prices.PriceFeedService
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
+import org.vechain.indexer.rest.cachedByAge
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.HexUtils
@@ -74,6 +78,7 @@ open class ValidatorV2Controller(
     @CommonApiResponses
     @PriceOracleUnavailableResponse
     @PaginationParameters
+    @CacheFor(CachePolicy.MINUTE)
     open fun getValidators(
         @RequestParam(required = false) status: List<Status>?,
         @RequestParam(required = false) endorser: String?,
@@ -137,10 +142,12 @@ open class ValidatorV2Controller(
         required = true,
     )
     @CommonApiResponses
+    @CacheFor(CachePolicy.VOLATILE)
     open fun getSlotStats(
         @ValidNonNegativeLong @RequestParam startTimestamp: Long,
         @ValidNonNegativeLong @RequestParam endTimestamp: Long,
-    ): List<ValidatorSlotStats> = service.getSlotStats(startTimestamp, endTimestamp)
+    ): ResponseEntity<List<ValidatorSlotStats>> =
+        cachedByAge(endTimestamp, service.getSlotStats(startTimestamp, endTimestamp))
 
     @GetMapping("/{validatorId}/slots")
     @Operation(
@@ -167,19 +174,22 @@ open class ValidatorV2Controller(
         required = true,
     )
     @CommonApiResponses
+    @CacheFor(CachePolicy.VOLATILE)
     open fun getSlotStatsForValidator(
         @PathVariable @ValidAddress validatorId: Address,
         @ValidNonNegativeLong @RequestParam startTimestamp: Long,
         @ValidNonNegativeLong @RequestParam endTimestamp: Long,
-    ): ValidatorSlotStats {
+    ): ResponseEntity<ValidatorSlotStats> {
         val normalised = HexUtils.normalise(validatorId.value)
-        return service.getSlotStatsForValidator(startTimestamp, endTimestamp, normalised)
-            ?: ValidatorSlotStats(
-                validator = normalised,
-                proposedBlocks = 0L,
-                missedSlots = 0L,
-                missedSlotRatio = 0.0,
-            )
+        val stats =
+            service.getSlotStatsForValidator(startTimestamp, endTimestamp, normalised)
+                ?: ValidatorSlotStats(
+                    validator = normalised,
+                    proposedBlocks = 0L,
+                    missedSlots = 0L,
+                    missedSlotRatio = 0.0,
+                )
+        return cachedByAge(endTimestamp, stats)
     }
 
     @GetMapping("/{validatorId}")
@@ -195,6 +205,7 @@ open class ValidatorV2Controller(
     )
     @CommonApiResponses
     @PriceOracleUnavailableResponse
+    @CacheFor(CachePolicy.MINUTE)
     open fun getValidatorById(
         @PathVariable @ValidAddress validatorId: Address
     ): ValidatorV2Response {

@@ -23,6 +23,8 @@ import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.PaginationSize
 import org.vechain.indexer.docs.TransferEventTypeParameter
 import org.vechain.indexer.exception.BadRequestException
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -56,6 +58,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     @CommonApiResponses
     @PaginationSize
     @Cursor
+    @CacheFor(CachePolicy.VOLATILE)
     open fun getLatestTransfers(
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @ValidCursor @RequestParam(required = false) cursor: String?,
@@ -74,6 +77,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     @BeforeParameter
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.MINUTE)
     open fun getTransferEvents(
         @AddressParameter(
             name = "address",
@@ -133,6 +137,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     @BeforeParameter
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.MINUTE)
     open fun getTransferEventsByFrom(
         @AddressParameter(description = "From address of the transfer event", required = true)
         @ValidAddress
@@ -178,6 +183,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     @BeforeParameter
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.MINUTE)
     open fun getTransferEventsByTo(
         @AddressParameter(description = "To address of the transfer event", required = true)
         @ValidAddress
@@ -226,6 +232,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     )
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.MINUTE)
     open fun getTransfersForBlock(
         @ValidAddressList @RequestParam addresses: List<Address>,
         @RequestParam blockNumber: Long,
@@ -254,6 +261,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     )
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getFungibleTokensContractsByAddress(
         @AddressParameter(
             description =

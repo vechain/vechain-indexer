@@ -20,6 +20,8 @@ import org.vechain.indexer.docs.NftHistoryEventNameParameter
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.TokenIdParameter
 import org.vechain.indexer.history.IndexedHistoryEvent
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -53,6 +55,7 @@ open class NftController(
     )
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.MINUTE)
     open fun getOwnedNFTs(
         @AddressParameter(required = true, description = "Address of the NFT owner")
         @ValidAddress
@@ -89,6 +92,7 @@ open class NftController(
     )
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.MINUTE)
     open fun getContractsByNFTOwner(
         @AddressParameter(name = "owner", required = true)
         @ValidAddress
@@ -120,6 +124,7 @@ open class NftController(
     @BeforeParameter
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.MINUTE)
     open fun getNftHistory(
         @ValidAddress @RequestParam contractAddress: Address,
         @ValidTokenId @RequestParam tokenId: String,

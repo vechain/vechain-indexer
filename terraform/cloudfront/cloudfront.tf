@@ -78,7 +78,7 @@ module "mainnet_cloudfront" {
   ]
 
   waf_web_acl              = local.waf_arn
-  cache_policy_id          = try(local.cache_policy_map["default"].cache_policy_id, "")
+  cache_policy_id          = try(local.cache_policy_map["origin-controlled"].cache_policy_id, "")
   headers_policy_id        = try(local.env_config.default_headers_policy_id, "")
   origin_request_policy_id = try(local.env_config.default_origin_request_policy_id, "")
 
@@ -112,7 +112,7 @@ module "testnet_cloudfront" {
   ]
 
   waf_web_acl              = local.testnet_waf_arn
-  cache_policy_id          = try(local.cache_policy_map["default"].cache_policy_id, "")
+  cache_policy_id          = try(local.cache_policy_map["origin-controlled"].cache_policy_id, "")
   headers_policy_id        = try(local.env_config.default_headers_policy_id, "")
   origin_request_policy_id = try(local.env_config.default_origin_request_policy_id, "")
 

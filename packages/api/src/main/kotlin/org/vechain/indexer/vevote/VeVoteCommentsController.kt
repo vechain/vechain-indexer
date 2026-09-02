@@ -12,6 +12,8 @@ import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.ProposalIdParameter
 import org.vechain.indexer.docs.SupportParameter
 import org.vechain.indexer.proposal.ProposalId
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -33,6 +35,7 @@ open class VeVoteCommentsController(private val vevoteService: VeVoteService) {
     @SupportParameter
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.MINUTE)
     open fun getComments(
         @ValidProposalId @RequestParam(required = false) proposalId: ProposalId?,
         @ValidAddress @RequestParam(required = false) voter: Address?,

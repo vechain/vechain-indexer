@@ -96,8 +96,7 @@ cache_policies_v1:
     enable_gzip: true
     enable_brotli: true
 
-  # The only policy with min_ttl != default_ttl != max_ttl, so the only one where CloudFront honours
-  # the origin's Cache-Control. Endpoints that vary their own TTL per response use this.
+  # The default behaviour's policy: min != default != max is what makes CloudFront obey the origin.
   - id: "origin-controlled"
     name: "veworld_origin_controlled_cache_policy"
     create_header_policy: false

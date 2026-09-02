@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.VEVOTE_PATH
 import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -44,6 +46,7 @@ open class HistoricController(private val historicApiService: HistoricApiService
         schema = Schema(type = "boolean"),
     )
     @CommonApiResponses
+    @CacheFor(CachePolicy.HOURLY)
     open fun getAllProposals(
         @RequestParam(required = false) proposalId: String?,
         @ValidAddress @RequestParam(required = false) contractAddress: Address?,

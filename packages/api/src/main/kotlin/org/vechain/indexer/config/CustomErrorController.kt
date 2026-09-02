@@ -20,6 +20,8 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.exception.ExceptionResponse
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 
 /**
  * Custom error controller that returns JSON responses for errors forwarded by the servlet container
@@ -31,6 +33,7 @@ import org.vechain.indexer.exception.ExceptionResponse
 class CustomErrorController : ErrorController {
 
     @RequestMapping("/error", produces = [MediaType.APPLICATION_JSON_VALUE])
+    @CacheFor(CachePolicy.VOLATILE)
     fun handleError(request: HttpServletRequest): ResponseEntity<ExceptionResponse> {
         val statusCode =
             request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE) as? Int

@@ -17,6 +17,8 @@ import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.exception.BadRequestException
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.utils.PaginationUtils
@@ -50,6 +52,7 @@ open class TreasuryTransferController(
     @BeforeParameter
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.MINUTE)
     open fun getTreasuryTransfers(
         @RequestParam(required = false) category: String?,
         @ValidNonNegativeLong @RequestParam(required = false) after: Long?,

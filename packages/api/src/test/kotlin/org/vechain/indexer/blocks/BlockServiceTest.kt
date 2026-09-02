@@ -17,7 +17,6 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.SliceImpl
 import org.vechain.indexer.blocks.repository.BlockRepository
-import org.vechain.indexer.rest.MAX_CACHE_AGE_SECONDS
 
 @ExtendWith(MockKExtension::class)
 internal class BlockServiceTest {
@@ -119,7 +118,7 @@ internal class BlockServiceTest {
         every { repository.findLatest(any()) } returns
             SliceImpl(listOf(indexedBlock(1000)), PageRequest.of(0, 1), true)
 
-        assertNull(service.getBlocks(null, 1).maxAgeSeconds)
+        assertNull(service.getBlocks(null, 1).settledAt)
     }
 
     @Test
@@ -127,73 +126,56 @@ internal class BlockServiceTest {
         every { repository.findAtOrBelow(1000L, any()) } returns
             SliceImpl(listOf(indexedBlock(1000), indexedBlock(999)), PageRequest.of(0, 2), true)
 
-        assertNotNull(service.getBlocks(1000L, 2).maxAgeSeconds)
+        assertNotNull(service.getBlocks(1000L, 2).settledAt)
     }
 
-    // -- maxAgeSeconds: structural gate, then graded by age --
+    // -- settledAt: the structural gate, with the grading left to the endpoint --
 
     @Test
-    fun `the head range is never cacheable however old its newest row looks`() {
+    fun `the head range never settles however old its newest row looks`() {
         // The backfill case: an ancient indexed head must not read as settled.
-        assertNull(service.maxAgeSeconds(null, listOf(indexedBlock(1000)), stampOf(1000) + 999_999))
+        assertNull(service.settledAt(null, listOf(indexedBlock(1000))))
     }
 
     @Test
-    fun `an empty page is not cacheable`() {
-        assertNull(service.maxAgeSeconds(1000L, emptyList(), stampOf(1000)))
+    fun `an empty page does not settle`() {
+        assertNull(service.settledAt(1000L, emptyList()))
     }
 
     @Test
-    fun `a page anchored above the indexed head is not cacheable`() {
+    fun `a page anchored above the indexed head does not settle`() {
         val data = listOf(indexedBlock(1000), indexedBlock(999))
 
-        assertNull(service.maxAgeSeconds(5000L, data, stampOf(1000) + 86_400))
+        assertNull(service.settledAt(5000L, data))
     }
 
     @Test
-    fun `a page with a missing record is not cacheable`() {
+    fun `a page with a missing record does not settle`() {
         // 998 is absent, so the span is 4 but only 3 rows came back.
         val data = listOf(indexedBlock(1000), indexedBlock(999), indexedBlock(997))
 
-        assertNull(service.maxAgeSeconds(1000L, data, stampOf(1000) + 86_400))
+        assertNull(service.settledAt(1000L, data))
     }
 
     @Test
-    fun `a contiguous anchored page is cacheable for the age of its newest row`() {
+    fun `a contiguous anchored page settles at its newest row`() {
         val data = listOf(indexedBlock(1000), indexedBlock(999), indexedBlock(998))
 
-        assertEquals(3600L, service.maxAgeSeconds(1000L, data, stampOf(1000) + 3600))
+        assertEquals(stampOf(1000), service.settledAt(1000L, data))
     }
 
     @Test
-    fun `a short page at the genesis end is still contiguous and cacheable`() {
+    fun `a short page at the genesis end is still contiguous and settles`() {
         val data = (30L downTo 0L).map(::indexedBlock)
 
-        assertEquals(86_400L, service.maxAgeSeconds(30L, data, stampOf(30) + 86_400))
+        assertEquals(stampOf(30), service.settledAt(30L, data))
     }
 
     @Test
     fun `a single row page is contiguous`() {
         val data = listOf(indexedBlock(1000))
 
-        assertEquals(600L, service.maxAgeSeconds(1000L, data, stampOf(1000) + 600))
-    }
-
-    @Test
-    fun `deep history is capped at the maximum age`() {
-        val data = listOf(indexedBlock(1000), indexedBlock(999))
-
-        assertEquals(
-            MAX_CACHE_AGE_SECONDS,
-            service.maxAgeSeconds(1000L, data, stampOf(1000) + MAX_CACHE_AGE_SECONDS * 5),
-        )
-    }
-
-    @Test
-    fun `a page at the head gets a near-zero age rather than a negative one`() {
-        val data = listOf(indexedBlock(1000))
-
-        assertEquals(0L, service.maxAgeSeconds(1000L, data, stampOf(1000) - 30))
+        assertEquals(stampOf(1000), service.settledAt(1000L, data))
     }
 
     companion object {

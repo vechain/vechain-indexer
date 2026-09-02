@@ -12,6 +12,8 @@ import org.vechain.indexer.constants.X_ALLOC_PATH
 import org.vechain.indexer.docs.AppIdParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.RoundIdParameter
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 
 @Profile("b3tr", "b3tr-x-alloc")
 @Tag(name = "B3TR - X-Allocations", description = "Query XAllocation voting data on VeBetterDAO.")
@@ -28,6 +30,7 @@ open class XAllocController(private val xAllocService: XAllocService) {
     @RoundIdParameter(`in` = ParameterIn.PATH, required = true)
     @AppIdParameter
     @CommonApiResponses
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getXAllocResults(
         @PathVariable roundId: Int,
         @RequestParam(required = false) appId: String?,
@@ -54,6 +57,7 @@ open class XAllocController(private val xAllocService: XAllocService) {
     @AppIdParameter
     @RoundIdParameter
     @CommonApiResponses
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getXAllocEarnings(
         @RequestParam(required = false) appId: String?,
         @RequestParam(required = false) roundId: Int?,

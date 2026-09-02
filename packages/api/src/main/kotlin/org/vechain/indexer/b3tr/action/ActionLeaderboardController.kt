@@ -24,6 +24,8 @@ import org.vechain.indexer.docs.DateParameter
 import org.vechain.indexer.docs.RoundIdParameter
 import org.vechain.indexer.docs.SortByParameter
 import org.vechain.indexer.exception.BadRequestException
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.validation.ValidAppId
 import org.vechain.indexer.validation.ValidCursor
@@ -58,6 +60,7 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
     )
     @CommonApiResponses
     @CursorPaginationParameters
+    @CacheFor(CachePolicy.HOURLY)
     open fun getUserLeaderboard(
         @RequestParam(required = false) roundId: Int?,
         @ValidISODateString @RequestParam(required = false) date: String?,
@@ -105,6 +108,7 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
     )
     @CommonApiResponses
     @CursorPaginationParameters
+    @CacheFor(CachePolicy.HOURLY)
     open fun getAppLeaderboard(
         @RequestParam(required = false) roundId: Int?,
         @ValidISODateString @RequestParam(required = false) date: String?,
@@ -151,6 +155,7 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
     )
     @CommonApiResponses
     @CursorPaginationParameters
+    @CacheFor(CachePolicy.HOURLY)
     open fun getUserAppLeaderboard(
         @ValidAppId @PathVariable(required = true) appId: AppId,
         @RequestParam(required = false) roundId: Int?,

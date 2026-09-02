@@ -16,6 +16,8 @@ import org.vechain.indexer.constants.B3TR_PATH
 import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.CursorPaginationParameters
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.validation.ValidAddress
@@ -44,6 +46,7 @@ open class B3trRichlistController(private val service: B3trRichlistService) {
     )
     @CommonApiResponses
     @CursorPaginationParameters
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getRichlist(
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
@@ -67,6 +70,7 @@ open class B3trRichlistController(private val service: B3trRichlistService) {
         description = "The address to get the rank for.",
     )
     @CommonApiResponses
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getAddressRank(
         @ValidAddress @PathVariable address: Address,
         @RequestParam(required = false, defaultValue = "ALL") scope: RichlistScope,

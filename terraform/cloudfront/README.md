@@ -6,8 +6,8 @@ This directory contains a unified Terraform configuration that uses workspaces t
 
 | Workspace | Plan |
 |---|---|
-| `prod` | No changes |
-| `staging` | No changes |
+| `prod` | Default behaviour moves to `origin-controlled`; the per-path TTL behaviours are removed |
+| `staging` | Same as `prod` |
 | `shared` | No changes |
 | `dead` | Never applied — creates the dead-colour distributions on first run |
 
@@ -17,6 +17,30 @@ order is a dependency chain, since the distributions consume `shared`'s cache
 policies and `prod`'s continuous-deployment policy reads `staging`'s domains. Each
 workspace's plan lands in the job summary before it applies. `shared-infra.yml`
 plans all four at review time — read that before merging.
+
+## Caching
+
+The API's TTLs are not in this stack. Every endpoint declares its own with `@CacheFor`
+and the response carries a `Cache-Control`; the default behaviour's `origin-controlled`
+cache policy has `min_ttl < default_ttl < max_ttl`, which is the condition for CloudFront
+to obey it. See AGENTS.md "Endpoints Own Their Cache TTL".
+
+This replaced roughly forty path-pattern behaviours, each pinning a fixed TTL on a policy
+whose `min == default == max` — the condition for CloudFront to *ignore* the origin. A TTL
+change meant a Terraform PR, a `shared-infra-ack` label and a manual apply, for a fact only
+the endpoint knew. It now ships with the endpoint.
+
+What remains are the paths no annotated controller serves, from #1556 plus liveness:
+
+| Path | Policy | Why |
+|---|---|---|
+| `/api-docs`, `/api-docs/*` | `10-minutes` | springdoc sends no `Cache-Control` |
+| `/swagger-ui/*` | `hourly` | static webjars, versioned with springdoc |
+| `/actuator/*` | `default` | liveness must never be answered from a cache |
+
+Anything else with no `Cache-Control` — an unannotated endpoint, an error the exception
+handlers miss — falls to the policy's `default_ttl` of 10 seconds. `CacheControlCoverageTest`
+is what stops an endpoint landing in that state.
 
 ## The dead workspace
 
