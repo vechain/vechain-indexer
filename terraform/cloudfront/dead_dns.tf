@@ -1,66 +1,40 @@
-# Certificate and alias records for the dead-colour distributions.
-# Only the `dead` workspace creates these; prod and staging carry pre-existing
-# certificate ARNs in their environment files instead.
+# Alias records pointing the dead-colour hostnames at their distributions.
+# Only the `dead` workspace creates these; the zones are looked up by name
+# because they are managed outside this repository.
 
 locals {
-  # Other workspaces zero out the resources below, but `terraform validate` still
-  # schema-checks them, so every fallback here has to be well-formed rather than
-  # empty. None of these values reach AWS.
-  dead_zone_id      = try(local.env_config.hosted_zone_id, "ZUNUSED")
+  # Non-empty fallbacks: validate schema-checks these where their count is zero.
   dead_mainnet_host = local.is_dead ? local.env_config.mainnet_cnames[0] : "unused.invalid"
   dead_testnet_host = local.is_dead ? local.env_config.testnet_cnames[0] : "unused.invalid"
 
   # Hosted zone CloudFront alias targets always live in, not our own zone.
   cloudfront_hosted_zone_id = "Z2FDTNDATAQYW2"
 
-  dead_alias_records = local.is_dead ? {
-    "mainnet-A"    = { host = local.dead_mainnet_host, type = "A", target = module.mainnet_cloudfront[0].domain_name }
-    "mainnet-AAAA" = { host = local.dead_mainnet_host, type = "AAAA", target = module.mainnet_cloudfront[0].domain_name }
-    "testnet-A"    = { host = local.dead_testnet_host, type = "A", target = module.testnet_cloudfront[0].domain_name }
-    "testnet-AAAA" = { host = local.dead_testnet_host, type = "AAAA", target = module.testnet_cloudfront[0].domain_name }
+  dead_alias_records = local.is_dead ? merge([
+    for net in ["mainnet", "testnet"] : {
+      for type in ["A", "AAAA"] : "${net}-${type}" => {
+        host   = net == "mainnet" ? local.dead_mainnet_host : local.dead_testnet_host
+        zone   = try(data.aws_route53_zone.dead[net].zone_id, "")
+        target = net == "mainnet" ? module.mainnet_cloudfront[0].domain_name : module.testnet_cloudfront[0].domain_name
+        type   = type
+      }
+    }
+  ]...) : {}
+}
+
+data "aws_route53_zone" "dead" {
+  for_each = local.is_dead ? {
+    mainnet = local.env_config.mainnet_hosted_zone_name
+    testnet = local.env_config.testnet_hosted_zone_name
   } : {}
-}
 
-# One certificate covers both networks; CloudFront requires it in us-east-1.
-resource "aws_acm_certificate" "dead" {
-  count    = local.is_dead ? 1 : 0
-  provider = aws.us_east_1
-
-  domain_name               = local.dead_mainnet_host
-  subject_alternative_names = [local.dead_testnet_host]
-  validation_method         = "DNS"
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-resource "aws_route53_record" "dead_cert_validation" {
-  for_each = {
-    for option in try(aws_acm_certificate.dead[0].domain_validation_options, []) :
-    option.domain_name => option
-  }
-
-  zone_id         = local.dead_zone_id
-  name            = each.value.resource_record_name
-  type            = each.value.resource_record_type
-  records         = [each.value.resource_record_value]
-  ttl             = 60
-  allow_overwrite = true
-}
-
-resource "aws_acm_certificate_validation" "dead" {
-  count    = local.is_dead ? 1 : 0
-  provider = aws.us_east_1
-
-  certificate_arn         = aws_acm_certificate.dead[0].arn
-  validation_record_fqdns = [for record in aws_route53_record.dead_cert_validation : record.fqdn]
+  name = each.value
 }
 
 resource "aws_route53_record" "dead_alias" {
   for_each = local.dead_alias_records
 
-  zone_id = local.dead_zone_id
+  zone_id = each.value.zone
   name    = each.value.host
   type    = each.value.type
 

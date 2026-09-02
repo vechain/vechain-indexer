@@ -24,20 +24,22 @@ plans all four at review time — read that before merging.
 Its origins are the colour-agnostic `*.dead.prod.veworld.vechain.org` records, so a
 cutover swaps what it points at without any change here.
 
-Unlike the other workspaces it owns its own certificate and DNS: `dead_dns.tf`
-issues a DNS-validated us-east-1 certificate covering both aliases and writes the
-Route53 alias records, because neither exists until the workspace first applies.
-The aliases are:
+It answers on a `dead.` prefix of each live hostname:
 
-- `https://mainnet.dead-cdn.prod.veworld.vechain.org`
-- `https://testnet.dead-cdn.prod.veworld.vechain.org`
+- `https://dead.indexer.mainnet.vechain.org`
+- `https://dead.indexer.testnet.vechain.org`
+
+Those names need no certificate of their own — prod's certificates already carry
+`*.indexer.mainnet.vechain.org` and `*.indexer.testnet.vechain.org` SANs, so
+`environments/dead.yml` reuses the same two ARNs. Unlike the other workspaces this
+one does write DNS: `dead_dns.tf` looks up the two `indexer.*.vechain.org` zones by
+name and puts the alias records there. Those zones are managed outside this
+repository, so the apply needs Route53 write access to them.
 
 It reuses the prod WAF ACLs and prod's cache behaviours (via `cache_behaviors_from`
 in `environments/dead.yml`) — a dead-colour test that cached differently from live
 would not be testing the same thing. The WAF rate limit applies, so heavy suites
 need the `x-rate-limit-bypass` header the same way prod does.
-
-The first apply blocks on ACM DNS validation, usually a few minutes.
 
 `shared` now tracks only the cache policies. It once held the two CLOUDFRONT-scope
 WAF ACLs that `terraform/vpc/cloudfront_waf.tf` has owned since #1519; the

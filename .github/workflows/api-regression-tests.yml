@@ -5,7 +5,7 @@ on:
     inputs:
       candidate_url:
         description: "Candidate API URL (the version being validated)"
-        default: "https://mainnet.dead-cdn.prod.veworld.vechain.org"
+        default: "https://dead.indexer.mainnet.vechain.org"
         required: false
         type: string
       baseline_url:
@@ -19,7 +19,7 @@ on:
         description: "Candidate API URL (the version being validated)"
         required: false
         type: string
-        default: "https://mainnet.dead-cdn.prod.veworld.vechain.org"
+        default: "https://dead.indexer.mainnet.vechain.org"
       baseline_url:
         description: "Baseline API URL (the known-good reference)"
         required: false
@@ -47,7 +47,7 @@ jobs:
 
       - name: Run regression comparison (candidate vs baseline)
         env:
-          CANDIDATE_URL: ${{ inputs.candidate_url || 'https://mainnet.dead-cdn.prod.veworld.vechain.org' }}
+          CANDIDATE_URL: ${{ inputs.candidate_url || 'https://dead.indexer.mainnet.vechain.org' }}
           BASELINE_URL: ${{ inputs.baseline_url || 'https://indexer.mainnet.vechain.org' }}
           REGRESSION_SEED_METADATA_FILE: regression-output/seed-metadata.json
         run: |
@@ -58,7 +58,7 @@ jobs:
       - name: Generate summary
         if: always()
         env:
-          CANDIDATE: ${{ inputs.candidate_url || 'https://mainnet.dead-cdn.prod.veworld.vechain.org' }}
+          CANDIDATE: ${{ inputs.candidate_url || 'https://dead.indexer.mainnet.vechain.org' }}
           BASELINE: ${{ inputs.baseline_url || 'https://indexer.mainnet.vechain.org' }}
         run: |
           python3 - <<'PYEOF'

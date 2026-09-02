@@ -8,7 +8,7 @@ set -euo pipefail
 #
 # Environment variables:
 #   BASELINE_URL       - Known-good reference endpoint (default: https://indexer.mainnet.vechain.org)
-#   CANDIDATE_URL      - Candidate endpoint being validated (default: https://mainnet.dead-cdn.prod.veworld.vechain.org)
+#   CANDIDATE_URL      - Candidate endpoint being validated (default: https://dead.indexer.mainnet.vechain.org)
 #   SPEC_URL           - OpenAPI spec URL (default: derived from BASELINE_URL)
 #   TIMEOUT            - Request timeout in seconds (default: 30)
 #   NUM_ABS_TOLERANCE  - Absolute numeric tolerance for leaf diffs (default: 1)
@@ -26,7 +26,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 BASELINE_URL="${BASELINE_URL:-https://indexer.mainnet.vechain.org}"
-CANDIDATE_URL="${CANDIDATE_URL:-https://mainnet.dead-cdn.prod.veworld.vechain.org}"
+CANDIDATE_URL="${CANDIDATE_URL:-https://dead.indexer.mainnet.vechain.org}"
 SPEC_URL="${SPEC_URL:-${BASELINE_URL}/api-docs}"
 TIMEOUT="${TIMEOUT:-30}"
 NUM_ABS_TOLERANCE="${NUM_ABS_TOLERANCE:-1}"

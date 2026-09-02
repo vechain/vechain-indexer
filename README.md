@@ -179,7 +179,7 @@ make test-e2e
 Use the schema-driven harness when you need to validate the public API in a deployed environment. It fetches the OpenAPI document from `/api-docs`, runs Schemathesis-based checks across every documented operation, and fails if any response exceeds 2 000 ms (override by setting `MAX_RESPONSE_MILLISECONDS`).
 
 - Local run: `packages/api/scripts/run_api_schema_tests.sh [dead|live|<base-url>] [--base-url <base-url>]` (defaults to the dead environment). Install `schemathesis` locally first, for example `pip install "schemathesis>=3.19,<4"`.
-- Both colours are reached through CloudFront; the ALB hostnames themselves accept nothing but distribution traffic. Dead is `https://mainnet.dead-cdn.prod.veworld.vechain.org` and `https://testnet.dead-cdn.prod.veworld.vechain.org`, which follow the colour swap automatically.
+- Both colours are reached through CloudFront; the ALB hostnames themselves accept nothing but distribution traffic. Dead is `https://dead.indexer.mainnet.vechain.org` and `https://dead.indexer.testnet.vechain.org`, which follow the colour swap automatically.
 - GitHub Action: trigger **API Tests** from the Actions tab and choose the target environment, or provide a full base URL override. The workflow uses the same script and publishes Schemathesis logs and JUnit XML as artifacts.
 
 ## Disaster Recovery
@@ -222,6 +222,6 @@ Since blue/green deployments are fairly infrequent, the dead color can be used a
 ### Environment Tear-down
 When testing is complete, or when a DNS switch has migrated traffic from one environment to the other, the dead environment can be safely torn down until needed again. To do this, run the [Cluster Destroy](https://github.com/vechain/veworld-indexer/actions/workflows/destroy-environment.yml) workflow, and select the appropriate environment when prompted.
 
-Leave the `dead` CloudFront workspace in place. A torn-down colour leaves its origin record pointing at a placeholder, so the distributions return errors until the colour is redeployed — but they cost nothing idle, and keeping them avoids re-issuing the certificate every cycle.
+Leave the `dead` CloudFront workspace in place. A torn-down colour leaves its origin record pointing at a placeholder, so the distributions return errors until the colour is redeployed — but they cost nothing idle, and keeping them avoids recreating the DNS every cycle.
 
 Further details on the CICD process can be found [here](https://vechainfoundation-my.sharepoint.com/:w:/g/personal/dougal_rea_vechain_org/EcuW_jUEDh5PhS8jzH5PJ0EBw9pY8EqSd5IWKCJIG8rGVQ?e=i0Pa0N)

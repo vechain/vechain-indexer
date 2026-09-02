@@ -13,12 +13,6 @@ locals {
   origin_verify_secret_name = "/prod/veworld/cloudfront-origin-verify-token"
   origin_verify_header_name = try(local.env_config.origin_verify_header_name, "")
 
-  # The dead workspace issues its own certificate in dead_dns.tf; the others
-  # carry a pre-existing ARN in their environment file.
-  dead_certificate_arn    = one(aws_acm_certificate_validation.dead[*].certificate_arn)
-  mainnet_certificate_arn = local.is_dead ? local.dead_certificate_arn : try(local.env_config.mainnet_certificate_arn, "")
-  testnet_certificate_arn = local.is_dead ? local.dead_certificate_arn : try(local.env_config.testnet_certificate_arn, "")
-
   # Staging twins carry the same header, so enabling a continuous-deployment
   # policy later cannot start failing at the origin.
   origin_verify_headers = local.is_shared || local.origin_verify_header_name == "" ? {} : {
@@ -59,7 +53,7 @@ module "mainnet_cloudfront" {
   source = "./modules/non-s3-distribution"
 
   origin_domain         = try(local.env_config.mainnet_origin_domain, "")
-  certificate_arn       = local.mainnet_certificate_arn
+  certificate_arn       = try(local.env_config.mainnet_certificate_arn, "")
   cnames                = try(local.env_config.mainnet_cnames, [])
   staging               = try(local.env_config.staging, false)
   origin_custom_headers = local.origin_verify_headers
@@ -93,7 +87,7 @@ module "testnet_cloudfront" {
   source = "./modules/non-s3-distribution"
 
   origin_domain         = try(local.env_config.testnet_origin_domain, "")
-  certificate_arn       = local.testnet_certificate_arn
+  certificate_arn       = try(local.env_config.testnet_certificate_arn, "")
   cnames                = try(local.env_config.testnet_cnames, [])
   staging               = try(local.env_config.staging, false)
   origin_custom_headers = local.origin_verify_headers
