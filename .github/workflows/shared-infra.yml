@@ -96,8 +96,8 @@ jobs:
             printf 'the next [Deploy](%s) run does, along with the application.\n' "$RUN_URL"
             if [ "$VPC_CHANGED" = "true" ]; then
               echo
-              echo '`terraform/vpc`: a blue/green cutover (`switch-live-dns.yml`) would also apply'
-              echo 'these changes as a side effect, records-only. Read its plan in the job summary.'
+              echo '`terraform/vpc`: only a change to the four Route53 records can land sooner —'
+              echo 'a cutover (`switch-live-dns.yml`) targets just those. Read the plan in the summary.'
             fi
             if [ "$CLOUDFRONT_CHANGED" = "true" ]; then
               echo
