@@ -3,10 +3,13 @@ package org.vechain.indexer.rest
 /** However deep the content sits, it never earns a longer TTL than this. */
 const val MAX_CACHE_AGE_SECONDS = 31_536_000L
 
+/** One block: what a shared cache may hold a still-moving response for, when a client may not. */
+const val VOLATILE_SHARED_MAX_AGE_SECONDS = 10L
+
 /** How long a response may be reused. See AGENTS.md "Endpoints Own Their Cache TTL". */
 enum class CachePolicy(private val maxAgeSeconds: Long, private val sharedMaxAgeSeconds: Long?) {
     /** Moves with the head: shared caches absorb a burst, clients always revalidate. */
-    VOLATILE(0, 10),
+    VOLATILE(0, VOLATILE_SHARED_MAX_AGE_SECONDS),
 
     /** Follows on-chain activity, but a stale minute costs the caller nothing. */
     MINUTE(60, null),

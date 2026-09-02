@@ -30,11 +30,12 @@ whose `min == default == max` — the condition for CloudFront to *ignore* the o
 change meant a Terraform PR, a `shared-infra-ack` label and a manual apply, for a fact only
 the endpoint knew. It now ships with the endpoint.
 
-Two behaviours remain, for the paths no annotated controller serves:
+What remains are the paths no annotated controller serves, from #1556 plus liveness:
 
 | Path | Policy | Why |
 |---|---|---|
-| `/api-docs` | `hourly` | springdoc sends no `Cache-Control` |
+| `/api-docs`, `/api-docs/*` | `10-minutes` | springdoc sends no `Cache-Control` |
+| `/swagger-ui/*` | `hourly` | static webjars, versioned with springdoc |
 | `/actuator/*` | `default` | liveness must never be answered from a cache |
 
 Anything else with no `Cache-Control` — an unannotated endpoint, an error the exception

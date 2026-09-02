@@ -32,7 +32,6 @@ testnet_cnames:
 
 # Only paths whose origin sends no Cache-Control need one — see README.md "Caching".
 cache_behaviors:
-  # springdoc sends none.
   - name: "api-docs"
     path_pattern: "/api-docs"
     cache_policy_name: "10-minutes"

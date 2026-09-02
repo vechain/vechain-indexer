@@ -14,17 +14,22 @@ annotation class CacheFor(val policy: CachePolicy)
 fun <T : Any> cachedFor(policy: CachePolicy, body: T): ResponseEntity<T> =
     cachedResponse(policy.headerValue, body)
 
-/** Grants the age of the content; a null timestamp means there was nothing to grade. */
+/**
+ * Grants the age of the newest thing the response can cover — the block it settled at, or the
+ * instant its window closed. A null, future or just-passed timestamp earns nothing beyond
+ * [CachePolicy.VOLATILE], so a window still open cannot freeze at the edge.
+ */
 fun <T : Any> cachedByAge(
-    blockTimestamp: Long?,
+    settledAt: Long?,
     body: T,
     nowEpochSeconds: Long = Instant.now().epochSecond,
-): ResponseEntity<T> =
-    cachedResponse(
-        blockTimestamp?.let { cacheControlHeader(gradedMaxAge(it, nowEpochSeconds)) }
-            ?: CachePolicy.VOLATILE.headerValue,
-        body,
-    )
+): ResponseEntity<T> {
+    val age = settledAt?.let { gradedMaxAge(it, nowEpochSeconds) } ?: 0L
+    val header =
+        if (age > VOLATILE_SHARED_MAX_AGE_SECONDS) cacheControlHeader(age)
+        else CachePolicy.VOLATILE.headerValue
+    return cachedResponse(header, body)
+}
 
 private fun <T : Any> cachedResponse(header: String, body: T): ResponseEntity<T> =
     ResponseEntity.ok().header(HttpHeaders.CACHE_CONTROL, header).body(body)

@@ -118,9 +118,13 @@ Pick the coarsest window the data tolerates, from the tiers in `CachePolicy`: `V
 Two escapes, for a TTL only the response knows. Both need `@CacheFor` anyway — it is the
 floor that applies if the call is missed:
 
-- `cachedByAge(blockTimestamp, body)` — grants the age of the content itself, capped at a
-  year, so nothing outlives the span it has already been stable and a reorg can only poison
-  an entry for as long as the block was on chain. `BlockController`, `GET /transactions/{txId}`.
+- `cachedByAge(settledAt, body)` — grants the age of the newest thing the response can cover,
+  capped at a year, so nothing outlives the span it has already been stable and a reorg can only
+  poison an entry for as long as the block was on chain. Pass the block a page settled at
+  (`BlockController`, `GET /transactions/{txId}`) or the instant a `startTimestamp`/`endTimestamp`
+  window closed. A window whose end is now — or in the future, which the validators allow — grades
+  to nothing and stays volatile; without that, rows keep landing inside a window whose cache key
+  never changes, which is the one request shape that reliably serves stale data.
 - `cachedFor(policy, body)` — grants a policy chosen per request. The `historic/{range}`
   endpoints take theirs from `TimeRangePreset`, since a year-wide series tolerates far more
   staleness than an hour-wide one.

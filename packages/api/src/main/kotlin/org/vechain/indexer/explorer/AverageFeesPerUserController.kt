@@ -3,6 +3,7 @@ package org.vechain.indexer.explorer
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
+import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -14,6 +15,7 @@ import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.rest.CacheFor
 import org.vechain.indexer.rest.CachePolicy
+import org.vechain.indexer.rest.cachedByAge
 import org.vechain.indexer.utils.TimeValidationUtils
 import org.vechain.indexer.validation.ValidNonNegativeLong
 
@@ -43,17 +45,20 @@ open class AverageFeesPerUserController(
     @AfterParameter(name = "startTimestamp", required = true)
     @BeforeParameter(name = "endTimestamp", required = true)
     @CommonApiResponses
-    @CacheFor(CachePolicy.HOURLY)
+    @CacheFor(CachePolicy.VOLATILE)
     open fun getAverageFeesPerUser(
         @ValidNonNegativeLong @RequestParam startTimestamp: Long,
         @ValidNonNegativeLong @RequestParam endTimestamp: Long,
-    ): List<AverageFeesPerUser> {
+    ): ResponseEntity<List<AverageFeesPerUser>> {
         TimeValidationUtils.validateTimestamps(
             startTimestamp,
             endTimestamp,
             "startTimestamp",
             "endTimestamp",
         )
-        return averageFeesPerUserService.getAverageFeesPerUser(startTimestamp, endTimestamp)
+        return cachedByAge(
+            endTimestamp,
+            averageFeesPerUserService.getAverageFeesPerUser(startTimestamp, endTimestamp),
+        )
     }
 }

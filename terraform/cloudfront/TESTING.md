@@ -197,7 +197,8 @@ the annotations.
 
 | Behaviour | Path Pattern | Cache Policy | Why it is still here |
 |---|---|---|---|
-| api-docs | `/api-docs` | hourly | springdoc sends no `cache-control` |
+| api-docs | `/api-docs`, `/api-docs/*` | 10-minutes | springdoc sends no `cache-control` |
+| swagger-ui | `/swagger-ui/*` | hourly | static webjars, versioned with springdoc |
 | actuator | `/actuator/*` | default | liveness must never be answered from a cache |
 
 ## Monitoring in AWS Console

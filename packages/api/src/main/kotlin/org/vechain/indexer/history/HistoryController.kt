@@ -53,7 +53,7 @@ open class HistoryController(private val historyService: HistoryService) {
     @BeforeParameter
     @CommonApiResponses
     @PaginationParameters
-    @CacheFor(CachePolicy.VOLATILE)
+    @CacheFor(CachePolicy.MINUTE)
     open fun getUsersHistory(
         @AddressParameter(name = "account", required = true, `in` = ParameterIn.PATH)
         @ValidAddress
@@ -105,8 +105,8 @@ open class HistoryController(private val historyService: HistoryService) {
         summary = "Get account history",
         description =
             """
-            An account's history can gain an event at any block, so shared caches may serve a
-            response up to one block old.
+            An account's history can gain an event at any block, so caches may serve a response
+            up to a minute old.
             """,
     )
     @SearchByParameter
@@ -115,7 +115,7 @@ open class HistoryController(private val historyService: HistoryService) {
     @BeforeParameter
     @CommonApiResponses
     @PaginationParameters
-    @CacheFor(CachePolicy.VOLATILE)
+    @CacheFor(CachePolicy.MINUTE)
     open fun getUsersHistoryV2(
         @AddressParameter(name = "account", required = true, `in` = ParameterIn.PATH)
         @ValidAddress
@@ -174,7 +174,7 @@ open class HistoryController(private val historyService: HistoryService) {
     @BeforeParameter
     @CommonApiResponses
     @PaginationParameters
-    @CacheFor(CachePolicy.VOLATILE)
+    @CacheFor(CachePolicy.MINUTE)
     open fun getTokenHistory(
         @ValidTokenId @PathVariable(required = true) tokenId: String,
         @ValidTokenEventName @RequestParam(required = false) eventName: List<String>?,

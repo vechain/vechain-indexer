@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
+import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.VALIDATORS_PATH
@@ -22,6 +23,7 @@ import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.rest.CacheFor
 import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
+import org.vechain.indexer.rest.cachedByAge
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.HexUtils
@@ -286,16 +288,19 @@ open class ValidatorController(private val service: ValidatorService) {
         required = true,
     )
     @CommonApiResponses
-    @CacheFor(CachePolicy.HOURLY)
+    @CacheFor(CachePolicy.VOLATILE)
     open fun getHistoricValidatorRewardsRange(
         @PathVariable @ValidAddress validator: Address,
         @RequestParam startTimestamp: Long,
         @RequestParam endTimestamp: Long,
-    ): List<ValidatorBlock> =
-        service.getValidatorHistoricBlocks(
-            startTimestamp,
+    ): ResponseEntity<List<ValidatorBlock>> =
+        cachedByAge(
             endTimestamp,
-            validator.value.lowercase(),
+            service.getValidatorHistoricBlocks(
+                startTimestamp,
+                endTimestamp,
+                validator.value.lowercase(),
+            ),
         )
 
     // -- Deprecated: kept for client switch-over only. All legacy logic is inlined here so the

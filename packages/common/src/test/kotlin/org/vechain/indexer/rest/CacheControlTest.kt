@@ -67,6 +67,25 @@ internal class CacheControlTest {
     }
 
     @Test
+    fun `a window that has only just closed earns no more than the volatile tier`() {
+        assertEquals(CachePolicy.VOLATILE.headerValue, header(cachedByAge(stamp, "body", stamp)))
+        assertEquals(
+            CachePolicy.VOLATILE.headerValue,
+            header(cachedByAge(stamp, "body", stamp + VOLATILE_SHARED_MAX_AGE_SECONDS)),
+        )
+    }
+
+    @Test
+    fun `a window ending in the future cannot freeze at the edge`() {
+        // The poisoning case: rows keep landing inside a window whose end has not arrived, and the
+        // cache key never changes, so this is the one shape that would reliably serve stale data.
+        assertEquals(
+            CachePolicy.VOLATILE.headerValue,
+            header(cachedByAge(stamp + MAX_CACHE_AGE_SECONDS * 10, "body", stamp)),
+        )
+    }
+
+    @Test
     fun `the body survives the wrapping`() {
         assertEquals("body", cachedFor(CachePolicy.DAILY, "body").body)
         assertEquals("body", cachedByAge(stamp, "body").body)
