@@ -56,6 +56,9 @@ resource "aws_cloudfront_distribution" "non_s3_distribution" {
       allowed_methods = ordered_cache_behavior.value.allowed_methods
       cached_methods  = ordered_cache_behavior.value.cached_methods
 
+      # Terraform defaults this to false, so every ordered behaviour was serving uncompressed.
+      compress = true
+
       cache_policy_id            = ordered_cache_behavior.value.cache_policy_id
       response_headers_policy_id = ordered_cache_behavior.value.headers_policy_id
       origin_request_policy_id   = ordered_cache_behavior.value.origin_request_policy_id
