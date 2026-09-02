@@ -45,22 +45,22 @@ jobs:
     secrets:
       AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
 
-  define-env-vars:
-    name: Set Up Environment Variables
+  deployed-state:
+    name: Read Deployed State
     needs: [identify-live-color]
     runs-on: ubuntu-latest
     outputs:
-      MAINNET_VERSION: ${{ steps.distinguish-versions.outputs.MAINNET_VERSION }}
-      TESTNET_VERSION: ${{ steps.distinguish-versions.outputs.TESTNET_VERSION }}
-      DEPLOYMENT_COLOR: ${{ steps.set-environment.outputs.DEPLOYMENT_COLOR }}
+      DEPLOYMENT_COLOR: ${{ steps.colour.outputs.DEPLOYMENT_COLOR }}
+      DEPLOYED: ${{ steps.deployed.outputs.DEPLOYED }}
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
         with:
           aws-region: eu-west-1
           role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
-      - name: Set environment
-        id: set-environment
+
+      - name: Resolve target colour
+        id: colour
         env:
           INPUT_NETWORK: ${{ inputs.network }}
           INPUT_ENV: ${{ inputs.environment }}
@@ -69,100 +69,175 @@ jobs:
           TESTNET_LIVE: ${{ needs.identify-live-color.outputs.testnet_live_color }}
           TESTNET_DEAD: ${{ needs.identify-live-color.outputs.testnet_dead_color }}
         run: |
-          if [[ "$INPUT_NETWORK" == 'mainnet' || "$INPUT_NETWORK" == 'both' ]]; then
-            if [[ "$INPUT_ENV" == 'live' ]]; then
-              echo "DEPLOYMENT_COLOR=$MAINNET_LIVE" >> $GITHUB_OUTPUT
-            elif [[ "$INPUT_ENV" == 'dead' ]]; then
-              echo "DEPLOYMENT_COLOR=$MAINNET_DEAD" >> $GITHUB_OUTPUT
-            fi
-          elif [[ "$INPUT_NETWORK" == 'testnet' ]]; then
-            if [[ "$INPUT_ENV" == 'live' ]]; then
-              echo "DEPLOYMENT_COLOR=$TESTNET_LIVE" >> $GITHUB_OUTPUT
-            elif [[ "$INPUT_ENV" == 'dead' ]]; then
-              echo "DEPLOYMENT_COLOR=$TESTNET_DEAD" >> $GITHUB_OUTPUT
-            fi
+          set -euo pipefail
+          if [[ "$INPUT_NETWORK" == 'testnet' ]]; then
+            live="$TESTNET_LIVE"; dead="$TESTNET_DEAD"
+          else
+            live="$MAINNET_LIVE"; dead="$MAINNET_DEAD"
           fi
-      - name: Get current version
-        id: get-current-version
-        # Read the currently-deployed image version from the *target* color, not the live
-        # color. plan-or-apply-terraform.yml rewrites both main:image_version and
-        # test:image_version on every apply, so when only one network is being deployed,
-        # the un-deployed network's CURRENT_* must reflect what is actually running on
-        # the target color. Reading from the live color caused inadvertent downgrades on
-        # the dead environment when colors diverged across networks (e.g. live mainnet on
-        # blue, live testnet on green).
-        # Falls back to the live color when the target color has no task definition yet
-        # (fresh dead environment); INPUT_NETWORK=both will overwrite both versions
-        # explicitly anyway.
+
+          case "$INPUT_ENV" in
+            live) colour="$live" ;;
+            dead) colour="$dead" ;;
+            *) echo "::error::Unknown environment '$INPUT_ENV'"; exit 1 ;;
+          esac
+
+          echo "DEPLOYMENT_COLOR=${colour}" >> "$GITHUB_OUTPUT"
+          echo "Target colour: ${colour}"
+
+      # Falls back to the live colour for a dead colour that was torn down.
+      - name: Read deployed image tags
+        id: deployed
         env:
-          TARGET_COLOR: ${{ steps.set-environment.outputs.DEPLOYMENT_COLOR }}
+          TARGET_COLOR: ${{ steps.colour.outputs.DEPLOYMENT_COLOR }}
           MAINNET_LIVE: ${{ needs.identify-live-color.outputs.mainnet_live_color }}
           TESTNET_LIVE: ${{ needs.identify-live-color.outputs.testnet_live_color }}
         run: |
+          set -euo pipefail
+
           read_image_tag() {
-            local task_def="$1"
             aws ecs describe-task-definition \
-              --task-definition "$task_def" \
+              --task-definition "$1" \
               --query "taskDefinition.containerDefinitions[0].image" \
               --output text 2>/dev/null \
             | awk -F: 'NF>1 {print $NF}'
           }
 
-          MAINNET_IMAGE_VERSION=$(read_image_tag "${TARGET_COLOR}-veworld-main-api")
-          if [ -z "$MAINNET_IMAGE_VERSION" ]; then
-            echo "No task definition for ${TARGET_COLOR}-veworld-main-api; falling back to ${MAINNET_LIVE}"
-            MAINNET_IMAGE_VERSION=$(read_image_tag "${MAINNET_LIVE}-veworld-main-api")
-          fi
+          deployed='{}'
+          for net in main test; do
+            case "$net" in
+              main) fallback="$MAINNET_LIVE" ;;
+              test) fallback="$TESTNET_LIVE" ;;
+            esac
+            for svc in api indexer; do
+              tag=$(read_image_tag "${TARGET_COLOR}-veworld-${net}-${svc}")
+              if [ -z "$tag" ]; then
+                echo "No ${TARGET_COLOR}-veworld-${net}-${svc}; reading ${fallback}"
+                tag=$(read_image_tag "${fallback}-veworld-${net}-${svc}")
+              fi
+              [ -n "$tag" ] || continue
+              deployed=$(jq -c --arg n "$net" --arg s "$svc" --arg t "$tag" \
+                '.[$n][$s] = $t' <<<"$deployed")
+            done
+          done
 
-          TESTNET_IMAGE_VERSION=$(read_image_tag "${TARGET_COLOR}-veworld-test-api")
-          if [ -z "$TESTNET_IMAGE_VERSION" ]; then
-            echo "No task definition for ${TARGET_COLOR}-veworld-test-api; falling back to ${TESTNET_LIVE}"
-            TESTNET_IMAGE_VERSION=$(read_image_tag "${TESTNET_LIVE}-veworld-test-api")
-          fi
+          echo "DEPLOYED=${deployed}" >> "$GITHUB_OUTPUT"
+          jq . <<<"$deployed"
 
-          echo "CURRENT_MAINNET_VERSION=${MAINNET_IMAGE_VERSION}" >> $GITHUB_OUTPUT
-          echo "CURRENT_TESTNET_VERSION=${TESTNET_IMAGE_VERSION}" >> $GITHUB_OUTPUT
-      - name: Set version
-        id: set-version
+  # No AWS credentials here: this job runs a script out of the checked-out tree
+  # to hash it, and only strings leave.
+  plan-release:
+    name: Plan Release
+    needs: [deployed-state]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      VERSION: ${{ steps.plan.outputs.VERSION }}
+      IMAGE_VERSIONS: ${{ steps.plan.outputs.IMAGE_VERSIONS }}
+      PROMOTE: ${{ steps.plan.outputs.PROMOTE }}
+      PROMOTE_NEEDED: ${{ steps.plan.outputs.PROMOTE_NEEDED }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Resolve version and per-service image tags
+        id: plan
         env:
           EVENT_NAME: ${{ github.event_name }}
           REF_NAME: ${{ github.ref_name }}
+          INPUT_NETWORK: ${{ inputs.network }}
+          DEPLOYED: ${{ needs.deployed-state.outputs.DEPLOYED }}
         run: |
+          set -euo pipefail
+
           if [[ "$EVENT_NAME" == "workflow_dispatch" && "$REF_NAME" == "main" ]]; then
-            LATEST_TAG=$(git tag | sort -V | tail -n1)
-            echo "VERSION=${LATEST_TAG}" >> "$GITHUB_OUTPUT"
+            VERSION=$(git tag --sort=v:refname | tail -n1)
           elif [[ "$EVENT_NAME" == "workflow_dispatch" && "$REF_NAME" == v.* ]]; then
-            echo "VERSION=$REF_NAME" >> "$GITHUB_OUTPUT"
+            VERSION="$REF_NAME"
           else
-            echo "Unrecognised version. Please select an existing version tag to deploy."
+            echo "::error::Unrecognised version. Select an existing version tag to deploy."
             exit 1
           fi
-      - name: Distinguish versions
-        id: distinguish-versions
-        env:
-          INPUT_NETWORK: ${{ inputs.network }}
-          SET_VERSION: ${{ steps.set-version.outputs.VERSION }}
-          CURRENT_MAINNET: ${{ steps.get-current-version.outputs.CURRENT_MAINNET_VERSION }}
-          CURRENT_TESTNET: ${{ steps.get-current-version.outputs.CURRENT_TESTNET_VERSION }}
-        run: |
-          if [[ "$INPUT_NETWORK" == "mainnet" || "$INPUT_NETWORK" == "both" ]]; then
-            echo "MAINNET_VERSION=$SET_VERSION" >> $GITHUB_OUTPUT
-          else
-            echo "MAINNET_VERSION=$CURRENT_MAINNET" >> $GITHUB_OUTPUT
+          if [ -z "$VERSION" ]; then
+            echo "::error::No version tag found to deploy."
+            exit 1
           fi
-          if [[ "$INPUT_NETWORK" == "testnet" || "$INPUT_NETWORK" == "both" ]]; then
-            echo "TESTNET_VERSION=$SET_VERSION" >> $GITHUB_OUTPUT
-          else
-            echo "TESTNET_VERSION=$CURRENT_TESTNET" >> $GITHUB_OUTPUT
-          fi
+
+          versions='{}'
+          promote=()
+          rows=()
+
+          for net in main test; do
+            case "$INPUT_NETWORK" in
+              both)    selected=true ;;
+              mainnet) [ "$net" = main ] && selected=true || selected=false ;;
+              testnet) [ "$net" = test ] && selected=true || selected=false ;;
+              *) echo "::error::Unknown network '$INPUT_NETWORK'"; exit 1 ;;
+            esac
+
+            for svc in api indexer; do
+              current=$(jq -r --arg n "$net" --arg s "$svc" '.[$n][$s] // empty' <<<"$DEPLOYED")
+
+              if [ "$selected" != true ]; then
+                chosen="$current"
+                note="network not selected"
+              else
+                new_hash=$(.github/workflows/scripts/content_hash.sh "$svc" "$VERSION")
+                old_hash=""
+                if [ -n "$current" ] && git rev-parse -q --verify "refs/tags/${current}^{tree}" >/dev/null; then
+                  old_hash=$(.github/workflows/scripts/content_hash.sh "$svc" "$current")
+                fi
+
+                if [ -n "$old_hash" ] && [ "$old_hash" = "$new_hash" ]; then
+                  chosen="$current"
+                  note="unchanged since ${current} (${new_hash})"
+                else
+                  chosen="$VERSION"
+                  promote+=("$svc")
+                  note="content ${new_hash}"
+                fi
+              fi
+
+              if [ -n "$chosen" ]; then
+                versions=$(jq -c --arg n "$net" --arg s "$svc" --arg v "$chosen" \
+                  '.[$n][$s] = $v' <<<"$versions")
+              else
+                note="no deployed tag to keep; environment yaml decides"
+              fi
+              rows+=("| ${net} | ${svc} | ${chosen:-<yaml>} | ${note} |")
+            done
+          done
+
+          promote_list=$(printf '%s\n' "${promote[@]+"${promote[@]}"}" \
+            | jq -Rc 'select(. != "")' | jq -sc 'unique')
+
+          {
+            echo "VERSION=${VERSION}"
+            echo "IMAGE_VERSIONS=${versions}"
+            echo "PROMOTE=${promote_list}"
+            echo "PROMOTE_NEEDED=$([ "$(jq 'length' <<<"$promote_list")" -gt 0 ] && echo true || echo false)"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### Deploying ${VERSION}"
+            echo
+            echo "| net | service | image tag | note |"
+            echo "|---|---|---|---|"
+            printf '%s\n' "${rows[@]}"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   promote-to-ecr:
     name: Promote GHCR Image to ECR - ${{ matrix.packageName }}
-    needs: [define-env-vars]
+    needs: [plan-release]
+    if: needs.plan-release.outputs.PROMOTE_NEEDED == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        packageName: ["api", "indexer"]
+        packageName: ${{ fromJSON(needs.plan-release.outputs.PROMOTE) }}
     env:
       GHCR_REGISTRY: ghcr.io
       GHCR_REPO: ${{ github.repository }}
@@ -185,75 +260,26 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Derive image tags
-        id: tags
+      - name: Copy image from GHCR to ECR
         env:
-          MAINNET_VERSION: ${{ needs.define-env-vars.outputs.MAINNET_VERSION }}
-          TESTNET_VERSION: ${{ needs.define-env-vars.outputs.TESTNET_VERSION }}
-          INPUT_NETWORK: ${{ inputs.network }}
-        run: |
-          # GHCR tags have the v. prefix stripped (v.1.0.0 -> 1.0.0)
-          echo "MAINNET_GHCR_TAG=$(echo "$MAINNET_VERSION" | sed 's/^v\.//')" >> "$GITHUB_OUTPUT"
-          echo "TESTNET_GHCR_TAG=$(echo "$TESTNET_VERSION" | sed 's/^v\.//')" >> "$GITHUB_OUTPUT"
-          # ECR tags keep the original format (v.1.0.0)
-          echo "MAINNET_ECR_TAG=$MAINNET_VERSION" >> "$GITHUB_OUTPUT"
-          echo "TESTNET_ECR_TAG=$TESTNET_VERSION" >> "$GITHUB_OUTPUT"
-          # When deploying both, check if versions differ to avoid redundant copy
-          if [ "$INPUT_NETWORK" = "both" ] && [ "$MAINNET_VERSION" = "$TESTNET_VERSION" ]; then
-            echo "SKIP_TESTNET=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "SKIP_TESTNET=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Copy mainnet image from GHCR to ECR
-        if: inputs.network == 'mainnet' || inputs.network == 'both'
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          GHCR_IMAGE: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPO }}/${{ matrix.packageName }}:${{ steps.tags.outputs.MAINNET_GHCR_TAG }}
+          VERSION: ${{ needs.plan-release.outputs.VERSION }}
+          GHCR_IMAGE_ROOT: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPO }}/${{ matrix.packageName }}
           ECR_IMAGE: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_PROJECT }}/${{ matrix.packageName }}
-        run: |
-          docker pull --platform linux/arm64 "$GHCR_IMAGE"
-          docker tag "$GHCR_IMAGE" "$ECR_IMAGE:${{ steps.tags.outputs.MAINNET_ECR_TAG }}"
-          docker tag "$GHCR_IMAGE" "$ECR_IMAGE:latest"
-          docker push "$ECR_IMAGE:${{ steps.tags.outputs.MAINNET_ECR_TAG }}"
-          docker push "$ECR_IMAGE:latest"
-
-      - name: Copy testnet image from GHCR to ECR
-        if: (inputs.network == 'testnet' || inputs.network == 'both') && steps.tags.outputs.SKIP_TESTNET != 'true'
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          GHCR_IMAGE: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPO }}/${{ matrix.packageName }}:${{ steps.tags.outputs.TESTNET_GHCR_TAG }}
-          ECR_IMAGE: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_PROJECT }}/${{ matrix.packageName }}
-        run: |
-          docker pull --platform linux/arm64 "$GHCR_IMAGE"
-          docker tag "$GHCR_IMAGE" "$ECR_IMAGE:${{ steps.tags.outputs.TESTNET_ECR_TAG }}"
-          docker push "$ECR_IMAGE:${{ steps.tags.outputs.TESTNET_ECR_TAG }}"
-
-      - name: Scan mainnet image in ECR
-        if: inputs.network == 'mainnet' || inputs.network == 'both'
-        env:
-          REPO: ${{ env.ECR_PROJECT }}/${{ matrix.packageName }}
-          TAG: ${{ steps.tags.outputs.MAINNET_ECR_TAG }}
         run: |
           set -euo pipefail
-          aws ecr start-image-scan --repository-name "$REPO" --image-id imageTag="$TAG" || true
-          aws ecr wait image-scan-complete --repository-name "$REPO" --image-id imageTag="$TAG"
-          read CRIT HIGH MED <<< "$(aws ecr describe-image-scan-findings \
-            --repository-name "$REPO" --image-id imageTag="$TAG" \
-            --query 'imageScanFindings.findingSeverityCounts.[CRITICAL, HIGH, MEDIUM]' \
-            --output text)"
-          CRIT=${CRIT/None/0}; HIGH=${HIGH/None/0}; MED=${MED/None/0}
-          echo "Findings for $REPO:$TAG — CRITICAL=$CRIT HIGH=$HIGH MEDIUM=$MED"
-          if [ $((CRIT + HIGH + MED)) -gt 0 ]; then
-            echo "::error::Vulnerabilities at MEDIUM or higher: CRITICAL=$CRIT HIGH=$HIGH MEDIUM=$MED"
-            exit 1
-          fi
+          # GHCR tags drop the v. prefix (v.1.0.0 -> 1.0.0); ECR keeps it.
+          GHCR_IMAGE="${GHCR_IMAGE_ROOT}:${VERSION#v.}"
 
-      - name: Scan testnet image in ECR
-        if: (inputs.network == 'testnet' || inputs.network == 'both') && steps.tags.outputs.SKIP_TESTNET != 'true'
+          docker pull --platform linux/arm64 "$GHCR_IMAGE"
+          docker tag "$GHCR_IMAGE" "${ECR_IMAGE}:${VERSION}"
+          docker tag "$GHCR_IMAGE" "${ECR_IMAGE}:latest"
+          docker push "${ECR_IMAGE}:${VERSION}"
+          docker push "${ECR_IMAGE}:latest"
+
+      - name: Scan image in ECR
         env:
           REPO: ${{ env.ECR_PROJECT }}/${{ matrix.packageName }}
-          TAG: ${{ steps.tags.outputs.TESTNET_ECR_TAG }}
+          TAG: ${{ needs.plan-release.outputs.VERSION }}
         run: |
           set -euo pipefail
           aws ecr start-image-scan --repository-name "$REPO" --image-id imageTag="$TAG" || true
@@ -270,13 +296,16 @@ jobs:
           fi
 
   deploy-env:
-    needs: [define-env-vars, promote-to-ecr]
-    name: Run Deployment - ${{ inputs.network}}
+    needs: [deployed-state, plan-release, promote-to-ecr]
+    if: >-
+      !cancelled() && needs.plan-release.result == 'success'
+      && needs.promote-to-ecr.result != 'failure'
+      && needs.promote-to-ecr.result != 'cancelled'
+    name: Run Deployment - ${{ inputs.network }}
     uses: ./.github/workflows/plan-or-apply-terraform.yml
     with:
-      environment: ${{ needs.define-env-vars.outputs.DEPLOYMENT_COLOR }}
-      mainnet_version: ${{ needs.define-env-vars.outputs.MAINNET_VERSION }}
-      testnet_version: ${{ needs.define-env-vars.outputs.TESTNET_VERSION }}
+      environment: ${{ needs.deployed-state.outputs.DEPLOYMENT_COLOR }}
+      image_versions: ${{ needs.plan-release.outputs.IMAGE_VERSIONS }}
       # Force ensures environment is spun up if it does not already exist
       force: true
     permissions:
@@ -311,7 +340,7 @@ jobs:
   manage-release:
     name: Refresh draft or publish release
     runs-on: ubuntu-latest
-    needs: [define-env-vars, deploy-env]
+    needs: [plan-release, deploy-env]
     if: >-
       ${{ needs.deploy-env.result == 'success'
       && (inputs.network == 'mainnet' || inputs.network == 'both') }}
@@ -320,7 +349,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
-      TAG: ${{ needs.define-env-vars.outputs.MAINNET_VERSION }}
+      TAG: ${{ needs.plan-release.outputs.VERSION }}
       INPUT_ENV: ${{ inputs.environment }}
     steps:
       - name: Check existing release state for tag
