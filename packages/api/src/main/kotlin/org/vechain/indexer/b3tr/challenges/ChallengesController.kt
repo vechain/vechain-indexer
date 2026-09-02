@@ -13,6 +13,8 @@ import org.vechain.indexer.constants.WALLET_CHALLENGES_PATH
 import org.vechain.indexer.docs.ChallengeFilterParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.utils.PaginationUtils.toPageable
@@ -32,6 +34,7 @@ open class ChallengesController(private val challengesService: ChallengesService
     )
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.MINUTE)
     open fun getChallenges(
         @RequestParam(required = false) status: ChallengeStatus?,
         @RequestParam(required = false) page: Int?,
@@ -59,6 +62,7 @@ open class ChallengesController(private val challengesService: ChallengesService
     @CommonApiResponses
     @PaginationParameters
     @ChallengeFilterParameter
+    @CacheFor(CachePolicy.MINUTE)
     open fun getWalletChallenges(
         @ValidAddress @PathVariable wallet: Address,
         @RequestParam(required = true) filter: ChallengeFilter,
@@ -82,6 +86,7 @@ open class ChallengesController(private val challengesService: ChallengesService
     @GetMapping("$CHALLENGES_PATH/{challengeId}")
     @Operation(summary = "Get a single indexed B3TR challenge.")
     @CommonApiResponses
+    @CacheFor(CachePolicy.MINUTE)
     open fun getChallenge(@PathVariable challengeId: Long): ChallengeDetailResponse =
         challengesService.getChallenge(challengeId)
 

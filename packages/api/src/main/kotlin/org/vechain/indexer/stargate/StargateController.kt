@@ -9,6 +9,7 @@ import java.math.BigInteger
 import java.time.Instant
 import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -32,7 +33,10 @@ import org.vechain.indexer.docs.TokenIdParameter
 import org.vechain.indexer.docs.TokenLevelParameter
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.history.IndexedHistoryEvent
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
+import org.vechain.indexer.rest.cachedFor
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
 import org.vechain.indexer.stargate.token.StargateToken
@@ -81,6 +85,7 @@ open class StargateController(
             "Optional query parameter to filter rewards by type. If not all rewards will be returned."
     )
     @CommonApiResponses
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getTotalVthoClaimed(
         @RequestParam(required = false) blockNumber: Long?,
         @RequestParam(required = false) rewardsType: String?,
@@ -102,6 +107,7 @@ open class StargateController(
     @AddressParameter(name = "account", required = true, `in` = ParameterIn.PATH)
     @RewardsTypeParameter
     @CommonApiResponses
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getTotalVthoClaimed(
         @ValidAddress @PathVariable account: Address,
         @RequestParam(required = false) rewardsType: String?,
@@ -124,6 +130,7 @@ open class StargateController(
     @TokenIdParameter(required = true, `in` = ParameterIn.PATH)
     @RewardsTypeParameter
     @CommonApiResponses
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getTotalVthoClaimed(
         @ValidAddress @PathVariable account: Address,
         @ValidTokenId @PathVariable tokenId: String,
@@ -149,15 +156,19 @@ open class StargateController(
     )
     @RangeParameter
     @CommonApiResponses
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getTotalVthoClaimed(
         @ValidTimeRangePreset @PathVariable("range") rangeStr: String
-    ): List<TimeSeriesRecord<BigInteger>> {
+    ): ResponseEntity<List<TimeSeriesRecord<BigInteger>>> {
         val now = Instant.now()
         val range = TimeRangePreset.Companion.fromPathValue(rangeStr)
 
         val after = range.computeAfterTimestamp(now)
 
-        return stargateService.getTotalVthoClaimedHistoric(range, after)
+        return cachedFor(
+            range.cachePolicy,
+            stargateService.getTotalVthoClaimedHistoric(range, after),
+        )
     }
 
     @GetMapping("/nft-holders")
@@ -167,6 +178,7 @@ open class StargateController(
             "Optional query parameter to get the total number of NFT holders at a specific block number. If not provided, the latest value will be returned."
     )
     @CommonApiResponses
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getNftHolders(@RequestParam(required = false) blockNumber: Long?): NftHoldersDto =
         stargateService.getNftHolders(blockNumber)
 
@@ -183,19 +195,23 @@ open class StargateController(
             "Optional query parameter to filter NFT holders by level. If not provided, all levels will be included."
     )
     @CommonApiResponses
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getNftHolders(
         @ValidTimeRangePreset @PathVariable("range") rangeStr: String,
         @ValidTokenLevel @RequestParam(required = false) level: String? = null,
-    ): List<TimeSeriesRecord<Long>> {
+    ): ResponseEntity<List<TimeSeriesRecord<Long>>> {
         val now = Instant.now()
         val range = TimeRangePreset.Companion.fromPathValue(rangeStr)
 
         val after = range.computeAfterTimestamp(now)
 
-        return stargateService.getNftHoldersHistoric(
-            after,
-            range,
-            TokenLevel.Companion.fromString(level),
+        return cachedFor(
+            range.cachePolicy,
+            stargateService.getNftHoldersHistoric(
+                after,
+                range,
+                TokenLevel.Companion.fromString(level),
+            ),
         )
     }
 
@@ -206,6 +222,7 @@ open class StargateController(
             "Optional query parameter to get the total VET staked at a specific block number. If not provided, the latest value will be returned."
     )
     @CommonApiResponses
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getTotalVetStaked(
         @RequestParam(required = false) blockNumber: Long?
     ): TotalByBlockDto = stargateService.getTotalVetStaked(blockNumber)
@@ -223,19 +240,23 @@ open class StargateController(
             "Optional query parameter to filter total VET staked by level. If not provided, all levels will be included."
     )
     @CommonApiResponses
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getTotalVetStaked(
         @ValidTimeRangePreset @PathVariable("range") rangeStr: String,
         @ValidTokenLevel @RequestParam(required = false) level: String? = null,
-    ): List<TimeSeriesRecord<BigInteger>> {
+    ): ResponseEntity<List<TimeSeriesRecord<BigInteger>>> {
         val now = Instant.now()
         val range = TimeRangePreset.Companion.fromPathValue(rangeStr)
 
         val after = range.computeAfterTimestamp(now)
 
-        return stargateService.getTotalVetStakedHistoric(
-            after,
-            range,
-            TokenLevel.Companion.fromString(level),
+        return cachedFor(
+            range.cachePolicy,
+            stargateService.getTotalVetStakedHistoric(
+                after,
+                range,
+                TokenLevel.Companion.fromString(level),
+            ),
         )
     }
 
@@ -246,6 +267,7 @@ open class StargateController(
             "Optional query parameter to get the total VTHO generated at a specific block number. If not provided, the latest value will be returned."
     )
     @CommonApiResponses
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getTotalVthoGenerated(@RequestParam(required = false) blockNumber: Long?): BigInteger =
         stargateService.getTotalVthoGenerated(blockNumber)
 
@@ -257,20 +279,25 @@ open class StargateController(
     )
     @RangeParameter
     @CommonApiResponses
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getTotalVthoGenerated(
         @ValidTimeRangePreset @PathVariable("range") rangeStr: String
-    ): List<TimeSeriesRecord<BigInteger>> {
+    ): ResponseEntity<List<TimeSeriesRecord<BigInteger>>> {
         val now = Instant.now()
         val range = TimeRangePreset.Companion.fromPathValue(rangeStr)
         val after = range.computeAfterTimestamp(now)
 
-        return stargateService.getTotalVthoGeneratedHistoric(range, after)
+        return cachedFor(
+            range.cachePolicy,
+            stargateService.getTotalVthoGeneratedHistoric(range, after),
+        )
     }
 
     @GetMapping("/total-vet-delegated")
     @Operation(summary = "Get total VET delegated in Stargate")
     @BlockNumberParameter
     @CommonApiResponses
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getTotalVetDelegated(
         @ValidNonNegativeLong @RequestParam(required = false) blockNumber: Long?
     ): TotalByBlockDto = stargateService.getTotalVetDelegated(blockNumber)
@@ -287,6 +314,7 @@ open class StargateController(
     @AddressParameter(name = "owner")
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.MINUTE)
     open fun getStargateTokens(
         @ValidTokenId @RequestParam(required = false) tokenId: String?,
         @ValidAddress @RequestParam(required = false) manager: Address?,
@@ -317,6 +345,7 @@ open class StargateController(
     @BeforeParameter
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.MINUTE)
     open fun getStargateTokenHistory(
         @ValidTokenId @PathVariable("tokenId") tokenId: String,
         @ValidStargateTokenHistoryEventName
@@ -371,6 +400,7 @@ open class StargateController(
     @AddressParameter(name = "validator")
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getStargateTokenRewards(
         @ValidTokenId @PathVariable("tokenId") tokenId: String,
         @ValidAddress @RequestParam(required = false) validator: Address?,
@@ -389,6 +419,7 @@ open class StargateController(
 
     @TimeFrameEndpoint
     @GetMapping("/vtho-generated/{period}")
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getVthoGenerated(
         @PathVariable period: String,
         @ValidAddress @RequestParam(required = false) validator: Address?,
@@ -424,6 +455,7 @@ open class StargateController(
 
     @TimeFrameEndpoint
     @GetMapping("/vtho-claimed/{period}")
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getVthoClaimed(
         @PathVariable period: String,
         @ValidAddress @RequestParam(required = false) validator: Address?,
@@ -459,6 +491,7 @@ open class StargateController(
 
     @TimeFrameEndpoint
     @GetMapping("/vet-delegated/{period}")
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getVETDelegatedTimeFrame(
         @PathVariable period: String,
         @RequestParam(required = false) from: Long?,
@@ -493,6 +526,7 @@ open class StargateController(
 
     @TimeFrameEndpoint
     @GetMapping("/nft-holders/{period}")
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getNFTHoldersTimeFrame(
         @PathVariable period: String,
         @RequestParam(required = false) from: Long?,
@@ -527,6 +561,7 @@ open class StargateController(
 
     @TimeFrameEndpoint
     @GetMapping("/vet-staked/{period}")
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getVETStakedTimeFrame(
         @PathVariable period: String,
         @RequestParam(required = false) from: Long?,

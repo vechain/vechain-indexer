@@ -96,6 +96,41 @@ Never return unbounded result sets. Use the existing pagination utilities:
 - **Offset pagination** for filtered queries that operate on a bounded subset of data.
 - **Cursor-based pagination** for queries that operate on an entire collection with millions of records (e.g., richlist rankings). The codebase already has a cursor-based pagination implementation — use it rather than building a new one.
 
+### Endpoints Own Their Cache TTL
+Every endpoint declares how long CloudFront and clients may reuse its response, next to its
+`@GetMapping`:
+
+```kotlin
+@GetMapping("/level-overview")
+@CacheFor(CachePolicy.HOURLY)
+open fun getLevelOverviews(...): List<GMLevelOverview> = ...
+```
+
+`CacheControlAdvice` writes the `Cache-Control`, so a handler returns its body as normal —
+no `ResponseEntity` wrapping. The default CloudFront behaviour uses the `origin-controlled`
+cache policy, which is the one whose `min_ttl < default_ttl < max_ttl` and therefore the one
+that obeys the origin. Nothing in Terraform pins an API TTL any more.
+
+Pick the coarsest window the data tolerates, from the tiers in `CachePolicy`: `VOLATILE`
+(moves with the head — clients revalidate, shared caches hold it for a block), `MINUTE`,
+`TEN_MINUTES`, `HOURLY`, `DAILY`. Prefer an existing tier over inventing a number.
+
+Two escapes, for a TTL only the response knows. Both need `@CacheFor` anyway — it is the
+floor that applies if the call is missed:
+
+- `cachedByAge(blockTimestamp, body)` — grants the age of the content itself, capped at a
+  year, so nothing outlives the span it has already been stable and a reorg can only poison
+  an entry for as long as the block was on chain. `BlockController`, `GET /transactions/{txId}`.
+- `cachedFor(policy, body)` — grants a policy chosen per request. The `historic/{range}`
+  endpoints take theirs from `TimeRangePreset`, since a year-wide series tolerates far more
+  staleness than an hour-wide one.
+
+Errors never inherit an endpoint's window: an exception handler's return type carries no
+`@CacheFor`, and the advice forces `VOLATILE` on any non-2xx it does see.
+
+`CacheControlCoverageTest` fails the build on a `@GetMapping` without a `@CacheFor`. It reads
+bytecode rather than a Spring context, so an endpoint cannot hide behind its `@Profile`.
+
 ### Conformance Testing
 When making API changes or changes that could affect performance, run the API conformance pipeline (`.github/workflows/api-conformance-tests.yml`). This is a manually triggered workflow. Run it first against the **dead** environment (the inactive side of our blue/green deployment), validate the results, and only then proceed with the DNS switch to make it live. This is strongly encouraged for all API and performance-related changes.
 

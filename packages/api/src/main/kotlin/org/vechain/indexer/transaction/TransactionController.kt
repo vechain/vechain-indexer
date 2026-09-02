@@ -2,9 +2,7 @@ package org.vechain.indexer.transaction
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
-import java.time.Instant
 import org.springframework.context.annotation.Profile
-import org.springframework.http.HttpHeaders
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
@@ -22,10 +20,10 @@ import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.PaginationSize
 import org.vechain.indexer.docs.TransactionIdParameter
 import org.vechain.indexer.exception.ResourceNotFoundException
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
-import org.vechain.indexer.rest.VOLATILE_CACHE_CONTROL
-import org.vechain.indexer.rest.cacheControlFor
-import org.vechain.indexer.rest.gradedMaxAge
+import org.vechain.indexer.rest.cachedByAge
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.utils.PaginationUtils.toPageable
@@ -55,15 +53,12 @@ open class TransactionController(private val transactionService: TransactionServ
     @ExpandedParameter
     @PaginationSize
     @Cursor
+    @CacheFor(CachePolicy.VOLATILE)
     open fun getLatestTransactions(
         @RequestParam(required = false) expanded: Boolean = false,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @ValidCursor @RequestParam(required = false) cursor: String?,
-    ): ResponseEntity<PaginatedResponse<IndexedTransaction>> {
-        return ResponseEntity.ok()
-            .header(HttpHeaders.CACHE_CONTROL, VOLATILE_CACHE_CONTROL)
-            .body(transactionService.findLatest(size, cursor))
-    }
+    ): PaginatedResponse<IndexedTransaction> = transactionService.findLatest(size, cursor)
 
     @GetMapping("{txId}")
     @Operation(
@@ -79,6 +74,7 @@ open class TransactionController(private val transactionService: TransactionServ
     @TransactionIdParameter
     @CommonApiResponses
     @ExpandedParameter
+    @CacheFor(CachePolicy.VOLATILE)
     open fun getTransactionById(
         @TransactionId @PathVariable txId: String,
         @RequestParam(required = false) expanded: Boolean = false,
@@ -86,10 +82,7 @@ open class TransactionController(private val transactionService: TransactionServ
         val transaction =
             transactionService.findById(txId)
                 ?: throw ResourceNotFoundException("Transaction not found for txId $txId")
-        val maxAge = gradedMaxAge(transaction.blockTimestamp, Instant.now().epochSecond)
-        return ResponseEntity.ok()
-            .header(HttpHeaders.CACHE_CONTROL, cacheControlFor(maxAge))
-            .body(transaction)
+        return cachedByAge(transaction.blockTimestamp, transaction)
     }
 
     @GetMapping
@@ -103,6 +96,7 @@ open class TransactionController(private val transactionService: TransactionServ
     @CommonApiResponses
     @ExpandedParameter
     @PaginationParameters
+    @CacheFor(CachePolicy.MINUTE)
     open fun getTransactionsByOriginOrDelegator(
         @ValidAddress @RequestParam origin: Address,
         @RequestParam(required = false) includeDelegated: Boolean = false,
@@ -126,6 +120,7 @@ open class TransactionController(private val transactionService: TransactionServ
     @CommonApiResponses
     @ExpandedParameter
     @PaginationParameters
+    @CacheFor(CachePolicy.VOLATILE)
     open fun getDelegatedTransactions(
         @ValidAddress @RequestParam delegator: Address,
         @RequestParam(required = false) expanded: Boolean = true,
@@ -154,22 +149,18 @@ open class TransactionController(private val transactionService: TransactionServ
     @CommonApiResponses
     @ExpandedParameter
     @PaginationParameters
+    @CacheFor(CachePolicy.VOLATILE)
     open fun getTransactionsByContract(
         @ValidAddress @RequestParam contractAddress: Address,
         @RequestParam(required = false) expanded: Boolean = false,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
-    ): ResponseEntity<PaginatedResponse<IndexedTransaction>> {
-        return ResponseEntity.ok()
-            .header(HttpHeaders.CACHE_CONTROL, VOLATILE_CACHE_CONTROL)
-            .body(
-                paginatedResponse(
-                    transactionService.findByContractAddress(
-                        contractAddress,
-                        toPageable(page, size, direction, "blockNumber", "_id"),
-                    )
-                )
+    ): PaginatedResponse<IndexedTransaction> =
+        paginatedResponse(
+            transactionService.findByContractAddress(
+                contractAddress,
+                toPageable(page, size, direction, "blockNumber", "_id"),
             )
-    }
+        )
 }

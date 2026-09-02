@@ -17,6 +17,8 @@ import org.vechain.indexer.docs.AfterParameter
 import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.exception.ResourceNotFoundException
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.utils.TimeValidationUtils
 import org.vechain.indexer.validation.ValidAddress
@@ -49,6 +51,7 @@ open class AccountsController(private val accountsService: AccountsService) {
     @AfterParameter(name = "startTimestamp", required = true)
     @BeforeParameter(name = "endTimestamp", required = true)
     @CommonApiResponses
+    @CacheFor(CachePolicy.HOURLY)
     open fun getTotalAccountsV2(
         @ValidNonNegativeLong @RequestParam startTimestamp: Long,
         @ValidNonNegativeLong @RequestParam endTimestamp: Long,
@@ -68,6 +71,7 @@ open class AccountsController(private val accountsService: AccountsService) {
         description = "Returns the total accounts observed on VeChain.",
     )
     @CommonApiResponses
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getTotalAccountsLatest(): Long =
         accountsService.getTotalAccountsLatest()
             ?: throw ResourceNotFoundException("Total accounts not found")
@@ -92,6 +96,7 @@ open class AccountsController(private val accountsService: AccountsService) {
         description = "The address of the account to retrieve the overview for.",
     )
     @CommonApiResponses
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getOverview(@ValidAddress @PathVariable address: Address): AccountOverviewResponse =
         accountsService.getOverviewWithVthoEarnings(address)
             ?: throw ResourceNotFoundException("Account overview not found for address $address")

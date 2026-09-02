@@ -19,6 +19,8 @@ import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.PriceOracleUnavailableResponse
 import org.vechain.indexer.exception.ResourceNotFoundException
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -113,6 +115,7 @@ open class ValidatorController(private val service: ValidatorService) {
     @CommonApiResponses
     @PriceOracleUnavailableResponse
     @PaginationParameters
+    @CacheFor(CachePolicy.MINUTE)
     open fun getValidators(
         @RequestParam(required = false) endorser: String?,
         @RequestParam(required = false) validatorId: String?,
@@ -152,6 +155,7 @@ open class ValidatorController(private val service: ValidatorService) {
     )
     @CommonApiResponses
     @PriceOracleUnavailableResponse
+    @CacheFor(CachePolicy.MINUTE)
     open fun getValidatorById(@PathVariable @ValidAddress validatorId: Address): ValidatorResponse {
         val normalised = HexUtils.normalise(validatorId.value)
         return service.getValidatorById(normalised)
@@ -185,6 +189,7 @@ open class ValidatorController(private val service: ValidatorService) {
     )
     @PaginationParameters
     @CommonApiResponses
+    @CacheFor(CachePolicy.MINUTE)
     open fun getValidatorBlocks(
         @RequestParam(required = false) blockNumber: Long?,
         @ValidAddress @RequestParam(required = false) validator: Address?,
@@ -222,6 +227,7 @@ open class ValidatorController(private val service: ValidatorService) {
     )
     @PaginationParameters
     @CommonApiResponses
+    @CacheFor(CachePolicy.MINUTE)
     open fun getValidatorBlockRewards(
         @ValidAddress @RequestParam(required = false) validator: Address?,
         @RequestParam(required = false) blockNumber: Long?,
@@ -248,6 +254,7 @@ open class ValidatorController(private val service: ValidatorService) {
     )
     @AddressParameter(name = "validator", description = "Optional validator address to filter by")
     @CommonApiResponses
+    @CacheFor(CachePolicy.MINUTE)
     open fun getBlockByBlockNumber(
         @PathVariable blockNumber: Long,
         @ValidAddress @RequestParam(required = false) validator: Address?,
@@ -279,6 +286,7 @@ open class ValidatorController(private val service: ValidatorService) {
         required = true,
     )
     @CommonApiResponses
+    @CacheFor(CachePolicy.HOURLY)
     open fun getHistoricValidatorRewardsRange(
         @PathVariable @ValidAddress validator: Address,
         @RequestParam startTimestamp: Long,
@@ -314,6 +322,7 @@ open class ValidatorController(private val service: ValidatorService) {
     )
     @AddressParameter(name = "validator", description = "Optional validator address to filter by")
     @CommonApiResponses
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getMissedBlocksPercentage(
         @RequestParam timeframe: MissedBlocksTimeframe,
         @ValidAddress @RequestParam(required = false) validator: Address?,

@@ -28,6 +28,8 @@ import org.vechain.indexer.docs.PriceOracleUnavailableResponse
 import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.prices.PriceFeed
 import org.vechain.indexer.prices.PriceFeedService
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -74,6 +76,7 @@ open class ValidatorV2Controller(
     @CommonApiResponses
     @PriceOracleUnavailableResponse
     @PaginationParameters
+    @CacheFor(CachePolicy.MINUTE)
     open fun getValidators(
         @RequestParam(required = false) status: List<Status>?,
         @RequestParam(required = false) endorser: String?,
@@ -137,6 +140,7 @@ open class ValidatorV2Controller(
         required = true,
     )
     @CommonApiResponses
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getSlotStats(
         @ValidNonNegativeLong @RequestParam startTimestamp: Long,
         @ValidNonNegativeLong @RequestParam endTimestamp: Long,
@@ -167,6 +171,7 @@ open class ValidatorV2Controller(
         required = true,
     )
     @CommonApiResponses
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getSlotStatsForValidator(
         @PathVariable @ValidAddress validatorId: Address,
         @ValidNonNegativeLong @RequestParam startTimestamp: Long,
@@ -195,6 +200,7 @@ open class ValidatorV2Controller(
     )
     @CommonApiResponses
     @PriceOracleUnavailableResponse
+    @CacheFor(CachePolicy.MINUTE)
     open fun getValidatorById(
         @PathVariable @ValidAddress validatorId: Address
     ): ValidatorV2Response {

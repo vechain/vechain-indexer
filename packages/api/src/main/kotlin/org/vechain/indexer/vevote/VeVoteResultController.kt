@@ -13,6 +13,8 @@ import org.vechain.indexer.docs.ProposalIdParameter
 import org.vechain.indexer.docs.SupportParameter
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.proposal.ProposalId
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.utils.PaginationUtils.toPageable
@@ -31,6 +33,7 @@ open class VeVoteResultController(private val resultService: VeVoteResultsServic
     @SupportParameter
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getResults(
         @ValidProposalId @RequestParam(required = false) proposalId: ProposalId?,
         @RequestParam(required = false) support: Support?,

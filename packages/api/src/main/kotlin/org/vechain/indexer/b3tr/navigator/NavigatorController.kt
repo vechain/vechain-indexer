@@ -19,6 +19,8 @@ import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.exception.ResourceNotFoundException
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -45,6 +47,7 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
             "Returns aggregate statistics across all active navigators: total count, total B3TR staked, total citizens delegating, and total VOT3 delegated.",
     )
     @CommonApiResponses
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getOverview(): NavigatorOverview = navigatorApiService.getOverview()
 
     @GetMapping
@@ -55,6 +58,7 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
     )
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.MINUTE)
     open fun getNavigators(
         @Parameter(
             description = "Filter by navigator status. Multiple values allowed.",
@@ -108,6 +112,7 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
         required = true,
     )
     @CommonApiResponses
+    @CacheFor(CachePolicy.MINUTE)
     open fun getNavigatorById(@ValidAddress @PathVariable navigatorId: Address): Navigator {
         val normalisedNavigatorId = navigatorId.value.lowercase()
         return navigatorApiService.getNavigatorById(normalisedNavigatorId)
@@ -122,6 +127,7 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
     )
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.MINUTE)
     open fun getCitizens(
         @Parameter(
             description = "Navigator address to list citizens for.",
@@ -156,6 +162,7 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
     )
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.MINUTE)
     open fun getDelegations(
         @Parameter(
             description = "Filter by navigator address.",
@@ -203,6 +210,7 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
             "Returns total fees earned and claimed for a navigator, or globally if no navigator specified.",
     )
     @CommonApiResponses
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getFeeSummary(
         @Parameter(
             description = "Filter by navigator address. Omit for global totals.",
@@ -221,6 +229,7 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
     )
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.HOURLY)
     open fun getFeeHistory(
         @Parameter(
             description = "Navigator address.",

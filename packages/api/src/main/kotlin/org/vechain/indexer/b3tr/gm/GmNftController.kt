@@ -9,6 +9,8 @@ import org.vechain.indexer.b3tr.gm.repository.GmNftRepository
 import org.vechain.indexer.constants.GM_NFT_PATH
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.GmNftLevelParameter
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 
 @Profile("b3tr", "b3tr-gm-nft")
 @Tag(
@@ -27,6 +29,7 @@ open class GmNftController(private val gmNftRepository: GmNftRepository) {
     @GetMapping("/level-overview")
     @GmNftLevelParameter
     @CommonApiResponses
+    @CacheFor(CachePolicy.HOURLY)
     open fun getLevelOverviews(
         @RequestParam(required = false) level: GmLevelName?
     ): List<GMLevelOverview> =

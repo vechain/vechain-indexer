@@ -16,6 +16,8 @@ import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.TokenIdParameter
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -55,6 +57,7 @@ open class DelegationController(private val service: DelegationService) {
     )
     @PaginationParameters
     @CommonApiResponses
+    @CacheFor(CachePolicy.MINUTE)
     open fun getDelegations(
         @ValidAddress @RequestParam(required = false) validator: Address?,
         @ValidTokenId @RequestParam(required = false) tokenId: String?,
@@ -78,6 +81,7 @@ open class DelegationController(private val service: DelegationService) {
     )
     @AddressParameter(name = "validator", description = "Optional validator address to filter by")
     @CommonApiResponses
+    @CacheFor(CachePolicy.MINUTE)
     open fun getDelegationCounts(
         @ValidAddress @RequestParam(required = false) validator: Address?
     ): List<DelegationCountsResponse> = service.getDelegationCounts(validator)

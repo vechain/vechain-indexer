@@ -17,6 +17,8 @@ import org.vechain.indexer.docs.ProposalStatesParameter
 import org.vechain.indexer.docs.SupportParameter
 import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.proposal.ProposalId
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -37,6 +39,7 @@ open class ProposalController(private val proposalService: ProposalService) {
     @CommonApiResponses
     @PaginationParameters
     @ProposalStatesParameter
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getAllProposalResults(
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
@@ -58,6 +61,7 @@ open class ProposalController(private val proposalService: ProposalService) {
     @Operation(summary = "Get the results of a proposal.")
     @ProposalIdParameter(required = true, `in` = ParameterIn.PATH)
     @CommonApiResponses
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getProposalResult(
         @ValidProposalId @PathVariable(required = true) proposalId: ProposalId
     ): ProposalResult {
@@ -72,6 +76,7 @@ open class ProposalController(private val proposalService: ProposalService) {
     @ProposalIdParameter(required = true, `in` = ParameterIn.PATH)
     @CommonApiResponses
     @Deprecated("This api is deprecated in favour of the v2 endpoint.")
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getProposalResultDeprecated(
         @ValidProposalId @PathVariable(required = true) proposalId: ProposalId
     ): List<ProposalResultDeprecated> {
@@ -89,6 +94,7 @@ open class ProposalController(private val proposalService: ProposalService) {
     @SupportParameter
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.MINUTE)
     open fun getProposalComments(
         @ValidProposalId @PathVariable(required = true) proposalId: ProposalId,
         @RequestParam(required = false) support: Support?,
@@ -108,6 +114,7 @@ open class ProposalController(private val proposalService: ProposalService) {
     @SupportParameter
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.MINUTE)
     open fun getUserProposalComments(
         @ValidAddress @PathVariable wallet: Address,
         @RequestParam(required = false) proposalId: ProposalId?,

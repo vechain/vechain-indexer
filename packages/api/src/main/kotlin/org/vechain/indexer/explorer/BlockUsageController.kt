@@ -12,6 +12,8 @@ import org.vechain.indexer.constants.EXPLORER_PATH
 import org.vechain.indexer.docs.AfterParameter
 import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.utils.TimeValidationUtils
 import org.vechain.indexer.validation.ValidNonNegativeLong
 
@@ -56,6 +58,7 @@ open class BlockUsageController(private val blockUsageService: BlockUsageService
     @AfterParameter(name = "startTimestamp", required = true)
     @BeforeParameter(name = "endTimestamp", required = true)
     @CommonApiResponses
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getBlockUsage(
         @ValidNonNegativeLong @RequestParam startTimestamp: Long,
         @ValidNonNegativeLong @RequestParam endTimestamp: Long,

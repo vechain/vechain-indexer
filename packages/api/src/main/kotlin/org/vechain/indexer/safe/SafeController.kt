@@ -15,6 +15,8 @@ import org.vechain.indexer.constants.API_VERSION
 import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -48,6 +50,7 @@ open class SafeController(private val safeService: SafeService) {
     )
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.MINUTE)
     open fun getSafesForOwner(
         @ValidAddress @PathVariable address: Address,
         @RequestParam(required = false, defaultValue = "ALL") membership: SafeMembershipScope,
@@ -77,6 +80,7 @@ open class SafeController(private val safeService: SafeService) {
     )
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.VOLATILE)
     open fun getTransactionsForSafe(
         @ValidAddress @PathVariable safe: Address,
         @RequestParam(required = false) page: Int?,
@@ -104,6 +108,7 @@ open class SafeController(private val safeService: SafeService) {
         description = "The Safe contract address.",
     )
     @CommonApiResponses
+    @CacheFor(CachePolicy.VOLATILE)
     open fun getTxState(
         @ValidAddress @PathVariable safe: Address,
         @TransactionId @PathVariable txHash: String,

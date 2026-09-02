@@ -28,6 +28,8 @@ import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.RoundIdParameter
 import org.vechain.indexer.docs.StartDateParameter
 import org.vechain.indexer.exception.BadRequestException
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.validation.ValidAddress
@@ -52,6 +54,7 @@ open class ActionController(private val service: ActionService) {
     @BeforeParameter
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.HOURLY)
     open fun getUserActions(
         @ValidAddress @PathVariable(required = true) wallet: Address,
         @ValidAppId @RequestParam(required = false) appId: AppId?,
@@ -91,6 +94,7 @@ open class ActionController(private val service: ActionService) {
     @BeforeParameter
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.HOURLY)
     open fun getAppActions(
         @ValidAppId @PathVariable(required = true) appId: AppId,
         @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
@@ -126,6 +130,7 @@ open class ActionController(private val service: ActionService) {
     )
     @AddressParameter(name = "wallet", required = true, `in` = ParameterIn.PATH)
     @CommonApiResponses
+    @CacheFor(CachePolicy.HOURLY)
     open fun getUserOverview(
         @ValidAddress @PathVariable wallet: Address,
         @RoundIdParameter @RequestParam(required = false) roundId: Int?,
@@ -165,6 +170,7 @@ open class ActionController(private val service: ActionService) {
     @AppIdParameter(required = true, `in` = ParameterIn.PATH)
     @DateParameter
     @CommonApiResponses
+    @CacheFor(CachePolicy.VOLATILE)
     open fun getUserAppOverview(
         @ValidAddress @PathVariable wallet: Address,
         @ValidAppId @PathVariable appId: AppId,
@@ -193,6 +199,7 @@ open class ActionController(private val service: ActionService) {
     @EndDateParameter
     @CommonApiResponses
     @PaginationParameters
+    @CacheFor(CachePolicy.HOURLY)
     open fun getDailySummariesForRange(
         @ValidAddress @PathVariable wallet: Address,
         @ValidISODateString @RequestParam startDate: String,
@@ -229,6 +236,7 @@ open class ActionController(private val service: ActionService) {
     @AppIdParameter(required = true, `in` = ParameterIn.PATH)
     @DateParameter
     @CommonApiResponses
+    @CacheFor(CachePolicy.HOURLY)
     open fun getAppOverview(
         @ValidAppId @PathVariable appId: AppId,
         @RequestParam(required = false) roundId: Int?,
@@ -265,6 +273,7 @@ open class ActionController(private val service: ActionService) {
     @RoundIdParameter
     @DateParameter
     @CommonApiResponses
+    @CacheFor(CachePolicy.DAILY)
     open fun getGlobalOverview(
         @RequestParam(required = false) roundId: Int?,
         @ValidISODateString @RequestParam(required = false) date: String?,

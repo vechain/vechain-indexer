@@ -15,6 +15,8 @@ import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.AfterParameter
 import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.utils.TimeValidationUtils
 import org.vechain.indexer.validation.ValidAddress
@@ -37,6 +39,7 @@ open class VetBalanceController(private val vetBalanceService: VetBalanceService
     @AfterParameter(name = "startTimestamp", required = true)
     @BeforeParameter(name = "endTimestamp", required = true)
     @CommonApiResponses
+    @CacheFor(CachePolicy.HOURLY)
     open fun getVetBalanceHistory(
         @ValidAddress @PathVariable address: Address,
         @ValidNonNegativeLong @RequestParam startTimestamp: Long,

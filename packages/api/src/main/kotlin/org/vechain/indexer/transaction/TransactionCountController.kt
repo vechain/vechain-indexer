@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.exception.ResourceNotFoundException
+import org.vechain.indexer.rest.CacheFor
+import org.vechain.indexer.rest.CachePolicy
 
 @Profile("transactions", "transaction-count")
 @Tag(name = "Transactions", description = "Query on chain transactions")
@@ -33,6 +35,7 @@ open class TransactionCountController(
         """,
     )
     @CommonApiResponses
+    @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getTransactionCount(): TransactionCountSummary =
         transactionCountService.getLatestCount()
             ?: throw ResourceNotFoundException("Transaction count not found")
