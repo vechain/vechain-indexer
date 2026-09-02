@@ -100,7 +100,7 @@ jobs:
             if [ "$CLOUDFRONT_CHANGED" = "true" ]; then
               echo
               printf '`terraform/cloudfront`: applied by [Deploy Shared Infra](%s), shared then staging\n' "$RUN_URL"
-              echo 'then prod, after the VPC stack. Read the plan for every workspace below.'
+              echo 'then prod then dead, after the VPC stack. Read the plan for every workspace below.'
             fi
             printf '\nChanged files:\n'
             cat "$RUNNER_TEMP/files.md"
@@ -263,15 +263,30 @@ jobs:
       - name: Terraform Initialize
         run: terraform init -reconfigure -input=false
 
-      # All three workspaces, so a reviewer sees which ones a merge leaves dirty.
+      # Every workspace, so a reviewer sees which ones a merge leaves dirty.
       # -lock=false so a review-time plan cannot block a concurrent deploy.
       - name: Terraform Plan
         run: |
           set -o pipefail
-          for workspace in shared staging prod; do
-            terraform workspace select "$workspace"
-            terraform plan -lock=false -input=false -no-color \
-              2>&1 | tee "$RUNNER_TEMP/plan-$workspace.txt"
+          for workspace in shared staging prod dead; do
+            log="$RUNNER_TEMP/plan-$workspace.txt"
+            if terraform workspace select "$workspace" 2>/dev/null; then
+              terraform plan -lock=false -input=false -no-color 2>&1 | tee "$log"
+              continue
+            fi
+            # Not created yet: plan against empty local state so the first-creation
+            # plan is still reviewed. The read-only role cannot create a remote one.
+            dir="$RUNNER_TEMP/first-plan-$workspace"
+            rm -rf "$dir" && mkdir -p "$dir"
+            tar -c --exclude=.terraform --exclude=.terraform.lock.hcl . | tar -x -C "$dir"
+            printf 'terraform {\n  backend "local" {}\n}\n' > "$dir/zz_local_backend_override.tf"
+            echo "No remote state yet - first-creation plan against empty state." | tee "$log"
+            (
+              cd "$dir"
+              terraform init -input=false > /dev/null
+              terraform workspace new "$workspace" > /dev/null
+              terraform plan -lock=false -input=false -no-color 2>&1
+            ) | tee -a "$log"
           done
 
       - name: Publish plan summary
@@ -279,7 +294,7 @@ jobs:
         run: |
           {
             echo '### CloudFront Plan'
-            for workspace in shared staging prod; do
+            for workspace in shared staging prod dead; do
               echo
               echo "#### \`$workspace\` workspace"
               echo '```terraform'

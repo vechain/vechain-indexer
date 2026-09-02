@@ -91,8 +91,8 @@ jobs:
 
       - name: Plan and apply each workspace
         run: |
-          for workspace in shared staging prod; do
-            terraform workspace select "$workspace"
+          for workspace in shared staging prod dead; do
+            terraform workspace select -or-create "$workspace"
             terraform plan -input=false -no-color -out="$workspace.tfplan" | tee "$workspace.plan"
             {
               printf '### %s\n\n```\n' "$workspace"

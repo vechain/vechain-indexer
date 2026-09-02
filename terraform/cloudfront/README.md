@@ -1,23 +1,46 @@
 # CloudFront Terraform Workspace Configuration
 
-This directory contains a unified Terraform configuration that uses workspaces to manage multiple environments (shared, staging, prod) from a single codebase.
+This directory contains a unified Terraform configuration that uses workspaces to manage multiple environments (shared, staging, prod, dead) from a single codebase.
 
 ## Workspace apply status
-
-All three workspaces are reconciled against live and plan clean:
 
 | Workspace | Plan |
 |---|---|
 | `prod` | No changes |
 | `staging` | No changes |
 | `shared` | No changes |
+| `dead` | Never applied — creates the dead-colour distributions on first run |
 
 [deploy-shared-infra.yml](../../.github/workflows/deploy-shared-infra.yml) applies
-the stack after the VPC one, `shared` then `staging` then `prod` — that order is a
-dependency chain, since the distributions consume `shared`'s cache policies and
-`prod`'s continuous-deployment policy reads `staging`'s domains. Each workspace's
-plan lands in the job summary before it applies. `shared-infra.yml` plans all
-three at review time — read that before merging.
+the stack after the VPC one, `shared` then `staging` then `prod` then `dead` — that
+order is a dependency chain, since the distributions consume `shared`'s cache
+policies and `prod`'s continuous-deployment policy reads `staging`'s domains. Each
+workspace's plan lands in the job summary before it applies. `shared-infra.yml`
+plans all four at review time — read that before merging.
+
+## The dead workspace
+
+`dead` fronts the inactive blue/green colour so it can be tested before a cutover.
+Its origins are the colour-agnostic `*.dead.prod.veworld.vechain.org` records, so a
+cutover swaps what it points at without any change here.
+
+It answers on:
+
+- `https://mainnet.dead.veworld.vechain.org`
+- `https://testnet.dead.veworld.vechain.org`
+
+Unlike the other workspaces it owns its certificate and DNS: `dead_dns.tf` issues a
+DNS-validated us-east-1 certificate covering both names and writes the alias records
+into the `veworld.vechain.org` zone, looked up by name. That zone is the shortest one
+this account holds — the live `indexer.*.vechain.org` names sit in another account,
+so this stack cannot write DNS beside them.
+
+The first apply blocks on ACM DNS validation, usually a few minutes.
+
+It reuses the prod WAF ACLs and prod's cache behaviours (via `cache_behaviors_from`
+in `environments/dead.yml`) — a dead-colour test that cached differently from live
+would not be testing the same thing. The WAF rate limit applies, so heavy suites
+need the `x-rate-limit-bypass` header the same way prod does.
 
 `shared` now tracks only the cache policies. It once held the two CLOUDFRONT-scope
 WAF ACLs that `terraform/vpc/cloudfront_waf.tf` has owned since #1519; the
@@ -69,12 +92,14 @@ terraform/cloudfront/
 ├── provider.tf                # Provider configuration with workspace logic
 ├── shared.tf                  # Shared resources (cache policies, WAF)
 ├── cloudfront.tf              # CloudFront distributions
+├── dead_dns.tf                # Dead-colour alias records
 ├── outputs.tf                 # Workspace-aware outputs
 ├── terraform-workspace.sh     # Management script
 ├── environments/
 │   ├── shared.yml             # Shared resources configuration
 │   ├── staging.yml            # Staging environment configuration
-│   └── prod.yml               # Production environment configuration
+│   ├── prod.yml               # Production environment configuration
+│   └── dead.yml               # Dead blue/green colour configuration
 └── (no CI workflow yet — applies are manual)
 ```
 
@@ -84,6 +109,8 @@ terraform/cloudfront/
   no aliases, and idle until a continuous-deployment policy routes to them, so
   they must be applied alongside `prod` to stay a faithful copy of it
 - **`prod`** - Production CloudFront distributions + continuous deployment
+- **`dead`** - Distributions fronting the inactive blue/green colour, so it can be
+  tested before a cutover. See "The dead workspace" above
 
 ## 🚀 Quick Start
 
@@ -101,7 +128,7 @@ cd terraform/cloudfront
 
 ### **2. Deploy All Environments**
 ```bash
-# Deploy staging → prod. shared is left to an explicit apply.
+# Deploy staging → prod → dead. shared is left to an explicit apply.
 ./terraform-workspace.sh deploy-all
 ```
 
@@ -118,6 +145,10 @@ cd terraform/cloudfront
 # Deploy production environment
 ./terraform-workspace.sh plan prod
 ./terraform-workspace.sh apply prod
+
+# Deploy the dead-colour front door
+./terraform-workspace.sh plan dead
+./terraform-workspace.sh apply dead
 ```
 
 ## 📋 Management Commands
@@ -273,7 +304,8 @@ The GitHub workflow uses AWS role assumption:
 S3 Bucket: veworld-indexer-terraform-state-prod
 ├── cloudfront/shared/cloudfront/terraform.tfstate    # Shared resources
 ├── cloudfront/staging/cloudfront/terraform.tfstate   # Staging environment
-└── cloudfront/prod/cloudfront/terraform.tfstate      # Production environment
+├── cloudfront/prod/cloudfront/terraform.tfstate      # Production environment
+└── cloudfront/dead/cloudfront/terraform.tfstate      # Dead blue/green colour
 ```
 
 ### **Workspace Commands**

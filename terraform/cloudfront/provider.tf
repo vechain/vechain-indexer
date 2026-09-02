@@ -1,5 +1,5 @@
 # Main CloudFront Infrastructure Configuration
-# This configuration supports multiple workspaces: shared, staging, prod
+# This configuration supports multiple workspaces: shared, staging, prod, dead
 
 terraform {
   required_version = ">= 1.7"
@@ -27,12 +27,23 @@ locals {
   workspace = terraform.workspace
 
   # Load configuration based on workspace
-  env_config = yamldecode(file("environments/${local.workspace}.yml"))
+  raw_config = yamldecode(file("environments/${local.workspace}.yml"))
+
+  # A workspace may take another's cache behaviours rather than duplicating them,
+  # falling back to its own list and then to none.
+  cache_behaviors = try(
+    yamldecode(file("environments/${local.raw_config.cache_behaviors_from}.yml")).cache_behaviors,
+    local.raw_config.cache_behaviors,
+    []
+  )
+
+  env_config = merge(local.raw_config, { cache_behaviors = local.cache_behaviors })
 
   # Workspace-specific settings
   is_shared  = local.workspace == "shared"
   is_staging = local.workspace == "staging"
   is_prod    = local.workspace == "prod"
+  is_dead    = local.workspace == "dead"
 
 }
 

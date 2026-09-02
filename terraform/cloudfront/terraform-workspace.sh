@@ -46,12 +46,13 @@ show_usage() {
     echo "  show <workspace>         - Show current workspace state"
     echo "  select <workspace>       - Select a workspace"
     echo "  validate                 - Validate configuration in current workspace"
-    echo "  deploy-all               - Deploy staging then prod (skips shared)"
+    echo "  deploy-all               - Deploy staging, prod then dead (skips shared)"
     echo ""
     echo "Workspaces:"
     echo "  shared                   - Shared resources (cache policies, WAF)"
     echo "  staging                  - Staging environment"
     echo "  prod                     - Production environment"
+    echo "  dead                     - Dead blue/green colour (pre-cutover testing)"
     echo ""
     echo "Examples:"
     echo "  $0 init"
@@ -68,7 +69,7 @@ init_terraform() {
     print_status "Creating workspaces..."
     
     # Create workspaces if they don't exist
-    for workspace in shared staging prod; do
+    for workspace in shared staging prod dead; do
         if ! terraform workspace list | grep -q "$workspace"; then
             print_status "Creating workspace: $workspace"
             terraform workspace new "$workspace"
@@ -86,9 +87,9 @@ init_terraform() {
 # Function to validate workspace name
 validate_workspace() {
     local workspace=$1
-    if [[ ! "$workspace" =~ ^(shared|staging|prod)$ ]]; then
+    if [[ ! "$workspace" =~ ^(shared|staging|prod|dead)$ ]]; then
         print_error "Invalid workspace: $workspace"
-        print_error "Valid workspaces: shared, staging, prod"
+        print_error "Valid workspaces: shared, staging, prod, dead"
         exit 1
     fi
 }
@@ -99,7 +100,7 @@ plan_deployment() {
     validate_workspace "$workspace"
     
     print_status "Planning deployment for workspace: $workspace"
-    terraform workspace select "$workspace"
+    terraform workspace select -or-create "$workspace"
     mkdir -p "$PLAN_DIR"
     terraform plan -out="$PLAN_DIR/$workspace.tfplan"
     print_success "Plan completed for $workspace"
@@ -153,23 +154,28 @@ deploy_all() {
     print_warning "Skipping 'shared' - plan and apply it explicitly (see README)"
 
     # Deploy staging environment
-    print_status "Step 1/2: Deploying staging environment..."
+    print_status "Step 1/3: Deploying staging environment..."
     plan_deployment "staging"
     apply_deployment "staging"
 
     # Deploy production environment
-    print_status "Step 2/2: Deploying production environment..."
+    print_status "Step 2/3: Deploying production environment..."
     plan_deployment "prod"
     print_warning "Production deployment requires manual approval"
     read -p "Deploy to production? (type 'yes' to confirm): " confirm
-    
-    if [ "$confirm" = "yes" ]; then
-        apply_deployment "prod"
-        print_success "Full deployment completed successfully!"
-    else
+
+    if [ "$confirm" != "yes" ]; then
         print_status "Production deployment skipped"
         print_status "Run '$0 apply prod' when ready to deploy to production"
+        return
     fi
+    apply_deployment "prod"
+
+    # Deploy the dead-colour front door
+    print_status "Step 3/3: Deploying dead colour..."
+    plan_deployment "dead"
+    apply_deployment "dead"
+    print_success "Full deployment completed successfully!"
 }
 
 # Function to list workspaces

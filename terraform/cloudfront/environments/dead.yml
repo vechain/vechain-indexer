@@ -1,0 +1,33 @@
+# Dead Colour Environment Configuration
+# Fronts the inactive blue/green colour so it can be tested before a cutover.
+# The origins are the colour-agnostic dead records, so this workspace needs no
+# change when a cutover swaps which colour is dead.
+
+environment: "dead"
+project_name: "veworld"
+region: "eu-west-1"
+
+# CloudFront Distribution Configuration
+enable_continuous_deployment: false
+mainnet_origin_domain: "mainnet.dead.prod.veworld.vechain.org"
+testnet_origin_domain: "testnet.dead.prod.veworld.vechain.org"
+
+staging: false
+origin_verify_header_name: "x-origin-verify"
+
+# Default Policy IDs
+default_headers_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
+default_origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+
+# dead_dns.tf issues the certificate and alias records into this zone.
+hosted_zone_name: "veworld.vechain.org."
+certificate_domain: "*.dead.veworld.vechain.org"
+
+mainnet_cnames:
+  - "mainnet.dead.veworld.vechain.org"
+
+testnet_cnames:
+  - "testnet.dead.veworld.vechain.org"
+
+# Prod's cache behaviours verbatim: a dead-colour test must cache like live.
+cache_behaviors_from: prod
