@@ -1,7 +1,8 @@
 # Global (us-east-1) and colour-agnostic, so it lives here rather than in
 # terraform/api, which applies once per colour and would fight over it.
-# These ACLs pre-date the config: it mirrors them exactly so the import plans
-# clean. Behaviour changes go through the exemption vars in prod.yml.
+# These ACLs pre-date the config. It mirrored them exactly so the import planned
+# clean; the count-only rule at priority 11 is the first deliberate addition, so
+# the plan now shows that one rule. Behaviour changes go through prod.yml.
 
 locals {
   # Read back from the live ACLs, not normalised: reordering would dirty the
@@ -17,6 +18,7 @@ locals {
     allow_only_get_options = 8
     python_ua_rate_limit   = 9
     block_health_check     = 10
+    high_rate_count        = 11
   }
 
   cloudfront_waf_priorities_testnet = {
@@ -74,6 +76,10 @@ module "cloudfront_waf_mainnet" {
   log_group_arn               = data.aws_cloudwatch_log_group.waf_cloudfront_mainnet.arn
   logging_filter_block_only   = true
   enable_python_ua_rate_limit = true
+
+  enable_high_rate_count_rule  = true
+  high_rate_count_limit        = local.env.cloudfront_waf.mainnet.high_rate_count_limit
+  logging_filter_include_count = local.env.cloudfront_waf.mainnet.logging_filter_include_count
 
   enable_rate_limit_exemptions   = local.env.cloudfront_waf.mainnet.enable_rate_limit_exemptions
   rate_limit_exempt_ipv4         = local.env.cloudfront_waf.mainnet.rate_limit_exempt_ipv4
