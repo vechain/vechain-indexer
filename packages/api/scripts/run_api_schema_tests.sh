@@ -43,7 +43,7 @@ fi
 if [[ -z "${BASE_URL}" ]]; then
   case "${ENVIRONMENT}" in
     dead)
-      BASE_URL="https://dead.indexer.mainnet.vechain.org"
+      BASE_URL="https://mainnet.dead.veworld.vechain.org"
       ;;
     live)
       BASE_URL="https://indexer.mainnet.vechain.org"

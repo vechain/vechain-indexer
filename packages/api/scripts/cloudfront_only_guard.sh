@@ -19,8 +19,8 @@ $label points at $host, an ALB hostname that only accepts CloudFront traffic.
 Use the distribution in front of that colour instead:
   live: https://indexer.mainnet.vechain.org
         https://indexer.testnet.vechain.org
-  dead: https://dead.indexer.mainnet.vechain.org
-        https://dead.indexer.testnet.vechain.org
+  dead: https://mainnet.dead.veworld.vechain.org
+        https://testnet.dead.veworld.vechain.org
 EOF
   return 1
 }

@@ -19,19 +19,14 @@ origin_verify_header_name: "x-origin-verify"
 default_headers_policy_id: e61eb60c-9c35-4d20-a928-2b84e02af89c
 default_origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
 
-# Prod's certificates, whose SANs already cover *.indexer.{main,test}net.vechain.org.
-mainnet_certificate_arn: "arn:aws:acm:us-east-1:905964754131:certificate/392c3bd4-5a0d-43b0-a204-1307fc140749"
-testnet_certificate_arn: "arn:aws:acm:us-east-1:905964754131:certificate/8b66d985-6d28-46fe-9a31-c4160c736fed"
-
-# dead_dns.tf writes the alias records into these zones.
-mainnet_hosted_zone_name: "indexer.mainnet.vechain.org."
-testnet_hosted_zone_name: "indexer.testnet.vechain.org."
+# dead_dns.tf issues the certificate and alias records into this zone.
+hosted_zone_name: "veworld.vechain.org."
 
 mainnet_cnames:
-  - "dead.indexer.mainnet.vechain.org"
+  - "mainnet.dead.veworld.vechain.org"
 
 testnet_cnames:
-  - "dead.indexer.testnet.vechain.org"
+  - "testnet.dead.veworld.vechain.org"
 
 # Prod's cache behaviours verbatim: a dead-colour test must cache like live.
 cache_behaviors_from: prod

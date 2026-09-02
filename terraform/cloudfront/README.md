@@ -24,17 +24,18 @@ plans all four at review time — read that before merging.
 Its origins are the colour-agnostic `*.dead.prod.veworld.vechain.org` records, so a
 cutover swaps what it points at without any change here.
 
-It answers on a `dead.` prefix of each live hostname:
+It answers on:
 
-- `https://dead.indexer.mainnet.vechain.org`
-- `https://dead.indexer.testnet.vechain.org`
+- `https://mainnet.dead.veworld.vechain.org`
+- `https://testnet.dead.veworld.vechain.org`
 
-Those names need no certificate of their own — prod's certificates already carry
-`*.indexer.mainnet.vechain.org` and `*.indexer.testnet.vechain.org` SANs, so
-`environments/dead.yml` reuses the same two ARNs. Unlike the other workspaces this
-one does write DNS: `dead_dns.tf` looks up the two `indexer.*.vechain.org` zones by
-name and puts the alias records there. Those zones are managed outside this
-repository, so the apply needs Route53 write access to them.
+Unlike the other workspaces it owns its certificate and DNS: `dead_dns.tf` issues a
+DNS-validated us-east-1 certificate covering both names and writes the alias records
+into the `veworld.vechain.org` zone, looked up by name. That zone is the shortest one
+this account holds — the live `indexer.*.vechain.org` names sit in another account,
+so this stack cannot write DNS beside them.
+
+The first apply blocks on ACM DNS validation, usually a few minutes.
 
 It reuses the prod WAF ACLs and prod's cache behaviours (via `cache_behaviors_from`
 in `environments/dead.yml`) — a dead-colour test that cached differently from live
