@@ -42,3 +42,17 @@ output "staging_testnet_cloudfront_domain_name" {
   description = "Domain name of the staging testnet CloudFront distribution"
   value       = local.is_staging && length(data.aws_cloudfront_distribution.testnet_distribution) > 0 ? data.aws_cloudfront_distribution.testnet_distribution[0].domain_name : null
 }
+
+output "mainnet_cloudfront_domain_name" {
+  description = "Domain name of the mainnet CloudFront distribution"
+  value       = local.is_shared ? null : (length(data.aws_cloudfront_distribution.mainnet_distribution) > 0 ? data.aws_cloudfront_distribution.mainnet_distribution[0].domain_name : null)
+}
+
+# Dead-colour outputs: the aliases the test suites target.
+output "dead_base_urls" {
+  description = "Base URLs fronting the dead colour, by network"
+  value = local.is_dead ? {
+    mainnet = "https://${local.dead_mainnet_host}"
+    testnet = "https://${local.dead_testnet_host}"
+  } : null
+}

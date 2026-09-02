@@ -52,6 +52,7 @@ show_usage() {
     echo "  shared                   - Shared resources (cache policies, WAF)"
     echo "  staging                  - Staging environment"
     echo "  prod                     - Production environment"
+    echo "  dead                     - Dead blue/green colour (pre-cutover testing)"
     echo ""
     echo "Examples:"
     echo "  $0 init"
@@ -68,7 +69,7 @@ init_terraform() {
     print_status "Creating workspaces..."
     
     # Create workspaces if they don't exist
-    for workspace in shared staging prod; do
+    for workspace in shared staging prod dead; do
         if ! terraform workspace list | grep -q "$workspace"; then
             print_status "Creating workspace: $workspace"
             terraform workspace new "$workspace"
@@ -86,9 +87,9 @@ init_terraform() {
 # Function to validate workspace name
 validate_workspace() {
     local workspace=$1
-    if [[ ! "$workspace" =~ ^(shared|staging|prod)$ ]]; then
+    if [[ ! "$workspace" =~ ^(shared|staging|prod|dead)$ ]]; then
         print_error "Invalid workspace: $workspace"
-        print_error "Valid workspaces: shared, staging, prod"
+        print_error "Valid workspaces: shared, staging, prod, dead"
         exit 1
     fi
 }
