@@ -82,10 +82,10 @@ jobs:
           else
             case "${environment}-${network}" in
               dead-mainnet)
-                base_url="https://mainnet.dead.prod.veworld.vechain.org"
+                base_url="https://mainnet.dead-cdn.prod.veworld.vechain.org"
                 ;;
               dead-testnet)
-                base_url="https://testnet.dead.prod.veworld.vechain.org"
+                base_url="https://testnet.dead-cdn.prod.veworld.vechain.org"
                 ;;
               live-mainnet)
                 base_url="https://indexer.mainnet.vechain.org"

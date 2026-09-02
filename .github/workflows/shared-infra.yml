@@ -100,7 +100,7 @@ jobs:
             if [ "$CLOUDFRONT_CHANGED" = "true" ]; then
               echo
               printf '`terraform/cloudfront`: applied by [Deploy Shared Infra](%s), shared then staging\n' "$RUN_URL"
-              echo 'then prod, after the VPC stack. Read the plan for every workspace below.'
+              echo 'then prod then dead, after the VPC stack. Read the plan for every workspace below.'
             fi
             printf '\nChanged files:\n'
             cat "$RUNNER_TEMP/files.md"
@@ -263,13 +263,18 @@ jobs:
       - name: Terraform Initialize
         run: terraform init -reconfigure -input=false
 
-      # All three workspaces, so a reviewer sees which ones a merge leaves dirty.
+      # Every workspace, so a reviewer sees which ones a merge leaves dirty.
       # -lock=false so a review-time plan cannot block a concurrent deploy.
+      # An uncreated workspace is reported, not created: the plan role is read-only.
       - name: Terraform Plan
         run: |
           set -o pipefail
-          for workspace in shared staging prod; do
-            terraform workspace select "$workspace"
+          for workspace in shared staging prod dead; do
+            if ! terraform workspace select "$workspace" 2>/dev/null; then
+              echo "Workspace does not exist yet - it is created by the first apply." \
+                | tee "$RUNNER_TEMP/plan-$workspace.txt"
+              continue
+            fi
             terraform plan -lock=false -input=false -no-color \
               2>&1 | tee "$RUNNER_TEMP/plan-$workspace.txt"
           done
@@ -279,7 +284,7 @@ jobs:
         run: |
           {
             echo '### CloudFront Plan'
-            for workspace in shared staging prod; do
+            for workspace in shared staging prod dead; do
               echo
               echo "#### \`$workspace\` workspace"
               echo '```terraform'
