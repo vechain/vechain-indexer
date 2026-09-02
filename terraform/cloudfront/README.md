@@ -91,12 +91,14 @@ terraform/cloudfront/
 ├── provider.tf                # Provider configuration with workspace logic
 ├── shared.tf                  # Shared resources (cache policies, WAF)
 ├── cloudfront.tf              # CloudFront distributions
+├── dead_dns.tf                # Dead-colour alias records
 ├── outputs.tf                 # Workspace-aware outputs
 ├── terraform-workspace.sh     # Management script
 ├── environments/
 │   ├── shared.yml             # Shared resources configuration
 │   ├── staging.yml            # Staging environment configuration
-│   └── prod.yml               # Production environment configuration
+│   ├── prod.yml               # Production environment configuration
+│   └── dead.yml               # Dead blue/green colour configuration
 └── (no CI workflow yet — applies are manual)
 ```
 
@@ -106,6 +108,8 @@ terraform/cloudfront/
   no aliases, and idle until a continuous-deployment policy routes to them, so
   they must be applied alongside `prod` to stay a faithful copy of it
 - **`prod`** - Production CloudFront distributions + continuous deployment
+- **`dead`** - Distributions fronting the inactive blue/green colour, so it can be
+  tested before a cutover. See "The dead workspace" above
 
 ## 🚀 Quick Start
 
@@ -123,7 +127,7 @@ cd terraform/cloudfront
 
 ### **2. Deploy All Environments**
 ```bash
-# Deploy staging → prod. shared is left to an explicit apply.
+# Deploy staging → prod → dead. shared is left to an explicit apply.
 ./terraform-workspace.sh deploy-all
 ```
 
@@ -140,6 +144,10 @@ cd terraform/cloudfront
 # Deploy production environment
 ./terraform-workspace.sh plan prod
 ./terraform-workspace.sh apply prod
+
+# Deploy the dead-colour front door
+./terraform-workspace.sh plan dead
+./terraform-workspace.sh apply dead
 ```
 
 ## 📋 Management Commands
@@ -295,7 +303,8 @@ The GitHub workflow uses AWS role assumption:
 S3 Bucket: veworld-indexer-terraform-state-prod
 ├── cloudfront/shared/cloudfront/terraform.tfstate    # Shared resources
 ├── cloudfront/staging/cloudfront/terraform.tfstate   # Staging environment
-└── cloudfront/prod/cloudfront/terraform.tfstate      # Production environment
+├── cloudfront/prod/cloudfront/terraform.tfstate      # Production environment
+└── cloudfront/dead/cloudfront/terraform.tfstate      # Dead blue/green colour
 ```
 
 ### **Workspace Commands**

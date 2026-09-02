@@ -265,18 +265,28 @@ jobs:
 
       # Every workspace, so a reviewer sees which ones a merge leaves dirty.
       # -lock=false so a review-time plan cannot block a concurrent deploy.
-      # An uncreated workspace is reported, not created: the plan role is read-only.
       - name: Terraform Plan
         run: |
           set -o pipefail
           for workspace in shared staging prod dead; do
-            if ! terraform workspace select "$workspace" 2>/dev/null; then
-              echo "Workspace does not exist yet - it is created by the first apply." \
-                | tee "$RUNNER_TEMP/plan-$workspace.txt"
+            log="$RUNNER_TEMP/plan-$workspace.txt"
+            if terraform workspace select "$workspace" 2>/dev/null; then
+              terraform plan -lock=false -input=false -no-color 2>&1 | tee "$log"
               continue
             fi
-            terraform plan -lock=false -input=false -no-color \
-              2>&1 | tee "$RUNNER_TEMP/plan-$workspace.txt"
+            # Not created yet: plan against empty local state so the first-creation
+            # plan is still reviewed. The read-only role cannot create a remote one.
+            dir="$RUNNER_TEMP/first-plan-$workspace"
+            rm -rf "$dir" && mkdir -p "$dir"
+            tar -c --exclude=.terraform --exclude=.terraform.lock.hcl . | tar -x -C "$dir"
+            printf 'terraform {\n  backend "local" {}\n}\n' > "$dir/zz_local_backend_override.tf"
+            echo "No remote state yet - first-creation plan against empty state." | tee "$log"
+            (
+              cd "$dir"
+              terraform init -input=false > /dev/null
+              terraform workspace new "$workspace" > /dev/null
+              terraform plan -lock=false -input=false -no-color 2>&1
+            ) | tee -a "$log"
           done
 
       - name: Publish plan summary
