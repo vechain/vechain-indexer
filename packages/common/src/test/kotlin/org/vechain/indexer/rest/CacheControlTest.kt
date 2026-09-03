@@ -41,6 +41,7 @@ internal class CacheControlTest {
         assertEquals("public, max-age=600", CachePolicy.TEN_MINUTES.headerValue)
         assertEquals("public, max-age=3600", CachePolicy.HOURLY.headerValue)
         assertEquals("public, max-age=86400", CachePolicy.DAILY.headerValue)
+        assertEquals("public, max-age=31536000", CachePolicy.IMMUTABLE.headerValue)
     }
 
     @Test

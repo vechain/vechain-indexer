@@ -28,6 +28,10 @@ interface UserRoundActionSummaryRepository : BaseIndexedRepository<UserRoundActi
     @Query("{ 'entity': ?0, 'roundId': ?1 }")
     fun findByEntityAndRoundId(entity: String, roundId: Int): UserRoundActionSummary?
 
+    // The newest round this collection has seen: the one still open, or the last one indexed
+    @Cacheable(value = ["user_round_latestRound"], key = "#entityType")
+    fun findFirstByEntityTypeOrderByRoundIdDesc(entityType: EntityType): UserRoundActionSummary?
+
     // Count entries where totalRewardAmount is greater than a specific value, filtering by entity
     // type and round ID
     @Cacheable(

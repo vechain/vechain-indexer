@@ -157,6 +157,9 @@ cache:
     user_round_countByEntityTypeAndRoundId:
       max-size: ${CACHE_USER_ROUND_COUNT_BY_ENTITY_TYPE_MAX_SIZE:1000}
       ttl-seconds: ${CACHE_USER_ROUND_COUNT_BY_ENTITY_TYPE_TTL_SECONDS:300}
+    user_round_latestRound:
+      max-size: ${CACHE_USER_ROUND_LATEST_ROUND_MAX_SIZE:10}
+      ttl-seconds: ${CACHE_USER_ROUND_LATEST_ROUND_TTL_SECONDS:300}
     official_token_addresses:
       max-size: ${CACHE_OFFICIAL_TOKEN_ADDRESSES_MAX_SIZE:10}
       ttl-seconds: ${CACHE_OFFICIAL_TOKEN_ADDRESSES_TTL_SECONDS:3600}
