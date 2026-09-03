@@ -5,6 +5,8 @@
 # A colour is "up" when both indexer services have running tasks: the indexer
 # is what keeps the colour's data current. Image tags come from the service's
 # task definition, since the family's latest may be a revision no rollout completed.
+# "release" is the tag whose terraform/api was last applied there (recorded by
+# plan-or-apply-terraform.yml); an unreadable marker is empty, never fatal.
 set -euo pipefail
 
 COLOURS="${COLOURS:?space-separated colours, e.g. 'prod-blue prod-green'}"
@@ -17,6 +19,19 @@ running_tag() {
     | awk -F: 'NF>1 {print $NF}'
 }
 
+err=$(mktemp)
+trap 'rm -f "$err"' EXIT
+
+deployed_release() {
+    local value
+    if value=$(aws ssm get-parameter --name "/veworld/$1/deployed-release" \
+        --query 'Parameter.Value' --output text 2>"$err"); then
+        echo "$value"
+    elif ! grep -q ParameterNotFound "$err"; then
+        echo "::warning::Could not read $1's deployed release: $(tr -d '\n' <"$err")"
+    fi
+}
+
 state='{}'
 for colour in $COLOURS; do
     names=()
@@ -26,12 +41,22 @@ for colour in $COLOURS; do
         done
     done
 
+    # Only a missing cluster means absent; any other failure must not be
+    # mistaken for one, since absent can lead to a restore.
     # shellcheck disable=SC2016  # JMESPath literal, not a shell expansion
-    desc=$(aws ecs describe-services \
+    if ! desc=$(aws ecs describe-services \
         --cluster "${colour}-veworld-cluster" \
         --services "${names[@]}" \
         --query 'services[?status==`ACTIVE`].{name:serviceName,desired:desiredCount,running:runningCount,taskDef:taskDefinition}' \
-        --output json 2>/dev/null) || desc='[]'
+        --output json 2>"$err"); then
+        if grep -q ClusterNotFoundException "$err"; then
+            desc='[]'
+        else
+            cat "$err" >&2
+            echo "::error::Could not read ${colour}'s ECS services; refusing to guess its state."
+            exit 1
+        fi
+    fi
 
     services='{}'
     while IFS=$'\t' read -r name desired running task_def; do
@@ -55,8 +80,9 @@ for colour in $COLOURS; do
         colour_state=stopped
     fi
 
-    state=$(jq -c --arg c "$colour" --arg st "$colour_state" --argjson s "$services" \
-        '.[$c] = {state: $st, services: $s}' <<<"$state")
+    release=$(deployed_release "$colour")
+    state=$(jq -c --arg c "$colour" --arg st "$colour_state" --arg r "$release" --argjson s "$services" \
+        '.[$c] = {state: $st, release: $r, services: $s}' <<<"$state")
 done
 
 echo "STATE=${state}" >> "${GITHUB_OUTPUT:?}"

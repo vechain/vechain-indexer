@@ -6,9 +6,10 @@
 #   dead colour cold, indexer changed   -> dead, restored from live snapshots first
 #   dead colour cold, indexer unchanged -> live
 #
-# "Indexer changed" means its image content or terraform/api differs from what
-# the live colour runs. Deploying that to live pauses indexing, so an explicit
-# TARGET_INPUT=live is refused in that case; everything else may be overridden.
+# "Indexer changed" means its image content differs from what the live colour
+# runs, or terraform/api differs from the release last applied there (its image
+# tag stands in when no release was recorded). Deploying that to live pauses
+# indexing, so an explicit TARGET_INPUT=live is refused; the rest may be overridden.
 set -euo pipefail
 
 VERSION="${VERSION:?}"
@@ -30,6 +31,12 @@ dead_state=$(jq -r --arg c "$dead" '.[$c].state // "absent"' <<<"$STATE")
 
 tag_of() { # colour net svc
     jq -r --arg c "$1" --arg n "$2" --arg s "$3" '.[$c].services[$n][$s].tag // empty' <<<"$STATE"
+}
+
+terraform_baseline() { # colour -> release last applied there, else its indexer tag
+    local release
+    release=$(jq -r --arg c "$1" '.[$c].release // empty' <<<"$STATE")
+    echo "${release:-$(tag_of "$1" main indexer)}"
 }
 
 known_tag() {
@@ -61,12 +68,13 @@ image_changed_vs() { # colour svc
 join() { local IFS='; '; echo "$*"; }
 
 live_indexer_tag=$(tag_of "$live" main indexer)
+live_baseline=$(terraform_baseline "$live")
 indexer_reasons=()
 if image_changed_vs "$live" indexer; then
     indexer_reasons+=("image content differs from ${live_indexer_tag:-what live runs}")
 fi
-if terraform_changed_since "$live_indexer_tag"; then
-    indexer_reasons+=("terraform/api changed since ${live_indexer_tag:-the running tag}")
+if terraform_changed_since "$live_baseline"; then
+    indexer_reasons+=("terraform/api changed since ${live_baseline:-the last recorded release}")
 fi
 indexer_changed=false
 [ "${#indexer_reasons[@]}" -eq 0 ] || indexer_changed=true
@@ -113,7 +121,7 @@ if [ "$target_kind" = dead ]; then
     if [ "$dead_state" = up ]; then
         restore_note="no; ${dead} is running and its indexers have kept its data current"
     elif [ "$SKIP_RESTORE" = true ]; then
-        restore_note="no; skipped by request, so ${dead} indexes from whatever data it has"
+        restore_note="no; skipped by request. ${dead} indexes on from whatever its Atlas clusters hold: a stale checkpoint for a stopped colour, nothing for a torn-down one"
     else
         restore=true
         restore_note="yes; ${dead} is ${dead_desc}, so its data is stale. Latest ${live} snapshots are restored before its services start"
@@ -154,7 +162,7 @@ for net in main test; do
 done
 
 if [ "$target_kind" = dead ] && [ "$dead_state" = up ] && [ "$staged" = true ] \
-    && ! terraform_changed_since "$(tag_of "$dead" main indexer)"; then
+    && ! terraform_changed_since "$(terraform_baseline "$dead")"; then
     staged_note="${dead} already runs this content. The application apply is a no-op; if a cutover is all you want, run 'Switch Live Environment' instead."
 else
     staged_note=""

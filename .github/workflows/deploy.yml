@@ -20,7 +20,7 @@ on:
           - dead
         default: auto
       skip_restore:
-        description: Deploy to a cold dead colour without restoring the live Atlas snapshots first
+        description: Skip restoring the live Atlas snapshots into a cold dead colour; it indexes on from whatever its clusters hold
         required: false
         type: boolean
         default: false
@@ -153,9 +153,45 @@ jobs:
           echo "### Confirmed: ${TITLE}" >> "$GITHUB_STEP_SUMMARY"
           echo "Dispatched by ${ACTOR}. The plan is in the Plan Release job summary." >> "$GITHUB_STEP_SUMMARY"
 
+  # The approval wait can be long. A DNS switch during it would hand the VPC
+  # apply a stale live colour and flip Route53 back, so re-resolve first.
+  recheck-live-color:
+    name: Re-resolve live colour after approval
+    needs: [confirm]
+    uses: ./.github/workflows/identify-live-color.yml
+    with:
+      dns_record_mainnet_name: mainnet.live.prod.veworld.vechain.org.
+      dns_record_testnet_name: testnet.live.prod.veworld.vechain.org.
+      hosted_zone_id: Z08093993BM56HB3DD4U4
+    permissions:
+      contents: read
+      id-token: write
+    secrets:
+      AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
+
+  verify-plan:
+    name: Verify the plan still holds
+    needs: [plan-release, recheck-live-color]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Compare live colour with the plan
+        env:
+          PLANNED: ${{ needs.plan-release.outputs.LIVE_COLOR }}
+          MAINNET_LIVE: ${{ needs.recheck-live-color.outputs.mainnet_live_color }}
+          TESTNET_LIVE: ${{ needs.recheck-live-color.outputs.testnet_live_color }}
+        run: |
+          set -euo pipefail
+          if [ "$MAINNET_LIVE" != "$PLANNED" ] || [ "$TESTNET_LIVE" != "$PLANNED" ]; then
+            echo "::error::DNS moved while the plan awaited approval: planned live ${PLANNED}, now mainnet ${MAINNET_LIVE} and testnet ${TESTNET_LIVE}. Nothing was applied; re-dispatch to plan again."
+            exit 1
+          fi
+          echo "Live colour is still ${PLANNED}."
+
   promote-to-ecr:
     name: Promote GHCR Image to ECR - ${{ matrix.packageName }}
-    needs: [plan-release, confirm]
+    needs: [plan-release, verify-plan]
     if: needs.plan-release.outputs.PROMOTE_NEEDED == 'true'
     runs-on: ubuntu-latest
     strategy:
@@ -220,13 +256,13 @@ jobs:
 
   apply-shared:
     name: Apply shared stack
-    needs: [identify-live-color, confirm]
+    needs: [recheck-live-color, verify-plan]
     uses: ./.github/workflows/deploy-colour-agnostic-infra.yml
     with:
       environment: prod
       scope: full
-      live_color_mainnet: ${{ needs.identify-live-color.outputs.mainnet_live_color }}
-      live_color_testnet: ${{ needs.identify-live-color.outputs.testnet_live_color }}
+      live_color_mainnet: ${{ needs.recheck-live-color.outputs.mainnet_live_color }}
+      live_color_testnet: ${{ needs.recheck-live-color.outputs.testnet_live_color }}
     permissions:
       contents: read
       id-token: write
@@ -236,7 +272,7 @@ jobs:
 
   apply-observability:
     name: Apply observability stacks
-    needs: [confirm]
+    needs: [verify-plan]
     uses: ./.github/workflows/deploy-observability.yml
     with:
       environment: prod
@@ -265,7 +301,7 @@ jobs:
   # the application apply starts its services is what a switch later relies on.
   restore-dead:
     name: Restore dead colour from live snapshots
-    needs: [plan-release, confirm]
+    needs: [plan-release, verify-plan]
     if: needs.plan-release.outputs.RESTORE == 'true'
     uses: ./.github/workflows/restore-dead-prod-atlas-snapshots.yml
     with:
@@ -294,6 +330,7 @@ jobs:
     with:
       environment: ${{ needs.plan-release.outputs.TARGET_COLOR }}
       image_versions: ${{ needs.plan-release.outputs.IMAGE_VERSIONS }}
+      release_version: ${{ needs.plan-release.outputs.VERSION }}
       # Force ensures environment is spun up if it does not already exist
       force: true
     permissions:
@@ -306,7 +343,7 @@ jobs:
 
   refresh-dead-dns:
     name: Refresh dead Route53 records
-    needs: [identify-live-color, plan-release, deploy-env]
+    needs: [recheck-live-color, plan-release, deploy-env]
     if: >-
       ${{ needs.deploy-env.result == 'success'
       && needs.plan-release.outputs.TARGET_KIND == 'dead' }}
@@ -314,8 +351,8 @@ jobs:
     with:
       environment: prod
       scope: dead-records
-      live_color_mainnet: ${{ needs.identify-live-color.outputs.mainnet_live_color }}
-      live_color_testnet: ${{ needs.identify-live-color.outputs.testnet_live_color }}
+      live_color_mainnet: ${{ needs.recheck-live-color.outputs.mainnet_live_color }}
+      live_color_testnet: ${{ needs.recheck-live-color.outputs.testnet_live_color }}
     secrets:
       AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
       VECHAINCI_SSH_PRIVATE_KEYS: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}

@@ -243,7 +243,7 @@ The plan follows three rules:
 - A cold dead colour and an indexer unchanged against live: live takes the release directly, with no indexing gap.
 - A cold dead colour and a changed indexer: the dead colour gets the release after its Atlas clusters are restored from the latest live snapshots. A changed indexer on live pauses indexing while it restarts, and a cold colour's data is stale.
 
-`target: live` is refused for a changed indexer. Tick `skip_restore` only for a deliberate reindex from genesis.
+`target: live` is refused for a changed indexer. `skip_restore` only skips the restore: the colour indexes on from whatever its Atlas clusters hold, which for a stopped colour is a stale checkpoint, not genesis. A reindex from genesis is an `indexer.version` bump (see `AGENTS.md` "Triggering an Indexer Resync"), not a skipped restore.
 
 One deploy applies every stack — shared infra, observability, the CloudFront distributions, the restore when needed, and the application — in dependency order, so a stack with no change is a no-op rather than a run someone has to remember. `AGENTS.md` "One Deploy Applies Every Stack" has the order and the reasoning.
 
