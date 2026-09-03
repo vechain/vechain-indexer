@@ -57,8 +57,8 @@ variable "enable_high_rate_count_rule" {
 
 variable "high_rate_count_limit" {
   type        = number
-  description = "Requests per evaluation window per IP before the COUNT-only rule flags them. Set well under rate_limit; that gap is what the dry run measures."
-  default     = 300
+  description = "Requests per evaluation window per IP before the COUNT-only rule flags them. Under rate_limit, but above what one caller legitimately bursts to — the explorer's CSV export alone sustains ~470 per window."
+  default     = 1000
 }
 
 variable "logging_filter_include_count" {
