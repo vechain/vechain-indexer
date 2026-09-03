@@ -6,10 +6,12 @@ import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Service
 import org.vechain.indexer.b3tr.AppId
 import org.vechain.indexer.b3tr.action.SortFieldUtils.assertSortFields
+import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
 import org.vechain.indexer.b3tr.action.response.AppLeaderboardItem
 import org.vechain.indexer.b3tr.action.response.UserAppLeaderboardItem
 import org.vechain.indexer.b3tr.action.response.UserLeaderboardItem
 import org.vechain.indexer.b3tr.shared.EntityType
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.utils.CursorPaginationUtils.buildCursorQuery
@@ -17,7 +19,23 @@ import org.vechain.indexer.utils.CursorPaginationUtils.calculateNextCursor
 
 @Profile("b3tr", "b3tr-actions")
 @Service
-open class ActionLeaderboardService(private val mongoTemplate: MongoTemplate) {
+open class ActionLeaderboardService(
+    private val mongoTemplate: MongoTemplate,
+    private val userRoundRepo: UserRoundActionSummaryRepository,
+) {
+
+    /**
+     * A round that has closed can never be awarded another action, so its leaderboard is final. The
+     * newest round on record is the one still open — or, if the indexer is behind a boundary, one
+     * that has only just closed — so only the rounds behind it are settled. The open round keeps
+     * moving with every rewarded action, so it earns a minute and no more.
+     */
+    fun roundLeaderboardPolicy(roundId: Int): CachePolicy {
+        val latestRound =
+            userRoundRepo.findFirstByEntityTypeOrderByRoundIdDesc(EntityType.GLOBAL)?.roundId
+        return if (latestRound != null && roundId < latestRound) CachePolicy.IMMUTABLE
+        else CachePolicy.MINUTE
+    }
 
     // User leaderboards
 

@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
+import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -27,6 +28,7 @@ import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.CacheFor
 import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
+import org.vechain.indexer.rest.cachedFor
 import org.vechain.indexer.validation.ValidAppId
 import org.vechain.indexer.validation.ValidCursor
 import org.vechain.indexer.validation.ValidISODateString
@@ -60,7 +62,7 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
     )
     @CommonApiResponses
     @CursorPaginationParameters
-    @CacheFor(CachePolicy.HOURLY)
+    @CacheFor(CachePolicy.MINUTE)
     open fun getUserLeaderboard(
         @RequestParam(required = false) roundId: Int?,
         @ValidISODateString @RequestParam(required = false) date: String?,
@@ -70,21 +72,30 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
         @RequestParam(required = false, defaultValue = "actionsRewarded")
         sortBy: String,
         @ValidCursor @RequestParam(required = false) cursor: String?,
-    ): PaginatedResponse<UserLeaderboardItem> {
+    ): ResponseEntity<PaginatedResponse<UserLeaderboardItem>> {
 
         if (roundId != null && date != null) {
             throw BadRequestException(ERROR_CANT_PASS_ROUND_AND_DATE)
         }
 
         if (roundId != null) {
-            return service.getUserRoundLeaderboard(roundId, size, direction, sortBy, cursor)
+            return cachedFor(
+                service.roundLeaderboardPolicy(roundId),
+                service.getUserRoundLeaderboard(roundId, size, direction, sortBy, cursor),
+            )
         }
 
         if (date != null) {
-            return service.getUserDailyLeaderboard(date, size, direction, sortBy, cursor)
+            return cachedFor(
+                CachePolicy.MINUTE,
+                service.getUserDailyLeaderboard(date, size, direction, sortBy, cursor),
+            )
         }
 
-        return service.getUserAllTimeLeaderboard(size, direction, sortBy, cursor)
+        return cachedFor(
+            CachePolicy.MINUTE,
+            service.getUserAllTimeLeaderboard(size, direction, sortBy, cursor),
+        )
     }
 
     @GetMapping("actions/leaderboards/apps")
@@ -108,7 +119,7 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
     )
     @CommonApiResponses
     @CursorPaginationParameters
-    @CacheFor(CachePolicy.HOURLY)
+    @CacheFor(CachePolicy.MINUTE)
     open fun getAppLeaderboard(
         @RequestParam(required = false) roundId: Int?,
         @ValidISODateString @RequestParam(required = false) date: String?,
@@ -118,19 +129,28 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
         @RequestParam(required = false, defaultValue = "actionsRewarded")
         sortBy: String,
         @ValidCursor @RequestParam(required = false) cursor: String?,
-    ): PaginatedResponse<AppLeaderboardItem> {
+    ): ResponseEntity<PaginatedResponse<AppLeaderboardItem>> {
 
         if (roundId != null && date != null) {
             throw BadRequestException(ERROR_CANT_PASS_ROUND_AND_DATE)
         }
 
         if (roundId != null) {
-            return service.getAppRoundLeaderboard(roundId, size, direction, sortBy, cursor)
+            return cachedFor(
+                service.roundLeaderboardPolicy(roundId),
+                service.getAppRoundLeaderboard(roundId, size, direction, sortBy, cursor),
+            )
         }
         if (date != null) {
-            return service.getAppDailyLeaderboard(date, size, direction, sortBy, cursor)
+            return cachedFor(
+                CachePolicy.MINUTE,
+                service.getAppDailyLeaderboard(date, size, direction, sortBy, cursor),
+            )
         }
-        return service.getAppAllTimeLeaderboard(size, direction, sortBy, cursor)
+        return cachedFor(
+            CachePolicy.MINUTE,
+            service.getAppAllTimeLeaderboard(size, direction, sortBy, cursor),
+        )
     }
 
     @GetMapping("actions/leaderboards/apps/{appId}")
@@ -155,7 +175,7 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
     )
     @CommonApiResponses
     @CursorPaginationParameters
-    @CacheFor(CachePolicy.HOURLY)
+    @CacheFor(CachePolicy.MINUTE)
     open fun getUserAppLeaderboard(
         @ValidAppId @PathVariable(required = true) appId: AppId,
         @RequestParam(required = false) roundId: Int?,
@@ -166,26 +186,35 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
         @RequestParam(required = false, defaultValue = "actionsRewarded")
         sortBy: String,
         @ValidCursor @RequestParam(required = false) cursor: String?,
-    ): PaginatedResponse<UserAppLeaderboardItem> {
+    ): ResponseEntity<PaginatedResponse<UserAppLeaderboardItem>> {
         if (roundId != null && date != null) {
             throw BadRequestException(ERROR_CANT_PASS_ROUND_AND_DATE)
         }
 
         if (roundId != null) {
-            return service.getUserAppRoundLeaderboard(
-                appId,
-                roundId,
-                size,
-                direction,
-                sortBy,
-                cursor,
+            return cachedFor(
+                service.roundLeaderboardPolicy(roundId),
+                service.getUserAppRoundLeaderboard(
+                    appId,
+                    roundId,
+                    size,
+                    direction,
+                    sortBy,
+                    cursor,
+                ),
             )
         }
 
         if (date != null) {
-            return service.getUserAppDailyLeaderboard(appId, date, size, direction, sortBy, cursor)
+            return cachedFor(
+                CachePolicy.MINUTE,
+                service.getUserAppDailyLeaderboard(appId, date, size, direction, sortBy, cursor),
+            )
         }
 
-        return service.getUserAppAllTimeLeaderboard(appId, size, direction, sortBy, cursor)
+        return cachedFor(
+            CachePolicy.MINUTE,
+            service.getUserAppAllTimeLeaderboard(appId, size, direction, sortBy, cursor),
+        )
     }
 }
