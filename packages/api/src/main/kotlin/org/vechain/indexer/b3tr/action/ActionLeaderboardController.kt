@@ -62,7 +62,7 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
     )
     @CommonApiResponses
     @CursorPaginationParameters
-    @CacheFor(CachePolicy.HOURLY)
+    @CacheFor(CachePolicy.MINUTE)
     open fun getUserLeaderboard(
         @RequestParam(required = false) roundId: Int?,
         @ValidISODateString @RequestParam(required = false) date: String?,
@@ -87,13 +87,13 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
 
         if (date != null) {
             return cachedFor(
-                CachePolicy.HOURLY,
+                CachePolicy.MINUTE,
                 service.getUserDailyLeaderboard(date, size, direction, sortBy, cursor),
             )
         }
 
         return cachedFor(
-            CachePolicy.HOURLY,
+            CachePolicy.MINUTE,
             service.getUserAllTimeLeaderboard(size, direction, sortBy, cursor),
         )
     }
@@ -119,7 +119,7 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
     )
     @CommonApiResponses
     @CursorPaginationParameters
-    @CacheFor(CachePolicy.HOURLY)
+    @CacheFor(CachePolicy.MINUTE)
     open fun getAppLeaderboard(
         @RequestParam(required = false) roundId: Int?,
         @ValidISODateString @RequestParam(required = false) date: String?,
@@ -143,12 +143,12 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
         }
         if (date != null) {
             return cachedFor(
-                CachePolicy.HOURLY,
+                CachePolicy.MINUTE,
                 service.getAppDailyLeaderboard(date, size, direction, sortBy, cursor),
             )
         }
         return cachedFor(
-            CachePolicy.HOURLY,
+            CachePolicy.MINUTE,
             service.getAppAllTimeLeaderboard(size, direction, sortBy, cursor),
         )
     }
@@ -175,7 +175,7 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
     )
     @CommonApiResponses
     @CursorPaginationParameters
-    @CacheFor(CachePolicy.HOURLY)
+    @CacheFor(CachePolicy.MINUTE)
     open fun getUserAppLeaderboard(
         @ValidAppId @PathVariable(required = true) appId: AppId,
         @RequestParam(required = false) roundId: Int?,
@@ -207,13 +207,13 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
 
         if (date != null) {
             return cachedFor(
-                CachePolicy.HOURLY,
+                CachePolicy.MINUTE,
                 service.getUserAppDailyLeaderboard(appId, date, size, direction, sortBy, cursor),
             )
         }
 
         return cachedFor(
-            CachePolicy.HOURLY,
+            CachePolicy.MINUTE,
             service.getUserAppAllTimeLeaderboard(appId, size, direction, sortBy, cursor),
         )
     }
