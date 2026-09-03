@@ -1,15 +1,12 @@
 #!/usr/bin/env bash
 # Decides where a release goes and what it needs, from git and the deployed
 # state alone: no credentials. Emits the plan as job outputs and a summary.
-#
 #   dead colour up                      -> dead (it is the colour being staged)
 #   dead colour cold, indexer changed   -> dead, restored from live snapshots first
 #   dead colour cold, indexer unchanged -> live
-#
-# "Indexer changed" means its image content differs from what the live colour
-# runs, or terraform/api differs from the release last applied there (its image
-# tag stands in when no release was recorded). Deploying that to live pauses
-# indexing, so an explicit TARGET_INPUT=live is refused; the rest may be overridden.
+# "Indexer changed": image content differs from live, or terraform/api differs
+# from the release last applied there. An explicit TARGET_INPUT=live is then
+# refused, since it would pause indexing; the rest may be overridden.
 set -euo pipefail
 
 VERSION="${VERSION:?}"
