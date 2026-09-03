@@ -113,7 +113,8 @@ that obeys the origin. Nothing in Terraform pins an API TTL any more.
 
 Pick the coarsest window the data tolerates, from the tiers in `CachePolicy`: `VOLATILE`
 (moves with the head — clients revalidate, shared caches hold it for a block), `MINUTE`,
-`TEN_MINUTES`, `HOURLY`, `DAILY`. Prefer an existing tier over inventing a number.
+`TEN_MINUTES`, `HOURLY`, `DAILY`, `IMMUTABLE` (a year — only for content whose source has
+finished, such as a B3TR round that has closed). Prefer an existing tier over inventing a number.
 
 Two escapes, for a TTL only the response knows. Both need `@CacheFor` anyway — it is the
 floor that applies if the call is missed:

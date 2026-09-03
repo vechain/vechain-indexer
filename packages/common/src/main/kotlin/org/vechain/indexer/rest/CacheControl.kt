@@ -21,7 +21,10 @@ enum class CachePolicy(private val maxAgeSeconds: Long, private val sharedMaxAge
     HOURLY(3_600, null),
 
     /** Rolled up per UTC day. */
-    DAILY(86_400, null);
+    DAILY(86_400, null),
+
+    /** Closed for good: whatever produced it has finished and can never produce another row. */
+    IMMUTABLE(MAX_CACHE_AGE_SECONDS, null);
 
     val headerValue: String = cacheControlHeader(maxAgeSeconds, sharedMaxAgeSeconds)
 }
