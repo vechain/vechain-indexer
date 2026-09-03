@@ -86,11 +86,103 @@
       "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
       "panels": [
                   {
+                    "id": 105,
+                    "type": "stat",
+                    "title": "CloudFront requests (total)",
+                    "description": "AWS/CloudFront Requests (Sum) totalled over the dashboard time range, both distributions collapsed into one figure — the graph beside it keeps them apart. The two series are joined and summed per timestamp in transformations because a stat panel otherwise renders one number per series. Period is left on auto so a range past CloudFront's 15-day 1-minute retention rolls up instead of returning nothing. Edge volume, so it sits above the API row's 'Total requests': cache hits and WAF blocks never reach the origin.",
+                    "gridPos": {"h": 4, "w": 12, "x": 0, "y": 1},
+                    "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                    "targets": [
+                                 {
+                                   "refId": "A",
+                                   "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                                   "namespace": "AWS/CloudFront",
+                                   "metricName": "Requests",
+                                   "statistic": "Sum",
+                                   "dimensions": {
+                                                   "DistributionId": ["E15Q64MS368TL", "E1LMOFNZTMWN6R"],
+                                                   "Region": "Global"
+                                                 },
+                                   "region": "us-east-1",
+                                   "period": "",
+                                   "matchExact": true,
+                                   "metricEditorMode": 0,
+                                   "metricQueryType": 0,
+                                   "label": "${PROP('Dim.DistributionId')}"
+                                 }
+                               ],
+                    "transformations": [
+                                         {"id": "joinByField", "options": {"mode": "outer"}},
+                                         {
+                                           "id": "calculateField",
+                                           "options": {
+                                                        "mode": "reduceRow",
+                                                        "reduce": {"reducer": "sum"},
+                                                        "alias": "Requests",
+                                                        "replaceFields": true
+                                                      }
+                                         }
+                                       ],
+                    "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "color": {"mode": "fixed", "fixedColor": "text"}}},
+                    "options": {
+                                 "reduceOptions": {"values": false, "calcs": ["sum"], "fields": ""},
+                                 "colorMode": "none",
+                                 "graphMode": "area",
+                                 "textMode": "auto"
+                               }
+                  },
+                  {
+                    "id": 106,
+                    "type": "stat",
+                    "title": "Cache hit rate (average)",
+                    "description": "AWS/CloudFront CacheHitRate (Average, %) reduced to one figure: the mean of the per-period averages over the dashboard range, across both distributions. Not a request-weighted hit ratio — CloudFront publishes no hit/miss counts — so a quiet period weighs the same as a busy one, and the spare distribution the same as the primary whenever it serves. Read it beside the graph, not instead of it.",
+                    "gridPos": {"h": 4, "w": 12, "x": 12, "y": 1},
+                    "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                    "targets": [
+                                 {
+                                   "refId": "A",
+                                   "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                                   "namespace": "AWS/CloudFront",
+                                   "metricName": "CacheHitRate",
+                                   "statistic": "Average",
+                                   "dimensions": {
+                                                   "DistributionId": ["E15Q64MS368TL", "E1LMOFNZTMWN6R"],
+                                                   "Region": "Global"
+                                                 },
+                                   "region": "us-east-1",
+                                   "period": "",
+                                   "matchExact": true,
+                                   "metricEditorMode": 0,
+                                   "metricQueryType": 0,
+                                   "label": "${PROP('Dim.DistributionId')}"
+                                 }
+                               ],
+                    "transformations": [
+                                         {"id": "joinByField", "options": {"mode": "outer"}},
+                                         {
+                                           "id": "calculateField",
+                                           "options": {
+                                                        "mode": "reduceRow",
+                                                        "reduce": {"reducer": "mean"},
+                                                        "alias": "Cache hit rate",
+                                                        "replaceFields": true
+                                                      }
+                                         }
+                                       ],
+                    "fieldConfig": {"defaults": {"unit": "percent", "decimals": 1, "min": 0, "max": 100, "color": {"mode": "fixed", "fixedColor": "text"}}},
+                    "options": {
+                                 "reduceOptions": {"values": false, "calcs": ["mean"], "fields": ""},
+                                 "colorMode": "none",
+                                 "graphMode": "area",
+                                 "textMode": "auto"
+                               }
+                  },
+                  {
                     "id": 100,
                     "type": "timeseries",
                     "title": "CloudFront requests",
                     "description": "AWS/CloudFront Requests (Sum) across the two distributions fronting indexer.mainnet.vechain.org (E15Q64MS368TL primary, E1LMOFNZTMWN6R spare/replica). Fixed to this network and not affected by the Network or Deployment pickers — CloudFront and WAF are shared across both blue/green colours and are not templated. CloudFront metrics are 1-minute granularity and publish with a few minutes of lag, so this trails the Prometheus panels below.",
-                    "gridPos": {"h": 8, "w": 8, "x": 0, "y": 1},
+                    "gridPos": {"h": 8, "w": 8, "x": 0, "y": 5},
                     "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
                     "targets": [
                                  {
@@ -125,7 +217,7 @@
                     "type": "timeseries",
                     "title": "Cache hit rate",
                     "description": "AWS/CloudFront CacheHitRate (Average, %). Higher = more edge hits, less origin load. The indexer API is largely uncacheable so expect low double digits at best; drops toward zero on cache invalidation or a hot-path change.",
-                    "gridPos": {"h": 8, "w": 8, "x": 8, "y": 1},
+                    "gridPos": {"h": 8, "w": 8, "x": 8, "y": 5},
                     "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
                     "targets": [
                                  {
@@ -154,7 +246,7 @@
                     "type": "timeseries",
                     "title": "CloudFront error rate — 4xx / 5xx",
                     "description": "AWS/CloudFront 4xxErrorRate + 5xxErrorRate (Average, %) — percentage of viewer requests returning 4xx/5xx at the edge. Cross-reference with the API panels in the Errors row: edge errors the origin never saw are WAF blocks or CloudFront-level failures.",
-                    "gridPos": {"h": 8, "w": 8, "x": 16, "y": 1},
+                    "gridPos": {"h": 8, "w": 8, "x": 16, "y": 5},
                     "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
                     "targets": [
                                  {
@@ -206,7 +298,7 @@
                     "type": "timeseries",
                     "title": "WAF — allowed vs blocked",
                     "description": "AWS/WAFV2 AllowedRequests + BlockedRequests (Sum, Rule=ALL). Aggregate across the whole shared-veworld-cloudfront-waf WebACL.",
-                    "gridPos": {"h": 8, "w": 12, "x": 0, "y": 9},
+                    "gridPos": {"h": 8, "w": 12, "x": 0, "y": 13},
                     "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
                     "targets": [
                                  {
@@ -280,7 +372,7 @@
                     "type": "timeseries",
                     "title": "WAF — blocked requests by rule",
                     "description": "AWS/WAFV2 BlockedRequests (Sum) split by Rule. Rule = the CloudWatch metric name from VisibilityConfig.MetricName. Spike hunters: rate-based rule (a customer being throttled), block-ip-set (specific IP blocked), block-get-options-swagger (non-GET/OPTIONS request rejected).",
-                    "gridPos": {"h": 8, "w": 12, "x": 12, "y": 9},
+                    "gridPos": {"h": 8, "w": 12, "x": 12, "y": 13},
                     "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
                     "targets": [
                                  {
@@ -335,7 +427,7 @@
                     "type": "timeseries",
                     "title": "WAF — counted requests by rule (dry run)",
                     "description": "AWS/WAFV2 CountedRequests (Sum). A COUNT rule flags a request and lets it through, so this is what a tighter limit would have caught — nothing here was blocked. \"High-rate IP dry run\" is waf--custom-AWS-count-high-rate-ip, tripping above high_rate_count_limit requests per IP per 5 min with none of the rate-limit exemptions, so the block-explorer proxy egress would be counted too. While no IP crosses the threshold CloudWatch creates no series for it at all, so it is absent from the legend rather than drawn at zero — that absence is the steady state, and as of #1558 the measured one. \"All count-mode rules\" is the WebACL-wide aggregate, carried here so the panel still renders and proves the query path is alive; the dry-run rule is a subset of it, which is why the series are not stacked. Confirm a zero independently with wafv2 get-rate-based-statement-managed-keys.",
-                    "gridPos": {"h": 8, "w": 24, "x": 0, "y": 17},
+                    "gridPos": {"h": 8, "w": 24, "x": 0, "y": 21},
                     "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
                     "targets": [
                                  {
@@ -413,11 +505,103 @@
       "gridPos": {"h": 1, "w": 24, "x": 0, "y": 1},
       "panels": [
                   {
+                    "id": 115,
+                    "type": "stat",
+                    "title": "CloudFront requests (total)",
+                    "description": "AWS/CloudFront Requests (Sum) totalled over the dashboard time range, both distributions collapsed into one figure — the graph beside it keeps them apart. The two series are joined and summed per timestamp in transformations because a stat panel otherwise renders one number per series. Period is left on auto so a range past CloudFront's 15-day 1-minute retention rolls up instead of returning nothing. Edge volume, so it sits above the API row's 'Total requests': cache hits and WAF blocks never reach the origin.",
+                    "gridPos": {"h": 4, "w": 12, "x": 0, "y": 2},
+                    "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                    "targets": [
+                                 {
+                                   "refId": "A",
+                                   "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                                   "namespace": "AWS/CloudFront",
+                                   "metricName": "Requests",
+                                   "statistic": "Sum",
+                                   "dimensions": {
+                                                   "DistributionId": ["E1M1PCQ9GH0M5O", "E2C4KPZEYCS5KZ"],
+                                                   "Region": "Global"
+                                                 },
+                                   "region": "us-east-1",
+                                   "period": "",
+                                   "matchExact": true,
+                                   "metricEditorMode": 0,
+                                   "metricQueryType": 0,
+                                   "label": "${PROP('Dim.DistributionId')}"
+                                 }
+                               ],
+                    "transformations": [
+                                         {"id": "joinByField", "options": {"mode": "outer"}},
+                                         {
+                                           "id": "calculateField",
+                                           "options": {
+                                                        "mode": "reduceRow",
+                                                        "reduce": {"reducer": "sum"},
+                                                        "alias": "Requests",
+                                                        "replaceFields": true
+                                                      }
+                                         }
+                                       ],
+                    "fieldConfig": {"defaults": {"unit": "short", "decimals": 0, "color": {"mode": "fixed", "fixedColor": "text"}}},
+                    "options": {
+                                 "reduceOptions": {"values": false, "calcs": ["sum"], "fields": ""},
+                                 "colorMode": "none",
+                                 "graphMode": "area",
+                                 "textMode": "auto"
+                               }
+                  },
+                  {
+                    "id": 116,
+                    "type": "stat",
+                    "title": "Cache hit rate (average)",
+                    "description": "AWS/CloudFront CacheHitRate (Average, %) reduced to one figure: the mean of the per-period averages over the dashboard range, across both distributions. Not a request-weighted hit ratio — CloudFront publishes no hit/miss counts — so a quiet period weighs the same as a busy one, and the spare distribution the same as the primary whenever it serves. Read it beside the graph, not instead of it.",
+                    "gridPos": {"h": 4, "w": 12, "x": 12, "y": 2},
+                    "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                    "targets": [
+                                 {
+                                   "refId": "A",
+                                   "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
+                                   "namespace": "AWS/CloudFront",
+                                   "metricName": "CacheHitRate",
+                                   "statistic": "Average",
+                                   "dimensions": {
+                                                   "DistributionId": ["E1M1PCQ9GH0M5O", "E2C4KPZEYCS5KZ"],
+                                                   "Region": "Global"
+                                                 },
+                                   "region": "us-east-1",
+                                   "period": "",
+                                   "matchExact": true,
+                                   "metricEditorMode": 0,
+                                   "metricQueryType": 0,
+                                   "label": "${PROP('Dim.DistributionId')}"
+                                 }
+                               ],
+                    "transformations": [
+                                         {"id": "joinByField", "options": {"mode": "outer"}},
+                                         {
+                                           "id": "calculateField",
+                                           "options": {
+                                                        "mode": "reduceRow",
+                                                        "reduce": {"reducer": "mean"},
+                                                        "alias": "Cache hit rate",
+                                                        "replaceFields": true
+                                                      }
+                                         }
+                                       ],
+                    "fieldConfig": {"defaults": {"unit": "percent", "decimals": 1, "min": 0, "max": 100, "color": {"mode": "fixed", "fixedColor": "text"}}},
+                    "options": {
+                                 "reduceOptions": {"values": false, "calcs": ["mean"], "fields": ""},
+                                 "colorMode": "none",
+                                 "graphMode": "area",
+                                 "textMode": "auto"
+                               }
+                  },
+                  {
                     "id": 110,
                     "type": "timeseries",
                     "title": "CloudFront requests",
                     "description": "AWS/CloudFront Requests (Sum) across the two distributions fronting indexer.testnet.vechain.org (E1M1PCQ9GH0M5O primary, E2C4KPZEYCS5KZ spare/replica). Fixed to this network and not affected by the Network or Deployment pickers — CloudFront and WAF are shared across both blue/green colours and are not templated. CloudFront metrics are 1-minute granularity and publish with a few minutes of lag, so this trails the Prometheus panels below.",
-                    "gridPos": {"h": 8, "w": 8, "x": 0, "y": 2},
+                    "gridPos": {"h": 8, "w": 8, "x": 0, "y": 6},
                     "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
                     "targets": [
                                  {
@@ -452,7 +636,7 @@
                     "type": "timeseries",
                     "title": "Cache hit rate",
                     "description": "AWS/CloudFront CacheHitRate (Average, %). Higher = more edge hits, less origin load. The indexer API is largely uncacheable so expect low double digits at best; drops toward zero on cache invalidation or a hot-path change.",
-                    "gridPos": {"h": 8, "w": 8, "x": 8, "y": 2},
+                    "gridPos": {"h": 8, "w": 8, "x": 8, "y": 6},
                     "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
                     "targets": [
                                  {
@@ -481,7 +665,7 @@
                     "type": "timeseries",
                     "title": "CloudFront error rate — 4xx / 5xx",
                     "description": "AWS/CloudFront 4xxErrorRate + 5xxErrorRate (Average, %) — percentage of viewer requests returning 4xx/5xx at the edge. Cross-reference with the API panels in the Errors row: edge errors the origin never saw are WAF blocks or CloudFront-level failures.",
-                    "gridPos": {"h": 8, "w": 8, "x": 16, "y": 2},
+                    "gridPos": {"h": 8, "w": 8, "x": 16, "y": 6},
                     "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
                     "targets": [
                                  {
@@ -533,7 +717,7 @@
                     "type": "timeseries",
                     "title": "WAF — allowed vs blocked",
                     "description": "AWS/WAFV2 AllowedRequests + BlockedRequests (Sum, Rule=ALL). Aggregate across the whole shared-veworld-testnet-cloudfront-waf WebACL.",
-                    "gridPos": {"h": 8, "w": 12, "x": 0, "y": 10},
+                    "gridPos": {"h": 8, "w": 12, "x": 0, "y": 14},
                     "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
                     "targets": [
                                  {
@@ -607,7 +791,7 @@
                     "type": "timeseries",
                     "title": "WAF — blocked requests by rule",
                     "description": "AWS/WAFV2 BlockedRequests (Sum) split by Rule. Rule = the CloudWatch metric name from VisibilityConfig.MetricName. Testnet does not have the python-user-agent rate-limit rule that mainnet does.",
-                    "gridPos": {"h": 8, "w": 12, "x": 12, "y": 10},
+                    "gridPos": {"h": 8, "w": 12, "x": 12, "y": 14},
                     "datasource": {"type": "cloudwatch", "uid": "cloudwatch"},
                     "targets": [
                                  {
