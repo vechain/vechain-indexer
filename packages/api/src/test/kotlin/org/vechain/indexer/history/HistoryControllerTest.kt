@@ -50,33 +50,11 @@ internal class HistoryControllerTest {
     }
 
     @Test
-    fun `token history is served without blowing up on an empty page`() {
-        every {
-            historyService.findTokenIdHistoryByFilters(any(), any(), any(), any(), any(), any())
-        } returns Page.empty<IndexedHistoryEvent>()
-
-        val result =
-            controller.getTokenHistory(
-                tokenId = "1",
-                eventName = null,
-                contractAddress = null,
-                after = null,
-                before = null,
-                page = null,
-                size = null,
-                direction = null,
-            )
-
-        assertNotNull(result)
-    }
-
-    @Test
     fun `history tolerates a stale minute, which is where its caching gain sits`() {
         // Measured: 7.9% of requests repeat within 10s, 12.0% within a minute. `before` closes the
         // window and would grade higher, but no caller sends it, so a flat minute is the ceiling.
         assertEquals(CachePolicy.MINUTE, declaredCachePolicy("getUsersHistory"))
         assertEquals(CachePolicy.MINUTE, declaredCachePolicy("getUsersHistoryV2"))
-        assertEquals(CachePolicy.MINUTE, declaredCachePolicy("getTokenHistory"))
     }
 
     private fun declaredCachePolicy(method: String): CachePolicy? =

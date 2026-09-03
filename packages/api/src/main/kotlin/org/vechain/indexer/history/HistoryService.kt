@@ -31,19 +31,6 @@ open class HistoryService(
         return runQuery(criteria, pageable)
     }
 
-    open fun findTokenIdHistoryByFilters(
-        tokenId: String?,
-        eventNames: List<String>?,
-        contractAddress: Address?,
-        before: Long?,
-        after: Long?,
-        pageable: Pageable,
-    ): Slice<IndexedHistoryEvent> {
-        val criteria =
-            buildCriteria(null, eventNames, null, contractAddress, before, after, tokenId)
-        return runQuery(criteria, pageable)
-    }
-
     private fun runQuery(criteria: Criteria, pageable: Pageable): Slice<IndexedHistoryEvent> {
         val query = Query(criteria).with(pageable)
         query.limit(pageable.pageSize + 1)
@@ -56,13 +43,12 @@ open class HistoryService(
     }
 
     private fun buildCriteria(
-        account: String?,
+        account: String,
         eventNames: List<String>?,
         searchFields: List<String>?,
         contractAddress: Address?,
         before: Long?,
         after: Long?,
-        tokenId: String? = null,
     ): Criteria {
         val criteria = Criteria()
 
@@ -71,12 +57,10 @@ open class HistoryService(
             criteria.orOperator(
                 *searchFields.map { Criteria.where(it).`is`(account) }.toTypedArray()
             )
-        } else if (!account.isNullOrBlank()) {
+        } else {
             // Single multikey equality replaces a 5-way $or over the address fields.
             // Backed by the involvedAddresses index in HistoryCollectionConfig.
             criteria.and(IndexedHistoryEvent.INVOLVED_ADDRESSES_FIELD).`is`(account)
-        } else {
-            criteria.and(IndexedHistoryEvent::tokenId.name).`is`(tokenId)
         }
 
         // Add contractAddress filter

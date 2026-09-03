@@ -150,25 +150,6 @@
         "root.topPercentage"
       ]
     },
-    "/api/v1/validators/{validatorId}": {
-      "ignore_paths": [
-        "root.blockProbability",
-        "root.blocksPerEpoch",
-        "root.blocksPerYear",
-        "root.completedPeriods",
-        "root.offlineBlocks",
-        "root.percentageOffline",
-        "root.online",
-        "root.tvlBasedYield",
-        "root.validatorYield",
-        "root.avgDelegatorYield",
-        "root.nextCycleAvgDelegatorYield",
-        "root.nextCycleTvlBasedYield",
-        "root.nextCycleValidatorYield",
-        "root.nftYields",
-        "root.nftYieldsIfDelegatedNextCycle"
-      ]
-    },
     "/api/v2/validators/{validatorId}": {
       "ignore_paths": [
         "root.blockProbability",
@@ -236,10 +217,6 @@
     },
     "/api/v2/history/{account}": {
       "account": ["0xc5213085d3fc19b6a883a92a5703f7733360f063"]
-    },
-    "/api/v2/history/token/{tokenId}": {
-      "tokenId": ["100"],
-      "eventName": ["STARGATE_CLAIM_REWARDS"]
     },
     "/api/v1/stargate/tokens/{tokenId}/history": {
       "tokenId": ["100"],

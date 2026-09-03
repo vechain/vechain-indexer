@@ -19,7 +19,6 @@ import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.PriceOracleUnavailableResponse
-import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.rest.CacheFor
 import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
@@ -59,7 +58,7 @@ open class ValidatorController(private val service: ValidatorService) {
             This endpoint retrieves validator stats.
 
             You can filter the results by:
-            - `validatorId`: (deprecated - use GET /api/v1/validators/{validatorId} instead)
+            - `validatorId`: (deprecated - use GET /api/v2/validators/{validatorId} instead)
             - `status`: validator status
             - `endorser`: endorser address
 
@@ -74,7 +73,7 @@ open class ValidatorController(private val service: ValidatorService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "validatorId",
-        description = "Deprecated: use GET /api/v1/validators/{validatorId} instead.",
+        description = "Deprecated: use GET /api/v2/validators/{validatorId} instead.",
         required = false,
         deprecated = true,
         schema = Schema(type = "string", pattern = Address.REGEX),
@@ -139,69 +138,6 @@ open class ValidatorController(private val service: ValidatorService) {
             )
 
         return paginatedResponse(results)
-    }
-
-    @GetMapping("/{validatorId}")
-    @Operation(
-        summary = "Get a single validator by ID (deprecated — use /api/v2/validators/{id})",
-        description =
-            "**Deprecated:** Replaced by `GET /api/v2/validators/{validatorId}`. " +
-                "Returns a single validator's stats by their address.",
-        deprecated = true,
-    )
-    @AddressParameter(
-        name = "validatorId",
-        `in` = ParameterIn.PATH,
-        description = "Validator address",
-        required = true,
-    )
-    @CommonApiResponses
-    @PriceOracleUnavailableResponse
-    @CacheFor(CachePolicy.MINUTE)
-    open fun getValidatorById(@PathVariable @ValidAddress validatorId: Address): ValidatorResponse {
-        val normalised = HexUtils.normalise(validatorId.value)
-        return service.getValidatorById(normalised)
-            ?: throw ResourceNotFoundException("Validator not found for id $normalised")
-    }
-
-    @Deprecated(
-        "Use /api/v1/validators/block-rewards and /api/v1/validators/block-rewards/{blockNumber} instead"
-    )
-    @GetMapping("/blocks")
-    @Operation(
-        summary = "Get validator block records (deprecated)",
-        description =
-            "Note: the original description was inaccurate. This endpoint does not return cumulative " +
-                "rewards 'up to the latest block'. It returns a paginated list of individual block " +
-                "reward/miss records, optionally filtered by an exact block number, validator, or status. " +
-                "Deprecated: use /api/v1/validators/block-rewards for paginated listing or /api/v1/validators/block-rewards/{blockNumber} for lookup by block.",
-        deprecated = true,
-    )
-    @BlockNumberParameter(
-        description =
-            "Optional block number. If provided, returns the total VTHO rewards as of this block."
-    )
-    @AddressParameter(name = "validator", description = "Optional validator address")
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "status",
-        schema = Schema(implementation = BlockStatus::class),
-        description = "Filter by block status - either VALIDATED or MISSED.",
-        required = false,
-    )
-    @PaginationParameters
-    @CommonApiResponses
-    @CacheFor(CachePolicy.MINUTE)
-    open fun getValidatorBlocks(
-        @RequestParam(required = false) blockNumber: Long?,
-        @ValidAddress @RequestParam(required = false) validator: Address?,
-        @RequestParam(required = false) status: BlockStatus?,
-        @RequestParam(required = false) page: Int?,
-        @ValidPageSize @RequestParam(required = false) size: Int?,
-        @RequestParam(required = false) direction: String?,
-    ): PaginatedResponse<ValidatorBlock> {
-        val pageable = toPageable(page, size, direction, ValidatorBlock::blockNumber.name)
-        return service.getValidatorBlocks(validator, status, blockNumber, pageable)
     }
 
     @GetMapping("/block-rewards")

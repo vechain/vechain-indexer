@@ -98,7 +98,7 @@ class RegressionSeedTest(unittest.TestCase):
         self.assertEqual(updated["parameters"]["validator"], ["0x01"])
         self.assertEqual(updated["parameters"]["validatorId"], ["0x01"])
         self.assertEqual(
-            updated["path_overrides"]["/api/v1/validators/{validatorId}"]["validatorId"],
+            updated["path_overrides"]["/api/v2/validators/{validatorId}"]["validatorId"],
             ["0x01", "0x02", "0x03", "0x04", "0x05", "0x06"],
         )
         self.assertEqual(

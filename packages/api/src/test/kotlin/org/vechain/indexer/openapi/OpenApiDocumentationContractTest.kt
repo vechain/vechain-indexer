@@ -87,14 +87,6 @@ class OpenApiDocumentationContractTest {
     }
 
     @Test
-    fun `deprecated generic token history route is marked deprecated in generated spec`() {
-        val spec = fetchSpec()
-        val operation = spec.at("/paths/~1api~1v2~1history~1token~1{tokenId}/get")
-
-        expectThat(operation.at("/deprecated").asBoolean()).isTrue()
-    }
-
-    @Test
     fun `transfer and nft address query parameters are documented with address patterns`() {
         val transferParameters = specParameters("/paths/~1api~1v1~1transfers/get/parameters")
         val nftParameters = specParameters("/paths/~1api~1v1~1nfts/get/parameters")

@@ -26,7 +26,6 @@ import strikt.assertions.hasSize
 import strikt.assertions.isEmpty
 import strikt.assertions.isEqualTo
 import strikt.assertions.isFalse
-import strikt.assertions.isNotNull
 import strikt.assertions.isNull
 import strikt.assertions.isTrue
 
@@ -423,33 +422,6 @@ class ValidatorServiceTest {
 
         expectThat(result.content).hasSize(2)
         expectThat(result.hasNext()).isFalse()
-    }
-
-    // -- getValidatorById tests --
-
-    @Test
-    fun `getValidatorById builds query with _id criteria`() {
-        val querySlot = slot<Query>()
-        val validator = validator(id = "0x1234567890abcdef1234567890abcdef12345678")
-
-        every { mongoTemplate.findOne(capture(querySlot), Validator::class.java) } returns validator
-
-        val result = service.getValidatorById("0x1234567890abcdef1234567890abcdef12345678")
-
-        expectThat(result).isNotNull().and {
-            get { id }.isEqualTo("0x1234567890abcdef1234567890abcdef12345678")
-        }
-        expectThat(querySlot.captured.queryObject)
-            .isEqualTo(org.bson.Document("_id", "0x1234567890abcdef1234567890abcdef12345678"))
-    }
-
-    @Test
-    fun `getValidatorById returns null when not found`() {
-        every { mongoTemplate.findOne(any<Query>(), Validator::class.java) } returns null
-
-        val result = service.getValidatorById("0x0000000000000000000000000000000000000000")
-
-        expectThat(result).isNull()
     }
 
     // -- getSlotStats / getSlotStatsForValidator tests --

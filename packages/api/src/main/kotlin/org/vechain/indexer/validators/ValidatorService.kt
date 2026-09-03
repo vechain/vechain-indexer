@@ -11,7 +11,6 @@ import org.springframework.data.domain.Slice
 import org.springframework.data.domain.SliceImpl
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.find
-import org.springframework.data.mongodb.core.findOne
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
@@ -41,41 +40,6 @@ open class ValidatorService(
     private val priceFeedService: PriceFeedService,
     private val thorClient: ThorClient,
 ) {
-
-    open fun getValidatorBlocks(
-        validator: Address?,
-        status: BlockStatus?,
-        blockNumber: Long?,
-        pageable: Pageable,
-    ): PaginatedResponse<ValidatorBlock> {
-        val criteriaList = mutableListOf<Criteria>()
-
-        validator?.let {
-            criteriaList.add(
-                Criteria.where(ValidatorBlock::validator.name).`is`(it.value.lowercase())
-            )
-        }
-        status?.let { criteriaList.add(Criteria.where(ValidatorBlock::status.name).`is`(it)) }
-        blockNumber?.let {
-            criteriaList.add(Criteria.where(ValidatorBlock::blockNumber.name).`is`(it))
-        }
-
-        val query =
-            if (criteriaList.isNotEmpty()) {
-                Query(Criteria().andOperator(*criteriaList.toTypedArray()))
-            } else {
-                Query()
-            }
-
-        query.with(pageable).limit(pageable.pageSize + 1)
-
-        val results = mongoTemplate.find<ValidatorBlock>(query)
-        val hasNext = results.size > pageable.pageSize
-        val page = if (hasNext) results.dropLast(1) else results
-        val slice = SliceImpl(page, pageable, hasNext)
-
-        return paginatedResponse(slice)
-    }
 
     open fun getValidatorBlockRewards(
         validator: Address?,
@@ -256,19 +220,6 @@ open class ValidatorService(
         val mapped = page.map { ValidatorResponse.from(it, aggregates, vetPrice, vthoPrice) }
 
         return SliceImpl(mapped, pageable, hasNext)
-    }
-
-    open fun getValidatorById(validatorId: String): ValidatorResponse? {
-        val query = Query(Criteria.where("_id").`is`(validatorId.lowercase()))
-        val doc = mongoTemplate.findOne<Validator>(query) ?: return null
-        val aggregates = aggregateService.build(listOf(doc.id))
-        val prices = priceFeedService.getPrices(setOf(PriceFeed.VET_USD, PriceFeed.VTHO_USD))
-        return ValidatorResponse.from(
-            doc,
-            aggregates,
-            prices.getValue(PriceFeed.VET_USD),
-            prices.getValue(PriceFeed.VTHO_USD),
-        )
     }
 
     open fun getSlotStats(startTimestamp: Long, endTimestamp: Long): List<ValidatorSlotStats> {
