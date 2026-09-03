@@ -45,20 +45,20 @@ internal class ActionLeaderboardServiceTest {
     fun `the newest round on record is still open`() {
         latestRoundIs(112)
 
-        assertEquals(CachePolicy.HOURLY, service.roundLeaderboardPolicy(112))
+        assertEquals(CachePolicy.MINUTE, service.roundLeaderboardPolicy(112))
     }
 
     @Test
     fun `a round the indexer has not reached yet stays fresh`() {
         latestRoundIs(112)
 
-        assertEquals(CachePolicy.HOURLY, service.roundLeaderboardPolicy(113))
+        assertEquals(CachePolicy.MINUTE, service.roundLeaderboardPolicy(113))
     }
 
     @Test
     fun `no rounds on record settles nothing`() {
         latestRoundIs(null)
 
-        assertEquals(CachePolicy.HOURLY, service.roundLeaderboardPolicy(111))
+        assertEquals(CachePolicy.MINUTE, service.roundLeaderboardPolicy(111))
     }
 }

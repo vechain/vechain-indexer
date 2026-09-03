@@ -27,13 +27,14 @@ open class ActionLeaderboardService(
     /**
      * A round that has closed can never be awarded another action, so its leaderboard is final. The
      * newest round on record is the one still open — or, if the indexer is behind a boundary, one
-     * that has only just closed — so only the rounds behind it are settled.
+     * that has only just closed — so only the rounds behind it are settled. The open round keeps
+     * moving with every rewarded action, so it earns a minute and no more.
      */
     fun roundLeaderboardPolicy(roundId: Int): CachePolicy {
         val latestRound =
             userRoundRepo.findFirstByEntityTypeOrderByRoundIdDesc(EntityType.GLOBAL)?.roundId
         return if (latestRound != null && roundId < latestRound) CachePolicy.IMMUTABLE
-        else CachePolicy.HOURLY
+        else CachePolicy.MINUTE
     }
 
     // User leaderboards
