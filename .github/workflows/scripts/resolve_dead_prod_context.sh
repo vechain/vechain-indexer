@@ -46,6 +46,12 @@ esac
 source_color="${mainnet_live}"
 target_color="${mainnet_dead}"
 
+expected_target="${EXPECTED_TARGET_COLOR:-}"
+if [[ -n "${expected_target}" && "${expected_target}" != "${target_color}" ]]; then
+  echo "Dead color is ${target_color} but the caller planned for ${expected_target}; DNS moved since the plan. Aborting."
+  exit 1
+fi
+
 {
   echo "source_color=${source_color}"
   echo "target_color=${target_color}"

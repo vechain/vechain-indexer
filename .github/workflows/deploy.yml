@@ -1,40 +1,31 @@
 name: Deploy
 
-# The one apply path for a deployed environment: shared infra, observability,
-# the CloudFront distributions and the application, in dependency order. Every
-# stack is planned and applied on every run, so a stack with no change is a
-# no-op rather than something an operator has to remember to run.
+# The one apply path for prod: shared infra, observability, the CloudFront
+# distributions and the application, in dependency order. Every stack is
+# planned and applied on every run, so one with no change is a no-op.
+#
+# plan_release.sh picks the colour (and whether the dead colour is restored
+# from live snapshots first); a reviewer confirms that plan on the
+# prod-release-approval environment before anything is applied.
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        description: Which environment to deploy
+      target:
+        description: Colour to deploy. auto follows the plan's recommendation.
         required: true
         type: choice
         options:
-          - prod
-        default: prod
-      network:
-        description: Which network to deploy
-        required: true
-        type: choice
-        options:
-          - testnet
-          - mainnet
-          - both
-        default: both
-      colour:
-        description: Which colour of that environment to deploy
-        required: true
-        type: choice
-        options:
+          - auto
           - live
           - dead
-        default: dead
+        default: auto
+      skip_restore:
+        description: Deploy to a cold dead colour without restoring the live Atlas snapshots first
+        required: false
+        type: boolean
+        default: false
 
-run-name: >-
-  Deploy ${{ github.ref_name }} -> ${{ inputs.environment }}
-  ${{ inputs.colour }} (${{ inputs.network }})
+run-name: Deploy ${{ github.ref_name }} -> prod (${{ inputs.target }})
 
 # Required for authentication through GitHub OIDC
 permissions:
@@ -43,7 +34,7 @@ permissions:
   packages: read # This is required for pulling images from GHCR
 
 concurrency:
-  group: deploy-${{ inputs.environment }}
+  group: deploy-prod
   cancel-in-progress: false
 
 jobs:
@@ -65,105 +56,40 @@ jobs:
     needs: [identify-live-color]
     runs-on: ubuntu-latest
     outputs:
-      DEPLOYMENT_COLOR: ${{ steps.colour.outputs.DEPLOYMENT_COLOR }}
-      DEPLOYED: ${{ steps.deployed.outputs.DEPLOYED }}
+      STATE: ${{ steps.state.outputs.STATE }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
         with:
           aws-region: eu-west-1
           role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
 
-      - name: Resolve target colour
-        id: colour
+      - name: Read what each colour runs
+        id: state
         env:
-          INPUT_NETWORK: ${{ inputs.network }}
-          INPUT_ENV: ${{ inputs.colour }}
-          MAINNET_LIVE: ${{ needs.identify-live-color.outputs.mainnet_live_color }}
-          MAINNET_DEAD: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}
-          TESTNET_LIVE: ${{ needs.identify-live-color.outputs.testnet_live_color }}
-          TESTNET_DEAD: ${{ needs.identify-live-color.outputs.testnet_dead_color }}
-        run: |
-          set -euo pipefail
-          if [[ "$INPUT_NETWORK" == 'testnet' ]]; then
-            live="$TESTNET_LIVE"; dead="$TESTNET_DEAD"
-          else
-            live="$MAINNET_LIVE"; dead="$MAINNET_DEAD"
-          fi
-
-          case "$INPUT_ENV" in
-            live) colour="$live" ;;
-            dead) colour="$dead" ;;
-            *) echo "::error::Unknown environment '$INPUT_ENV'"; exit 1 ;;
-          esac
-
-          echo "DEPLOYMENT_COLOR=${colour}" >> "$GITHUB_OUTPUT"
-          echo "Target colour: ${colour}"
-
-      # Falls back to the live colour for a dead colour that was torn down.
-      - name: Read deployed image tags
-        id: deployed
-        env:
-          TARGET_COLOR: ${{ steps.colour.outputs.DEPLOYMENT_COLOR }}
-          MAINNET_LIVE: ${{ needs.identify-live-color.outputs.mainnet_live_color }}
-          TESTNET_LIVE: ${{ needs.identify-live-color.outputs.testnet_live_color }}
-        run: |
-          set -euo pipefail
-
-          # Via the service, since the family's latest may be a revision no
-          # rollout completed.
-          read_running_image() {
-            local colour="$1" net="$2" svc="$3"
-            local desc status task_def
-
-            desc=$(aws ecs describe-services \
-              --cluster "${colour}-veworld-cluster" \
-              --services "${colour}-veworld-${net}-${svc}-service" \
-              --query 'services[0].[status,taskDefinition]' \
-              --output text 2>/dev/null) || return 0
-
-            status=$(awk '{print $1}' <<<"$desc")
-            task_def=$(awk '{print $2}' <<<"$desc")
-            [ "$status" = "ACTIVE" ] && [ -n "$task_def" ] && [ "$task_def" != "None" ] || return 0
-
-            aws ecs describe-task-definition \
-              --task-definition "$task_def" \
-              --query 'taskDefinition.containerDefinitions[0].image' \
-              --output text 2>/dev/null \
-            | awk -F: 'NF>1 {print $NF}'
-          }
-
-          deployed='{}'
-          for net in main test; do
-            case "$net" in
-              main) fallback="$MAINNET_LIVE" ;;
-              test) fallback="$TESTNET_LIVE" ;;
-            esac
-            for svc in api indexer; do
-              tag=$(read_running_image "$TARGET_COLOR" "$net" "$svc")
-              if [ -z "$tag" ]; then
-                echo "No running ${net}-${svc} service on ${TARGET_COLOR}; reading ${fallback}"
-                tag=$(read_running_image "$fallback" "$net" "$svc")
-              fi
-              [ -n "$tag" ] || continue
-              deployed=$(jq -c --arg n "$net" --arg s "$svc" --arg t "$tag" \
-                '.[$n][$s] = $t' <<<"$deployed")
-            done
-          done
-
-          echo "DEPLOYED=${deployed}" >> "$GITHUB_OUTPUT"
-          jq . <<<"$deployed"
+          COLOURS: prod-blue prod-green
+        run: bash .github/workflows/scripts/read_deployed_state.sh
 
   # No AWS credentials here: this job runs a script out of the checked-out tree
   # to hash it, and only strings leave.
   plan-release:
     name: Plan Release
-    needs: [deployed-state]
+    needs: [identify-live-color, deployed-state]
     runs-on: ubuntu-latest
     permissions:
       contents: read
     outputs:
-      VERSION: ${{ steps.plan.outputs.VERSION }}
+      VERSION: ${{ steps.version.outputs.VERSION }}
+      TARGET_COLOR: ${{ steps.plan.outputs.TARGET_COLOR }}
+      TARGET_KIND: ${{ steps.plan.outputs.TARGET_KIND }}
+      LIVE_COLOR: ${{ steps.plan.outputs.LIVE_COLOR }}
+      RESTORE: ${{ steps.plan.outputs.RESTORE }}
+      CONFIRM_TITLE: ${{ steps.plan.outputs.CONFIRM_TITLE }}
       IMAGE_VERSIONS: ${{ steps.plan.outputs.IMAGE_VERSIONS }}
       PROMOTE: ${{ steps.plan.outputs.PROMOTE }}
       PROMOTE_NEEDED: ${{ steps.plan.outputs.PROMOTE_NEEDED }}
@@ -174,16 +100,13 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      - name: Resolve version and per-service image tags
-        id: plan
+      - name: Resolve version
+        id: version
         env:
           EVENT_NAME: ${{ github.event_name }}
           REF_NAME: ${{ github.ref_name }}
-          INPUT_NETWORK: ${{ inputs.network }}
-          DEPLOYED: ${{ needs.deployed-state.outputs.DEPLOYED }}
         run: |
           set -euo pipefail
-
           if [[ "$EVENT_NAME" == "workflow_dispatch" && "$REF_NAME" == "main" ]]; then
             VERSION=$(git tag --sort=v:refname | tail -n1)
           elif [[ "$EVENT_NAME" == "workflow_dispatch" && "$REF_NAME" == v.* ]]; then
@@ -196,73 +119,43 @@ jobs:
             echo "::error::No version tag found to deploy."
             exit 1
           fi
+          echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
 
-          versions='{}'
-          promote=()
-          rows=()
+      - name: Choose the colour and per-service image tags
+        id: plan
+        env:
+          VERSION: ${{ steps.version.outputs.VERSION }}
+          TARGET_INPUT: ${{ inputs.target }}
+          SKIP_RESTORE: ${{ inputs.skip_restore }}
+          STATE: ${{ needs.deployed-state.outputs.STATE }}
+          MAINNET_LIVE: ${{ needs.identify-live-color.outputs.mainnet_live_color }}
+          MAINNET_DEAD: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}
+          TESTNET_LIVE: ${{ needs.identify-live-color.outputs.testnet_live_color }}
+          TESTNET_DEAD: ${{ needs.identify-live-color.outputs.testnet_dead_color }}
+        run: bash .github/workflows/scripts/plan_release.sh
 
-          for net in main test; do
-            case "$INPUT_NETWORK" in
-              both)    selected=true ;;
-              mainnet) [ "$net" = main ] && selected=true || selected=false ;;
-              testnet) [ "$net" = test ] && selected=true || selected=false ;;
-              *) echo "::error::Unknown network '$INPUT_NETWORK'"; exit 1 ;;
-            esac
-
-            for svc in api indexer; do
-              current=$(jq -r --arg n "$net" --arg s "$svc" '.[$n][$s] // empty' <<<"$DEPLOYED")
-
-              if [ "$selected" != true ]; then
-                chosen="$current"
-                note="network not selected"
-              else
-                new_hash=$(.github/workflows/scripts/content_hash.sh "$svc" "$VERSION")
-                old_hash=""
-                if [ -n "$current" ] && git rev-parse -q --verify "refs/tags/${current}^{tree}" >/dev/null; then
-                  old_hash=$(.github/workflows/scripts/content_hash.sh "$svc" "$current")
-                fi
-
-                if [ -n "$old_hash" ] && [ "$old_hash" = "$new_hash" ]; then
-                  chosen="$current"
-                  note="unchanged since ${current} (${new_hash})"
-                else
-                  chosen="$VERSION"
-                  promote+=("$svc")
-                  note="content ${new_hash}"
-                fi
-              fi
-
-              if [ -n "$chosen" ]; then
-                versions=$(jq -c --arg n "$net" --arg s "$svc" --arg v "$chosen" \
-                  '.[$n][$s] = $v' <<<"$versions")
-              else
-                note="no deployed tag to keep; environment yaml decides"
-              fi
-              rows+=("| ${net} | ${svc} | ${chosen:-<yaml>} | ${note} |")
-            done
-          done
-
-          promote_list=$(printf '%s\n' "${promote[@]+"${promote[@]}"}" \
-            | jq -Rc 'select(. != "")' | jq -sc 'unique')
-
-          {
-            echo "VERSION=${VERSION}"
-            echo "IMAGE_VERSIONS=${versions}"
-            echo "PROMOTE=${promote_list}"
-            echo "PROMOTE_NEEDED=$([ "$(jq 'length' <<<"$promote_list")" -gt 0 ] && echo true || echo false)"
-          } >> "$GITHUB_OUTPUT"
-
-          {
-            echo "### Deploying ${VERSION}"
-            echo
-            echo "| net | service | image tag | note |"
-            echo "|---|---|---|---|"
-            printf '%s\n' "${rows[@]}"
-          } >> "$GITHUB_STEP_SUMMARY"
+  # Pauses for a required reviewer on the prod-release-approval environment.
+  # Nothing is applied until this job passes; rejecting it leaves prod untouched.
+  confirm:
+    name: "Confirm: ${{ needs.plan-release.outputs.CONFIRM_TITLE }}"
+    needs: [plan-release]
+    runs-on: ubuntu-latest
+    environment: prod-release-approval
+    permissions:
+      contents: read
+    steps:
+      - name: Record the confirmed plan
+        env:
+          TITLE: ${{ needs.plan-release.outputs.CONFIRM_TITLE }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          echo "Confirmed: ${TITLE}"
+          echo "### Confirmed: ${TITLE}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Dispatched by ${ACTOR}. The plan is in the Plan Release job summary." >> "$GITHUB_STEP_SUMMARY"
 
   promote-to-ecr:
     name: Promote GHCR Image to ECR - ${{ matrix.packageName }}
-    needs: [plan-release]
+    needs: [plan-release, confirm]
     if: needs.plan-release.outputs.PROMOTE_NEEDED == 'true'
     runs-on: ubuntu-latest
     strategy:
@@ -314,7 +207,7 @@ jobs:
           set -euo pipefail
           aws ecr start-image-scan --repository-name "$REPO" --image-id imageTag="$TAG" || true
           aws ecr wait image-scan-complete --repository-name "$REPO" --image-id imageTag="$TAG"
-          read CRIT HIGH MED <<< "$(aws ecr describe-image-scan-findings \
+          read -r CRIT HIGH MED <<< "$(aws ecr describe-image-scan-findings \
             --repository-name "$REPO" --image-id imageTag="$TAG" \
             --query 'imageScanFindings.findingSeverityCounts.[CRITICAL, HIGH, MEDIUM]' \
             --output text)"
@@ -327,10 +220,10 @@ jobs:
 
   apply-shared:
     name: Apply shared stack
-    needs: [identify-live-color]
+    needs: [identify-live-color, confirm]
     uses: ./.github/workflows/deploy-colour-agnostic-infra.yml
     with:
-      environment: ${{ inputs.environment }}
+      environment: prod
       scope: full
       live_color_mainnet: ${{ needs.identify-live-color.outputs.mainnet_live_color }}
       live_color_testnet: ${{ needs.identify-live-color.outputs.testnet_live_color }}
@@ -343,9 +236,10 @@ jobs:
 
   apply-observability:
     name: Apply observability stacks
+    needs: [confirm]
     uses: ./.github/workflows/deploy-observability.yml
     with:
-      environment: ${{ inputs.environment }}
+      environment: prod
       apply: true
     permissions:
       contents: read
@@ -367,18 +261,38 @@ jobs:
     secrets:
       AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
 
+  # A cold dead colour holds stale data. Restoring the live snapshots before
+  # the application apply starts its services is what a switch later relies on.
+  restore-dead:
+    name: Restore dead colour from live snapshots
+    needs: [plan-release, confirm]
+    if: needs.plan-release.outputs.RESTORE == 'true'
+    uses: ./.github/workflows/restore-dead-prod-atlas-snapshots.yml
+    with:
+      confirm_restore: true
+      expected_target_color: ${{ needs.plan-release.outputs.TARGET_COLOR }}
+    concurrency:
+      group: dead-prod-recovery-operations
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    secrets: inherit
+
   deploy-env:
-    needs: [deployed-state, plan-release, promote-to-ecr, apply-shared, apply-observability]
+    needs: [plan-release, promote-to-ecr, apply-shared, apply-observability, restore-dead]
     if: >-
       !cancelled() && needs.plan-release.result == 'success'
       && needs.apply-shared.result == 'success'
       && needs.apply-observability.result == 'success'
       && needs.promote-to-ecr.result != 'failure'
       && needs.promote-to-ecr.result != 'cancelled'
-    name: Run Deployment - ${{ inputs.network }}
+      && needs.restore-dead.result != 'failure'
+      && needs.restore-dead.result != 'cancelled'
+    name: Run Deployment - ${{ needs.plan-release.outputs.TARGET_COLOR }}
     uses: ./.github/workflows/plan-or-apply-terraform.yml
     with:
-      environment: ${{ needs.deployed-state.outputs.DEPLOYMENT_COLOR }}
+      environment: ${{ needs.plan-release.outputs.TARGET_COLOR }}
       image_versions: ${{ needs.plan-release.outputs.IMAGE_VERSIONS }}
       # Force ensures environment is spun up if it does not already exist
       force: true
@@ -392,11 +306,13 @@ jobs:
 
   refresh-dead-dns:
     name: Refresh dead Route53 records
-    needs: [identify-live-color, deploy-env]
-    if: ${{ needs.deploy-env.result == 'success' && inputs.colour == 'dead' }}
+    needs: [identify-live-color, plan-release, deploy-env]
+    if: >-
+      ${{ needs.deploy-env.result == 'success'
+      && needs.plan-release.outputs.TARGET_KIND == 'dead' }}
     uses: ./.github/workflows/deploy-colour-agnostic-infra.yml
     with:
-      environment: ${{ inputs.environment }}
+      environment: prod
       scope: dead-records
       live_color_mainnet: ${{ needs.identify-live-color.outputs.mainnet_live_color }}
       live_color_testnet: ${{ needs.identify-live-color.outputs.testnet_live_color }}
@@ -404,27 +320,18 @@ jobs:
       AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
       VECHAINCI_SSH_PRIVATE_KEYS: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
 
-  log-live-environment:
-    name: Log Live Environment
-    needs: [identify-live-color]
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Live mainnet environment is ${{ needs.identify-live-color.outputs.mainnet_live_color }}"
-
   manage-release:
     name: Refresh draft or publish release
     runs-on: ubuntu-latest
     needs: [plan-release, deploy-env]
-    if: >-
-      ${{ needs.deploy-env.result == 'success'
-      && (inputs.network == 'mainnet' || inputs.network == 'both') }}
+    if: ${{ needs.deploy-env.result == 'success' }}
     permissions:
       contents: write
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
       TAG: ${{ needs.plan-release.outputs.VERSION }}
-      INPUT_ENV: ${{ inputs.colour }}
+      TARGET_KIND: ${{ needs.plan-release.outputs.TARGET_KIND }}
     steps:
       - name: Check existing release state for tag
         id: check
@@ -445,7 +352,7 @@ jobs:
           echo "Previous published tag: ${prev:-<none>}"
 
       - name: Delete stale draft releases (dead deploy)
-        if: steps.check.outputs.state != 'false' && env.INPUT_ENV == 'dead'
+        if: steps.check.outputs.state != 'false' && env.TARGET_KIND == 'dead'
         run: |
           set -euo pipefail
           # Keep exactly one draft — the one representing the tag just staged
@@ -464,7 +371,7 @@ jobs:
           fi
 
       - name: Create draft release (dead deploy)
-        if: steps.check.outputs.state != 'false' && env.INPUT_ENV == 'dead'
+        if: steps.check.outputs.state != 'false' && env.TARGET_KIND == 'dead'
         env:
           PREVIOUS: ${{ steps.prev.outputs.previous }}
         run: |
@@ -475,7 +382,7 @@ jobs:
           echo "Draft release $TAG created (baseline: ${PREVIOUS:-<none>})."
 
       - name: Publish release (live deploy)
-        if: steps.check.outputs.state != 'false' && env.INPUT_ENV == 'live'
+        if: steps.check.outputs.state != 'false' && env.TARGET_KIND == 'live'
         env:
           PREVIOUS: ${{ steps.prev.outputs.previous }}
           STATE: ${{ steps.check.outputs.state }}
@@ -490,3 +397,61 @@ jobs:
             gh release create "$TAG" "${args[@]}"
             echo "Published release $TAG (baseline: ${PREVIOUS:-<none>})."
           fi
+
+  next-steps:
+    name: Next steps
+    needs: [plan-release, deploy-env, refresh-dead-dns, manage-release]
+    if: ${{ !cancelled() && needs.deploy-env.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+
+      - name: Tell the operator what happens next
+        env:
+          VERSION: ${{ needs.plan-release.outputs.VERSION }}
+          TARGET_COLOR: ${{ needs.plan-release.outputs.TARGET_COLOR }}
+          TARGET_KIND: ${{ needs.plan-release.outputs.TARGET_KIND }}
+          LIVE_COLOR: ${{ needs.plan-release.outputs.LIVE_COLOR }}
+          RESTORED: ${{ needs.plan-release.outputs.RESTORE }}
+          SWITCH_URL: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/switch-live-dns.yml
+        run: |
+          set -euo pipefail
+          grafana=$(aws grafana list-workspaces \
+            --query "workspaces[?name=='veworld-indexer-prod-grafana-workspace'].endpoint | [0]" \
+            --output text 2>/dev/null || true)
+          [ -n "$grafana" ] && [ "$grafana" != "None" ] || grafana=""
+          deployment="${TARGET_COLOR#prod-}"
+          dashboard() {
+            if [ -n "$grafana" ]; then
+              echo "[blocks behind](https://${grafana}/d/overview?var-deployment=${deployment}&var-network=$1)"
+            else
+              echo "Grafana → Indexer, API & Edge → deployment ${deployment}, network $1"
+            fi
+          }
+
+          {
+            if [ "$TARGET_KIND" = dead ]; then
+              echo "### Next step: switch DNS once ${TARGET_COLOR} has synced"
+              echo
+              echo "${VERSION} runs on ${TARGET_COLOR}. Traffic stays on ${LIVE_COLOR} until you run [Switch Live Environment](${SWITCH_URL}) with network \`all\`, which also publishes the draft release."
+              if [ "$RESTORED" = true ]; then
+                echo
+                echo "${TARGET_COLOR}'s data was restored from the latest ${LIVE_COLOR} snapshots, so its indexers resume from that point."
+              fi
+              echo
+              echo "Switch when every indexer on both networks reports fully synced:"
+              echo
+              echo "| | mainnet | testnet |"
+              echo "|---|---|---|"
+              echo "| Grafana | $(dashboard mainnet) | $(dashboard testnet) |"
+              echo "| Indexed head | https://mainnet.dead.veworld.vechain.org/api/v1/blocks?size=1 | https://testnet.dead.veworld.vechain.org/api/v1/blocks?size=1 |"
+            else
+              echo "### ${VERSION} is live on ${TARGET_COLOR}"
+              echo
+              echo "The release is published. Nothing else to do; watch $(dashboard mainnet) and $(dashboard testnet) if the change touched the API."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

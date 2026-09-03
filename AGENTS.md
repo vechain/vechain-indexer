@@ -156,17 +156,30 @@ Write reviewer-facing prose at final length — don't draft long and trim. The b
 - **Design notes:** one to three sentences per phase or status entry. "Why X over Y" rationale belongs in the module README or `notes/`, not stacked above the code.
 
 ### One Deploy Applies Every Stack
-[deploy.yml](.github/workflows/deploy.yml) is the single apply path for a deployed environment. It takes `environment` (only `prod` exists today), `network` and `colour`, and applies, in dependency order:
+[deploy.yml](.github/workflows/deploy.yml) is the single apply path for prod. Its one real input is `target`: `auto` (the default), `live` or `dead`. Both networks always deploy together. The run plans first, pauses for confirmation, then applies, in dependency order:
 
 1. `terraform/vpc`, scope `full` — VPC, Route53, ECR, Atlas access, the CloudFront WAFs
 2. `terraform/observability` then `terraform/observability-grafana` — in parallel with the VPC stack; `terraform/api` reads both stacks' outputs
 3. `terraform/cloudfront` — `shared`, `staging`, `prod`, `dead`, which is a dependency chain
-4. `terraform/api` for the target colour, image tags resolved per service
-5. `terraform/vpc`, scope `dead-records` — after the application, so the dead records name the ALB it just moved
+4. the live Atlas snapshots into the dead colour, when the plan says so ([restore-dead-prod-atlas-snapshots.yml](.github/workflows/restore-dead-prod-atlas-snapshots.yml), called)
+5. `terraform/api` for the target colour, image tags resolved per service
+6. `terraform/vpc`, scope `dead-records` — after the application, so the dead records name the ALB it just moved
 
 Every stack plans and applies on every run, so one with no change is a no-op. This replaced the separate shared-infra and observability dispatches: no stack is left for an operator to remember.
 
-Live colours still come from DNS rather than operator input, so a cutover cannot be reverted by a stale value typed into a form, and both VPC applies serialize on the `terraform-vpc-apply` concurrency group.
+**The plan picks the colour.** [plan_release.sh](.github/workflows/scripts/plan_release.sh) reads what both colours run ([read_deployed_state.sh](.github/workflows/scripts/read_deployed_state.sh)) and decides:
+
+| dead colour | indexer changed vs live | plan |
+|---|---|---|
+| running | any | dead — it is the colour being staged |
+| cold | no | live — nothing restarts the indexer |
+| cold | yes | restore live snapshots, then dead |
+
+"Indexer changed" is the image content hash or `terraform/api` differing from what live runs; deploying that to live pauses indexing, so `target: live` is refused in that case. A running colour's indexers keep its data current, so it is never restored; a stopped or absent one is, unless `skip_restore` is set (a reindex from whatever it has). Misaligned networks stop the run: align them with a single-network DNS switch first.
+
+**Confirmation is an environment gate.** The `confirm` job runs on the `prod-release-approval` environment, whose required reviewers see the plan as the job name ("Deploy v.1.2.3 to prod-green (dead), restoring from prod-blue snapshots first"). Approve to apply it; reject and nothing has changed, then re-dispatch with an explicit `target`. The environment's reviewers are configured in repository settings, not in the workflow: without them the gate does not pause.
+
+**The cutover stays manual.** A dead deploy ends with a summary naming the Switch Live Environment run to make once every indexer is fully synced, with the Grafana "blocks behind" panel for that colour and the dead API's indexed head to watch. Live colours come from DNS rather than operator input, so a cutover cannot be reverted by a stale value typed into a form, and both VPC applies serialize on the `terraform-vpc-apply` concurrency group.
 
 **Merging still applies nothing.** [shared-infra.yml](.github/workflows/shared-infra.yml) enforces that for the colour-agnostic stacks. Touch `terraform/vpc/**` or `terraform/cloudfront/**` and it blocks the PR until someone applies the `shared-infra-ack` label, posts a sticky comment, and runs the `terraform plan` that no other check covers — read it in the job summary before approving, because the next deploy applies it. Each stack plans separately, since only `terraform/vpc` needs the live-colour lookup.
 

@@ -8,6 +8,19 @@ on:
         required: true
         type: boolean
         default: false
+  # deploy.yml calls this before it starts a cold dead colour's services; the
+  # caller's approval gate stands in for the checkbox.
+  workflow_call:
+    inputs:
+      confirm_restore:
+        required: false
+        type: boolean
+        default: true
+      expected_target_color:
+        description: "Abort unless the dead colour resolved from DNS is this one"
+        required: false
+        type: string
+        default: ""
 
 concurrency:
   group: dead-prod-recovery-operations
@@ -55,6 +68,7 @@ jobs:
         env:
           REQUIRE_CONFIRMATION: "true"
           CONFIRM_RESTORE: ${{ inputs.confirm_restore }}
+          EXPECTED_TARGET_COLOR: ${{ inputs.expected_target_color }}
           MAINNET_LIVE_COLOR: ${{ needs.identify-live-color.outputs.mainnet_live_color }}
           MAINNET_DEAD_COLOR: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}
           TESTNET_LIVE_COLOR: ${{ needs.identify-live-color.outputs.testnet_live_color }}
