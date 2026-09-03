@@ -235,20 +235,27 @@ without one.
 
 ## Deployment & Testing
 
-The VeWorld Indexer can be deployed via two strategies: Regular or Blue/Green. To trigger a deployment, run the [Deploy workflow](https://github.com/vechain/veworld-indexer/actions/workflows/deploy.yml) from the version tag you want to deploy. It asks for the environment (only `prod` today), the network, and the colour. If in doubt about which colour is currently live, run the [Identify Live/Dead Environments](https://github.com/vechain/veworld-indexer/actions/workflows/identify-live-color.yml) workflow with the default arguments.
+To deploy, run the [Deploy workflow](https://github.com/vechain/veworld-indexer/actions/workflows/deploy.yml) from the version tag you want to deploy, leaving `target` at `auto`. Both networks deploy together. The run works out which colour the release should go to and pauses at a **Confirm** job whose name states the plan, for example "Deploy v.1.2.3 to prod-green (dead), restoring from prod-blue snapshots first". The Plan Release job summary has the reasoning and the per-service image tags. Approve it to proceed. To do something else, reject it (nothing has been applied) and re-dispatch with `target` set to `live` or `dead`.
 
-One deploy applies every stack — shared infra, observability, the CloudFront distributions and the application — in dependency order, so a stack with no change is a no-op rather than a run someone has to remember. `AGENTS.md` "One Deploy Applies Every Stack" has the order and the reasoning.
+The plan follows three rules:
 
-### Regular Deployment
-Choosing the `live` colour deploys to the colour currently serving production traffic. Most deployments will follow this process. Ensure any changes being deployed via this strategy have been sufficiently tested before triggering (testing process described below).
+- A running dead colour is the one being staged, so it gets the release.
+- A cold dead colour and an indexer unchanged against live: live takes the release directly, with no indexing gap.
+- A cold dead colour and a changed indexer: the dead colour gets the release after its Atlas clusters are restored from the latest live snapshots. A changed indexer on live pauses indexing while it restarts, and a cold colour's data is stale.
 
-### Blue/Green Deployment
-For code changes requiring a full reindex from the genesis block, choose the `dead` colour. This deploys to the colour not serving traffic. Following deployment, a sufficient amount of time will need to be left (ie a few days) until the database has caught up with the latest block. After this point, the live environment can be switched from the current live color to the dead color. To do this, run the [Switch Live Environment](https://github.com/vechain/veworld-indexer/actions/workflows/switch-live-dns.yml) workflow. This will update the appropriate DNS records to redirect traffic to the alternate color environment. 
+`target: live` is refused for a changed indexer. `skip_restore` only skips the restore: the colour indexes on from whatever its Atlas clusters hold, which for a stopped colour is a stale checkpoint, not genesis. A reindex from genesis is an `indexer.version` bump (see `AGENTS.md` "Triggering an Indexer Resync"), not a skipped restore.
+
+One deploy applies every stack — shared infra, observability, the CloudFront distributions, the restore when needed, and the application — in dependency order, so a stack with no change is a no-op rather than a run someone has to remember. `AGENTS.md` "One Deploy Applies Every Stack" has the order and the reasoning.
+
+### After a dead deploy: the DNS switch
+A deploy to the dead colour finishes with a **Next steps** summary. Traffic stays where it was until you run the [Switch Live Environment](https://github.com/vechain/veworld-indexer/actions/workflows/switch-live-dns.yml) workflow with network `all`, which also publishes the draft release.
+
+Do that once every indexer on both networks reports fully synced; the summary links the Grafana "blocks behind" panel for that colour and the dead API's indexed head (`https://mainnet.dead.veworld.vechain.org/api/v1/blocks?size=1` and the testnet equivalent). A restored colour catches up in hours; a reindex from genesis takes days. If in doubt about which colour is currently live, run the [Identify Live/Dead Environments](https://github.com/vechain/veworld-indexer/actions/workflows/identify-live-color.yml) workflow with the default arguments.
 
 Following the DNS switch, please wait at least 48 hours before tearing down the old live (now dead) environment. This is to allow any remote DNS caches to update to the new live environment.
 
 ### Testing
-Since blue/green deployments are fairly infrequent, the dead color can be used as a transient testing environment when needed. This is preferable to using the dev environment because the dead color is an exact replica of the live environment, whereas dev is a more lightweight, stripped-down version, missing some key components like a mongo atlas cluster. Deployment to the dead color will be performed automatically on merge to main, *as long as the dead environment already exists*. The environment will therefore need to be deployed manually (either by deploying the terraform locally or by triggering a [Deploy](https://github.com/vechain/veworld-indexer/actions/workflows/deploy.yml) of the dead color).
+The dead colour doubles as a testing environment: it is an exact replica of live, Atlas cluster included. To put a release on it regardless of what the plan would pick, dispatch the [Deploy workflow](https://github.com/vechain/veworld-indexer/actions/workflows/deploy.yml) with `target: dead`. A cold colour is restored from the live snapshots first unless `skip_restore` is ticked. Merging to main deploys nothing. While the dead colour is running, `auto` sends every release to it, so tear it down or switch to it when testing is done.
 
 ### Environment Tear-down
 When testing is complete, or when a DNS switch has migrated traffic from one environment to the other, the dead environment can be safely torn down until needed again. To do this, run the [Cluster Destroy](https://github.com/vechain/veworld-indexer/actions/workflows/destroy-environment.yml) workflow, and select the appropriate environment when prompted.

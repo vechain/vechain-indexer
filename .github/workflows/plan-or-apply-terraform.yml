@@ -31,6 +31,13 @@ on:
         required: false
         default: false
         type: boolean
+      release_version:
+        description: >-
+          Release tag whose terraform/api this apply puts in place. Recorded in
+          SSM as /veworld/<environment>/deployed-release for the next plan.
+        required: false
+        default: ""
+        type: string
     secrets:
       AWS_ACC_ROLE:
         description: "AWS IAM role ARN for OIDC authentication"
@@ -231,6 +238,15 @@ jobs:
           done
 
           echo "Successfully tagged images with protection tag: ${PROTECTION_TAG}"
+
+      - name: Record the deployed release
+        if: steps.apply.outcome == 'success' && inputs.release_version != '' && (env.ENVIRONMENT == 'prod-blue' || env.ENVIRONMENT == 'prod-green')
+        env:
+          RELEASE: ${{ inputs.release_version }}
+        run: |
+          aws ssm put-parameter --name "/veworld/${ENVIRONMENT}/deployed-release" \
+            --type String --overwrite --value "$RELEASE" >/dev/null \
+          || echo "::warning::Could not record ${RELEASE} as ${ENVIRONMENT}'s deployed release; the next plan falls back to the indexer image tag as its terraform/api baseline."
 
       # - name: Slack Notification
       #   if: steps.apply.outcome == 'success'
