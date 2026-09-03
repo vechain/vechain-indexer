@@ -133,7 +133,7 @@ def apply_validator_sample(
     if not sampled_validator_ids:
         return updated
 
-    validator_detail = updated["path_overrides"].setdefault("/api/v1/validators/{validatorId}", {})
+    validator_detail = updated["path_overrides"].setdefault("/api/v2/validators/{validatorId}", {})
     validator_detail["validatorId"] = sampled_validator_ids
 
     validator_list = updated["path_overrides"].setdefault("/api/v1/validators", {})

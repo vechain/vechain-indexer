@@ -20,8 +20,6 @@ import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.EventNameParameter
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.SearchByParameter
-import org.vechain.indexer.docs.TokenEventNameParameter
-import org.vechain.indexer.docs.TokenIdParameter
 import org.vechain.indexer.rest.CacheFor
 import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
@@ -35,8 +33,6 @@ import org.vechain.indexer.validation.ValidEventName
 import org.vechain.indexer.validation.ValidNonNegativeLong
 import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validation.ValidSearchBy
-import org.vechain.indexer.validation.ValidTokenEventName
-import org.vechain.indexer.validation.ValidTokenId
 
 @RequestMapping(API_ROOT)
 @Profile("history")
@@ -148,60 +144,6 @@ open class HistoryController(private val historyService: HistoryService) {
                 account = account.value,
                 eventNames = eventName,
                 searchFields = searchBy,
-                contractAddress = contractAddress,
-                before = before,
-                after = after,
-                pageable = pageable,
-            )
-        )
-    }
-
-    @Deprecated(
-        "Generic token history is deprecated for contract-ambiguous NFT domains. Use /api/v1/stargate/tokens/{tokenId}/history for Stargate tokens."
-    )
-    @GetMapping("v2/history/token/{tokenId}")
-    @Operation(
-        summary = "Get token history (deprecated)",
-        description =
-            "Deprecated: this endpoint scopes history by tokenId and optional emitter contract only, " +
-                "which is not safe for contract-ambiguous NFT domains such as Stargate. " +
-                "Use /api/v1/stargate/tokens/{tokenId}/history for Stargate token timelines.",
-        deprecated = true,
-    )
-    @TokenIdParameter(required = true, `in` = ParameterIn.PATH)
-    @TokenEventNameParameter
-    @AfterParameter
-    @BeforeParameter
-    @CommonApiResponses
-    @PaginationParameters
-    @CacheFor(CachePolicy.MINUTE)
-    open fun getTokenHistory(
-        @ValidTokenId @PathVariable(required = true) tokenId: String,
-        @ValidTokenEventName @RequestParam(required = false) eventName: List<String>?,
-        @AddressParameter(name = "contractAddress")
-        @ValidAddress
-        @RequestParam(required = false)
-        contractAddress: Address?,
-        @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
-        @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
-        @RequestParam(required = false) page: Int?,
-        @ValidPageSize @RequestParam(required = false) size: Int? = DEFAULT_PAGE_SIZE,
-        @RequestParam(required = false) direction: String?,
-    ): PaginatedResponse<IndexedHistoryEvent> {
-        TimeValidationUtils.validateTimestamps(after, before)
-
-        val pageable =
-            PaginationUtils.toPageable(
-                page,
-                size,
-                direction,
-                IndexedHistoryEvent::blockTimestamp.name,
-            )
-
-        return paginatedResponse(
-            historyService.findTokenIdHistoryByFilters(
-                tokenId = tokenId,
-                eventNames = eventName,
                 contractAddress = contractAddress,
                 before = before,
                 after = after,
