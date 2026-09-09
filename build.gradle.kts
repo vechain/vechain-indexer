@@ -35,6 +35,9 @@ allprojects {
     extra["kotlin-coroutines.version"] = "1.11.0"
     extra["kotlin-serialization.version"] = "1.11.0"
 
+    // Ahead of the BOM's 4.1.135.Final for the netty-handler TLS fixes (CVE-2026-50010).
+    extra["netty.version"] = "4.1.137.Final"
+
     configurations.all {
         resolutionStrategy {
             force(
