@@ -3,6 +3,8 @@ locals {
 
   # Ratio thresholds used across alert rules.
   saturation_threshold = 0.8
+  # 10s blocks, so 60 is ten minutes of chain behind the live colour.
+  live_indexer_lag_blocks = 60
 
   # Ported from agent-marketplace's observability-aws stack. Starter set is
   # limited to signals whose source metrics we actually have — API 5xx rate
@@ -45,6 +47,30 @@ locals {
             annotations:
               title: "High memory usage"
               summary: "ECS task memory is above ${format("%.0f", local.saturation_threshold * 100)}% for over 10 minutes."
+
+          - alert: LiveIndexerBehindHead
+            expr: |
+              (
+                max by (env, deployment, network, service) (thor_best_block_number{service="indexer"})
+                - on (env, deployment, network, service) group_right()
+                max by (env, deployment, network, service, indexer_name) (indexer_current_block{service="indexer"})
+              ) > ${local.live_indexer_lag_blocks}
+              and on (deployment, network) veworld:live_colour
+            for: 10m
+            labels:
+              severity: critical
+            annotations:
+              title: "Live indexer behind head"
+              summary: "An indexer on the live colour has been more than ${local.live_indexer_lag_blocks} blocks behind Thor's best block for over 10 minutes."
+
+          - alert: LiveIndexerThorHeadStale
+            expr: changes(thor_best_block_number{service="indexer"}[10m]) == 0 and on (deployment, network) veworld:live_colour
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              title: "Thor best block not advancing"
+              summary: "The live indexer's view of Thor's best block has not moved for 10 minutes, so the lag alert is blind. Check the Thor node and the indexer's metrics reporter."
   YAML
 
   # AMP Alertmanager `sns_configs` defaults to upstream Alertmanager's
@@ -58,7 +84,8 @@ locals {
         {{ define "sns.default.message" -}}
         *[{{ .CommonLabels.env }}/{{ .CommonLabels.deployment }}/{{ .CommonLabels.network }}] {{ .CommonLabels.service }}: {{ if .CommonAnnotations.title }}{{ .CommonAnnotations.title }}{{ else }}{{ .CommonLabels.alertname }}{{ end }}*{{ if eq .Status "resolved" }} — resolved{{ else }}{{ if or (gt (len .Alerts.Firing) 1) (gt (len .Alerts.Resolved) 0) }} — {{ len .Alerts.Firing }} firing{{ if gt (len .Alerts.Resolved) 0 }}, {{ len .Alerts.Resolved }} recovered{{ end }}{{ end }}
         {{ .CommonAnnotations.summary }}{{ with .Alerts.Firing }}{{ if (index . 0).Labels.task_id }}
-        Tasks: {{ range $i, $a := . }}{{ if $i }}, {{ end }}{{ printf "%.8s" $a.Labels.task_id }}{{ end }}{{ end }}{{ end }}{{ end }}
+        Tasks: {{ range $i, $a := . }}{{ if $i }}, {{ end }}{{ printf "%.8s" $a.Labels.task_id }}{{ end }}{{ end }}{{ if (index . 0).Labels.indexer_name }}
+        Indexers: {{ range $i, $a := . }}{{ if $i }}, {{ end }}{{ $a.Labels.indexer_name }}{{ end }}{{ end }}{{ end }}{{ end }}
         {{- end }}
     alertmanager_config: |
       templates:

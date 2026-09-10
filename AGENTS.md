@@ -163,7 +163,7 @@ Write reviewer-facing prose at final length — don't draft long and trim. The b
 [deploy.yml](.github/workflows/deploy.yml) is the single apply path for prod. Its one real input is `target`: `auto` (the default), `live` or `dead`. Both networks always deploy together. The run plans first, pauses for confirmation, then applies, in dependency order:
 
 1. `terraform/vpc`, scope `full` — VPC, Route53, ECR, Atlas access, the CloudFront WAFs
-2. `terraform/observability` then `terraform/observability-grafana` — in parallel with the VPC stack; `terraform/api` reads both stacks' outputs
+2. `terraform/observability` then `terraform/observability-grafana` — after the VPC stack, whose live-colour outputs feed the live-only alert rules; `terraform/api` reads both stacks' outputs
 3. `terraform/cloudfront` — `shared`, `staging`, `prod`, `dead`, which is a dependency chain
 4. the live Atlas snapshots into the dead colour, when the plan says so ([restore-dead-prod-atlas-snapshots.yml](.github/workflows/restore-dead-prod-atlas-snapshots.yml), called)
 5. `terraform/api` for the target colour, image tags resolved per service

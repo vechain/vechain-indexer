@@ -270,9 +270,10 @@ jobs:
       AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
       VECHAINCI_SSH_PRIVATE_KEYS: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
 
+  # Reads the live colour from the VPC stack's outputs, so it follows it.
   apply-observability:
     name: Apply observability stacks
-    needs: [verify-plan]
+    needs: [apply-shared, verify-plan]
     uses: ./.github/workflows/deploy-observability.yml
     with:
       environment: prod

@@ -194,6 +194,22 @@ jobs:
       AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
       VECHAINCI_SSH_PRIVATE_KEYS: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
 
+  # The live-only alert rules read the colour from the vpc stack's outputs.
+  apply-observability:
+    name: Re-apply observability for the new live colour
+    needs: [apply-vpc-stack]
+    uses: ./.github/workflows/deploy-observability.yml
+    with:
+      environment: prod
+      apply: true
+    permissions:
+      contents: read
+      id-token: write
+    secrets:
+      AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
+      VECHAINCI_SSH_PRIVATE_KEYS: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
   publish-release:
     name: Publish draft release for switched version
     runs-on: ubuntu-latest

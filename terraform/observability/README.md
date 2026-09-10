@@ -26,6 +26,12 @@ Slack webhook value comes in via `TF_VAR_slack_webhook_url` (marked sensitive). 
 
 Alert rules are stamped without an explicit `env`/`deployment`/`network`/`service` label — those come through from the underlying series' external_labels (set by the sidecar). Aggregating alerts (e.g. `sum by (...) rate(...)`) must include those labels in the `by` clause or Alertmanager `.CommonLabels` will drop them.
 
+## Live-only alerts
+
+The services do not know which colour is live; the Route53 records in `terraform/vpc` are the only definition. `live_colour.tf` reads `live_color_mainnet` / `live_color_testnet` from that stack's remote state and publishes one `veworld:live_colour{deployment, network}` recording-rule series per network. A rule that should stay quiet on the dead colour joins on it with `and on (deployment, network) veworld:live_colour`; `LiveIndexerBehindHead` and `LiveIndexerThorHeadStale` do. Until the vpc outputs exist the series covers both colours, so a wiring gap shows up as noise rather than silence.
+
+The value is only as fresh as the last apply of this stack. `deploy.yml` applies it after the vpc stack, and `switch-live-dns.yml` re-applies it after moving the records, so both paths that can change the colour refresh the rule.
+
 ## Apply order
 
 `terraform/api` reads `alerts_topic_arn` from this stack's remote state and its alarms publish under this stack's topic policy. Apply this stack first when either changes; the api plan fails loudly if the output is missing.
