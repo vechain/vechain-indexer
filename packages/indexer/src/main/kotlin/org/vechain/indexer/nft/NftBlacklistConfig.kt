@@ -10,25 +10,27 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("nfts")
-open class NftConfig() {
-
+@Profile("nfts", "history")
+open class NftBlacklistConfig {
     @Bean
-    open fun nftIndexer(
+    open fun nftBlacklistIndexer(
         thorClient: ThorClient,
-        processor: NftProcessor,
-        @Value("\${indexer.start-block.nfts}") startBlock: Long,
+        processor: NftBlacklistProcessor,
+        @Value("\${indexer.start-block.nft-blacklist}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-    ): Indexer =
-        IndexerFactory()
-            .name(IndexerNames.NFT.NAME)
+        @Value("\${indexer.blacklist.contract-address}") blacklistContract: String,
+    ): Indexer {
+        require(blacklistContract.isNotBlank()) { "indexer.blacklist.contract-address is required" }
+        return IndexerFactory()
+            .name(IndexerNames.NFT_BLACKLIST.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
             .abis("abis/nft")
-            .abiEventNames(listOf("Transfer"))
+            .abiContracts(listOf(blacklistContract))
+            .abiEventNames(NftBlacklistService.EVENT_NAMES)
             .excludeVetTransfers()
-            .disableEventCriteria()
             .build()
+    }
 }

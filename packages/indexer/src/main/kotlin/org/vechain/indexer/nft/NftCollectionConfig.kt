@@ -43,14 +43,12 @@ open class NftCollectionConfig(
                     IndexedNft::blockNumber.name to Sort.Direction.DESC,
                     IndexedNft::txId.name to Sort.Direction.DESC,
                     "_id" to Sort.Direction.DESC,
-                    IndexedNft::isBlacklisted.name to Sort.Direction.ASC,
                 ),
                 buildIndex(
                     IndexedNft::contractAddress.name to Sort.Direction.ASC,
                     IndexedNft::blockNumber.name to Sort.Direction.DESC,
                     IndexedNft::txId.name to Sort.Direction.DESC,
                     "_id" to Sort.Direction.DESC,
-                    IndexedNft::isBlacklisted.name to Sort.Direction.ASC,
                 ),
                 buildIndex(
                     IndexedNft::owner.name to Sort.Direction.ASC,
@@ -58,7 +56,6 @@ open class NftCollectionConfig(
                     IndexedNft::blockNumber.name to Sort.Direction.DESC,
                     IndexedNft::txId.name to Sort.Direction.DESC,
                     "_id" to Sort.Direction.DESC,
-                    IndexedNft::isBlacklisted.name to Sort.Direction.ASC,
                 ),
                 buildIndex(
                     IndexedNft::owner.name to Sort.Direction.ASC,
@@ -67,7 +64,6 @@ open class NftCollectionConfig(
                     IndexedNft::blockNumber.name to Sort.Direction.DESC,
                     IndexedNft::txId.name to Sort.Direction.DESC,
                     "_id" to Sort.Direction.DESC,
-                    IndexedNft::isBlacklisted.name to Sort.Direction.ASC,
                 ),
             )
         )

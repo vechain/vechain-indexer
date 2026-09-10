@@ -8,7 +8,8 @@ import org.junit.jupiter.api.Test
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.query.Query
+import org.springframework.data.mongodb.core.aggregation.Aggregation
+import org.springframework.data.mongodb.core.aggregation.AggregationResults
 import org.vechain.indexer.history.HistoryEventName
 import org.vechain.indexer.history.IndexedHistoryEvent
 import org.vechain.indexer.thor.Address
@@ -19,20 +20,27 @@ import strikt.assertions.isFalse
 import strikt.assertions.isTrue
 
 class NftHistoryServiceTest {
-    private val mongoTemplate: MongoTemplate = mockk()
+    private val mongoTemplate: MongoTemplate = mockk {
+        every { getCollectionName(IndexedHistoryEvent::class.java) } returns "history_events"
+    }
     private val service = NftHistoryService(mongoTemplate)
     private val contractAddress = Address("0x1856c533ac2d94340aaa8544d35a5c1d4a21dee7")
 
     @Test
     fun `findTokenHistory builds contract and token scoped query with default events`() {
-        val querySlot = slot<Query>()
+        val aggregationSlot = slot<Aggregation>()
         val pageable = PageRequest.of(0, 2, Sort.by(Sort.Order.desc("blockTimestamp")))
         val first = historyEvent("event-1", HistoryEventName.NFT_SALE, 300)
         val second = historyEvent("event-2", HistoryEventName.TRANSFER_NFT, 200)
         val third = historyEvent("event-3", HistoryEventName.NFT_SALE, 100)
 
-        every { mongoTemplate.find(capture(querySlot), IndexedHistoryEvent::class.java) } returns
-            listOf(first, second, third)
+        every {
+            mongoTemplate.aggregate(
+                capture(aggregationSlot),
+                "history_events",
+                IndexedHistoryEvent::class.java,
+            )
+        } returns AggregationResults(listOf(first, second, third), Document())
 
         val result =
             service.findTokenHistory(
@@ -44,12 +52,11 @@ class NftHistoryServiceTest {
                 pageable = pageable,
             )
 
-        val clauses = andClauses(querySlot.captured.queryObject)
+        val clauses = andClauses(matchStage(aggregationSlot.captured))
         val contractClause = clauses.single { it.containsKey("contractAddress") }
         val tokenClause = clauses.single { it.containsKey("tokenId") }
         val eventClause = clauses.single { it.containsKey("eventName") }
         val timestampClause = clauses.single { it.containsKey("blockTimestamp") }
-        val blacklistClause = clauses.single { it.containsKey("isBlacklisted") }
         val requestedEvents =
             eventClause.get("eventName", Document::class.java).getList("\$in", String::class.java)
 
@@ -58,8 +65,10 @@ class NftHistoryServiceTest {
         expectThat(requestedEvents).containsExactly("TRANSFER_NFT", "NFT_SALE")
         expectThat(timestampClause.get("blockTimestamp", Document::class.java).toJson())
             .isEqualTo("""{"${'$'}gte": 100, "${'$'}lte": 500}""")
-        expectThat(blacklistClause.get("isBlacklisted", Document::class.java).toJson())
-            .isEqualTo("""{"${'$'}ne": true}""")
+        expectThat(stageNames(aggregationSlot.captured))
+            .isEqualTo(
+                listOf("\$match", "\$sort", "\$lookup", "\$match", "\$skip", "\$limit", "\$project")
+            )
 
         expectThat(result.content).containsExactly(first, second)
         expectThat(result.hasNext()).isTrue()
@@ -67,11 +76,16 @@ class NftHistoryServiceTest {
 
     @Test
     fun `findTokenHistory applies explicit event filter`() {
-        val querySlot = slot<Query>()
+        val aggregationSlot = slot<Aggregation>()
         val pageable = PageRequest.of(0, 10, Sort.by(Sort.Order.desc("blockTimestamp")))
 
-        every { mongoTemplate.find(capture(querySlot), IndexedHistoryEvent::class.java) } returns
-            emptyList()
+        every {
+            mongoTemplate.aggregate(
+                capture(aggregationSlot),
+                "history_events",
+                IndexedHistoryEvent::class.java,
+            )
+        } returns AggregationResults(emptyList(), Document())
 
         service.findTokenHistory(
             contractAddress = contractAddress,
@@ -82,7 +96,7 @@ class NftHistoryServiceTest {
             pageable = pageable,
         )
 
-        val clauses = andClauses(querySlot.captured.queryObject)
+        val clauses = andClauses(matchStage(aggregationSlot.captured))
         val eventClause = clauses.single { it.containsKey("eventName") }
         val requestedEvents =
             eventClause.get("eventName", Document::class.java).getList("\$in", String::class.java)
@@ -95,8 +109,13 @@ class NftHistoryServiceTest {
         val pageable = PageRequest.of(0, 2, Sort.by(Sort.Order.desc("blockTimestamp")))
         val only = historyEvent("event-1", HistoryEventName.TRANSFER_NFT, 100)
 
-        every { mongoTemplate.find(any<Query>(), IndexedHistoryEvent::class.java) } returns
-            listOf(only)
+        every {
+            mongoTemplate.aggregate(
+                any<Aggregation>(),
+                "history_events",
+                IndexedHistoryEvent::class.java,
+            )
+        } returns AggregationResults(listOf(only), Document())
 
         val result =
             service.findTokenHistory(
@@ -123,6 +142,15 @@ class NftHistoryServiceTest {
             tokenId = "42",
             eventName = eventName,
         )
+
+    private fun matchStage(aggregation: Aggregation): Document =
+        aggregation
+            .toPipeline(Aggregation.DEFAULT_CONTEXT)
+            .first()
+            .get("\$match", Document::class.java)
+
+    private fun stageNames(aggregation: Aggregation): List<String> =
+        aggregation.toPipeline(Aggregation.DEFAULT_CONTEXT).map { it.keys.single() }
 
     @Suppress("UNCHECKED_CAST")
     private fun andClauses(document: Document): List<Document> =

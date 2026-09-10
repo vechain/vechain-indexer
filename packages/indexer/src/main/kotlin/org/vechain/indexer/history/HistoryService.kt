@@ -3,19 +3,12 @@ package org.vechain.indexer.history
 import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.data.mongodb.core.query.Query
-import org.springframework.data.mongodb.core.query.Update
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.b3tr.ProofUtils
-import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.nft.NftBlacklistClient
 import org.vechain.indexer.thor.model.Block
-import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.EventUtils
 import org.vechain.indexer.utils.ParamUtils.getAsBoolean
 import org.vechain.indexer.utils.ParamUtils.getAsInt
@@ -28,8 +21,6 @@ import org.vechain.indexer.validator.ValidatorSnapshot
 @Service
 open class HistoryService(
     private val historyRepository: HistoryRepository,
-    private val mongoTemplate: MongoTemplate,
-    private val blacklistClient: NftBlacklistClient,
     private val delegationLifecycleHistoryService: DelegationLifecycleHistoryService,
     private val validatorRepository: ValidatorRepository,
     @param:Value("\${indexer.start-block.validator}") private val validatorStartBlock: Long,
@@ -129,61 +120,11 @@ open class HistoryService(
         historyRepository.saveAll(events)
     }
 
-    open fun processBlacklistEvents(events: List<IndexedEvent>) {
-        // HistoryProcessor routes only blacklist-related events here; fail fast if that contract is
-        // broken.
-        assertEventTypes(events, "NFT_Blacklisted", "NFT_Whitelisted")
-
-        val (blacklistAddresses, whitelistAddresses) = EventUtils.partitionBlacklistEvents(events)
-
-        if (blacklistAddresses.isNotEmpty()) blacklist(blacklistAddresses)
-        if (whitelistAddresses.isNotEmpty()) whitelist(whitelistAddresses)
-    }
-
-    /** Sets isBlacklisted to true for all history events related to the given contract addresses */
-    protected fun blacklist(contractAddresses: List<String>) {
-        if (contractAddresses.isEmpty()) return
-
-        val query =
-            Query().apply {
-                addCriteria(
-                    Criteria.where(IndexedHistoryEvent::contractAddress.name)
-                        .`in`(contractAddresses)
-                )
-                // Required to engage the partial-filtered indexes on history_events.
-                addCriteria(Criteria.where(IndexedHistoryEvent::blockNumber.name).exists(true))
-                // Skip docs already flagged so sync replay doesn't rewrite them.
-                addCriteria(Criteria.where(IndexedHistoryEvent::isBlacklisted.name).ne(true))
-            }
-        val update = Update().set(IndexedHistoryEvent::isBlacklisted.name, true)
-        mongoTemplate.updateMulti(query, update, IndexedHistoryEvent::class.java)
-    }
-
-    protected fun whitelist(contractAddresses: List<String>) {
-        if (contractAddresses.isEmpty()) return
-
-        val query =
-            Query().apply {
-                addCriteria(
-                    Criteria.where(IndexedHistoryEvent::contractAddress.name)
-                        .`in`(contractAddresses)
-                )
-                // Required to engage the partial-filtered indexes on history_events.
-                addCriteria(Criteria.where(IndexedHistoryEvent::blockNumber.name).exists(true))
-                // Only flip currently-blacklisted docs; null / false are already excluded by reads.
-                addCriteria(Criteria.where(IndexedHistoryEvent::isBlacklisted.name).`is`(true))
-            }
-        val update = Update().set(IndexedHistoryEvent::isBlacklisted.name, false)
-        mongoTemplate.updateMulti(query, update, IndexedHistoryEvent::class.java)
-    }
-
     open fun invalidateDelegationLifecycleState() {
         delegationLifecycleHistoryService.invalidate()
     }
 
-    private suspend fun buildBatchTransferHistoryEvents(
-        event: IndexedEvent
-    ): List<IndexedHistoryEvent> {
+    private fun buildBatchTransferHistoryEvents(event: IndexedEvent): List<IndexedHistoryEvent> {
         val indexedHistoryEvents = mutableListOf<IndexedHistoryEvent>()
 
         val tokenIds = event.params.getReturnValues()["ids"] as? List<*> ?: emptyList<Any>()
@@ -209,11 +150,6 @@ open class HistoryService(
                     to = transferTo,
                     value = values.getOrNull(i)?.toString(),
                     tokenId = tokenIds.getOrNull(i)?.toString(),
-                    isBlacklisted =
-                        blacklistClient.isBlacklisted(
-                            contractAddress,
-                            BlockDetails(event.blockId, event.blockNumber, event.blockTimestamp),
-                        ),
                     involvedAddresses =
                         IndexedHistoryEvent.involvedAddressesOf(
                             origin = event.origin,
@@ -229,7 +165,7 @@ open class HistoryService(
     }
 
     /** Maps one recognised indexed event into the normalised history document shape. */
-    private suspend fun buildHistoryEvent(
+    private fun buildHistoryEvent(
         event: IndexedEvent,
         eventName: HistoryEventName,
     ): IndexedHistoryEvent {
@@ -262,20 +198,6 @@ open class HistoryService(
                 HistoryEventName.B3TR_NAVIGATOR_FEE_CLAIMED,
                 HistoryEventName.B3TR_NAVIGATOR_FEE_DEPOSITED -> event.params.getAsString("amount")
                 else -> event.params.getAsString("value")
-            }
-
-        val isBlacklisted =
-            when (eventName) {
-                HistoryEventName.TRANSFER_NFT,
-                HistoryEventName.TRANSFER_SF -> {
-                    val contractAddress =
-                        event.address ?: error("No contract address in event ${event.txId}")
-                    blacklistClient.isBlacklisted(
-                        contractAddress,
-                        BlockDetails(event.blockId, event.blockNumber, event.blockTimestamp),
-                    )
-                }
-                else -> null
             }
 
         val isNavigatorDelegation =
@@ -364,7 +286,6 @@ open class HistoryService(
             delegationId = event.params.getAsString("delegationId"),
             periodClaimed = event.params.getAsLong("periodClaimed"),
             boostedBlocks = event.params.getAsString("boostedBlocks"),
-            isBlacklisted = isBlacklisted,
             involvedAddresses =
                 IndexedHistoryEvent.involvedAddressesOf(
                     origin = event.origin,

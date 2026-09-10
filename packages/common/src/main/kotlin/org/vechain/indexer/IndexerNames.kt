@@ -59,6 +59,7 @@ object IndexerNames {
 
     object NFT_BLACKLIST {
         const val NAME = "NftBlacklistIndexer"
+        const val COLLECTION = "nft_blacklist"
     }
 
     object NFT_HOLDERS_BY_BLOCK {
