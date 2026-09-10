@@ -3,6 +3,9 @@ locals {
 
   # Ratio thresholds used across alert rules.
   saturation_threshold = 0.8
+  # 10s blocks and the indexers keep pace, so 10 behind already means trouble.
+  live_indexer_lag_blocks = 10
+  colour_networks         = setproduct(["blue", "green"], ["mainnet", "testnet"])
 
   # Ported from agent-marketplace's observability-aws stack. Starter set is
   # limited to signals whose source metrics we actually have — API 5xx rate
@@ -45,6 +48,43 @@ locals {
             annotations:
               title: "High memory usage"
               summary: "ECS task memory is above ${format("%.0f", local.saturation_threshold * 100)}% for over 10 minutes."
+
+          - alert: LiveIndexerBehindHead
+            expr: |
+              (
+                max by (env, deployment, network, service) (thor_best_block_number{service="indexer"})
+                - on (env, deployment, network, service) group_right()
+                max by (env, deployment, network, service, indexer_name) (indexer_current_block{service="indexer"})
+              ) > ${local.live_indexer_lag_blocks}
+            for: 3m
+            labels:
+              severity: critical
+              live_only: "true"
+            annotations:
+              title: "Live indexer behind head"
+              summary: "An indexer on the live colour has been more than ${local.live_indexer_lag_blocks} blocks behind Thor's best block for over 3 minutes."
+
+          - alert: LiveIndexerThorHeadStale
+            expr: changes(thor_best_block_number{service="indexer"}[5m]) == 0
+            for: 2m
+            labels:
+              severity: critical
+              live_only: "true"
+            annotations:
+              title: "Thor best block not advancing"
+              summary: "The indexer's view of Thor's best block has not moved for 5 minutes, so the lag alert is blind. Check the Thor node and the indexer's metrics reporter."
+          %{~for pair in local.colour_networks}
+
+          - alert: LiveIndexerTelemetryMissing
+            expr: absent_over_time(thor_best_block_number{env="${terraform.workspace}", deployment="${pair[0]}", network="${pair[1]}", service="indexer"}[5m])
+            for: 2m
+            labels:
+              severity: critical
+              live_only: "true"
+            annotations:
+              title: "Indexer telemetry missing"
+              summary: "No best-block samples from the ${pair[0]} ${pair[1]} indexer for 5 minutes, so the lag alerts are blind. Check the task and its sidecar."
+          %{~endfor}
   YAML
 
   # AMP Alertmanager `sns_configs` defaults to upstream Alertmanager's
@@ -58,7 +98,8 @@ locals {
         {{ define "sns.default.message" -}}
         *[{{ .CommonLabels.env }}/{{ .CommonLabels.deployment }}/{{ .CommonLabels.network }}] {{ .CommonLabels.service }}: {{ if .CommonAnnotations.title }}{{ .CommonAnnotations.title }}{{ else }}{{ .CommonLabels.alertname }}{{ end }}*{{ if eq .Status "resolved" }} — resolved{{ else }}{{ if or (gt (len .Alerts.Firing) 1) (gt (len .Alerts.Resolved) 0) }} — {{ len .Alerts.Firing }} firing{{ if gt (len .Alerts.Resolved) 0 }}, {{ len .Alerts.Resolved }} recovered{{ end }}{{ end }}
         {{ .CommonAnnotations.summary }}{{ with .Alerts.Firing }}{{ if (index . 0).Labels.task_id }}
-        Tasks: {{ range $i, $a := . }}{{ if $i }}, {{ end }}{{ printf "%.8s" $a.Labels.task_id }}{{ end }}{{ end }}{{ end }}{{ end }}
+        Tasks: {{ range $i, $a := . }}{{ if $i }}, {{ end }}{{ printf "%.8s" $a.Labels.task_id }}{{ end }}{{ end }}{{ if (index . 0).Labels.indexer_name }}
+        Indexers: {{ range $i, $a := . }}{{ if $i }}, {{ end }}{{ $a.Labels.indexer_name }}{{ end }}{{ end }}{{ end }}{{ end }}
         {{- end }}
     alertmanager_config: |
       templates:
@@ -75,5 +116,9 @@ locals {
             - topic_arn: '${aws_sns_topic.alerts.arn}'
               sigv4:
                 region: '${data.aws_region.current.name}'
+              attributes:
+                live_only: '{{ .CommonLabels.live_only }}'
+                deployment: '{{ .CommonLabels.deployment }}'
+                network: '{{ .CommonLabels.network }}'
   YAML
 }
