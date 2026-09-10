@@ -28,9 +28,11 @@ Alert rules are stamped without an explicit `env`/`deployment`/`network`/`servic
 
 ## Live-only alerts
 
-The services do not know which colour is live; the Route53 records in `terraform/vpc` are the only definition. `live_colour.tf` reads `live_color_mainnet` / `live_color_testnet` from that stack's remote state and publishes one `veworld:live_colour{deployment, network}` recording-rule series per network. A rule that should stay quiet on the dead colour joins on it with `and on (deployment, network) veworld:live_colour`; `LiveIndexerBehindHead` and `LiveIndexerThorHeadStale` do. Until the vpc outputs exist the series covers both colours, so a wiring gap shows up as noise rather than silence.
+The services do not know which colour is live, and neither do the rules: the Route53 `<network>.live.<zone>` record is the only definition, and it changes at runtime. Rules that should only page for the live colour carry `live_only: "true"`. Alertmanager forwards `live_only`, `deployment` and `network` as SNS message attributes, and `sns_to_slack.py` resolves the live record for that network (cached for a minute) and drops the message when the colours differ. Rules stay colour-agnostic, so Grafana still shows a warm dead colour falling behind; only Slack is gated. On a Route53 error or missing attributes the Lambda forwards rather than drops.
 
-The value is only as fresh as the last apply of this stack. `deploy.yml` applies it after the vpc stack, and `switch-live-dns.yml` re-applies it after moving the records, so both paths that can change the colour refresh the rule.
+Two consequences: a suppressed alert is re-evaluated on every Alertmanager repeat, so a colour that goes live mid-incident starts paging on the next repeat; and an alert that was firing on the colour that just went dead never gets a Slack "resolved", because that is dropped too.
+
+`LiveIndexerBehindHead`, `LiveIndexerThorHeadStale` and `LiveIndexerTelemetryMissing` use it. The last one is `absent_over_time` per colour and network, which only works behind a delivery-time gate: at rule time, a cold dead colour and a broken live one look the same.
 
 ## Apply order
 

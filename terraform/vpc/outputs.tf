@@ -36,16 +36,3 @@ output "github_actions_plan_role_arn" {
   description = "Role ARN for the AWS_OIDC_ROLE_ARN variable that shared-infra.yml plans with"
   value       = local.env.environment == "prod" ? aws_iam_role.github_actions_plan[0].arn : ""
 }
-
-# depends_on keeps these in a records-scoped apply; terraform/observability reads them.
-output "live_color_mainnet" {
-  description = "Colour whose ALB the live mainnet record names, as last applied"
-  value       = var.live_color_mainnet
-  depends_on  = [aws_route53_record.mainnet_live]
-}
-
-output "live_color_testnet" {
-  description = "Colour whose ALB the live testnet record names, as last applied"
-  value       = var.live_color_testnet
-  depends_on  = [aws_route53_record.testnet_live]
-}

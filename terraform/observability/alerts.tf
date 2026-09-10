@@ -101,12 +101,22 @@ resource "aws_iam_role_policy_attachment" "sns_to_slack_basic" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
+data "aws_route53_zone" "live" {
+  name = local.env.live_dns_zone
+}
+
 data "aws_iam_policy_document" "sns_to_slack_inline" {
   statement {
     sid       = "ReadSlackWebhook"
     effect    = "Allow"
     actions   = ["secretsmanager:GetSecretValue"]
     resources = [aws_secretsmanager_secret.slack_webhook.arn]
+  }
+  statement {
+    sid       = "ReadLiveRecords"
+    effect    = "Allow"
+    actions   = ["route53:ListResourceRecordSets"]
+    resources = [data.aws_route53_zone.live.arn]
   }
 }
 
@@ -135,6 +145,8 @@ resource "aws_lambda_function" "sns_to_slack" {
   environment {
     variables = {
       SLACK_WEBHOOK_SECRET_ARN = aws_secretsmanager_secret.slack_webhook.arn
+      LIVE_ZONE_ID             = data.aws_route53_zone.live.zone_id
+      LIVE_RECORD_TEMPLATE     = "{network}.live.${local.env.live_dns_zone}"
     }
   }
 
