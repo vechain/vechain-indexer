@@ -82,6 +82,9 @@ Indexer collections should be pre-shaped to match the API queries they serve. Id
 ### One API Call = One Database Query
 An API endpoint should not make multiple sequential repository calls (e.g., fetch a document, then use a value from it to query a second collection). If an endpoint needs data from multiple collections, that is a strong signal the data model should be restructured — either by reshaping an existing indexer's output or by creating a new indexer that pre-joins the data.
 
+### NFT Blacklist Filtering Is the One Sanctioned Lookup
+History and NFT reads exclude blacklisted collections with a `$lookup` into `nft_blacklist` (`NftBlacklistFilter` in `packages/api`), not a denormalised flag. The flag approach rewrote every row of a collection on each blacklist event and stalled indexing for minutes. The lookup is a point probe by `_id` into a collection of about 1.5K rows and its cost scales with the page, not the list. Keep the stage order `$match → $sort → $lookup → $match → $skip → $limit`: the sort must precede the lookup so the index supplies the order and the lookup only touches rows the page consumes. The `NftBlacklistIndexer` owns that collection and starts at the blacklist contract's deployment block.
+
 ### Focused Endpoints Over Flexible Ones
 Avoid endpoints with many optional filter parameters. An endpoint that accepts 8 optional query params to cover every possible filtering combination is hard to optimise and hard to index. Challenge contributors: does the consumer actually need all these filters? Prefer splitting into multiple focused endpoints that each do one thing well over a single endpoint that does many things poorly.
 

@@ -4,4 +4,6 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.BaseIndexedRepository
 
-@Profile("nfts") @Repository interface NftRepository : BaseIndexedRepository<IndexedNft, String>
+@Profile("nfts", "history")
+@Repository
+interface NftBlacklistRepository : BaseIndexedRepository<NftBlacklist, String>

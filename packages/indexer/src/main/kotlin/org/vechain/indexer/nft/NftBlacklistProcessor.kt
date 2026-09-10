@@ -9,32 +9,28 @@ import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 
-@Profile("nfts")
+@Profile("nfts", "history")
 @Component
-open class NftProcessor(
-    private val nftService: NftService,
+open class NftBlacklistProcessor(
+    private val service: NftBlacklistService,
+    repository: NftBlacklistRepository,
     mongoTemplate: MongoTemplate,
-    repository: NftRepository,
     checkpointService: CheckpointService,
     processorMetrics: ProcessorMetrics,
 ) :
     BaseStatefulProcessor(
         repository = repository,
         mongoTemplate = mongoTemplate,
-        indexerName = IndexerNames.NFT.NAME,
+        indexerName = IndexerNames.NFT_BLACKLIST.NAME,
         checkpointService = checkpointService,
-        collectionName = IndexerNames.NFT.COLLECTION,
+        collectionName = IndexerNames.NFT_BLACKLIST.COLLECTION,
         processorMetrics = processorMetrics,
     ) {
-
     override suspend fun processEntry(entry: IndexingResult) {
-        val nftEvents = entry.events()
-        if (nftEvents.isEmpty()) return
-
-        val existing = nftService.getExisting(nftEvents)
-        val updated = nftService.parseRecords(nftEvents, existing)
+        if (entry.events().isEmpty()) return
+        val (updated, existing) = service.processBlock(entry.events())
         if (updated.isNotEmpty() || existing.isNotEmpty()) {
-            nftService.save(updated, existing)
+            service.save(updated, existing)
         }
     }
 }
