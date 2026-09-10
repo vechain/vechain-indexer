@@ -28,9 +28,9 @@ open class NftProcessor(
     ) {
 
     override suspend fun processEntry(entry: IndexingResult) {
-        val nftEvents = entry.events()
-        if (nftEvents.isEmpty()) return
+        if (entry.events().isEmpty()) return
 
+        val nftEvents = entry.events()
         val existing = nftService.getExisting(nftEvents)
         val updated = nftService.parseRecords(nftEvents, existing)
         if (updated.isNotEmpty() || existing.isNotEmpty()) {

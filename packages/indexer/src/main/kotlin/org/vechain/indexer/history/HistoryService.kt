@@ -3,11 +3,14 @@ package org.vechain.indexer.history
 import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.b3tr.ProofUtils
 import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.nft.BlacklistedContracts
+import org.vechain.indexer.nft.NftBlacklistLookup
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.EventUtils
 import org.vechain.indexer.utils.ParamUtils.getAsBoolean
@@ -21,6 +24,8 @@ import org.vechain.indexer.validator.ValidatorSnapshot
 @Service
 open class HistoryService(
     private val historyRepository: HistoryRepository,
+    private val mongoTemplate: MongoTemplate,
+    private val blacklistLookup: NftBlacklistLookup,
     private val delegationLifecycleHistoryService: DelegationLifecycleHistoryService,
     private val validatorRepository: ValidatorRepository,
     @param:Value("\${indexer.start-block.validator}") private val validatorStartBlock: Long,
@@ -41,6 +46,7 @@ open class HistoryService(
         val indexedHistoryEvents = mutableListOf<IndexedHistoryEvent>()
         val transactionIdsWithHistoryEvents = mutableSetOf<String>()
         val processDelegationLifecycle = block.number >= validatorStartBlock
+        val blacklisted = blacklistLookup.blacklisted(events.mapNotNull { it.address })
         val validatorSnapshots: Map<String, ValidatorSnapshot> =
             if (processDelegationLifecycle) loadValidatorSnapshots() else emptyMap()
 
@@ -58,12 +64,12 @@ open class HistoryService(
                     eventName == HistoryEventName.TRANSFER_SF
             ) {
                 // A TransferBatch event fans out into one history row per token id/value pair.
-                indexedHistoryEvents.addAll(buildBatchTransferHistoryEvents(event))
+                indexedHistoryEvents.addAll(buildBatchTransferHistoryEvents(event, blacklisted))
                 transactionIdsWithHistoryEvents.add(event.txId)
                 continue
             }
 
-            val historyEvent = eventName?.let { buildHistoryEvent(event, it) }
+            val historyEvent = eventName?.let { buildHistoryEvent(event, it, blacklisted) }
 
             if (processDelegationLifecycle) {
                 val lifecycleResult =
@@ -124,7 +130,10 @@ open class HistoryService(
         delegationLifecycleHistoryService.invalidate()
     }
 
-    private fun buildBatchTransferHistoryEvents(event: IndexedEvent): List<IndexedHistoryEvent> {
+    private fun buildBatchTransferHistoryEvents(
+        event: IndexedEvent,
+        blacklisted: BlacklistedContracts,
+    ): List<IndexedHistoryEvent> {
         val indexedHistoryEvents = mutableListOf<IndexedHistoryEvent>()
 
         val tokenIds = event.params.getReturnValues()["ids"] as? List<*> ?: emptyList<Any>()
@@ -150,6 +159,7 @@ open class HistoryService(
                     to = transferTo,
                     value = values.getOrNull(i)?.toString(),
                     tokenId = tokenIds.getOrNull(i)?.toString(),
+                    isBlacklisted = contractAddress in blacklisted,
                     involvedAddresses =
                         IndexedHistoryEvent.involvedAddressesOf(
                             origin = event.origin,
@@ -168,6 +178,7 @@ open class HistoryService(
     private fun buildHistoryEvent(
         event: IndexedEvent,
         eventName: HistoryEventName,
+        blacklisted: BlacklistedContracts,
     ): IndexedHistoryEvent {
         val tokenId =
             when (eventName) {
@@ -198,6 +209,17 @@ open class HistoryService(
                 HistoryEventName.B3TR_NAVIGATOR_FEE_CLAIMED,
                 HistoryEventName.B3TR_NAVIGATOR_FEE_DEPOSITED -> event.params.getAsString("amount")
                 else -> event.params.getAsString("value")
+            }
+
+        val isBlacklisted =
+            when (eventName) {
+                HistoryEventName.TRANSFER_NFT,
+                HistoryEventName.TRANSFER_SF -> {
+                    val contractAddress =
+                        event.address ?: error("No contract address in event ${event.txId}")
+                    contractAddress in blacklisted
+                }
+                else -> null
             }
 
         val isNavigatorDelegation =
@@ -286,6 +308,7 @@ open class HistoryService(
             delegationId = event.params.getAsString("delegationId"),
             periodClaimed = event.params.getAsLong("periodClaimed"),
             boostedBlocks = event.params.getAsString("boostedBlocks"),
+            isBlacklisted = isBlacklisted,
             involvedAddresses =
                 IndexedHistoryEvent.involvedAddressesOf(
                     origin = event.origin,

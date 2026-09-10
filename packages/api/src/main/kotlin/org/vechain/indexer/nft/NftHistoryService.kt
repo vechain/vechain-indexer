@@ -3,8 +3,10 @@ package org.vechain.indexer.nft
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
+import org.springframework.data.domain.SliceImpl
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
+import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
 import org.vechain.indexer.history.HistoryEventName
 import org.vechain.indexer.history.IndexedHistoryEvent
@@ -33,12 +35,14 @@ open class NftHistoryService(private val mongoTemplate: MongoTemplate) {
                 before,
                 after,
             )
-        return NftBlacklistFilter.findPage(
-            mongoTemplate,
-            criteria,
-            pageable,
-            IndexedHistoryEvent::class.java,
-        )
+        val query = Query(criteria).with(pageable)
+        query.limit(pageable.pageSize + 1)
+
+        val raw = mongoTemplate.find(query, IndexedHistoryEvent::class.java)
+        val hasNext = raw.size > pageable.pageSize
+        val content = if (hasNext) raw.dropLast(1) else raw
+
+        return SliceImpl(content, pageable, hasNext)
     }
 
     private fun buildCriteria(
@@ -53,6 +57,7 @@ open class NftHistoryService(private val mongoTemplate: MongoTemplate) {
                 Criteria.where(IndexedHistoryEvent::contractAddress.name).`is`(contractAddress),
                 Criteria.where(IndexedHistoryEvent::tokenId.name).`is`(tokenId),
                 Criteria.where(IndexedHistoryEvent::eventName.name).`in`(eventNames),
+                Criteria.where(IndexedHistoryEvent::isBlacklisted.name).ne(true),
             )
 
         if (before != null && after != null) {

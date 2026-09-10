@@ -1,9 +1,11 @@
 package org.vechain.indexer.performance.history
 
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.history.HistoryRepository
 import org.vechain.indexer.history.HistoryService
 import org.vechain.indexer.history.IndexedHistoryEvent
+import org.vechain.indexer.nft.NftBlacklistLookup
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.validator.ValidatorRepository
@@ -14,6 +16,8 @@ import org.vechain.indexer.validator.ValidatorRepository
  */
 class ProfiledHistoryService(
     repository: HistoryRepository,
+    mongoTemplate: MongoTemplate,
+    blacklistLookup: NftBlacklistLookup,
     delegationLifecycleHistoryService:
         org.vechain.indexer.history.DelegationLifecycleHistoryService,
     validatorRepository: ValidatorRepository,
@@ -22,6 +26,8 @@ class ProfiledHistoryService(
 ) :
     HistoryService(
         repository,
+        mongoTemplate,
+        blacklistLookup,
         delegationLifecycleHistoryService,
         validatorRepository,
         validatorStartBlock,

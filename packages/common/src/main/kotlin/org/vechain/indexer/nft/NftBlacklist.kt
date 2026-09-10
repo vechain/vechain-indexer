@@ -9,10 +9,7 @@ import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.thor.model.Views
 
-/**
- * Current blacklist state of one NFT collection, keyed by its normalised contract address. History
- * and NFT reads `$lookup` this collection instead of carrying a denormalised flag per row.
- */
+/** Current blacklist state of one NFT collection, keyed by its normalised contract address. */
 @Document(collection = IndexerNames.NFT_BLACKLIST.COLLECTION)
 @JsonView(Views.Public::class)
 data class NftBlacklist(
