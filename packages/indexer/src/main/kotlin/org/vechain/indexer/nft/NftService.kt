@@ -11,7 +11,6 @@ import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.saveVersionedDocuments
-import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.EventUtils
 import org.vechain.indexer.utils.ParamUtils.getAsString
 import org.vechain.indexer.utils.buildNftId
@@ -21,7 +20,7 @@ import org.vechain.indexer.utils.buildNftId
 open class NftService(
     private val nftRepository: NftRepository,
     private val inlineVersioningProperties: InlineVersioningProperties,
-    private val blacklistClient: NftBlacklistClient,
+    private val blacklistLookup: NftBlacklistLookup,
     private val mongoTemplate: MongoTemplate,
 ) {
     @Transactional(rollbackFor = [Exception::class])
@@ -42,6 +41,7 @@ open class NftService(
     ): List<IndexedNft> {
         // Pre-index existing records for faster lookup
         val existingById = existing.associateBy { it.id }
+        val blacklisted = blacklistLookup.blacklisted(data.mapNotNull { it.address })
 
         // Group events by NFT ID, keeping only the latest event per NFT
         val latestEventsById =
@@ -70,11 +70,7 @@ open class NftService(
                 blockId = event.blockId,
                 blockNumber = event.blockNumber,
                 blockTimestamp = event.blockTimestamp,
-                isBlacklisted =
-                    blacklistClient.isBlacklisted(
-                        contractAddress,
-                        BlockDetails(event.blockId, event.blockNumber, event.blockTimestamp),
-                    ),
+                isBlacklisted = contractAddress in blacklisted,
             )
         }
     }
