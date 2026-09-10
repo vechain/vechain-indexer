@@ -16,6 +16,7 @@ import org.vechain.indexer.history.HistoryConfig
 import org.vechain.indexer.history.HistoryProcessor
 import org.vechain.indexer.history.HistoryRepository
 import org.vechain.indexer.history.HistoryService
+import org.vechain.indexer.nft.NftBlacklistClient
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.validator.ValidatorRepository
@@ -30,6 +31,7 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var mongoTemplate: MongoTemplate
 
+    @Autowired lateinit var blacklistClient: NftBlacklistClient
     @Autowired lateinit var delegationLifecycleHistoryService: DelegationLifecycleHistoryService
     @Autowired lateinit var validatorRepository: ValidatorRepository
 
@@ -88,6 +90,8 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
                 val profiledService =
                     ProfiledHistoryService(
                         historyRepository,
+                        mongoTemplate,
+                        blacklistClient,
                         delegationLifecycleHistoryService,
                         validatorRepository,
                         0L,
