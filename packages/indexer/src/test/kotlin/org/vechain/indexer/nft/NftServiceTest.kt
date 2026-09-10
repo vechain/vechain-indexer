@@ -28,7 +28,7 @@ import strikt.assertions.isNotNull
 internal class NftServiceTest {
     @MockK lateinit var repository: NftRepository
     @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
-    @MockK lateinit var blacklistClient: NftBlacklistClient
+    @MockK lateinit var blacklistLookup: NftBlacklistLookup
     @MockK lateinit var mongoTemplate: MongoTemplate
     @MockK(relaxed = true) lateinit var mongoCollection: MongoCollection<Document>
     @MockK(relaxed = true) lateinit var converter: MongoConverter
@@ -39,8 +39,8 @@ internal class NftServiceTest {
     fun setUp() {
         MockKAnnotations.init(this)
         nftService =
-            NftService(repository, inlineVersioningProperties, blacklistClient, mongoTemplate)
-        coEvery { blacklistClient.isBlacklisted(any(), any()) } returns false
+            NftService(repository, inlineVersioningProperties, blacklistLookup, mongoTemplate)
+        every { blacklistLookup.blacklisted(any()) } returns BlacklistedContracts.NONE
         every { inlineVersioningProperties.blockWindow } returns 10000L
         every { inlineVersioningProperties.maxVersions } returns 100
         every { inlineVersioningProperties.minVersions } returns 20
