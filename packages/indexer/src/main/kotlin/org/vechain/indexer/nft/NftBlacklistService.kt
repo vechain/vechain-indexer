@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.nft.backfill.NftBlacklistBackfillService
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.EventUtils.groupByBlock
@@ -22,6 +23,7 @@ open class NftBlacklistService(
     private val repository: NftBlacklistRepository,
     private val mongoTemplate: MongoTemplate,
     private val inlineVersioningProperties: InlineVersioningProperties,
+    private val backfillService: NftBlacklistBackfillService,
 ) {
     companion object {
         const val NFT_BLACKLISTED = "NFTBlacklisted"
@@ -80,5 +82,6 @@ open class NftBlacklistService(
             maxVersions = inlineVersioningProperties.maxVersions,
             minVersions = inlineVersioningProperties.minVersions,
         )
+        backfillService.enqueue(updated)
     }
 }
