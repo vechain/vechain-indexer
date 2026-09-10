@@ -53,6 +53,9 @@ Keep local defaults at `1`: do not bump `indexer.version.<key>` fallback values 
 
 More detailed templates and copy/paste snippets live in `notes/indexer-api-playbook.md`.
 
+### NFT Blacklist Flags Are Backfilled Off the Block Path
+`nft_blacklist` (one document per collection, owned by `NftBlacklistIndexer`) is the source of truth. Row writers take `isBlacklisted` from `NftBlacklistLookup`, read once per block, and reads keep filtering on the flag. A state change enqueues an `nft_blacklist_backfill` task; `NftBlacklistBackfillService` flips one bounded batch per scheduler tick (`indexer.blacklist.backfill.*`), walking the `contractAddress, tokenId` index, so a collection with millions of rows never runs as one `updateMulti` inside an indexer. To force a re-scan of a collection, upsert a task document with the target flag and no cursors.
+
 ## Indexer Performance Guidelines
 
 ### CRITICAL: 1 Indexer = 1 Collection

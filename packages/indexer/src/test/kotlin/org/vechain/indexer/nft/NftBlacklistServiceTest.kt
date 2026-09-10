@@ -14,12 +14,14 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
+import org.vechain.indexer.nft.backfill.NftBlacklistBackfillService
 
 @ExtendWith(MockKExtension::class)
 internal class NftBlacklistServiceTest {
     @MockK lateinit var repository: NftBlacklistRepository
     @MockK lateinit var mongoTemplate: MongoTemplate
     @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
+    @MockK(relaxed = true) lateinit var backfillService: NftBlacklistBackfillService
 
     private val blacklistContract = "0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5"
     private val collectionA = "0xAAAA000000000000000000000000000000000001"
@@ -29,7 +31,13 @@ internal class NftBlacklistServiceTest {
 
     @BeforeEach
     fun setUp() {
-        service = NftBlacklistService(repository, mongoTemplate, inlineVersioningProperties)
+        service =
+            NftBlacklistService(
+                repository,
+                mongoTemplate,
+                inlineVersioningProperties,
+                backfillService,
+            )
         every { repository.findById(any<String>()) } returns Optional.empty()
         every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
     }

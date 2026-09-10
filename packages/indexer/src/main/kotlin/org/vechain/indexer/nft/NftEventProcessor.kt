@@ -30,30 +30,11 @@ open class NftProcessor(
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) return
 
-        // Filter out blacklist and whitelist events and handle them separately
-        val (blacklistEvents, nftEvents) =
-            entry
-                .events()
-                .partition({
-                    it.eventType == "NFT_Blacklisted" || it.eventType == "NFT_Whitelisted"
-                })
-
-        if (nftEvents.isNotEmpty()) {
-
-            // Find any existing records
-            val existing = nftService.getExisting(nftEvents)
-
-            // Process the updated records
-            val updated = nftService.parseRecords(nftEvents, existing)
-
-            // Finally save the updated records and archive the existing ones
-            if (updated.isNotEmpty() || existing.isNotEmpty()) {
-                nftService.save(updated, existing)
-            }
-        }
-
-        if (blacklistEvents.isNotEmpty()) {
-            nftService.processBlacklistEvents(blacklistEvents)
+        val nftEvents = entry.events()
+        val existing = nftService.getExisting(nftEvents)
+        val updated = nftService.parseRecords(nftEvents, existing)
+        if (updated.isNotEmpty() || existing.isNotEmpty()) {
+            nftService.save(updated, existing)
         }
     }
 }

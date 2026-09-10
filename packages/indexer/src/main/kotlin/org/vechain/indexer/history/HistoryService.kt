@@ -4,13 +4,9 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.data.mongodb.core.query.Query
-import org.springframework.data.mongodb.core.query.Update
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.b3tr.ProofUtils
-import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.nft.BlacklistedContracts
@@ -128,54 +124,6 @@ open class HistoryService(
     @Transactional(rollbackFor = [Exception::class])
     open fun save(events: List<IndexedHistoryEvent>) {
         historyRepository.saveAll(events)
-    }
-
-    open fun processBlacklistEvents(events: List<IndexedEvent>) {
-        // HistoryProcessor routes only blacklist-related events here; fail fast if that contract is
-        // broken.
-        assertEventTypes(events, "NFT_Blacklisted", "NFT_Whitelisted")
-
-        val (blacklistAddresses, whitelistAddresses) = EventUtils.partitionBlacklistEvents(events)
-
-        if (blacklistAddresses.isNotEmpty()) blacklist(blacklistAddresses)
-        if (whitelistAddresses.isNotEmpty()) whitelist(whitelistAddresses)
-    }
-
-    /** Sets isBlacklisted to true for all history events related to the given contract addresses */
-    protected fun blacklist(contractAddresses: List<String>) {
-        if (contractAddresses.isEmpty()) return
-
-        val query =
-            Query().apply {
-                addCriteria(
-                    Criteria.where(IndexedHistoryEvent::contractAddress.name)
-                        .`in`(contractAddresses)
-                )
-                // Required to engage the partial-filtered indexes on history_events.
-                addCriteria(Criteria.where(IndexedHistoryEvent::blockNumber.name).exists(true))
-                // Skip docs already flagged so sync replay doesn't rewrite them.
-                addCriteria(Criteria.where(IndexedHistoryEvent::isBlacklisted.name).ne(true))
-            }
-        val update = Update().set(IndexedHistoryEvent::isBlacklisted.name, true)
-        mongoTemplate.updateMulti(query, update, IndexedHistoryEvent::class.java)
-    }
-
-    protected fun whitelist(contractAddresses: List<String>) {
-        if (contractAddresses.isEmpty()) return
-
-        val query =
-            Query().apply {
-                addCriteria(
-                    Criteria.where(IndexedHistoryEvent::contractAddress.name)
-                        .`in`(contractAddresses)
-                )
-                // Required to engage the partial-filtered indexes on history_events.
-                addCriteria(Criteria.where(IndexedHistoryEvent::blockNumber.name).exists(true))
-                // Only flip currently-blacklisted docs; null / false are already excluded by reads.
-                addCriteria(Criteria.where(IndexedHistoryEvent::isBlacklisted.name).`is`(true))
-            }
-        val update = Update().set(IndexedHistoryEvent::isBlacklisted.name, false)
-        mongoTemplate.updateMulti(query, update, IndexedHistoryEvent::class.java)
     }
 
     open fun invalidateDelegationLifecycleState() {
