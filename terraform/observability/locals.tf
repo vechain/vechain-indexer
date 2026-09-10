@@ -3,8 +3,8 @@ locals {
 
   # Ratio thresholds used across alert rules.
   saturation_threshold = 0.8
-  # 10s blocks, so 60 is ten minutes of chain behind the live colour.
-  live_indexer_lag_blocks = 60
+  # 10s blocks and the indexers keep pace, so 10 behind already means trouble.
+  live_indexer_lag_blocks = 10
 
   # Ported from agent-marketplace's observability-aws stack. Starter set is
   # limited to signals whose source metrics we actually have — API 5xx rate
@@ -56,21 +56,21 @@ locals {
                 max by (env, deployment, network, service, indexer_name) (indexer_current_block{service="indexer"})
               ) > ${local.live_indexer_lag_blocks}
               and on (deployment, network) veworld:live_colour
-            for: 10m
+            for: 3m
             labels:
               severity: critical
             annotations:
               title: "Live indexer behind head"
-              summary: "An indexer on the live colour has been more than ${local.live_indexer_lag_blocks} blocks behind Thor's best block for over 10 minutes."
+              summary: "An indexer on the live colour has been more than ${local.live_indexer_lag_blocks} blocks behind Thor's best block for over 3 minutes."
 
           - alert: LiveIndexerThorHeadStale
-            expr: changes(thor_best_block_number{service="indexer"}[10m]) == 0 and on (deployment, network) veworld:live_colour
-            for: 5m
+            expr: changes(thor_best_block_number{service="indexer"}[5m]) == 0 and on (deployment, network) veworld:live_colour
+            for: 2m
             labels:
               severity: critical
             annotations:
               title: "Thor best block not advancing"
-              summary: "The live indexer's view of Thor's best block has not moved for 10 minutes, so the lag alert is blind. Check the Thor node and the indexer's metrics reporter."
+              summary: "The live indexer's view of Thor's best block has not moved for 5 minutes, so the lag alert is blind. Check the Thor node and the indexer's metrics reporter."
   YAML
 
   # AMP Alertmanager `sns_configs` defaults to upstream Alertmanager's
