@@ -23,9 +23,14 @@ open class NftService(private val mongoTemplate: MongoTemplate) {
         excludeCollections: List<Address>?,
         pageable: Pageable,
     ): Slice<IndexedNft> {
-        val criteria = ownerCriteria(owner, excludeCollections)
+        // A contract scope replaces the exclusion list; both would target the same key.
+        val criteria =
+            if (contractAddress == null) ownerCriteria(owner, excludeCollections)
+            else
+                ownerCriteria(owner, null)
+                    .and(IndexedNft::contractAddress.name)
+                    .`is`(contractAddress.value)
         if (contractAddress != null) {
-            criteria.and(IndexedNft::contractAddress.name).`is`(contractAddress.value)
             tokenId
                 ?.takeIf { it.isNotEmpty() }
                 ?.let { BigIntegerUtils.fromHexOrDecimal(it).toString(10) }
@@ -39,7 +44,7 @@ open class NftService(private val mongoTemplate: MongoTemplate) {
         )
     }
 
-    // Group first so the blacklist lookup runs once per collection, not once per NFT.
+    // Grouping first makes the lookup run once per collection instead of once per NFT.
     open fun findContractsByNftOwner(
         owner: Address,
         excludeCollections: List<Address>?,

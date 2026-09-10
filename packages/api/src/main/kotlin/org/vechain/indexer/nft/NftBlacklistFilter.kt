@@ -9,7 +9,7 @@ import org.springframework.data.mongodb.core.query.Criteria
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.utils.SliceBuilder
 
-// Sort precedes the lookup so the index orders rows and only the consumed page is probed.
+// Sorting first keeps index order; probes stop when the page fills, blacklisted rows included.
 object NftBlacklistFilter {
     const val LOOKUP_FIELD = "blacklistInfo"
     private const val BLACKLISTED_PATH = "$LOOKUP_FIELD.${NftBlacklist.IS_BLACKLISTED_FIELD}"

@@ -96,6 +96,25 @@ internal class NftBlacklistFilterMongoTest {
         expectThat(contracts.content).containsExactly(neverListed, whitelistedAgain)
     }
 
+    @Test
+    fun `a contract scope replaces the exclusion list instead of clashing with it`() {
+        template.insert(nft("1", neverListed, 20))
+        template.insert(nft("2", neverListed, 10))
+        val service = NftService(template)
+        val nftPage = PageRequest.of(0, 10, Sort.by(Sort.Order.desc("blockNumber")))
+
+        val scoped =
+            service.findOwnedNfts(
+                Address(account),
+                Address(neverListed),
+                "2",
+                listOf(Address(blacklisted)),
+                nftPage,
+            )
+
+        expectThat(scoped.content.map { it.tokenId }).containsExactly("2")
+    }
+
     private fun blacklistDoc(contract: String, isBlacklisted: Boolean) =
         NftBlacklist(
             id = contract,
