@@ -57,6 +57,7 @@ constructor(
     val delegationId: String? = null,
     val periodClaimed: Long? = null,
     val boostedBlocks: String? = null,
+    @JsonIgnore val isBlacklisted: Boolean? = null,
     @JsonIgnore val delegationLifecycleStatus: Status? = null,
     @JsonIgnore val delegationLifecycleNextCycle: Long? = null,
     @JsonIgnore val delegationLifecycleCycleLength: Long? = null,

@@ -22,6 +22,7 @@ import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.BusinessEventParamFixtures.BUSINESS_EVENT_PARAMS
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
+import org.vechain.indexer.nft.NftBlacklistClient
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.Status
@@ -33,6 +34,8 @@ class HistoryServiceTest {
     @MockK lateinit var historyRepository: HistoryRepository
 
     @MockK lateinit var mongoTemplate: MongoTemplate
+
+    @MockK lateinit var blacklistClient: NftBlacklistClient
 
     @MockK lateinit var validatorDelegationService: ValidatorDelegationService
 
@@ -62,6 +65,7 @@ class HistoryServiceTest {
         coEvery { processor.process(any()) } returns Unit
         coEvery { thorClient.inspectClauses(any(), any()) } returns
             listOf(InspectionResult("0x", emptyList(), emptyList(), 0, false, ""))
+        coEvery { blacklistClient.isBlacklisted(any(), any()) } returns false
         every { validatorIndexer.startBlock } returns 0L
         every { validatorIndexer.name } returns "validator"
         coEvery { validatorDelegationService.resolveCycleInfo(any(), any(), any()) } answers
@@ -85,6 +89,8 @@ class HistoryServiceTest {
         historyService =
             HistoryService(
                 historyRepository = historyRepository,
+                mongoTemplate = mongoTemplate,
+                blacklistClient = blacklistClient,
                 delegationLifecycleHistoryService = delegationLifecycleHistoryService,
                 validatorRepository = validatorRepository,
                 validatorStartBlock = 0L,

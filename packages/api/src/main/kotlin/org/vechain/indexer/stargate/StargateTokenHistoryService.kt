@@ -4,12 +4,13 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
+import org.springframework.data.domain.SliceImpl
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
+import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
 import org.vechain.indexer.history.HistoryEventName
 import org.vechain.indexer.history.IndexedHistoryEvent
-import org.vechain.indexer.nft.NftBlacklistFilter
 import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.utils.BigIntegerUtils
 
@@ -35,12 +36,14 @@ class StargateTokenHistoryService(
     ): Slice<IndexedHistoryEvent> {
         val normalizedTokenId = BigIntegerUtils.fromHexOrDecimal(tokenId).toString(10)
         val criteria = buildCriteria(normalizedTokenId, eventNames, before, after)
-        return NftBlacklistFilter.findPage(
-            mongoTemplate,
-            criteria,
-            pageable,
-            IndexedHistoryEvent::class.java,
-        )
+        val query = Query(criteria).with(pageable)
+        query.limit(pageable.pageSize + 1)
+
+        val raw = mongoTemplate.find(query, IndexedHistoryEvent::class.java)
+        val hasNext = raw.size > pageable.pageSize
+        val content = if (hasNext) raw.dropLast(1) else raw
+
+        return SliceImpl(content, pageable, hasNext)
     }
 
     private fun buildCriteria(
@@ -52,6 +55,7 @@ class StargateTokenHistoryService(
         val criteria =
             mutableListOf(
                 Criteria.where(IndexedHistoryEvent::tokenId.name).`is`(tokenId),
+                Criteria.where(IndexedHistoryEvent::isBlacklisted.name).ne(true),
                 buildStargateTokenScopeCriteria(),
             )
 
