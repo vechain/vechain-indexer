@@ -4,36 +4,37 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.CheckpointProperties
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.history.DelegationLifecycleHistoryService
 import org.vechain.indexer.history.HistoryConfig
 import org.vechain.indexer.history.HistoryProcessor
-import org.vechain.indexer.history.HistoryRepository
 import org.vechain.indexer.history.HistoryService
+import org.vechain.indexer.history.HistoryWriteRepository
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
+import org.vechain.indexer.postgres.IndexerStateRepository
 import org.vechain.indexer.validator.ValidatorRepository
 
 @Disabled("Performance test - run explicitly with --tests when needed")
 @ActiveProfiles("history")
 class HistoryProcessorPerformanceTest : BasePerformanceTest() {
 
-    @Autowired lateinit var historyRepository: HistoryRepository
+    @Autowired lateinit var historyRepository: HistoryWriteRepository
 
     @Autowired lateinit var historyService: HistoryService
-
-    @Autowired lateinit var mongoTemplate: MongoTemplate
 
     @Autowired lateinit var delegationLifecycleHistoryService: DelegationLifecycleHistoryService
     @Autowired lateinit var validatorRepository: ValidatorRepository
 
-    @Autowired lateinit var checkpointService: CheckpointService
+    @Autowired lateinit var indexerState: IndexerStateRepository
+    @Autowired lateinit var checkpointProperties: CheckpointProperties
+    @Autowired lateinit var horizon: InlineVersioningProperties
     @Autowired lateinit var processorMetrics: ProcessorMetrics
 
     @Autowired @Qualifier("validatorIndexer") lateinit var validatorIndexer: Indexer
@@ -41,7 +42,7 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
         // Clear database to start fresh
-        historyRepository.deleteAll()
+        historyRepository.truncate()
         println("✓ Cleared history database")
 
         // Create profiler for detailed timing analysis
@@ -88,7 +89,6 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
                 val profiledService =
                     ProfiledHistoryService(
                         historyRepository,
-                        mongoTemplate,
                         delegationLifecycleHistoryService,
                         validatorRepository,
                         0L,
@@ -98,15 +98,19 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
                     repository = historyRepository,
                     historyService = profiledService,
                     profiler = profiler,
-                    checkpointService = checkpointService,
+                    state = indexerState,
+                    checkpointProperties = checkpointProperties,
+                    horizon = horizon,
                     processorMetrics = processorMetrics,
                 )
             } else {
                 // Use standard processor
                 HistoryProcessor(
-                    repository = historyRepository,
                     historyService = historyService,
-                    checkpointService = checkpointService,
+                    repository = historyRepository,
+                    state = indexerState,
+                    checkpointProperties = checkpointProperties,
+                    horizon = horizon,
                     processorMetrics = processorMetrics,
                 )
             }
@@ -124,16 +128,20 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
 
     /** Profiled wrapper for HistoryProcessor that times each operation */
     private class ProfiledHistoryProcessor(
-        repository: HistoryRepository,
+        repository: HistoryWriteRepository,
         historyService: HistoryService,
         private val profiler: DetailedProfiler,
-        checkpointService: CheckpointService,
+        state: IndexerStateRepository,
+        checkpointProperties: CheckpointProperties,
+        horizon: InlineVersioningProperties,
         processorMetrics: ProcessorMetrics,
     ) :
         HistoryProcessor(
-            repository = repository,
             historyService = historyService,
-            checkpointService = checkpointService,
+            repository = repository,
+            state = state,
+            checkpointProperties = checkpointProperties,
+            horizon = horizon,
             processorMetrics = processorMetrics,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {

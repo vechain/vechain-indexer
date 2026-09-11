@@ -5,15 +5,11 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlin.reflect.full.memberProperties
 import kotlinx.coroutines.runBlocking
-import org.bson.Document
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.DynamicTest.dynamicTest
 import org.junit.jupiter.api.TestFactory
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.aggregation.Aggregation
-import org.springframework.data.mongodb.core.aggregation.AggregationResults
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.SimpleBlockIndexerCoordinator
@@ -29,7 +25,7 @@ import org.vechain.indexer.validator.ValidatorDelegationService
 /** `assemble(flatten(e)) == e` for every row the indexer projects from every block fixture. */
 class HistoryRowsRoundTripTest {
 
-    private val mongoTemplate = mockk<MongoTemplate>()
+    private val repository = mockk<HistoryWriteRepository>(relaxed = true)
     private val thorClient = mockk<ThorClient>()
     private val validatorIndexer = mockk<Indexer>()
     private val validatorDelegationService = mockk<ValidatorDelegationService>()
@@ -38,10 +34,6 @@ class HistoryRowsRoundTripTest {
 
     init {
         every { businessEventProperties.substitutions } returns BUSINESS_EVENT_PARAMS
-        every { mongoTemplate.getCollectionName(IndexedHistoryEvent::class.java) } returns "history"
-        every {
-            mongoTemplate.aggregate(any<Aggregation>(), "history", IndexedHistoryEvent::class.java)
-        } returns AggregationResults(emptyList(), Document())
         coEvery { thorClient.inspectClauses(any(), any()) } returns
             listOf(InspectionResult("0x", emptyList(), emptyList(), 0, false, ""))
         every { validatorIndexer.startBlock } returns 0L
@@ -65,11 +57,10 @@ class HistoryRowsRoundTripTest {
         coEvery { validatorDelegationService.getValidatorExitBlock(any(), any()) } returns 0L
         historyService =
             HistoryService(
-                historyRepository = mockk(relaxed = true),
-                mongoTemplate = mongoTemplate,
+                repository = repository,
                 delegationLifecycleHistoryService =
                     DelegationLifecycleHistoryService(
-                        mongoTemplate = mongoTemplate,
+                        repository = repository,
                         validatorDelegationService = validatorDelegationService,
                         stakerSC = "0x00000000000000000000000000005374616B6572",
                         stargateNftContract =
