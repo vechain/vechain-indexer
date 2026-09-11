@@ -14,8 +14,8 @@ import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.jdbc.support.JdbcTransactionManager
 
 /**
- * The `chain` Postgres store, beside Mongo in the same process. Every bean is named `chain*` so a
- * `@Transactional` on a Postgres write has to say `transactionManager = "chainTransactionManager"`.
+ * The Postgres store, beside Mongo in the same process. Every bean is named `postgres*` so a
+ * `@Transactional` on a Postgres write has to name `PostgresConfig.TRANSACTION_MANAGER`.
  * `postgres.enabled=false` is for tests that boot a context without a database.
  */
 @Configuration
@@ -31,14 +31,14 @@ open class PostgresConfig {
     companion object {
         const val SCHEMA = "chain"
         const val MIGRATIONS = "classpath:db/migration/chain"
-        const val TRANSACTION_MANAGER = "chainTransactionManager"
+        const val TRANSACTION_MANAGER = "postgresTransactionManager"
     }
 
     @Bean
-    open fun chainDataSource(properties: PostgresProperties): DataSource =
+    open fun postgresDataSource(properties: PostgresProperties): DataSource =
         HikariDataSource(
             HikariConfig().apply {
-                poolName = SCHEMA
+                poolName = "postgres"
                 jdbcUrl = properties.url
                 username = properties.username
                 password = properties.password
@@ -50,30 +50,30 @@ open class PostgresConfig {
 
     @Bean(initMethod = "migrate")
     @ConditionalOnProperty(prefix = "postgres.flyway", name = ["enabled"], havingValue = "true")
-    open fun chainFlyway(chainDataSource: DataSource): Flyway =
+    open fun postgresFlyway(postgresDataSource: DataSource): Flyway =
         Flyway.configure()
-            .dataSource(chainDataSource)
+            .dataSource(postgresDataSource)
             .schemas(SCHEMA)
             .defaultSchema(SCHEMA)
             .locations(MIGRATIONS)
             .load()
 
     @Bean(TRANSACTION_MANAGER)
-    open fun chainTransactionManager(chainDataSource: DataSource): JdbcTransactionManager =
-        JdbcTransactionManager(chainDataSource)
+    open fun postgresTransactionManager(postgresDataSource: DataSource): JdbcTransactionManager =
+        JdbcTransactionManager(postgresDataSource)
 
     // Resolving the Flyway provider orders the template, and everything built on it, after
     // migrate().
     @Bean
-    open fun chainJdbcTemplate(
-        chainDataSource: DataSource,
-        chainFlyway: ObjectProvider<Flyway>,
+    open fun postgresJdbcTemplate(
+        postgresDataSource: DataSource,
+        postgresFlyway: ObjectProvider<Flyway>,
     ): JdbcTemplate {
-        chainFlyway.ifAvailable
-        return JdbcTemplate(chainDataSource)
+        postgresFlyway.ifAvailable
+        return JdbcTemplate(postgresDataSource)
     }
 
     @Bean
-    open fun chainJdbcClient(chainJdbcTemplate: JdbcTemplate): JdbcClient =
-        JdbcClient.create(chainJdbcTemplate)
+    open fun postgresJdbcClient(postgresJdbcTemplate: JdbcTemplate): JdbcClient =
+        JdbcClient.create(postgresJdbcTemplate)
 }
