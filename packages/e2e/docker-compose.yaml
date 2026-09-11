@@ -22,7 +22,7 @@ services:
 
   postgres:
     extends:
-      file: ../../database/docker-compose-postgres.yaml
+      file: database/docker-compose-postgres.yaml
       service: postgres
     restart: "no"
 
@@ -30,3 +30,5 @@ networks:
   vechain-thor-e2e:
     external: true
     name: vechain-thor-e2e
+volumes:
+  vechain-postgres-data:
