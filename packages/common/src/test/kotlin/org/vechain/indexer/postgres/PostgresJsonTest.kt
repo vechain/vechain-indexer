@@ -1,5 +1,6 @@
 package org.vechain.indexer.postgres
 
+import com.fasterxml.jackson.core.type.TypeReference
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
@@ -33,4 +34,16 @@ class PostgresJsonTest {
         val stored = """{"proof":"a${esc}b${esc}"}"""
         assertEquals(mapOf("proof" to "a${esc}b${esc}"), PostgresJson.read(stored))
     }
+
+    @Test
+    fun `a typed value is escaped the same way as a parameter map`() {
+        val value = Payload("a${nul}b${esc}", listOf(Item("$nul"), Item("plain")))
+        val text = PostgresJson.write(value)!!
+        assertFalse(text.contains("u0000"), text)
+        assertEquals(value, PostgresJson.read(text, object : TypeReference<Payload>() {}))
+    }
+
+    data class Payload(val text: String, val items: List<Item>)
+
+    data class Item(val name: String)
 }

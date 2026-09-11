@@ -1,7 +1,11 @@
 package org.vechain.indexer.postgres
 
 import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.databind.node.TextNode
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import java.math.BigDecimal
@@ -26,34 +30,30 @@ object PostgresJson {
             )
     private val mapType = object : TypeReference<Map<String, Any>>() {}
 
-    fun write(params: Map<String, Any>?): String? = params?.let {
-        mapper.writeValueAsString(if (needsEscaping(it)) mapStrings(it, ::escape) else it)
+    fun read(json: String?): Map<String, Any>? = read(json, mapType)
+
+    fun <T> write(value: T?): String? = value?.let {
+        val text = mapper.writeValueAsString(it)
+        if ("\\u0000" !in text && ESC !in text) text
+        else mapper.writeValueAsString(mapStrings(mapper.valueToTree(it), ::escape))
     }
 
-    fun read(json: String?): Map<String, Any>? = json?.let { text ->
-        val parsed = mapper.readValue(text, mapType)
-        if (ESC in text) mapStrings(parsed, ::unescape) else parsed
+    fun <T> read(json: String?, type: TypeReference<T>): T? = json?.let { text ->
+        if (ESC !in text) mapper.readValue(text, type)
+        else mapper.treeToValue(mapStrings(mapper.readTree(text), ::unescape), type)
     }
 
-    private fun needsEscaping(value: Any?): Boolean =
-        when (value) {
-            is String -> NUL in value || ESC in value
-            is Map<*, *> -> value.values.any(::needsEscaping)
-            is List<*> -> value.any(::needsEscaping)
-            else -> false
-        }
-
-    private fun mapStrings(params: Map<String, Any>, f: (String) -> String): Map<String, Any> =
-        params.mapValues { (_, value) ->
-            mapValue(value, f)
-        }
-
-    private fun mapValue(value: Any, f: (String) -> String): Any =
-        when (value) {
-            is String -> f(value)
-            is Map<*, *> -> value.mapValues { (_, v) -> v?.let { mapValue(it, f) } }
-            is List<*> -> value.map { it?.let { element -> mapValue(element, f) } }
-            else -> value
+    private fun mapStrings(node: JsonNode, f: (String) -> String): JsonNode =
+        when (node) {
+            is TextNode -> TextNode.valueOf(f(node.textValue()))
+            is ObjectNode ->
+                node.apply {
+                    fieldNames().asSequence().toList().forEach {
+                        replace(it, mapStrings(get(it), f))
+                    }
+                }
+            is ArrayNode -> node.apply { for (i in 0 until size()) set(i, mapStrings(get(i), f)) }
+            else -> node
         }
 
     // jsonb rejects U+0000, and chain data carries it: NUL is written as ESC NUL_MARK and a literal
