@@ -23,8 +23,6 @@ import strikt.assertions.isTrue
 
 @ExtendWith(MockKExtension::class)
 class HistoryIndexerTest {
-    @MockK lateinit var repository: HistoryRepository
-
     @MockK lateinit var processor: HistoryProcessor
 
     @MockK lateinit var thorClient: ThorClient

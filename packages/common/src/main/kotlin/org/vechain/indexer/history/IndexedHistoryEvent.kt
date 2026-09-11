@@ -3,21 +3,17 @@ package org.vechain.indexer.history
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import org.springframework.boot.context.properties.bind.ConstructorBinding
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
-import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.b3tr.action.SustainabilityProofV2
 import org.vechain.indexer.b3tr.voting.AppVote
 import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.validator.Status
 
-@Document(collection = IndexerNames.HISTORY.COLLECTION)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class IndexedHistoryEvent
 @ConstructorBinding
 constructor(
-    @Id val id: String,
+    val id: String,
     override val blockId: String,
     override val blockNumber: Long,
     override val blockTimestamp: Long,
@@ -57,33 +53,13 @@ constructor(
     val delegationId: String? = null,
     val periodClaimed: Long? = null,
     val boostedBlocks: String? = null,
-    @JsonIgnore val isBlacklisted: Boolean? = null,
     @JsonIgnore val delegationLifecycleStatus: Status? = null,
     @JsonIgnore val delegationLifecycleNextCycle: Long? = null,
     @JsonIgnore val delegationLifecycleCycleLength: Long? = null,
     @JsonIgnore val delegationLifecycleForceExit: Boolean? = null,
     @JsonIgnore val delegationLifecycleOrder: Int? = null,
-    @JsonIgnore val involvedAddresses: List<String>? = null,
 ) : IndexedDocument {
     companion object {
-        const val DELEGATION_LIFECYCLE_STATUS_FIELD = "delegationLifecycleStatus"
-        const val DELEGATION_LIFECYCLE_NEXT_CYCLE_FIELD = "delegationLifecycleNextCycle"
-        const val DELEGATION_LIFECYCLE_CYCLE_LENGTH_FIELD = "delegationLifecycleCycleLength"
-        const val DELEGATION_LIFECYCLE_FORCE_EXIT_FIELD = "delegationLifecycleForceExit"
-        const val DELEGATION_LIFECYCLE_ORDER_FIELD = "delegationLifecycleOrder"
-        const val INVOLVED_ADDRESSES_FIELD = "involvedAddresses"
-
-        // Denormalized union of the address-bearing fields, indexed multikey so the
-        // API account-history query is a single equality instead of a 5-way $or.
-        fun involvedAddressesOf(
-            origin: String?,
-            gasPayer: String?,
-            to: String?,
-            from: String?,
-            owner: String?,
-        ): List<String>? =
-            listOfNotNull(origin, gasPayer, to, from, owner).distinct().takeIf { it.isNotEmpty() }
-
         fun getAppVotes(appIds: Any?, voteWeights: Any?): List<AppVote>? {
             // Ensure both are non-null and cast to List<String>
             val appIdsList = appIds as? List<*> ?: return null
