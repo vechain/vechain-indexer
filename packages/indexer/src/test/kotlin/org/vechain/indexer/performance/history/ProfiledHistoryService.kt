@@ -1,9 +1,8 @@
 package org.vechain.indexer.performance.history
 
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.history.HistoryRepository
 import org.vechain.indexer.history.HistoryService
+import org.vechain.indexer.history.HistoryWriteRepository
 import org.vechain.indexer.history.IndexedHistoryEvent
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.thor.model.Block
@@ -14,8 +13,7 @@ import org.vechain.indexer.validator.ValidatorRepository
  * visibility into where time is spent
  */
 class ProfiledHistoryService(
-    repository: HistoryRepository,
-    mongoTemplate: MongoTemplate,
+    repository: HistoryWriteRepository,
     delegationLifecycleHistoryService:
         org.vechain.indexer.history.DelegationLifecycleHistoryService,
     validatorRepository: ValidatorRepository,
@@ -24,7 +22,6 @@ class ProfiledHistoryService(
 ) :
     HistoryService(
         repository,
-        mongoTemplate,
         delegationLifecycleHistoryService,
         validatorRepository,
         validatorStartBlock,
@@ -49,8 +46,8 @@ class ProfiledHistoryService(
     }
 
     override fun save(events: List<IndexedHistoryEvent>) {
-        profiler.time("      HistoryService.save (MongoDB)") {
-            profiler.time("        - repository.saveAll") { super.save(events) }
+        profiler.time("      HistoryService.save (Postgres)") {
+            profiler.time("        - repository.save") { super.save(events) }
         }
     }
 }

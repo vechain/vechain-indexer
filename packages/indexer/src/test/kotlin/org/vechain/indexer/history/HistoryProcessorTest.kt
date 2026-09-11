@@ -1,5 +1,6 @@
 package org.vechain.indexer.history
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.Called
 import io.mockk.MockKAnnotations
 import io.mockk.Runs
@@ -17,7 +18,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
-import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.CheckpointProperties
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.BlockFixtures
@@ -28,27 +30,22 @@ import strikt.assertions.isEqualTo
 
 @ExtendWith(MockKExtension::class)
 internal class HistoryProcessorTest {
-    @MockK lateinit var historyRepository: HistoryRepository
-
     @MockK lateinit var historyService: HistoryService
-
-    @MockK lateinit var checkpointService: CheckpointService
-
-    private val processorMetrics: ProcessorMetrics = mockk(relaxed = true)
 
     private lateinit var processor: HistoryProcessor
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        every { checkpointService.trySaveCheckpoint(any(), any()) } just Runs
 
         processor =
             HistoryProcessor(
-                repository = historyRepository,
                 historyService = historyService,
-                checkpointService = checkpointService,
-                processorMetrics = processorMetrics,
+                repository = mockk(relaxed = true),
+                state = mockk(relaxed = true),
+                checkpointProperties = CheckpointProperties(),
+                horizon = InlineVersioningProperties(),
+                processorMetrics = ProcessorMetrics(SimpleMeterRegistry()),
             )
     }
 
