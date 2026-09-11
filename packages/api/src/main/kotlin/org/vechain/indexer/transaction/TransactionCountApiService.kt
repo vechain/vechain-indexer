@@ -1,14 +1,11 @@
 package org.vechain.indexer.transaction
 
 import org.springframework.context.annotation.Profile
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import org.vechain.indexer.blocks.BlocksReadRepository
 
-@Profile("transactions", "transaction-count")
+@Profile("blocks")
 @Service
-open class TransactionCountApiService(
-    private val transactionCountSummaryRepository: TransactionCountSummaryRepository
-) {
-    open fun getLatestCount(): TransactionCountSummary? =
-        transactionCountSummaryRepository.findByIdOrNull(TransactionCountSummary.SUMMARY_ID)
+open class TransactionCountApiService(private val repository: BlocksReadRepository) {
+    open fun getLatestCount(): TransactionCountSummary? = repository.latestTotals()
 }

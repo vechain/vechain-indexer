@@ -34,7 +34,7 @@ spring:
   application:
     name: vechain-api
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:nfts,transactions,transfers,history,stargate,vevote-results,vevote-historic-proposals,b3tr,explorer,accounts,validator,safe,blocks}
+    active: ${SPRING_PROFILES_ACTIVE:nfts,blocks,transfers,history,stargate,vevote-results,vevote-historic-proposals,b3tr,explorer,accounts,validator,safe}
     group:
       validator: [delegation, prices]
       delegation: [validator]

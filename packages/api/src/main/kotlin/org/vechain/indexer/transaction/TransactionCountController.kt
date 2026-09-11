@@ -13,7 +13,7 @@ import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.rest.CacheFor
 import org.vechain.indexer.rest.CachePolicy
 
-@Profile("transactions", "transaction-count")
+@Profile("blocks")
 @Tag(name = "Transactions", description = "Query on chain transactions")
 @Validated
 @RestController

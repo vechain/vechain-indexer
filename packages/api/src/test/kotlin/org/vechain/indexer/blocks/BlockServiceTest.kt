@@ -3,7 +3,6 @@ package org.vechain.indexer.blocks
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import io.mockk.slot
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -13,15 +12,11 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Pageable
-import org.springframework.data.domain.SliceImpl
-import org.vechain.indexer.blocks.repository.BlockRepository
 
 @ExtendWith(MockKExtension::class)
 internal class BlockServiceTest {
 
-    @MockK lateinit var repository: BlockRepository
+    @MockK lateinit var repository: BlocksReadRepository
 
     private lateinit var service: BlockService
 
@@ -55,14 +50,12 @@ internal class BlockServiceTest {
     // -- query routing and cursors --
 
     @Test
-    fun `from omitted queries the head with the default page size`() {
-        val pageableSlot = slot<Pageable>()
-        every { repository.findLatest(capture(pageableSlot)) } returns
-            SliceImpl(listOf(indexedBlock(1000)), PageRequest.of(0, 20), false)
+    fun `from omitted queries the head with one row past the default page size`() {
+        every { repository.findBlocks(null, 21) } returns listOf(indexedBlock(1000))
 
         val result = service.getBlocks(null, null)
 
-        assertEquals(20, pageableSlot.captured.pageSize)
+        verify(exactly = 1) { repository.findBlocks(null, 21) }
         assertEquals(1, result.page.data.size)
         assertFalse(result.page.pagination.hasNext)
         assertNull(result.page.pagination.cursor)
@@ -70,28 +63,27 @@ internal class BlockServiceTest {
 
     @Test
     fun `from bounds the range above and steps the cursor down`() {
-        every { repository.findAtOrBelow(1000L, any()) } returns
-            SliceImpl(listOf(indexedBlock(1000), indexedBlock(999)), PageRequest.of(0, 2), true)
+        every { repository.findBlocks(1000L, 3) } returns
+            listOf(indexedBlock(1000), indexedBlock(999), indexedBlock(998))
 
         val result = service.getBlocks(1000L, 2)
 
-        verify(exactly = 1) { repository.findAtOrBelow(1000L, any()) }
+        assertEquals(listOf(1000L, 999L), result.page.data.map { it.blockNumber })
         assertTrue(result.page.pagination.hasNext)
         assertEquals("998", result.page.pagination.cursor)
     }
 
     @Test
     fun `the head page cursor continues the same backwards walk`() {
-        every { repository.findLatest(any()) } returns
-            SliceImpl(listOf(indexedBlock(999), indexedBlock(998)), PageRequest.of(0, 2), true)
+        every { repository.findBlocks(null, 3) } returns
+            listOf(indexedBlock(999), indexedBlock(998), indexedBlock(997))
 
         assertEquals("997", service.getBlocks(null, 2).page.pagination.cursor)
     }
 
     @Test
     fun `cursor is null on the last page`() {
-        every { repository.findAtOrBelow(1000L, any()) } returns
-            SliceImpl(listOf(indexedBlock(1000)), PageRequest.of(0, 20), false)
+        every { repository.findBlocks(1000L, 21) } returns listOf(indexedBlock(1000))
 
         val result = service.getBlocks(1000L, null)
 
@@ -101,8 +93,7 @@ internal class BlockServiceTest {
 
     @Test
     fun `a from below the indexed range returns an empty page`() {
-        every { repository.findAtOrBelow(5L, any()) } returns
-            SliceImpl(emptyList(), PageRequest.of(0, 20), false)
+        every { repository.findBlocks(5L, 21) } returns emptyList()
 
         val result = service.getBlocks(5L, null)
 
@@ -115,16 +106,16 @@ internal class BlockServiceTest {
 
     @Test
     fun `a head range is not cacheable`() {
-        every { repository.findLatest(any()) } returns
-            SliceImpl(listOf(indexedBlock(1000)), PageRequest.of(0, 1), true)
+        every { repository.findBlocks(null, 2) } returns
+            listOf(indexedBlock(1000), indexedBlock(999))
 
         assertNull(service.getBlocks(null, 1).settledAt)
     }
 
     @Test
     fun `a settled anchored range is cacheable`() {
-        every { repository.findAtOrBelow(1000L, any()) } returns
-            SliceImpl(listOf(indexedBlock(1000), indexedBlock(999)), PageRequest.of(0, 2), true)
+        every { repository.findBlocks(1000L, 3) } returns
+            listOf(indexedBlock(1000), indexedBlock(999), indexedBlock(998))
 
         assertNotNull(service.getBlocks(1000L, 2).settledAt)
     }

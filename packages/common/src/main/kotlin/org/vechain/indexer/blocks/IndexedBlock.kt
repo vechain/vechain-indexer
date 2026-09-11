@@ -1,15 +1,11 @@
 package org.vechain.indexer.blocks
 
 import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonView
 import org.springframework.boot.context.properties.bind.ConstructorBinding
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
-import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.model.Views
 
 /**
@@ -18,10 +14,8 @@ import org.vechain.indexer.thor.model.Views
  *
  * The `@get:JsonProperty` renames reproduce Thor's wire names, so the serialised document is a
  * collapsed `GET /blocks/{revision}` response plus two totals, minus `isTrunk`/`isFinalized` — see
- * `BlockController` for why those two are omitted. Mongo field names are unaffected: Spring Data
- * maps on property names, so range queries still filter and sort on `blockNumber`.
+ * `BlockController` for why those two are omitted.
  */
-@Document(collection = IndexerNames.BLOCKS.COLLECTION)
 @JsonView(Views.Public::class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class IndexedBlock
@@ -49,5 +43,4 @@ constructor(
     val clauseCount: Int = 0,
     val totalVthoPaid: String = "0x0",
     val transactions: List<String> = emptyList(),
-    @JsonIgnore @Id val id: String = blockNumber.toString(),
 ) : IndexedDocument

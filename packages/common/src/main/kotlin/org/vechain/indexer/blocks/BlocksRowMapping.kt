@@ -135,13 +135,14 @@ object BlocksRowMapping {
         return TransactionRows(row, clauses, events, transfers)
     }
 
-    /** [events] and [transfers] may arrive in any order; they are placed by their indexes. */
+    /** Children may arrive in any order; [clauseCount] stands in when clauses are not loaded. */
     fun assemble(
         row: TransactionRow,
         block: BlockRef,
         clauses: List<ClauseRow>,
         events: List<EventRow>,
         transfers: List<TransferRow>,
+        clauseCount: Int = clauses.size,
     ): IndexedTransaction {
         val origin = hex(row.origin)
         val eventsByClause = events.groupBy { it.clauseIndex }
@@ -173,6 +174,7 @@ object BlocksRowMapping {
             reward = minimalHex(row.reward),
             reverted = row.reverted,
             origin = origin,
+            clauseCount = clauseCount,
             outputs =
                 (0 until row.outputCount).map { clauseIndex ->
                     DecodedOutputs(

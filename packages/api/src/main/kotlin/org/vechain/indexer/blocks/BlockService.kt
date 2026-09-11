@@ -1,10 +1,7 @@
 package org.vechain.indexer.blocks
 
 import org.springframework.context.annotation.Profile
-import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Service
-import org.vechain.indexer.blocks.repository.BlockRepository
 import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
@@ -14,26 +11,23 @@ data class BlockRange(val page: PaginatedResponse<IndexedBlock>, val settledAt: 
 
 @Profile("blocks")
 @Service
-open class BlockService(private val repository: BlockRepository) {
+open class BlockService(private val repository: BlocksReadRepository) {
 
     /** Always newest-first: [from] is an inclusive upper bound, defaulting to the indexed head. */
     open fun getBlocks(from: Long?, size: Int?): BlockRange {
-        val pageable = PageRequest.of(0, size ?: DEFAULT_PAGE_SIZE)
-        val slice =
-            if (from == null) {
-                repository.findLatest(pageable)
-            } else {
-                repository.findAtOrBelow(from, pageable)
-            }
+        val pageSize = size ?: DEFAULT_PAGE_SIZE
+        val rows = repository.findBlocks(from, pageSize + 1)
+        val data = rows.take(pageSize)
+        val hasNext = rows.size > pageSize
 
         return BlockRange(
             page =
                 paginatedResponse(
-                    data = slice.content,
-                    hasNext = slice.hasNext(),
-                    cursor = nextCursor(slice),
+                    data = data,
+                    hasNext = hasNext,
+                    cursor = nextCursor(data, hasNext),
                 ),
-            settledAt = settledAt(from, slice.content),
+            settledAt = settledAt(from, data),
         )
     }
 
@@ -47,9 +41,9 @@ open class BlockService(private val repository: BlockRepository) {
     }
 
     /** The next `from`: the bound is inclusive, so step one block below the last row. */
-    private fun nextCursor(slice: Slice<IndexedBlock>): String? {
-        if (!slice.hasNext()) return null
-        val last = slice.content.lastOrNull() ?: return null
+    private fun nextCursor(data: List<IndexedBlock>, hasNext: Boolean): String? {
+        if (!hasNext) return null
+        val last = data.lastOrNull() ?: return null
         return (last.blockNumber - 1).toString()
     }
 }

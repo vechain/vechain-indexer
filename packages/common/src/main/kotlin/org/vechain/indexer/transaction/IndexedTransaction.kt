@@ -4,24 +4,19 @@ import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonView
 import org.springframework.boot.context.properties.bind.ConstructorBinding
-import org.springframework.data.annotation.Id
-import org.springframework.data.annotation.Transient
-import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
-import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.DecodedOutputs
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.thor.model.Transaction
 import org.vechain.indexer.thor.model.Views
 
-@Document(collection = IndexerNames.TRANSACTION.COLLECTION)
 @JsonView(Views.Public::class)
 data class IndexedTransaction
 @ConstructorBinding
 @JsonCreator
 constructor(
-    @Id val id: String,
+    val id: String,
     override val blockId: String,
     override val blockNumber: Long,
     override val blockTimestamp: Long,
@@ -45,11 +40,9 @@ constructor(
     val reverted: Boolean,
     val origin: String,
     @field:JsonView(Views.Expanded::class) val outputs: List<DecodedOutputs>,
+    // Stored separately so a collapsed read can report it without loading the clauses.
+    val clauseCount: Int = clauses.size,
 ) : IndexedDocument {
-    @get:JsonView(Views.Public::class)
-    @get:Transient
-    val clauseCount: Int
-        get() = clauses.size
 
     constructor(
         block: Block,
