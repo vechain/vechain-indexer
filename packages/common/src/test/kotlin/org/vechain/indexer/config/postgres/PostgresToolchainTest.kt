@@ -64,21 +64,21 @@ class PostgresToolchainTest {
     }
 
     @Test
-    fun `flyway owns the chain schema`() {
+    fun `flyway owns the public schema`() {
         val client = jdbcClient()
         val schema =
             client
                 .sql(
-                    "SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'chain'"
+                    "SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'public'"
                 )
                 .query(String::class.java)
                 .single()
-        assertEquals(PostgresConfig.SCHEMA, schema)
+        assertEquals("public", schema)
         val history =
             client
                 .sql(
                     "SELECT count(*) FROM information_schema.tables " +
-                        "WHERE table_schema = 'chain' AND table_name = 'flyway_schema_history'"
+                        "WHERE table_schema = 'public' AND table_name = 'flyway_schema_history'"
                 )
                 .query(Int::class.java)
                 .single()

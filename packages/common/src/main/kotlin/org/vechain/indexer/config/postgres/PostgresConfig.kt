@@ -16,21 +16,14 @@ import org.springframework.jdbc.support.JdbcTransactionManager
 /**
  * The Postgres store, beside Mongo in the same process. Every bean is named `postgres*` so a
  * `@Transactional` on a Postgres write has to name `PostgresConfig.TRANSACTION_MANAGER`.
- * `postgres.enabled=false` is for tests that boot a context without a database.
  */
 @Configuration
-@ConditionalOnProperty(
-    prefix = "postgres",
-    name = ["enabled"],
-    havingValue = "true",
-    matchIfMissing = true,
-)
+@ConditionalOnPostgres
 @EnableConfigurationProperties(PostgresProperties::class)
 open class PostgresConfig {
 
     companion object {
-        const val SCHEMA = "chain"
-        const val MIGRATIONS = "classpath:db/migration/chain"
+        const val MIGRATIONS = "classpath:db/migration"
         const val TRANSACTION_MANAGER = "postgresTransactionManager"
     }
 
@@ -51,12 +44,7 @@ open class PostgresConfig {
     @Bean(initMethod = "migrate")
     @ConditionalOnProperty(prefix = "postgres.flyway", name = ["enabled"], havingValue = "true")
     open fun postgresFlyway(postgresDataSource: DataSource): Flyway =
-        Flyway.configure()
-            .dataSource(postgresDataSource)
-            .schemas(SCHEMA)
-            .defaultSchema(SCHEMA)
-            .locations(MIGRATIONS)
-            .load()
+        Flyway.configure().dataSource(postgresDataSource).locations(MIGRATIONS).load()
 
     @Bean(TRANSACTION_MANAGER)
     open fun postgresTransactionManager(postgresDataSource: DataSource): JdbcTransactionManager =

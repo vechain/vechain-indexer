@@ -32,7 +32,7 @@
         }
       ],
       "maxFeePerGas": "0x95ff980a220",
-      "maxPriorityFeePerGas": "x",
+      "maxPriorityFeePerGas": "0x0",
       "gas": 231744,
       "origin": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
       "delegator": null,
