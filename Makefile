@@ -92,11 +92,11 @@ run-api: build-api #@ Run the api locally.
 
 # All
 start: #@ Remove, clean and start all the infrastructure and the application.
-	make db-up db-setup app-up
+	make db-up db-setup pg-up app-up
 clean: #@ Clean all the infrastructure and the application data.
-	make app-down db-clean
+	make app-down db-clean pg-clean
 down: #@ Stop all the infrastructure and the application.
-	make app-down db-down
+	make app-down db-down pg-down
 
 # Application
 ensure-gradle-props:
