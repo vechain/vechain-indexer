@@ -32,7 +32,7 @@ import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidCursor
 import org.vechain.indexer.validation.ValidPageSize
 
-@Profile("transactions", "transaction")
+@Profile("blocks")
 @Tag(name = "Transactions", description = "Query on chain transactions")
 @Validated
 @RestController
@@ -110,6 +110,7 @@ open class TransactionController(private val transactionService: TransactionServ
                 origin,
                 includeDelegated,
                 toPageable(page, size, direction, "blockNumber", "_id"),
+                expanded,
             )
         )
     }
@@ -132,6 +133,7 @@ open class TransactionController(private val transactionService: TransactionServ
             transactionService.findAllDelegated(
                 delegator,
                 toPageable(page, size, direction, "blockNumber", "_id"),
+                expanded,
             )
         )
     }
@@ -161,6 +163,7 @@ open class TransactionController(private val transactionService: TransactionServ
             transactionService.findByContractAddress(
                 contractAddress,
                 toPageable(page, size, direction, "blockNumber", "_id"),
+                expanded,
             )
         )
 }

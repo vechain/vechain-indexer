@@ -24,7 +24,6 @@ class OpenApiActiveProfilesResolverTest {
                     "nfts",
                     "safe",
                     "stargate",
-                    "transactions",
                     "transfers",
                     "validator",
                     "validator-reward",

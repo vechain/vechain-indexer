@@ -8,9 +8,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.TestPropertySource
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.vechain.indexer.blocks.BlocksReadRepository
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 import strikt.assertions.isFalse
@@ -23,6 +25,9 @@ import strikt.assertions.isTrue
     properties = ["de.flapdoodle.mongodb.embedded.version=7.0.14", "postgres.enabled=false"]
 )
 class OpenApiDocumentationContractTest {
+
+    // The block and transaction controllers need a reader; the spec comes from annotations.
+    @MockitoBean private lateinit var postgresReadRepository: BlocksReadRepository
 
     @Autowired private lateinit var mockMvc: MockMvc
     @Autowired private lateinit var objectMapper: ObjectMapper

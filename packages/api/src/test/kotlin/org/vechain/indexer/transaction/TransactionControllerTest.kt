@@ -3,6 +3,7 @@ package org.vechain.indexer.transaction
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import io.mockk.verify
 import java.time.Instant
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -10,11 +11,14 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.SliceImpl
 import org.springframework.http.HttpHeaders
 import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.rest.CacheFor
 import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.MAX_CACHE_AGE_SECONDS
+import org.vechain.indexer.thor.Address
 
 @ExtendWith(MockKExtension::class)
 internal class TransactionControllerTest {
@@ -106,6 +110,26 @@ internal class TransactionControllerTest {
     fun `a transaction listing tolerates a stale minute, as account history does`() {
         assertEquals(CachePolicy.MINUTE, declaredCachePolicy("getTransactionsByOriginOrDelegator"))
         assertEquals(CachePolicy.MINUTE, declaredCachePolicy("getTransactionsByContract"))
+    }
+
+    @Test
+    fun `listings hand the expanded flag to the service`() {
+        val address = Address("0x0000000000000000000000000000000000000001")
+        val empty = SliceImpl<IndexedTransaction>(emptyList(), PageRequest.of(0, 20), false)
+        every { transactionService.findByOriginOrDelegator(address, true, any(), true) } returns
+            empty
+        every { transactionService.findAllDelegated(address, any(), false) } returns empty
+        every { transactionService.findByContractAddress(address, any(), true) } returns empty
+
+        controller.getTransactionsByOriginOrDelegator(address, true, true, null, null, null)
+        controller.getDelegatedTransactions(address, false, null, null, null)
+        controller.getTransactionsByContract(address, true, null, null, null)
+
+        verify(exactly = 1) {
+            transactionService.findByOriginOrDelegator(address, true, any(), true)
+        }
+        verify(exactly = 1) { transactionService.findAllDelegated(address, any(), false) }
+        verify(exactly = 1) { transactionService.findByContractAddress(address, any(), true) }
     }
 
     private fun declaredCachePolicy(method: String): CachePolicy? =

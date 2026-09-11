@@ -1690,11 +1690,257 @@
       ]
     },
     {
+      "id": 134,
+      "type": "row",
+      "title": "Postgres · Indexer",
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 48 },
+      "panels": [
+        {
+          "id": 135,
+          "type": "timeseries",
+          "title": "Pool size vs active",
+          "description": "hikaricp_connections vs hikaricp_connections_active for the Postgres pool. Sustained active ≈ size means the pool is saturated — bump postgres.pool.maximum-size or fix a slow query.",
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 41 },
+          "datasource": { "type": "prometheus", "uid": "amp" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (deployment, network) (hikaricp_connections{pool=\"postgres\", service=\"indexer\", deployment=~\"$deployment\", network=~\"$network\"})",
+              "legendFormat": "size · {{deployment}}/{{network}}"
+            },
+            {
+              "refId": "B",
+              "expr": "sum by (deployment, network) (hikaricp_connections_active{pool=\"postgres\", service=\"indexer\", deployment=~\"$deployment\", network=~\"$network\"})",
+              "legendFormat": "active · {{deployment}}/{{network}}"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short", "min": 0 } },
+          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+        },
+        {
+          "id": 136,
+          "type": "timeseries",
+          "title": "Threads waiting for a connection",
+          "description": "hikaricp_connections_pending — callers blocked on the pool. Anything > 0 sustained surfaces as latency.",
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 41 },
+          "datasource": { "type": "prometheus", "uid": "amp" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (deployment, network) (hikaricp_connections_pending{pool=\"postgres\", service=\"indexer\", deployment=~\"$deployment\", network=~\"$network\"})",
+              "legendFormat": "{{deployment}}/{{network}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "orange", "value": 1 },
+                  { "color": "red", "value": 10 }
+                ]
+              },
+              "custom": { "thresholdsStyle": { "mode": "dashed" } }
+            }
+          },
+          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+        },
+        {
+          "id": 137,
+          "type": "timeseries",
+          "title": "Connection timeouts",
+          "description": "rate(hikaricp_connections_timeout_total[5m]) — callers that gave up waiting for a connection. Should be zero.",
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 41 },
+          "datasource": { "type": "prometheus", "uid": "amp" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (deployment, network) (rate(hikaricp_connections_timeout_total{pool=\"postgres\", service=\"indexer\", deployment=~\"$deployment\", network=~\"$network\"}[5m]))",
+              "legendFormat": "{{deployment}}/{{network}}"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "ops", "min": 0 } },
+          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+        },
+        {
+          "id": 138,
+          "type": "timeseries",
+          "title": "Connection acquire — avg and max",
+          "description": "hikaricp_connections_acquire_seconds: time to get a connection from the pool. Grows before pending does.",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 49 },
+          "datasource": { "type": "prometheus", "uid": "amp" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (deployment, network) (rate(hikaricp_connections_acquire_seconds_sum{pool=\"postgres\", service=\"indexer\", deployment=~\"$deployment\", network=~\"$network\"}[5m])) / sum by (deployment, network) (rate(hikaricp_connections_acquire_seconds_count{pool=\"postgres\", service=\"indexer\", deployment=~\"$deployment\", network=~\"$network\"}[5m]))",
+              "legendFormat": "avg · {{deployment}}/{{network}}"
+            },
+            {
+              "refId": "B",
+              "expr": "max by (deployment, network) (max_over_time(hikaricp_connections_acquire_seconds_max{pool=\"postgres\", service=\"indexer\", deployment=~\"$deployment\", network=~\"$network\"}[5m]))",
+              "legendFormat": "max · {{deployment}}/{{network}}"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "s", "min": 0 } },
+          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+        },
+        {
+          "id": 139,
+          "type": "timeseries",
+          "title": "Connection usage — avg and max",
+          "description": "hikaricp_connections_usage_seconds: how long a connection is held, i.e. statement plus commit time.",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 49 },
+          "datasource": { "type": "prometheus", "uid": "amp" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (deployment, network) (rate(hikaricp_connections_usage_seconds_sum{pool=\"postgres\", service=\"indexer\", deployment=~\"$deployment\", network=~\"$network\"}[5m])) / sum by (deployment, network) (rate(hikaricp_connections_usage_seconds_count{pool=\"postgres\", service=\"indexer\", deployment=~\"$deployment\", network=~\"$network\"}[5m]))",
+              "legendFormat": "avg · {{deployment}}/{{network}}"
+            },
+            {
+              "refId": "B",
+              "expr": "max by (deployment, network) (max_over_time(hikaricp_connections_usage_seconds_max{pool=\"postgres\", service=\"indexer\", deployment=~\"$deployment\", network=~\"$network\"}[5m]))",
+              "legendFormat": "max · {{deployment}}/{{network}}"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "s", "min": 0 } },
+          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+        }
+      ]
+    },
+    {
+      "id": 140,
+      "type": "row",
+      "title": "Postgres · API",
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 49 },
+      "panels": [
+        {
+          "id": 141,
+          "type": "timeseries",
+          "title": "Pool size vs active",
+          "description": "hikaricp_connections vs hikaricp_connections_active for the Postgres pool. Sustained active ≈ size means the pool is saturated — bump postgres.pool.maximum-size or fix a slow query.",
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 42 },
+          "datasource": { "type": "prometheus", "uid": "amp" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (deployment, network) (hikaricp_connections{pool=\"postgres\", service=\"api\", deployment=~\"$deployment\", network=~\"$network\"})",
+              "legendFormat": "size · {{deployment}}/{{network}}"
+            },
+            {
+              "refId": "B",
+              "expr": "sum by (deployment, network) (hikaricp_connections_active{pool=\"postgres\", service=\"api\", deployment=~\"$deployment\", network=~\"$network\"})",
+              "legendFormat": "active · {{deployment}}/{{network}}"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short", "min": 0 } },
+          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+        },
+        {
+          "id": 142,
+          "type": "timeseries",
+          "title": "Threads waiting for a connection",
+          "description": "hikaricp_connections_pending — callers blocked on the pool. Anything > 0 sustained surfaces as latency.",
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 42 },
+          "datasource": { "type": "prometheus", "uid": "amp" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (deployment, network) (hikaricp_connections_pending{pool=\"postgres\", service=\"api\", deployment=~\"$deployment\", network=~\"$network\"})",
+              "legendFormat": "{{deployment}}/{{network}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "orange", "value": 1 },
+                  { "color": "red", "value": 10 }
+                ]
+              },
+              "custom": { "thresholdsStyle": { "mode": "dashed" } }
+            }
+          },
+          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+        },
+        {
+          "id": 143,
+          "type": "timeseries",
+          "title": "Connection timeouts",
+          "description": "rate(hikaricp_connections_timeout_total[5m]) — callers that gave up waiting for a connection. Should be zero.",
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 42 },
+          "datasource": { "type": "prometheus", "uid": "amp" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (deployment, network) (rate(hikaricp_connections_timeout_total{pool=\"postgres\", service=\"api\", deployment=~\"$deployment\", network=~\"$network\"}[5m]))",
+              "legendFormat": "{{deployment}}/{{network}}"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "ops", "min": 0 } },
+          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+        },
+        {
+          "id": 144,
+          "type": "timeseries",
+          "title": "Connection acquire — avg and max",
+          "description": "hikaricp_connections_acquire_seconds: time to get a connection from the pool. Grows before pending does.",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 50 },
+          "datasource": { "type": "prometheus", "uid": "amp" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (deployment, network) (rate(hikaricp_connections_acquire_seconds_sum{pool=\"postgres\", service=\"api\", deployment=~\"$deployment\", network=~\"$network\"}[5m])) / sum by (deployment, network) (rate(hikaricp_connections_acquire_seconds_count{pool=\"postgres\", service=\"api\", deployment=~\"$deployment\", network=~\"$network\"}[5m]))",
+              "legendFormat": "avg · {{deployment}}/{{network}}"
+            },
+            {
+              "refId": "B",
+              "expr": "max by (deployment, network) (max_over_time(hikaricp_connections_acquire_seconds_max{pool=\"postgres\", service=\"api\", deployment=~\"$deployment\", network=~\"$network\"}[5m]))",
+              "legendFormat": "max · {{deployment}}/{{network}}"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "s", "min": 0 } },
+          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+        },
+        {
+          "id": 145,
+          "type": "timeseries",
+          "title": "Connection usage — avg and max",
+          "description": "hikaricp_connections_usage_seconds: how long a connection is held, i.e. statement plus commit time.",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 50 },
+          "datasource": { "type": "prometheus", "uid": "amp" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (deployment, network) (rate(hikaricp_connections_usage_seconds_sum{pool=\"postgres\", service=\"api\", deployment=~\"$deployment\", network=~\"$network\"}[5m])) / sum by (deployment, network) (rate(hikaricp_connections_usage_seconds_count{pool=\"postgres\", service=\"api\", deployment=~\"$deployment\", network=~\"$network\"}[5m]))",
+              "legendFormat": "avg · {{deployment}}/{{network}}"
+            },
+            {
+              "refId": "B",
+              "expr": "max by (deployment, network) (max_over_time(hikaricp_connections_usage_seconds_max{pool=\"postgres\", service=\"api\", deployment=~\"$deployment\", network=~\"$network\"}[5m]))",
+              "legendFormat": "max · {{deployment}}/{{network}}"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "s", "min": 0 } },
+          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+        }
+      ]
+    },
+    {
       "id": 12,
       "type": "row",
       "title": "WAF request detail · Mainnet — Logs Insights, runs only while expanded",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 48 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 50 },
       "panels": [
         {
           "id": 120,
@@ -1811,7 +2057,7 @@
       "type": "row",
       "title": "WAF request detail · Testnet — Logs Insights, runs only while expanded",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 49 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 51 },
       "panels": [
         {
           "id": 130,

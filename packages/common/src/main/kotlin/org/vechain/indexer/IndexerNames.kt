@@ -82,16 +82,6 @@ object IndexerNames {
         const val COLLECTION = "b3tr_proposal_results"
     }
 
-    object TRANSACTION {
-        const val NAME = "TransactionIndexer"
-        const val COLLECTION = "transactions"
-    }
-
-    object TRANSACTION_COUNT {
-        const val NAME = "TransactionCountIndexer"
-        const val COLLECTION = "transaction_counts"
-    }
-
     object TRANSFER {
         const val NAME = "TransferIndexer"
         const val COLLECTION = "transfer_events"
