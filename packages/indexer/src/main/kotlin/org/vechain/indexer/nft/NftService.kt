@@ -15,7 +15,6 @@ import org.vechain.indexer.utils.buildNftId
 open class NftService(
     private val nftRepository: NftRepository,
     private val inlineVersioningProperties: InlineVersioningProperties,
-    private val blacklistLookup: NftBlacklistLookup,
     private val mongoTemplate: MongoTemplate,
 ) {
     @Transactional(rollbackFor = [Exception::class])
@@ -36,7 +35,6 @@ open class NftService(
     ): List<IndexedNft> {
         // Pre-index existing records for faster lookup
         val existingById = existing.associateBy { it.id }
-        val blacklisted = blacklistLookup.blacklisted(data.mapNotNull { it.address })
 
         // Group events by NFT ID, keeping only the latest event per NFT
         val latestEventsById =
@@ -65,7 +63,6 @@ open class NftService(
                 blockId = event.blockId,
                 blockNumber = event.blockNumber,
                 blockTimestamp = event.blockTimestamp,
-                isBlacklisted = contractAddress in blacklisted,
             )
         }
     }

@@ -133,7 +133,6 @@ object VeWorldAPIClient {
                     val laggards = tracked.filter {
                         (it["currentBlock"]?.toLongOrNull() ?: -1L) < thorHead
                     }
-                    val pendingBackfill = fetchPendingBlacklistBackfill()
                     if (laggards.isNotEmpty()) {
                         stableSince = null
                         lastError =
@@ -141,9 +140,6 @@ object VeWorldAPIClient {
                                 laggards.joinToString {
                                     "${it["indexerName"]}@${it["currentBlock"]}"
                                 }
-                    } else if (pendingBackfill > 0) {
-                        stableSince = null
-                        lastError = "NFT blacklist backfill still has $pendingBackfill task(s)"
                     } else {
                         val now = System.currentTimeMillis()
                         if (stableSince == null) stableSince = now
@@ -192,19 +188,6 @@ object VeWorldAPIClient {
         return res.body?.components?.get("indexer")?.details?.get("IndexersHealth")
             as? List<LinkedHashMap<String, String>>
             ?: throw Exception("Indexer health response missing IndexersHealth")
-    }
-
-    /** Flags for a collection blacklisted after its mints land via a background backfill. */
-    private fun fetchPendingBlacklistBackfill(): Long {
-        val res =
-            REST_TEMPLATE.exchange(
-                "$INDEXER_URL/actuator/health",
-                HttpMethod.GET,
-                null,
-                HealthCheckResponse::class.java,
-            )
-        val pending = res.body?.components?.get("nftBlacklistBackfill")?.details?.get("pending")
-        return (pending as? Number)?.toLong() ?: 0L
     }
 
     fun getNfts(
