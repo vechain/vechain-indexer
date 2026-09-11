@@ -158,6 +158,15 @@ module "ecs-lb-service-api" {
     start_delay = 120
   }
   additional_containers = local.observability_sidecar_enabled ? [module.observability_sidecar_api[each.key].container_definition] : []
+
+  # Resolved by ECS at task start, so the password stays out of the task definition.
+  sensitive_environment_variables = [
+    {
+      name      = "PG_PASSWORD"
+      valueFrom = aws_secretsmanager_secret.pg_api_password.arn
+    }
+  ]
+
   environment_variables = [
     {
       name  = "APPLICATION_NAME"
@@ -395,6 +404,14 @@ module "ecs-lb-service-api" {
       value = "admin"
     },
     {
+      name  = "PG_URL"
+      value = local.pg_url[each.key]
+    },
+    {
+      name  = "PG_USER"
+      value = "api"
+    },
+    {
       name  = "APP_LOGGER"
       value = "CloudWatch"
     },
@@ -517,8 +534,28 @@ module "ecs-backend-service" {
       value = "admin"
     },
     {
+      name  = "PG_URL"
+      value = local.pg_url[each.key]
+    },
+    {
+      name  = "PG_USER"
+      value = "indexer"
+    },
+    {
+      name  = "PG_PASSWORD"
+      value = aws_secretsmanager_secret_version.pg_indexer_password.secret_string
+    },
+    {
+      name  = "PG_API_PASSWORD"
+      value = aws_secretsmanager_secret_version.pg_api_password.secret_string
+    },
+    {
       name  = "APP_LOGGER"
       value = "CloudWatch"
+    },
+    {
+      name  = "INDEXER_START_BLOCK_BLOCKS"
+      value = each.value.indexer.start-block.blocks
     },
     {
       name  = "INDEXER_START_BLOCK_NFTS"
@@ -527,10 +564,6 @@ module "ecs-backend-service" {
     {
       name  = "INDEXER_START_BLOCK_NFT_BLACKLIST",
       value = each.value.indexer.start-block.nft-blacklist
-    },
-    {
-      name  = "INDEXER_START_BLOCK_TRANSACTIONS"
-      value = each.value.indexer.start-block.transactions
     },
     {
       name  = "INDEXER_START_BLOCK_TRANSFERS"
@@ -643,10 +676,6 @@ module "ecs-backend-service" {
     {
       name  = "INDEXER_START_BLOCK_SAFE_TX_PROPOSALS"
       value = each.value.indexer.start-block.safe-tx-proposals
-    },
-    {
-      name  = "INDEXER_START_BLOCK_BLOCKS"
-      value = each.value.indexer.start-block.blocks
     },
     {
       name  = "BLACKLIST_CONTRACT_ADDRESS"
@@ -837,6 +866,10 @@ module "ecs-backend-service" {
       value = each.value.api.cache.b3tr-richlist-total-holders.ttl-seconds
     },
     {
+      name  = "VERSION_BLOCKS"
+      value = each.value.indexer.version.blocks
+    },
+    {
       name  = "VERSION_NFTS"
       value = each.value.indexer.version.nfts
     },
@@ -847,14 +880,6 @@ module "ecs-backend-service" {
     {
       name  = "VERSION_FUNGIBLE_TOKEN_INTERACTIONS"
       value = each.value.indexer.version.fungible-token-interactions
-    },
-    {
-      name  = "VERSION_TRANSACTIONS"
-      value = each.value.indexer.version.transactions
-    },
-    {
-      name  = "VERSION_TRANSACTION_COUNT"
-      value = each.value.indexer.version.transaction-count
     },
     {
       name  = "VERSION_HISTORY"
@@ -1007,10 +1032,6 @@ module "ecs-backend-service" {
     {
       name  = "VERSION_VET_BALANCE"
       value = each.value.indexer.version.vet-balance
-    },
-    {
-      name  = "VERSION_BLOCKS"
-      value = each.value.indexer.version.blocks
     },
     {
       name  = "MIN_COMMENT_LEN"
