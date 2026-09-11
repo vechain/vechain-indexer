@@ -1,0 +1,32 @@
+services:
+  postgres:
+    hostname: vechain-postgres
+    image: postgres:16
+    command: [ "postgres", "-c", "synchronous_commit=off", "-c", "shared_buffers=512MB" ]
+    ports:
+      - "5432:5432"
+    restart: always
+    volumes:
+      - vechain-postgres-data:/var/lib/postgresql/data
+      - ./scripts/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    environment:
+      POSTGRES_DB: vechain
+      POSTGRES_USER: indexer
+      POSTGRES_PASSWORD: password
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U indexer -d vechain" ]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+    networks:
+      vechain-indexer-network:
+        aliases:
+          - vechain-postgres
+
+networks:
+  vechain-indexer-network:
+    external: true
+    name: vechain-indexer-network
+
+volumes:
+  vechain-postgres-data:
