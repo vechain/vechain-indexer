@@ -78,6 +78,12 @@ Connect for the various users with the following URIs:
 make db-all
 ```
 
+### Connecting to PostgreSQL
+
+The `chain` schema (blocks and transactions) lives in PostgreSQL. `make pg-up` starts it on
+`localhost:5432` as database `vechain`; roles `indexer` and `api`, both with password
+`password`. `make pg-psql` opens a shell, `make pg-clean` drops the data.
+
 ## Backup MongoDB
 You can back up the database by running the following command:
 

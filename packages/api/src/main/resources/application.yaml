@@ -45,6 +45,15 @@ spring:
   output:
     ansi:
       enabled: always
+  # PostgresConfig owns the chain DataSource; keep Boot's single-DataSource wiring out of the way.
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.JdbcClientAutoConfiguration
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+      - org.springframework.boot.autoconfigure.sql.init.SqlInitializationAutoConfiguration
 
 management:
   endpoints:
@@ -76,6 +85,14 @@ spring.data:
   mongodb:
     auto-index-creation: false
     uri: ${MONGO_URI:mongodb://api:password@localhost:27017/vechain?authSource=admin}
+
+# The indexer runs the migrations; the API only reads.
+postgres:
+  url: ${PG_URL:}
+  username: ${PG_USER:api}
+  password: ${PG_PASSWORD:password}
+  flyway:
+    enabled: false
 
 thor:
   url: ${THOR_URL:https://testnet.vechain.org}

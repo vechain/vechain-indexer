@@ -19,7 +19,9 @@ import strikt.assertions.isTrue
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles(resolver = OpenApiActiveProfilesResolver::class)
-@TestPropertySource(properties = ["de.flapdoodle.mongodb.embedded.version=7.0.14"])
+@TestPropertySource(
+    properties = ["de.flapdoodle.mongodb.embedded.version=7.0.14", "postgres.enabled=false"]
+)
 class OpenApiDocumentationContractTest {
 
     @Autowired private lateinit var mockMvc: MockMvc

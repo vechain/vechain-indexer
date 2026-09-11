@@ -149,6 +149,20 @@ db-keyfile-create: #@ Generate the keyfile for the database.
 	$(DB_MAKE_KEY)
 db-keyfile-remove: #@ Remove the keyfile for the database.
 	$(DB_REMOVE_KEY)
+
+# PostgreSQL
+PG_COMMAND=docker compose -f database/docker-compose-postgres.yaml
+PG_NETWORK=docker network inspect vechain-indexer-network >/dev/null 2>&1 || docker network create vechain-indexer-network
+
+pg-up: #@ Start PostgreSQL (Docker)
+	$(PG_NETWORK)
+	$(PG_COMMAND) up -d --wait
+pg-down: #@ Stop PostgreSQL (Docker)
+	$(PG_COMMAND) down
+pg-clean: #@ Remove PostgreSQL and its data (Docker)
+	$(PG_COMMAND) down -v --remove-orphans
+pg-psql: #@ Open psql against the local PostgreSQL as the indexer role.
+	docker exec -it $$($(PG_COMMAND) ps -q postgres) psql -U indexer -d vechain
 db-backup: #@ Backup MongoDB database using Docker (Compressed). Usage: make db-backup [BACKUP_DIR=/absolute/path/to/dir]
 	@case "$(BACKUP_DIR)" in /*) ;; *) echo "Error: BACKUP_DIR must be an absolute path. Got: $(BACKUP_DIR)"; exit 1;; esac
 	mkdir -p "$(BACKUP_DIR)"
