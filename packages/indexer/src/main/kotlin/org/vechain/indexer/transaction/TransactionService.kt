@@ -1,18 +1,15 @@
 package org.vechain.indexer.transaction
 
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.insert
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.DecodedEvent
 import org.vechain.indexer.thor.DecodedOutputs
 import org.vechain.indexer.thor.model.Block
 
-@Profile("transactions", "transaction")
+@Profile("blocks")
 @Service
-open class TransactionService(private val mongoTemplate: MongoTemplate) {
+open class TransactionService {
     open fun processBlock(block: Block, events: List<IndexedEvent>): List<IndexedTransaction> {
         if (block.transactions.isEmpty()) return emptyList()
 
@@ -66,10 +63,5 @@ open class TransactionService(private val mongoTemplate: MongoTemplate) {
                 decodedOutputs = decodedOutputs,
             )
         }
-    }
-
-    @Transactional(rollbackFor = [Exception::class])
-    open fun save(records: List<IndexedTransaction>) {
-        mongoTemplate.insert<IndexedTransaction>(records)
     }
 }

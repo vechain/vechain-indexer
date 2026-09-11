@@ -5,6 +5,10 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.accounts.AccountTotalsSeriesProcessor
+import org.vechain.indexer.blocks.BlockTree
+import org.vechain.indexer.blocks.BlockTreeService
+import org.vechain.indexer.blocks.BlocksProcessor
+import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.history.HistoryProcessor
 import org.vechain.indexer.transfer.TransferService
 
@@ -18,6 +22,18 @@ class ProcessorTransactionalAnnotationsTest {
     @Test
     fun `account totals series processor rollback keeps transactional semantics`() {
         assertRollbackIsTransactional(AccountTotalsSeriesProcessor::class.java)
+    }
+
+    @Test
+    fun `postgres processor rollback and service save name the postgres transaction manager`() {
+        val rollback =
+            BlocksProcessor::class.java.getDeclaredMethod("rollback", java.lang.Long.TYPE)
+        val save = BlockTreeService::class.java.getDeclaredMethod("save", BlockTree::class.java)
+        for (method in listOf(rollback, save)) {
+            val transactional = method.getAnnotation(Transactional::class.java)
+            assertTransactional(transactional)
+            assertEquals(PostgresConfig.TRANSACTION_MANAGER, transactional!!.transactionManager)
+        }
     }
 
     @Test

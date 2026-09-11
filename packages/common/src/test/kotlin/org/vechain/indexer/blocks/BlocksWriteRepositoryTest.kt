@@ -1,4 +1,4 @@
-package org.vechain.indexer.postgres
+package org.vechain.indexer.blocks
 
 import com.zaxxer.hikari.HikariDataSource
 import java.sql.DriverManager
@@ -13,23 +13,25 @@ import org.junit.jupiter.api.TestInstance
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.transaction.support.TransactionTemplate
 import org.testcontainers.containers.PostgreSQLContainer
+import org.vechain.indexer.blocks.BlocksFixtures.block
+import org.vechain.indexer.blocks.BlocksFixtures.decodedEvent
+import org.vechain.indexer.blocks.BlocksFixtures.rawEvent
+import org.vechain.indexer.blocks.BlocksFixtures.transaction
+import org.vechain.indexer.blocks.BlocksFixtures.transfer
 import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.config.postgres.PostgresProperties
-import org.vechain.indexer.postgres.PostgresFixtures.block
-import org.vechain.indexer.postgres.PostgresFixtures.decodedEvent
-import org.vechain.indexer.postgres.PostgresFixtures.rawEvent
-import org.vechain.indexer.postgres.PostgresFixtures.transaction
-import org.vechain.indexer.postgres.PostgresFixtures.transfer
+import org.vechain.indexer.postgres.PostgresApiRole
+import org.vechain.indexer.postgres.PostgresHex
 import org.vechain.indexer.thor.model.BlockIdentifier
 import org.vechain.indexer.transaction.IndexedTransaction
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class PostgresWriteRepositoryTest {
+class BlocksWriteRepositoryTest {
 
     private val postgres = PostgreSQLContainer("postgres:16")
     private lateinit var dataSource: HikariDataSource
     private lateinit var jdbc: JdbcTemplate
-    private lateinit var repository: PostgresWriteRepository
+    private lateinit var repository: BlocksWriteRepository
     private lateinit var properties: PostgresProperties
 
     @BeforeAll
@@ -46,7 +48,7 @@ class PostgresWriteRepositoryTest {
         dataSource = config.postgresDataSource(properties) as HikariDataSource
         config.postgresFlyway(dataSource).migrate()
         jdbc = JdbcTemplate(dataSource)
-        repository = PostgresWriteRepository(jdbc)
+        repository = BlocksWriteRepository(jdbc)
     }
 
     @AfterAll
@@ -92,7 +94,7 @@ class PostgresWriteRepositoryTest {
     fun `insert writes the block tree and the running totals`() {
         insertTwoBlocks()
 
-        assertEquals(BlockIdentifier(2, PostgresFixtures.hash(2)), repository.lastSynced())
+        assertEquals(BlockIdentifier(2, BlocksFixtures.hash(2)), repository.lastSynced())
         assertEquals(BlockTotals(3, 2, 1, 1), repository.newestTotals())
         assertEquals(2, count("block"))
         assertEquals(3, count("transaction"))
@@ -111,7 +113,7 @@ class PostgresWriteRepositoryTest {
                 jdbc
                     .query(
                         "SELECT * FROM transaction WHERE id = ?",
-                        { rs, _ -> PostgresRowMappers.transaction(rs) },
+                        { rs, _ -> BlocksRowMappers.transaction(rs) },
                         id,
                     )
                     .single()
@@ -119,27 +121,27 @@ class PostgresWriteRepositoryTest {
                 jdbc
                     .query(
                         "SELECT * FROM block WHERE number = ?",
-                        { rs, _ -> PostgresRowMappers.block(rs) },
+                        { rs, _ -> BlocksRowMappers.block(rs) },
                         row.blockNumber,
                     )
                     .single()
             val assembled =
-                PostgresRowMapping.assemble(
+                BlocksRowMapping.assemble(
                     row,
-                    PostgresRowMapping.BlockRef(PostgresHex.hex(block.id), block.timestamp),
+                    BlocksRowMapping.BlockRef(PostgresHex.hex(block.id), block.timestamp),
                     jdbc.query(
                         "SELECT * FROM clause WHERE tx_id = ?",
-                        { rs, _ -> PostgresRowMappers.clause(rs) },
+                        { rs, _ -> BlocksRowMappers.clause(rs) },
                         id,
                     ),
                     jdbc.query(
                         "SELECT * FROM event WHERE tx_id = ?",
-                        { rs, _ -> PostgresRowMappers.event(rs) },
+                        { rs, _ -> BlocksRowMappers.event(rs) },
                         id,
                     ),
                     jdbc.query(
                         "SELECT * FROM transfer WHERE tx_id = ?",
-                        { rs, _ -> PostgresRowMappers.transfer(rs) },
+                        { rs, _ -> BlocksRowMappers.transfer(rs) },
                         id,
                     ),
                 )
@@ -154,7 +156,7 @@ class PostgresWriteRepositoryTest {
             jdbc
                 .query(
                     "SELECT * FROM block WHERE number = 1",
-                    { rs, _ -> PostgresRowMappers.block(rs) },
+                    { rs, _ -> BlocksRowMappers.block(rs) },
                 )
                 .single()
         val ids =
@@ -163,7 +165,7 @@ class PostgresWriteRepositoryTest {
                 { rs, _ -> PostgresHex.hex(rs.getBytes(1)) },
             )
 
-        assertEquals(block(1, written.take(2)), PostgresRowMapping.assembleBlock(row, ids))
+        assertEquals(block(1, written.take(2)), BlocksRowMapping.assembleBlock(row, ids))
     }
 
     @Test

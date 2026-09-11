@@ -1,9 +1,9 @@
-package org.vechain.indexer.postgres
+package org.vechain.indexer.blocks
 
 import java.sql.ResultSet
 
 /** `ResultSet` → row, one per table, for readers that `SELECT *` from the Postgres tables. */
-object PostgresRowMappers {
+object BlocksRowMappers {
 
     fun block(rs: ResultSet): BlockRow =
         BlockRow(

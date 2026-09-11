@@ -9,6 +9,11 @@ dependencies {
     implementation("com.github.vechain:thor-devkit.java:v1.0.0")
     implementation("com.github.kittinunf.fuel:fuel:2.3.1")
     implementation("com.github.kittinunf.fuel:fuel-coroutines:2.3.1")
+
+    // Postgres-backed tests build the Postgres store by hand; common keeps these as implementation.
+    testImplementation("org.springframework.boot:spring-boot-starter-jdbc")
+    testImplementation("org.flywaydb:flyway-core")
+    testImplementation("org.testcontainers:postgresql")
 }
 
 tasks.getByName<BootJar>("bootJar") { enabled = true }

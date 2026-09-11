@@ -1,14 +1,13 @@
-package org.vechain.indexer.postgres
+package org.vechain.indexer.blocks
 
 import java.math.BigInteger
-import org.vechain.indexer.blocks.IndexedBlock
 import org.vechain.indexer.thor.DecodedEvent
 import org.vechain.indexer.thor.DecodedOutputs
 import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.thor.model.TxTransfer
 import org.vechain.indexer.transaction.IndexedTransaction
 
-object PostgresFixtures {
+object BlocksFixtures {
     fun address(n: Int) = "0x" + n.toString(16).padStart(40, '0')
 
     fun hash(n: Int) = "0x" + n.toString(16).padStart(64, '0')

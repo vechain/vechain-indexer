@@ -12,8 +12,6 @@ import org.vechain.indexer.thor.client.ThorClient
 @Configuration
 @Profile("blocks")
 open class BlocksConfig {
-    // includeFullBlock() is mandatory: IndexerFactory.build() only returns a BlockIndexer when
-    // includeFullBlock or dependsOn is set, and here the block header is the data.
     @Bean
     open fun blocksIndexer(
         thorClient: ThorClient,
@@ -25,8 +23,10 @@ open class BlocksConfig {
             .name(IndexerNames.BLOCKS.NAME)
             .thorClient(thorClient)
             .processor(processor)
-            .syncLoggerInterval(syncLoggerInterval)
+            .abis("abis")
             .startBlock(startBlock)
+            .syncLoggerInterval(syncLoggerInterval)
+            .excludeVetTransfers()
             .includeFullBlock()
             .build()
 }

@@ -1,6 +1,5 @@
-package org.vechain.indexer.postgres
+package org.vechain.indexer.blocks
 
-import org.vechain.indexer.blocks.IndexedBlock
 import org.vechain.indexer.postgres.PostgresHex.bytes
 import org.vechain.indexer.postgres.PostgresHex.bytesOrNull
 import org.vechain.indexer.postgres.PostgresHex.hex
@@ -9,6 +8,7 @@ import org.vechain.indexer.postgres.PostgresHex.minimalHex
 import org.vechain.indexer.postgres.PostgresHex.minimalHexOrNull
 import org.vechain.indexer.postgres.PostgresHex.quantity
 import org.vechain.indexer.postgres.PostgresHex.quantityOrNull
+import org.vechain.indexer.postgres.PostgresJson
 import org.vechain.indexer.thor.DecodedEvent
 import org.vechain.indexer.thor.DecodedOutputs
 import org.vechain.indexer.thor.model.Clause
@@ -16,7 +16,7 @@ import org.vechain.indexer.thor.model.TxTransfer
 import org.vechain.indexer.transaction.IndexedTransaction
 
 /** The API models to rows and back: `assemble(flatten(tx))` is `tx` again. */
-object PostgresRowMapping {
+object BlocksRowMapping {
 
     /** Block fields every transaction row is joined with at read time. */
     data class BlockRef(val blockId: String, val blockTimestamp: Long)

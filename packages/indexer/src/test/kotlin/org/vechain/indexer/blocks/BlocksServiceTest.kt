@@ -1,15 +1,11 @@
 package org.vechain.indexer.blocks
 
-import io.mockk.every
-import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.vechain.indexer.blocks.repository.BlockRepository
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.thor.model.Transaction
@@ -17,13 +13,11 @@ import org.vechain.indexer.thor.model.Transaction
 @ExtendWith(MockKExtension::class)
 class BlocksServiceTest {
 
-    @MockK(relaxed = true) lateinit var repository: BlockRepository
-
     private lateinit var service: BlocksService
 
     @BeforeEach
     fun setUp() {
-        service = BlocksService(repository)
+        service = BlocksService()
     }
 
     private fun transaction(id: String, clauses: Int = 0, paid: String = "0x1") =
@@ -96,7 +90,6 @@ class BlocksServiceTest {
         assertEquals(source.com, indexed.com)
         assertEquals(source.signer, indexed.signer)
         assertEquals(source.baseFeePerGas, indexed.baseFeePerGas)
-        assertEquals("100", indexed.id)
     }
 
     @Test
@@ -142,15 +135,5 @@ class BlocksServiceTest {
     @Test
     fun `processBlock leaves baseFeePerGas null for a pre-GALACTICA block`() {
         assertNull(service.processBlock(block(baseFeePerGas = null)).baseFeePerGas)
-    }
-
-    @Test
-    fun `save delegates to the repository`() {
-        val indexed = service.processBlock(block())
-        every { repository.save(indexed) } returns indexed
-
-        service.save(indexed)
-
-        verify(exactly = 1) { repository.save(indexed) }
     }
 }
