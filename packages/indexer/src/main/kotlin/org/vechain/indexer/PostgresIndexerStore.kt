@@ -2,6 +2,7 @@ package org.vechain.indexer
 
 import org.slf4j.LoggerFactory
 import org.vechain.indexer.config.CheckpointProperties
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.postgres.IndexerStateRepository
 import org.vechain.indexer.postgres.PostgresIndexerTables
 import org.vechain.indexer.thor.model.BlockIdentifier
@@ -15,6 +16,7 @@ open class PostgresIndexerStore(
     private val tables: PostgresIndexerTables,
     private val state: IndexerStateRepository,
     private val checkpointProperties: CheckpointProperties,
+    private val horizon: InlineVersioningProperties = InlineVersioningProperties(),
 ) : IndexerStore {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -22,6 +24,7 @@ open class PostgresIndexerStore(
     // Set after each processed entry; read by the shutdown thread, hence @Volatile.
     @Volatile private var lastObserved: BlockIdentifier? = null
     private var lastSavedNanos: Long? = null
+    private var lastPrunedBucket: Long = -1
 
     /** False for a schema whose newest row is the resume point, such as `blocks`. */
     protected open val usesCheckpoint: Boolean = true
@@ -38,6 +41,7 @@ open class PostgresIndexerStore(
     /** Throttled by `indexer.checkpoint.save-interval-seconds`; failures only log. */
     open fun onProcessed(latest: BlockIdentifier) {
         lastObserved = latest
+        pruneIfDue(latest.number)
         if (!usesCheckpoint) return
         val now = System.nanoTime()
         val interval = checkpointProperties.saveIntervalSeconds * 1_000_000_000L
@@ -47,6 +51,18 @@ open class PostgresIndexerStore(
             lastSavedNanos = now
         } catch (e: Exception) {
             logger.warn("Failed to save checkpoint for {} at block {}", schema, latest.number, e)
+        }
+    }
+
+    // Outside the block transaction; the horizon is `indexer.inline-versioning.block-window`.
+    private fun pruneIfDue(blockNumber: Long) {
+        val bucket = blockNumber / PRUNE_EVERY_BLOCKS
+        if (bucket <= lastPrunedBucket) return
+        lastPrunedBucket = bucket
+        try {
+            tables.prune(blockNumber - horizon.blockWindow)
+        } catch (e: Exception) {
+            logger.warn("Failed to prune {} below block {}", schema, blockNumber, e)
         }
     }
 
@@ -80,5 +96,9 @@ open class PostgresIndexerStore(
                 state.resync(schema, version, tables)
             }
         }
+    }
+
+    companion object {
+        const val PRUNE_EVERY_BLOCKS = 1_000L
     }
 }
