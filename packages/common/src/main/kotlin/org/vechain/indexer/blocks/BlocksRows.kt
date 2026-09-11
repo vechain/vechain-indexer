@@ -1,4 +1,4 @@
-package org.vechain.indexer.postgres
+package org.vechain.indexer.blocks
 
 import java.math.BigDecimal
 import org.vechain.indexer.transaction.IndexedTransaction

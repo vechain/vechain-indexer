@@ -1,6 +1,5 @@
-package org.vechain.indexer.postgres
+package org.vechain.indexer.blocks
 
-import io.mockk.mockk
 import java.math.BigInteger
 import kotlin.reflect.full.memberProperties
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -9,11 +8,11 @@ import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.DynamicTest.dynamicTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestFactory
-import org.vechain.indexer.blocks.BlocksService
+import org.vechain.indexer.blocks.BlocksRowMapping.BlockRef
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.IndexedEventsFixtures
-import org.vechain.indexer.postgres.PostgresRowMapping.BlockRef
+import org.vechain.indexer.postgres.PostgresJson
 import org.vechain.indexer.thor.DecodedEvent
 import org.vechain.indexer.thor.DecodedOutputs
 import org.vechain.indexer.thor.model.Block
@@ -21,10 +20,10 @@ import org.vechain.indexer.transaction.IndexedTransaction
 import org.vechain.indexer.transaction.TransactionService
 
 /** `assemble(flatten(tx)) == tx` over every block fixture, decoded the way the indexer does. */
-class PostgresRowsRoundTripTest {
+class BlocksRowsRoundTripTest {
 
-    private val blocks = BlocksService(mockk())
-    private val transactions = TransactionService(mockk())
+    private val blocks = BlocksService()
+    private val transactions = TransactionService()
 
     private val decodedEvents =
         mapOf(
@@ -47,10 +46,10 @@ class PostgresRowsRoundTripTest {
                 val indexedBlock = blocks.processBlock(block)
                 val txs = transactions.processBlock(block, events)
 
-                val blockRow = PostgresRowMapping.flattenBlock(indexedBlock, BlockTotals.ZERO)
+                val blockRow = BlocksRowMapping.flattenBlock(indexedBlock, BlockTotals.ZERO)
                 assertEquals(
                     indexedBlock,
-                    PostgresRowMapping.assembleBlock(blockRow, txs.map { it.id }),
+                    BlocksRowMapping.assembleBlock(blockRow, txs.map { it.id }),
                 )
 
                 txs.forEach { tx -> assertEquals(normalise(tx), roundTrip(tx)) }
@@ -94,8 +93,8 @@ class PostgresRowsRoundTripTest {
     }
 
     private fun roundTrip(tx: IndexedTransaction): IndexedTransaction {
-        val rows = PostgresRowMapping.flatten(tx)
-        return PostgresRowMapping.assemble(
+        val rows = BlocksRowMapping.flatten(tx)
+        return BlocksRowMapping.assemble(
             rows.transaction,
             BlockRef(tx.blockId, tx.blockTimestamp),
             rows.clauses,

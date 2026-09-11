@@ -3,13 +3,12 @@ package org.vechain.indexer.blocks
 import java.math.BigInteger
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
-import org.vechain.indexer.blocks.repository.BlockRepository
 import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.thor.model.Block
 
 @Profile("blocks")
 @Service
-open class BlocksService(private val repository: BlockRepository) {
+open class BlocksService {
 
     /**
      * Projects a block header onto [IndexedBlock]. `isTrunk` and `isFinalized` are dropped: both
@@ -44,9 +43,4 @@ open class BlocksService(private val repository: BlockRepository) {
                 total + HexUtils.toBigInteger(tx.paid)
             }
         )
-
-    // No @Transactional needed: single-document writes are always atomic in MongoDB.
-    open fun save(block: IndexedBlock) {
-        repository.save(block)
-    }
 }

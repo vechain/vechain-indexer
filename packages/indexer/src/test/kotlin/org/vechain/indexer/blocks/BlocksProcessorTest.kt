@@ -1,65 +1,34 @@
 package org.vechain.indexer.blocks
 
+import io.mockk.Runs
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
+import io.mockk.verifyOrder
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
-import org.vechain.indexer.blocks.repository.BlockRepository
-import org.vechain.indexer.checkpoint.CheckpointService
-import org.vechain.indexer.config.metrics.ProcessorMetrics
-import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.fixtures.BlockFixtures
+import org.vechain.indexer.thor.model.BlockIdentifier
 
 class BlocksProcessorTest {
 
-    private val repository = mockk<BlockRepository>(relaxed = true)
-    private val service = mockk<BlocksService>(relaxed = true)
-    private val checkpointService = mockk<CheckpointService>(relaxed = true)
-    private val processorMetrics = mockk<ProcessorMetrics>(relaxed = true)
-
-    private val processor =
-        BlocksProcessor(repository, service, checkpointService, processorMetrics)
-
-    private fun block(number: Long) =
-        Block(
-            number = number,
-            id = "0xblock-$number",
-            size = 361,
-            parentID = "0xblock-${number - 1}",
-            timestamp = 1_700_000_000,
-            gasLimit = 40_000_000,
-            beneficiary = "0xbeneficiary",
-            gasUsed = 0,
-            totalScore = 1,
-            txsRoot = "0xtxsRoot",
-            txsFeatures = 1,
-            stateRoot = "0xstateRoot",
-            receiptsRoot = "0xreceiptsRoot",
-            com = true,
-            signer = "0xsigner",
-            isTrunk = true,
-            isFinalized = false,
-        )
+    private val service = mockk<BlockTreeService>(relaxed = true)
+    private val repository = mockk<BlocksWriteRepository>(relaxed = true)
+    private val processor = BlocksProcessor(service, repository, mockk(relaxed = true))
 
     @Test
-    fun `rollback deletes from the reorg block forward and rewinds the checkpoint`() {
-        processor.rollback(500L)
+    fun `processEntry projects the block and saves it`() = runBlocking {
+        val block = BlockFixtures.BLOCK_MULTIPLE_TXS
+        val projected = mockk<BlockTree>()
+        every { service.processBlock(block, emptyList()) } returns projected
 
-        verify(exactly = 1) { repository.deleteAllByBlockNumberGreaterThanEqual(500L) }
-        verify(exactly = 1) { checkpointService.saveCheckpoint("blocks", 499L) }
-    }
-
-    @Test
-    fun `processEntry projects and saves the block`() = runBlocking {
-        val source = block(100L)
-        val projected = BlocksService(mockk(relaxed = true)).processBlock(source)
-        every { service.processBlock(source) } returns projected
-
-        processor.processEntry(
-            IndexingResult.BlockResult(source, emptyList(), emptyList(), Status.SYNCING)
+        processor.process(
+            IndexingResult.BlockResult(block, emptyList(), emptyList(), Status.SYNCING)
         )
 
         verify(exactly = 1) { service.save(projected) }
@@ -67,10 +36,35 @@ class BlocksProcessorTest {
 
     @Test
     fun `processEntry rejects a log result`() {
-        assertThrows(IllegalArgumentException::class.java) {
+        assertThrows<IllegalArgumentException> {
             runBlocking {
-                processor.processEntry(IndexingResult.LogResult(1L, emptyList(), Status.SYNCING))
+                processor.process(IndexingResult.LogResult(1L, emptyList(), Status.SYNCING))
             }
         }
+    }
+
+    @Test
+    fun `resume comes from the newest block row`() {
+        every { repository.lastSynced() } returns BlockIdentifier(42L, "0x2a")
+
+        assertEquals(BlockIdentifier(42L, "0x2a"), processor.getLastSyncedBlock())
+    }
+
+    @Test
+    fun `rollback clears the totals cache before deleting forward of the block`() {
+        every { service.resetCache() } just Runs
+
+        processor.rollback(500L)
+
+        verifyOrder {
+            service.resetCache()
+            repository.rollbackFrom(500L)
+        }
+    }
+
+    @Test
+    fun `bootstrap runs the version check`() {
+        processor.bootstrap()
+        verify(exactly = 1) { service.ensureVersion() }
     }
 }

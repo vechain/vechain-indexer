@@ -1,17 +1,8 @@
 package org.vechain.indexer
 
-import io.mockk.Runs
-import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
-import io.mockk.mockkObject
-import io.mockk.unmockkObject
 import io.mockk.verify
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.explorer.BlockUsageProcessor
@@ -32,9 +23,6 @@ import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlockService
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockProcessor
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockRepository
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockService
-import org.vechain.indexer.transaction.TransactionCountSummaryRepository
-import org.vechain.indexer.transaction.count.TransactionCountProcessor
-import org.vechain.indexer.transaction.count.TransactionCountService
 
 /**
  * Each cache-bearing processor must invalidate its service's in-memory cache when rollback is
@@ -116,52 +104,5 @@ class RollbackResetsCacheTest {
         processor.rollback(100)
 
         verify(exactly = 1) { service.resetCache() }
-    }
-
-    /**
-     * TransactionCountProcessor extends StatefulMongoProcessor and overrides rollback() directly
-     * (rather than resetProcessingState()), so the parent rollback delegates to
-     * InlineVersionService — stubbed here to keep the test hermetic.
-     */
-    @Nested
-    inner class TransactionCount {
-
-        private val mongoTemplate = mockk<MongoTemplate>(relaxed = true)
-        private val repository = mockk<TransactionCountSummaryRepository>(relaxed = true)
-        private val service = mockk<TransactionCountService>(relaxed = true)
-
-        @BeforeEach
-        fun setUp() {
-            mockkObject(InlineVersionService)
-            every {
-                InlineVersionService.rollback(
-                    IndexerNames.TRANSACTION_COUNT.COLLECTION,
-                    100,
-                    mongoTemplate,
-                    1,
-                )
-            } just Runs
-        }
-
-        @AfterEach
-        fun tearDown() {
-            unmockkObject(InlineVersionService)
-        }
-
-        @Test
-        fun `rollback resets service cache`() {
-            val processor =
-                TransactionCountProcessor(
-                    repository = repository,
-                    mongoTemplate = mongoTemplate,
-                    service = service,
-                    checkpointService = checkpointService,
-                    processorMetrics = processorMetrics,
-                )
-
-            processor.rollback(100)
-
-            verify(exactly = 1) { service.resetCache() }
-        }
     }
 }

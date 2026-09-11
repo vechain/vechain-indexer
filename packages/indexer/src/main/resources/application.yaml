@@ -7,7 +7,7 @@ spring:
   application:
     name: vechain-indexer
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:indexer,nfts,transactions,transfers,history,stargate,vevote-results,vevote-historic-proposals,b3tr,explorer,accounts,safe,blocks}
+    active: ${SPRING_PROFILES_ACTIVE:indexer,nfts,blocks,transfers,history,stargate,vevote-results,vevote-historic-proposals,b3tr,explorer,accounts,safe}
     group:
       validator: [delegation]
       delegation: [validator]
@@ -144,7 +144,6 @@ indexer:
     blocks: ${INDEXER_START_BLOCK_BLOCKS:0}
     nfts: ${INDEXER_START_BLOCK_NFTS:0}
     nft-blacklist: ${INDEXER_START_BLOCK_NFT_BLACKLIST:0}
-    transactions: ${INDEXER_START_BLOCK_TRANSACTIONS:0}
     transfers: ${INDEXER_START_BLOCK_TRANSFERS:0}
     history: ${INDEXER_START_BLOCK_HISTORY:0}
     vevote: ${INDEXER_START_BLOCK_VEVOTE:0}
@@ -199,8 +198,6 @@ indexer:
     nfts: ${VERSION_NFTS:1}
     transfers: ${VERSION_TRANSFERS:1}
     fungible-token-interactions: ${VERSION_FUNGIBLE_TOKEN_INTERACTIONS:1}
-    transactions: ${VERSION_TRANSACTIONS:1}
-    transaction-count: ${VERSION_TRANSACTION_COUNT:1}
     history: ${VERSION_HISTORY:1}
     nft-blacklist: ${VERSION_NFT_BLACKLIST:1}
     vevote-comments: ${VERSION_VEVOTE_COMMENTS:1}

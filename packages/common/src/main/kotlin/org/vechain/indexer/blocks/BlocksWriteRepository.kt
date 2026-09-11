@@ -1,4 +1,4 @@
-package org.vechain.indexer.postgres
+package org.vechain.indexer.blocks
 
 import java.sql.PreparedStatement
 import java.sql.Types
@@ -6,16 +6,16 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.blocks.IndexedBlock
 import org.vechain.indexer.config.postgres.ConditionalOnPostgres
 import org.vechain.indexer.config.postgres.PostgresConfig
+import org.vechain.indexer.postgres.PostgresHex
 import org.vechain.indexer.thor.model.BlockIdentifier
 import org.vechain.indexer.transaction.IndexedTransaction
 
 /** One transaction per block; rollback cascades from the block table; resync truncates. */
 @Repository
 @ConditionalOnPostgres
-open class PostgresWriteRepository(
+open class BlocksWriteRepository(
     @Qualifier("postgresJdbcTemplate") private val jdbc: JdbcTemplate
 ) {
 
@@ -33,7 +33,7 @@ open class PostgresWriteRepository(
                 "SELECT total_transactions, total_clauses, total_reverted_transactions, " +
                     "total_reverted_clauses FROM block ORDER BY number DESC LIMIT 1"
             ) { rs, _ ->
-                PostgresRowMappers.totals(rs)
+                BlocksRowMappers.totals(rs)
             }
             .firstOrNull()
 
@@ -46,8 +46,8 @@ open class PostgresWriteRepository(
         transactions: List<IndexedTransaction>,
         totals: BlockTotals,
     ) {
-        insertBlock(PostgresRowMapping.flattenBlock(block, totals))
-        val rows = transactions.map(PostgresRowMapping::flatten)
+        insertBlock(BlocksRowMapping.flattenBlock(block, totals))
+        val rows = transactions.map(BlocksRowMapping::flatten)
         insertTransactions(rows.map { it.transaction })
         insertClauses(rows.flatMap { it.clauses })
         insertEvents(rows.flatMap { it.events })
@@ -225,6 +225,6 @@ open class PostgresWriteRepository(
     }
 
     companion object {
-        const val NAME = "postgres"
+        const val NAME = "blocks"
     }
 }
