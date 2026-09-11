@@ -155,3 +155,96 @@ resource "aws_cloudwatch_metric_alarm" "alb_target_latency" {
   alarm_actions = local.alerts_topic_arns
   ok_actions    = local.alerts_topic_arns
 }
+
+# RDS
+
+locals {
+  alarm_pg = local.alarms_enabled ? { for net in keys(local.pg_nets) : net => aws_db_instance.postgres[net].identifier } : {}
+
+  alarm_pg_headers = {
+    for net in keys(local.env.enabled_nets) :
+    net => "[${local.observability_env}/${local.observability_deployment}/${local.network_label[net]}] postgres"
+  }
+}
+
+# 10% of the initial size: the volume autoscales, so this fires only when growth has outrun it.
+resource "aws_cloudwatch_metric_alarm" "pg_free_storage" {
+  for_each = local.alarm_pg
+
+  alarm_name        = "${local.alarm_name_prefix}-${each.key}-pg-free-storage"
+  alarm_description = "${local.alarm_pg_headers[each.key]}: Free storage low — under 10% of the initial volume; check max_allocated_storage."
+
+  namespace           = "AWS/RDS"
+  metric_name         = "FreeStorageSpace"
+  dimensions          = { DBInstanceIdentifier = each.value }
+  statistic           = "Minimum"
+  period              = 300
+  evaluation_periods  = 2
+  comparison_operator = "LessThanThreshold"
+  threshold           = local.pg_nets[each.key].allocated_storage_gb * 0.1 * 1073741824
+  treat_missing_data  = "notBreaching"
+
+  alarm_actions = local.alerts_topic_arns
+  ok_actions    = local.alerts_topic_arns
+}
+
+resource "aws_cloudwatch_metric_alarm" "pg_cpu" {
+  for_each = local.alarm_pg
+
+  alarm_name        = "${local.alarm_name_prefix}-${each.key}-pg-cpu"
+  alarm_description = "${local.alarm_pg_headers[each.key]}: CPU above 85% for 15 minutes — a backfill or a query plan has gone wrong."
+
+  namespace           = "AWS/RDS"
+  metric_name         = "CPUUtilization"
+  dimensions          = { DBInstanceIdentifier = each.value }
+  statistic           = "Average"
+  period              = 300
+  evaluation_periods  = 3
+  comparison_operator = "GreaterThanThreshold"
+  threshold           = 85
+  treat_missing_data  = "notBreaching"
+
+  alarm_actions = local.alerts_topic_arns
+  ok_actions    = local.alerts_topic_arns
+}
+
+resource "aws_cloudwatch_metric_alarm" "pg_freeable_memory" {
+  for_each = local.alarm_pg
+
+  alarm_name        = "${local.alarm_name_prefix}-${each.key}-pg-memory"
+  alarm_description = "${local.alarm_pg_headers[each.key]}: Freeable memory under 1 GiB — the working set no longer fits; expect I/O to climb."
+
+  namespace           = "AWS/RDS"
+  metric_name         = "FreeableMemory"
+  dimensions          = { DBInstanceIdentifier = each.value }
+  statistic           = "Minimum"
+  period              = 300
+  evaluation_periods  = 3
+  comparison_operator = "LessThanThreshold"
+  threshold           = 1073741824
+  treat_missing_data  = "notBreaching"
+
+  alarm_actions = local.alerts_topic_arns
+  ok_actions    = local.alerts_topic_arns
+}
+
+# Both services' Hikari pools together open well under 100 connections; more means a leak.
+resource "aws_cloudwatch_metric_alarm" "pg_connections" {
+  for_each = local.alarm_pg
+
+  alarm_name        = "${local.alarm_name_prefix}-${each.key}-pg-connections"
+  alarm_description = "${local.alarm_pg_headers[each.key]}: Too many connections — above 100, more than the indexer and API pools can open."
+
+  namespace           = "AWS/RDS"
+  metric_name         = "DatabaseConnections"
+  dimensions          = { DBInstanceIdentifier = each.value }
+  statistic           = "Maximum"
+  period              = 300
+  evaluation_periods  = 2
+  comparison_operator = "GreaterThanThreshold"
+  threshold           = 100
+  treat_missing_data  = "notBreaching"
+
+  alarm_actions = local.alerts_topic_arns
+  ok_actions    = local.alerts_topic_arns
+}
