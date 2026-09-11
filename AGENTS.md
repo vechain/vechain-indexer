@@ -53,9 +53,6 @@ Keep local defaults at `1`: do not bump `indexer.version.<key>` fallback values 
 
 More detailed templates and copy/paste snippets live in `notes/indexer-api-playbook.md`.
 
-### NFT Blacklist Flags Are Backfilled Off the Block Path
-`nft_blacklist` (one document per collection, owned by `NftBlacklistIndexer`) is the source of truth. Row writers take `isBlacklisted` from `NftBlacklistLookup`, read once per block, and reads keep filtering on the flag. A state change enqueues an `nft_blacklist_backfill` task; `NftBlacklistBackfillService` flips one bounded batch per scheduler tick (`indexer.blacklist.backfill.*`), walking the `contractAddress, tokenId` index, so a collection with millions of rows never runs as one `updateMulti` inside an indexer. To force a re-scan of a collection, upsert a task document with the target flag and no cursors.
-
 ## Postgres Migrations Are Metadata-Only
 
 Flyway runs on the indexer's startup path, before the web server answers the container's liveness check, and the task is killed if that takes more than a few minutes. A migration must therefore finish in milliseconds regardless of table size: drop and re-add a column, add a nullable column, create an empty table. Never rewrite a populated table with `ALTER COLUMN ... TYPE`. When a column's contents must change shape, drop and re-add it and bump `indexer.version.<key>` on both colours and both nets so the resync repopulates it.
