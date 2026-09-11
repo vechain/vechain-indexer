@@ -12,6 +12,8 @@ import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.history.HistoryProcessor
 import org.vechain.indexer.nft.NftBlacklistProcessor
 import org.vechain.indexer.nft.NftBlacklistService
+import org.vechain.indexer.nft.NftProcessor
+import org.vechain.indexer.nft.NftService
 import org.vechain.indexer.postgres.IndexerStateRepository
 import org.vechain.indexer.postgres.PostgresIndexerTables
 import org.vechain.indexer.transfer.TransferService
@@ -36,8 +38,15 @@ class ProcessorTransactionalAnnotationsTest {
             listOf(
                 BlockTreeService::class.java.getDeclaredMethod("save", BlockTree::class.java),
                 NftBlacklistService::class.java.getDeclaredMethod("save", List::class.java),
+                NftService::class.java.getDeclaredMethod("save", List::class.java),
             )
-        for (processor in listOf(BlocksProcessor::class.java, NftBlacklistProcessor::class.java)) {
+        val processors =
+            listOf(
+                BlocksProcessor::class.java,
+                NftBlacklistProcessor::class.java,
+                NftProcessor::class.java,
+            )
+        for (processor in processors) {
             assertEquals(PostgresProcessor::class.java, processor.superclass)
         }
         for (method in listOf(rollback) + saves) {
