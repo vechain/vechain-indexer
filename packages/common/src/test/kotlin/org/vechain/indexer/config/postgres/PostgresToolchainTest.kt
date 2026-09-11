@@ -24,7 +24,7 @@ class PostgresToolchainTest {
     fun start() {
         postgres.start()
         dataSource =
-            config.chainDataSource(
+            config.postgresDataSource(
                 PostgresProperties(
                     url = postgres.jdbcUrl,
                     username = postgres.username,
@@ -40,10 +40,10 @@ class PostgresToolchainTest {
     }
 
     private fun jdbcClient() =
-        config.chainJdbcClient(config.chainJdbcTemplate(dataSource, flywayProvider()))
+        config.postgresJdbcClient(config.postgresJdbcTemplate(dataSource, flywayProvider()))
 
     private fun flywayProvider(): ObjectProvider<org.flywaydb.core.Flyway> {
-        val flyway = config.chainFlyway(dataSource)
+        val flyway = config.postgresFlyway(dataSource)
         flyway.migrate()
         return object : ObjectProvider<org.flywaydb.core.Flyway> {
             override fun getObject(vararg args: Any?) = flyway
@@ -86,7 +86,7 @@ class PostgresToolchainTest {
     }
 
     @Test
-    fun `the transaction manager binds the chain data source`() {
-        assertEquals(dataSource, config.chainTransactionManager(dataSource).dataSource)
+    fun `the transaction manager binds the postgres data source`() {
+        assertEquals(dataSource, config.postgresTransactionManager(dataSource).dataSource)
     }
 }

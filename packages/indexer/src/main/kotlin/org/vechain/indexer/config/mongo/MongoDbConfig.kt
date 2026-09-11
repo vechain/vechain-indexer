@@ -22,7 +22,7 @@ open class MongoDbConfig {
         converter: MappingMongoConverter,
     ): MongoTemplate = FilteringMongoTemplate(dbFactory, converter)
 
-    // Primary: the chain store adds a second manager, and unqualified @Transactional means Mongo.
+    // Primary: Postgres adds a second manager; unqualified @Transactional stays Mongo.
     @Primary
     @Bean("mongoTransactionManager")
     open fun mongoTransactionManager(mongoTemplate: MongoTemplate): MongoTransactionManager =

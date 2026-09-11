@@ -45,7 +45,7 @@ spring:
   output:
     ansi:
       enabled: always
-  # PostgresConfig owns the chain DataSource; keep Boot's single-DataSource wiring out of the way.
+  # PostgresConfig owns the Postgres DataSource; keep Boot's single-DataSource wiring out of the way.
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
