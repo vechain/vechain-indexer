@@ -1,6 +1,6 @@
 package org.vechain.indexer.nft
 
-import io.mockk.mockk
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -12,6 +12,7 @@ import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
 import org.vechain.indexer.config.CheckpointProperties
 import org.vechain.indexer.config.InlineVersioningProperties
+import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures
 import org.vechain.indexer.postgres.IndexerStateRepository
@@ -45,7 +46,8 @@ class NftBlacklistProcessorIntegrationTest {
                 IndexerStateRepository(database.jdbc),
                 CheckpointProperties().apply { saveIntervalSeconds = 0 },
                 InlineVersioningProperties(),
-                mockk(relaxed = true),
+                // A real registry: a recording mock keeps one call per block in a batch's gap.
+                ProcessorMetrics(SimpleMeterRegistry()),
                 version = 1,
             )
         processor.bootstrap()

@@ -1,7 +1,6 @@
 package org.vechain.indexer.nft
 
 import io.mockk.mockk
-import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DynamicTest
@@ -12,8 +11,7 @@ import org.vechain.indexer.fixtures.IndexedEventsFixtures
 /** `assemble(flatten(nft)) == nft` over every NFT fixture, projected the way the indexer does. */
 class NftRowsRoundTripTest {
 
-    private val service =
-        NftService(mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true))
+    private val service = NftService(mockk(relaxed = true))
 
     private val fixtures =
         mapOf(
@@ -26,7 +24,7 @@ class NftRowsRoundTripTest {
     fun `every fixture survives flatten and assemble`(): List<DynamicTest> =
         fixtures.map { (name, events) ->
             dynamicTest(name) {
-                val nfts = runBlocking { service.parseRecords(events, emptyList()) }
+                val nfts = service.processBlock(events)
                 assertTrue(nfts.isNotEmpty())
                 nfts.forEach { assertEquals(it, NftRowMapping.assemble(NftRowMapping.flatten(it))) }
             }

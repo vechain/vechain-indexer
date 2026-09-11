@@ -1,72 +1,42 @@
 package org.vechain.indexer.nft
 
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.config.InlineVersioningProperties
+import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.saveVersionedDocuments
+import org.vechain.indexer.utils.EventUtils.groupByBlock
 import org.vechain.indexer.utils.ParamUtils.getAsString
 import org.vechain.indexer.utils.buildNftId
 
+/** Projects `Transfer` events onto one ownership state per (token, block). */
 @Profile("nfts")
 @Service
-open class NftService(
-    private val nftRepository: NftRepository,
-    private val inlineVersioningProperties: InlineVersioningProperties,
-    private val mongoTemplate: MongoTemplate,
-) {
-    @Transactional(rollbackFor = [Exception::class])
-    open fun save(updated: List<IndexedNft>, existing: List<IndexedNft>) {
-        saveVersionedDocuments(
-            updated,
-            existing,
-            mongoTemplate,
-            inlineVersioningProperties.blockWindow,
-            inlineVersioningProperties.maxVersions,
-            inlineVersioningProperties.minVersions,
-        )
-    }
+open class NftService(private val repository: NftWriteRepository) {
 
-    open suspend fun parseRecords(
-        data: List<IndexedEvent>,
-        existing: List<IndexedNft>,
-    ): List<IndexedNft> {
-        // Pre-index existing records for faster lookup
-        val existingById = existing.associateBy { it.id }
-
-        // Group events by NFT ID, keeping only the latest event per NFT
-        val latestEventsById =
-            data
-                .map { event ->
-                    val nftId = buildNftId(event)
-                    nftId to event
-                }
-                .groupingBy { it.first }
-                .reduce { _, acc, e ->
-                    if (e.second.blockNumber > acc.second.blockNumber) e else acc
-                }
-                .mapValues { it.value.second }
-
-        return latestEventsById.map { (nftId, event) ->
-            val version = existingById[nftId]?.version?.plus(1) ?: 1
-            val contractAddress =
-                event.address ?: error("No contract address in event ${event.txId}")
-            IndexedNft(
-                id = nftId,
-                version = version,
-                owner = event.params.getAsString("to")!!,
-                contractAddress = contractAddress,
-                tokenId = event.params.getAsString("tokenId")!!,
-                txId = event.txId,
-                blockId = event.blockId,
-                blockNumber = event.blockNumber,
-                blockTimestamp = event.blockTimestamp,
-            )
+    /** The last transfer of a token within a block decides its owner at that block. */
+    open fun processBlock(events: List<IndexedEvent>): List<IndexedNft> =
+        groupByBlock(events).flatMap { (_, blockEvents) ->
+            blockEvents.map(::toNft).associateBy { it.id }.values
         }
-    }
 
-    open fun getExisting(nftTransfers: List<IndexedEvent>): List<IndexedNft> =
-        nftRepository.findAllById(nftTransfers.map { buildNftId(it) }).toList()
+    private fun toNft(event: IndexedEvent): IndexedNft =
+        IndexedNft(
+            id = buildNftId(event),
+            owner = event.params.getAsString("to")!!,
+            contractAddress = event.address ?: error("No contract address in event ${event.txId}"),
+            tokenId = event.params.getAsString("tokenId")!!,
+            txId = event.txId,
+            blockId = event.blockId,
+            blockNumber = event.blockNumber,
+            blockTimestamp = event.blockTimestamp,
+        )
+
+    @Transactional(
+        transactionManager = PostgresConfig.TRANSACTION_MANAGER,
+        rollbackFor = [Exception::class],
+    )
+    open fun save(nfts: List<IndexedNft>) {
+        if (nfts.isNotEmpty()) repository.save(nfts)
+    }
 }

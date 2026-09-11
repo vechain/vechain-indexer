@@ -7,7 +7,6 @@ object NFTFixtures {
     val NFT_VIP181 =
         IndexedNft(
             id = "3eeba42d5c9cce7224250c2e5f153f87e787f134",
-            version = 1,
             tokenId = "vip181token",
             contractAddress = "0x8418c039aa38a55b1f1d3742f65521920b65243c",
             owner = "0x0000000000000000000000000000000000000003",
@@ -20,7 +19,6 @@ object NFTFixtures {
     val NFT_ROLLBACK_TEST_VERSION1 =
         IndexedNft(
             id = "64fc91a89710a9365f88261f06b7321f6394fa32",
-            version = 1,
             tokenId = "token1",
             contractAddress = "0xab79539086966abd833f43142536bb0e8bca93b1",
             owner = "0x0000000000000000000000000000000000000001",
@@ -33,7 +31,6 @@ object NFTFixtures {
     val NFT_ROLLBACK_TEST_VERSION2 =
         IndexedNft(
             id = "64fc91a89710a9365f88261f06b7321f6394fa32",
-            version = 2,
             tokenId = "token1",
             contractAddress = "0xab79539086966abd833f43142536bb0e8bca93b1",
             owner = "0x0000000000000000000000000000000000000002",
