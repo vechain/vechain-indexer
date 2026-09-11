@@ -7,12 +7,16 @@ import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
 import org.vechain.indexer.nft.IndexedNft
+import org.vechain.indexer.nft.NftReadRepository
 import org.vechain.indexer.transfer.IndexedTransferEvent
 import org.vechain.indexer.transfer.TransferEventType
 
 @Profile("e2e")
 @Service
-open class E2EService(private val mongoTemplate: MongoTemplate) {
+open class E2EService(
+    private val mongoTemplate: MongoTemplate,
+    private val nftRepository: NftReadRepository,
+) {
 
     @TestOnly
     open fun getNftTransfers(): List<IndexedTransferEvent> {
@@ -24,8 +28,5 @@ open class E2EService(private val mongoTemplate: MongoTemplate) {
         return mongoTemplate.find(query, IndexedTransferEvent::class.java)
     }
 
-    @TestOnly
-    open fun getNfts(): List<IndexedNft> {
-        return mongoTemplate.findAll(IndexedNft::class.java)
-    }
+    @TestOnly open fun getNfts(): List<IndexedNft> = nftRepository.findAll()
 }

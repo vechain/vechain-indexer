@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.vechain.indexer.blocks.BlocksReadRepository
+import org.vechain.indexer.nft.NftReadRepository
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 import strikt.assertions.isFalse
@@ -28,6 +29,7 @@ class OpenApiDocumentationContractTest {
 
     // The block and transaction controllers need a reader; the spec comes from annotations.
     @MockitoBean private lateinit var postgresReadRepository: BlocksReadRepository
+    @MockitoBean private lateinit var nftReadRepository: NftReadRepository
 
     @Autowired private lateinit var mockMvc: MockMvc
     @Autowired private lateinit var objectMapper: ObjectMapper
