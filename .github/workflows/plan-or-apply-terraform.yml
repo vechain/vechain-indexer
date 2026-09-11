@@ -147,6 +147,20 @@ jobs:
           fi
           terraform plan -out "apply.plan" ${args[@]+"${args[@]}"}
 
+      # A replaced instance comes back empty and the colour re-indexes from genesis.
+      # Only restore-dead-prod-snapshots.yml may replace one, and it targets its own apply.
+      - name: Refuse a plan that replaces a Postgres instance
+        run: |
+          set -euo pipefail
+          destroyed=$(terraform show -json apply.plan | jq -r '
+            [.resource_changes[]?
+             | select(.type == "aws_db_instance" and (.change.actions | index("delete")))
+             | .address] | join(", ")')
+          if [ -n "$destroyed" ]; then
+            echo "::error::This plan destroys ${destroyed}. Restore the colour with the restore workflow instead."
+            exit 1
+          fi
+
       - name: Should proceed with deployment? (PR builds will never deploy)
         if: github.ref == 'refs/heads/main' || inputs.force
         id: check-env

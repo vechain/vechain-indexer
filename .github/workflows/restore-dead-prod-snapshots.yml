@@ -1,13 +1,23 @@
-name: Restore Dead Prod From Atlas Snapshots
+name: Restore Dead Prod From Live Snapshots
 
 on:
   workflow_dispatch:
     inputs:
       confirm_restore:
-        description: "Confirm that the current dead prod color should be restored from the current live prod Atlas snapshots"
+        description: "Confirm that the current dead prod color should be restored from the current live prod Atlas and RDS snapshots"
         required: true
         type: boolean
         default: false
+      pg_snapshot_main:
+        description: "Restore the mainnet Postgres instance from this snapshot instead of the live colour's newest one"
+        required: false
+        type: string
+        default: ""
+      pg_snapshot_test:
+        description: "Restore the testnet Postgres instance from this snapshot instead of the live colour's newest one"
+        required: false
+        type: string
+        default: ""
   # deploy.yml calls this before it starts a cold dead colour's services; the
   # caller's approval gate stands in for the checkbox.
   workflow_call:
@@ -18,6 +28,14 @@ on:
         default: true
       expected_target_color:
         description: "Abort unless the dead colour resolved from DNS is this one"
+        required: false
+        type: string
+        default: ""
+      pg_snapshot_main:
+        required: false
+        type: string
+        default: ""
+      pg_snapshot_test:
         required: false
         type: string
         default: ""
@@ -216,3 +234,49 @@ jobs:
           name: dead-prod-atlas-restore-output
           path: restore-output
           if-no-files-found: error
+
+  restore-postgres:
+    name: Restore Dead Prod Postgres Instances
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    needs: [resolve-context, assert-services-stopped]
+    environment: prod
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.15.8
+          terraform_wrapper: false
+
+      - name: Restore dead-prod Postgres instances
+        env:
+          SOURCE_COLOR: ${{ needs.resolve-context.outputs.source_color }}
+          TARGET_COLOR: ${{ needs.resolve-context.outputs.target_color }}
+          ECS_CLUSTER: ${{ needs.resolve-context.outputs.ecs_cluster }}
+          PG_SNAPSHOT_MAIN: ${{ inputs.pg_snapshot_main }}
+          PG_SNAPSHOT_TEST: ${{ inputs.pg_snapshot_test }}
+        run: bash .github/workflows/scripts/restore_dead_prod_pg_snapshots.sh
+
+      - name: Upload restore summary
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dead-prod-pg-restore-output
+          path: restore-output
+          if-no-files-found: ignore

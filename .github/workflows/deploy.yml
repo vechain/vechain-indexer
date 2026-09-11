@@ -20,7 +20,7 @@ on:
           - dead
         default: auto
       skip_restore:
-        description: Skip restoring the live Atlas snapshots into a cold dead colour; it indexes on from whatever its clusters hold
+        description: Skip restoring the live snapshots into a cold dead colour; it indexes on from whatever its own datastores hold
         required: false
         type: boolean
         default: false
@@ -303,7 +303,7 @@ jobs:
     name: Restore dead colour from live snapshots
     needs: [plan-release, verify-plan]
     if: needs.plan-release.outputs.RESTORE == 'true'
-    uses: ./.github/workflows/restore-dead-prod-atlas-snapshots.yml
+    uses: ./.github/workflows/restore-dead-prod-snapshots.yml
     with:
       confirm_restore: true
       expected_target_color: ${{ needs.plan-release.outputs.TARGET_COLOR }}
@@ -477,7 +477,7 @@ jobs:
               echo "${VERSION} runs on ${TARGET_COLOR}. Traffic stays on ${LIVE_COLOR} until you run [Switch Live Environment](${SWITCH_URL}) with network \`all\`, which also publishes the draft release."
               if [ "$RESTORED" = true ]; then
                 echo
-                echo "${TARGET_COLOR}'s data was restored from the latest ${LIVE_COLOR} snapshots, so its indexers resume from that point."
+                echo "${TARGET_COLOR}'s Atlas clusters and Postgres instances were restored from the latest ${LIVE_COLOR} snapshots, so its indexers resume from that point. Postgres reads stay slow until the prewarm task named in the restore summary has stopped."
               fi
               echo
               echo "Switch when every indexer on both networks reports fully synced:"
