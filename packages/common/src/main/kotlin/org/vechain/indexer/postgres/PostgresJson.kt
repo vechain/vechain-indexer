@@ -24,4 +24,10 @@ object PostgresJson {
     fun write(params: Map<String, Any>?): String? = params?.let(mapper::writeValueAsString)
 
     fun read(json: String?): Map<String, Any>? = json?.let { mapper.readValue(it, mapType) }
+
+    fun <T> write(value: T?): String? = value?.let(mapper::writeValueAsString)
+
+    fun <T> read(json: String?, type: TypeReference<T>): T? = json?.let {
+        mapper.readValue(it, type)
+    }
 }
