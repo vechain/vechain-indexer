@@ -20,18 +20,19 @@ import org.vechain.indexer.b3tr.action.response.UserAppOverview
 import org.vechain.indexer.b3tr.action.response.UserOverview
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.exception.BadRequestException
-import org.vechain.indexer.history.HistoryEventName
-import org.vechain.indexer.history.HistoryRepository
+import org.vechain.indexer.history.HistoryReadRepository
+import org.vechain.indexer.history.IndexedHistoryEvent
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.HexUtils
+import org.vechain.indexer.utils.PaginationUtils.offsetSlice
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 
 @Profile("b3tr", "b3tr-actions")
 @Service
 open class ActionService(
-    private val historyRepo: HistoryRepository,
+    private val historyRepo: HistoryReadRepository,
     private val userAllTimeRepo: UserAllTimeActionSummaryRepository,
     private val userDailyRepo: UserDailyActionSummaryRepository,
     private val userRoundRepo: UserRoundActionSummaryRepository,
@@ -49,46 +50,8 @@ open class ActionService(
         page: Int?,
         size: Int?,
         direction: String?,
-    ): PaginatedResponse<Action> {
-        val pageable = toPageable(page, size, direction, "blockTimestamp")
-
-        val result =
-            if (after != null && before != null) {
-                historyRepo.findAllByToAndAppIdAndEventNameAndBlockTimestampBetween(
-                    HexUtils.normalise(wallet.value),
-                    appId.value,
-                    HistoryEventName.B3TR_ACTION.name,
-                    after,
-                    before,
-                    pageable,
-                )
-            } else if (after != null) {
-                historyRepo.findAllByToAndAppIdAndEventNameAndBlockTimestampAfter(
-                    HexUtils.normalise(wallet.value),
-                    appId.value,
-                    HistoryEventName.B3TR_ACTION.name,
-                    after,
-                    pageable,
-                )
-            } else if (before != null) {
-                historyRepo.findAllByToAndAppIdAndEventNameAndBlockTimestampBefore(
-                    HexUtils.normalise(wallet.value),
-                    appId.value,
-                    HistoryEventName.B3TR_ACTION.name,
-                    before,
-                    pageable,
-                )
-            } else {
-                historyRepo.findAllByToAndAppIdAndEventName(
-                    HexUtils.normalise(wallet.value),
-                    appId.value,
-                    HistoryEventName.B3TR_ACTION.name,
-                    pageable,
-                )
-            }
-
-        return paginatedResponse(result.map { Action.from(it) })
-    }
+    ): PaginatedResponse<Action> =
+        actions(HexUtils.normalise(wallet.value), appId.value, after, before, page, size, direction)
 
     open fun getUserActions(
         wallet: Address,
@@ -97,42 +60,8 @@ open class ActionService(
         page: Int?,
         size: Int?,
         direction: String?,
-    ): PaginatedResponse<Action> {
-        val pageable = toPageable(page, size, direction, "blockTimestamp")
-
-        val result =
-            if (after != null && before != null) {
-                historyRepo.findAllByToAndEventNameAndBlockTimestampBetween(
-                    HexUtils.normalise(wallet.value),
-                    HistoryEventName.B3TR_ACTION.name,
-                    after,
-                    before,
-                    pageable,
-                )
-            } else if (after != null) {
-                historyRepo.findAllByToAndEventNameAndBlockTimestampAfter(
-                    HexUtils.normalise(wallet.value),
-                    HistoryEventName.B3TR_ACTION.name,
-                    after,
-                    pageable,
-                )
-            } else if (before != null) {
-                historyRepo.findAllByToAndEventNameAndBlockTimestampBefore(
-                    HexUtils.normalise(wallet.value),
-                    HistoryEventName.B3TR_ACTION.name,
-                    before,
-                    pageable,
-                )
-            } else {
-                historyRepo.findAllByToAndEventName(
-                    HexUtils.normalise(wallet.value),
-                    HistoryEventName.B3TR_ACTION.name,
-                    pageable,
-                )
-            }
-
-        return paginatedResponse(result.map { Action.from(it) })
-    }
+    ): PaginatedResponse<Action> =
+        actions(HexUtils.normalise(wallet.value), null, after, before, page, size, direction)
 
     fun getAppActions(
         appId: AppId,
@@ -141,41 +70,23 @@ open class ActionService(
         page: Int?,
         size: Int?,
         direction: String?,
+    ): PaginatedResponse<Action> = actions(null, appId.value, after, before, page, size, direction)
+
+    private fun actions(
+        to: String?,
+        appId: String?,
+        after: Long?,
+        before: Long?,
+        page: Int?,
+        size: Int?,
+        direction: String?,
     ): PaginatedResponse<Action> {
-        val pageable = toPageable(page, size, direction, "blockTimestamp")
-
-        val result =
-            if (after != null && before != null) {
-                historyRepo.findAllByAppIdAndEventNameAndBlockTimestampBetween(
-                    appId.value,
-                    HistoryEventName.B3TR_ACTION.name,
-                    after,
-                    before,
-                    pageable,
-                )
-            } else if (after != null) {
-                historyRepo.findAllByAppIdAndEventNameAndBlockTimestampAfter(
-                    appId.value,
-                    HistoryEventName.B3TR_ACTION.name,
-                    after,
-                    pageable,
-                )
-            } else if (before != null) {
-                historyRepo.findAllByAppIdAndEventNameAndBlockTimestampBefore(
-                    appId.value,
-                    HistoryEventName.B3TR_ACTION.name,
-                    before,
-                    pageable,
-                )
-            } else {
-                historyRepo.findAllByAppIdAndEventName(
-                    appId.value,
-                    HistoryEventName.B3TR_ACTION.name,
-                    pageable,
-                )
+        val pageable = toPageable(page, size, direction, IndexedHistoryEvent::blockTimestamp.name)
+        val slice =
+            offsetSlice(pageable, IndexedHistoryEvent::blockTimestamp.name) { offset, limit, dir ->
+                historyRepo.findActions(to, appId, after, before, offset, limit, dir)
             }
-
-        return paginatedResponse(result.map { Action.from(it) })
+        return paginatedResponse(slice.map { Action.from(it) })
     }
 
     // User overviews

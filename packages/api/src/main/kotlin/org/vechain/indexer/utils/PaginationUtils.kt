@@ -2,6 +2,8 @@ package org.vechain.indexer.utils
 
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Slice
+import org.springframework.data.domain.SliceImpl
 import org.springframework.data.domain.Sort
 import org.springframework.data.domain.Sort.Direction
 import org.vechain.indexer.constants.DEFAULT_PAGE_NUMBER
@@ -48,6 +50,17 @@ object PaginationUtils {
             pageable.pageSize,
             pageable.sort.and(Sort.by(Direction.ASC, "_id")),
         )
+
+    /** Offset paging as the Mongo repositories did it: one row past the page decides hasNext. */
+    fun <T> offsetSlice(
+        pageable: Pageable,
+        sortField: String,
+        fetch: (offset: Long, limit: Int, direction: Direction) -> List<T>,
+    ): Slice<T> {
+        val direction = pageable.sort.getOrderFor(sortField)?.direction ?: Direction.DESC
+        val rows = fetch(pageable.offset, pageable.pageSize + 1, direction)
+        return SliceImpl(rows.take(pageable.pageSize), pageable, rows.size > pageable.pageSize)
+    }
 
     private fun toSortDirection(direction: String?): Direction {
         val sortDirection: Direction
