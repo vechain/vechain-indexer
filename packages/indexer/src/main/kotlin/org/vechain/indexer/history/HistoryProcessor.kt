@@ -3,9 +3,9 @@ package org.vechain.indexer.history
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.MongoProcessor
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 
@@ -17,7 +17,7 @@ open class HistoryProcessor(
     checkpointService: CheckpointService,
     processorMetrics: ProcessorMetrics,
 ) :
-    BaseProcessor(
+    MongoProcessor(
         repository = repository,
         indexerName = IndexerNames.HISTORY.NAME,
         checkpointService = checkpointService,

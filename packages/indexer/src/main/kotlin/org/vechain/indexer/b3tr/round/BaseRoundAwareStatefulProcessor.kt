@@ -2,8 +2,8 @@ package org.vechain.indexer.b3tr.round
 
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.BaseIndexedRepository
-import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.StatefulMongoProcessor
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils
 import org.vechain.indexer.checkpoint.CheckpointService
@@ -32,7 +32,7 @@ abstract class BaseRoundAwareStatefulProcessor<T : VersionedDocument>(
     processorMetrics: ProcessorMetrics,
     private val b3trRoundService: B3trRoundService,
 ) :
-    BaseStatefulProcessor(
+    StatefulMongoProcessor(
         repository = repository,
         mongoTemplate = mongoTemplate,
         indexerName = indexerName,

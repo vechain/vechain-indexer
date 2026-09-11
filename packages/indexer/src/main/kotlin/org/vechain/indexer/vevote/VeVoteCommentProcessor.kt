@@ -4,9 +4,9 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.insert
 import org.springframework.stereotype.Component
-import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.MongoProcessor
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 
@@ -19,7 +19,7 @@ open class VeVoteCommentProcessor(
     checkpointService: CheckpointService,
     processorMetrics: ProcessorMetrics,
 ) :
-    BaseProcessor(
+    MongoProcessor(
         repository = vevoteCommentRepository,
         indexerName = IndexerNames.VEVOTE_COMMENT.NAME,
         checkpointService = checkpointService,

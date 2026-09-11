@@ -6,9 +6,9 @@ import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.StatefulMongoProcessor
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.nft.backfill.NftBlacklistBackfillService
@@ -23,7 +23,7 @@ open class NftBlacklistProcessor(
     checkpointService: CheckpointService,
     processorMetrics: ProcessorMetrics,
 ) :
-    BaseStatefulProcessor(
+    StatefulMongoProcessor(
         repository = repository,
         mongoTemplate = mongoTemplate,
         indexerName = IndexerNames.NFT_BLACKLIST.NAME,

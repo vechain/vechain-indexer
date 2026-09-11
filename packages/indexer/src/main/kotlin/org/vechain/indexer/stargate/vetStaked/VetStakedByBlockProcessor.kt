@@ -2,9 +2,9 @@ package org.vechain.indexer.stargate.vetStaked
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.MongoProcessor
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 
@@ -16,7 +16,7 @@ open class VetStakedByBlockProcessor(
     checkpointService: CheckpointService,
     processorMetrics: ProcessorMetrics,
 ) :
-    BaseProcessor(
+    MongoProcessor(
         repository = repository,
         indexerName = IndexerNames.VET_STAKED_BY_BLOCK.NAME,
         checkpointService = checkpointService,

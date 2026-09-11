@@ -19,7 +19,7 @@ import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 
 @ExtendWith(MockKExtension::class)
-class BaseStatefulProcessorTest {
+class StatefulMongoProcessorTest {
     @MockK lateinit var repository: BaseIndexedRepository<TestDocument, String>
 
     @MockK lateinit var mongoTemplate: MongoTemplate
@@ -113,7 +113,7 @@ class BaseStatefulProcessorTest {
         processorMetrics: ProcessorMetrics,
         collectionName: String = TEST_COLLECTION,
     ) :
-        BaseStatefulProcessor(
+        StatefulMongoProcessor(
             repository,
             mongoTemplate,
             TEST_INDEXER_NAME,
