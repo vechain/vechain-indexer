@@ -24,7 +24,7 @@ import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.BlockIdentifier
 
 @ExtendWith(MockKExtension::class)
-class BaseProcessorTest {
+class MongoProcessorTest {
 
     @MockK lateinit var repository: BaseIndexedRepository<Document, String>
 
@@ -108,7 +108,7 @@ class BaseProcessorTest {
         checkpointService: CheckpointService,
         processorMetrics: ProcessorMetrics,
     ) :
-        BaseProcessor(
+        MongoProcessor(
             repository,
             TEST_INDEXER_NAME,
             checkpointService,
@@ -126,7 +126,7 @@ class BaseProcessorTest {
         checkpointService: CheckpointService,
         processorMetrics: ProcessorMetrics,
     ) :
-        BaseProcessor(
+        MongoProcessor(
             repository,
             TEST_INDEXER_NAME,
             checkpointService,

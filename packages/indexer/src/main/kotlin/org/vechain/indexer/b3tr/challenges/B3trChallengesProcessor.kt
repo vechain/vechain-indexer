@@ -4,9 +4,9 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.StatefulMongoProcessor
 import org.vechain.indexer.b3tr.challenges.repository.B3trChallengeRepository
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
@@ -20,7 +20,7 @@ open class B3trChallengesProcessor(
     checkpointService: CheckpointService,
     processorMetrics: ProcessorMetrics,
 ) :
-    BaseStatefulProcessor(
+    StatefulMongoProcessor(
         repository = repository,
         mongoTemplate = mongoTemplate,
         indexerName = IndexerNames.B3TR_CHALLENGES.NAME,

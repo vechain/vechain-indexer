@@ -119,7 +119,7 @@ class RollbackResetsCacheTest {
     }
 
     /**
-     * TransactionCountProcessor extends BaseStatefulProcessor and overrides rollback() directly
+     * TransactionCountProcessor extends StatefulMongoProcessor and overrides rollback() directly
      * (rather than resetProcessingState()), so the parent rollback delegates to
      * InlineVersionService — stubbed here to keep the test hermetic.
      */

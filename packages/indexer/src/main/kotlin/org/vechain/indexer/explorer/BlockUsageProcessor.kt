@@ -2,9 +2,9 @@ package org.vechain.indexer.explorer
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.MongoProcessor
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.explorer.repository.BlockUsageRepository
@@ -17,7 +17,7 @@ open class BlockUsageProcessor(
     checkpointService: CheckpointService,
     processorMetrics: ProcessorMetrics,
 ) :
-    BaseProcessor(
+    MongoProcessor(
         repository = repository,
         indexerName = IndexerNames.BLOCK_USAGE.NAME,
         checkpointService = checkpointService,

@@ -5,9 +5,9 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
-import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.StatefulMongoProcessor
 import org.vechain.indexer.accounts.repository.AccountOverviewRepository
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
@@ -22,7 +22,7 @@ open class AccountOverviewProcessor(
     checkpointService: CheckpointService,
     processorMetrics: ProcessorMetrics,
 ) :
-    BaseStatefulProcessor(
+    StatefulMongoProcessor(
         repository = repository,
         mongoTemplate = mongoTemplate,
         indexerName = IndexerNames.ACCOUNT_OVERVIEW.NAME,

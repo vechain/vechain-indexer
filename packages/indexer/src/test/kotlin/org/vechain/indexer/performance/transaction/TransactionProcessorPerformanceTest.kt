@@ -108,7 +108,7 @@ class TransactionProcessorPerformanceTest : BasePerformanceTest() {
         checkpointService: CheckpointService,
         processorMetrics: ProcessorMetrics,
     ) :
-        org.vechain.indexer.BaseProcessor(
+        org.vechain.indexer.MongoProcessor(
             repository = repository,
             indexerName = IndexerNames.TRANSACTION.NAME,
             checkpointService = checkpointService,

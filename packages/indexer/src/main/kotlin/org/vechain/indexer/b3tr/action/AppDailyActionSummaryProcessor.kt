@@ -3,9 +3,9 @@ package org.vechain.indexer.b3tr.action
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
-import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.StatefulMongoProcessor
 import org.vechain.indexer.b3tr.action.repository.AppDailyActionSummaryRepository
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
@@ -19,7 +19,7 @@ open class AppDailyActionSummaryProcessor(
     checkpointService: CheckpointService,
     processorMetrics: ProcessorMetrics,
 ) :
-    BaseStatefulProcessor(
+    StatefulMongoProcessor(
         repository = repository,
         mongoTemplate = mongoTemplate,
         indexerName = IndexerNames.APP_DAILY_ACTION_SUMMARY.NAME,

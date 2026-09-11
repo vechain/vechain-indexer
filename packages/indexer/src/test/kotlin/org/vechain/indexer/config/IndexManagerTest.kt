@@ -18,10 +18,10 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.context.ApplicationContext
-import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerRunner
+import org.vechain.indexer.MongoProcessor
 import org.vechain.indexer.Status
 import org.vechain.indexer.config.metrics.IndexerHealthMetrics
 import org.vechain.indexer.config.mongo.CollectionConfig
@@ -86,8 +86,8 @@ class IndexManagerTest {
 
     @Test
     fun `onShutdown flushes each processor's checkpoint`() {
-        val processorA = mockk<BaseProcessor>()
-        val processorB = mockk<BaseProcessor>()
+        val processorA = mockk<MongoProcessor>()
+        val processorB = mockk<MongoProcessor>()
         every { processorA.flushCheckpoint() } just Runs
         every { processorB.flushCheckpoint() } just Runs
 
@@ -117,8 +117,8 @@ class IndexManagerTest {
         // The shutdown sequence must be best-effort: a single processor that fails to flush its
         // checkpoint cannot starve later processors or the final-metrics publish step. Each step
         // is independently try/catched in IndexManager.onShutdown.
-        val processorA = mockk<BaseProcessor>()
-        val processorB = mockk<BaseProcessor>()
+        val processorA = mockk<MongoProcessor>()
+        val processorB = mockk<MongoProcessor>()
         every { processorA.flushCheckpoint() } throws RuntimeException("flush A failed")
         every { processorB.flushCheckpoint() } just Runs
 
