@@ -81,6 +81,7 @@ postgres:
   url: ${PG_URL:}
   username: ${PG_USER:indexer}
   password: ${PG_PASSWORD:password}
+  api-password: ${PG_API_PASSWORD:password}
   flyway:
     enabled: true
 

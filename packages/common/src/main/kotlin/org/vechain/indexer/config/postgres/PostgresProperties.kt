@@ -7,6 +7,8 @@ data class PostgresProperties(
     val url: String,
     val username: String,
     val password: String,
+    /** Read-only `api` role password, set by the migrating side; blank leaves the role alone. */
+    val apiPassword: String = "",
     val flyway: Flyway = Flyway(),
     val pool: Pool = Pool(),
 ) {
