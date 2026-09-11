@@ -54,7 +54,7 @@ object IndexerNames {
 
     object NFT {
         const val NAME = "NftIndexer"
-        const val COLLECTION = "nfts"
+        const val COLLECTION = "nft"
     }
 
     object NFT_BLACKLIST {

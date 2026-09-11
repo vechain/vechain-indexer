@@ -1,194 +1,52 @@
 package org.vechain.indexer.nft
 
-import io.mockk.*
-import io.mockk.impl.annotations.MockK
-import io.mockk.junit5.MockKExtension
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
-import org.vechain.indexer.checkpoint.CheckpointService
-import org.vechain.indexer.config.metrics.ProcessorMetrics
+import org.vechain.indexer.config.CheckpointProperties
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_MINT
+import org.vechain.indexer.fixtures.NFTFixtures
 
-@ExtendWith(MockKExtension::class)
 internal class NftProcessorTest {
 
-    @MockK lateinit var nftRepository: NftRepository
+    private val service = mockk<NftService>(relaxed = true)
+    private val processor =
+        NftProcessor(
+            service,
+            mockk(relaxed = true),
+            mockk(relaxed = true),
+            CheckpointProperties(),
+            InlineVersioningProperties(),
+            mockk(relaxed = true),
+        )
 
-    @MockK lateinit var mongoTemplate: MongoTemplate
-
-    @MockK lateinit var nftService: NftService
-
-    @MockK lateinit var checkpointService: CheckpointService
-
-    private val processorMetrics: ProcessorMetrics = mockk(relaxed = true)
-
-    private lateinit var processor: NftProcessor
-
-    @BeforeEach
-    fun setUp() {
-        MockKAnnotations.init(this)
-        every { checkpointService.trySaveCheckpoint(any(), any()) } just Runs
-
-        processor =
-            NftProcessor(
-                nftService = nftService,
-                mongoTemplate = mongoTemplate,
-                repository = nftRepository,
-                checkpointService = checkpointService,
-                processorMetrics = processorMetrics,
-            )
-    }
-
-    @Test
-    fun `process - empty data`() {
-        val events = INDEXED_EVENTS_NFT_MINT
-
-        every { nftService.getExisting(any()) } returns emptyList()
-        coEvery { nftService.parseRecords(any(), emptyList()) } returns emptyList()
-        every { nftService.save(any(), any()) } just Runs
-
+    private fun process(events: List<org.vechain.indexer.event.model.generic.IndexedEvent>) =
         runBlocking {
             processor.process(
-                IndexingResult.LogResult(
-                    events.maxBy { it.blockNumber }.blockNumber,
-                    events,
-                    Status.SYNCING,
-                )
+                IndexingResult.LogResult(events.maxOf { it.blockNumber }, events, Status.SYNCING)
             )
         }
 
-        verify(exactly = 0) { nftService.save(any(), any()) }
+    @Test
+    fun `an entry without events saves nothing`() {
+        runBlocking { processor.process(IndexingResult.LogResult(5, emptyList(), Status.SYNCING)) }
+
+        verify(exactly = 0) { service.processBlock(any()) }
+        verify(exactly = 0) { service.save(any()) }
     }
 
     @Test
-    fun `process - update called if existing and updated records`() {
-        val events = INDEXED_EVENTS_NFT_MINT
+    fun `the projected states are saved`() {
+        val projected = listOf(NFTFixtures.NFT_VIP181)
+        every { service.processBlock(INDEXED_EVENTS_NFT_MINT) } returns projected
 
-        val existing =
-            listOf(
-                IndexedNft(
-                    id = "93bed94c547a207d9a8ff1daee175feded00304b",
-                    version = 1,
-                    owner = "0x0001",
-                    contractAddress = "0x0002",
-                    tokenId = "0",
-                    txId = "0x0003",
-                    blockId = "0x0004",
-                    blockNumber = 1L,
-                    blockTimestamp = 3,
-                )
-            )
+        process(INDEXED_EVENTS_NFT_MINT)
 
-        val updated =
-            listOf(
-                IndexedNft(
-                    id = "93bed94c547a207d9a8ff1daee175feded00304b",
-                    version = 2,
-                    owner = "0x0005",
-                    contractAddress = "0x0006",
-                    tokenId = "0",
-                    txId = "0x0007",
-                    blockId = "0x0008",
-                    blockNumber = 2L,
-                    blockTimestamp = 4,
-                )
-            )
-
-        every { nftService.getExisting(any()) } returns existing
-        coEvery { nftService.parseRecords(any(), existing) } returns updated
-        every { nftService.save(updated, existing) } just Runs
-
-        runBlocking {
-            processor.process(
-                IndexingResult.LogResult(
-                    events.maxBy { it.blockNumber }.blockNumber,
-                    events,
-                    Status.SYNCING,
-                )
-            )
-        }
-
-        verify(exactly = 1) { nftService.save(updated, existing) }
-    }
-
-    @Test
-    fun `processLogs - update called if no existing records`() {
-        val events = INDEXED_EVENTS_NFT_MINT
-
-        val existing = emptyList<IndexedNft>()
-
-        val updated =
-            listOf(
-                IndexedNft(
-                    id = "93bed94c547a207d9a8ff1daee175feded00304b",
-                    version = 2,
-                    owner = "0x0005",
-                    contractAddress = "0x0006",
-                    tokenId = "0",
-                    txId = "0x0007",
-                    blockId = "0x0008",
-                    blockNumber = 2L,
-                    blockTimestamp = 4,
-                )
-            )
-
-        every { nftService.getExisting(any()) } returns existing
-        coEvery { nftService.parseRecords(any(), existing) } returns updated
-        every { nftService.save(updated, existing) } just Runs
-
-        runBlocking {
-            processor.process(
-                IndexingResult.LogResult(
-                    events.maxBy { it.blockNumber }.blockNumber,
-                    events,
-                    Status.SYNCING,
-                )
-            )
-        }
-
-        verify(exactly = 1) { nftService.save(updated, existing) }
-    }
-
-    @Test
-    fun `processLogs - update called is only existing records and not updated`() {
-        val events = INDEXED_EVENTS_NFT_MINT
-
-        val existing =
-            listOf(
-                IndexedNft(
-                    id = "93bed94c547a207d9a8ff1daee175feded00304b",
-                    version = 1,
-                    owner = "0x0001",
-                    contractAddress = "0x0002",
-                    tokenId = "0",
-                    txId = "0x0003",
-                    blockId = "0x0004",
-                    blockNumber = 1L,
-                    blockTimestamp = 3,
-                )
-            )
-
-        val updated = emptyList<IndexedNft>()
-
-        every { nftService.getExisting(any()) } returns existing
-        coEvery { nftService.parseRecords(any(), existing) } returns updated
-        every { nftService.save(updated, existing) } just Runs
-
-        runBlocking {
-            processor.process(
-                IndexingResult.LogResult(
-                    events.maxBy { it.blockNumber }.blockNumber,
-                    events,
-                    Status.SYNCING,
-                )
-            )
-        }
-
-        verify(exactly = 1) { nftService.save(updated, existing) }
+        verify(exactly = 1) { service.save(projected) }
     }
 }
