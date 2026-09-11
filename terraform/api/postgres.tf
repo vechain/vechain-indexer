@@ -225,7 +225,7 @@ resource "aws_ecs_task_definition" "pg_prewarm" {
       "psql", "-v", "ON_ERROR_STOP=1",
       "-c", "CREATE EXTENSION IF NOT EXISTS pg_prewarm",
       "-c", "CREATE EXTENSION IF NOT EXISTS pg_stat_statements",
-      "-c", "SELECT c.oid::regclass AS relation, pg_prewarm(c.oid) AS pages FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public' AND c.relkind IN ('r', 'i') ORDER BY 1",
+      "-c", "SELECT c.oid::regclass AS relation, pg_prewarm(c.oid) AS pages FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname NOT LIKE 'pg\\_%' AND n.nspname <> 'information_schema' AND c.relkind IN ('r', 'i') ORDER BY 1",
     ]
     environment = [
       { name = "PGHOST", value = aws_db_instance.postgres[each.key].address },
