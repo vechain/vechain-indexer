@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.domain.Sort.Direction
 import org.vechain.indexer.b3tr.AppId
 import org.vechain.indexer.b3tr.action.repository.AppAllTimeActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.AppDailyActionSummaryRepository
@@ -18,12 +19,14 @@ import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryReposi
 import org.vechain.indexer.b3tr.action.repository.UserDailyActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
 import org.vechain.indexer.b3tr.shared.EntityType
-import org.vechain.indexer.history.HistoryRepository
+import org.vechain.indexer.history.HistoryEventName
+import org.vechain.indexer.history.HistoryReadRepository
+import org.vechain.indexer.history.IndexedHistoryEvent
 import org.vechain.indexer.thor.Address
 
 @ExtendWith(MockKExtension::class)
 internal class ActionServiceTest {
-    @MockK lateinit var historyRepo: HistoryRepository
+    @MockK lateinit var historyRepo: HistoryReadRepository
     @MockK lateinit var userAllTimeRepo: UserAllTimeActionSummaryRepository
     @MockK lateinit var userDailyRepo: UserDailyActionSummaryRepository
     @MockK lateinit var userRoundRepo: UserRoundActionSummaryRepository
@@ -47,6 +50,42 @@ internal class ActionServiceTest {
                 appRoundRepo,
                 kotlinx.coroutines.Dispatchers.IO.limitedParallelism(4),
             )
+    }
+
+    @Test
+    fun `user actions are the B3TR_ACTION rows to the wallet, paged one row past the page`() {
+        val wallet = Address("0x" + "A".repeat(40))
+        val row =
+            IndexedHistoryEvent(
+                id = "1",
+                blockId = "0x01",
+                blockNumber = 5,
+                blockTimestamp = 50,
+                txId = "0x02",
+                eventName = HistoryEventName.B3TR_ACTION,
+                appId = "0x" + "7".repeat(64),
+                from = "0x" + "d".repeat(40),
+                to = "0x" + "a".repeat(40),
+                value = "5000000000000000000",
+            )
+        every {
+            historyRepo.findActions("0x" + "a".repeat(40), null, 10L, null, 0L, 2, Direction.DESC)
+        } returns listOf(row, row)
+
+        val page =
+            service.getUserActions(
+                wallet,
+                after = 10L,
+                before = null,
+                page = 0,
+                size = 1,
+                direction = null,
+            )
+
+        assertEquals(1, page.data.size)
+        assertEquals(0, java.math.BigDecimal("5").compareTo(page.data.single().amount))
+        assertEquals(row.appId, page.data.single().appId)
+        assertEquals(true, page.pagination.hasNext)
     }
 
     @Test
