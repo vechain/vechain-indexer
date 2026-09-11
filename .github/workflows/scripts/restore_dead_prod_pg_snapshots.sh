@@ -19,12 +19,50 @@ command -v yq >/dev/null 2>&1 || { echo "yq is required."; exit 1; }
 
 mkdir -p "${output_dir}"
 
+err_file="$(mktemp)"
+trap 'rm -f "${err_file}"' EXIT
+
 summary() {
   printf '%s\n' "$@" >> "${GITHUB_STEP_SUMMARY:?GITHUB_STEP_SUMMARY is required}"
 }
 
+aws_said() {
+  grep -q "${1}" "${err_file}"
+}
+
+aws_failed() {
+  echo "${1}"
+  cat "${err_file}"
+  exit 1
+}
+
+# Expired credentials or a throttle must not read as "there is nothing to restore from":
+# that answer skips the restore and lets the colour deploy on stale data.
 instance_exists() {
-  aws rds describe-db-instances --db-instance-identifier "${1}" >/dev/null 2>&1
+  aws rds describe-db-instances --db-instance-identifier "${1}" >/dev/null 2>"${err_file}" && return 0
+  aws_said DBInstanceNotFound && return 1
+  aws_failed "Could not look up ${1}."
+}
+
+# A snapshot names the instance it was taken from, and restoring one network from
+# another's is silent and total, so the source is checked before anything is replaced.
+validate_snapshot() {
+  local net="${1}" snapshot="${2}" details source status engine
+  details="$(aws rds describe-db-snapshots --db-snapshot-identifier "${snapshot}" --output json 2>"${err_file}")" \
+    || aws_failed "Could not describe snapshot ${snapshot}."
+
+  source="$(jq -r '.DBSnapshots[0].DBInstanceIdentifier // "an unknown instance"' <<<"${details}")"
+  status="$(jq -r '.DBSnapshots[0].Status // "unknown"' <<<"${details}")"
+  engine="$(jq -r '.DBSnapshots[0].Engine // "unknown"' <<<"${details}")"
+
+  if [[ "${source}" != "${source_color}-${net}-pg" && "${source}" != "${target_color}-${net}-pg" ]]; then
+    echo "Snapshot ${snapshot} was taken from ${source}, not ${source_color}-${net}-pg or ${target_color}-${net}-pg."
+    exit 1
+  fi
+  if [[ "${status}" != "available" || "${engine}" != "postgres" ]]; then
+    echo "Snapshot ${snapshot} is ${status} on engine ${engine}; it must be an available postgres snapshot."
+    exit 1
+  fi
 }
 
 newest_available_snapshot() {
@@ -42,11 +80,14 @@ newest_available_snapshot() {
 
 # Where the indexer tasks run: the one network configuration that reaches Postgres.
 indexer_network_configuration() {
+  local service="${target_color}-veworld-${1}-indexer-service"
   aws ecs describe-services \
     --cluster "${ecs_cluster}" \
-    --services "${target_color}-veworld-${1}-indexer-service" \
+    --services "${service}" \
     --query 'services[0].networkConfiguration.awsvpcConfiguration' \
-    --output json 2>/dev/null || echo null
+    --output json 2>"${err_file}" && return 0
+  aws_said ClusterNotFound && { echo null; return 0; }
+  aws_failed "Could not look up ${service}."
 }
 
 net_map() {
@@ -73,6 +114,7 @@ for net in "${pg_nets[@]}"; do
   snapshot="${!override_name:-}"
 
   if [[ -n "${snapshot}" ]]; then
+    validate_snapshot "${net}" "${snapshot}"
     echo "Using the snapshot supplied for ${net}: ${snapshot}"
   else
     live_instance="${source_color}-${net}-pg"
@@ -137,7 +179,8 @@ for net in "${restore_nets[@]}"; do
     continue
   fi
 
-  prewarm_tasks["${net}"]="$(aws ecs run-task \
+  # run-task answers 200 with an empty task list when placement fails.
+  started="$(aws ecs run-task \
     --cluster "${ecs_cluster}" \
     --task-definition "${target_color}-${net}-pg-prewarm" \
     --launch-type FARGATE \
@@ -145,7 +188,12 @@ for net in "${restore_nets[@]}"; do
     --network-configuration "awsvpcConfiguration=$(
       jq -r '"{subnets=[\(.subnets | join(","))],securityGroups=[\(.securityGroups | join(","))],assignPublicIp=\(.assignPublicIp // "DISABLED")}"' <<<"${network}"
     )" \
-    --query 'tasks[0].taskArn' --output text)"
+    --output json)"
+  prewarm_tasks["${net}"]="$(jq -r '.tasks[0].taskArn // empty' <<<"${started}")"
+  if [[ -z "${prewarm_tasks[${net}]}" ]]; then
+    echo "Prewarm task for ${net} did not start: $(jq -c '.failures // []' <<<"${started}")"
+    exit 1
+  fi
   echo "Prewarming ${net}: ${prewarm_tasks[${net}]}"
 done
 

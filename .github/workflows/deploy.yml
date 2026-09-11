@@ -477,7 +477,7 @@ jobs:
               echo "${VERSION} runs on ${TARGET_COLOR}. Traffic stays on ${LIVE_COLOR} until you run [Switch Live Environment](${SWITCH_URL}) with network \`all\`, which also publishes the draft release."
               if [ "$RESTORED" = true ]; then
                 echo
-                echo "${TARGET_COLOR}'s Atlas clusters and Postgres instances were restored from the latest ${LIVE_COLOR} snapshots, so its indexers resume from that point. Postgres reads stay slow until the prewarm task named in the restore summary has stopped."
+                echo "${TARGET_COLOR}'s Atlas clusters were restored from the latest ${LIVE_COLOR} snapshots, so its indexers resume from that point. The restore run's summary says what each Postgres instance did — rebuilt from a snapshot, or left alone while ${LIVE_COLOR} has none — and names the prewarm task that keeps a rebuilt one slow until it stops."
               fi
               echo
               echo "Switch when every indexer on both networks reports fully synced:"
