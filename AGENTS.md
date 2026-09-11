@@ -165,7 +165,7 @@ Write reviewer-facing prose at final length — don't draft long and trim. The b
 1. `terraform/vpc`, scope `full` — VPC, Route53, ECR, Atlas access, the CloudFront WAFs
 2. `terraform/observability` then `terraform/observability-grafana` — in parallel with the VPC stack; `terraform/api` reads both stacks' outputs
 3. `terraform/cloudfront` — `shared`, `staging`, `prod`, `dead`, which is a dependency chain
-4. the live Atlas snapshots into the dead colour, when the plan says so ([restore-dead-prod-atlas-snapshots.yml](.github/workflows/restore-dead-prod-atlas-snapshots.yml), called)
+4. the live Atlas and RDS snapshots into the dead colour, when the plan says so ([restore-dead-prod-snapshots.yml](.github/workflows/restore-dead-prod-snapshots.yml), called)
 5. `terraform/api` for the target colour, image tags resolved per service
 6. `terraform/vpc`, scope `dead-records` — after the application, so the dead records name the ALB it just moved
 

@@ -56,6 +56,7 @@ node_modules/
 lambda.zip
 apply.plan
 *.tfplan
+*.tfvars.json
 dist/
 
 database/backups/

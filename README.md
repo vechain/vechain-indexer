@@ -196,17 +196,19 @@ The restore process involves downloading the gzipped JSON exports to an EC2 inst
 
 For the full step-by-step runbook, see: **[Disaster Recovery Runbook](https://vechain.atlassian.net/wiki/x/AYCfe)**
 
-### Dead Prod Atlas Restore Workflow
+### Dead Prod Restore Workflow
 
-For Atlas-native recovery of the current dead prod color, use the **Restore Dead Prod From Atlas Snapshots** workflow. It restores both dead-prod Atlas clusters from the latest completed snapshots belonging to the current live prod color.
+For snapshot-native recovery of the current dead prod color, use the **Restore Dead Prod From Live Snapshots** workflow. It restores both dead-prod Atlas clusters from the latest completed Atlas snapshots belonging to the current live prod color, and in a parallel job rebuilds the dead colour's Postgres instances from the live colour's newest automated RDS snapshots.
+
+Postgres differs from Atlas in three ways. RDS cannot restore into an existing instance, so each one is replaced from the snapshot under the same identifier — that is the only operation allowed to destroy a Postgres instance, and every other plan is refused by a guard in **Plan or Apply Terraform**. A net whose live instance does not exist yet is skipped, leaving the dead colour's own data alone. A restored instance lazy-loads its pages from S3, so the job starts a `pg-prewarm` ECS task per net and reports its ARN; reads stay slow until it stops, which takes hours on mainnet.
 
 This workflow does not stop or start ECS services. The dead environment must already be quiesced before restore. Use the **Stop or Start Dead Prod Environment Services** workflow first, then run the restore, then start services again once the restore summary looks correct.
 
 Recommended sequence:
 
 1. Run **Stop or Start Dead Prod Environment Services** with `stop`.
-2. Run **Restore Dead Prod From Atlas Snapshots**.
-3. Review the restore summary artifact and Atlas restore job IDs.
+2. Run **Restore Dead Prod From Live Snapshots**. To restore Postgres from a specific snapshot — a manual one taken before a risky operation, or a rehearsal against the dead colour's own data — pass it as `pg_snapshot_main` / `pg_snapshot_test`.
+3. Review the restore summary artifacts: the Atlas restore job IDs, and the RDS snapshot and prewarm task per net.
 4. Run **Stop or Start Dead Prod Environment Services** with `start`.
 5. Run the schema or regression tests against the dead environment before switching traffic.
 

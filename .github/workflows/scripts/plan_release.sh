@@ -118,7 +118,7 @@ if [ "$target_kind" = dead ]; then
     if [ "$dead_state" = up ]; then
         restore_note="no; ${dead} is running and its indexers have kept its data current"
     elif [ "$SKIP_RESTORE" = true ]; then
-        restore_note="no; skipped by request. ${dead} indexes on from whatever its Atlas clusters hold: a stale checkpoint for a stopped colour, nothing for a torn-down one"
+        restore_note="no; skipped by request. ${dead} indexes on from whatever its Atlas clusters and Postgres instances hold: a stale checkpoint for a stopped colour, nothing for a torn-down one"
     else
         restore=true
         restore_note="yes; ${dead} is ${dead_desc}, so its data is stale. Latest ${live} snapshots are restored before its services start"
