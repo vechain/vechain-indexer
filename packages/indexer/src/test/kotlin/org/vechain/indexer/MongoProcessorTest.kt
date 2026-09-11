@@ -150,6 +150,7 @@ class MongoProcessorTest {
         private fun block(number: Long): Block {
             val block = mockk<Block>()
             every { block.number } returns number
+            every { block.id } returns "0x$number"
             return block
         }
 

@@ -24,7 +24,7 @@ abstract class BaseProcessor(
     abstract suspend fun processEntry(entry: IndexingResult)
 
     /** Runs after a successful [processEntry] with the newest block the entry covered. */
-    protected open fun onProcessed(latestBlockNumber: Long) {}
+    protected open fun onProcessed(latest: BlockIdentifier) {}
 
     // Rollback hook: clear service-level caches here. Single-threaded per processor, so no locks.
     protected open fun resetProcessingState() {
@@ -39,12 +39,26 @@ abstract class BaseProcessor(
         try {
             assertEventsInBlockOrder(entry.events())
             processEntry(entry)
-            onProcessed(entry.latestBlockNumber())
+            onProcessed(latestBlock(entry))
             metricsRecorder.recordEvents(entry.events().size)
         } finally {
             metricsRecorder.record(entry, start.elapsedNow())
         }
     }
+
+    /** A log batch may end on a block without events, whose id the entry does not carry. */
+    private fun latestBlock(entry: IndexingResult): BlockIdentifier =
+        when (entry) {
+            is IndexingResult.BlockResult -> BlockIdentifier(entry.block.number, entry.block.id)
+            else ->
+                BlockIdentifier(
+                    entry.latestBlockNumber(),
+                    entry
+                        .events()
+                        .lastOrNull { it.blockNumber == entry.latestBlockNumber() }
+                        ?.blockId,
+                )
+        }
 
     private fun assertEventsInBlockOrder(events: List<IndexedEvent>) {
         for (i in 1 until events.size) {

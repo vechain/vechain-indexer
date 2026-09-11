@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.config.postgres.ConditionalOnPostgres
 import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.postgres.PostgresHex
+import org.vechain.indexer.postgres.PostgresIndexerTables
 import org.vechain.indexer.thor.model.BlockIdentifier
 import org.vechain.indexer.transaction.IndexedTransaction
 
@@ -17,11 +18,11 @@ import org.vechain.indexer.transaction.IndexedTransaction
 @ConditionalOnPostgres
 open class BlocksWriteRepository(
     @Qualifier("postgresJdbcTemplate") private val jdbc: JdbcTemplate
-) {
+) : PostgresIndexerTables {
 
     open fun lastSynced(): BlockIdentifier? =
         jdbc
-            .query("SELECT number, id FROM block ORDER BY number DESC LIMIT 1") { rs, _ ->
+            .query("SELECT number, id FROM blocks.block ORDER BY number DESC LIMIT 1") { rs, _ ->
                 BlockIdentifier(rs.getLong("number"), PostgresHex.hex(rs.getBytes("id")))
             }
             .firstOrNull()
@@ -31,7 +32,7 @@ open class BlocksWriteRepository(
         jdbc
             .query(
                 "SELECT total_transactions, total_clauses, total_reverted_transactions, " +
-                    "total_reverted_clauses FROM block ORDER BY number DESC LIMIT 1"
+                    "total_reverted_clauses FROM blocks.block ORDER BY number DESC LIMIT 1"
             ) { rs, _ ->
                 BlocksRowMappers.totals(rs)
             }
@@ -58,46 +59,20 @@ open class BlocksWriteRepository(
         transactionManager = PostgresConfig.TRANSACTION_MANAGER,
         rollbackFor = [Exception::class],
     )
-    open fun rollbackFrom(blockNumber: Long) {
-        jdbc.update("DELETE FROM block WHERE number >= ?", blockNumber)
+    override fun rollbackFrom(blockNumber: Long) {
+        jdbc.update("DELETE FROM blocks.block WHERE number >= ?", blockNumber)
     }
 
-    open fun storedVersion(): Int? =
-        jdbc
-            .query(
-                "SELECT version FROM indexer_state WHERE name = ?",
-                { rs, _ -> rs.getInt(1) },
-                NAME,
-            )
-            .firstOrNull()
-
-    /** Empties every table and records [version]; the next run backfills from the start block. */
-    @Transactional(
-        transactionManager = PostgresConfig.TRANSACTION_MANAGER,
-        rollbackFor = [Exception::class],
-    )
-    open fun resync(version: Int) {
-        jdbc.execute("TRUNCATE block, transaction, clause, event, transfer")
-        recordVersion(version)
-    }
-
-    @Transactional(
-        transactionManager = PostgresConfig.TRANSACTION_MANAGER,
-        rollbackFor = [Exception::class],
-    )
-    open fun recordVersion(version: Int) {
-        jdbc.update(
-            "INSERT INTO indexer_state (name, version) VALUES (?, ?) " +
-                "ON CONFLICT (name) DO UPDATE SET version = EXCLUDED.version",
-            NAME,
-            version,
+    override fun truncate() {
+        jdbc.execute(
+            "TRUNCATE blocks.block, blocks.transaction, blocks.clause, blocks.event, blocks.transfer"
         )
     }
 
     private fun insertBlock(b: BlockRow) {
         jdbc.update(
             """
-            INSERT INTO block (number, id, parent_id, timestamp, size, gas_limit, gas_used,
+            INSERT INTO blocks.block (number, id, parent_id, timestamp, size, gas_limit, gas_used,
               beneficiary, signer, total_score, txs_root, txs_features, state_root, receipts_root, com,
               base_fee_per_gas, clause_count, total_vtho_paid, total_transactions, total_clauses,
               total_reverted_transactions, total_reverted_clauses)
@@ -133,7 +108,7 @@ open class BlocksWriteRepository(
         if (rows.isEmpty()) return
         jdbc.batchUpdate(
             """
-            INSERT INTO transaction (id, block_number, tx_index, type, size, chain_tag, block_ref,
+            INSERT INTO blocks.transaction (id, block_number, tx_index, type, size, chain_tag, block_ref,
               expiration, gas_price_coef, gas, max_fee_per_gas, max_priority_fee_per_gas, depends_on,
               nonce, gas_used, gas_payer, paid, reward, reverted, origin, output_count)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -169,7 +144,7 @@ open class BlocksWriteRepository(
     private fun insertClauses(rows: List<ClauseRow>) {
         if (rows.isEmpty()) return
         jdbc.batchUpdate(
-            "INSERT INTO clause (tx_id, clause_index, block_number, to_address, value, data) " +
+            "INSERT INTO blocks.clause (tx_id, clause_index, block_number, to_address, value, data) " +
                 "VALUES (?, ?, ?, ?, ?, ?)",
             rows,
             rows.size,
@@ -186,7 +161,7 @@ open class BlocksWriteRepository(
     private fun insertEvents(rows: List<EventRow>) {
         if (rows.isEmpty()) return
         jdbc.batchUpdate(
-            "INSERT INTO event (tx_id, clause_index, event_index, address, topic0, topic1, " +
+            "INSERT INTO blocks.event (tx_id, clause_index, event_index, address, topic0, topic1, " +
                 "topic2, topic3, topic4, data, name, params) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS jsonb))",
             rows,
@@ -206,7 +181,7 @@ open class BlocksWriteRepository(
     private fun insertTransfers(rows: List<TransferRow>) {
         if (rows.isEmpty()) return
         jdbc.batchUpdate(
-            "INSERT INTO transfer (tx_id, clause_index, transfer_index, sender, recipient, amount) " +
+            "INSERT INTO blocks.transfer (tx_id, clause_index, transfer_index, sender, recipient, amount) " +
                 "VALUES (?, ?, ?, ?, ?, ?)",
             rows,
             rows.size,
@@ -222,9 +197,5 @@ open class BlocksWriteRepository(
 
     private fun PreparedStatement.setShortOrNull(index: Int, value: Short?) {
         if (value == null) setNull(index, Types.SMALLINT) else setShort(index, value)
-    }
-
-    companion object {
-        const val NAME = "blocks"
     }
 }

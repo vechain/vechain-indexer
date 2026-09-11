@@ -1,7 +1,5 @@
 package org.vechain.indexer.blocks
 
-import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -20,10 +18,7 @@ open class BlockTreeService(
     private val blocksService: BlocksService,
     private val transactionService: TransactionService,
     private val repository: BlocksWriteRepository,
-    @Value("\${indexer.version.blocks:1}") private val version: Int,
 ) {
-    private val logger = LoggerFactory.getLogger(this::class.java)
-
     // Previous block's running totals; written and cleared on the processor's single coroutine.
     private var lastSaved: Pair<Long, BlockTotals>? = null
 
@@ -55,25 +50,5 @@ open class BlockTreeService(
 
     open fun resetCache() {
         lastSaved = null
-    }
-
-    /** Mirrors the Mongo version check: a raised `indexer.version.blocks` empties the schema. */
-    open fun ensureVersion() {
-        val stored = repository.storedVersion()
-        when {
-            stored == null -> {
-                logger.info("No blocks indexer version recorded; recording version {}", version)
-                repository.recordVersion(version)
-            }
-            stored < version -> {
-                logger.info(
-                    "Blocks indexer version {} is below {}; truncating for a resync",
-                    stored,
-                    version,
-                )
-                repository.resync(version)
-                resetCache()
-            }
-        }
     }
 }

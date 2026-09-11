@@ -27,8 +27,9 @@ class ProcessorTransactionalAnnotationsTest {
     @Test
     fun `postgres processor rollback and service save name the postgres transaction manager`() {
         val rollback =
-            BlocksProcessor::class.java.getDeclaredMethod("rollback", java.lang.Long.TYPE)
+            PostgresProcessor::class.java.getDeclaredMethod("rollback", java.lang.Long.TYPE)
         val save = BlockTreeService::class.java.getDeclaredMethod("save", BlockTree::class.java)
+        assertEquals(PostgresProcessor::class.java, BlocksProcessor::class.java.superclass)
         for (method in listOf(rollback, save)) {
             val transactional = method.getAnnotation(Transactional::class.java)
             assertTransactional(transactional)

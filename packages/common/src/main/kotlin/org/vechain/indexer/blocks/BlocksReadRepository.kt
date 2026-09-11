@@ -34,9 +34,9 @@ open class BlocksReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTemplate:
         val bound = if (from == null) "" else "WHERE b.number <= :from"
         return jdbc.query(
             """
-            SELECT b.*, (SELECT array_agg(t.id ORDER BY t.tx_index) FROM transaction t
+            SELECT b.*, (SELECT array_agg(t.id ORDER BY t.tx_index) FROM blocks.transaction t
                          WHERE t.block_number = b.number) AS tx_ids
-            FROM block b $bound ORDER BY b.number DESC LIMIT :limit
+            FROM blocks.block b $bound ORDER BY b.number DESC LIMIT :limit
             """
                 .trimIndent(),
             MapSqlParameterSource("from", from).addValue("limit", limit),
@@ -91,10 +91,10 @@ open class BlocksReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTemplate:
             if (includeDelegated)
                 """
                 SELECT t.*, b.id AS block_id, b.timestamp AS block_timestamp, $CLAUSE_COUNT
-                FROM ((SELECT * FROM transaction WHERE origin = :address ORDER BY $order LIMIT :reach)
+                FROM ((SELECT * FROM blocks.transaction WHERE origin = :address ORDER BY $order LIMIT :reach)
                       UNION
-                      (SELECT * FROM transaction WHERE gas_payer = :address ORDER BY $order LIMIT :reach)) t
-                JOIN block b ON b.number = t.block_number
+                      (SELECT * FROM blocks.transaction WHERE gas_payer = :address ORDER BY $order LIMIT :reach)) t
+                JOIN blocks.block b ON b.number = t.block_number
                 ORDER BY t.block_number ${direction.name}, t.id ${direction.name} OFFSET :offset LIMIT :limit
                 """
                     .trimIndent()
@@ -131,11 +131,11 @@ open class BlocksReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTemplate:
         transactions(
             """
             WITH page AS (
-              SELECT DISTINCT ON (c.block_number, c.tx_id) c.block_number, c.tx_id FROM clause c
+              SELECT DISTINCT ON (c.block_number, c.tx_id) c.block_number, c.tx_id FROM blocks.clause c
               WHERE c.to_address = :address
               ORDER BY c.block_number ${direction.name}, c.tx_id ${direction.name} OFFSET :offset LIMIT :limit)
             SELECT t.*, b.id AS block_id, b.timestamp AS block_timestamp, $CLAUSE_COUNT
-            FROM page p JOIN transaction t ON t.id = p.tx_id JOIN block b ON b.number = t.block_number
+            FROM page p JOIN blocks.transaction t ON t.id = p.tx_id JOIN blocks.block b ON b.number = t.block_number
             ORDER BY p.block_number ${direction.name}, p.tx_id ${direction.name}
             """
                 .trimIndent(),
@@ -150,7 +150,7 @@ open class BlocksReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTemplate:
             .query(
                 "SELECT number, id, timestamp, total_transactions, total_clauses, " +
                     "total_reverted_transactions, total_reverted_clauses " +
-                    "FROM block ORDER BY number DESC LIMIT 1"
+                    "FROM blocks.block ORDER BY number DESC LIMIT 1"
             ) { rs, _ ->
                 val totals = BlocksRowMappers.totals(rs)
                 TransactionCountSummary(
@@ -218,12 +218,12 @@ open class BlocksReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTemplate:
 
     companion object {
         private const val CLAUSE_COUNT =
-            "(SELECT count(*) FROM clause c WHERE c.tx_id = t.id) AS clause_count"
-        private const val SELECT_CLAUSES = "SELECT * FROM clause WHERE tx_id = ANY(:ids)"
-        private const val SELECT_EVENTS = "SELECT * FROM event WHERE tx_id = ANY(:ids)"
-        private const val SELECT_TRANSFERS = "SELECT * FROM transfer WHERE tx_id = ANY(:ids)"
+            "(SELECT count(*) FROM blocks.clause c WHERE c.tx_id = t.id) AS clause_count"
+        private const val SELECT_CLAUSES = "SELECT * FROM blocks.clause WHERE tx_id = ANY(:ids)"
+        private const val SELECT_EVENTS = "SELECT * FROM blocks.event WHERE tx_id = ANY(:ids)"
+        private const val SELECT_TRANSFERS = "SELECT * FROM blocks.transfer WHERE tx_id = ANY(:ids)"
         private const val SELECT_TX =
             "SELECT t.*, b.id AS block_id, b.timestamp AS block_timestamp, $CLAUSE_COUNT " +
-                "FROM transaction t JOIN block b ON b.number = t.block_number"
+                "FROM blocks.transaction t JOIN blocks.block b ON b.number = t.block_number"
     }
 }

@@ -1,6 +1,5 @@
 package org.vechain.indexer.blocks
 
-import com.zaxxer.hikari.HikariDataSource
 import java.math.BigInteger
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -11,16 +10,13 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.data.domain.Sort.Direction.ASC
 import org.springframework.data.domain.Sort.Direction.DESC
-import org.springframework.jdbc.core.JdbcTemplate
-import org.testcontainers.containers.PostgreSQLContainer
 import org.vechain.indexer.blocks.BlocksFixtures.address
 import org.vechain.indexer.blocks.BlocksFixtures.block
 import org.vechain.indexer.blocks.BlocksFixtures.decodedEvent
 import org.vechain.indexer.blocks.BlocksFixtures.transaction
 import org.vechain.indexer.blocks.BlocksFixtures.transfer
 import org.vechain.indexer.blocks.BlocksReadRepository.LatestCursor
-import org.vechain.indexer.config.postgres.PostgresConfig
-import org.vechain.indexer.config.postgres.PostgresProperties
+import org.vechain.indexer.postgres.PostgresTestDatabase
 import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.transaction.IndexedTransaction
 
@@ -28,8 +24,7 @@ import org.vechain.indexer.transaction.IndexedTransaction
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class BlocksReadRepositoryTest {
 
-    private val postgres = PostgreSQLContainer("postgres:16")
-    private lateinit var dataSource: HikariDataSource
+    private val database = PostgresTestDatabase()
     private lateinit var repository: BlocksReadRepository
 
     private val alice = address(10)
@@ -40,23 +35,12 @@ class BlocksReadRepositoryTest {
 
     @BeforeAll
     fun start() {
-        postgres.start()
-        val config = PostgresConfig()
-        dataSource =
-            config.postgresDataSource(
-                PostgresProperties(postgres.jdbcUrl, postgres.username, postgres.password)
-            ) as HikariDataSource
-        config.postgresFlyway(dataSource).migrate()
-        val jdbc = JdbcTemplate(dataSource)
-        repository = BlocksReadRepository(jdbc)
-        seed(BlocksWriteRepository(jdbc))
+        database.start()
+        repository = BlocksReadRepository(database.jdbc)
+        seed(BlocksWriteRepository(database.jdbc))
     }
 
-    @AfterAll
-    fun stop() {
-        dataSource.close()
-        postgres.stop()
-    }
+    @AfterAll fun stop() = database.close()
 
     private fun seed(writer: BlocksWriteRepository) {
         var totals = BlockTotals.ZERO

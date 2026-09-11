@@ -44,6 +44,14 @@ class PostgresHexTest {
     }
 
     @Test
+    fun `sha1 ids render without a prefix and decode from either form`() {
+        val id = "93bed94c547a207d9a8ff1daee175feded00304b"
+        assertEquals(20, PostgresHex.bytes(id).size)
+        assertEquals(id, PostgresHex.bareHex(PostgresHex.bytes(id)))
+        assertEquals(id, PostgresHex.bareHex(PostgresHex.bytes("0x$id")))
+    }
+
+    @Test
     fun `nullable helpers pass null through`() {
         assertNull(PostgresHex.bytesOrNull(null))
         assertNull(PostgresHex.hexOrNull(null))

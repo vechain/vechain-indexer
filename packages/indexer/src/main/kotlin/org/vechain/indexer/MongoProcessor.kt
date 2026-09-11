@@ -3,6 +3,7 @@ package org.vechain.indexer
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.metrics.ProcessorMetrics
+import org.vechain.indexer.thor.model.BlockIdentifier
 
 /** A [BaseProcessor] over one Mongo collection, with the throttled `__checkpoint__` writes. */
 abstract class MongoProcessor(
@@ -18,9 +19,9 @@ abstract class MongoProcessor(
     // Set after each successful processEntry; read by the shutdown thread, hence @Volatile.
     @Volatile private var lastObservedBlock: Long? = null
 
-    override fun onProcessed(latestBlockNumber: Long) {
-        lastObservedBlock = latestBlockNumber
-        checkpointService.trySaveCheckpoint(collectionName, latestBlockNumber)
+    override fun onProcessed(latest: BlockIdentifier) {
+        lastObservedBlock = latest.number
+        checkpointService.trySaveCheckpoint(collectionName, latest.number)
     }
 
     /**
