@@ -30,6 +30,19 @@ open class HistoryWriteRepository(
         insertAddresses(rows.flatMap { it.addresses })
     }
 
+    /**
+     * The newest lifecycle row per delegation, from which the indexer rebuilds its in-memory state.
+     */
+    open fun latestLifecycleRows(): List<IndexedHistoryEvent> =
+        jdbc
+            .query(
+                "SELECT DISTINCT ON (delegation_id) * FROM history.event WHERE lifecycle_status IS NOT NULL " +
+                    "ORDER BY delegation_id, block_number DESC, lifecycle_order DESC"
+            ) { rs, _ ->
+                HistoryRowMapping.row(rs)
+            }
+            .map(HistoryRowMapping::assemble)
+
     override fun rollbackFrom(blockNumber: Long) {
         jdbc.update("DELETE FROM history.event_address WHERE block_number >= ?", blockNumber)
         jdbc.update("DELETE FROM history.event WHERE block_number >= ?", blockNumber)

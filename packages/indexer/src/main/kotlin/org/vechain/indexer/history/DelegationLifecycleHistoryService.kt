@@ -3,14 +3,6 @@ package org.vechain.indexer.history
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
-import org.springframework.data.domain.Sort
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.aggregation.Aggregation
-import org.springframework.data.mongodb.core.aggregation.Aggregation.group
-import org.springframework.data.mongodb.core.aggregation.Aggregation.match
-import org.springframework.data.mongodb.core.aggregation.Aggregation.replaceRoot
-import org.springframework.data.mongodb.core.aggregation.Aggregation.sort
-import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
@@ -24,7 +16,7 @@ import org.vechain.indexer.validator.ValidatorSnapshot
 @Profile("history")
 @Service
 class DelegationLifecycleHistoryService(
-    private val mongoTemplate: MongoTemplate,
+    private val repository: HistoryWriteRepository,
     private val validatorDelegationService: ValidatorDelegationService,
     @param:Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
     private val stakerSC: String,
@@ -346,34 +338,7 @@ class DelegationLifecycleHistoryService(
     private fun ensureLoaded() {
         if (isLoaded) return
 
-        val aggregation =
-            Aggregation.newAggregation(
-                match(
-                    Criteria.where(IndexedHistoryEvent.DELEGATION_LIFECYCLE_STATUS_FIELD)
-                        .exists(true)
-                        .ne(null)
-                ),
-                sort(
-                    Sort.by(
-                        Sort.Order.asc(IndexedHistoryEvent::delegationId.name),
-                        Sort.Order.desc(IndexedHistoryEvent::blockNumber.name),
-                        Sort.Order.desc(IndexedHistoryEvent.DELEGATION_LIFECYCLE_ORDER_FIELD),
-                    )
-                ),
-                group(IndexedHistoryEvent::delegationId.name)
-                    .first(Aggregation.ROOT)
-                    .`as`("latest"),
-                replaceRoot("latest"),
-            )
-
-        val latestRows =
-            mongoTemplate
-                .aggregate(
-                    aggregation,
-                    mongoTemplate.getCollectionName(IndexedHistoryEvent::class.java),
-                    IndexedHistoryEvent::class.java,
-                )
-                .mappedResults
+        val latestRows = repository.latestLifecycleRows()
 
         latestRows.forEach { row ->
             val delegationId = row.delegationId ?: return@forEach
@@ -456,14 +421,6 @@ class DelegationLifecycleHistoryService(
             delegationLifecycleCycleLength = state.cycleLength,
             delegationLifecycleForceExit = state.forceExit,
             delegationLifecycleOrder = order,
-            involvedAddresses =
-                IndexedHistoryEvent.involvedAddressesOf(
-                    origin = state.owner,
-                    gasPayer = null,
-                    to = null,
-                    from = null,
-                    owner = state.owner,
-                ),
         )
 
     private fun IndexedHistoryEvent?.withLifecycleState(

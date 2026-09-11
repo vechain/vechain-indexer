@@ -7,13 +7,9 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
-import org.bson.Document
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.aggregation.Aggregation
-import org.springframework.data.mongodb.core.aggregation.AggregationResults
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.SimpleBlockIndexerCoordinator
@@ -30,9 +26,7 @@ import org.vechain.indexer.validator.ValidatorRepository
 
 @ExtendWith(MockKExtension::class)
 class HistoryServiceTest {
-    @MockK lateinit var historyRepository: HistoryRepository
-
-    @MockK lateinit var mongoTemplate: MongoTemplate
+    @MockK(relaxed = true) lateinit var repository: HistoryWriteRepository
 
     @MockK lateinit var validatorDelegationService: ValidatorDelegationService
 
@@ -53,10 +47,7 @@ class HistoryServiceTest {
         MockKAnnotations.init(this)
 
         every { businessEventProperties.substitutions } returns BUSINESS_EVENT_PARAMS
-        every { mongoTemplate.getCollectionName(IndexedHistoryEvent::class.java) } returns "history"
-        every {
-            mongoTemplate.aggregate(any<Aggregation>(), "history", IndexedHistoryEvent::class.java)
-        } returns AggregationResults(emptyList(), Document())
+        every { repository.latestLifecycleRows() } returns emptyList()
         every { processor.getLastSyncedBlock() } returns null
         coEvery { processor.rollback(any()) } returns Unit
         coEvery { processor.process(any()) } returns Unit
@@ -76,7 +67,7 @@ class HistoryServiceTest {
 
         val delegationLifecycleHistoryService =
             DelegationLifecycleHistoryService(
-                mongoTemplate = mongoTemplate,
+                repository = repository,
                 validatorDelegationService = validatorDelegationService,
                 stakerSC = "0x00000000000000000000000000005374616B6572",
                 stargateNftContract = BUSINESS_EVENT_PARAMS.getValue("STARGATE_NFT_CONTRACT"),
@@ -84,8 +75,7 @@ class HistoryServiceTest {
 
         historyService =
             HistoryService(
-                historyRepository = historyRepository,
-                mongoTemplate = mongoTemplate,
+                repository = repository,
                 delegationLifecycleHistoryService = delegationLifecycleHistoryService,
                 validatorRepository = validatorRepository,
                 validatorStartBlock = 0L,
@@ -121,18 +111,6 @@ class HistoryServiceTest {
             assertThat(exitRequest.delegationLifecycleNextCycle)
                 .isEqualTo(exitResult.block.number + 5L)
             assertThat(exitRequest.delegationLifecycleCycleLength).isEqualTo(5L)
-            assertThat(exitRequest.involvedAddresses)
-                .isNotNull
-                .containsExactlyInAnyOrderElementsOf(
-                    listOfNotNull(
-                            exitRequest.origin,
-                            exitRequest.gasPayer,
-                            exitRequest.to,
-                            exitRequest.from,
-                            exitRequest.owner,
-                        )
-                        .distinct()
-                )
         }
 
     @Test
@@ -146,13 +124,6 @@ class HistoryServiceTest {
             assertThat(records.map { it.eventName }).containsOnly(HistoryEventName.UNKNOWN_TX)
             assertThat(records.map { it.txId })
                 .containsExactlyInAnyOrderElementsOf(block.transactions.map { it.id })
-            records.forEach { record ->
-                assertThat(record.involvedAddresses)
-                    .isNotNull
-                    .containsExactlyInAnyOrderElementsOf(
-                        listOfNotNull(record.origin, record.gasPayer).distinct()
-                    )
-            }
         }
 
     @Test
@@ -187,11 +158,6 @@ class HistoryServiceTest {
             val record = records.single()
             assertThat(record.eventName).isEqualTo(HistoryEventName.TRANSFER_VET)
             assertThat(record.txId).isEqualTo(transaction.id)
-            assertThat(record.involvedAddresses)
-                .isNotNull
-                .containsExactlyInAnyOrderElementsOf(
-                    listOfNotNull(record.origin, record.gasPayer, record.from, record.to).distinct()
-                )
         }
 
     private suspend fun captureIndexerResults(
