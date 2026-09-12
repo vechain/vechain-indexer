@@ -123,11 +123,7 @@ class HistoryRowsRoundTripTest {
             }
         }
 
-    /** What the row cannot carry: the derived fan-out, and numbers hidden behind a String type. */
+    /** Token ids may be numbers hidden behind the String type upstream; the row renders strings. */
     private fun normalise(e: IndexedHistoryEvent) =
-        e.copy(
-            isBlacklisted = null,
-            involvedAddresses = null,
-            tokenIds = (e.tokenIds as List<*>?)?.map { it.toString() },
-        )
+        e.copy(tokenIds = (e.tokenIds as List<*>?)?.map { it.toString() })
 }

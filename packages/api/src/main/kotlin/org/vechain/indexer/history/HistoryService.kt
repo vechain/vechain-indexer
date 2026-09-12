@@ -3,19 +3,15 @@ package org.vechain.indexer.history
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
-import org.springframework.data.domain.SliceImpl
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
+import org.vechain.indexer.history.HistoryReadRepository.SearchField
 import org.vechain.indexer.thor.Address
+import org.vechain.indexer.utils.PaginationUtils.offsetSlice
 
 @Profile("history")
 @Service
-open class HistoryService(
-    private val historyRepository: HistoryRepository,
-    private val mongoTemplate: MongoTemplate,
-) {
+open class HistoryService(private val repository: HistoryReadRepository) {
+
     open fun findUserHistoryByFilters(
         account: String,
         eventNames: List<String>?,
@@ -24,67 +20,33 @@ open class HistoryService(
         before: Long?,
         after: Long?,
         pageable: Pageable,
-    ): Slice<IndexedHistoryEvent> {
-        val criteria =
-            buildCriteria(account, eventNames, searchFields, contractAddress, before, after)
-
-        return runQuery(criteria, pageable)
-    }
-
-    private fun runQuery(criteria: Criteria, pageable: Pageable): Slice<IndexedHistoryEvent> {
-        val query = Query(criteria).with(pageable)
-        query.limit(pageable.pageSize + 1)
-        val raw = mongoTemplate.find(query, IndexedHistoryEvent::class.java)
-
-        val hasNext = raw.size > pageable.pageSize
-        val content = if (hasNext) raw.dropLast(1) else raw
-
-        return SliceImpl(content, pageable, hasNext)
-    }
-
-    private fun buildCriteria(
-        account: String,
-        eventNames: List<String>?,
-        searchFields: List<String>?,
-        contractAddress: Address?,
-        before: Long?,
-        after: Long?,
-    ): Criteria {
-        val criteria = Criteria()
-
-        // Add dynamic search fields
-        if (!searchFields.isNullOrEmpty()) {
-            criteria.orOperator(
-                *searchFields.map { Criteria.where(it).`is`(account) }.toTypedArray()
-            )
-        } else {
-            // Single multikey equality replaces a 5-way $or over the address fields.
-            // Backed by the involvedAddresses index in HistoryCollectionConfig.
-            criteria.and(IndexedHistoryEvent.INVOLVED_ADDRESSES_FIELD).`is`(account)
+    ): Slice<IndexedHistoryEvent> =
+        offsetSlice(pageable, IndexedHistoryEvent::blockTimestamp.name) { offset, limit, direction
+            ->
+            val fields = searchFields.orEmpty().mapNotNull(SearchField::of)
+            if (fields.isEmpty()) {
+                repository.findByAccount(
+                    account,
+                    eventNames,
+                    contractAddress?.value,
+                    after,
+                    before,
+                    offset,
+                    limit,
+                    direction,
+                )
+            } else {
+                repository.findBySearchFields(
+                    account,
+                    fields,
+                    eventNames,
+                    contractAddress?.value,
+                    after,
+                    before,
+                    offset,
+                    limit,
+                    direction,
+                )
+            }
         }
-
-        // Add contractAddress filter
-        if (contractAddress != null) {
-            criteria.and(IndexedHistoryEvent::contractAddress.name).`is`(contractAddress.value)
-        }
-
-        // Add eventNames filter
-        if (!eventNames.isNullOrEmpty()) {
-            criteria.and(IndexedHistoryEvent::eventName.name).`in`(eventNames)
-        }
-
-        // Add timestamp filters
-        if (before != null && after != null) {
-            criteria.and(IndexedHistoryEvent::blockTimestamp.name).gte(after).lte(before)
-        } else if (before != null) {
-            criteria.and(IndexedHistoryEvent::blockTimestamp.name).lte(before)
-        } else if (after != null) {
-            criteria.and(IndexedHistoryEvent::blockTimestamp.name).gte(after)
-        }
-
-        // Add isBlacklisted filter
-        criteria.and(IndexedHistoryEvent::isBlacklisted.name).ne(true)
-
-        return criteria
-    }
 }
