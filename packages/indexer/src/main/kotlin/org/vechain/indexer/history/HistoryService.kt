@@ -3,11 +3,11 @@ package org.vechain.indexer.history
 import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.b3tr.ProofUtils
 import org.vechain.indexer.b3tr.voting.Support
+import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.EventUtils
@@ -21,8 +21,7 @@ import org.vechain.indexer.validator.ValidatorSnapshot
 @Profile("history")
 @Service
 open class HistoryService(
-    private val historyRepository: HistoryRepository,
-    private val mongoTemplate: MongoTemplate,
+    private val repository: HistoryWriteRepository,
     private val delegationLifecycleHistoryService: DelegationLifecycleHistoryService,
     private val validatorRepository: ValidatorRepository,
     @param:Value("\${indexer.start-block.validator}") private val validatorStartBlock: Long,
@@ -117,9 +116,12 @@ open class HistoryService(
                 )
         }
 
-    @Transactional(rollbackFor = [Exception::class])
+    @Transactional(
+        transactionManager = PostgresConfig.TRANSACTION_MANAGER,
+        rollbackFor = [Exception::class],
+    )
     open fun save(events: List<IndexedHistoryEvent>) {
-        historyRepository.saveAll(events)
+        repository.save(events)
     }
 
     open fun invalidateDelegationLifecycleState() {
@@ -152,14 +154,6 @@ open class HistoryService(
                     to = transferTo,
                     value = values.getOrNull(i)?.toString(),
                     tokenId = tokenIds.getOrNull(i)?.toString(),
-                    involvedAddresses =
-                        IndexedHistoryEvent.involvedAddressesOf(
-                            origin = event.origin,
-                            gasPayer = event.gasPayer,
-                            to = transferTo,
-                            from = transferFrom,
-                            owner = null,
-                        ),
                 )
             )
         }
@@ -288,14 +282,6 @@ open class HistoryService(
             delegationId = event.params.getAsString("delegationId"),
             periodClaimed = event.params.getAsLong("periodClaimed"),
             boostedBlocks = event.params.getAsString("boostedBlocks"),
-            involvedAddresses =
-                IndexedHistoryEvent.involvedAddressesOf(
-                    origin = event.origin,
-                    gasPayer = event.gasPayer,
-                    to = to,
-                    from = from,
-                    owner = ownerParam,
-                ),
         )
     }
 
@@ -317,14 +303,6 @@ open class HistoryService(
                     origin = tx.origin,
                     eventName = HistoryEventName.UNKNOWN_TX,
                     gasPayer = tx.gasPayer,
-                    involvedAddresses =
-                        IndexedHistoryEvent.involvedAddressesOf(
-                            origin = tx.origin,
-                            gasPayer = tx.gasPayer,
-                            to = null,
-                            from = null,
-                            owner = null,
-                        ),
                 )
             }
 }

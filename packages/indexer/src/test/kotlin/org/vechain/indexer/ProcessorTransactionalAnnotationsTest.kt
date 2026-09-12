@@ -10,6 +10,7 @@ import org.vechain.indexer.blocks.BlockTreeService
 import org.vechain.indexer.blocks.BlocksProcessor
 import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.history.HistoryProcessor
+import org.vechain.indexer.history.HistoryService
 import org.vechain.indexer.nft.NftBlacklistProcessor
 import org.vechain.indexer.nft.NftBlacklistService
 import org.vechain.indexer.nft.NftProcessor
@@ -19,8 +20,12 @@ import org.vechain.indexer.transfer.TransferService
 class ProcessorTransactionalAnnotationsTest {
 
     @Test
-    fun `history processor rollback keeps transactional semantics`() {
-        assertRollbackIsTransactional(HistoryProcessor::class.java)
+    fun `history processor rollback names the postgres transaction manager`() {
+        val rollback =
+            HistoryProcessor::class.java.getDeclaredMethod("rollback", java.lang.Long.TYPE)
+        val transactional = rollback.getAnnotation(Transactional::class.java)
+        assertTransactional(transactional)
+        assertEquals(PostgresConfig.TRANSACTION_MANAGER, transactional!!.transactionManager)
     }
 
     @Test
@@ -37,12 +42,14 @@ class ProcessorTransactionalAnnotationsTest {
                 BlockTreeService::class.java.getDeclaredMethod("save", BlockTree::class.java),
                 NftBlacklistService::class.java.getDeclaredMethod("save", List::class.java),
                 NftService::class.java.getDeclaredMethod("save", List::class.java),
+                HistoryService::class.java.getDeclaredMethod("save", List::class.java),
             )
         val processors =
             listOf(
                 BlocksProcessor::class.java,
                 NftBlacklistProcessor::class.java,
                 NftProcessor::class.java,
+                HistoryProcessor::class.java,
             )
         for (processor in processors) {
             assertEquals(PostgresProcessor::class.java, processor.superclass)

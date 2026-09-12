@@ -5,15 +5,10 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.slot
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
-import org.bson.Document
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.aggregation.Aggregation
-import org.springframework.data.mongodb.core.aggregation.AggregationResults
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
@@ -22,7 +17,7 @@ import org.vechain.indexer.validator.ValidatorDelegationService
 import org.vechain.indexer.validator.ValidatorSnapshot
 
 class DelegationLifecycleHistoryServiceTest {
-    private val mongoTemplate = mockk<MongoTemplate>()
+    private val repository = mockk<HistoryWriteRepository>()
     private val validatorDelegationService = mockk<ValidatorDelegationService>()
 
     private lateinit var service: DelegationLifecycleHistoryService
@@ -30,14 +25,11 @@ class DelegationLifecycleHistoryServiceTest {
     @BeforeEach
     fun setup() {
         clearAllMocks()
-        every { mongoTemplate.getCollectionName(IndexedHistoryEvent::class.java) } returns "history"
-        every {
-            mongoTemplate.aggregate(any<Aggregation>(), "history", IndexedHistoryEvent::class.java)
-        } returns AggregationResults(emptyList(), Document())
+        every { repository.latestLifecycleRows() } returns emptyList()
 
         service =
             DelegationLifecycleHistoryService(
-                mongoTemplate = mongoTemplate,
+                repository = repository,
                 validatorDelegationService = validatorDelegationService,
                 stakerSC = "0xSTAKER",
                 stargateNftContract = "0xNFT",
@@ -268,7 +260,7 @@ class DelegationLifecycleHistoryServiceTest {
             assertThat(synthetic.first().eventName)
                 .isEqualTo(HistoryEventName.STARGATE_DELEGATION_EXITED_VALIDATOR)
             assertThat(synthetic.first().txId).isEqualTo("tx-request")
-            assertThat(synthetic.first().involvedAddresses).containsExactly("0xOWNER")
+            assertThat(synthetic.first().owner).isEqualTo("0xOWNER")
         }
 
     @Test
@@ -499,27 +491,44 @@ class DelegationLifecycleHistoryServiceTest {
         }
 
     @Test
-    fun `ensureLoaded only aggregates rows with lifecycle status present`() {
-        val aggregationSlot = slot<Aggregation>()
-        every {
-            mongoTemplate.aggregate(
-                capture(aggregationSlot),
-                "history",
-                IndexedHistoryEvent::class.java,
-            )
-        } returns AggregationResults(emptyList(), Document())
+    fun `ensureLoaded rebuilds state from the newest lifecycle row per delegation, exited ones aside`() =
+        runBlocking {
+            every { validatorDelegationService.nextStatus(Status.QUEUED) } returns Status.ACTIVE
+            every { repository.latestLifecycleRows() } returns
+                listOf(
+                    historyRow(
+                            eventName = HistoryEventName.STARGATE_DELEGATE_REQUEST,
+                            delegationId = "d1",
+                            tokenId = "t1",
+                            validator = "0xVAL",
+                            owner = "0xOWNER",
+                            txId = "tx-request",
+                            block = block(5),
+                        )
+                        .copy(
+                            delegationLifecycleStatus = Status.QUEUED,
+                            delegationLifecycleNextCycle = 10L,
+                        ),
+                    historyRow(
+                            eventName = HistoryEventName.STARGATE_DELEGATION_EXITED,
+                            delegationId = "d2",
+                            tokenId = "t2",
+                            validator = "0xVAL",
+                            owner = "0xOWNER",
+                            txId = "tx-exited",
+                            block = block(6),
+                        )
+                        .copy(delegationLifecycleStatus = Status.EXITED),
+                )
 
-        service.onBlockEnd(block(1), emptyMap())
+            val synthetic = service.onBlockStart(block(10), emptyMap())
 
-        val matchStage = aggregationSlot.captured.toPipeline(Aggregation.DEFAULT_CONTEXT).first()
-        val lifecycleMatch =
-            matchStage
-                .get("\$match", Document::class.java)
-                .get(IndexedHistoryEvent.DELEGATION_LIFECYCLE_STATUS_FIELD, Document::class.java)
-
-        assertThat(lifecycleMatch).containsEntry("\$exists", true)
-        assertThat(lifecycleMatch).containsKey("\$ne")
-    }
+            assertThat(synthetic).hasSize(1)
+            assertThat(synthetic.first().delegationId).isEqualTo("d1")
+            assertThat(synthetic.first().eventName)
+                .isEqualTo(HistoryEventName.STARGATE_DELEGATE_ACTIVE)
+            assertThat(synthetic.first().txId).isEqualTo("tx-request")
+        }
 
     private fun block(number: Long) =
         Block(

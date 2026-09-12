@@ -49,7 +49,7 @@ object IndexerNames {
 
     object HISTORY {
         const val NAME = "HistoryIndexer"
-        const val COLLECTION = "history_events"
+        const val COLLECTION = "history"
     }
 
     object NFT {
