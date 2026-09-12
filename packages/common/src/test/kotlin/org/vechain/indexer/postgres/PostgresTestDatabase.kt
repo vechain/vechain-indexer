@@ -39,6 +39,8 @@ class PostgresTestDatabase(private val apiPassword: String = "") : AutoCloseable
                     username = container.username
                     password = container.password
                     connectionInitSql = "SET search_path TO ''"
+                    // As PostgresConfig does, so a batch is rewritten here the way production does.
+                    addDataSourceProperty("reWriteBatchedInserts", "true")
                 }
             )
         jdbc = JdbcTemplate(dataSource)
