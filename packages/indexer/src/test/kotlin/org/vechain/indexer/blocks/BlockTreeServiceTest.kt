@@ -1,8 +1,6 @@
 package org.vechain.indexer.blocks
 
-import io.mockk.Runs
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -14,8 +12,7 @@ import org.vechain.indexer.transaction.TransactionService
 class BlockTreeServiceTest {
 
     private val repository = mockk<BlocksWriteRepository>(relaxed = true)
-    private val service =
-        BlockTreeService(BlocksService(), TransactionService(), repository, version = 3)
+    private val service = BlockTreeService(BlocksService(), TransactionService(), repository)
 
     private val genesis = service.processBlock(BlockFixtures.BLOCK_NO_CLAUSES, emptyList())
     private val withTxs = service.processBlock(BlockFixtures.BLOCK_MULTIPLE_TXS, emptyList())
@@ -81,37 +78,6 @@ class BlockTreeServiceTest {
         service.save(at(genesis, 200))
 
         verify(exactly = 3) { repository.newestTotals() }
-    }
-
-    @Test
-    fun `ensureVersion records a first version without touching data`() {
-        every { repository.storedVersion() } returns null
-
-        service.ensureVersion()
-
-        verify { repository.recordVersion(3) }
-        verify(exactly = 0) { repository.resync(any()) }
-    }
-
-    @Test
-    fun `ensureVersion truncates when the configured version is higher`() {
-        every { repository.storedVersion() } returns 2
-        every { repository.resync(3) } just Runs
-
-        service.ensureVersion()
-
-        verify { repository.resync(3) }
-    }
-
-    @Test
-    fun `ensureVersion leaves a current or newer schema alone`() {
-        every { repository.storedVersion() } returns 3
-        service.ensureVersion()
-        every { repository.storedVersion() } returns 4
-        service.ensureVersion()
-
-        verify(exactly = 0) { repository.resync(any()) }
-        verify(exactly = 0) { repository.recordVersion(any()) }
     }
 
     @Test

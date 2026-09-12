@@ -18,8 +18,8 @@ import org.vechain.indexer.thor.model.BlockIdentifier
 class BlocksProcessorTest {
 
     private val service = mockk<BlockTreeService>(relaxed = true)
-    private val repository = mockk<BlocksWriteRepository>(relaxed = true)
-    private val processor = BlocksProcessor(service, repository, mockk(relaxed = true))
+    private val store = mockk<BlocksIndexerStore>(relaxed = true)
+    private val processor = BlocksProcessor(service, store, mockk(relaxed = true), version = 3)
 
     @Test
     fun `processEntry projects the block and saves it`() = runBlocking {
@@ -44,8 +44,8 @@ class BlocksProcessorTest {
     }
 
     @Test
-    fun `resume comes from the newest block row`() {
-        every { repository.lastSynced() } returns BlockIdentifier(42L, "0x2a")
+    fun `resume comes from the store`() {
+        every { store.lastSynced() } returns BlockIdentifier(42L, "0x2a")
 
         assertEquals(BlockIdentifier(42L, "0x2a"), processor.getLastSyncedBlock())
     }
@@ -58,13 +58,14 @@ class BlocksProcessorTest {
 
         verifyOrder {
             service.resetCache()
-            repository.rollbackFrom(500L)
+            store.rollbackFrom(500L)
         }
     }
 
     @Test
-    fun `bootstrap runs the version check`() {
+    fun `bootstrap runs the version check and clears the totals cache`() {
         processor.bootstrap()
-        verify(exactly = 1) { service.ensureVersion() }
+        verify(exactly = 1) { store.ensureVersion(3) }
+        verify(exactly = 1) { service.resetCache() }
     }
 }

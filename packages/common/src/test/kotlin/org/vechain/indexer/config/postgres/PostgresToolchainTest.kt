@@ -83,6 +83,14 @@ class PostgresToolchainTest {
                 .query(Int::class.java)
                 .single()
         assertEquals(1, history)
+        val blocks =
+            client
+                .sql(
+                    "SELECT table_schema FROM information_schema.tables WHERE table_name = 'block'"
+                )
+                .query(String::class.java)
+                .single()
+        assertEquals("blocks", blocks)
     }
 
     @Test

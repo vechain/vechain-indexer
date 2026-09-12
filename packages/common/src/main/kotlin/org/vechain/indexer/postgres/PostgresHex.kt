@@ -16,6 +16,9 @@ object PostgresHex {
 
     fun hexOrNull(bytes: ByteArray?): String? = bytes?.let(::hex)
 
+    /** sha1 ids are the one hex the API renders without `0x`; [bytes] accepts either form. */
+    fun bareHex(bytes: ByteArray): String = Hex.encodeHexString(bytes)
+
     fun quantity(hex: String): BigDecimal = BigDecimal(BigInteger(hex.removePrefix(PREFIX), 16))
 
     fun quantityOrNull(hex: String?): BigDecimal? = hex?.let(::quantity)

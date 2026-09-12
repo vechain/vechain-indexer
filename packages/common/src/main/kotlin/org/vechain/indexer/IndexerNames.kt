@@ -1,6 +1,6 @@
 package org.vechain.indexer
 
-/** Shared indexer names and collection names reused by models, processors, and configs. */
+/** Shared indexer names and storage unit names (a Mongo collection or a Postgres schema). */
 object IndexerNames {
     object APP_ALL_TIME_ACTION_SUMMARY {
         const val NAME = "AppAllTimeActionSummaryIndexer"

@@ -1,6 +1,5 @@
 package org.vechain.indexer.blocks
 
-import com.zaxxer.hikari.HikariDataSource
 import java.sql.DriverManager
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -11,59 +10,39 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.jdbc.core.JdbcTemplate
-import org.springframework.transaction.support.TransactionTemplate
-import org.testcontainers.containers.PostgreSQLContainer
 import org.vechain.indexer.blocks.BlocksFixtures.block
 import org.vechain.indexer.blocks.BlocksFixtures.decodedEvent
 import org.vechain.indexer.blocks.BlocksFixtures.rawEvent
 import org.vechain.indexer.blocks.BlocksFixtures.transaction
 import org.vechain.indexer.blocks.BlocksFixtures.transfer
-import org.vechain.indexer.config.postgres.PostgresConfig
-import org.vechain.indexer.config.postgres.PostgresProperties
 import org.vechain.indexer.postgres.PostgresApiRole
 import org.vechain.indexer.postgres.PostgresHex
+import org.vechain.indexer.postgres.PostgresTestDatabase
 import org.vechain.indexer.thor.model.BlockIdentifier
 import org.vechain.indexer.transaction.IndexedTransaction
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class BlocksWriteRepositoryTest {
 
-    private val postgres = PostgreSQLContainer("postgres:16")
-    private lateinit var dataSource: HikariDataSource
+    private val database = PostgresTestDatabase(apiPassword = "api-secret")
     private lateinit var jdbc: JdbcTemplate
     private lateinit var repository: BlocksWriteRepository
-    private lateinit var properties: PostgresProperties
 
     @BeforeAll
     fun start() {
-        postgres.start()
-        val config = PostgresConfig()
-        properties =
-            PostgresProperties(
-                url = postgres.jdbcUrl,
-                username = postgres.username,
-                password = postgres.password,
-                apiPassword = "api-secret",
-            )
-        dataSource = config.postgresDataSource(properties) as HikariDataSource
-        config.postgresFlyway(dataSource).migrate()
-        jdbc = JdbcTemplate(dataSource)
+        database.start()
+        jdbc = database.jdbc
         repository = BlocksWriteRepository(jdbc)
     }
 
-    @AfterAll
-    fun stop() {
-        dataSource.close()
-        postgres.stop()
-    }
+    @AfterAll fun stop() = database.close()
 
     @BeforeEach
     fun reset() {
-        repository.resync(1)
+        repository.truncate()
     }
 
-    private fun count(table: String): Int =
-        jdbc.queryForObject("SELECT count(*) FROM $table", Int::class.java)!!
+    private fun count(table: String): Int = database.count("blocks.$table")
 
     private fun insertTwoBlocks(): List<IndexedTransaction> {
         val b1 = block(1)
@@ -112,7 +91,7 @@ class BlocksWriteRepositoryTest {
             val row =
                 jdbc
                     .query(
-                        "SELECT * FROM transaction WHERE id = ?",
+                        "SELECT * FROM blocks.transaction WHERE id = ?",
                         { rs, _ -> BlocksRowMappers.transaction(rs) },
                         id,
                     )
@@ -120,7 +99,7 @@ class BlocksWriteRepositoryTest {
             val block =
                 jdbc
                     .query(
-                        "SELECT * FROM block WHERE number = ?",
+                        "SELECT * FROM blocks.block WHERE number = ?",
                         { rs, _ -> BlocksRowMappers.block(rs) },
                         row.blockNumber,
                     )
@@ -130,17 +109,17 @@ class BlocksWriteRepositoryTest {
                     row,
                     BlocksRowMapping.BlockRef(PostgresHex.hex(block.id), block.timestamp),
                     jdbc.query(
-                        "SELECT * FROM clause WHERE tx_id = ?",
+                        "SELECT * FROM blocks.clause WHERE tx_id = ?",
                         { rs, _ -> BlocksRowMappers.clause(rs) },
                         id,
                     ),
                     jdbc.query(
-                        "SELECT * FROM event WHERE tx_id = ?",
+                        "SELECT * FROM blocks.event WHERE tx_id = ?",
                         { rs, _ -> BlocksRowMappers.event(rs) },
                         id,
                     ),
                     jdbc.query(
-                        "SELECT * FROM transfer WHERE tx_id = ?",
+                        "SELECT * FROM blocks.transfer WHERE tx_id = ?",
                         { rs, _ -> BlocksRowMappers.transfer(rs) },
                         id,
                     ),
@@ -155,13 +134,13 @@ class BlocksWriteRepositoryTest {
         val row =
             jdbc
                 .query(
-                    "SELECT * FROM block WHERE number = 1",
+                    "SELECT * FROM blocks.block WHERE number = 1",
                     { rs, _ -> BlocksRowMappers.block(rs) },
                 )
                 .single()
         val ids =
             jdbc.query(
-                "SELECT id FROM transaction WHERE block_number = 1 ORDER BY tx_index",
+                "SELECT id FROM blocks.transaction WHERE block_number = 1 ORDER BY tx_index",
                 { rs, _ -> PostgresHex.hex(rs.getBytes(1)) },
             )
 
@@ -197,36 +176,35 @@ class BlocksWriteRepositoryTest {
     }
 
     @Test
-    fun `resync truncates every table and records the version`() {
+    fun `truncate empties every table`() {
         insertTwoBlocks()
-        assertEquals(1, repository.storedVersion())
 
-        repository.resync(2)
+        repository.truncate()
 
-        assertEquals(2, repository.storedVersion())
-        assertEquals(0, count("block"))
-        assertEquals(0, count("event"))
+        assertEquals(0, count("block") + count("event"))
+        assertNull(repository.lastSynced())
     }
 
     @Test
     fun `the api role can read the tables and nothing more`() {
         insertTwoBlocks()
-        PostgresApiRole(jdbc, properties).sync()
+        PostgresApiRole(jdbc, database.properties).sync()
 
-        DriverManager.getConnection(postgres.jdbcUrl, PostgresApiRole.ROLE, "api-secret").use { api
+        DriverManager.getConnection(database.jdbcUrl, PostgresApiRole.ROLE, "api-secret").use { api
             ->
-            api.createStatement().executeQuery("SELECT count(*) FROM block").use { rs ->
+            api.createStatement().executeQuery("SELECT count(*) FROM blocks.block").use { rs ->
                 rs.next()
                 assertEquals(2, rs.getInt(1))
             }
+            api.createStatement().executeQuery("SELECT count(*) FROM public.indexer_state").close()
             assertThrows(Exception::class.java) {
-                api.createStatement().execute("DELETE FROM block")
+                api.createStatement().execute("DELETE FROM blocks.block")
             }
         }
 
         // Re-running with a new password re-passwords rather than failing on the existing role.
-        PostgresApiRole(jdbc, properties.copy(apiPassword = "rotated")).sync()
-        DriverManager.getConnection(postgres.jdbcUrl, PostgresApiRole.ROLE, "rotated").close()
+        PostgresApiRole(jdbc, database.properties.copy(apiPassword = "rotated")).sync()
+        DriverManager.getConnection(database.jdbcUrl, PostgresApiRole.ROLE, "rotated").close()
     }
 
     @Test
@@ -236,14 +214,13 @@ class BlocksWriteRepositoryTest {
         val duplicate = transaction(b, 1).copy(id = tx.id)
 
         assertThrows(Exception::class.java) {
-            TransactionTemplate(PostgresConfig().postgresTransactionManager(dataSource))
-                .executeWithoutResult {
-                    repository.insert(
-                        block(1, listOf(tx, duplicate)),
-                        listOf(tx, duplicate),
-                        BlockTotals.ZERO,
-                    )
-                }
+            database.transactions().executeWithoutResult {
+                repository.insert(
+                    block(1, listOf(tx, duplicate)),
+                    listOf(tx, duplicate),
+                    BlockTotals.ZERO,
+                )
+            }
         }
 
         assertEquals(0, count("block"))

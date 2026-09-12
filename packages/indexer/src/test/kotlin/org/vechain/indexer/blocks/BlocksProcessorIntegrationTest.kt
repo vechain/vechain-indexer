@@ -1,6 +1,5 @@
 package org.vechain.indexer.blocks
 
-import com.zaxxer.hikari.HikariDataSource
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterAll
@@ -10,13 +9,13 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.jdbc.core.JdbcTemplate
-import org.testcontainers.containers.PostgreSQLContainer
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
-import org.vechain.indexer.config.postgres.PostgresConfig
-import org.vechain.indexer.config.postgres.PostgresProperties
+import org.vechain.indexer.config.CheckpointProperties
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.IndexedEventsFixtures
+import org.vechain.indexer.postgres.IndexerStateRepository
+import org.vechain.indexer.postgres.PostgresTestDatabase
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.transaction.TransactionService
 
@@ -24,32 +23,23 @@ import org.vechain.indexer.transaction.TransactionService
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class BlocksProcessorIntegrationTest {
 
-    private val postgres = PostgreSQLContainer("postgres:16")
-    private lateinit var dataSource: HikariDataSource
+    private val database = PostgresTestDatabase()
     private lateinit var jdbc: JdbcTemplate
     private lateinit var processor: BlocksProcessor
 
     @BeforeAll
     fun start() {
-        postgres.start()
-        val config = PostgresConfig()
-        dataSource =
-            config.postgresDataSource(
-                PostgresProperties(postgres.jdbcUrl, postgres.username, postgres.password)
-            ) as HikariDataSource
-        config.postgresFlyway(dataSource).migrate()
-        jdbc = JdbcTemplate(dataSource)
+        database.start()
+        jdbc = database.jdbc
         val repository = BlocksWriteRepository(jdbc)
-        val service = BlockTreeService(BlocksService(), TransactionService(), repository, 1)
-        processor = BlocksProcessor(service, repository, mockk(relaxed = true))
+        val service = BlockTreeService(BlocksService(), TransactionService(), repository)
+        val store =
+            BlocksIndexerStore(repository, IndexerStateRepository(jdbc), CheckpointProperties())
+        processor = BlocksProcessor(service, store, mockk(relaxed = true), version = 1)
         processor.bootstrap()
     }
 
-    @AfterAll
-    fun stop() {
-        dataSource.close()
-        postgres.stop()
-    }
+    @AfterAll fun stop() = database.close()
 
     private fun renumber(block: Block, number: Long) =
         Block(
@@ -81,8 +71,7 @@ class BlocksProcessorIntegrationTest {
         processor.process(IndexingResult.BlockResult(block, events, emptyList(), Status.SYNCING))
     }
 
-    private fun count(table: String) =
-        jdbc.queryForObject("SELECT count(*) FROM $table", Int::class.java)!!
+    private fun count(table: String) = database.count("blocks.$table")
 
     @Test
     fun `blocks are written in order, resumed from, and rolled back`() {
@@ -104,7 +93,7 @@ class BlocksProcessorIntegrationTest {
         assertEquals(expectedTxs.toLong(), totals.totalTransactions)
         val decodedEvents =
             jdbc.queryForObject(
-                "SELECT count(*) FROM event WHERE name IS NOT NULL",
+                "SELECT count(*) FROM blocks.event WHERE name IS NOT NULL",
                 Int::class.java,
             )!!
         assertEquals(true, decodedEvents > 0, "decoded events should carry their names")
@@ -112,6 +101,7 @@ class BlocksProcessorIntegrationTest {
         processor.rollback(1)
 
         assertEquals(0L, processor.getLastSyncedBlock()?.number)
+        assertEquals(1, IndexerStateRepository(jdbc).storedVersion("blocks"))
         assertEquals(0, count("transaction") + count("event") + count("transfer"))
         assertEquals(BlockTotals.ZERO, BlocksWriteRepository(jdbc).newestTotals())
 
