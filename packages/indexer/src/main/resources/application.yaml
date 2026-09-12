@@ -185,12 +185,6 @@ indexer:
     min-versions: ${INLINE_VERSIONING_MIN_VERSIONS:20}
   blacklist:
     contract-address: ${BLACKLIST_CONTRACT_ADDRESS:0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5}
-    backfill:
-      enabled: ${BLACKLIST_BACKFILL_ENABLED:true}
-      batch-size: ${BLACKLIST_BACKFILL_BATCH_SIZE:2000}
-      tick-ms: ${BLACKLIST_BACKFILL_TICK_MS:250}
-      initial-delay-ms: ${BLACKLIST_BACKFILL_INITIAL_DELAY_MS:30000}
-      max-attempts: ${BLACKLIST_BACKFILL_MAX_ATTEMPTS:10}
   version:
     blocks: ${VERSION_BLOCKS:1}
     contracts: ${VERSION_CONTRACTS:1}
