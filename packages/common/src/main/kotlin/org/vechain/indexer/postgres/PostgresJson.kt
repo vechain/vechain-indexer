@@ -14,6 +14,8 @@ import java.math.BigInteger
 object PostgresJson {
     private val NUL = Char(0)
     private val ESC = Char(0xE000)
+    private val NUL_MARK = Char(0xE001)
+    private val ESC_MARK = Char(0xE002)
 
     private val mapper =
         jacksonObjectMapper()
@@ -54,16 +56,17 @@ object PostgresJson {
             else -> value
         }
 
-    // jsonb rejects U+0000, and chain data carries it: NUL is written as ESC '0' and a literal
-    // ESC as ESC ESC, so unescape can reverse both and the API returns exactly what Mongo did.
+    // jsonb rejects U+0000, and chain data carries it: NUL is written as ESC NUL_MARK and a literal
+    // ESC as ESC ESC_MARK; unescape reverses both and leaves any other ESC alone, so rows written
+    // before this escaping existed still read back unchanged.
     private fun escape(s: String): String =
         if (NUL !in s && ESC !in s) s
         else
             buildString(s.length + 4) {
                 for (c in s) {
                     when (c) {
-                        NUL -> append(ESC).append('0')
-                        ESC -> append(ESC).append(ESC)
+                        NUL -> append(ESC).append(NUL_MARK)
+                        ESC -> append(ESC).append(ESC_MARK)
                         else -> append(c)
                     }
                 }
@@ -76,8 +79,9 @@ object PostgresJson {
                 var i = 0
                 while (i < s.length) {
                     val c = s[i]
-                    if (c == ESC && i + 1 < s.length) {
-                        append(if (s[i + 1] == '0') NUL else s[i + 1])
+                    val mark = if (c == ESC && i + 1 < s.length) s[i + 1] else null
+                    if (mark == NUL_MARK || mark == ESC_MARK) {
+                        append(if (mark == NUL_MARK) NUL else ESC)
                         i += 2
                     } else {
                         append(c)

@@ -27,4 +27,10 @@ class PostgresJsonTest {
         assertFalse(text.contains("u0000"), text)
         assertEquals(params, PostgresJson.read(text))
     }
+
+    @Test
+    fun `a row written before escaping existed reads back unchanged`() {
+        val stored = """{"proof":"a${esc}b${esc}"}"""
+        assertEquals(mapOf("proof" to "a${esc}b${esc}"), PostgresJson.read(stored))
+    }
 }
