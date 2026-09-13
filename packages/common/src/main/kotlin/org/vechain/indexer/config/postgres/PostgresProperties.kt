@@ -20,5 +20,14 @@ data class PostgresProperties(
 
     data class Flyway(val enabled: Boolean = true)
 
-    data class Pool(val maximumSize: Int = 10)
+    /**
+     * [socketTimeoutSeconds] applies per statement, so it sits well above the slowest one — a deep
+     * rollback's cascading delete, a resync truncate — and only ever fires on a dead peer.
+     */
+    data class Pool(
+        val maximumSize: Int = 10,
+        val socketTimeoutSeconds: Long = 300,
+        val connectTimeoutSeconds: Long = 10,
+        val keepaliveSeconds: Long = 60,
+    )
 }
