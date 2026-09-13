@@ -38,6 +38,13 @@ open class PostgresConfig {
                 maximumPoolSize = properties.pool.maximumSize
                 // Turns a JDBC batch of single-row INSERTs into multi-row statements.
                 addDataSourceProperty("reWriteBatchedInserts", "true")
+                // pgjdbc defaults socketTimeout to 0, so a read whose peer went away without an
+                // RST — an RDS snapshot or failover — parks the caller for good. Values in seconds.
+                addDataSourceProperty("socketTimeout", "${properties.pool.socketTimeoutSeconds}")
+                addDataSourceProperty("connectTimeout", "${properties.pool.connectTimeoutSeconds}")
+                addDataSourceProperty("tcpKeepAlive", "true")
+                // Probes an idle pooled connection so a dead one is evicted, not handed out.
+                keepaliveTime = properties.pool.keepaliveSeconds * 1_000
             }
         )
 
