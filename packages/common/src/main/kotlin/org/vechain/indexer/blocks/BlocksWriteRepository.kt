@@ -163,7 +163,7 @@ open class BlocksWriteRepository(
         jdbc.batchUpdate(
             "INSERT INTO blocks.event (tx_id, clause_index, event_index, address, topic0, topic1, " +
                 "topic2, topic3, topic4, data, name, params) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS json))",
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS jsonb))",
             rows,
             rows.size,
         ) { ps, e ->

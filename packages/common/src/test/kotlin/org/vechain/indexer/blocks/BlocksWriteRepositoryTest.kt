@@ -178,9 +178,10 @@ class BlocksWriteRepositoryTest {
 
     /** Block 19,208,142 on mainnet wedged the indexer here: jsonb refuses U+0000, json keeps it. */
     @Test
-    fun `an event parameter carrying a NUL round-trips byte for byte`() {
+    fun `an event parameter carrying a NUL or the escape character round-trips byte for byte`() {
         val nul = Char(0)
-        val proof = "picked up litter${nul} and ${nul} more"
+        val esc = Char(0xE000)
+        val proof = "picked up litter${nul} and ${esc} more${nul}"
         val event = decodedEvent().copy(params = mapOf("proof" to proof, "nested" to listOf(proof)))
         val tx = transaction(block(1), 0, events = listOf(event))
         repository.insert(block(1), listOf(tx), BlockTotals.ZERO)
