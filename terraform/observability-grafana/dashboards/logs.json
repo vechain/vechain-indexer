@@ -80,6 +80,14 @@
         }
       },
       {
+        "name": "indexer",
+        "label": "Indexer (regex, case-insensitive)",
+        "description": "Narrows to one indexer. indexer-core names each indexer's logger after the indexer itself (LoggerFactory.getLogger(name), e.g. BlocksIndexer), and this repo's own processor logs lead with the same name, so the regex runs against `logger_name` and `message`. Blank matches everything.",
+        "type": "textbox",
+        "current": { "text": "", "value": "" },
+        "query": ""
+      },
+      {
         "name": "filter",
         "label": "Filter (regex, case-insensitive)",
         "description": "Free-text regex applied to `message` and `stack_trace`.",
@@ -93,7 +101,7 @@
     {
       "id": 1,
       "type": "logs",
-      "title": "Logs — $network · $service · $level",
+      "title": "Logs — $network · $service · $level · $indexer",
       "description": "Single view over every ECS service log group. The parsed `message` field appears before other string fields in `fields` so Grafana's Logs panel picks it as the log body (it uses the first non-timestamp string field); `level` and `logger_name` (parsed from the LogstashEncoder JSON) surface as labels, and `stack_trace` is available on row-expand when the log carried a throwable. Deployment/network/service narrow via @log regex; level via the parsed field; filter regex runs against message and stack_trace.",
       "gridPos": { "h": 30, "w": 24, "x": 0, "y": 0 },
       "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
@@ -120,7 +128,7 @@
             "veworld-prod-green-main-indexer",
             "veworld-prod-green-test-indexer"
           ],
-          "expression": "fields @timestamp, message, level, logger_name, stack_trace\n| filter @log like /prod-(${deployment:pipe})-/\n| filter @log like /-(${network:pipe})-/\n| filter @log like /-(${service:pipe})$/\n| filter level like /${level:pipe}/\n| filter (message like /(?i)${filter:raw}/) or (stack_trace like /(?i)${filter:raw}/)\n| sort @timestamp desc, @ptr desc\n| limit 500"
+          "expression": "fields @timestamp, message, level, logger_name, stack_trace\n| filter @log like /prod-(${deployment:pipe})-/\n| filter @log like /-(${network:pipe})-/\n| filter @log like /-(${service:pipe})$/\n| filter level like /${level:pipe}/\n| filter (logger_name like /(?i)${indexer:raw}/) or (message like /(?i)${indexer:raw}/)\n| filter (message like /(?i)${filter:raw}/) or (stack_trace like /(?i)${filter:raw}/)\n| sort @timestamp desc, @ptr desc\n| limit 500"
         }
       ]
     }
