@@ -17,6 +17,7 @@ import org.vechain.indexer.blocks.BlocksFixtures.transaction
 import org.vechain.indexer.blocks.BlocksFixtures.transfer
 import org.vechain.indexer.postgres.PostgresApiRole
 import org.vechain.indexer.postgres.PostgresHex
+import org.vechain.indexer.postgres.PostgresJson
 import org.vechain.indexer.postgres.PostgresTestDatabase
 import org.vechain.indexer.thor.model.BlockIdentifier
 import org.vechain.indexer.transaction.IndexedTransaction
@@ -173,6 +174,26 @@ class BlocksWriteRepositoryTest {
         assertThrows(Exception::class.java) {
             repository.insert(block(2), emptyList(), BlockTotals.ZERO)
         }
+    }
+
+    /** Block 19,208,142 on mainnet wedged the indexer here: jsonb refuses U+0000, json keeps it. */
+    @Test
+    fun `an event parameter carrying a NUL round-trips byte for byte`() {
+        val nul = Char(0)
+        val proof = "picked up litter${nul} and ${nul} more"
+        val event = decodedEvent().copy(params = mapOf("proof" to proof, "nested" to listOf(proof)))
+        val tx = transaction(block(1), 0, events = listOf(event))
+        repository.insert(block(1), listOf(tx), BlockTotals.ZERO)
+
+        val stored =
+            jdbc
+                .query(
+                    "SELECT * FROM blocks.event WHERE tx_id = ?",
+                    { rs, _ -> BlocksRowMappers.event(rs) },
+                    PostgresHex.bytes(tx.id),
+                )
+                .single()
+        assertEquals(event.params, PostgresJson.read(stored.params))
     }
 
     @Test
