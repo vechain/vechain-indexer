@@ -66,6 +66,13 @@ resource "aws_db_parameter_group" "postgres" {
     value = "1000"
   }
 
+  # A statement whose client is gone otherwise runs to completion holding its locks; a task killed
+  # mid-DDL then queues one more behind it on every restart. Checked every 10s.
+  parameter {
+    name  = "client_connection_check_interval"
+    value = "10000"
+  }
+
   # gp3 is SSD: random reads cost about the same as sequential ones.
   parameter {
     name  = "random_page_cost"
