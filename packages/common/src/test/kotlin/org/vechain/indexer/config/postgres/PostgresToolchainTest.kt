@@ -1,12 +1,14 @@
 package org.vechain.indexer.config.postgres
 
 import com.zaxxer.hikari.HikariDataSource
+import java.sql.SQLException
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.ObjectProvider
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Testcontainers
@@ -59,8 +61,30 @@ class PostgresToolchainTest {
     @Test
     fun `the pool rewrites batched inserts and speaks to Postgres 16`() {
         assertEquals("true", dataSource.dataSourceProperties["reWriteBatchedInserts"])
+        assertEquals("true", dataSource.dataSourceProperties["tcpKeepAlive"])
+        assertEquals(60_000, dataSource.keepaliveTime)
         val version = jdbcClient().sql("SHOW server_version_num").query(Int::class.java).single()
         assertTrue(version >= 160000, "server_version_num=$version")
+    }
+
+    @Test
+    fun `a read outliving the socket timeout fails instead of blocking forever`() {
+        val impatient =
+            config.postgresDataSource(
+                PostgresProperties(
+                    url = postgres.jdbcUrl,
+                    username = postgres.username,
+                    password = postgres.password,
+                    pool = PostgresProperties.Pool(socketTimeoutSeconds = 1),
+                )
+            ) as HikariDataSource
+        impatient.use { source ->
+            source.connection.use { connection ->
+                assertThrows<SQLException> {
+                    connection.createStatement().execute("SELECT pg_sleep(10)")
+                }
+            }
+        }
     }
 
     @Test
