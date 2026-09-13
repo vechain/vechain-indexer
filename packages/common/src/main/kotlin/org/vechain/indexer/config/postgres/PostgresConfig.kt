@@ -51,7 +51,10 @@ open class PostgresConfig {
     @Bean(initMethod = "migrate")
     @ConditionalOnProperty(prefix = "postgres.flyway", name = ["enabled"], havingValue = "true")
     open fun postgresFlyway(postgresDataSource: DataSource): Flyway =
-        Flyway.configure().dataSource(postgresDataSource).locations(MIGRATIONS).load()
+        Flyway.configure().dataSource(postgresDataSource).locations(MIGRATIONS).load().also {
+            // Repair first: V3 shipped once as a rewrite; its checksum differs where that ran.
+            it.repair()
+        }
 
     @Bean(TRANSACTION_MANAGER)
     open fun postgresTransactionManager(postgresDataSource: DataSource): JdbcTransactionManager =
