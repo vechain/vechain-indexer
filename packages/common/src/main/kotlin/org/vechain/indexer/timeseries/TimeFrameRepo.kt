@@ -2,7 +2,6 @@ package org.vechain.indexer.timeseries
 
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
-import org.springframework.data.mongodb.repository.Query
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.accounts.TimeFrame
 
@@ -36,7 +35,7 @@ interface TimeFrameRepo<T : IndexedDocument> {
 
     fun findLatestBeforeOrAtBlockTimestamp(blockTimestamp: Long): T?
 
-    @Query("{'blockNumber': {'\$exists': true}}") fun findAll(pageable: Pageable): Slice<T>
+    fun findAll(pageable: Pageable): Slice<T>
 
     fun findByBlockTimestampBefore(blockTimestamp: Long, pageable: Pageable): Slice<T>
 

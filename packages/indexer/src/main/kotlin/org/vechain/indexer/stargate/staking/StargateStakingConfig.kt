@@ -1,6 +1,5 @@
-package org.vechain.indexer.stargate.nftHolders
+package org.vechain.indexer.stargate.staking
 
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -12,15 +11,13 @@ import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("stargate", "nft-holders-by-block")
-open class NftHoldersByBlockConfig {
-
+@Profile("stargate", "stargate-staking")
+open class StargateStakingConfig {
     @Bean
-    open fun nftHoldersByBlockIndexer(
+    open fun stargateStakingIndexer(
         thorClient: ThorClient,
-        processor: NftHoldersByBlockProcessor,
-        @Qualifier("nftOwnerBalanceIndexer") nftOwnerBalanceIndexer: Indexer,
-        @Value("\${indexer.start-block.nft-holders-by-block}") startBlock: Long,
+        processor: StargateStakingProcessor,
+        @Value("\${indexer.start-block.stargate-staking}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
         stargateNftContract: String,
@@ -29,7 +26,7 @@ open class NftHoldersByBlockConfig {
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.NFT_HOLDERS_BY_BLOCK.NAME)
+            .name(IndexerNames.STARGATE_STAKING.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)
@@ -38,6 +35,5 @@ open class NftHoldersByBlockConfig {
             .businessEventNames(listOf("STARGATE_STAKE", "STARGATE_UNSTAKE"))
             .businessEventContracts(listOf(stargateNftContract, stargateDelegationContract))
             .businessEventSubstitutionParams(bEProperties.substitutions)
-            .dependsOn(nftOwnerBalanceIndexer)
             .build()
 }

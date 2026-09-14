@@ -10,7 +10,8 @@ import org.springframework.stereotype.Service
 import org.vechain.indexer.accounts.TimeFrame
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
-import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
+import org.vechain.indexer.stargate.staking.NftHoldersReadRepository
+import org.vechain.indexer.stargate.staking.VetStakedReadRepository
 import org.vechain.indexer.stargate.token.StargateToken
 import org.vechain.indexer.stargate.token.StargateTokenReadRepository
 import org.vechain.indexer.stargate.token.TokenLevel
@@ -18,7 +19,6 @@ import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.tokenReward.TokenRewardReadRepository
 import org.vechain.indexer.stargate.vetDelegated.VetDelegatedReadRepository
-import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedReadRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedTotals
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedReadRepository
@@ -34,8 +34,8 @@ import org.vechain.indexer.utils.PaginationUtils.offsetSlice
 @Service
 open class StargateService(
     private val vthoClaimedRepository: VthoClaimedReadRepository,
-    private val nftHoldersByBlockRepository: NftHoldersByBlockRepository,
-    private val vetStakedByBlockRepository: VetStakedByBlockRepository,
+    private val nftHoldersByBlockRepository: NftHoldersReadRepository,
+    private val vetStakedByBlockRepository: VetStakedReadRepository,
     private val vthoGeneratedByBlockRepository: VthoGeneratedReadRepository,
     private val vetDelegatedByBlockRepository: VetDelegatedReadRepository,
     private val stargateTokenRepository: StargateTokenReadRepository,

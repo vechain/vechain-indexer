@@ -1,4 +1,4 @@
-package org.vechain.indexer.stargate.vetDelegated
+package org.vechain.indexer.stargate.staking
 
 import java.math.BigInteger
 import org.vechain.indexer.stargate.token.LevelledValue
@@ -6,7 +6,7 @@ import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.timeseries.TimeFrameDocument
 import org.vechain.indexer.timeseries.TimeFramePeriod
 
-data class VetDelegatedByBlock(
+data class VetStakedByBlock(
     override val blockId: String,
     override val blockNumber: Long,
     override val blockTimestamp: Long,

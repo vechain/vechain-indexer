@@ -15,6 +15,8 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.vechain.indexer.blocks.BlocksReadRepository
 import org.vechain.indexer.history.HistoryReadRepository
 import org.vechain.indexer.nft.NftReadRepository
+import org.vechain.indexer.stargate.staking.NftHoldersReadRepository
+import org.vechain.indexer.stargate.staking.VetStakedReadRepository
 import org.vechain.indexer.stargate.token.StargateTokenReadRepository
 import org.vechain.indexer.stargate.tokenReward.TokenRewardReadRepository
 import org.vechain.indexer.stargate.vetDelegated.VetDelegatedReadRepository
@@ -48,6 +50,8 @@ class OpenApiDocumentationContractTest {
     @MockitoBean private lateinit var vetDelegatedReadRepository: VetDelegatedReadRepository
     @MockitoBean private lateinit var vthoGeneratedReadRepository: VthoGeneratedReadRepository
     @MockitoBean private lateinit var vthoClaimedReadRepository: VthoClaimedReadRepository
+    @MockitoBean private lateinit var vetStakedReadRepository: VetStakedReadRepository
+    @MockitoBean private lateinit var nftHoldersReadRepository: NftHoldersReadRepository
 
     @Autowired private lateinit var mockMvc: MockMvc
     @Autowired private lateinit var objectMapper: ObjectMapper

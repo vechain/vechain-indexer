@@ -8,7 +8,8 @@ import org.junit.jupiter.api.Test
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.vechain.indexer.stargate.StargateService
-import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
+import org.vechain.indexer.stargate.staking.NftHoldersReadRepository
+import org.vechain.indexer.stargate.staking.VetStakedReadRepository
 import org.vechain.indexer.stargate.token.StargateToken
 import org.vechain.indexer.stargate.token.StargateTokenReadRepository
 import org.vechain.indexer.stargate.token.TokenLevel
@@ -16,7 +17,6 @@ import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.tokenReward.TokenRewardReadRepository
 import org.vechain.indexer.stargate.vetDelegated.VetDelegatedReadRepository
-import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedReadRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedTotals
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedReadRepository
@@ -27,8 +27,8 @@ import strikt.assertions.isEqualTo
 
 class StargateServiceTest {
     private val vthoClaimedRepository: VthoClaimedReadRepository = mockk()
-    private val nftHoldersByBlockRepository: NftHoldersByBlockRepository = mockk()
-    private val vetStakedByBlockRepository: VetStakedByBlockRepository = mockk()
+    private val nftHoldersByBlockRepository: NftHoldersReadRepository = mockk()
+    private val vetStakedByBlockRepository: VetStakedReadRepository = mockk()
     private val vthoGeneratedByBlockRepository: VthoGeneratedReadRepository = mockk()
     private val vetDelegatedByBlockRepository: VetDelegatedReadRepository = mockk()
     private val stargateTokenRepository: StargateTokenReadRepository = mockk()
