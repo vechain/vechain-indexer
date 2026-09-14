@@ -15,6 +15,7 @@ class IndexerStateRepositoryTest {
     private val database = PostgresTestDatabase()
     private lateinit var repository: IndexerStateRepository
     private val truncated = mutableListOf<String>()
+    private var pruned = 0
     private val tables =
         object : PostgresIndexerTables {
             override fun rollbackFrom(blockNumber: Long) = Unit
@@ -22,6 +23,8 @@ class IndexerStateRepositoryTest {
             override fun truncate() {
                 truncated += SCHEMA
             }
+
+            override fun prune(before: Long) = pruned
         }
 
     @BeforeAll
@@ -39,9 +42,27 @@ class IndexerStateRepositoryTest {
     }
 
     @Test
-    fun `an unknown schema has no version and no checkpoint`() {
+    fun `an unknown schema has no version, checkpoint or pruned horizon`() {
         assertNull(repository.storedVersion(SCHEMA))
         assertNull(repository.checkpoint(SCHEMA))
+        assertNull(repository.prunedBelow(SCHEMA))
+    }
+
+    @Test
+    fun `the pruned horizon moves only when rows went, only rises, and a resync forgets it`() {
+        repository.recordVersion(SCHEMA, 1)
+
+        pruned = 0
+        assertEquals(0, repository.prune(SCHEMA, tables, 100))
+        assertNull(repository.prunedBelow(SCHEMA))
+
+        pruned = 3
+        assertEquals(3, repository.prune(SCHEMA, tables, 100))
+        repository.prune(SCHEMA, tables, 50)
+        assertEquals(100L, repository.prunedBelow(SCHEMA))
+
+        repository.resync(SCHEMA, 2, tables)
+        assertNull(repository.prunedBelow(SCHEMA))
     }
 
     @Test
