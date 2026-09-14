@@ -93,7 +93,7 @@ open class VetDelegatedReadRepository(
                 ALL +
                     " WHERE TRUE" +
                     (if (timeFrame == null) ""
-                    else " AND :frame = ANY(CAST(time_frames AS text[]))") +
+                    else " AND time_frames @> ARRAY[:frame]::vet_delegated.time_frame[]") +
                     (if (after == null) "" else " AND block_timestamp > :after") +
                     (if (before == null) "" else " AND block_timestamp < :before") +
                     " ORDER BY block_timestamp ${direction.name}, block_number ${direction.name}" +
