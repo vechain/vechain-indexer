@@ -21,7 +21,7 @@ import org.vechain.indexer.stargate.vetDelegated.VetDelegatedReadRepository
 import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlockRepository
-import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockRepository
+import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedReadRepository
 import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.timeseries.TimeFrameDocument
 import org.vechain.indexer.timeseries.TimeFrameRepo
@@ -38,7 +38,7 @@ open class StargateService(
     private val vthoClaimedByAccountRepository: VthoClaimedByAccountRepository,
     private val nftHoldersByBlockRepository: NftHoldersByBlockRepository,
     private val vetStakedByBlockRepository: VetStakedByBlockRepository,
-    private val vthoGeneratedByBlockRepository: VthoGeneratedByBlockRepository,
+    private val vthoGeneratedByBlockRepository: VthoGeneratedReadRepository,
     private val vetDelegatedByBlockRepository: VetDelegatedReadRepository,
     private val stargateTokenRepository: StargateTokenReadRepository,
     private val tokenRewardRepository: TokenRewardReadRepository,

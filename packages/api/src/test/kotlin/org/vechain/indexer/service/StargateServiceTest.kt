@@ -19,7 +19,7 @@ import org.vechain.indexer.stargate.vetDelegated.VetDelegatedReadRepository
 import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlockRepository
-import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockRepository
+import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedReadRepository
 import org.vechain.indexer.validator.Status
 import strikt.api.expectThat
 import strikt.assertions.containsExactly
@@ -29,7 +29,7 @@ class StargateServiceTest {
     private val vthoClaimedByAccountRepository: VthoClaimedByAccountRepository = mockk()
     private val nftHoldersByBlockRepository: NftHoldersByBlockRepository = mockk()
     private val vetStakedByBlockRepository: VetStakedByBlockRepository = mockk()
-    private val vthoGeneratedByBlockRepository: VthoGeneratedByBlockRepository = mockk()
+    private val vthoGeneratedByBlockRepository: VthoGeneratedReadRepository = mockk()
     private val vetDelegatedByBlockRepository: VetDelegatedReadRepository = mockk()
     private val stargateTokenRepository: StargateTokenReadRepository = mockk()
     private val tokenRewardRepository: TokenRewardReadRepository = mockk()

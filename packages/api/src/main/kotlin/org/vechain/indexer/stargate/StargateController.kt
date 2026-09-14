@@ -46,7 +46,7 @@ import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.vetDelegated.VetDelegatedReadRepository
 import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlockRepository
-import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockRepository
+import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedReadRepository
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.timeseries.TimeRangePreset
 import org.vechain.indexer.timeseries.TimeSeriesRecord
@@ -68,7 +68,7 @@ import org.vechain.indexer.validation.ValidTokenLevel
 open class StargateController(
     private val stargateService: StargateService,
     private val stargateTokenHistoryService: StargateTokenHistoryService,
-    private val vthoGeneratedByBlockRepository: VthoGeneratedByBlockRepository,
+    private val vthoGeneratedByBlockRepository: VthoGeneratedReadRepository,
     private val vetStakedByBlockRepository: VetStakedByBlockRepository,
     private val vetDelegatedByBlockRepository: VetDelegatedReadRepository,
     private val nftHoldersByBlockRepository: NftHoldersByBlockRepository,
