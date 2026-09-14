@@ -44,6 +44,7 @@ open class StargateTokenProcessor(
     }
 
     override fun resetProcessingState() {
+        super.resetProcessingState()
         service.invalidateCache()
     }
 }

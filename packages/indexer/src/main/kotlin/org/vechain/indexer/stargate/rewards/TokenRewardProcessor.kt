@@ -51,6 +51,7 @@ open class TokenRewardProcessor(
 
     /** Drops the service's cycle and tracker caches so the next block reloads rolled-back rows. */
     override fun resetProcessingState() {
+        super.resetProcessingState()
         service.invalidateCache()
     }
 }

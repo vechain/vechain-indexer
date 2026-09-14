@@ -45,6 +45,7 @@ open class ValidatorBlockProcessor(
     }
 
     override fun resetProcessingState() {
+        super.resetProcessingState()
         service.invalidateCache()
     }
 }

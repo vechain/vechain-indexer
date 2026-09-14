@@ -46,6 +46,7 @@ open class DelegationProcessor(
 
     /** Drops the service's zero-cycle mirror so the next block reloads the rolled-back rows. */
     override fun resetProcessingState() {
+        super.resetProcessingState()
         service.invalidateCache()
     }
 }
