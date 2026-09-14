@@ -12,6 +12,8 @@ import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.history.HistoryProcessor
 import org.vechain.indexer.nft.NftBlacklistProcessor
 import org.vechain.indexer.nft.NftBlacklistService
+import org.vechain.indexer.postgres.IndexerStateRepository
+import org.vechain.indexer.postgres.PostgresIndexerTables
 import org.vechain.indexer.transfer.TransferService
 
 class ProcessorTransactionalAnnotationsTest {
@@ -39,6 +41,30 @@ class ProcessorTransactionalAnnotationsTest {
             assertEquals(PostgresProcessor::class.java, processor.superclass)
         }
         for (method in listOf(rollback) + saves) {
+            val transactional = method.getAnnotation(Transactional::class.java)
+            assertTransactional(transactional)
+            assertEquals(PostgresConfig.TRANSACTION_MANAGER, transactional!!.transactionManager)
+        }
+    }
+
+    @Test
+    fun `state repository prune and resync pair the table write with the marker in one transaction`() {
+        val repo = IndexerStateRepository::class.java
+        val prune =
+            repo.getDeclaredMethod(
+                "prune",
+                String::class.java,
+                PostgresIndexerTables::class.java,
+                java.lang.Long.TYPE,
+            )
+        val resync =
+            repo.getDeclaredMethod(
+                "resync",
+                String::class.java,
+                Integer.TYPE,
+                PostgresIndexerTables::class.java,
+            )
+        for (method in listOf(prune, resync)) {
             val transactional = method.getAnnotation(Transactional::class.java)
             assertTransactional(transactional)
             assertEquals(PostgresConfig.TRANSACTION_MANAGER, transactional!!.transactionManager)

@@ -8,7 +8,9 @@ import io.mockk.verify
 import io.mockk.verifyOrder
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.vechain.indexer.config.CheckpointProperties
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.postgres.IndexerStateRepository
 import org.vechain.indexer.postgres.PostgresIndexerTables
 import org.vechain.indexer.thor.model.BlockIdentifier
@@ -18,8 +20,9 @@ class PostgresIndexerStoreTest {
     private val tables = mockk<PostgresIndexerTables>(relaxed = true)
     private val state = mockk<IndexerStateRepository>(relaxed = true)
     private val properties = CheckpointProperties()
+    private val horizon = InlineVersioningProperties()
 
-    private fun store() = PostgresIndexerStore("test", tables, state, properties)
+    private fun store() = PostgresIndexerStore("test", tables, state, properties, horizon)
 
     @Test
     fun `resume is the recorded checkpoint`() {
@@ -36,6 +39,40 @@ class PostgresIndexerStoreTest {
             tables.rollbackFrom(500)
             state.saveCheckpoint("test", BlockIdentifier(499, null))
         }
+    }
+
+    @Test
+    fun `a rollback below the pruned horizon is refused before touching the tables`() {
+        every { state.prunedBelow("test") } returns 5_000
+
+        assertThrows<IllegalStateException> { store().rollbackFrom(4_999) }
+        verify(exactly = 0) { tables.rollbackFrom(any()) }
+        verify(exactly = 0) { state.saveCheckpoint(any(), any()) }
+
+        store().rollbackFrom(5_000)
+        verify { tables.rollbackFrom(5_000) }
+    }
+
+    @Test
+    fun `prune runs once per thousand blocks, a window behind the head`() {
+        val store = store()
+
+        store.onProcessed(BlockIdentifier(12_000, null))
+        store.onProcessed(BlockIdentifier(12_999, null))
+        store.onProcessed(BlockIdentifier(13_000, null))
+
+        verify(exactly = 1) { state.prune("test", tables, 2_000) }
+        verify(exactly = 1) { state.prune("test", tables, 3_000) }
+        verify(exactly = 2) { state.prune(any(), any(), any()) }
+    }
+
+    @Test
+    fun `the prune window never drops below the floor`() {
+        horizon.blockWindow = 0
+
+        store().onProcessed(BlockIdentifier(12_000, null))
+
+        verify { state.prune("test", tables, 12_000 - PostgresIndexerStore.MIN_PRUNE_WINDOW) }
     }
 
     @Test

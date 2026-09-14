@@ -33,6 +33,11 @@ open class PostgresIndexerStore(
 
     /** Runs inside the processor's Postgres transaction, so the data and the marker agree. */
     override fun rollbackFrom(blockNumber: Long) {
+        val prunedBelow = state.prunedBelow(schema)
+        check(prunedBelow == null || blockNumber >= prunedBelow) {
+            "$schema: cannot roll back to block $blockNumber, rows superseded before $prunedBelow " +
+                "were pruned; raise indexer.version to resync"
+        }
         tables.rollbackFrom(blockNumber)
         lastObserved = null
         if (usesCheckpoint) state.saveCheckpoint(schema, BlockIdentifier(blockNumber - 1, null))
@@ -54,15 +59,16 @@ open class PostgresIndexerStore(
         }
     }
 
-    // Outside the block transaction; the horizon is `indexer.inline-versioning.block-window`.
+    // Outside the block transaction; the recorded horizon arms the rollbackFrom guard.
     private fun pruneIfDue(blockNumber: Long) {
         val bucket = blockNumber / PRUNE_EVERY_BLOCKS
         if (bucket <= lastPrunedBucket) return
         lastPrunedBucket = bucket
+        val before = blockNumber - maxOf(horizon.blockWindow, MIN_PRUNE_WINDOW)
         try {
-            tables.prune(blockNumber - horizon.blockWindow)
+            state.prune(schema, tables, before)
         } catch (e: Exception) {
-            logger.warn("Failed to prune {} below block {}", schema, blockNumber, e)
+            logger.warn("Failed to prune {} below block {}", schema, before, e)
         }
     }
 
@@ -100,5 +106,6 @@ open class PostgresIndexerStore(
 
     companion object {
         const val PRUNE_EVERY_BLOCKS = 1_000L
+        const val MIN_PRUNE_WINDOW = 1_000L
     }
 }

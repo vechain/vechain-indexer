@@ -6,6 +6,6 @@ interface PostgresIndexerTables {
 
     fun truncate()
 
-    /** Drops superseded rows older than [before]; append-only schemas have nothing to drop. */
-    fun prune(before: Long) {}
+    /** Deletes superseded rows older than [before] and returns how many; append-only schemas: 0. */
+    fun prune(before: Long): Int = 0
 }

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.api.assertThrows
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
 import org.vechain.indexer.config.CheckpointProperties
@@ -90,6 +91,16 @@ class NftBlacklistProcessorIntegrationTest {
         assertEquals(emptyList<String>(), reader.blacklisted())
         process(21774600, IndexedEventsFixtures.INDEXED_EVENTS_WHITELIST)
         assertEquals(false, reader.current(flipped)!!.isBlacklisted)
+
+        // Flag and clear again, then an entry a window later prunes both closed rows; a rollback
+        // into that range is refused instead of leaving the collection with no row at all.
+        process(21774999, IndexedEventsFixtures.INDEXED_EVENTS_BLACKLIST_DUPLICATE)
+        process(21785000, emptyList())
+        assertEquals(1, database.count("nft_blacklist.collection_state"))
+        val pruned = rows()
+        assertThrows<IllegalStateException> { processor.rollback(21774999) }
+        assertEquals(pruned, rows())
+        assertEquals(BlockIdentifier(21785000, null), processor.getLastSyncedBlock())
     }
 
     private fun rows(): List<String> =

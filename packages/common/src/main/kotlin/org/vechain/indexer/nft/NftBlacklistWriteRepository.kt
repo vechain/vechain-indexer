@@ -76,8 +76,7 @@ open class NftBlacklistWriteRepository(
         jdbc.execute("TRUNCATE nft_blacklist.collection_state")
     }
 
-    /** Safe while [before] is older than the deepest rollback the indexer will be asked for. */
-    override fun prune(before: Long) {
+    /** The store records [before] once rows are gone and refuses any rollback below it. */
+    override fun prune(before: Long): Int =
         jdbc.update("DELETE FROM nft_blacklist.collection_state WHERE superseded_at < ?", before)
-    }
 }

@@ -45,9 +45,9 @@ open class IndexerStateRepository(
     open fun resync(schema: String, version: Int, tables: PostgresIndexerTables) {
         tables.truncate()
         jdbc.update(
-            "INSERT INTO public.indexer_state (name, version, checkpoint_block, checkpoint_block_id) " +
-                "VALUES (?, ?, NULL, NULL) ON CONFLICT (name) DO UPDATE " +
-                "SET version = EXCLUDED.version, checkpoint_block = NULL, checkpoint_block_id = NULL",
+            "INSERT INTO public.indexer_state (name, version) VALUES (?, ?) ON CONFLICT (name) " +
+                "DO UPDATE SET version = EXCLUDED.version, checkpoint_block = NULL, " +
+                "checkpoint_block_id = NULL, pruned_below = NULL",
             schema,
             version,
         )
@@ -78,5 +78,33 @@ open class IndexerStateRepository(
             PostgresHex.bytesOrNull(block.id),
             schema,
         )
+    }
+
+    open fun prunedBelow(schema: String): Long? =
+        jdbc
+            .query(
+                "SELECT pruned_below FROM public.indexer_state WHERE name = ? AND pruned_below IS NOT NULL",
+                { rs, _ -> rs.getLong(1) },
+                schema,
+            )
+            .firstOrNull()
+
+    /**
+     * One transaction, so rows never go without the marker; it only rises, even after a rollback.
+     */
+    @Transactional(
+        transactionManager = PostgresConfig.TRANSACTION_MANAGER,
+        rollbackFor = [Exception::class],
+    )
+    open fun prune(schema: String, tables: PostgresIndexerTables, before: Long): Int {
+        val gone = tables.prune(before)
+        if (gone > 0) {
+            jdbc.update(
+                "UPDATE public.indexer_state SET pruned_below = GREATEST(pruned_below, ?) WHERE name = ?",
+                before,
+                schema,
+            )
+        }
+        return gone
     }
 }
