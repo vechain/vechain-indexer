@@ -1,8 +1,8 @@
 package org.vechain.indexer.stargate.vthoGenerated
 
 import java.math.BigInteger
+import org.vechain.indexer.timeseries.TimeFrameDocument
 import org.vechain.indexer.timeseries.TimeFramePeriod
-import org.vechain.indexer.timeseries.TimeFrameRow
 
 data class VthoGeneratedByBlock(
     override val blockId: String,
@@ -10,4 +10,4 @@ data class VthoGeneratedByBlock(
     override val blockTimestamp: Long,
     val total: BigInteger,
     override val period: TimeFramePeriod,
-) : TimeFrameRow
+) : TimeFrameDocument

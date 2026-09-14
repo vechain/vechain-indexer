@@ -638,20 +638,12 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.vtho-claimed
     },
     {
-      name  = "INDEXER_START_BLOCK_VET_STAKED_BY_BLOCK"
-      value = each.value.indexer.start-block.vet-staked-by-block
+      name  = "INDEXER_START_BLOCK_STARGATE_STAKING"
+      value = each.value.indexer.start-block.stargate-staking
     },
     {
       name  = "INDEXER_START_BLOCK_VET_DELEGATED_BY_BLOCK"
       value = each.value.indexer.start-block.vet-delegated-by-block
-    },
-    {
-      name  = "INDEXER_START_BLOCK_NFT_HOLDERS_BY_BLOCK"
-      value = each.value.indexer.start-block.nft-holders-by-block
-    },
-    {
-      name  = "INDEXER_START_BLOCK_NFT_OWNER_BALANCE"
-      value = each.value.indexer.start-block.nft-owner-balance
     },
     {
       name  = "INDEXER_START_BLOCK_ACCOUNT_TOTALS_SERIES"
@@ -906,16 +898,8 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.stargate-vtho-generated-by-block
     },
     {
-      name  = "VERSION_STARGATE_VET_STAKED_BY_BLOCK"
-      value = each.value.indexer.version.stargate-vet-staked-by-block
-    },
-    {
-      name  = "VERSION_STARGATE_NFT_HOLDERS_BY_BLOCK"
-      value = each.value.indexer.version.stargate-nft-holders-by-block
-    },
-    {
-      name  = "VERSION_STARGATE_NFT_OWNER_BALANCE"
-      value = each.value.indexer.version.stargate-nft-owner-balance
+      name  = "VERSION_STARGATE_STAKING"
+      value = each.value.indexer.version.stargate-staking
     },
     {
       name  = "VERSION_STARGATE_VET_DELEGATED_BY_BLOCK"

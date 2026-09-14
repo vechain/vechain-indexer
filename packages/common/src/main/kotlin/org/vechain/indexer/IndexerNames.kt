@@ -62,16 +62,6 @@ object IndexerNames {
         const val COLLECTION = "nft_blacklist"
     }
 
-    object NFT_HOLDERS_BY_BLOCK {
-        const val NAME = "NftHoldersByBlockIndexer"
-        const val COLLECTION = "stargate_total_nft_holders_by_block"
-    }
-
-    object NFT_OWNER_BALANCE {
-        const val NAME = "NftOwnerBalanceIndexer"
-        const val COLLECTION = "stargate_nft_owner_balances"
-    }
-
     object PROPOSAL_COMMENT {
         const val NAME = "ProposalCommentIndexer"
         const val COLLECTION = "b3tr_proposal_comments"
@@ -117,9 +107,9 @@ object IndexerNames {
         const val COLLECTION = "vevote_proposal_results"
     }
 
-    object VET_STAKED_BY_BLOCK {
-        const val NAME = "VetStakedByBlockIndexer"
-        const val COLLECTION = "stargate_total_vet_staked_by_block"
+    object STARGATE_STAKING {
+        const val NAME = "StargateStakingIndexer"
+        const val COLLECTION = "stargate_staking"
     }
 
     object VET_DELEGATED_BY_BLOCK {

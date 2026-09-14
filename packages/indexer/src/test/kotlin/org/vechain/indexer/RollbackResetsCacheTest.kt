@@ -10,15 +10,12 @@ import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.explorer.BlockUsageProcessor
 import org.vechain.indexer.explorer.BlockUsageService
 import org.vechain.indexer.explorer.repository.BlockUsageRepository
-import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockProcessor
-import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
-import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockService
+import org.vechain.indexer.stargate.staking.StargateStakingProcessor
+import org.vechain.indexer.stargate.staking.StargateStakingService
+import org.vechain.indexer.stargate.staking.StargateStakingWriteRepository
 import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlockProcessor
 import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlockService
 import org.vechain.indexer.stargate.vetDelegated.VetDelegatedWriteRepository
-import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockProcessor
-import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockRepository
-import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockService
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedProcessor
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedService
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedWriteRepository
@@ -37,11 +34,17 @@ class RollbackResetsCacheTest {
     private val processorMetrics = mockk<ProcessorMetrics>(relaxed = true)
 
     @Test
-    fun `VetStakedByBlockProcessor rollback resets service cache`() {
-        val service = mockk<VetStakedByBlockService>(relaxed = true)
-        val repository = mockk<VetStakedByBlockRepository>(relaxed = true)
+    fun `StargateStakingProcessor rollback resets service cache`() {
+        val service = mockk<StargateStakingService>(relaxed = true)
+        val repository = mockk<StargateStakingWriteRepository>(relaxed = true)
         val processor =
-            VetStakedByBlockProcessor(service, repository, checkpointService, processorMetrics)
+            StargateStakingProcessor(
+                service,
+                repository,
+                mockk(relaxed = true),
+                CheckpointProperties(),
+                processorMetrics,
+            )
 
         processor.rollback(100)
 
@@ -60,18 +63,6 @@ class RollbackResetsCacheTest {
                 CheckpointProperties(),
                 processorMetrics,
             )
-
-        processor.rollback(100)
-
-        verify(exactly = 1) { service.resetCache() }
-    }
-
-    @Test
-    fun `NftHoldersByBlockProcessor rollback resets service cache`() {
-        val service = mockk<NftHoldersByBlockService>(relaxed = true)
-        val repository = mockk<NftHoldersByBlockRepository>(relaxed = true)
-        val processor =
-            NftHoldersByBlockProcessor(service, repository, checkpointService, processorMetrics)
 
         processor.rollback(100)
 

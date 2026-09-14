@@ -38,13 +38,13 @@ import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.cachedFor
 import org.vechain.indexer.rest.paginatedResponse
-import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
+import org.vechain.indexer.stargate.staking.NftHoldersReadRepository
+import org.vechain.indexer.stargate.staking.VetStakedReadRepository
 import org.vechain.indexer.stargate.token.StargateToken
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.vetDelegated.VetDelegatedReadRepository
-import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedReadRepository
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedReadRepository
 import org.vechain.indexer.thor.Address
@@ -69,9 +69,9 @@ open class StargateController(
     private val stargateService: StargateService,
     private val stargateTokenHistoryService: StargateTokenHistoryService,
     private val vthoGeneratedByBlockRepository: VthoGeneratedReadRepository,
-    private val vetStakedByBlockRepository: VetStakedByBlockRepository,
+    private val vetStakedByBlockRepository: VetStakedReadRepository,
     private val vetDelegatedByBlockRepository: VetDelegatedReadRepository,
-    private val nftHoldersByBlockRepository: NftHoldersByBlockRepository,
+    private val nftHoldersByBlockRepository: NftHoldersReadRepository,
     private val vthoClaimedRepository: VthoClaimedReadRepository,
 ) {
     @GetMapping("/total-vtho-claimed")

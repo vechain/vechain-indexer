@@ -19,6 +19,8 @@ import org.vechain.indexer.postgres.IndexerStateRepository
 import org.vechain.indexer.postgres.PostgresIndexerTables
 import org.vechain.indexer.stargate.rewards.TokenRewardProcessor
 import org.vechain.indexer.stargate.rewards.TokenRewardService
+import org.vechain.indexer.stargate.staking.StargateStakingProcessor
+import org.vechain.indexer.stargate.staking.StargateStakingService
 import org.vechain.indexer.stargate.token.StargateTokenProcessor
 import org.vechain.indexer.stargate.token.StargateTokenService
 import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlockProcessor
@@ -79,6 +81,12 @@ class ProcessorTransactionalAnnotationsTest {
                         "save",
                         VthoClaimedService.Update::class.java,
                     ),
+                StargateStakingService::class
+                    .java
+                    .getDeclaredMethod(
+                        "save",
+                        StargateStakingService.Update::class.java,
+                    ),
             )
         val processors =
             listOf(
@@ -94,6 +102,7 @@ class ProcessorTransactionalAnnotationsTest {
                 VetDelegatedByBlockProcessor::class.java,
                 VthoGeneratedByBlockProcessor::class.java,
                 VthoClaimedProcessor::class.java,
+                StargateStakingProcessor::class.java,
             )
         for (processor in processors) {
             assertEquals(PostgresProcessor::class.java, processor.superclass)
