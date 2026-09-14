@@ -51,7 +51,8 @@ open class DelegationWriteRepository(
         statuses: List<DelegationStatus>,
     ): List<Delegation> =
         query(
-            "$CURRENT AND transition_at_block = ? AND CAST(status AS text) = ANY(?) ORDER BY id",
+            "$CURRENT AND transition_at_block = ? AND status = ANY(CAST(? AS delegation.status[])) " +
+                "ORDER BY id",
             blockNumber,
             statuses.map { it.name }.toTypedArray(),
         )
@@ -60,7 +61,8 @@ open class DelegationWriteRepository(
         statuses: List<DelegationStatus>
     ): List<Delegation> =
         query(
-            "$CURRENT AND transition_at_block IS NULL AND CAST(status AS text) = ANY(?) ORDER BY id",
+            "$CURRENT AND transition_at_block IS NULL " +
+                "AND status = ANY(CAST(? AS delegation.status[])) ORDER BY id",
             statuses.map { it.name }.toTypedArray(),
         )
 

@@ -30,7 +30,8 @@ open class DelegationReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTempl
             CURRENT +
                 (if (validator == null) "" else " AND validator = :validator") +
                 (if (tokenId == null) "" else " AND token_id = :token") +
-                (if (statuses == null) "" else " AND CAST(status AS text) = ANY(:statuses)") +
+                (if (statuses == null) ""
+                else " AND status = ANY(CAST(:statuses AS delegation.status[]))") +
                 " ORDER BY block_number ${direction.name}, id ${direction.name} OFFSET :offset LIMIT :limit",
             MapSqlParameterSource("validator", PostgresHex.bytesOrNull(validator))
                 .addValue("token", tokenId?.let(::BigDecimal))
@@ -44,7 +45,8 @@ open class DelegationReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTempl
         statuses: Collection<DelegationStatus>,
     ): List<Delegation> =
         query(
-            "$CURRENT AND validator = :validator AND CAST(status AS text) = ANY(:statuses) ORDER BY id",
+            "$CURRENT AND validator = :validator " +
+                "AND status = ANY(CAST(:statuses AS delegation.status[])) ORDER BY id",
             MapSqlParameterSource("validator", PostgresHex.bytes(validator))
                 .addValue("statuses", statuses.map { it.name }.toTypedArray()),
         )
