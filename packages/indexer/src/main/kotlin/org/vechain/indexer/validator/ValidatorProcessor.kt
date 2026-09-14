@@ -46,6 +46,7 @@ open class ValidatorProcessor(
 
     /** Drops the service's in-memory mirror so the next block reloads the rolled-back rows. */
     override fun resetProcessingState() {
+        super.resetProcessingState()
         service.invalidateCache()
     }
 }

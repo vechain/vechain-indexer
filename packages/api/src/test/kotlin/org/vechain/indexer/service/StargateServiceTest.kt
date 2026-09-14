@@ -2,6 +2,7 @@ package org.vechain.indexer.service
 
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import java.math.BigInteger
 import org.junit.jupiter.api.Test
 import org.springframework.data.domain.PageRequest
@@ -44,6 +45,35 @@ class StargateServiceTest {
             stargateTokenRepository = stargateTokenRepository,
             tokenRewardRepository = tokenRewardRepository,
         )
+
+    @Test
+    fun `getRewards passes the token id to the repository in decimal`() {
+        val pageable = PageRequest.of(0, 10, Sort.by(Sort.Order.asc("blockTimestamp")))
+
+        every {
+            tokenRewardRepository.findByTokenIdAndRewardPeriodIn(
+                "42",
+                listOf(RewardPeriod.ALL),
+                null,
+                any(),
+                0,
+                11,
+            )
+        } returns emptyList()
+
+        service.getRewards(tokenId = "0x2a", validator = null, period = null, pageable = pageable)
+
+        verify {
+            tokenRewardRepository.findByTokenIdAndRewardPeriodIn(
+                "42",
+                listOf(RewardPeriod.ALL),
+                null,
+                any(),
+                0,
+                11,
+            )
+        }
+    }
 
     @Test
     fun `getRewards normalizes ALL documents to DAY period`() {
