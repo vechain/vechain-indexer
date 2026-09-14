@@ -64,7 +64,8 @@ open class StargateTokenWriteRepository(
     ): List<StargateToken> =
         query(
             "$CURRENT AND delegation_next_period = ANY(?) " +
-                "AND CAST(delegation_status AS text) = ANY(?) ORDER BY token_id",
+                "AND delegation_status = ANY(CAST(? AS stargate_token.delegation_status[])) " +
+                "ORDER BY token_id",
             blockNumbers.toTypedArray(),
             statuses.toTypedArray(),
         )
