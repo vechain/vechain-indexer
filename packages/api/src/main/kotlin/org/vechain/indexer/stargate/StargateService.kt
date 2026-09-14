@@ -19,8 +19,8 @@ import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.tokenReward.TokenRewardReadRepository
 import org.vechain.indexer.stargate.vetDelegated.VetDelegatedReadRepository
 import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockRepository
-import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountRepository
-import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlockRepository
+import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedReadRepository
+import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedTotals
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedReadRepository
 import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.timeseries.TimeFrameDocument
@@ -28,14 +28,12 @@ import org.vechain.indexer.timeseries.TimeFrameRepo
 import org.vechain.indexer.timeseries.TimeRangePreset
 import org.vechain.indexer.timeseries.TimeSeriesRecord
 import org.vechain.indexer.utils.BigIntegerUtils
-import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.utils.PaginationUtils.offsetSlice
 
 @Profile("stargate")
 @Service
 open class StargateService(
-    private val vthoClaimedByBlockRepository: VthoClaimedByBlockRepository,
-    private val vthoClaimedByAccountRepository: VthoClaimedByAccountRepository,
+    private val vthoClaimedRepository: VthoClaimedReadRepository,
     private val nftHoldersByBlockRepository: NftHoldersByBlockRepository,
     private val vetStakedByBlockRepository: VetStakedByBlockRepository,
     private val vthoGeneratedByBlockRepository: VthoGeneratedReadRepository,
@@ -54,9 +52,9 @@ open class StargateService(
     open fun getTotalVthoClaimed(blockNumber: Long?, rewardType: String?): BigInteger {
         val record =
             if (blockNumber != null) {
-                vthoClaimedByBlockRepository.findLatestBeforeOrAtBlockNumber(blockNumber)
+                vthoClaimedRepository.findLatestBeforeOrAtBlockNumber(blockNumber)
             } else {
-                vthoClaimedByBlockRepository.getLatestRecord()
+                vthoClaimedRepository.getLatestRecord()
             }
         if (rewardType == "LEGACY") {
             return record?.legacyRewards ?: BigInteger.ZERO
@@ -74,22 +72,7 @@ open class StargateService(
      * @dev If the account has never claimed rewards, zero is returned.
      */
     open fun getTotalVthoClaimed(account: String, rewardType: String?): BigInteger =
-        vthoClaimedByAccountRepository
-            .findById(IdUtils.generateId(HexUtils.normalise(account)))
-            .map {
-                when (rewardType) {
-                    "LEGACY" -> {
-                        it.legacyRewards
-                    }
-                    "DELEGATION" -> {
-                        it.delegationRewards
-                    }
-                    else -> {
-                        it.total
-                    }
-                }
-            }
-            .orElse(BigInteger.ZERO)
+        vthoClaimedRepository.findByAccount(HexUtils.normalise(account)).forRewardType(rewardType)
 
     /**
      * @param account Owner or delegator address.
@@ -104,27 +87,20 @@ open class StargateService(
         tokenId: String,
         rewardType: String?,
     ): BigInteger =
-        vthoClaimedByAccountRepository
-            .findById(
-                IdUtils.generateId(
-                    HexUtils.normalise(account),
-                    BigIntegerUtils.fromHexOrDecimal(tokenId).toString(10),
-                )
+        vthoClaimedRepository
+            .findByAccount(
+                HexUtils.normalise(account),
+                BigIntegerUtils.fromHexOrDecimal(tokenId).toString(10),
             )
-            .map {
-                when (rewardType) {
-                    "LEGACY" -> {
-                        it.legacyRewards
-                    }
-                    "DELEGATION" -> {
-                        it.delegationRewards
-                    }
-                    else -> {
-                        it.total
-                    }
-                }
-            }
-            .orElse(BigInteger.ZERO)
+            .forRewardType(rewardType)
+
+    private fun VthoClaimedTotals?.forRewardType(rewardType: String?): BigInteger =
+        when {
+            this == null -> BigInteger.ZERO
+            rewardType == "LEGACY" -> legacyRewards
+            rewardType == "DELEGATION" -> delegationRewards
+            else -> total
+        }
 
     /**
      * @param blockNumber Block number to query.
@@ -158,9 +134,9 @@ open class StargateService(
 
         val rows =
             if (timeFrame == null) {
-                vthoClaimedByBlockRepository.findByBlockTimestampAfter(after)
+                vthoClaimedRepository.findByBlockTimestampAfter(after)
             } else {
-                vthoClaimedByBlockRepository.findByTimeFramesContainsAndBlockTimestampAfter(
+                vthoClaimedRepository.findByTimeFramesContainsAndBlockTimestampAfter(
                     timeFrame,
                     after,
                 )

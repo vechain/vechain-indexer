@@ -12,11 +12,10 @@ import org.vechain.indexer.accounts.AccountTotalsSeriesRecordType.SERIES
 import org.vechain.indexer.accounts.repository.AccountOverviewRepository
 import org.vechain.indexer.accounts.repository.AccountTotalsSeriesRepository
 import org.vechain.indexer.exception.BadRequestException
-import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccount
-import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountRepository
+import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedReadRepository
+import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedTotals
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.HexUtils
-import org.vechain.indexer.utils.IdUtils
 import strikt.api.expectThat
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
@@ -24,15 +23,11 @@ import strikt.assertions.isEqualTo
 class AccountsServiceTest {
     private val accountOverviewRepository: AccountOverviewRepository = mockk()
     private val accountTotalsSeriesRepository: AccountTotalsSeriesRepository = mockk()
-    private val vthoClaimedByAccountRepository: VthoClaimedByAccountRepository = mockk()
+    private val vthoClaimedRepository: VthoClaimedReadRepository = mockk()
 
     private val service =
         AccountsService(accountOverviewRepository, accountTotalsSeriesRepository).also {
-            ReflectionTestUtils.setField(
-                it,
-                "vthoClaimedByAccountRepository",
-                vthoClaimedByAccountRepository,
-            )
+            ReflectionTestUtils.setField(it, "vthoClaimedRepository", vthoClaimedRepository)
         }
 
     @Test
@@ -125,7 +120,7 @@ class AccountsServiceTest {
     }
 
     @Test
-    fun `getOverviewWithVthoEarnings loads Stargate totals by generated id`() {
+    fun `getOverviewWithVthoEarnings sums Stargate claims over the account`() {
         val address = Address("0x3F90bf8B314c42005103B3c94505634fA680dcEe")
         val overview =
             AccountOverview(
@@ -139,29 +134,17 @@ class AccountsServiceTest {
                 vthoBlockRewards = BigInteger("5"),
                 vthoPassiveGeneration = BigInteger("7"),
             )
-        val stargateClaimed =
-            VthoClaimedByAccount(
-                version = 1,
-                blockId = "0xclaim",
-                blockNumber = 10L,
-                blockTimestamp = 11L,
-                total = BigInteger("13"),
-                legacyRewards = BigInteger.ZERO,
-                delegationRewards = BigInteger("13"),
-                account = HexUtils.normalise(address.value),
-                tokenId = null,
-            )
-        val expectedId = IdUtils.generateId(HexUtils.normalise(address.value))
+        val account = HexUtils.normalise(address.value)
 
         every { accountOverviewRepository.findById(address.value) } returns Optional.of(overview)
-        every { vthoClaimedByAccountRepository.findById(expectedId) } returns
-            Optional.of(stargateClaimed)
+        every { vthoClaimedRepository.findByAccount(account) } returns
+            VthoClaimedTotals(BigInteger("4"), BigInteger("9"))
 
         val result = service.getOverviewWithVthoEarnings(address)
 
         expectThat(result).isEqualTo(AccountOverviewResponse.from(overview, BigInteger("13")))
         verify(exactly = 1) { accountOverviewRepository.findById(address.value) }
-        verify(exactly = 1) { vthoClaimedByAccountRepository.findById(expectedId) }
+        verify(exactly = 1) { vthoClaimedRepository.findByAccount(account) }
     }
 
     @Test
@@ -179,15 +162,13 @@ class AccountsServiceTest {
                 vthoBlockRewards = BigInteger("5"),
                 vthoPassiveGeneration = BigInteger("7"),
             )
-        val expectedId = IdUtils.generateId(HexUtils.normalise(address.value))
-
         every { accountOverviewRepository.findById(address.value) } returns Optional.of(overview)
-        every { vthoClaimedByAccountRepository.findById(expectedId) } returns Optional.empty()
+        every { vthoClaimedRepository.findByAccount(address.value) } returns null
 
         val result = service.getOverviewWithVthoEarnings(address)
 
         expectThat(result).isEqualTo(AccountOverviewResponse.from(overview, BigInteger.ZERO))
-        verify(exactly = 1) { vthoClaimedByAccountRepository.findById(expectedId) }
+        verify(exactly = 1) { vthoClaimedRepository.findByAccount(address.value) }
     }
 
     private fun accountTotalsSeries(

@@ -127,14 +127,9 @@ object IndexerNames {
         const val COLLECTION = "vet_delegated"
     }
 
-    object VTHO_CLAIMED_BY_ACCOUNT {
-        const val NAME = "VthoClaimedByAccountIndexer"
-        const val COLLECTION = "stargate_vtho_claimed_by_account"
-    }
-
-    object VTHO_CLAIMED_BY_BLOCK {
-        const val NAME = "VthoClaimedByBlockIndexer"
-        const val COLLECTION = "stargate_vtho_claimed_by_block"
+    object VTHO_CLAIMED {
+        const val NAME = "VthoClaimedIndexer"
+        const val COLLECTION = "stargate_vtho_claimed"
     }
 
     object X_ALLOC_RESULT {

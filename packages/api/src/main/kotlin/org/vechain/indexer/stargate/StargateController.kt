@@ -45,7 +45,7 @@ import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.vetDelegated.VetDelegatedReadRepository
 import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockRepository
-import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlockRepository
+import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedReadRepository
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedReadRepository
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.timeseries.TimeRangePreset
@@ -72,7 +72,7 @@ open class StargateController(
     private val vetStakedByBlockRepository: VetStakedByBlockRepository,
     private val vetDelegatedByBlockRepository: VetDelegatedReadRepository,
     private val nftHoldersByBlockRepository: NftHoldersByBlockRepository,
-    private val vthoClaimedByBlockRepository: VthoClaimedByBlockRepository,
+    private val vthoClaimedRepository: VthoClaimedReadRepository,
 ) {
     @GetMapping("/total-vtho-claimed")
     @Operation(summary = "Get total VTHO claimed by Stargate users")
@@ -475,14 +475,14 @@ open class StargateController(
                     to = to,
                     timeFrame = tf,
                     pageable = pageable,
-                    repository = vthoClaimedByBlockRepository,
+                    repository = vthoClaimedRepository,
                 )
             } else {
                 stargateService.getTimeFrameData(
                     timeFrame = tf,
                     pageable = pageable,
                     direction = direction,
-                    repository = vthoClaimedByBlockRepository,
+                    repository = vthoClaimedRepository,
                 )
             }
 

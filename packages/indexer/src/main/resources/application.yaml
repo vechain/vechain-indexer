@@ -161,7 +161,7 @@ indexer:
     validator: ${INDEXER_START_BLOCK_VALIDATOR:0}
     delegation: ${INDEXER_START_BLOCK_DELEGATION:0}
     vtho-generated-by-block: ${INDEXER_START_BLOCK_VTHO_GENERATED_BY_BLOCK:0}
-    vtho-claimed-by-block: ${INDEXER_START_BLOCK_VTHO_CLAIMED_BY_BLOCK:0}
+    vtho-claimed: ${INDEXER_START_BLOCK_VTHO_CLAIMED:0}
     vet-staked-by-block: ${INDEXER_START_BLOCK_VET_STAKED_BY_BLOCK:0}
     vet-delegated-by-block: ${INDEXER_START_BLOCK_VET_DELEGATED_BY_BLOCK:0}
     nft-holders-by-block: ${INDEXER_START_BLOCK_NFT_HOLDERS_BY_BLOCK:0}
@@ -196,9 +196,8 @@ indexer:
     nft-blacklist: ${VERSION_NFT_BLACKLIST:1}
     vevote-comments: ${VERSION_VEVOTE_COMMENTS:1}
     vevote-results: ${VERSION_VEVOTE_RESULTS:1}
-    stargate-vtho-claimed-by-block: ${VERSION_STARGATE_VTHO_CLAIMED_BY_BLOCK:1}
+    stargate-vtho-claimed: ${VERSION_STARGATE_VTHO_CLAIMED:1}
     stargate-vtho-generated-by-block: ${VERSION_STARGATE_VTHO_GENERATED_BY_BLOCK:1}
-    stargate-vtho-claimed-by-account: ${VERSION_STARGATE_VTHO_CLAIMED_BY_ACCOUNT:1}
     stargate-nft-owner-balance: ${VERSION_STARGATE_NFT_OWNER_BALANCE:1}
     stargate-nft-holders-by-block: ${VERSION_STARGATE_NFT_HOLDERS_BY_BLOCK:1}
     stargate-vet-staked-by-block: ${VERSION_STARGATE_VET_STAKED_BY_BLOCK:1}
