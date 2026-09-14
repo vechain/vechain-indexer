@@ -30,7 +30,7 @@ open class TokenRewardReadRepository(
     ): List<TokenReward> =
         jdbc.query(
             "SELECT * FROM token_reward.state WHERE superseded_at IS NULL AND token_id = :token" +
-                " AND CAST(reward_period AS text) = ANY(:periods)" +
+                " AND reward_period = ANY(CAST(:periods AS token_reward.period[]))" +
                 (if (validator == null) "" else " AND validator = :validator") +
                 " ORDER BY block_timestamp ${direction.name}, id ${direction.name} OFFSET :offset LIMIT :limit",
             MapSqlParameterSource("token", BigDecimal(tokenId))
