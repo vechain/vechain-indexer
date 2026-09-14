@@ -10,7 +10,7 @@ import org.springframework.data.domain.Sort
 import org.vechain.indexer.stargate.StargateService
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
 import org.vechain.indexer.stargate.token.StargateToken
-import org.vechain.indexer.stargate.token.StargateTokenRepository
+import org.vechain.indexer.stargate.token.StargateTokenReadRepository
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
@@ -31,7 +31,7 @@ class StargateServiceTest {
     private val vetStakedByBlockRepository: VetStakedByBlockRepository = mockk()
     private val vthoGeneratedByBlockRepository: VthoGeneratedByBlockRepository = mockk()
     private val vetDelegatedByBlockRepository: VetDelegatedByBlockRepository = mockk()
-    private val stargateTokenRepository: StargateTokenRepository = mockk()
+    private val stargateTokenRepository: StargateTokenReadRepository = mockk()
     private val tokenRewardRepository: TokenRewardRepository = mockk()
 
     private val service =
@@ -274,12 +274,14 @@ class StargateServiceTest {
         val token = token(tokenId = "15613", owner = "0xowner", manager = "0xmanager")
 
         every {
-            stargateTokenRepository.findActiveByOwnerOrManager(
+            stargateTokenRepository.findActive(
                 "0xowner",
                 "0xmanager",
-                pageable = pageable,
+                Sort.Direction.DESC,
+                0,
+                21,
             )
-        } returns SliceImpl(listOf(token), pageable, false)
+        } returns listOf(token)
 
         val response =
             service.getStargateTokens(
@@ -298,8 +300,8 @@ class StargateServiceTest {
         val token = token(tokenId = "17105", owner = "0xowner", manager = "0xmanager")
 
         every {
-            stargateTokenRepository.findActiveByManager("0xmanager", pageable = pageable)
-        } returns SliceImpl(listOf(token), pageable, false)
+            stargateTokenRepository.findActive(null, "0xmanager", Sort.Direction.DESC, 0, 21)
+        } returns listOf(token)
 
         val response =
             service.getStargateTokens(
@@ -317,8 +319,8 @@ class StargateServiceTest {
         val pageable = PageRequest.of(0, 20, Sort.by(Sort.Order.desc("blockNumber")))
         val token = token(tokenId = "34813", owner = "0xowner", manager = "0xmanager")
 
-        every { stargateTokenRepository.findAllActive(pageable = pageable) } returns
-            SliceImpl(listOf(token), pageable, false)
+        every { stargateTokenRepository.findActive(null, null, Sort.Direction.DESC, 0, 21) } returns
+            listOf(token)
 
         val response =
             service.getStargateTokens(
@@ -387,6 +389,5 @@ class StargateServiceTest {
             blockNumber = 1,
             blockId = "0xblock",
             blockTimestamp = 1,
-            version = 1,
         )
 }

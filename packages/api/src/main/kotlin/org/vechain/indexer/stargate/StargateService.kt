@@ -14,7 +14,7 @@ import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
 import org.vechain.indexer.stargate.timeFrame.TimeFrameDocument
 import org.vechain.indexer.stargate.timeFrame.TimeFrameRepo
 import org.vechain.indexer.stargate.token.StargateToken
-import org.vechain.indexer.stargate.token.StargateTokenRepository
+import org.vechain.indexer.stargate.token.StargateTokenReadRepository
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
@@ -29,6 +29,7 @@ import org.vechain.indexer.timeseries.TimeRangePreset
 import org.vechain.indexer.timeseries.TimeSeriesRecord
 import org.vechain.indexer.utils.BigIntegerUtils
 import org.vechain.indexer.utils.IdUtils
+import org.vechain.indexer.utils.PaginationUtils.offsetSlice
 
 @Profile("stargate")
 @Service
@@ -39,7 +40,7 @@ open class StargateService(
     private val vetStakedByBlockRepository: VetStakedByBlockRepository,
     private val vthoGeneratedByBlockRepository: VthoGeneratedByBlockRepository,
     private val vetDelegatedByBlockRepository: VetDelegatedByBlockRepository,
-    private val stargateTokenRepository: StargateTokenRepository,
+    private val stargateTokenRepository: StargateTokenReadRepository,
     private val tokenRewardRepository: TokenRewardRepository,
 ) {
     /**
@@ -378,27 +379,13 @@ open class StargateService(
         pageable: Pageable,
     ): PaginatedResponse<StargateToken> {
         val slice =
-            when {
-                tokenId != null -> {
-                    stargateTokenRepository
-                        .findById(tokenId)
-                        .map { SliceImpl(listOf(it), pageable, false) }
-                        .orElseGet { SliceImpl(emptyList(), pageable, false) }
+            if (tokenId != null) {
+                val decimal = BigIntegerUtils.fromHexOrDecimal(tokenId).toString(10)
+                SliceImpl(listOfNotNull(stargateTokenRepository.findById(decimal)), pageable, false)
+            } else {
+                offsetSlice(pageable, StargateToken::blockNumber.name) { offset, limit, direction ->
+                    stargateTokenRepository.findActive(owner, manager, direction, offset, limit)
                 }
-                manager != null && owner != null ->
-                    stargateTokenRepository.findActiveByOwnerOrManager(
-                        owner,
-                        manager,
-                        pageable = pageable,
-                    )
-
-                manager != null ->
-                    stargateTokenRepository.findActiveByManager(manager, pageable = pageable)
-
-                owner != null ->
-                    stargateTokenRepository.findActiveByOwner(owner, pageable = pageable)
-
-                else -> stargateTokenRepository.findAllActive(pageable = pageable)
             }
 
         return paginatedResponse(slice)

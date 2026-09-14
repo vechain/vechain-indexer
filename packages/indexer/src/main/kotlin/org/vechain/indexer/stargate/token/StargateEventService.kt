@@ -149,7 +149,6 @@ class StargateEventService(
                 existingTokens.add(token)
                 latestTokenSnapshots[token.tokenId] =
                     token.copy(
-                        version = token.version + 1,
                         blockId = event.blockId,
                         blockNumber = event.blockNumber,
                         blockTimestamp = event.blockTimestamp,
@@ -186,7 +185,6 @@ class StargateEventService(
     ): StargateToken {
         existingTokens.add(base)
         return base.copy(
-            version = base.version + 1,
             blockId = event.blockId,
             blockNumber = event.blockNumber,
             blockTimestamp = event.blockTimestamp,
@@ -206,7 +204,6 @@ class StargateEventService(
     ): StargateToken {
         existingTokens.add(base)
         return base.copy(
-            version = base.version + 1,
             blockId = event.blockId,
             blockNumber = event.blockNumber,
             blockTimestamp = event.blockTimestamp,
@@ -233,7 +230,6 @@ class StargateEventService(
                 blockId = event.blockId,
                 blockNumber = event.blockNumber,
                 blockTimestamp = event.blockTimestamp,
-                version = base.version + 1,
             )
         } else {
             existingTokens.add(base)
@@ -243,7 +239,6 @@ class StargateEventService(
                 blockId = event.blockId,
                 blockNumber = event.blockNumber,
                 blockTimestamp = event.blockTimestamp,
-                version = base.version + 1,
             )
         }
     }
@@ -260,7 +255,6 @@ class StargateEventService(
 
         existingTokens.add(base)
         return base.copy(
-            version = base.version + 1,
             blockId = event.blockId,
             blockNumber = event.blockNumber,
             blockTimestamp = event.blockTimestamp,
@@ -292,7 +286,6 @@ class StargateEventService(
             blockId = event.blockId,
             blockNumber = event.blockNumber,
             blockTimestamp = event.blockTimestamp,
-            version = base.version + 1,
         )
     }
 
@@ -304,7 +297,6 @@ class StargateEventService(
     ): StargateToken {
         existingTokens.add(base)
         return base.copy(
-            version = base.version + 1,
             blockId = event.blockId,
             blockNumber = event.blockNumber,
             blockTimestamp = event.blockTimestamp,
@@ -327,7 +319,6 @@ class StargateEventService(
             Status.QUEUED -> {
                 existingTokens.add(base)
                 base.copy(
-                    version = base.version + 1,
                     blockId = event.blockId,
                     blockNumber = event.blockNumber,
                     blockTimestamp = event.blockTimestamp,
@@ -338,7 +329,6 @@ class StargateEventService(
             else -> {
                 existingTokens.add(base)
                 base.copy(
-                    version = base.version + 1,
                     blockId = event.blockId,
                     blockNumber = event.blockNumber,
                     blockTimestamp = event.blockTimestamp,
@@ -362,7 +352,6 @@ class StargateEventService(
     ): StargateToken {
         existingTokens.add(base)
         return base.copy(
-            version = base.version + 1,
             blockId = event.blockId,
             blockNumber = event.blockNumber,
             blockTimestamp = event.blockTimestamp,
@@ -378,7 +367,6 @@ class StargateEventService(
     ): StargateToken {
         existingTokens.add(base)
         return base.copy(
-            version = base.version + 1,
             blockId = event.blockId,
             blockNumber = event.blockNumber,
             blockTimestamp = event.blockTimestamp,
@@ -394,7 +382,6 @@ class StargateEventService(
     private fun handleTokenMinted(event: IndexedEvent, tokenId: String): StargateToken =
         StargateToken(
             tokenId = tokenId,
-            version = 1,
             blockId = event.blockId,
             blockNumber = event.blockNumber,
             blockTimestamp = event.blockTimestamp,

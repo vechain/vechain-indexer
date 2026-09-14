@@ -4,17 +4,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonView
 import java.math.BigInteger
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
-import org.vechain.indexer.IndexerNames
-import org.vechain.indexer.VersionedDocument
+import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.thor.model.Views
 import org.vechain.indexer.validator.Status
 
-@Document(collection = IndexerNames.STARGATE_TOKEN.COLLECTION)
 @JsonView(Views.Public::class)
 data class StargateToken(
-    @Id val tokenId: String,
+    val tokenId: String,
     val level: TokenLevel,
     val owner: String,
     @JsonInclude(JsonInclude.Include.ALWAYS) val manager: String? = null,
@@ -28,10 +24,7 @@ data class StargateToken(
     @JsonIgnore override val blockNumber: Long,
     @JsonIgnore override val blockId: String,
     @JsonIgnore override val blockTimestamp: Long,
-    @JsonIgnore @field:JsonView(Views.Internal::class) override val version: Int,
     @JsonIgnore val delegationNextPeriod: Long? = null,
     @JsonIgnore val delegationPeriodLength: Long? = null,
     @JsonIgnore val validatorExiting: Boolean? = null,
-) : VersionedDocument {
-    @JsonIgnore override fun getDocumentId(): String = tokenId
-}
+) : IndexedDocument

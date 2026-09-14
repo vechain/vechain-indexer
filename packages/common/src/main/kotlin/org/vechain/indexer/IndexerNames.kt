@@ -169,7 +169,7 @@ object IndexerNames {
 
     object STARGATE_TOKEN {
         const val NAME = "StargateTokenIndexer"
-        const val COLLECTION = "stargate_tokens"
+        const val COLLECTION = "stargate_token"
     }
 
     object TOKEN_REWARD {
