@@ -3,12 +3,10 @@ package org.vechain.indexer.stargate.token
 import kotlin.collections.plus
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.config.InlineVersioningProperties
+import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.ParamUtils.getAsString
@@ -29,11 +27,9 @@ import org.vechain.indexer.validator.ValidatorReadRepository
 @Profile("stargate", "stargate-token")
 @Service
 open class StargateTokenService(
-    private val stargateTokenRepository: StargateTokenRepository,
+    private val stargateTokenRepository: StargateTokenWriteRepository,
     private val eventService: StargateEventService,
     private val validatorRepository: ValidatorReadRepository,
-    private val mongoTemplate: MongoTemplate,
-    private val inlineVersioningProperties: InlineVersioningProperties,
     @param:Value("\${indexer.start-block.validator}") private val validatorStartBlock: Long,
 ) {
     private var cachedValidators: Set<String> = emptySet()
@@ -46,10 +42,7 @@ open class StargateTokenService(
     private var activeValidatorsLoaded = false
 
     /** Main entry point for processing a block. */
-    open suspend fun processBlock(
-        block: Block,
-        events: List<IndexedEvent>,
-    ): Pair<Collection<StargateToken>, List<StargateToken>> {
+    open suspend fun processBlock(block: Block, events: List<IndexedEvent>): List<StargateToken> {
         // NFT lifecycle events (mints, transfers, manager changes) can fire in the gap between
         // the Stargate NFT deployment and the validator indexer's start block — index them.
         // Only the validator-collection read is gated; the validator map stays empty until the
@@ -78,6 +71,7 @@ open class StargateTokenService(
                 validatorsRefreshed,
                 existingTokens,
             )
+        val loaded = latestTokenSnapshots.keys.toSet()
 
         // Mutations
         processDelegationStatusTransitions(block, latestTokenSnapshots, existingTokens)
@@ -94,27 +88,21 @@ open class StargateTokenService(
             existingTokens,
         )
 
-        // Only return tokens that were actually modified or newly minted (version 1).
-        // Unmodified tokens loaded from DB at version > 1 have no entry in existingTokens,
-        // which would violate the InlineVersionService invariant.
+        // Only the tokens this block modified or minted; the rest were loaded and left alone.
         val modifiedTokenIds = existingTokens.map { it.tokenId }.toSet()
-        val updated =
-            latestTokenSnapshots.values.filter { it.tokenId in modifiedTokenIds || it.version <= 1 }
-        return updated to existingTokens
+        return latestTokenSnapshots.values.filter {
+            it.tokenId in modifiedTokenIds || it.tokenId !in loaded
+        }
     }
 
     /** Persist updated token snapshots. */
-    @Transactional(rollbackFor = [Exception::class])
-    open fun save(tokens: Collection<StargateToken>, existing: List<StargateToken>) {
+    @Transactional(
+        transactionManager = PostgresConfig.TRANSACTION_MANAGER,
+        rollbackFor = [Exception::class],
+    )
+    open fun save(tokens: List<StargateToken>) {
         if (tokens.isEmpty()) return
-        saveVersionedDocuments(
-            tokens.toList(),
-            existing,
-            mongoTemplate,
-            inlineVersioningProperties.blockWindow,
-            inlineVersioningProperties.maxVersions,
-            inlineVersioningProperties.minVersions,
-        )
+        stargateTokenRepository.save(tokens)
     }
 
     open fun invalidateCache() {
@@ -205,7 +193,6 @@ open class StargateTokenService(
                 existingTokens.add(token)
                 latestTokenSnapshots[token.tokenId] =
                     token.copy(
-                        version = token.version + 1,
                         delegationStatus =
                             if (token.delegationStatus == Status.EXITING) {
                                 Status.NONE
@@ -261,7 +248,6 @@ open class StargateTokenService(
                             blockId = block.id,
                             blockNumber = block.number,
                             blockTimestamp = block.timestamp,
-                            version = existing.version + 1,
                         )
                 }
             }
@@ -286,7 +272,6 @@ open class StargateTokenService(
                 existingTokens.add(token)
                 latestTokenSnapshots[token.tokenId] =
                     token.copy(
-                        version = token.version + 1,
                         blockId = block.id,
                         blockNumber = block.number,
                         blockTimestamp = block.timestamp,

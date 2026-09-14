@@ -10,22 +10,23 @@ import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.CheckpointProperties
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
+import org.vechain.indexer.postgres.IndexerStateRepository
 import org.vechain.indexer.stargate.token.StargateEventService
 import org.vechain.indexer.stargate.token.StargateTokenProcessor
-import org.vechain.indexer.stargate.token.StargateTokenRepository
 import org.vechain.indexer.stargate.token.StargateTokenService
+import org.vechain.indexer.stargate.token.StargateTokenWriteRepository
 import org.vechain.indexer.validator.ValidatorReadRepository
 
 @Disabled("Performance test - run explicitly with --tests when needed")
 @ActiveProfiles("stargate-token")
 class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
 
-    @Autowired lateinit var stargateTokenRepository: StargateTokenRepository
+    @Autowired lateinit var stargateTokenRepository: StargateTokenWriteRepository
     @Autowired lateinit var stargateTokenService: StargateTokenService
     @Autowired lateinit var stargateEventService: StargateEventService
     @Autowired lateinit var validatorRepository: ValidatorReadRepository
@@ -33,7 +34,8 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
     @Value("\${indexer.start-block.validator}") var validatorStartBlock: Long = 0L
     @Autowired lateinit var inlineVersioningProperties: InlineVersioningProperties
     @Autowired lateinit var mongoTemplate: MongoTemplate
-    @Autowired lateinit var checkpointService: CheckpointService
+    @Autowired lateinit var indexerState: IndexerStateRepository
+    @Autowired lateinit var checkpointProperties: CheckpointProperties
     @Autowired lateinit var processorMetrics: ProcessorMetrics
 
     @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
@@ -54,7 +56,7 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
         // Clear database to start fresh
-        stargateTokenRepository.deleteAll()
+        stargateTokenRepository.truncate()
         println("✓ Cleared stargate token database")
 
         // Create profiler for detailed timing analysis
@@ -99,8 +101,6 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
                     repository = stargateTokenRepository,
                     eventService = stargateEventService,
                     validatorRepository = validatorRepository,
-                    mongoTemplate = mongoTemplate,
-                    inlineVersioningProperties = inlineVersioningProperties,
                     validatorStartBlock = validatorStartBlock,
                     profiler = profiler,
                 )
@@ -113,17 +113,19 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
                 ProfiledStargateTokenProcessor(
                     service = serviceToUse,
                     stargateTokenRepository = stargateTokenRepository,
-                    mongoTemplate = mongoTemplate,
                     profiler = profiler,
-                    checkpointService = checkpointService,
+                    state = indexerState,
+                    checkpointProperties = checkpointProperties,
+                    horizon = inlineVersioningProperties,
                     processorMetrics = processorMetrics,
                 )
             } else {
                 StargateTokenProcessor(
                     service = serviceToUse,
                     stargateTokenRepository = stargateTokenRepository,
-                    mongoTemplate = mongoTemplate,
-                    checkpointService = checkpointService,
+                    state = indexerState,
+                    checkpointProperties = checkpointProperties,
+                    horizon = inlineVersioningProperties,
                     processorMetrics = processorMetrics,
                 )
             }
@@ -168,17 +170,19 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
     /** Profiled wrapper for StargateTokenProcessor */
     private class ProfiledStargateTokenProcessor(
         service: StargateTokenService,
-        stargateTokenRepository: StargateTokenRepository,
-        mongoTemplate: MongoTemplate,
+        stargateTokenRepository: StargateTokenWriteRepository,
         private val profiler: DetailedProfiler,
-        checkpointService: CheckpointService,
+        state: IndexerStateRepository,
+        checkpointProperties: CheckpointProperties,
+        horizon: InlineVersioningProperties,
         processorMetrics: ProcessorMetrics,
     ) :
         StargateTokenProcessor(
             service = service,
             stargateTokenRepository = stargateTokenRepository,
-            mongoTemplate = mongoTemplate,
-            checkpointService = checkpointService,
+            state = state,
+            checkpointProperties = checkpointProperties,
+            horizon = horizon,
             processorMetrics = processorMetrics,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {

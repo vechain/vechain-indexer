@@ -8,13 +8,10 @@ import io.mockk.junit5.MockKExtension
 import java.math.BigInteger
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertIterableEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
@@ -25,12 +22,10 @@ import org.vechain.indexer.validator.ValidatorReadRepository
 
 @ExtendWith(MockKExtension::class)
 internal class StargateTokenServiceTest {
-    @MockK lateinit var repository: StargateTokenRepository
+    @MockK lateinit var repository: StargateTokenWriteRepository
     @MockK lateinit var eventService: StargateEventService
     @MockK lateinit var validatorDelegationService: ValidatorDelegationService
     @MockK lateinit var validatorRepository: ValidatorReadRepository
-    @MockK lateinit var mongoTemplate: MongoTemplate
-    @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
 
     private lateinit var service: StargateTokenService
 
@@ -42,12 +37,10 @@ internal class StargateTokenServiceTest {
                 repository,
                 eventService,
                 validatorRepository,
-                mongoTemplate,
-                inlineVersioningProperties,
                 validatorStartBlock = 0L,
             )
 
-        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
+        every { repository.findAllById(any()) } returns emptyList()
         every { repository.findByValidatorIdIn(any()) } returns emptyList()
         every { repository.findAllDistinctValidatorIds() } returns emptyList()
         every { validatorRepository.findAll() } returns emptyList()
@@ -60,7 +53,6 @@ internal class StargateTokenServiceTest {
             val existingToken =
                 stargateToken(
                     tokenId = "15613",
-                    version = 2,
                     blockNumber = 22083557,
                     delegationNextPeriod = 0L,
                     validatorId = "0xvalidator",
@@ -76,74 +68,66 @@ internal class StargateTokenServiceTest {
                     validator(id = "0xvalidator", cyclePeriodLength = 720L, startBlock = 22090000L)
                 )
 
-            val (updated, existing) = service.processBlock(block, emptyList())
+            val updated = service.processBlock(block, emptyList())
 
             assertEquals(1, updated.size)
             assertEquals("15613", updated.single().tokenId)
-            assertEquals(3, updated.single().version)
             assertEquals(22090000L, updated.single().delegationNextPeriod)
-            assertIterableEquals(listOf(existingToken), existing)
         }
 
     @Test
-    fun `processBlock excludes unmodified tokens loaded from DB at version greater than 1`() =
-        runBlocking {
-            // Token loaded via exitingValidators path but no mutation applies:
-            // - Validator is NOT in removedValidators (still in current snapshots)
-            // - Token status is ACTIVE with nextPeriod far in the future (no transition)
-            // - eventService.handleStargateEvents is mocked to no-op
-            val unchangedToken =
-                stargateToken(
-                    tokenId = "88888",
-                    version = 5,
-                    blockNumber = 22083400,
-                    delegationNextPeriod = 99999999L,
-                    validatorId = "0xexitingval",
-                    delegationStatus = Status.ACTIVE,
-                )
-            val block = block(number = 22083558)
+    fun `processBlock excludes unmodified tokens loaded from DB`() = runBlocking {
+        // Token loaded via exitingValidators path but no mutation applies:
+        // - Validator is NOT in removedValidators (still in current snapshots)
+        // - Token status is ACTIVE with nextPeriod far in the future (no transition)
+        // - eventService.handleStargateEvents is mocked to no-op
+        val unchangedToken =
+            stargateToken(
+                tokenId = "88888",
+                blockNumber = 22083400,
+                delegationNextPeriod = 99999999L,
+                validatorId = "0xexitingval",
+                delegationStatus = Status.ACTIVE,
+            )
+        val block = block(number = 22083558)
 
-            every {
-                repository.findByDelegationNextPeriodAndDelegationStatusIn(any(), any())
-            } returns emptyList()
-            // 0xexitingval is still present -> not in removedValidators
-            every { validatorRepository.findAll() } returns
-                listOf(
-                    validator(id = "0xexitingval", cyclePeriodLength = 720L, startBlock = 22000000L)
-                )
-            every { repository.findAllDistinctValidatorIds() } returns listOf("0xexitingval")
+        every {
+            repository.findByDelegationNextPeriodAndDelegationStatusIn(any(), any())
+        } returns emptyList()
+        // 0xexitingval is still present -> not in removedValidators
+        every { validatorRepository.findAll() } returns
+            listOf(validator(id = "0xexitingval", cyclePeriodLength = 720L, startBlock = 22000000L))
+        every { repository.findAllDistinctValidatorIds() } returns listOf("0xexitingval")
 
-            // ValidationSignaledExit event triggers validator lifecycle lookup
-            val exitEvent =
-                IndexedEvent(
-                    id = "evt1",
-                    blockId = block.id,
-                    blockNumber = block.number,
-                    blockTimestamp = block.timestamp,
-                    txId = "0xtx",
-                    origin = "0xorigin",
-                    paid = null,
-                    gasUsed = null,
-                    gasPayer = null,
-                    raw = null,
-                    params =
-                        AbiEventParameters(returnValues = mapOf("validator" to "0xexitingval")),
-                    address = "0xcontract",
-                    eventType = "ValidationSignaledExit",
-                    clauseIndex = 0,
-                    signature = null,
-                )
+        // ValidationSignaledExit event triggers validator lifecycle lookup
+        val exitEvent =
+            IndexedEvent(
+                id = "evt1",
+                blockId = block.id,
+                blockNumber = block.number,
+                blockTimestamp = block.timestamp,
+                txId = "0xtx",
+                origin = "0xorigin",
+                paid = null,
+                gasUsed = null,
+                gasPayer = null,
+                raw = null,
+                params = AbiEventParameters(returnValues = mapOf("validator" to "0xexitingval")),
+                address = "0xcontract",
+                eventType = "ValidationSignaledExit",
+                clauseIndex = 0,
+                signature = null,
+            )
 
-            // Token loaded via findByValidatorIdIn(lifecycleValidators) but not mutated
-            every { repository.findByValidatorIdIn(setOf("0xexitingval")) } returns
-                listOf(unchangedToken)
+        // Token loaded via findByValidatorIdIn(lifecycleValidators) but not mutated
+        every { repository.findByValidatorIdIn(setOf("0xexitingval")) } returns
+            listOf(unchangedToken)
 
-            val (updated, existing) = service.processBlock(block, listOf(exitEvent))
+        val updated = service.processBlock(block, listOf(exitEvent))
 
-            // Token should be EXCLUDED: not modified and version > 1
-            assertEquals(0, updated.size)
-            assertEquals(0, existing.size)
-        }
+        // Token should be EXCLUDED: loaded but not modified
+        assertEquals(0, updated.size)
+    }
 
     @Test
     fun `processBlock clears manager for TokenManagerRemoved events`() = runBlocking {
@@ -158,14 +142,11 @@ internal class StargateTokenServiceTest {
                 repository,
                 realEventService,
                 validatorRepository,
-                mongoTemplate,
-                inlineVersioningProperties,
                 validatorStartBlock = 0L,
             )
         val existingToken =
             stargateToken(
                 tokenId = "34132",
-                version = 2,
                 blockNumber = 24407826,
                 delegationNextPeriod = null,
                 validatorId = null,
@@ -205,17 +186,14 @@ internal class StargateTokenServiceTest {
             emptyList()
         every { validatorRepository.findAll() } returns emptyList()
 
-        val (updated, existing) = realService.processBlock(block, listOf(managerRemovedEvent))
+        val updated = realService.processBlock(block, listOf(managerRemovedEvent))
 
         assertEquals(1, updated.size)
-        assertEquals(3, updated.single().version)
         assertNull(updated.single().manager)
-        assertIterableEquals(listOf(existingToken), existing)
     }
 
     private fun stargateToken(
         tokenId: String,
-        version: Int,
         blockNumber: Long,
         delegationNextPeriod: Long?,
         validatorId: String?,
@@ -237,7 +215,6 @@ internal class StargateTokenServiceTest {
             blockNumber = blockNumber,
             blockId = "0xprev",
             blockTimestamp = 1767463000,
-            version = version,
             delegationNextPeriod = delegationNextPeriod,
             delegationPeriodLength = 720L,
         )

@@ -41,7 +41,6 @@ class StargateEventServiceTest {
         )
 
         assertThat(latestTokenSnapshots[token.tokenId]!!.manager).isNull()
-        assertThat(latestTokenSnapshots[token.tokenId]!!.version).isEqualTo(2)
         assertThat(existingTokens).containsExactly(token)
     }
 
@@ -63,7 +62,6 @@ class StargateEventServiceTest {
             )
 
             assertThat(latestTokenSnapshots[token.tokenId]!!.manager).isNull()
-            assertThat(latestTokenSnapshots[token.tokenId]!!.version).isEqualTo(2)
             assertThat(existingTokens).containsExactly(token)
         }
 
@@ -256,7 +254,6 @@ class StargateEventServiceTest {
             blockNumber = 23693226,
             blockId = "0xprev",
             blockTimestamp = 1767463000,
-            version = 1,
             delegationNextPeriod = delegationNextPeriod,
             delegationPeriodLength = delegationPeriodLength,
         )
