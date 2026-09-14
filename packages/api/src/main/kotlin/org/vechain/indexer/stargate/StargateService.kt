@@ -378,9 +378,14 @@ open class StargateService(
         owner: String?,
         pageable: Pageable,
     ): PaginatedResponse<StargateToken> {
+        val decimal =
+            tokenId
+                ?.takeIf { it.isNotBlank() }
+                ?.let {
+                    BigIntegerUtils.fromHexOrDecimal(it).toString(10)
+                }
         val slice =
-            if (tokenId != null) {
-                val decimal = BigIntegerUtils.fromHexOrDecimal(tokenId).toString(10)
+            if (decimal != null) {
                 SliceImpl(listOfNotNull(stargateTokenRepository.findById(decimal)), pageable, false)
             } else {
                 offsetSlice(pageable, StargateToken::blockNumber.name) { offset, limit, direction ->
