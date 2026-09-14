@@ -21,6 +21,7 @@ import org.vechain.indexer.stargate.rewards.TokenRewardProcessor
 import org.vechain.indexer.stargate.rewards.TokenRewardService
 import org.vechain.indexer.stargate.token.StargateTokenProcessor
 import org.vechain.indexer.stargate.token.StargateTokenService
+import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlockProcessor
 import org.vechain.indexer.transfer.TransferService
 import org.vechain.indexer.validator.DelegationProcessor
 import org.vechain.indexer.validator.DelegationService
@@ -72,6 +73,7 @@ class ProcessorTransactionalAnnotationsTest {
                 DelegationProcessor::class.java,
                 StargateTokenProcessor::class.java,
                 TokenRewardProcessor::class.java,
+                VetDelegatedByBlockProcessor::class.java,
             )
         for (processor in processors) {
             assertEquals(PostgresProcessor::class.java, processor.superclass)

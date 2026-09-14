@@ -124,7 +124,7 @@ object IndexerNames {
 
     object VET_DELEGATED_BY_BLOCK {
         const val NAME = "VetDelegatedByBlockIndexer"
-        const val COLLECTION = "stargate_total_vet_delegated_by_block"
+        const val COLLECTION = "vet_delegated"
     }
 
     object VTHO_CLAIMED_BY_ACCOUNT {

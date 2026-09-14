@@ -15,7 +15,7 @@ import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.tokenReward.TokenRewardReadRepository
-import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlockRepository
+import org.vechain.indexer.stargate.vetDelegated.VetDelegatedReadRepository
 import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlockRepository
@@ -30,7 +30,7 @@ class StargateServiceTest {
     private val nftHoldersByBlockRepository: NftHoldersByBlockRepository = mockk()
     private val vetStakedByBlockRepository: VetStakedByBlockRepository = mockk()
     private val vthoGeneratedByBlockRepository: VthoGeneratedByBlockRepository = mockk()
-    private val vetDelegatedByBlockRepository: VetDelegatedByBlockRepository = mockk()
+    private val vetDelegatedByBlockRepository: VetDelegatedReadRepository = mockk()
     private val stargateTokenRepository: StargateTokenReadRepository = mockk()
     private val tokenRewardRepository: TokenRewardReadRepository = mockk()
 

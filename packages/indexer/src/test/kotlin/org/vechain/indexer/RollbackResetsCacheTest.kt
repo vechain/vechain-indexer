@@ -4,6 +4,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.CheckpointProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.explorer.BlockUsageProcessor
 import org.vechain.indexer.explorer.BlockUsageService
@@ -12,8 +13,8 @@ import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockProcessor
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockService
 import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlockProcessor
-import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlockRepository
 import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlockService
+import org.vechain.indexer.stargate.vetDelegated.VetDelegatedWriteRepository
 import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockProcessor
 import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockRepository
 import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockService
@@ -73,9 +74,15 @@ class RollbackResetsCacheTest {
     @Test
     fun `VetDelegatedByBlockProcessor rollback resets service cache`() {
         val service = mockk<VetDelegatedByBlockService>(relaxed = true)
-        val repository = mockk<VetDelegatedByBlockRepository>(relaxed = true)
+        val repository = mockk<VetDelegatedWriteRepository>(relaxed = true)
         val processor =
-            VetDelegatedByBlockProcessor(service, repository, checkpointService, processorMetrics)
+            VetDelegatedByBlockProcessor(
+                service,
+                repository,
+                mockk(relaxed = true),
+                CheckpointProperties(),
+                processorMetrics,
+            )
 
         processor.rollback(100)
 
