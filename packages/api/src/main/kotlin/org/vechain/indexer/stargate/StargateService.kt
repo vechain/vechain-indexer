@@ -11,8 +11,6 @@ import org.vechain.indexer.accounts.TimeFrame
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
-import org.vechain.indexer.stargate.timeFrame.TimeFrameDocument
-import org.vechain.indexer.stargate.timeFrame.TimeFrameRepo
 import org.vechain.indexer.stargate.token.StargateToken
 import org.vechain.indexer.stargate.token.StargateTokenReadRepository
 import org.vechain.indexer.stargate.token.TokenLevel
@@ -25,6 +23,8 @@ import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlockRepository
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockRepository
 import org.vechain.indexer.thor.HexUtils
+import org.vechain.indexer.timeseries.TimeFrameDocument
+import org.vechain.indexer.timeseries.TimeFrameRepo
 import org.vechain.indexer.timeseries.TimeRangePreset
 import org.vechain.indexer.timeseries.TimeSeriesRecord
 import org.vechain.indexer.utils.BigIntegerUtils

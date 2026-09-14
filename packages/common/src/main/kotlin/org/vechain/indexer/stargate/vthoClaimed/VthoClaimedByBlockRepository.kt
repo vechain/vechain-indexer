@@ -6,7 +6,7 @@ import org.springframework.data.domain.Slice
 import org.springframework.data.mongodb.repository.Aggregation
 import org.vechain.indexer.BaseIndexedRepository
 import org.vechain.indexer.accounts.TimeFrame
-import org.vechain.indexer.stargate.timeFrame.TimeFrameRepo
+import org.vechain.indexer.timeseries.TimeFrameRepo
 
 @Profile("stargate", "vtho-claimed-by-block")
 interface VthoClaimedByBlockRepository :

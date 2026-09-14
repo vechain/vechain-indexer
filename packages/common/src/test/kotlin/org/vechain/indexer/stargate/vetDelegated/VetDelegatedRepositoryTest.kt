@@ -15,6 +15,7 @@ import org.springframework.data.domain.Sort.Direction.DESC
 import org.vechain.indexer.accounts.TimeFrame
 import org.vechain.indexer.postgres.PostgresTestDatabase
 import org.vechain.indexer.stargate.token.TokenLevel
+import org.vechain.indexer.timeseries.TimeFramePeriod
 
 /** The series' write and read sides on a seeded set; see [seed] for which blocks rolled what. */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -47,18 +48,21 @@ class VetDelegatedRepositoryTest {
                 ),
             totalNftCount = 2,
             nftCountByLevel = mapOf(TokenLevel.Dawn to 1, TokenLevel.MjolnirX to 1),
-            hourOfDay = 12,
-            dayOfMonth = 25,
-            weekOfYear = 43,
-            month = 10,
-            year = 2025,
-            timeFrames = frames,
-            blockTotal = BigInteger.ONE,
-            hourTotal = BigInteger.TWO,
-            dayTotal = BigInteger.valueOf(3),
-            weekTotal = BigInteger.valueOf(4),
-            monthTotal = BigInteger.valueOf(5),
-            yearTotal = BigInteger.valueOf(6),
+            period =
+                TimeFramePeriod(
+                    hourOfDay = 12,
+                    dayOfMonth = 25,
+                    weekOfYear = 43,
+                    month = 10,
+                    year = 2025,
+                    timeFrames = frames,
+                    blockTotal = BigInteger.ONE,
+                    hourTotal = BigInteger.TWO,
+                    dayTotal = BigInteger.valueOf(3),
+                    weekTotal = BigInteger.valueOf(4),
+                    monthTotal = BigInteger.valueOf(5),
+                    yearTotal = BigInteger.valueOf(6),
+                ),
         )
 
     /** Blocks 10, 20 (rolled HOUR), 30 (rolled HOUR and DAY) and 40; timestamps are block × 10. */
