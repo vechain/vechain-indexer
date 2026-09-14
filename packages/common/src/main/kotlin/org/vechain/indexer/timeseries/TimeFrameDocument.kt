@@ -1,4 +1,4 @@
-package org.vechain.indexer.stargate.timeFrame
+package org.vechain.indexer.timeseries
 
 import java.math.BigInteger
 import org.vechain.indexer.IndexedDocument
@@ -17,4 +17,21 @@ interface TimeFrameDocument : IndexedDocument {
     val weekTotal: BigInteger?
     val monthTotal: BigInteger?
     val yearTotal: BigInteger?
+
+    val period: TimeFramePeriod
+        get() =
+            TimeFramePeriod(
+                hourOfDay,
+                dayOfMonth,
+                weekOfYear,
+                month,
+                year,
+                timeFrames,
+                blockTotal,
+                hourTotal,
+                dayTotal,
+                weekTotal,
+                monthTotal,
+                yearTotal,
+            )
 }

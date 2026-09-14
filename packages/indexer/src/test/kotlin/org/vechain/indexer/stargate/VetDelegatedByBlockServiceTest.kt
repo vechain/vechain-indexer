@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.accounts.TimeFrame
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.timeseries.TimeFramePeriod
 import org.vechain.indexer.validator.DelegationLevelAggregateResult
 import org.vechain.indexer.validator.DelegationReadRepository
 import strikt.api.expectThat
@@ -43,6 +44,29 @@ class VetDelegatedByBlockServiceTest {
         every { this@mockk.parentID } returns parentID
     }
 
+    private fun period(
+        hour: Long,
+        day: Long,
+        week: Long,
+        month: Long,
+        year: Long,
+        total: BigInteger,
+    ) =
+        TimeFramePeriod(
+            hour,
+            day,
+            week,
+            month,
+            year,
+            emptyList(),
+            total,
+            total,
+            total,
+            total,
+            total,
+            total,
+        )
+
     private fun mockActiveAggregation(vararg levels: Pair<TokenLevel, String>) {
         every { delegationRepository.aggregateActiveDelegationsByLevel() } returns
             levels.map { (level, amount) -> DelegationLevelAggregateResult(level.name, amount, 1) }
@@ -57,18 +81,7 @@ class VetDelegatedByBlockServiceTest {
                 1000,
                 total = BigInteger("100"),
                 byLevel = emptyMap(),
-                hourOfDay = 1,
-                dayOfMonth = 1,
-                weekOfYear = 1,
-                month = 1,
-                year = 2025,
-                timeFrames = emptyList(),
-                blockTotal = BigInteger.ZERO,
-                hourTotal = BigInteger.ZERO,
-                dayTotal = BigInteger.ZERO,
-                weekTotal = BigInteger.ZERO,
-                monthTotal = BigInteger.ZERO,
-                yearTotal = BigInteger.ZERO,
+                period = period(1, 1, 1, 1, 2025, BigInteger.ZERO),
             )
 
         val block = mockBlock(10, 1100) // EXACT SAME BLOCK → FAIL
@@ -86,18 +99,7 @@ class VetDelegatedByBlockServiceTest {
                 1000,
                 total = BigInteger("100"),
                 byLevel = emptyMap(),
-                hourOfDay = 1,
-                dayOfMonth = 1,
-                weekOfYear = 1,
-                month = 1,
-                year = 2025,
-                timeFrames = emptyList(),
-                blockTotal = BigInteger.ZERO,
-                hourTotal = BigInteger.ZERO,
-                dayTotal = BigInteger.ZERO,
-                weekTotal = BigInteger.ZERO,
-                monthTotal = BigInteger.ZERO,
-                yearTotal = BigInteger.ZERO,
+                period = period(1, 1, 1, 1, 2025, BigInteger.ZERO),
             )
 
         val block = mockBlock(5, 900) // EARLIER BLOCK → FAIL
@@ -115,18 +117,7 @@ class VetDelegatedByBlockServiceTest {
                 1735560000, // Dec 30 2024 @ 12:00 UTC
                 total = BigInteger("100"),
                 byLevel = emptyMap(),
-                hourOfDay = 12,
-                dayOfMonth = 30,
-                weekOfYear = 53,
-                month = 12,
-                year = 2024,
-                timeFrames = emptyList(),
-                blockTotal = BigInteger.ZERO,
-                hourTotal = BigInteger.ZERO,
-                dayTotal = BigInteger.ZERO,
-                weekTotal = BigInteger.ZERO,
-                monthTotal = BigInteger.ZERO,
-                yearTotal = BigInteger.ZERO,
+                period = period(12, 30, 53, 12, 2024, BigInteger.ZERO),
             )
         mockActiveAggregation(TokenLevel.Strength to "100")
 
@@ -170,18 +161,7 @@ class VetDelegatedByBlockServiceTest {
                 1735603140, // Dec 30 2025 @ 23:59 UTC
                 total = BigInteger("10"),
                 byLevel = mapOf(TokenLevel.Strength to BigInteger("10")),
-                hourOfDay = 23,
-                dayOfMonth = 30,
-                weekOfYear = 1,
-                month = 12,
-                year = 2025,
-                timeFrames = emptyList(),
-                blockTotal = BigInteger.ZERO,
-                hourTotal = BigInteger.ZERO,
-                dayTotal = BigInteger.ZERO,
-                weekTotal = BigInteger.ZERO,
-                monthTotal = BigInteger.ZERO,
-                yearTotal = BigInteger.ZERO,
+                period = period(23, 30, 1, 12, 2025, BigInteger.ZERO),
             )
         mockActiveAggregation(TokenLevel.Strength to "10")
 
@@ -213,18 +193,7 @@ class VetDelegatedByBlockServiceTest {
                 1735560000, // Dec 30 2024 @ 12:00 UTC
                 total = BigInteger("10"),
                 byLevel = mapOf(TokenLevel.Strength to BigInteger("10")),
-                hourOfDay = 12,
-                dayOfMonth = 30,
-                weekOfYear = 53,
-                month = 12,
-                year = 2024,
-                timeFrames = emptyList(),
-                blockTotal = BigInteger.ZERO,
-                hourTotal = BigInteger.ZERO,
-                dayTotal = BigInteger.ZERO,
-                weekTotal = BigInteger.ZERO,
-                monthTotal = BigInteger.ZERO,
-                yearTotal = BigInteger.ZERO,
+                period = period(12, 30, 53, 12, 2024, BigInteger.ZERO),
             )
         // Same total as before - no change
         mockActiveAggregation(TokenLevel.Strength to "10")
@@ -247,18 +216,7 @@ class VetDelegatedByBlockServiceTest {
                 1735560000, // Dec 30 2024 @ 12:00 UTC
                 total = BigInteger("10"),
                 byLevel = mapOf(TokenLevel.Strength to BigInteger("10")),
-                hourOfDay = 12,
-                dayOfMonth = 30,
-                weekOfYear = 53,
-                month = 12,
-                year = 2024,
-                timeFrames = emptyList(),
-                blockTotal = BigInteger.ZERO,
-                hourTotal = BigInteger.ZERO,
-                dayTotal = BigInteger.ZERO,
-                weekTotal = BigInteger.ZERO,
-                monthTotal = BigInteger.ZERO,
-                yearTotal = BigInteger.ZERO,
+                period = period(12, 30, 53, 12, 2024, BigInteger.ZERO),
             )
         // Different total - there IS a change
         mockActiveAggregation(TokenLevel.Strength to "20")
@@ -286,18 +244,7 @@ class VetDelegatedByBlockServiceTest {
                 1735560000,
                 total = BigInteger("10"),
                 byLevel = mapOf(TokenLevel.Strength to BigInteger("10")),
-                hourOfDay = 12,
-                dayOfMonth = 30,
-                weekOfYear = 53,
-                month = 12,
-                year = 2024,
-                timeFrames = emptyList(),
-                blockTotal = BigInteger.ZERO,
-                hourTotal = BigInteger.ZERO,
-                dayTotal = BigInteger.ZERO,
-                weekTotal = BigInteger.ZERO,
-                monthTotal = BigInteger.ZERO,
-                yearTotal = BigInteger.ZERO,
+                period = period(12, 30, 53, 12, 2024, BigInteger.ZERO),
             )
         every { repository.latest() } returns latestRecord
 
@@ -325,18 +272,7 @@ class VetDelegatedByBlockServiceTest {
                 1735560000,
                 total = BigInteger("10"),
                 byLevel = mapOf(TokenLevel.Strength to BigInteger("10")),
-                hourOfDay = 12,
-                dayOfMonth = 30,
-                weekOfYear = 53,
-                month = 12,
-                year = 2024,
-                timeFrames = emptyList(),
-                blockTotal = BigInteger.ZERO,
-                hourTotal = BigInteger.ZERO,
-                dayTotal = BigInteger.ZERO,
-                weekTotal = BigInteger.ZERO,
-                monthTotal = BigInteger.ZERO,
-                yearTotal = BigInteger.ZERO,
+                period = period(12, 30, 53, 12, 2024, BigInteger.ZERO),
             )
         every { repository.latest() } returns latestRecord
 
@@ -370,18 +306,7 @@ class VetDelegatedByBlockServiceTest {
                 1735560000, // Dec 30 2024 @ 12:00 UTC
                 total = BigInteger("10"),
                 byLevel = mapOf(TokenLevel.Strength to BigInteger("10")),
-                hourOfDay = 12,
-                dayOfMonth = 30,
-                weekOfYear = 53,
-                month = 12,
-                year = 2024,
-                timeFrames = emptyList(),
-                blockTotal = BigInteger.ZERO,
-                hourTotal = BigInteger.ZERO,
-                dayTotal = BigInteger.ZERO,
-                weekTotal = BigInteger.ZERO,
-                monthTotal = BigInteger.ZERO,
-                yearTotal = BigInteger.ZERO,
+                period = period(12, 30, 53, 12, 2024, BigInteger.ZERO),
             )
         every { repository.latest() } returns latestRecord
         mockActiveAggregation(TokenLevel.Strength to "10")
@@ -411,18 +336,7 @@ class VetDelegatedByBlockServiceTest {
                 1735560000,
                 total = BigInteger("10"),
                 byLevel = mapOf(TokenLevel.Strength to BigInteger("10")),
-                hourOfDay = 12,
-                dayOfMonth = 30,
-                weekOfYear = 53,
-                month = 12,
-                year = 2024,
-                timeFrames = emptyList(),
-                blockTotal = BigInteger.ZERO,
-                hourTotal = BigInteger.ZERO,
-                dayTotal = BigInteger.ZERO,
-                weekTotal = BigInteger.ZERO,
-                monthTotal = BigInteger.ZERO,
-                yearTotal = BigInteger.ZERO,
+                period = period(12, 30, 53, 12, 2024, BigInteger.ZERO),
             )
         every { repository.latest() } returns latestRecord
         mockActiveAggregation(TokenLevel.Strength to "10")
@@ -449,18 +363,7 @@ class VetDelegatedByBlockServiceTest {
                     1,
                     total = BigInteger.ONE,
                     byLevel = emptyMap(),
-                    hourOfDay = 1,
-                    dayOfMonth = 1,
-                    weekOfYear = 1,
-                    month = 1,
-                    year = 2025,
-                    timeFrames = emptyList(),
-                    blockTotal = BigInteger.ONE,
-                    hourTotal = BigInteger.ONE,
-                    dayTotal = BigInteger.ONE,
-                    weekTotal = BigInteger.ONE,
-                    monthTotal = BigInteger.ONE,
-                    yearTotal = BigInteger.ONE,
+                    period = period(1, 1, 1, 1, 2025, BigInteger.ONE),
                 )
             )
 

@@ -1,4 +1,4 @@
-package org.vechain.indexer.stargate.timeFrame
+package org.vechain.indexer.timeseries
 
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice

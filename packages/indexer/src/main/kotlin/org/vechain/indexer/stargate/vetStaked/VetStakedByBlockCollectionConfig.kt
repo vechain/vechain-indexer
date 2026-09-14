@@ -10,7 +10,7 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
-import org.vechain.indexer.stargate.timeFrame.TimeFrameDocument
+import org.vechain.indexer.timeseries.TimeFrameDocument
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("stargate", "vet-staked-by-block")
