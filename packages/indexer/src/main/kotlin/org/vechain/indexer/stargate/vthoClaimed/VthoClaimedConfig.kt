@@ -12,13 +12,13 @@ import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("stargate", "vtho-claimed-by-block")
-open class VthoClaimedByBlockConfig {
+@Profile("stargate", "vtho-claimed")
+open class VthoClaimedConfig {
     @Bean
-    open fun vthoClaimedByBlockIndexer(
+    open fun vthoClaimedIndexer(
         thorClient: ThorClient,
-        processor: VthoClaimedByBlockProcessor,
-        @Value("\${indexer.start-block.vtho-claimed-by-block}") startBlock: Long,
+        processor: VthoClaimedProcessor,
+        @Value("\${indexer.start-block.vtho-claimed}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
         stargateNftContract: String,
@@ -28,7 +28,7 @@ open class VthoClaimedByBlockConfig {
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.VTHO_CLAIMED_BY_BLOCK.NAME)
+            .name(IndexerNames.VTHO_CLAIMED.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)

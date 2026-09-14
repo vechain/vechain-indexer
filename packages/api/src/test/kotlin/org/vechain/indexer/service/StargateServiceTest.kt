@@ -17,16 +17,16 @@ import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.tokenReward.TokenRewardReadRepository
 import org.vechain.indexer.stargate.vetDelegated.VetDelegatedReadRepository
 import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockRepository
-import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountRepository
-import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlockRepository
+import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedReadRepository
+import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedTotals
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedReadRepository
 import org.vechain.indexer.validator.Status
 import strikt.api.expectThat
 import strikt.assertions.containsExactly
+import strikt.assertions.isEqualTo
 
 class StargateServiceTest {
-    private val vthoClaimedByBlockRepository: VthoClaimedByBlockRepository = mockk()
-    private val vthoClaimedByAccountRepository: VthoClaimedByAccountRepository = mockk()
+    private val vthoClaimedRepository: VthoClaimedReadRepository = mockk()
     private val nftHoldersByBlockRepository: NftHoldersByBlockRepository = mockk()
     private val vetStakedByBlockRepository: VetStakedByBlockRepository = mockk()
     private val vthoGeneratedByBlockRepository: VthoGeneratedReadRepository = mockk()
@@ -36,8 +36,7 @@ class StargateServiceTest {
 
     private val service =
         StargateService(
-            vthoClaimedByBlockRepository = vthoClaimedByBlockRepository,
-            vthoClaimedByAccountRepository = vthoClaimedByAccountRepository,
+            vthoClaimedRepository = vthoClaimedRepository,
             nftHoldersByBlockRepository = nftHoldersByBlockRepository,
             vetStakedByBlockRepository = vetStakedByBlockRepository,
             vthoGeneratedByBlockRepository = vthoGeneratedByBlockRepository,
@@ -45,6 +44,20 @@ class StargateServiceTest {
             stargateTokenRepository = stargateTokenRepository,
             tokenRewardRepository = tokenRewardRepository,
         )
+
+    @Test
+    fun `getTotalVthoClaimed normalises the account, takes the token id in decimal and zeroes a miss`() {
+        val account = "0x3f90bf8b314c42005103b3c94505634fa680dcee"
+        every { vthoClaimedRepository.findByAccount(account) } returns
+            VthoClaimedTotals(BigInteger("4"), BigInteger("9"))
+        every { vthoClaimedRepository.findByAccount(account, "42") } returns null
+
+        expectThat(service.getTotalVthoClaimed(account.uppercase(), null))
+            .isEqualTo(BigInteger("13"))
+        expectThat(service.getTotalVthoClaimed(account, "LEGACY")).isEqualTo(BigInteger("4"))
+        expectThat(service.getTotalVthoClaimed(account, "DELEGATION")).isEqualTo(BigInteger("9"))
+        expectThat(service.getTotalVthoClaimed(account, "0x2a", null)).isEqualTo(BigInteger.ZERO)
+    }
 
     @Test
     fun `getRewards passes the token id to the repository in decimal`() {

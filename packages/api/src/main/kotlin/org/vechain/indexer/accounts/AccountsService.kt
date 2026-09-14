@@ -7,11 +7,10 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.vechain.indexer.accounts.repository.AccountOverviewRepository
 import org.vechain.indexer.accounts.repository.AccountTotalsSeriesRepository
-import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountRepository
+import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedReadRepository
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.timeseries.TimeSeriesResolution
-import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.utils.TimeSeriesUtils
 import org.vechain.indexer.utils.TimeValidationUtils
 
@@ -27,7 +26,7 @@ open class AccountsService(
     private val accountTotalsSeriesRepository: AccountTotalsSeriesRepository,
 ) {
     @Autowired(required = false)
-    private var vthoClaimedByAccountRepository: VthoClaimedByAccountRepository? = null
+    private var vthoClaimedRepository: VthoClaimedReadRepository? = null
 
     fun getTotalSeries(startTimestamp: Long, endTimestamp: Long): List<AccountTotalsSeries> {
         TimeValidationUtils.validateTimestamps(
@@ -113,12 +112,9 @@ open class AccountsService(
     fun getOverviewWithVthoEarnings(address: Address): AccountOverviewResponse? {
         val overview = accountOverviewRepository.findByIdOrNull(address.value) ?: return null
 
-        // Account-level Stargate totals are already stored as a dedicated _id entry.
         val stargateVthoClaimed =
-            vthoClaimedByAccountRepository
-                ?.findById(IdUtils.generateId(HexUtils.normalise(address.value)))
-                ?.map { it.total }
-                ?.orElse(BigInteger.ZERO) ?: BigInteger.ZERO
+            vthoClaimedRepository?.findByAccount(HexUtils.normalise(address.value))?.total
+                ?: BigInteger.ZERO
 
         return AccountOverviewResponse.from(overview, stargateVthoClaimed)
     }

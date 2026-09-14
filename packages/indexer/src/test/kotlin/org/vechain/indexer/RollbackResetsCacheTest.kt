@@ -5,6 +5,7 @@ import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.CheckpointProperties
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.explorer.BlockUsageProcessor
 import org.vechain.indexer.explorer.BlockUsageService
@@ -18,9 +19,9 @@ import org.vechain.indexer.stargate.vetDelegated.VetDelegatedWriteRepository
 import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockProcessor
 import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockRepository
 import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockService
-import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlockProcessor
-import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlockRepository
-import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlockService
+import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedProcessor
+import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedService
+import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedWriteRepository
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockProcessor
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockService
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedWriteRepository
@@ -96,11 +97,18 @@ class RollbackResetsCacheTest {
     }
 
     @Test
-    fun `VthoClaimedByBlockProcessor rollback resets service cache`() {
-        val service = mockk<VthoClaimedByBlockService>(relaxed = true)
-        val repository = mockk<VthoClaimedByBlockRepository>(relaxed = true)
+    fun `VthoClaimedProcessor rollback resets service cache`() {
+        val service = mockk<VthoClaimedService>(relaxed = true)
+        val repository = mockk<VthoClaimedWriteRepository>(relaxed = true)
         val processor =
-            VthoClaimedByBlockProcessor(service, repository, checkpointService, processorMetrics)
+            VthoClaimedProcessor(
+                service,
+                repository,
+                mockk(relaxed = true),
+                CheckpointProperties(),
+                InlineVersioningProperties(),
+                processorMetrics,
+            )
 
         processor.rollback(100)
 
