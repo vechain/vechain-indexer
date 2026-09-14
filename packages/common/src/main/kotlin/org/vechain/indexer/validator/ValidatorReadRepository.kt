@@ -32,7 +32,7 @@ open class ValidatorReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTempla
 
     open fun findByStatusIn(statuses: Collection<Status>): List<Validator> =
         query(
-            "$CURRENT AND CAST(status AS text) = ANY(:statuses) ORDER BY id",
+            "$CURRENT AND status = ANY(CAST(:statuses AS validator.status[])) ORDER BY id",
             MapSqlParameterSource("statuses", statuses.map { it.name }.toTypedArray()),
         )
 
@@ -68,7 +68,8 @@ open class ValidatorReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTempla
             CURRENT +
                 (if (id == null) "" else " AND id = :id") +
                 (if (endorser == null) "" else " AND endorser = :endorser") +
-                (if (statuses == null) "" else " AND CAST(status AS text) = ANY(:statuses)") +
+                (if (statuses == null) ""
+                else " AND status = ANY(CAST(:statuses AS validator.status[]))") +
                 " ORDER BY $column $order, id ASC OFFSET :offset LIMIT :limit",
             params,
         )
