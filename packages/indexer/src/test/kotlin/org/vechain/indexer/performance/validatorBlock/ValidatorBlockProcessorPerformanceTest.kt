@@ -9,31 +9,33 @@ import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.CheckpointProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
+import org.vechain.indexer.postgres.IndexerStateRepository
 import org.vechain.indexer.stargate.rewards.TokenRewardService
 import org.vechain.indexer.validator.ValidatorBlockProcessor
-import org.vechain.indexer.validator.ValidatorBlockRepository
 import org.vechain.indexer.validator.ValidatorBlockService
+import org.vechain.indexer.validator.ValidatorBlockWriteRepository
 import org.vechain.indexer.validator.ValidatorReadRepository
 
 @Disabled("Performance test - run explicitly with --tests when needed")
 @ActiveProfiles("validator-reward", "validator")
 class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
 
-    @Autowired lateinit var validatorBlockRepository: ValidatorBlockRepository
+    @Autowired lateinit var validatorBlockRepository: ValidatorBlockWriteRepository
     @Autowired lateinit var validatorBlockService: ValidatorBlockService
     @Autowired lateinit var validatorV2Repository: ValidatorReadRepository
-    @Autowired lateinit var checkpointService: CheckpointService
+    @Autowired lateinit var indexerState: IndexerStateRepository
+    @Autowired lateinit var checkpointProperties: CheckpointProperties
     @Autowired lateinit var processorMetrics: ProcessorMetrics
 
     @Value("\${indexer.start-block.validator}") var validatorStartBlock: Long = 0L
 
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
-        validatorBlockRepository.deleteAll()
+        validatorBlockRepository.truncate()
         println("✓ Cleared validator block database")
 
         val profiler = DetailedProfiler()
@@ -89,14 +91,16 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
                     service = serviceToUse,
                     repository = validatorBlockRepository,
                     profiler = profiler,
-                    checkpointService = checkpointService,
+                    state = indexerState,
+                    checkpointProperties = checkpointProperties,
                     processorMetrics = processorMetrics,
                 )
             } else {
                 ValidatorBlockProcessor(
                     service = serviceToUse,
                     repository = validatorBlockRepository,
-                    checkpointService = checkpointService,
+                    state = indexerState,
+                    checkpointProperties = checkpointProperties,
                     processorMetrics = processorMetrics,
                 )
             }
@@ -117,15 +121,17 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
     /** Profiled wrapper for ValidatorBlockProcessor */
     private class ProfiledValidatorBlockProcessor(
         service: ValidatorBlockService,
-        repository: ValidatorBlockRepository,
+        repository: ValidatorBlockWriteRepository,
         private val profiler: DetailedProfiler,
-        checkpointService: CheckpointService,
+        state: IndexerStateRepository,
+        checkpointProperties: CheckpointProperties,
         processorMetrics: ProcessorMetrics,
     ) :
         ValidatorBlockProcessor(
             service = service,
             repository = repository,
-            checkpointService = checkpointService,
+            state = state,
+            checkpointProperties = checkpointProperties,
             processorMetrics = processorMetrics,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {

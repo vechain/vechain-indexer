@@ -20,7 +20,7 @@ import org.vechain.indexer.thor.model.Transaction
 
 @ExtendWith(MockKExtension::class)
 class ValidatorBlockServiceTest {
-    private lateinit var repository: ValidatorBlockRepository
+    private lateinit var repository: ValidatorBlockWriteRepository
     private lateinit var validatorRepository: ValidatorReadRepository
     private lateinit var thorClient: ThorClient
     private lateinit var service: ValidatorBlockService
@@ -28,6 +28,7 @@ class ValidatorBlockServiceTest {
     @BeforeEach
     fun setup() {
         repository = mockk(relaxed = true)
+        every { repository.latestSampled(any()) } returns emptyMap()
         validatorRepository = mockk(relaxed = true)
         thorClient = mockk(relaxed = true)
         service =
@@ -39,11 +40,6 @@ class ValidatorBlockServiceTest {
                     validatorStartBlock = 0L,
                 )
             )
-
-        every { repository.findLatestHourly() } returns emptyList()
-        every { repository.findLatestDaily() } returns emptyList()
-        every { repository.findLatestWeekly() } returns emptyList()
-        every { repository.findLatestMonthly() } returns emptyList()
     }
 
     private fun createBlock(
@@ -252,7 +248,7 @@ class ValidatorBlockServiceTest {
 
         service.save(listOf(block))
 
-        verify { repository.saveAll(listOf(block)) }
+        verify { repository.save(listOf(block)) }
         val hourlyCache =
             service.javaClass
                 .getDeclaredField("hourlyCache")

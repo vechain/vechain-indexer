@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.explorer.TimestampUtils.calculateTimeBoundary
 import org.vechain.indexer.explorer.TimestampUtils.isDailyChange
 import org.vechain.indexer.explorer.TimestampUtils.isHourlyChange
@@ -18,6 +19,7 @@ import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.thor.model.InspectionResult
+import org.vechain.indexer.timeseries.TimeSeriesResolution
 import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
 
 /**
@@ -38,7 +40,7 @@ import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
 @Profile("validator & validator-reward")
 @Service
 open class ValidatorBlockService(
-    private val repository: ValidatorBlockRepository,
+    private val repository: ValidatorBlockWriteRepository,
     private val validatorRepository: ValidatorReadRepository,
     private val thorClient: ThorClient,
     @param:Value("\${indexer.start-block.validator}") private val validatorStartBlock: Long,
@@ -70,9 +72,12 @@ open class ValidatorBlockService(
         return listOfNotNull(validationInfo) + missedSlots
     }
 
-    @Transactional
+    @Transactional(
+        transactionManager = PostgresConfig.TRANSACTION_MANAGER,
+        rollbackFor = [Exception::class],
+    )
     open fun save(records: List<ValidatorBlock>) {
-        repository.saveAll(records)
+        repository.save(records)
         records.forEach {
             if (it.isHourly == true) hourlyCache[it.validator] = it.blockTimestamp
             if (it.isDaily == true) dailyCache[it.validator] = it.blockTimestamp
@@ -193,12 +198,10 @@ open class ValidatorBlockService(
     // ---------------------------------------------------------------------------------------------
 
     private fun preloadLatestAggregates() {
-        repository.findLatestHourly().forEach { hourlyCache[it._id.validator] = it.blockTimestamp }
-        repository.findLatestDaily().forEach { dailyCache[it._id.validator] = it.blockTimestamp }
-        repository.findLatestWeekly().forEach { weeklyCache[it._id.validator] = it.blockTimestamp }
-        repository.findLatestMonthly().forEach {
-            monthlyCache[it._id.validator] = it.blockTimestamp
-        }
+        hourlyCache.putAll(repository.latestSampled(TimeSeriesResolution.HOURLY))
+        dailyCache.putAll(repository.latestSampled(TimeSeriesResolution.DAILY))
+        weeklyCache.putAll(repository.latestSampled(TimeSeriesResolution.WEEKLY))
+        monthlyCache.putAll(repository.latestSampled(TimeSeriesResolution.MONTHLY))
     }
 
     /**

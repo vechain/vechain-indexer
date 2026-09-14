@@ -5,8 +5,8 @@ import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.ValidatorBlock
-import org.vechain.indexer.validator.ValidatorBlockRepository
 import org.vechain.indexer.validator.ValidatorBlockService
+import org.vechain.indexer.validator.ValidatorBlockWriteRepository
 import org.vechain.indexer.validator.ValidatorReadRepository
 
 /**
@@ -16,7 +16,7 @@ import org.vechain.indexer.validator.ValidatorReadRepository
  * are sufficient.
  */
 class ProfiledValidatorBlockService(
-    repository: ValidatorBlockRepository,
+    repository: ValidatorBlockWriteRepository,
     validatorRepository: ValidatorReadRepository,
     thorClient: ThorClient,
     validatorStartBlock: Long,
