@@ -159,7 +159,7 @@ object IndexerNames {
 
     object VTHO_GENERATED_BY_BLOCK {
         const val NAME = "VthoGeneratedByBlockIndexer"
-        const val COLLECTION = "stargate_vtho_generated_by_block"
+        const val COLLECTION = "stargate_vtho_generated"
     }
 
     object VALIDATOR_BLOCK {

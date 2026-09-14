@@ -22,6 +22,9 @@ import org.vechain.indexer.stargate.rewards.TokenRewardService
 import org.vechain.indexer.stargate.token.StargateTokenProcessor
 import org.vechain.indexer.stargate.token.StargateTokenService
 import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlockProcessor
+import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlockService
+import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockProcessor
+import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockService
 import org.vechain.indexer.transfer.TransferService
 import org.vechain.indexer.validator.DelegationProcessor
 import org.vechain.indexer.validator.DelegationService
@@ -61,6 +64,13 @@ class ProcessorTransactionalAnnotationsTest {
                 DelegationService::class.java.getDeclaredMethod("save", List::class.java),
                 StargateTokenService::class.java.getDeclaredMethod("save", List::class.java),
                 TokenRewardService::class.java.getDeclaredMethod("save", List::class.java),
+                VetDelegatedByBlockService::class
+                    .java
+                    .getDeclaredMethod(
+                        "saveRecords",
+                        List::class.java,
+                    ),
+                VthoGeneratedByBlockService::class.java.getDeclaredMethod("save", List::class.java),
             )
         val processors =
             listOf(
@@ -74,6 +84,7 @@ class ProcessorTransactionalAnnotationsTest {
                 StargateTokenProcessor::class.java,
                 TokenRewardProcessor::class.java,
                 VetDelegatedByBlockProcessor::class.java,
+                VthoGeneratedByBlockProcessor::class.java,
             )
         for (processor in processors) {
             assertEquals(PostgresProcessor::class.java, processor.superclass)

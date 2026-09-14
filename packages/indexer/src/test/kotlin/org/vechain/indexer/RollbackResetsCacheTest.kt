@@ -22,8 +22,8 @@ import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlockProcessor
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlockRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlockService
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockProcessor
-import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockRepository
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockService
+import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedWriteRepository
 
 /**
  * Each cache-bearing processor must invalidate its service's in-memory cache when rollback is
@@ -50,9 +50,15 @@ class RollbackResetsCacheTest {
     @Test
     fun `VthoGeneratedByBlockProcessor rollback resets service cache`() {
         val service = mockk<VthoGeneratedByBlockService>(relaxed = true)
-        val repository = mockk<VthoGeneratedByBlockRepository>(relaxed = true)
+        val repository = mockk<VthoGeneratedWriteRepository>(relaxed = true)
         val processor =
-            VthoGeneratedByBlockProcessor(service, repository, checkpointService, processorMetrics)
+            VthoGeneratedByBlockProcessor(
+                service,
+                repository,
+                mockk(relaxed = true),
+                CheckpointProperties(),
+                processorMetrics,
+            )
 
         processor.rollback(100)
 
