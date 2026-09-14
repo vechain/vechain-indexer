@@ -12,9 +12,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.config.DetectedNetwork
-import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.NetworkDetectionService
 import org.vechain.indexer.config.VeChainNetwork
 import org.vechain.indexer.event.model.generic.AbiEventParameters
@@ -31,17 +29,17 @@ import strikt.assertions.contains
 import strikt.assertions.isEqualTo
 
 class ValidatorServiceTest {
-    private lateinit var repository: ValidatorRepository
+    private lateinit var repository: ValidatorReadRepository
+    private lateinit var writeRepository: ValidatorWriteRepository
     private lateinit var thorClient: ThorClient
-    private lateinit var mongoTemplate: MongoTemplate
     private lateinit var networkDetectionService: NetworkDetectionService
     private lateinit var service: ValidatorService
 
     @BeforeEach
     fun setup() {
         repository = mockk()
+        writeRepository = mockk(relaxed = true)
         thorClient = mockk()
-        mongoTemplate = mockk(relaxed = true)
         networkDetectionService = mockk()
         every { networkDetectionService.detectBlocking() } returns
             DetectedNetwork(network = VeChainNetwork.MAINNET, genesisBlock = mockk())
@@ -51,10 +49,9 @@ class ValidatorServiceTest {
         stubParentTimestamp(parentTimestamp = DEFAULT_BLOCK_TIMESTAMP - 10L)
         service =
             ValidatorService(
+                writeRepository,
                 repository,
                 thorClient,
-                mongoTemplate,
-                InlineVersioningProperties(),
                 networkDetectionService,
                 STAKER_ADDRESS,
                 validatorStartBlock = 0L,
@@ -101,7 +98,7 @@ class ValidatorServiceTest {
         // 20M VET withdrawn — within both exiting buckets
         val event = validationWithdrawnEvent(VALIDATOR_ID, "20000000000000000000000000")
 
-        val (updates, _) = runBlocking { service.processBlock(midEpochBlock(), listOf(event)) }
+        val updates = runBlocking { service.processBlock(midEpochBlock(), listOf(event)) }
 
         // `updates` also contains an entry for the block.signer (created via newDoc by the
         // signer-credit path) — that's not what this test is about, so filter to the validator
@@ -137,7 +134,7 @@ class ValidatorServiceTest {
         // Withdraw more than what's in either bucket — both clamp to zero, no underflow
         val event = validationWithdrawnEvent(VALIDATOR_ID, "500000000000000000000000")
 
-        val (updates, _) = runBlocking { service.processBlock(midEpochBlock(), listOf(event)) }
+        val updates = runBlocking { service.processBlock(midEpochBlock(), listOf(event)) }
 
         // `updates` also contains an entry for the block.signer (created via newDoc by the
         // signer-credit path) — that's not what this test is about, so filter to the validator
@@ -170,8 +167,9 @@ class ValidatorServiceTest {
         every { repository.findAll() } returns listOf(signer, other)
         stubParentTimestamp(LIVENESS_TIMESTAMP - 10L)
 
-        val (updates, _) =
-            runBlocking { service.processBlock(livenessBlock(signer = VID_A), emptyList()) }
+        val updates = runBlocking {
+            service.processBlock(livenessBlock(signer = VID_A), emptyList())
+        }
 
         // Only the signer's counters moved.
         val updated = updates.single()
@@ -196,8 +194,9 @@ class ValidatorServiceTest {
         every { repository.findAll() } returns listOf(signer)
         stubParentTimestamp(LIVENESS_TIMESTAMP - 10L)
 
-        val (updates, _) =
-            runBlocking { service.processBlock(livenessBlock(signer = VID_A), emptyList()) }
+        val updates = runBlocking {
+            service.processBlock(livenessBlock(signer = VID_A), emptyList())
+        }
 
         val updated = updates.single()
         expectThat(updated) {
@@ -219,8 +218,9 @@ class ValidatorServiceTest {
 
         stubOfflineBlockResponse(mapOf(VID_A to LIVENESS_BLOCK_NUMBER))
 
-        val (updates, _) =
-            runBlocking { service.processBlock(livenessBlock(signer = VID_B), emptyList()) }
+        val updates = runBlocking {
+            service.processBlock(livenessBlock(signer = VID_B), emptyList())
+        }
 
         val byId = updates.associateBy { it.id }
         expectThat(byId.getValue(VID_A)) {
@@ -251,8 +251,9 @@ class ValidatorServiceTest {
             mapOf(VID_A to LIVENESS_BLOCK_NUMBER, VID_B to LIVENESS_BLOCK_NUMBER)
         )
 
-        val (updates, _) =
-            runBlocking { service.processBlock(livenessBlock(signer = VID_C), emptyList()) }
+        val updates = runBlocking {
+            service.processBlock(livenessBlock(signer = VID_C), emptyList())
+        }
 
         val byId = updates.associateBy { it.id }
         expectThat(byId.getValue(VID_A)) {
@@ -282,8 +283,9 @@ class ValidatorServiceTest {
 
         stubOfflineBlockResponse(mapOf(VID_A to LIVENESS_BLOCK_NUMBER))
 
-        val (updates, _) =
-            runBlocking { service.processBlock(livenessBlock(signer = VID_B), emptyList()) }
+        val updates = runBlocking {
+            service.processBlock(livenessBlock(signer = VID_B), emptyList())
+        }
 
         val updatedA = updates.single { it.id == VID_A }
         expectThat(updatedA) {
@@ -309,8 +311,9 @@ class ValidatorServiceTest {
             mapOf(VID_A to LIVENESS_BLOCK_NUMBER, VID_C to LIVENESS_BLOCK_NUMBER)
         )
 
-        val (updates, _) =
-            runBlocking { service.processBlock(livenessBlock(signer = VID_B), emptyList()) }
+        val updates = runBlocking {
+            service.processBlock(livenessBlock(signer = VID_B), emptyList())
+        }
 
         // VID_A had no change; should NOT be in updates (counters unchanged).
         expectThat(updates.map { it.id }.toSet()).isEqualTo(setOf(VID_B, VID_C))
@@ -391,8 +394,9 @@ class ValidatorServiceTest {
             )
         )
 
-        val (updates, _) =
-            runBlocking { service.processBlock(livenessBlock(signer = VID_D), emptyList()) }
+        val updates = runBlocking {
+            service.processBlock(livenessBlock(signer = VID_D), emptyList())
+        }
 
         // Only the signer should move; A/B/C are all online per the chain.
         expectThat(updates.map { it.id }.toSet()).isEqualTo(setOf(VID_D))
@@ -420,8 +424,9 @@ class ValidatorServiceTest {
 
         stubOfflineBlockResponse(mapOf(VID_A to pastMissBlock))
 
-        val (updates, _) =
-            runBlocking { service.processBlock(livenessBlock(signer = VID_B), emptyList()) }
+        val updates = runBlocking {
+            service.processBlock(livenessBlock(signer = VID_B), emptyList())
+        }
 
         val updatedA = updates.single { it.id == VID_A }
         expectThat(updatedA) {
@@ -438,8 +443,9 @@ class ValidatorServiceTest {
         every { repository.findAll() } returns listOf(solo)
         // Parent timestamp lookup not stubbed — solo path returns before fetching it.
 
-        val (updates, _) =
-            runBlocking { service.processBlock(livenessBlock(signer = VID_A), emptyList()) }
+        val updates = runBlocking {
+            service.processBlock(livenessBlock(signer = VID_A), emptyList())
+        }
 
         val updated = updates.single()
         expectThat(updated) {
@@ -458,10 +464,9 @@ class ValidatorServiceTest {
         every { net.detectBlocking() } returns
             DetectedNetwork(network = VeChainNetwork.CUSTOM, genesisBlock = mockk())
         return ValidatorService(
+            writeRepository,
             repository,
             thorClient,
-            mongoTemplate,
-            InlineVersioningProperties(),
             net,
             STAKER_ADDRESS,
             validatorStartBlock = 0L,

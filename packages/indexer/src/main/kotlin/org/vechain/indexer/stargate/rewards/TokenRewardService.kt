@@ -10,7 +10,6 @@ import java.util.concurrent.ConcurrentHashMap
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.config.InlineVersioningProperties
@@ -32,7 +31,7 @@ import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.validator.DelegationRepository
 import org.vechain.indexer.validator.DelegationStatus
 import org.vechain.indexer.validator.Validator
-import org.vechain.indexer.validator.ValidatorRepository
+import org.vechain.indexer.validator.ValidatorReadRepository
 
 @Profile("token-reward")
 @Service
@@ -40,7 +39,7 @@ open class TokenRewardService(
     private val repository: TokenRewardRepository,
     private val mongoTemplate: MongoTemplate,
     private val inlineVersioningProperties: InlineVersioningProperties,
-    private val validatorV2Repository: ValidatorRepository,
+    private val validatorV2Repository: ValidatorReadRepository,
     private val delegationV2Repository: DelegationRepository,
     private val thorClient: ThorClient,
     @param:Value("\${indexer.start-block.validator}") private val validatorStartBlock: Long,
@@ -72,7 +71,7 @@ open class TokenRewardService(
      *   `Energy.totalSupply()` result (see [energyTotalSupplyClause]).
      * @return A list of updated TokenReward documents for this block.
      * @notice Process a block and update validator reward state.
-     * @dev Reads validator cycle state from [ValidatorRepository] (no aggregator decode), uses the
+     * @dev Reads validator state from [ValidatorReadRepository] (no aggregator decode), uses the
      *   decoded VTHO total supply to derive the per-block reward, then distributes that reward
      *   proportionally across active delegations.
      */
@@ -88,8 +87,7 @@ open class TokenRewardService(
         // dependsOn(delegationIndexer) → transitively dependsOn(validatorIndexer) guarantees
         // that Validator has applied this block's state by the time we read it here.
         val validator =
-            validatorV2Repository.findByIdOrNull(validatorId)
-                ?: return Pair(emptyList(), emptyList())
+            validatorV2Repository.findById(validatorId) ?: return Pair(emptyList(), emptyList())
 
         val blockTotalSupply =
             decodeTotalSupply(callResponses) ?: return Pair(emptyList(), emptyList())

@@ -19,7 +19,7 @@ import org.vechain.indexer.stargate.token.StargateEventService
 import org.vechain.indexer.stargate.token.StargateTokenProcessor
 import org.vechain.indexer.stargate.token.StargateTokenRepository
 import org.vechain.indexer.stargate.token.StargateTokenService
-import org.vechain.indexer.validator.ValidatorRepository
+import org.vechain.indexer.validator.ValidatorReadRepository
 
 @Disabled("Performance test - run explicitly with --tests when needed")
 @ActiveProfiles("stargate-token")
@@ -28,7 +28,7 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var stargateTokenRepository: StargateTokenRepository
     @Autowired lateinit var stargateTokenService: StargateTokenService
     @Autowired lateinit var stargateEventService: StargateEventService
-    @Autowired lateinit var validatorRepository: ValidatorRepository
+    @Autowired lateinit var validatorRepository: ValidatorReadRepository
 
     @Value("\${indexer.start-block.validator}") var validatorStartBlock: Long = 0L
     @Autowired lateinit var inlineVersioningProperties: InlineVersioningProperties

@@ -19,7 +19,7 @@ import strikt.assertions.isEqualTo
 
 class DelegationServiceTest {
     private lateinit var repository: DelegationRepository
-    private lateinit var validatorRepository: ValidatorRepository
+    private lateinit var validatorRepository: ValidatorReadRepository
     private lateinit var mongoTemplate: MongoTemplate
     private lateinit var service: DelegationService
 
@@ -52,7 +52,7 @@ class DelegationServiceTest {
         every { repository.findByTransitionAtBlockIsNullAndStatusIn(any()) } returns emptyList()
         every { repository.findByTokenIdIn(any()) } returns emptyList()
         every { repository.findByValidatorIn(any()) } returns emptyList()
-        every { validatorRepository.findAllById(any<Iterable<String>>()) } returns
+        every { validatorRepository.findAllById(any()) } returns
             listOf(soloGenesisValidator(VALIDATOR_ID))
 
         val (updates, archive) =
@@ -114,7 +114,7 @@ class DelegationServiceTest {
         } returns listOf(existing)
         every { repository.findByTokenIdIn(any()) } returns emptyList()
         every { repository.findByValidatorIn(any()) } returns emptyList()
-        every { validatorRepository.findAllById(any<Iterable<String>>()) } returns
+        every { validatorRepository.findAllById(any()) } returns
             listOf(soloGenesisValidator(VALIDATOR_ID))
 
         // processing block 500 — long past `start(0) + period(90) = 90`, the chain housekeep
@@ -161,7 +161,7 @@ class DelegationServiceTest {
         } returns listOf(existing)
         every { repository.findByTokenIdIn(any()) } returns emptyList()
         every { repository.findByValidatorIn(any()) } returns emptyList()
-        every { validatorRepository.findAllById(any<Iterable<String>>()) } returns
+        every { validatorRepository.findAllById(any()) } returns
             listOf(soloGenesisValidator(VALIDATOR_ID))
 
         // processing block 150 — past the chain housekeep (90) anchored on initiatedAtBlock, but
@@ -205,7 +205,7 @@ class DelegationServiceTest {
         } returns listOf(existing)
         every { repository.findByTokenIdIn(any()) } returns emptyList()
         every { repository.findByValidatorIn(any()) } returns emptyList()
-        every { validatorRepository.findAllById(any<Iterable<String>>()) } returns
+        every { validatorRepository.findAllById(any()) } returns
             listOf(soloGenesisValidator(VALIDATOR_ID))
 
         // processing block 40 — between blockNumber(30) and the first housekeep (90) computed via
@@ -246,7 +246,7 @@ class DelegationServiceTest {
         every { repository.findByTransitionAtBlockIsNullAndStatusIn(any()) } returns emptyList()
         every { repository.findByTokenIdIn(any()) } returns emptyList()
         every { repository.findByValidatorIn(any()) } returns emptyList()
-        every { validatorRepository.findAllById(any<Iterable<String>>()) } returns
+        every { validatorRepository.findAllById(any()) } returns
             listOf(soloGenesisValidator(VALIDATOR_ID))
 
         val (updates, _) = runBlocking { service.processBlock(block(number = 90), emptyList()) }

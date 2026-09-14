@@ -6,12 +6,12 @@ import java.math.BigDecimal
 import org.junit.jupiter.api.Test
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator
-import org.vechain.indexer.validator.ValidatorRepository
+import org.vechain.indexer.validator.ValidatorReadRepository
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 
 class ValidatorChainAggregatesServiceTest {
-    private val validatorRepository: ValidatorRepository = mockk()
+    private val validatorRepository: ValidatorReadRepository = mockk()
     private val service = ValidatorChainAggregatesService(validatorRepository)
 
     @Test

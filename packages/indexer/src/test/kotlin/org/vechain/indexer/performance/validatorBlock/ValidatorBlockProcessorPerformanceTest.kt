@@ -17,7 +17,7 @@ import org.vechain.indexer.stargate.rewards.TokenRewardService
 import org.vechain.indexer.validator.ValidatorBlockProcessor
 import org.vechain.indexer.validator.ValidatorBlockRepository
 import org.vechain.indexer.validator.ValidatorBlockService
-import org.vechain.indexer.validator.ValidatorRepository
+import org.vechain.indexer.validator.ValidatorReadRepository
 
 @Disabled("Performance test - run explicitly with --tests when needed")
 @ActiveProfiles("validator-reward", "validator")
@@ -25,7 +25,7 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var validatorBlockRepository: ValidatorBlockRepository
     @Autowired lateinit var validatorBlockService: ValidatorBlockService
-    @Autowired lateinit var validatorV2Repository: ValidatorRepository
+    @Autowired lateinit var validatorV2Repository: ValidatorReadRepository
     @Autowired lateinit var checkpointService: CheckpointService
     @Autowired lateinit var processorMetrics: ProcessorMetrics
 

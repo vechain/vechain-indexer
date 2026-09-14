@@ -7,11 +7,6 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.SliceImpl
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.find
-import org.springframework.data.mongodb.core.findOne
-import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.data.mongodb.core.query.Query
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
@@ -51,7 +46,6 @@ import org.vechain.indexer.validator.ValidatorSlotStats
 @RestController
 @RequestMapping(VALIDATORS_PATH_V2)
 open class ValidatorV2Controller(
-    private val mongoTemplate: MongoTemplate,
     private val aggregateService: ValidatorAggregateService,
     private val priceFeedService: PriceFeedService,
     private val service: ValidatorService,
@@ -89,20 +83,10 @@ open class ValidatorV2Controller(
         val pageable =
             withIdTieBreaker(toPageable(page, size, direction, Validator::validatorVetStaked.name))
 
-        val criteria = mutableListOf<Criteria>()
-        status?.let { criteria += Criteria.where(Validator::status.name).`in`(it) }
-        endorser?.let {
-            criteria += Criteria.where(Validator::endorser.name).`is`(HexUtils.normalise(it))
-        }
-
-        val query =
-            if (criteria.isNotEmpty()) Query(Criteria().andOperator(*criteria.toTypedArray()))
-            else Query()
-        query.with(pageable).limit(pageable.pageSize + 1)
-
-        val results = mongoTemplate.find<Validator>(query)
-        val hasNext = results.size > pageable.pageSize
-        val pageContent = if (hasNext) results.dropLast(1) else results
+        val result =
+            service.findValidators(null, endorser?.let { HexUtils.normalise(it) }, status, pageable)
+        val hasNext = result.hasNext()
+        val pageContent = result.content
 
         // No rows means no price-dependent fields to compute — skip the oracle hop so an empty
         // page never returns 503 just because the oracle happens to be flaky.
@@ -211,7 +195,7 @@ open class ValidatorV2Controller(
     ): ValidatorV2Response {
         val normalised = HexUtils.normalise(validatorId.value)
         val doc =
-            mongoTemplate.findOne<Validator>(Query(Criteria.where("_id").`is`(normalised)))
+            service.findValidator(normalised)
                 ?: throw ResourceNotFoundException("Validator V2 not found for id $normalised")
 
         val aggregates = aggregateService.build(listOf(doc.id))

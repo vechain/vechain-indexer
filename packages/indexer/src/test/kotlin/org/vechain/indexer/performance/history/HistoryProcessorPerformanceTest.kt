@@ -19,7 +19,7 @@ import org.vechain.indexer.history.HistoryWriteRepository
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.postgres.IndexerStateRepository
-import org.vechain.indexer.validator.ValidatorRepository
+import org.vechain.indexer.validator.ValidatorReadRepository
 
 @Disabled("Performance test - run explicitly with --tests when needed")
 @ActiveProfiles("history")
@@ -30,7 +30,7 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var historyService: HistoryService
 
     @Autowired lateinit var delegationLifecycleHistoryService: DelegationLifecycleHistoryService
-    @Autowired lateinit var validatorRepository: ValidatorRepository
+    @Autowired lateinit var validatorRepository: ValidatorReadRepository
 
     @Autowired lateinit var indexerState: IndexerStateRepository
     @Autowired lateinit var checkpointProperties: CheckpointProperties

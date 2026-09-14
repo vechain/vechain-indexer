@@ -26,13 +26,13 @@ import org.vechain.indexer.validator.DelegationRepository
 import org.vechain.indexer.validator.DelegationStatus
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator
-import org.vechain.indexer.validator.ValidatorRepository
+import org.vechain.indexer.validator.ValidatorReadRepository
 
 class TokenRewardServiceTest {
     private val repository = mockk<TokenRewardRepository>(relaxed = true)
     private val mongoTemplate = mockk<MongoTemplate>(relaxed = true)
     private val inlineVersioningProperties = mockk<InlineVersioningProperties>()
-    private val validatorV2Repository = mockk<ValidatorRepository>(relaxed = true)
+    private val validatorV2Repository = mockk<ValidatorReadRepository>(relaxed = true)
     private val delegationV2Repository = mockk<DelegationRepository>(relaxed = true)
     private val thorClient = mockk<ThorClient>(relaxed = true)
 

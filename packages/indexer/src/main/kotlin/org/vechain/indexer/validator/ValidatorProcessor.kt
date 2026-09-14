@@ -1,51 +1,50 @@
 package org.vechain.indexer.validator
 
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.StatefulMongoProcessor
-import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.PostgresIndexerStore
+import org.vechain.indexer.PostgresProcessor
+import org.vechain.indexer.config.CheckpointProperties
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
+import org.vechain.indexer.postgres.IndexerStateRepository
 
 @Profile("validator", "stargate-token", "history")
 @Component
 open class ValidatorProcessor(
-    repository: ValidatorRepository,
-    mongoTemplate: MongoTemplate,
-    checkpointService: CheckpointService,
     private val service: ValidatorService,
+    repository: ValidatorWriteRepository,
+    state: IndexerStateRepository,
+    checkpointProperties: CheckpointProperties,
+    horizon: InlineVersioningProperties,
     processorMetrics: ProcessorMetrics,
+    @Value("\${indexer.version.validator:1}") version: Int = 1,
 ) :
-    StatefulMongoProcessor(
-        repository = repository,
-        mongoTemplate = mongoTemplate,
-        indexerName = IndexerNames.VALIDATOR.NAME,
-        checkpointService = checkpointService,
-        collectionName = IndexerNames.VALIDATOR.COLLECTION,
-        processorMetrics = processorMetrics,
+    PostgresProcessor(
+        PostgresIndexerStore(
+            IndexerNames.VALIDATOR.COLLECTION,
+            repository,
+            state,
+            checkpointProperties,
+            horizon,
+        ),
+        IndexerNames.VALIDATOR.NAME,
+        version,
+        processorMetrics,
     ) {
 
     override suspend fun processEntry(entry: IndexingResult) {
-        if (entry !is IndexingResult.BlockResult) {
-            throw IllegalArgumentException(
-                "Expected IndexingResult.BlockResult (full block result) but got ${entry::class.simpleName}"
-            )
+        require(entry is IndexingResult.BlockResult) {
+            "Expected IndexingResult.BlockResult (full block result) but got ${entry::class.simpleName}"
         }
-
-        val (updated, archived) = service.processBlock(entry.block, entry.events())
-
-        if (updated.isNotEmpty()) {
-            service.save(updated, archived)
-        }
+        val updated = service.processBlock(entry.block, entry.events())
+        if (updated.isNotEmpty()) service.save(updated)
     }
 
-    /**
-     * Called by [org.vechain.indexer.BaseProcessor.rollback] on reorg. The service holds an
-     * in-memory mirror of the active-validator collection — drop it so the next block reloads from
-     * the (now-rolled-back) database state instead of carrying entries from the reorged branch.
-     */
+    /** Drops the service's in-memory mirror so the next block reloads the rolled-back rows. */
     override fun resetProcessingState() {
         service.invalidateCache()
     }

@@ -10,10 +10,10 @@ import org.vechain.indexer.fixtures.IndexedEventsFixtures
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator
 import org.vechain.indexer.validator.ValidatorDelegationService
-import org.vechain.indexer.validator.ValidatorRepository
+import org.vechain.indexer.validator.ValidatorReadRepository
 
 class StargateEventServiceTest {
-    private val validatorRepository = mockk<ValidatorRepository>(relaxed = true)
+    private val validatorRepository = mockk<ValidatorReadRepository>(relaxed = true)
     private val service =
         StargateEventService(
             validatorDelegationService = mockk<ValidatorDelegationService>(relaxed = true),

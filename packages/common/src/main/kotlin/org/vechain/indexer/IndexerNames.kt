@@ -149,7 +149,7 @@ object IndexerNames {
 
     object VALIDATOR {
         const val NAME = "ValidatorIndexer"
-        const val COLLECTION = "validators"
+        const val COLLECTION = "validator"
     }
 
     object DELEGATION {

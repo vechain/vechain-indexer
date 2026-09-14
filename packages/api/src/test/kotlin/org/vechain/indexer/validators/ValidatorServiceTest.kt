@@ -20,6 +20,7 @@ import org.vechain.indexer.validator.BlockStatus
 import org.vechain.indexer.validator.Validator
 import org.vechain.indexer.validator.ValidatorBlock
 import org.vechain.indexer.validator.ValidatorBlockRepository
+import org.vechain.indexer.validator.ValidatorReadRepository
 import org.vechain.indexer.validator.ValidatorSlotStats
 import strikt.api.expectThat
 import strikt.assertions.hasSize
@@ -31,6 +32,7 @@ import strikt.assertions.isTrue
 
 class ValidatorServiceTest {
     private val validatorBlockRepository: ValidatorBlockRepository = mockk()
+    private val validatorRepository: ValidatorReadRepository = mockk()
     private val mongoTemplate: MongoTemplate = mockk()
     private val aggregateService: ValidatorAggregateService = mockk {
         every { build(any()) } returns
@@ -51,6 +53,7 @@ class ValidatorServiceTest {
     private val service =
         ValidatorService(
             validatorBlockRepository = validatorBlockRepository,
+            validatorRepository = validatorRepository,
             mongoTemplate = mongoTemplate,
             aggregateService = aggregateService,
             priceFeedService = priceFeedService,
@@ -384,11 +387,12 @@ class ValidatorServiceTest {
 
     @Test
     fun `getValidators hasNext is false when results equal pageSize`() {
-        val pageable = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "validatorTvl"))
+        val pageable = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "validatorVetStaked"))
         val validators =
             (1..3).map { validator(id = "0x000000000000000000000000000000000000000$it") }
 
-        every { mongoTemplate.find(any<Query>(), Validator::class.java) } returns validators
+        every { validatorRepository.find(any(), any(), any(), any(), any(), any(), any()) } returns
+            validators
 
         val result = service.getValidators(null, null, null, pageable)
 
@@ -398,11 +402,12 @@ class ValidatorServiceTest {
 
     @Test
     fun `getValidators hasNext is true and content is trimmed when more results exist`() {
-        val pageable = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "validatorTvl"))
+        val pageable = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "validatorVetStaked"))
         val validators =
             (1..4).map { validator(id = "0x000000000000000000000000000000000000000$it") }
 
-        every { mongoTemplate.find(any<Query>(), Validator::class.java) } returns validators
+        every { validatorRepository.find(any(), any(), any(), any(), any(), any(), any()) } returns
+            validators
 
         val result = service.getValidators(null, null, null, pageable)
 
@@ -412,11 +417,12 @@ class ValidatorServiceTest {
 
     @Test
     fun `getValidators hasNext is false when fewer results than pageSize`() {
-        val pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "validatorTvl"))
+        val pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "validatorVetStaked"))
         val validators =
             (1..2).map { validator(id = "0x000000000000000000000000000000000000000$it") }
 
-        every { mongoTemplate.find(any<Query>(), Validator::class.java) } returns validators
+        every { validatorRepository.find(any(), any(), any(), any(), any(), any(), any()) } returns
+            validators
 
         val result = service.getValidators(null, null, null, pageable)
 

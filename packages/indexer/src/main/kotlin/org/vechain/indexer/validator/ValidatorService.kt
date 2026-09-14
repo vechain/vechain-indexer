@@ -6,17 +6,15 @@ import java.util.concurrent.ConcurrentHashMap
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.NetworkDetectionService
 import org.vechain.indexer.config.VeChainNetwork
+import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
-import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.AddressUtils
 import org.vechain.indexer.thor.client.ThorClient
@@ -31,10 +29,9 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 @Profile("validator", "stargate-token", "history")
 @Service
 open class ValidatorService(
-    private val repository: ValidatorRepository,
+    private val repository: ValidatorWriteRepository,
+    private val readRepository: ValidatorReadRepository,
     private val thorClient: ThorClient,
-    private val mongoTemplate: MongoTemplate,
-    private val inlineVersioningProperties: InlineVersioningProperties,
     private val networkDetectionService: NetworkDetectionService,
     @param:Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
     private val stakerAddress: String,
@@ -59,8 +56,8 @@ open class ValidatorService(
     open suspend fun processBlock(
         block: Block,
         matchedEvents: List<IndexedEvent>,
-    ): Pair<List<Validator>, List<Validator>> {
-        if (block.number < validatorStartBlock) return emptyList<Validator>() to emptyList()
+    ): List<Validator> {
+        if (block.number < validatorStartBlock) return emptyList()
 
         val existing = loadAll()
         val working = existing.toMutableMap()
@@ -75,25 +72,22 @@ open class ValidatorService(
 
         val updates = diff(existing, working, block)
         lastProcessedBlock = block
-        return updates to archiveDocsForUpdates(existing, updates)
+        return updates
     }
 
-    @Transactional(rollbackFor = [Exception::class])
-    open fun save(updates: List<Validator>, archive: List<Validator>) {
-        saveVersionedDocuments(
-            updates,
-            archive,
-            mongoTemplate,
-            inlineVersioningProperties.blockWindow,
-            inlineVersioningProperties.maxVersions,
-            inlineVersioningProperties.minVersions,
-        )
+    @Transactional(
+        transactionManager = PostgresConfig.TRANSACTION_MANAGER,
+        rollbackFor = [Exception::class],
+    )
+    open fun save(updates: List<Validator>) {
+        if (updates.isEmpty()) return
+        repository.save(updates)
         updateCache(updates)
     }
 
     /**
      * Drop the in-memory validator cache. Called from [ValidatorProcessor.resetProcessingState] on
-     * rollback so the next block reloads from MongoDB instead of carrying state from a reorged-out
+     * rollback so the next block reloads from the DB instead of carrying state from a reorged-out
      * branch.
      */
     open fun invalidateCache() {
@@ -104,7 +98,7 @@ open class ValidatorService(
      * In-memory mirror of every persisted validator (including [Status.EXITED], which is terminal
      * but still receives `ValidationWithdrawn` cooldown-refund events that should decrement
      * `exitingVetStaked`). Loaded lazily on the first [loadAll] call after startup or invalidation;
-     * kept in sync with MongoDB by [updateCache] after every successful [save]. The
+     * kept in sync with the table by [updateCache] after every successful [save]. The
      * single-thread-per-indexer model means no synchronization is needed.
      */
     private var validatorCache: MutableMap<String, Validator>? = null
@@ -112,7 +106,7 @@ open class ValidatorService(
     private fun loadAll(): Map<String, Validator> {
         val cached = validatorCache
         if (cached != null) return cached.toMap()
-        val loaded = repository.findAll().associateByTo(mutableMapOf()) { it.id }
+        val loaded = readRepository.findAll().associateByTo(mutableMapOf()) { it.id }
         validatorCache = loaded
         return loaded.toMap()
     }
@@ -701,7 +695,7 @@ open class ValidatorService(
         return raw.takeIf { it in 1L until MAX_UINT32_LONG }
     }
 
-    // -------- Diff & versioning --------
+    // -------- Diff --------
 
     private fun diff(
         existing: Map<String, Validator>,
@@ -718,7 +712,6 @@ open class ValidatorService(
                         blockId = block.id,
                         blockNumber = block.number,
                         blockTimestamp = block.timestamp,
-                        version = (prior?.version ?: 0) + 1,
                     )
             }
 
@@ -727,11 +720,6 @@ open class ValidatorService(
             vetStaked =
                 (validatorVetStaked ?: BigDecimal.ZERO).add(delegatorVetStaked ?: BigDecimal.ZERO)
         )
-
-    private fun archiveDocsForUpdates(
-        existing: Map<String, Validator>,
-        updates: List<Validator>,
-    ): List<Validator> = updates.mapNotNull { existing[it.id] }
 
     private fun isEpochBoundary(blockNumber: Long): Boolean = blockNumber % EPOCH_LENGTH == 0L
 
