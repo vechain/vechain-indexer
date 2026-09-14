@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.repository.findByIdOrNull
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.Transaction
@@ -22,7 +21,7 @@ import org.vechain.indexer.thor.model.Transaction
 @ExtendWith(MockKExtension::class)
 class ValidatorBlockServiceTest {
     private lateinit var repository: ValidatorBlockRepository
-    private lateinit var validatorRepository: ValidatorRepository
+    private lateinit var validatorRepository: ValidatorReadRepository
     private lateinit var thorClient: ThorClient
     private lateinit var service: ValidatorBlockService
 
@@ -149,7 +148,7 @@ class ValidatorBlockServiceTest {
                     ),
             )
 
-        every { validatorRepository.findByIdOrNull("0xVAL1") } returns
+        every { validatorRepository.findById("0xVAL1") } returns
             validatorV2("0xVAL1", delegatorStake = BigDecimal("0.5"))
 
         // Cold-start fallback: parent block totalSupply = 900
@@ -167,10 +166,7 @@ class ValidatorBlockServiceTest {
 
     @Test
     fun `getValidationInfo computes delta correctly across multiple blocks`() = runBlocking {
-        every { validatorRepository.findById(any()) } answers
-            {
-                java.util.Optional.of(validatorV2(it.invocation.args[0] as String))
-            }
+        every { validatorRepository.findById(any()) } answers { validatorV2(firstArg()) }
 
         val block1 = createBlock(num = 101, signer = "0xVAL1")
         coEvery { service.getTotalVTHOIssuedAtBlock("block-100") } returns BigInteger.valueOf(900)

@@ -21,14 +21,14 @@ import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator
 import org.vechain.indexer.validator.ValidatorDelegationService
-import org.vechain.indexer.validator.ValidatorRepository
+import org.vechain.indexer.validator.ValidatorReadRepository
 
 @ExtendWith(MockKExtension::class)
 internal class StargateTokenServiceTest {
     @MockK lateinit var repository: StargateTokenRepository
     @MockK lateinit var eventService: StargateEventService
     @MockK lateinit var validatorDelegationService: ValidatorDelegationService
-    @MockK lateinit var validatorRepository: ValidatorRepository
+    @MockK lateinit var validatorRepository: ValidatorReadRepository
     @MockK lateinit var mongoTemplate: MongoTemplate
     @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
 

@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator
-import org.vechain.indexer.validator.ValidatorRepository
+import org.vechain.indexer.validator.ValidatorReadRepository
 
 /**
  * Chain-wide aggregates over the next-cycle active set — totals that are independent of the page
@@ -28,7 +28,9 @@ data class ChainWideValidatorAggregates(
  */
 @Profile("validator")
 @Service
-open class ValidatorChainAggregatesService(private val validatorRepository: ValidatorRepository) {
+open class ValidatorChainAggregatesService(
+    private val validatorRepository: ValidatorReadRepository
+) {
 
     /**
      * Computes (and caches) the chain-wide aggregates. `sync = true` guarantees that on a miss only

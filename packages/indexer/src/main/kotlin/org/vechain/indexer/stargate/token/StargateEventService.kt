@@ -3,7 +3,6 @@ package org.vechain.indexer.stargate.token
 import java.math.BigInteger
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.Address
@@ -13,7 +12,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator
 import org.vechain.indexer.validator.ValidatorDelegationService
-import org.vechain.indexer.validator.ValidatorRepository
+import org.vechain.indexer.validator.ValidatorReadRepository
 
 /**
  * StargateEventApplier
@@ -31,7 +30,7 @@ import org.vechain.indexer.validator.ValidatorRepository
 @Service
 class StargateEventService(
     private val validatorDelegationService: ValidatorDelegationService,
-    private val validatorRepository: ValidatorRepository,
+    private val validatorRepository: ValidatorReadRepository,
     @Value("\${business-event.substitutions.STARGATE_DELEGATION_CONTRACT}")
     private val stargateDelegationContract: String,
 ) {
@@ -442,7 +441,7 @@ class StargateEventService(
         validators: Map<String, Validator>,
     ): Validator? {
         val normalized = validatorId.lowercase()
-        return validators[normalized] ?: validatorRepository.findByIdOrNull(normalized)
+        return validators[normalized] ?: validatorRepository.findById(normalized)
     }
 
     private fun nextCycleStart(validator: Validator, blockNumber: Long): Long {

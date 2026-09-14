@@ -6,7 +6,7 @@ import org.vechain.indexer.history.HistoryWriteRepository
 import org.vechain.indexer.history.IndexedHistoryEvent
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.thor.model.Block
-import org.vechain.indexer.validator.ValidatorRepository
+import org.vechain.indexer.validator.ValidatorReadRepository
 
 /**
  * Extended HistoryService that profiles EVERY internal method call This gives you complete
@@ -16,7 +16,7 @@ class ProfiledHistoryService(
     repository: HistoryWriteRepository,
     delegationLifecycleHistoryService:
         org.vechain.indexer.history.DelegationLifecycleHistoryService,
-    validatorRepository: ValidatorRepository,
+    validatorRepository: ValidatorReadRepository,
     validatorStartBlock: Long,
     private val profiler: DetailedProfiler,
 ) :

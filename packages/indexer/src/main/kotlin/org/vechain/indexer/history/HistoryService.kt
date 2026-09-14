@@ -15,7 +15,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsBoolean
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 import org.vechain.indexer.utils.ParamUtils.getAsLong
 import org.vechain.indexer.utils.ParamUtils.getAsString
-import org.vechain.indexer.validator.ValidatorRepository
+import org.vechain.indexer.validator.ValidatorReadRepository
 import org.vechain.indexer.validator.ValidatorSnapshot
 
 @Profile("history")
@@ -23,7 +23,7 @@ import org.vechain.indexer.validator.ValidatorSnapshot
 open class HistoryService(
     private val repository: HistoryWriteRepository,
     private val delegationLifecycleHistoryService: DelegationLifecycleHistoryService,
-    private val validatorRepository: ValidatorRepository,
+    private val validatorRepository: ValidatorReadRepository,
     @param:Value("\${indexer.start-block.validator}") private val validatorStartBlock: Long,
 ) {
     /**

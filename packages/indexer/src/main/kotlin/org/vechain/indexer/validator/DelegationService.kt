@@ -18,7 +18,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 /**
  * V2 delegation indexer.
  *
- * Pure event-driven. Reads `Validator` from MongoDB (via [ValidatorRepository]) for cycle math — no
+ * Pure event-driven. Reads `Validator` from Postgres (via the read repository) for cycle math — no
  * chain calls, no aggregator dependency, no `callDataClauses`. Ordering with the V2 validator
  * indexer is handled by `dependsOn(validatorIndexer)` in [DelegationConfig].
  *
@@ -34,7 +34,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 @Service
 open class DelegationService(
     private val repository: DelegationRepository,
-    private val validatorRepository: ValidatorRepository,
+    private val validatorRepository: ValidatorReadRepository,
     private val mongoTemplate: MongoTemplate,
     private val inlineVersioningProperties: InlineVersioningProperties,
     @param:Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
@@ -401,8 +401,7 @@ open class DelegationService(
         }
     }
 
-    // ------------------------------ validator helpers (MongoDB-backed)
-    // ------------------------------
+    // ------------------------------ validator helpers ------------------------------
 
     /**
      * Next cycle-boundary block for [validatorId] after [blockNumber], computed from the persisted

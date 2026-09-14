@@ -9,7 +9,7 @@ import org.vechain.indexer.stargate.token.StargateToken
 import org.vechain.indexer.stargate.token.StargateTokenRepository
 import org.vechain.indexer.stargate.token.StargateTokenService
 import org.vechain.indexer.thor.model.Block
-import org.vechain.indexer.validator.ValidatorRepository
+import org.vechain.indexer.validator.ValidatorReadRepository
 
 /**
  * Extended StargateTokenService that profiles EVERY internal method call Tracks performance of:
@@ -27,7 +27,7 @@ import org.vechain.indexer.validator.ValidatorRepository
 class ProfiledStargateTokenService(
     repository: StargateTokenRepository,
     eventService: StargateEventService,
-    validatorRepository: ValidatorRepository,
+    validatorRepository: ValidatorReadRepository,
     mongoTemplate: MongoTemplate,
     inlineVersioningProperties: InlineVersioningProperties,
     validatorStartBlock: Long,

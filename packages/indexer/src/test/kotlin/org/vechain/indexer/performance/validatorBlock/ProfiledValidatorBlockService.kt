@@ -7,7 +7,7 @@ import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.ValidatorBlock
 import org.vechain.indexer.validator.ValidatorBlockRepository
 import org.vechain.indexer.validator.ValidatorBlockService
-import org.vechain.indexer.validator.ValidatorRepository
+import org.vechain.indexer.validator.ValidatorReadRepository
 
 /**
  * Thin profiling wrapper around [ValidatorBlockService] for the performance test harness. Captures
@@ -17,7 +17,7 @@ import org.vechain.indexer.validator.ValidatorRepository
  */
 class ProfiledValidatorBlockService(
     repository: ValidatorBlockRepository,
-    validatorRepository: ValidatorRepository,
+    validatorRepository: ValidatorReadRepository,
     thorClient: ThorClient,
     validatorStartBlock: Long,
     private val profiler: DetailedProfiler,

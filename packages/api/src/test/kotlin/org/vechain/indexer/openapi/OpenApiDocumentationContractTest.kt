@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.vechain.indexer.blocks.BlocksReadRepository
 import org.vechain.indexer.history.HistoryReadRepository
 import org.vechain.indexer.nft.NftReadRepository
+import org.vechain.indexer.validator.ValidatorReadRepository
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 import strikt.assertions.isFalse
@@ -32,6 +33,7 @@ class OpenApiDocumentationContractTest {
     @MockitoBean private lateinit var postgresReadRepository: BlocksReadRepository
     @MockitoBean private lateinit var nftReadRepository: NftReadRepository
     @MockitoBean private lateinit var historyReadRepository: HistoryReadRepository
+    @MockitoBean private lateinit var validatorReadRepository: ValidatorReadRepository
 
     @Autowired private lateinit var mockMvc: MockMvc
     @Autowired private lateinit var objectMapper: ObjectMapper

@@ -6,7 +6,6 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.explorer.TimestampUtils.calculateTimeBoundary
@@ -40,7 +39,7 @@ import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
 @Service
 open class ValidatorBlockService(
     private val repository: ValidatorBlockRepository,
-    private val validatorRepository: ValidatorRepository,
+    private val validatorRepository: ValidatorReadRepository,
     private val thorClient: ThorClient,
     @param:Value("\${indexer.start-block.validator}") private val validatorStartBlock: Long,
 ) {
@@ -92,7 +91,7 @@ open class ValidatorBlockService(
      */
     suspend fun getValidationInfo(block: Block, blockTotalSupply: BigInteger): ValidatorBlock? {
         val signer = block.signer
-        val validator = validatorRepository.findByIdOrNull(signer) ?: return null
+        val validator = validatorRepository.findById(signer) ?: return null
         val hasDelegations = (validator.delegatorVetStaked ?: BigDecimal.ZERO) > BigDecimal.ZERO
 
         // Cold-start: seed prev-supply from the parent block.

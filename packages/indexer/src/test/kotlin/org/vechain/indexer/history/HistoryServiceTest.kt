@@ -22,7 +22,7 @@ import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.ValidatorDelegationService
-import org.vechain.indexer.validator.ValidatorRepository
+import org.vechain.indexer.validator.ValidatorReadRepository
 
 @ExtendWith(MockKExtension::class)
 class HistoryServiceTest {
@@ -30,7 +30,7 @@ class HistoryServiceTest {
 
     @MockK lateinit var validatorDelegationService: ValidatorDelegationService
 
-    @MockK lateinit var validatorRepository: ValidatorRepository
+    @MockK lateinit var validatorRepository: ValidatorReadRepository
 
     @MockK lateinit var validatorIndexer: Indexer
 

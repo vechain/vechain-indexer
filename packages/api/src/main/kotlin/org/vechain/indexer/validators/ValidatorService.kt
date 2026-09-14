@@ -22,6 +22,7 @@ import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.timeseries.TimeSeriesResolution
+import org.vechain.indexer.utils.PaginationUtils.offsetSlice
 import org.vechain.indexer.utils.TimeSeriesUtils
 import org.vechain.indexer.utils.TimeValidationUtils
 import org.vechain.indexer.validator.BlockStatus
@@ -29,12 +30,14 @@ import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator
 import org.vechain.indexer.validator.ValidatorBlock
 import org.vechain.indexer.validator.ValidatorBlockRepository
+import org.vechain.indexer.validator.ValidatorReadRepository
 import org.vechain.indexer.validator.ValidatorSlotStats
 
 @Profile("validator")
 @Service
 open class ValidatorService(
     private val validatorBlockRepository: ValidatorBlockRepository,
+    private val validatorRepository: ValidatorReadRepository,
     private val mongoTemplate: MongoTemplate,
     private val aggregateService: ValidatorAggregateService,
     private val priceFeedService: PriceFeedService,
@@ -180,46 +183,54 @@ open class ValidatorService(
         }
     }
 
+    /** One page of the current set, in the pageable's first non-id order. */
+    open fun findValidators(
+        validatorId: String?,
+        endorser: String?,
+        statuses: List<Status>?,
+        pageable: Pageable,
+    ): Slice<Validator> {
+        val sortField =
+            pageable.sort.firstOrNull { it.property != "_id" }?.property
+                ?: Validator::validatorVetStaked.name
+        return offsetSlice(pageable, sortField) { offset, limit, direction ->
+            validatorRepository.find(
+                validatorId,
+                endorser,
+                statuses,
+                sortField,
+                direction,
+                offset,
+                limit,
+            )
+        }
+    }
+
+    open fun findValidator(validatorId: String): Validator? =
+        validatorRepository.findById(validatorId)
+
     open fun getValidators(
         validatorId: String?,
         endorser: String?,
         statuses: List<Status>?,
         pageable: Pageable,
     ): Slice<ValidatorResponse> {
-        val criteriaList = mutableListOf<Criteria>()
-
-        validatorId?.let { criteriaList.add(Criteria.where("_id").`is`(it.lowercase())) }
-        endorser?.let {
-            criteriaList.add(Criteria.where(Validator::endorser.name).`is`(it.lowercase()))
-        }
-        statuses?.let { criteriaList.add(Criteria.where(Validator::status.name).`in`(it)) }
-
-        val query =
-            if (criteriaList.isNotEmpty()) {
-                Query(Criteria().andOperator(*criteriaList.toTypedArray()))
-            } else {
-                Query()
-            }
-
-        query.with(pageable).limit(pageable.pageSize + 1)
-
-        val results = mongoTemplate.find<Validator>(query)
-        val hasNext = results.size > pageable.pageSize
-        val page = if (hasNext) results.dropLast(1) else results
+        val page = findValidators(validatorId, endorser, statuses, pageable)
 
         // Empty pages don't need price data — skip the oracle hop so a no-match query never
         // returns 503 just because the oracle happens to be flaky.
-        if (page.isEmpty()) {
-            return SliceImpl(emptyList(), pageable, hasNext)
+        if (page.isEmpty) {
+            return SliceImpl(emptyList(), pageable, page.hasNext())
         }
 
-        val aggregates = aggregateService.build(page.map { it.id })
+        val aggregates = aggregateService.build(page.content.map { it.id })
         val prices = priceFeedService.getPrices(setOf(PriceFeed.VET_USD, PriceFeed.VTHO_USD))
         val vetPrice = prices.getValue(PriceFeed.VET_USD)
         val vthoPrice = prices.getValue(PriceFeed.VTHO_USD)
-        val mapped = page.map { ValidatorResponse.from(it, aggregates, vetPrice, vthoPrice) }
+        val mapped =
+            page.content.map { ValidatorResponse.from(it, aggregates, vetPrice, vthoPrice) }
 
-        return SliceImpl(mapped, pageable, hasNext)
+        return SliceImpl(mapped, pageable, page.hasNext())
     }
 
     open fun getSlotStats(startTimestamp: Long, endTimestamp: Long): List<ValidatorSlotStats> {

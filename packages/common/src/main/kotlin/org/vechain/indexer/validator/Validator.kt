@@ -3,12 +3,7 @@ package org.vechain.indexer.validator
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import java.math.BigDecimal
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
-import org.springframework.data.mongodb.core.mapping.Field
-import org.springframework.data.mongodb.core.mapping.FieldType
-import org.vechain.indexer.IndexerNames
-import org.vechain.indexer.VersionedDocument
+import org.vechain.indexer.IndexedDocument
 
 /**
  * Indexed validator state. Persists only what the chain (built-in Staker) and PoS-schedule
@@ -30,10 +25,9 @@ import org.vechain.indexer.VersionedDocument
  * **Not yet wired up:** `totalRewards` (the reward ledger lives in the separate `validator-reward`
  * profile).
  */
-@Document(collection = IndexerNames.VALIDATOR.COLLECTION)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Validator(
-    @Id val id: String,
+    val id: String,
     @JsonIgnore override val blockId: String,
     @JsonIgnore override val blockNumber: Long,
     @JsonIgnore override val blockTimestamp: Long,
@@ -44,18 +38,17 @@ data class Validator(
     val startBlock: Long? = null,
     val exitBlock: Long? = null,
     val completedPeriods: Long? = null,
-    @Field(targetType = FieldType.DECIMAL128) val validatorVetStaked: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val validatorLockedWeight: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val delegatorVetStaked: BigDecimal? = null,
-    // Persisted sum of validatorVetStaked + delegatorVetStaked. Stored so V1's deprecated
-    // `sortBy=totalTvl` can map to a Mongo-sortable field (TVL preserves stake order within
-    // a single request since vetPrice is a per-request scalar).
-    @Field(targetType = FieldType.DECIMAL128) val vetStaked: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val validatorQueuedVetStaked: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val queuedVetStaked: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val exitingVetStaked: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val validatorExitingVetStaked: BigDecimal? = null,
-    @Field(targetType = FieldType.DECIMAL128) val totalNextPeriodWeight: BigDecimal? = null,
+    val validatorVetStaked: BigDecimal? = null,
+    val validatorLockedWeight: BigDecimal? = null,
+    val delegatorVetStaked: BigDecimal? = null,
+    // Persisted sum of validatorVetStaked + delegatorVetStaked, so V1's deprecated
+    // `sortBy=totalTvl` has a column to sort on (a per-request vetPrice preserves stake order).
+    val vetStaked: BigDecimal? = null,
+    val validatorQueuedVetStaked: BigDecimal? = null,
+    val queuedVetStaked: BigDecimal? = null,
+    val exitingVetStaked: BigDecimal? = null,
+    val validatorExitingVetStaked: BigDecimal? = null,
+    val totalNextPeriodWeight: BigDecimal? = null,
     val queuePosition: Long? = null,
     val availableStartBlock: Long? = null,
     val scheduledSlots: Long = 0,
@@ -68,7 +61,4 @@ data class Validator(
     // detecting new misses — we increment `missedSlots` when chain `offlineBlock` advances past
     // the value stored here.
     val offlineBlock: Long? = null,
-    @JsonIgnore override val version: Int = 0,
-) : VersionedDocument {
-    @JsonIgnore override fun getDocumentId(): String = id
-}
+) : IndexedDocument
