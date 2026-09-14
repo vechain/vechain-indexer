@@ -4,17 +4,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonView
 import java.math.BigInteger
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
-import org.vechain.indexer.IndexerNames
-import org.vechain.indexer.VersionedDocument
+import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.thor.model.Views
 
-@Document(collection = IndexerNames.TOKEN_REWARD.COLLECTION)
 @JsonView(Views.Public::class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class TokenReward(
-    @JsonIgnore @Id val id: String,
+    @JsonIgnore val id: String,
     @JsonIgnore override val blockId: String,
     @JsonIgnore override val blockNumber: Long,
     @JsonIgnore override val blockTimestamp: Long,
@@ -33,7 +29,4 @@ data class TokenReward(
     @JsonIgnore val monthReward: BigInteger? = null,
     @JsonIgnore val yearReward: BigInteger? = null,
     @JsonIgnore val cycleReward: BigInteger? = null,
-    @JsonIgnore @field:JsonView(Views.Internal::class) override val version: Int,
-) : VersionedDocument {
-    @JsonIgnore override fun getDocumentId(): String = id
-}
+) : IndexedDocument

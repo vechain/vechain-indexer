@@ -5,7 +5,6 @@ import io.mockk.mockk
 import java.math.BigInteger
 import org.junit.jupiter.api.Test
 import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.SliceImpl
 import org.springframework.data.domain.Sort
 import org.vechain.indexer.stargate.StargateService
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
@@ -14,7 +13,7 @@ import org.vechain.indexer.stargate.token.StargateTokenReadRepository
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
-import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
+import org.vechain.indexer.stargate.tokenReward.TokenRewardReadRepository
 import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlockRepository
 import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountRepository
@@ -32,7 +31,7 @@ class StargateServiceTest {
     private val vthoGeneratedByBlockRepository: VthoGeneratedByBlockRepository = mockk()
     private val vetDelegatedByBlockRepository: VetDelegatedByBlockRepository = mockk()
     private val stargateTokenRepository: StargateTokenReadRepository = mockk()
-    private val tokenRewardRepository: TokenRewardRepository = mockk()
+    private val tokenRewardRepository: TokenRewardReadRepository = mockk()
 
     private val service =
         StargateService(
@@ -78,9 +77,12 @@ class StargateServiceTest {
             tokenRewardRepository.findByTokenIdAndRewardPeriodIn(
                 tokenId,
                 listOf(RewardPeriod.DAY, RewardPeriod.ALL),
-                pageable,
+                null,
+                any(),
+                0,
+                11,
             )
-        } returns SliceImpl(listOf(dayDoc, allTracker), pageable, false)
+        } returns listOf(dayDoc, allTracker)
 
         val slice =
             service.getRewards(
@@ -126,9 +128,12 @@ class StargateServiceTest {
             tokenRewardRepository.findByTokenIdAndRewardPeriodIn(
                 tokenId,
                 listOf(RewardPeriod.WEEK, RewardPeriod.ALL),
-                pageable,
+                null,
+                any(),
+                0,
+                11,
             )
-        } returns SliceImpl(listOf(allTracker), pageable, false)
+        } returns listOf(allTracker)
 
         val slice =
             service.getRewards(
@@ -186,9 +191,12 @@ class StargateServiceTest {
             tokenRewardRepository.findByTokenIdAndRewardPeriodIn(
                 tokenId,
                 listOf(RewardPeriod.MONTH, RewardPeriod.ALL),
-                pageable,
+                null,
+                any(),
+                0,
+                11,
             )
-        } returns SliceImpl(listOf(allTracker1, allTracker2), pageable, false)
+        } returns listOf(allTracker1, allTracker2)
 
         val slice =
             service.getRewards(
@@ -242,9 +250,12 @@ class StargateServiceTest {
             tokenRewardRepository.findByTokenIdAndRewardPeriodIn(
                 tokenId,
                 listOf(RewardPeriod.DAY, RewardPeriod.ALL),
-                pageable,
+                null,
+                any(),
+                0,
+                11,
             )
-        } returns SliceImpl(listOf(allTracker), pageable, false)
+        } returns listOf(allTracker)
 
         val slice =
             service.getRewards(
@@ -389,7 +400,6 @@ class StargateServiceTest {
             monthReward = monthReward,
             yearReward = yearReward,
             cycleReward = cycleReward,
-            version = 0,
         )
 
     private fun token(tokenId: String, owner: String, manager: String? = null): StargateToken =
