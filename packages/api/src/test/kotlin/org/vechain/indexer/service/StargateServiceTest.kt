@@ -295,6 +295,25 @@ class StargateServiceTest {
     }
 
     @Test
+    fun `getStargateTokens treats a blank token id as no filter`() {
+        val pageable = PageRequest.of(0, 20, Sort.by(Sort.Order.desc("blockNumber")))
+        val token = token(tokenId = "15613", owner = "0xowner", manager = "0xmanager")
+
+        every { stargateTokenRepository.findActive(null, null, Sort.Direction.DESC, 0, 21) } returns
+            listOf(token)
+
+        val response =
+            service.getStargateTokens(
+                tokenId = " ",
+                manager = null,
+                owner = null,
+                pageable = pageable,
+            )
+
+        expectThat(response.data).containsExactly(token)
+    }
+
+    @Test
     fun `getStargateTokens excludes burned tokens from manager-only lookups`() {
         val pageable = PageRequest.of(0, 20, Sort.by(Sort.Order.desc("blockNumber")))
         val token = token(tokenId = "17105", owner = "0xowner", manager = "0xmanager")
