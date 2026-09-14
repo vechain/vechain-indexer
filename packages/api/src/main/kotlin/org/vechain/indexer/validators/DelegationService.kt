@@ -23,7 +23,10 @@ open class DelegationService(private val delegationRepository: DelegationReadRep
         pageable: Pageable,
     ): Slice<Delegation> {
         val normalisedValidator = validator?.let(HexUtils::normalise)
-        val decimalTokenId = tokenId?.let { BigIntegerUtils.fromHexOrDecimal(it).toString(10) }
+        val decimalTokenId =
+            tokenId
+                ?.takeIf { it.isNotBlank() }
+                ?.let { BigIntegerUtils.fromHexOrDecimal(it).toString(10) }
         return offsetSlice(pageable, Delegation::blockNumber.name) { offset, limit, direction ->
             delegationRepository.find(
                 normalisedValidator,

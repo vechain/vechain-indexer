@@ -45,6 +45,15 @@ class DelegationServiceTest {
     }
 
     @Test
+    fun `getDelegations treats a blank token id as no filter`() {
+        every { repository.find(any(), any(), any(), any(), any(), any()) } returns emptyList()
+
+        service.getDelegations(null, " ", null, PageRequest.of(0, 20, Sort.by(DESC, "blockNumber")))
+
+        verify { repository.find(null, null, null, DESC, 0, 21) }
+    }
+
+    @Test
     fun `getDelegationCounts maps the counts and lowercases the validator`() {
         every { repository.countsByValidator(null) } returns
             listOf(DelegationStatusCounts(normalisedValidator, queued = 3, active = 7, exiting = 2))
