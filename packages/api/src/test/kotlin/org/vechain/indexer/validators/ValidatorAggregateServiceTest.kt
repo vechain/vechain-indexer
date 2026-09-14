@@ -7,7 +7,7 @@ import java.math.BigDecimal
 import org.junit.jupiter.api.Test
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.validator.DelegationLevelFacet
-import org.vechain.indexer.validator.DelegationRepository
+import org.vechain.indexer.validator.DelegationReadRepository
 import org.vechain.indexer.validator.DelegationStatus
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
@@ -22,7 +22,7 @@ class ValidatorAggregateServiceTest {
                 totalActiveNextCycleVetStaked = BigDecimal.ZERO,
             )
     }
-    private val delegationRepository: DelegationRepository = mockk()
+    private val delegationRepository: DelegationReadRepository = mockk()
     private val service = ValidatorAggregateService(chainAggregatesService, delegationRepository)
 
     @Test

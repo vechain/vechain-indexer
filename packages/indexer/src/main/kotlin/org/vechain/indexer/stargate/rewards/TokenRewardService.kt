@@ -28,7 +28,7 @@ import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.ContractUtils
-import org.vechain.indexer.validator.DelegationRepository
+import org.vechain.indexer.validator.DelegationReadRepository
 import org.vechain.indexer.validator.DelegationStatus
 import org.vechain.indexer.validator.Validator
 import org.vechain.indexer.validator.ValidatorReadRepository
@@ -40,7 +40,7 @@ open class TokenRewardService(
     private val mongoTemplate: MongoTemplate,
     private val inlineVersioningProperties: InlineVersioningProperties,
     private val validatorV2Repository: ValidatorReadRepository,
-    private val delegationV2Repository: DelegationRepository,
+    private val delegationV2Repository: DelegationReadRepository,
     private val thorClient: ThorClient,
     @param:Value("\${indexer.start-block.validator}") private val validatorStartBlock: Long,
 ) {
@@ -215,7 +215,7 @@ open class TokenRewardService(
     /**
      * Fetch or create reward trackers for a validator at the start of a new cycle.
      *
-     * Reads currently-active delegations from [DelegationRepository] (was V1
+     * Reads currently-active delegations from [DelegationReadRepository] (was V1
      * `delegationRepository`). The `dependsOn(delegationIndexer)` ordering guarantees that
      * delegations transitioning at this block's cycle boundary have already been applied.
      */

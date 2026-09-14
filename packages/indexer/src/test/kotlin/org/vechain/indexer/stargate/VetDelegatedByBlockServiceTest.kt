@@ -15,14 +15,14 @@ import org.vechain.indexer.accounts.TimeFrame
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.validator.DelegationLevelAggregateResult
-import org.vechain.indexer.validator.DelegationRepository
+import org.vechain.indexer.validator.DelegationReadRepository
 import strikt.api.expectThat
 import strikt.assertions.*
 
 @ExtendWith(MockKExtension::class)
 class VetDelegatedByBlockServiceTest {
     @MockK lateinit var repository: VetDelegatedByBlockRepository
-    @MockK lateinit var delegationRepository: DelegationRepository
+    @MockK lateinit var delegationRepository: DelegationReadRepository
     private lateinit var service: VetDelegatedByBlockService
 
     @BeforeEach

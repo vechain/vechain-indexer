@@ -22,7 +22,7 @@ import org.vechain.indexer.thor.HexUtils.toHex
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.validator.Delegation
-import org.vechain.indexer.validator.DelegationRepository
+import org.vechain.indexer.validator.DelegationReadRepository
 import org.vechain.indexer.validator.DelegationStatus
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator
@@ -33,7 +33,7 @@ class TokenRewardServiceTest {
     private val mongoTemplate = mockk<MongoTemplate>(relaxed = true)
     private val inlineVersioningProperties = mockk<InlineVersioningProperties>()
     private val validatorV2Repository = mockk<ValidatorReadRepository>(relaxed = true)
-    private val delegationV2Repository = mockk<DelegationRepository>(relaxed = true)
+    private val delegationV2Repository = mockk<DelegationReadRepository>(relaxed = true)
     private val thorClient = mockk<ThorClient>(relaxed = true)
 
     private lateinit var service: TokenRewardService
