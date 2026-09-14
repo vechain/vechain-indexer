@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.CacheUtils
@@ -23,7 +24,7 @@ import org.vechain.indexer.validator.DelegationReadRepository
 @Profile("stargate", "vet-delegated-by-block")
 @Service
 open class VetDelegatedByBlockService(
-    private val repository: VetDelegatedByBlockRepository,
+    private val repository: VetDelegatedWriteRepository,
     private val delegationRepository: DelegationReadRepository,
 ) {
     private val logger = LoggerFactory.getLogger(VetDelegatedByBlockService::class.java)
@@ -136,9 +137,12 @@ open class VetDelegatedByBlockService(
      * @param records List of documents to store.
      * @notice Persist multiple delegation snapshots.
      */
-    @Transactional(rollbackFor = [Exception::class])
+    @Transactional(
+        transactionManager = PostgresConfig.TRANSACTION_MANAGER,
+        rollbackFor = [Exception::class],
+    )
     open fun saveRecords(records: List<VetDelegatedByBlock>) {
-        repository.saveAll(records)
+        repository.save(records)
         if (records.isNotEmpty()) {
             val latest = records.maxBy { it.blockNumber }
             CacheUtils.updateAfterCommit(
@@ -163,7 +167,6 @@ open class VetDelegatedByBlockService(
                 blockId = block.id,
                 blockNumber = block.number,
                 blockTimestamp = block.timestamp,
-                id = block.number.toString(),
             )
     }
 
@@ -208,6 +211,6 @@ open class VetDelegatedByBlockService(
             )
         }
 
-        return repository.getLatestRecord()
+        return repository.latest()
     }
 }

@@ -21,7 +21,7 @@ import strikt.assertions.*
 
 @ExtendWith(MockKExtension::class)
 class VetDelegatedByBlockServiceTest {
-    @MockK lateinit var repository: VetDelegatedByBlockRepository
+    @MockK lateinit var repository: VetDelegatedWriteRepository
     @MockK lateinit var delegationRepository: DelegationReadRepository
     private lateinit var service: VetDelegatedByBlockService
 
@@ -50,7 +50,7 @@ class VetDelegatedByBlockServiceTest {
 
     @Test
     fun `duplicate block throws`() {
-        every { repository.getLatestRecord() } returns
+        every { repository.latest() } returns
             VetDelegatedByBlock(
                 "block-10",
                 10,
@@ -79,7 +79,7 @@ class VetDelegatedByBlockServiceTest {
 
     @Test
     fun `backward block throws`() {
-        every { repository.getLatestRecord() } returns
+        every { repository.latest() } returns
             VetDelegatedByBlock(
                 "block-10",
                 10,
@@ -108,7 +108,7 @@ class VetDelegatedByBlockServiceTest {
 
     @Test
     fun `forward gap logs warning but does not throw`() {
-        every { repository.getLatestRecord() } returns
+        every { repository.latest() } returns
             VetDelegatedByBlock(
                 "block-10",
                 10,
@@ -140,7 +140,7 @@ class VetDelegatedByBlockServiceTest {
 
     @Test
     fun `aggregates active delegations correctly`() {
-        every { repository.getLatestRecord() } returns null
+        every { repository.latest() } returns null
         mockActiveAggregation(
             TokenLevel.Strength to "1000000000000000000",
             TokenLevel.Thunder to "5000000000000000000",
@@ -163,7 +163,7 @@ class VetDelegatedByBlockServiceTest {
     @Test
     fun `DAY rollover - previous block gets DAY tag`() {
         // Previous record from Dec 30 2025 @ 23:59 UTC
-        every { repository.getLatestRecord() } returns
+        every { repository.latest() } returns
             VetDelegatedByBlock(
                 "block-100",
                 100,
@@ -206,7 +206,7 @@ class VetDelegatedByBlockServiceTest {
     @Test
     fun `skips save when no change and no rollover`() {
         // Previous record exists with total = 10 @ Dec 30 2024 12:00 UTC
-        every { repository.getLatestRecord() } returns
+        every { repository.latest() } returns
             VetDelegatedByBlock(
                 "block-100",
                 100,
@@ -240,7 +240,7 @@ class VetDelegatedByBlockServiceTest {
     @Test
     fun `saves when there is a change even without rollover`() {
         // Previous record exists with total = 10 @ Dec 30 2024 12:00 UTC
-        every { repository.getLatestRecord() } returns
+        every { repository.latest() } returns
             VetDelegatedByBlock(
                 "block-100",
                 100,
@@ -299,7 +299,7 @@ class VetDelegatedByBlockServiceTest {
                 monthTotal = BigInteger.ZERO,
                 yearTotal = BigInteger.ZERO,
             )
-        every { repository.getLatestRecord() } returns latestRecord
+        every { repository.latest() } returns latestRecord
 
         // Block 101: no change → skipped, cache advanced
         mockActiveAggregation(TokenLevel.Strength to "10")
@@ -313,7 +313,7 @@ class VetDelegatedByBlockServiceTest {
         expectThat(result102).isEmpty()
 
         // DB should only have been called once (for block 101)
-        verify(exactly = 1) { repository.getLatestRecord() }
+        verify(exactly = 1) { repository.latest() }
     }
 
     @Test
@@ -338,7 +338,7 @@ class VetDelegatedByBlockServiceTest {
                 monthTotal = BigInteger.ZERO,
                 yearTotal = BigInteger.ZERO,
             )
-        every { repository.getLatestRecord() } returns latestRecord
+        every { repository.latest() } returns latestRecord
 
         // Blocks 101-103: no change → skipped
         mockActiveAggregation(TokenLevel.Strength to "10")
@@ -355,7 +355,7 @@ class VetDelegatedByBlockServiceTest {
         expectThat(result[0].blockNumber).isEqualTo(104)
 
         // DB should only have been called once (for block 101)
-        verify(exactly = 1) { repository.getLatestRecord() }
+        verify(exactly = 1) { repository.latest() }
     }
 
     @Test
@@ -383,8 +383,7 @@ class VetDelegatedByBlockServiceTest {
                 monthTotal = BigInteger.ZERO,
                 yearTotal = BigInteger.ZERO,
             )
-        expectThat(latestRecord.id).isEqualTo("100")
-        every { repository.getLatestRecord() } returns latestRecord
+        every { repository.latest() } returns latestRecord
         mockActiveAggregation(TokenLevel.Strength to "10")
 
         // Five skipped blocks within the same hour → cache advances each time.
@@ -400,9 +399,7 @@ class VetDelegatedByBlockServiceTest {
         expectThat(result).hasSize(2)
         expectThat(result[0].timeFrames).contains(TimeFrame.HOUR)
         expectThat(result[0].blockNumber).isEqualTo(105)
-        expectThat(result[0].id).isEqualTo("105")
         expectThat(result[1].blockNumber).isEqualTo(106)
-        expectThat(result[1].id).isEqualTo("106")
     }
 
     @Test
@@ -427,7 +424,7 @@ class VetDelegatedByBlockServiceTest {
                 monthTotal = BigInteger.ZERO,
                 yearTotal = BigInteger.ZERO,
             )
-        every { repository.getLatestRecord() } returns latestRecord
+        every { repository.latest() } returns latestRecord
         mockActiveAggregation(TokenLevel.Strength to "10")
 
         // Block 101 with mismatched parentID
@@ -435,7 +432,7 @@ class VetDelegatedByBlockServiceTest {
         service.processBlock(block)
 
         // Should have fallen back to DB
-        verify(exactly = 1) { repository.getLatestRecord() }
+        verify(exactly = 1) { repository.latest() }
     }
 
     // ---------------------------------------------------------
@@ -467,10 +464,10 @@ class VetDelegatedByBlockServiceTest {
                 )
             )
 
-        every { repository.saveAll(dummy) } returns dummy
+        every { repository.save(dummy) } returns Unit
 
         service.saveRecords(dummy)
 
-        verify(exactly = 1) { repository.saveAll(dummy) }
+        verify(exactly = 1) { repository.save(dummy) }
     }
 }
