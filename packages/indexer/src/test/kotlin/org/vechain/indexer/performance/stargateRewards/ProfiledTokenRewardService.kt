@@ -1,11 +1,9 @@
 package org.vechain.indexer.performance.stargateRewards
 
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.stargate.rewards.TokenRewardService
 import org.vechain.indexer.stargate.tokenReward.TokenReward
-import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
+import org.vechain.indexer.stargate.tokenReward.TokenRewardWriteRepository
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
@@ -19,9 +17,7 @@ import org.vechain.indexer.validator.ValidatorReadRepository
  * are sufficient.
  */
 class ProfiledTokenRewardService(
-    repository: TokenRewardRepository,
-    mongoTemplate: MongoTemplate,
-    inlineVersioningProperties: InlineVersioningProperties,
+    repository: TokenRewardWriteRepository,
     validatorV2Repository: ValidatorReadRepository,
     delegationV2Repository: DelegationReadRepository,
     thorClient: ThorClient,
@@ -30,8 +26,6 @@ class ProfiledTokenRewardService(
 ) :
     TokenRewardService(
         repository,
-        mongoTemplate,
-        inlineVersioningProperties,
         validatorV2Repository,
         delegationV2Repository,
         thorClient,
@@ -41,12 +35,12 @@ class ProfiledTokenRewardService(
     override suspend fun processBlock(
         block: Block,
         callResponses: List<InspectionResult>,
-    ): Pair<List<TokenReward>, List<TokenReward>> =
+    ): List<TokenReward> =
         profiler.time("      TokenRewardService.processBlock") {
             super.processBlock(block, callResponses)
         }
 
-    override fun save(rewards: List<TokenReward>, archive: List<TokenReward>) {
-        profiler.time("      TokenRewardService.save (MongoDB)") { super.save(rewards, archive) }
+    override fun save(rewards: List<TokenReward>) {
+        profiler.time("      TokenRewardService.save (Postgres)") { super.save(rewards) }
     }
 }

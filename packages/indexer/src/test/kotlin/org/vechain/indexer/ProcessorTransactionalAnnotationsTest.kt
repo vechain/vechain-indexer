@@ -17,6 +17,8 @@ import org.vechain.indexer.nft.NftProcessor
 import org.vechain.indexer.nft.NftService
 import org.vechain.indexer.postgres.IndexerStateRepository
 import org.vechain.indexer.postgres.PostgresIndexerTables
+import org.vechain.indexer.stargate.rewards.TokenRewardProcessor
+import org.vechain.indexer.stargate.rewards.TokenRewardService
 import org.vechain.indexer.stargate.token.StargateTokenProcessor
 import org.vechain.indexer.stargate.token.StargateTokenService
 import org.vechain.indexer.transfer.TransferService
@@ -57,6 +59,7 @@ class ProcessorTransactionalAnnotationsTest {
                 ValidatorBlockService::class.java.getDeclaredMethod("save", List::class.java),
                 DelegationService::class.java.getDeclaredMethod("save", List::class.java),
                 StargateTokenService::class.java.getDeclaredMethod("save", List::class.java),
+                TokenRewardService::class.java.getDeclaredMethod("save", List::class.java),
             )
         val processors =
             listOf(
@@ -68,6 +71,7 @@ class ProcessorTransactionalAnnotationsTest {
                 ValidatorBlockProcessor::class.java,
                 DelegationProcessor::class.java,
                 StargateTokenProcessor::class.java,
+                TokenRewardProcessor::class.java,
             )
         for (processor in processors) {
             assertEquals(PostgresProcessor::class.java, processor.superclass)

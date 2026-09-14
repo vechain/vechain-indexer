@@ -1,31 +1,40 @@
 package org.vechain.indexer.stargate.rewards
 
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.StatefulMongoProcessor
-import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.PostgresIndexerStore
+import org.vechain.indexer.PostgresProcessor
+import org.vechain.indexer.config.CheckpointProperties
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
-import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
+import org.vechain.indexer.postgres.IndexerStateRepository
+import org.vechain.indexer.stargate.tokenReward.TokenRewardWriteRepository
 
 @Profile("token-reward")
 @Component
 open class TokenRewardProcessor(
     private val service: TokenRewardService,
-    repository: TokenRewardRepository,
-    mongoTemplate: MongoTemplate,
-    checkpointService: CheckpointService,
+    repository: TokenRewardWriteRepository,
+    state: IndexerStateRepository,
+    checkpointProperties: CheckpointProperties,
+    horizon: InlineVersioningProperties,
     processorMetrics: ProcessorMetrics,
+    @Value("\${indexer.version.token-rewards:1}") version: Int = 1,
 ) :
-    StatefulMongoProcessor(
-        repository = repository,
-        mongoTemplate = mongoTemplate,
-        indexerName = IndexerNames.TOKEN_REWARD.NAME,
-        checkpointService = checkpointService,
-        collectionName = IndexerNames.TOKEN_REWARD.COLLECTION,
-        processorMetrics = processorMetrics,
+    PostgresProcessor(
+        PostgresIndexerStore(
+            IndexerNames.TOKEN_REWARD.COLLECTION,
+            repository,
+            state,
+            checkpointProperties,
+            horizon,
+        ),
+        IndexerNames.TOKEN_REWARD.NAME,
+        version,
+        processorMetrics,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.BlockResult) {
@@ -36,10 +45,12 @@ open class TokenRewardProcessor(
                     "full block is required for token reward processing"
             )
         }
-        val (updated, existing) = service.processBlock(entry.block, entry.callResults())
+        val updated = service.processBlock(entry.block, entry.callResults())
+        if (updated.isNotEmpty()) service.save(updated)
+    }
 
-        if (updated.isNotEmpty() || existing.isNotEmpty()) {
-            service.save(updated, existing)
-        }
+    /** Drops the service's cycle and tracker caches so the next block reloads rolled-back rows. */
+    override fun resetProcessingState() {
+        service.invalidateCache()
     }
 }

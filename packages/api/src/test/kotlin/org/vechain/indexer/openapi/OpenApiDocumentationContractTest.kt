@@ -16,6 +16,7 @@ import org.vechain.indexer.blocks.BlocksReadRepository
 import org.vechain.indexer.history.HistoryReadRepository
 import org.vechain.indexer.nft.NftReadRepository
 import org.vechain.indexer.stargate.token.StargateTokenReadRepository
+import org.vechain.indexer.stargate.tokenReward.TokenRewardReadRepository
 import org.vechain.indexer.validator.DelegationReadRepository
 import org.vechain.indexer.validator.ValidatorBlockReadRepository
 import org.vechain.indexer.validator.ValidatorReadRepository
@@ -40,6 +41,7 @@ class OpenApiDocumentationContractTest {
     @MockitoBean private lateinit var validatorBlockReadRepository: ValidatorBlockReadRepository
     @MockitoBean private lateinit var delegationReadRepository: DelegationReadRepository
     @MockitoBean private lateinit var stargateTokenReadRepository: StargateTokenReadRepository
+    @MockitoBean private lateinit var tokenRewardReadRepository: TokenRewardReadRepository
 
     @Autowired private lateinit var mockMvc: MockMvc
     @Autowired private lateinit var objectMapper: ObjectMapper

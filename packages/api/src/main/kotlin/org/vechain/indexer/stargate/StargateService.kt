@@ -18,7 +18,7 @@ import org.vechain.indexer.stargate.token.StargateTokenReadRepository
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
-import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
+import org.vechain.indexer.stargate.tokenReward.TokenRewardReadRepository
 import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlockRepository
 import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountRepository
@@ -41,7 +41,7 @@ open class StargateService(
     private val vthoGeneratedByBlockRepository: VthoGeneratedByBlockRepository,
     private val vetDelegatedByBlockRepository: VetDelegatedByBlockRepository,
     private val stargateTokenRepository: StargateTokenReadRepository,
-    private val tokenRewardRepository: TokenRewardRepository,
+    private val tokenRewardRepository: TokenRewardReadRepository,
 ) {
     /**
      * @param blockNumber The block number to query, or null for the latest.
@@ -423,16 +423,17 @@ open class StargateService(
                     ) // always include ALL alongside the target period
             }
 
+        val decimalTokenId = BigIntegerUtils.fromHexOrDecimal(tokenId).toString(10)
         val slice =
-            if (validator != null) {
-                tokenRewardRepository.findByTokenIdAndRewardPeriodInAndValidator(
-                    tokenId,
+            offsetSlice(pageable, TokenReward::blockTimestamp.name) { offset, limit, direction ->
+                tokenRewardRepository.findByTokenIdAndRewardPeriodIn(
+                    decimalTokenId,
                     periods,
                     validator,
-                    pageable,
+                    direction,
+                    offset,
+                    limit,
                 )
-            } else {
-                tokenRewardRepository.findByTokenIdAndRewardPeriodIn(tokenId, periods, pageable)
             }
 
         // If target == ALL → nothing to normalize; return as-is.

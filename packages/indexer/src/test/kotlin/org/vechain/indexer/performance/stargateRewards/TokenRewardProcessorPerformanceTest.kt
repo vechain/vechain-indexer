@@ -10,14 +10,15 @@ import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.config.CheckpointProperties
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
+import org.vechain.indexer.postgres.IndexerStateRepository
 import org.vechain.indexer.stargate.rewards.TokenRewardProcessor
 import org.vechain.indexer.stargate.rewards.TokenRewardService
-import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
+import org.vechain.indexer.stargate.tokenReward.TokenRewardWriteRepository
 import org.vechain.indexer.validator.DelegationReadRepository
 import org.vechain.indexer.validator.ValidatorReadRepository
 
@@ -25,13 +26,14 @@ import org.vechain.indexer.validator.ValidatorReadRepository
 @ActiveProfiles("token-reward", "delegation", "validator")
 class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
 
-    @Autowired lateinit var tokenRewardRepository: TokenRewardRepository
+    @Autowired lateinit var tokenRewardRepository: TokenRewardWriteRepository
     @Autowired lateinit var tokenRewardService: TokenRewardService
     @Autowired lateinit var inlineVersioningProperties: InlineVersioningProperties
     @Autowired lateinit var mongoTemplate: MongoTemplate
     @Autowired lateinit var validatorV2Repository: ValidatorReadRepository
     @Autowired lateinit var delegationV2Repository: DelegationReadRepository
-    @Autowired lateinit var checkpointService: CheckpointService
+    @Autowired lateinit var indexerState: IndexerStateRepository
+    @Autowired lateinit var checkpointProperties: CheckpointProperties
     @Autowired lateinit var processorMetrics: ProcessorMetrics
 
     @Value("\${indexer.start-block.validator}") var validatorStartBlock: Long = 0L
@@ -39,7 +41,7 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
         // Clear database to start fresh
-        tokenRewardRepository.deleteAll()
+        tokenRewardRepository.truncate()
         println("✓ Cleared token reward database")
 
         // Create profiler for detailed timing analysis
@@ -82,8 +84,6 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
             if (profiler != null) {
                 ProfiledTokenRewardService(
                     repository = tokenRewardRepository,
-                    mongoTemplate = mongoTemplate,
-                    inlineVersioningProperties = inlineVersioningProperties,
                     validatorV2Repository = validatorV2Repository,
                     delegationV2Repository = delegationV2Repository,
                     thorClient = thorClient,
@@ -99,17 +99,19 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
                 ProfiledTokenRewardProcessor(
                     service = serviceToUse,
                     repository = tokenRewardRepository,
-                    mongoTemplate = mongoTemplate,
                     profiler = profiler,
-                    checkpointService = checkpointService,
+                    state = indexerState,
+                    checkpointProperties = checkpointProperties,
+                    horizon = inlineVersioningProperties,
                     processorMetrics = processorMetrics,
                 )
             } else {
                 TokenRewardProcessor(
                     service = serviceToUse,
                     repository = tokenRewardRepository,
-                    mongoTemplate = mongoTemplate,
-                    checkpointService = checkpointService,
+                    state = indexerState,
+                    checkpointProperties = checkpointProperties,
+                    horizon = inlineVersioningProperties,
                     processorMetrics = processorMetrics,
                 )
             }
@@ -128,17 +130,19 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
     /** Profiled wrapper for TokenRewardProcessor */
     private class ProfiledTokenRewardProcessor(
         service: TokenRewardService,
-        repository: TokenRewardRepository,
-        mongoTemplate: MongoTemplate,
+        repository: TokenRewardWriteRepository,
         private val profiler: DetailedProfiler,
-        checkpointService: CheckpointService,
+        state: IndexerStateRepository,
+        checkpointProperties: CheckpointProperties,
+        horizon: InlineVersioningProperties,
         processorMetrics: ProcessorMetrics,
     ) :
         TokenRewardProcessor(
             service = service,
             repository = repository,
-            mongoTemplate = mongoTemplate,
-            checkpointService = checkpointService,
+            state = state,
+            checkpointProperties = checkpointProperties,
+            horizon = horizon,
             processorMetrics = processorMetrics,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {

@@ -9,18 +9,16 @@ import java.time.temporal.WeekFields
 import java.util.concurrent.ConcurrentHashMap
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.config.InlineVersioningProperties
+import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.contracts.abi.FunctionDefinition
 import org.vechain.indexer.contracts.abi.FunctionParameter
 import org.vechain.indexer.event.model.abi.InputOutput
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
-import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
-import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
+import org.vechain.indexer.stargate.tokenReward.TokenRewardWriteRepository
 import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
@@ -36,9 +34,7 @@ import org.vechain.indexer.validator.ValidatorReadRepository
 @Profile("token-reward")
 @Service
 open class TokenRewardService(
-    private val repository: TokenRewardRepository,
-    private val mongoTemplate: MongoTemplate,
-    private val inlineVersioningProperties: InlineVersioningProperties,
+    private val repository: TokenRewardWriteRepository,
     private val validatorV2Repository: ValidatorReadRepository,
     private val delegationV2Repository: DelegationReadRepository,
     private val thorClient: ThorClient,
@@ -53,7 +49,7 @@ open class TokenRewardService(
 
     /**
      * @notice In-memory cache of ALL-period reward trackers per validator.
-     * @dev Avoids re-reading the same reward documents from MongoDB every block. Keyed by validator
+     * @dev Avoids re-reading the same reward rows from Postgres every block. Keyed by validator
      *   address, populated after each block's updateRewardInfo and invalidated on rollback or
      *   restart (starts empty, falls through to DB on first miss).
      */
@@ -78,28 +74,25 @@ open class TokenRewardService(
     open suspend fun processBlock(
         block: Block,
         callResponses: List<InspectionResult>,
-    ): Pair<List<TokenReward>, List<TokenReward>> {
-        if (block.number < validatorStartBlock) return Pair(emptyList(), emptyList())
+    ): List<TokenReward> {
+        if (block.number < validatorStartBlock) return emptyList()
 
         val validatorId = block.signer
 
         // Cycle info now comes from the V2 validator collection (was: aggregator decode).
         // dependsOn(delegationIndexer) → transitively dependsOn(validatorIndexer) guarantees
         // that Validator has applied this block's state by the time we read it here.
-        val validator =
-            validatorV2Repository.findById(validatorId) ?: return Pair(emptyList(), emptyList())
+        val validator = validatorV2Repository.findById(validatorId) ?: return emptyList()
 
-        val blockTotalSupply =
-            decodeTotalSupply(callResponses) ?: return Pair(emptyList(), emptyList())
+        val blockTotalSupply = decodeTotalSupply(callResponses) ?: return emptyList()
 
         val latestRewards = getLatestRewards(block, validator)
         if (latestRewards.isEmpty()) {
-            return Pair(emptyList(), emptyList())
+            return emptyList()
         }
 
         val delegatorBlockReward =
-            getDelegatorsBlockReward(block, blockTotalSupply)
-                ?: return Pair(emptyList(), emptyList())
+            getDelegatorsBlockReward(block, blockTotalSupply) ?: return emptyList()
 
         val result =
             updateRewardInfo(
@@ -111,7 +104,7 @@ open class TokenRewardService(
                 blockId = block.id,
             )
 
-        val allPeriodTrackers = result.first.filter { it.rewardPeriod == RewardPeriod.ALL }
+        val allPeriodTrackers = result.filter { it.rewardPeriod == RewardPeriod.ALL }
         if (allPeriodTrackers.isNotEmpty()) {
             rewardTrackerCache[validatorId] = allPeriodTrackers
         }
@@ -119,17 +112,14 @@ open class TokenRewardService(
         return result
     }
 
-    /** @notice Persist a batch of reward records to MongoDB. */
-    @Transactional(rollbackFor = [Exception::class])
-    open fun save(rewards: List<TokenReward>, archive: List<TokenReward>) {
-        saveVersionedDocuments(
-            rewards,
-            archive,
-            mongoTemplate,
-            inlineVersioningProperties.blockWindow,
-            inlineVersioningProperties.maxVersions,
-            inlineVersioningProperties.minVersions,
-        )
+    /** @notice Persist a batch of reward records to Postgres. */
+    @Transactional(
+        transactionManager = PostgresConfig.TRANSACTION_MANAGER,
+        rollbackFor = [Exception::class],
+    )
+    open fun save(rewards: List<TokenReward>) {
+        if (rewards.isEmpty()) return
+        repository.save(rewards)
     }
 
     /** @notice Clear all in-memory caches. Called on rollback to ensure consistency. */
@@ -276,7 +266,6 @@ open class TokenRewardService(
                 monthReward = null,
                 yearReward = null,
                 cycleReward = null,
-                version = 1,
             )
         }
 
@@ -322,10 +311,9 @@ open class TokenRewardService(
         blockNumber: Long,
         blockTimestamp: Long,
         blockId: String,
-    ): Pair<List<TokenReward>, List<TokenReward>> {
+    ): List<TokenReward> {
         val cycleCache = validatorCycleCache[validator]!!
         val updatedRewards = mutableListOf<TokenReward>()
-        val archive = mutableListOf<TokenReward>()
 
         val blockDateTime = Instant.ofEpochSecond(blockTimestamp).atZone(ZoneOffset.UTC)
         val blockDate = blockDateTime.toLocalDate()
@@ -430,14 +418,12 @@ open class TokenRewardService(
                     weekOfYear = blockWeek,
                     month = blockMonth,
                     year = blockYear,
-                    version = rewardTracker.version + 1,
                 )
 
             updatedRewards.add(updatedTracker)
-            archive.add(rewardTracker)
         }
 
-        return updatedRewards to archive
+        return updatedRewards
     }
 
     /**
@@ -466,7 +452,6 @@ open class TokenRewardService(
             weekOfYear = mainTracker.weekOfYear,
             month = mainTracker.month,
             year = mainTracker.year,
-            version = 1,
         )
 
     /**

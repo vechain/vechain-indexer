@@ -12,12 +12,10 @@ import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
-import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
+import org.vechain.indexer.stargate.tokenReward.TokenRewardWriteRepository
 import org.vechain.indexer.thor.HexUtils.toHex
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
@@ -29,9 +27,7 @@ import org.vechain.indexer.validator.Validator
 import org.vechain.indexer.validator.ValidatorReadRepository
 
 class TokenRewardServiceTest {
-    private val repository = mockk<TokenRewardRepository>(relaxed = true)
-    private val mongoTemplate = mockk<MongoTemplate>(relaxed = true)
-    private val inlineVersioningProperties = mockk<InlineVersioningProperties>()
+    private val repository = mockk<TokenRewardWriteRepository>(relaxed = true)
     private val validatorV2Repository = mockk<ValidatorReadRepository>(relaxed = true)
     private val delegationV2Repository = mockk<DelegationReadRepository>(relaxed = true)
     private val thorClient = mockk<ThorClient>(relaxed = true)
@@ -43,15 +39,10 @@ class TokenRewardServiceTest {
     @BeforeEach
     fun setup() {
         clearAllMocks()
-        every { inlineVersioningProperties.blockWindow } returns 10000L
-        every { inlineVersioningProperties.maxVersions } returns 100
-        every { inlineVersioningProperties.minVersions } returns 20
         service =
             spyk(
                 TokenRewardService(
                     repository,
-                    mongoTemplate,
-                    inlineVersioningProperties,
                     validatorV2Repository,
                     delegationV2Repository,
                     thorClient,
@@ -104,7 +95,6 @@ class TokenRewardServiceTest {
             weekOfYear = 1,
             month = 1,
             year = 2025,
-            version = 1,
         )
 
     private fun validatorV2(
@@ -154,7 +144,7 @@ class TokenRewardServiceTest {
 
         val tr = tokenReward(validator, "10001", stake = BigInteger.ONE)
 
-        val (updated, archive) =
+        val updated =
             service.updateRewardInfo(
                 listOf(tr),
                 totalBlockReward = BigInteger.TEN,
@@ -166,7 +156,6 @@ class TokenRewardServiceTest {
 
         val updatedDoc = updated.single()
         assertThat(updatedDoc.rewards).isEqualTo(BigInteger.TEN) // 10 * 1/1 = 10
-        assertThat(archive).containsExactly(tr) // previous doc archived
     }
 
     @Test
@@ -189,7 +178,7 @@ class TokenRewardServiceTest {
                 )
         val blockTimestamp = Instant.parse("2025-01-02T00:00:00Z").epochSecond
 
-        val (updated, _) =
+        val updated =
             service.updateRewardInfo(
                 listOf(rewardTracker),
                 totalBlockReward = BigInteger.TEN,
