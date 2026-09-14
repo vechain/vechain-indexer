@@ -18,6 +18,8 @@ import org.vechain.indexer.nft.NftService
 import org.vechain.indexer.postgres.IndexerStateRepository
 import org.vechain.indexer.postgres.PostgresIndexerTables
 import org.vechain.indexer.transfer.TransferService
+import org.vechain.indexer.validator.DelegationProcessor
+import org.vechain.indexer.validator.DelegationService
 import org.vechain.indexer.validator.ValidatorBlockProcessor
 import org.vechain.indexer.validator.ValidatorBlockService
 import org.vechain.indexer.validator.ValidatorProcessor
@@ -51,6 +53,7 @@ class ProcessorTransactionalAnnotationsTest {
                 HistoryService::class.java.getDeclaredMethod("save", List::class.java),
                 ValidatorService::class.java.getDeclaredMethod("save", List::class.java),
                 ValidatorBlockService::class.java.getDeclaredMethod("save", List::class.java),
+                DelegationService::class.java.getDeclaredMethod("save", List::class.java),
             )
         val processors =
             listOf(
@@ -60,6 +63,7 @@ class ProcessorTransactionalAnnotationsTest {
                 HistoryProcessor::class.java,
                 ValidatorProcessor::class.java,
                 ValidatorBlockProcessor::class.java,
+                DelegationProcessor::class.java,
             )
         for (processor in processors) {
             assertEquals(PostgresProcessor::class.java, processor.superclass)

@@ -4,12 +4,10 @@ import java.math.BigInteger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.config.InlineVersioningProperties
+import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
@@ -33,21 +31,16 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 @Profile("delegation")
 @Service
 open class DelegationService(
-    private val repository: DelegationRepository,
+    private val repository: DelegationWriteRepository,
     private val validatorRepository: ValidatorReadRepository,
-    private val mongoTemplate: MongoTemplate,
-    private val inlineVersioningProperties: InlineVersioningProperties,
     @param:Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
     private val stakerSC: String,
     @param:Value("\${indexer.start-block.validator}") private val validatorStartBlock: Long,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    open suspend fun processBlock(
-        block: Block,
-        events: List<IndexedEvent>,
-    ): Pair<List<Delegation>, List<Delegation>> {
-        if (block.number < validatorStartBlock) return emptyList<Delegation>() to emptyList()
+    open suspend fun processBlock(block: Block, events: List<IndexedEvent>): List<Delegation> {
+        if (block.number < validatorStartBlock) return emptyList()
 
         val due =
             repository.findByTransitionAtBlockAndStatusIn(
@@ -91,32 +84,24 @@ open class DelegationService(
             applyEventMutation(ev, block, working, tokenIdToId, validatorToIds, validators)
         }
 
-        val updates =
-            working.values.mapNotNull { carried ->
-                val prior = existing[carried.id]
-                if (carried == prior) null
-                else
-                    carried.copy(
-                        blockId = block.id,
-                        blockNumber = block.number,
-                        blockTimestamp = block.timestamp,
-                        version = (prior?.version ?: 0) + 1,
-                    )
-            }
-        val archive = updates.mapNotNull { existing[it.id] }
-        return updates to archive
+        return working.values.mapNotNull { carried ->
+            if (carried == existing[carried.id]) null
+            else
+                carried.copy(
+                    blockId = block.id,
+                    blockNumber = block.number,
+                    blockTimestamp = block.timestamp,
+                )
+        }
     }
 
-    @Transactional(rollbackFor = [Exception::class])
-    open fun save(updates: List<Delegation>, archive: List<Delegation>) {
-        saveVersionedDocuments(
-            updates,
-            archive,
-            mongoTemplate,
-            inlineVersioningProperties.blockWindow,
-            inlineVersioningProperties.maxVersions,
-            inlineVersioningProperties.minVersions,
-        )
+    @Transactional(
+        transactionManager = PostgresConfig.TRANSACTION_MANAGER,
+        rollbackFor = [Exception::class],
+    )
+    open fun save(updates: List<Delegation>) {
+        if (updates.isEmpty()) return
+        repository.save(updates)
         updateZeroCycleCache(updates)
     }
 
@@ -124,7 +109,7 @@ open class DelegationService(
 
     /**
      * In-memory mirror of zero-cycle delegations (status QUEUED with no scheduled transition —
-     * waiting for their validator to gain a `startBlock`). Loaded lazily; kept in sync with MongoDB
+     * waiting for their validator to gain a `startBlock`). Loaded lazily; kept in sync with the DB
      * by [updateZeroCycleCache] after every successful [save]. Cleared via [invalidateCache] on
      * rollback (wired through `DelegationProcessor.resetProcessingState`).
      *
@@ -133,7 +118,7 @@ open class DelegationService(
      */
     private var zeroCycleCache: MutableMap<String, Delegation>? = null
 
-    /** Drop the zero-cycle cache. Invoked on rollback so the next block reloads from MongoDB. */
+    /** Drop the zero-cycle cache. Invoked on rollback so the next block reloads from the DB. */
     open fun invalidateCache() {
         zeroCycleCache = null
     }

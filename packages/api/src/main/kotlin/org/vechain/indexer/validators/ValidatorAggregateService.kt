@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.validator.DelegationLevelFacet
-import org.vechain.indexer.validator.DelegationRepository
+import org.vechain.indexer.validator.DelegationReadRepository
 import org.vechain.indexer.validator.DelegationStatus
 
 /**
@@ -115,7 +115,7 @@ data class ParsedDelegationFacet(
 @Service
 open class ValidatorAggregateService(
     private val chainAggregatesService: ValidatorChainAggregatesService,
-    private val delegationRepository: DelegationRepository,
+    private val delegationRepository: DelegationReadRepository,
 ) {
     /**
      * Compute the per-request aggregate context.
@@ -124,7 +124,7 @@ open class ValidatorAggregateService(
      * totalActiveNextCycleVetStaked) is fetched via [ValidatorChainAggregatesService] which caches
      * the result — no per-request validator fetch + fold pass when the cache is warm.
      *
-     * Per-request work that remains: one Mongo round-trip to
+     * Per-request work that remains: one Postgres round-trip to
      * `aggregateDelegationFacetsByValidators` for the validators on the page (count-buckets grouped
      * by `(status, tokenLevel, transitionAtBlock)`, not raw rows).
      */

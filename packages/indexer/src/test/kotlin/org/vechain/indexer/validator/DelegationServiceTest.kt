@@ -5,8 +5,6 @@ import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
@@ -18,22 +16,18 @@ import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
 
 class DelegationServiceTest {
-    private lateinit var repository: DelegationRepository
+    private lateinit var repository: DelegationWriteRepository
     private lateinit var validatorRepository: ValidatorReadRepository
-    private lateinit var mongoTemplate: MongoTemplate
     private lateinit var service: DelegationService
 
     @BeforeEach
     fun setup() {
         repository = mockk()
         validatorRepository = mockk()
-        mongoTemplate = mockk(relaxed = true)
         service =
             DelegationService(
                 repository = repository,
                 validatorRepository = validatorRepository,
-                mongoTemplate = mongoTemplate,
-                inlineVersioningProperties = InlineVersioningProperties(),
                 stakerSC = STAKER_ADDRESS,
                 validatorStartBlock = 0L,
             )
@@ -55,13 +49,12 @@ class DelegationServiceTest {
         every { validatorRepository.findAllById(any()) } returns
             listOf(soloGenesisValidator(VALIDATOR_ID))
 
-        val (updates, archive) =
-            runBlocking {
-                service.processBlock(
-                    block(number = 55),
-                    listOf(delegationInitiatedEvent(blockNumber = 55)),
-                )
-            }
+        val updates = runBlocking {
+            service.processBlock(
+                block(number = 55),
+                listOf(delegationInitiatedEvent(blockNumber = 55)),
+            )
+        }
 
         expectThat(updates).hasSize(1).first().and {
             get { id }.isEqualTo("1")
@@ -70,7 +63,6 @@ class DelegationServiceTest {
             // start=0, period=90, blockNumber=55 → currentCycleStart=0 → next boundary=90
             get { transitionAtBlock }.isEqualTo(90L)
         }
-        expectThat(archive).hasSize(0)
     }
 
     /**
@@ -119,7 +111,7 @@ class DelegationServiceTest {
 
         // processing block 500 — long past `start(0) + period(90) = 90`, the chain housekeep
         // boundary that locked this delegation. Indexer must catch up rather than schedule for 540.
-        val (updates, _) = runBlocking { service.processBlock(block(number = 500), emptyList()) }
+        val updates = runBlocking { service.processBlock(block(number = 500), emptyList()) }
 
         expectThat(updates).hasSize(1).first().and {
             get { id }.isEqualTo("1")
@@ -166,7 +158,7 @@ class DelegationServiceTest {
 
         // processing block 150 — past the chain housekeep (90) anchored on initiatedAtBlock, but
         // before the spurious 270 boundary that a blockNumber-anchored computation would yield.
-        val (updates, _) = runBlocking { service.processBlock(block(number = 150), emptyList()) }
+        val updates = runBlocking { service.processBlock(block(number = 150), emptyList()) }
 
         expectThat(updates).hasSize(1).first().and {
             get { id }.isEqualTo("1")
@@ -210,7 +202,7 @@ class DelegationServiceTest {
 
         // processing block 40 — between blockNumber(30) and the first housekeep (90) computed via
         // the fallback path.
-        val (updates, _) = runBlocking { service.processBlock(block(number = 40), emptyList()) }
+        val updates = runBlocking { service.processBlock(block(number = 40), emptyList()) }
 
         expectThat(updates).hasSize(1).first().and {
             get { id }.isEqualTo("1")
@@ -249,7 +241,7 @@ class DelegationServiceTest {
         every { validatorRepository.findAllById(any()) } returns
             listOf(soloGenesisValidator(VALIDATOR_ID))
 
-        val (updates, _) = runBlocking { service.processBlock(block(number = 90), emptyList()) }
+        val updates = runBlocking { service.processBlock(block(number = 90), emptyList()) }
 
         expectThat(updates).hasSize(1).first().and {
             get { id }.isEqualTo("1")

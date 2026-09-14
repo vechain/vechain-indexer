@@ -154,7 +154,7 @@ object IndexerNames {
 
     object DELEGATION {
         const val NAME = "DelegationIndexer"
-        const val COLLECTION = "delegations"
+        const val COLLECTION = "delegation"
     }
 
     object VTHO_GENERATED_BY_BLOCK {

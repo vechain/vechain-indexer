@@ -3,10 +3,7 @@ package org.vechain.indexer.validator
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import java.math.BigInteger
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
-import org.vechain.indexer.IndexerNames
-import org.vechain.indexer.VersionedDocument
+import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.stargate.token.TokenLevel
 
 /**
@@ -26,10 +23,9 @@ import org.vechain.indexer.stargate.token.TokenLevel
  *
  * The V1 [Delegation.totalRewardsClaimed] semantics carry over unchanged.
  */
-@Document(collection = IndexerNames.DELEGATION.COLLECTION)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Delegation(
-    @Id val id: String,
+    val id: String,
     val validator: String,
     val tokenId: String,
     val owner: String,
@@ -58,7 +54,4 @@ data class Delegation(
     @JsonIgnore override val blockId: String,
     @JsonIgnore override val blockNumber: Long,
     @JsonIgnore override val blockTimestamp: Long,
-    @JsonIgnore override val version: Int = 1,
-) : VersionedDocument {
-    @JsonIgnore override fun getDocumentId(): String = id
-}
+) : IndexedDocument

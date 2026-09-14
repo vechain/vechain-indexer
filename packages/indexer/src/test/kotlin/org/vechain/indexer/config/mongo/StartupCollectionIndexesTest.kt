@@ -28,8 +28,6 @@ import org.vechain.indexer.accounts.mongo.VetBalanceCollectionConfig
 import org.vechain.indexer.config.genesis.GenesisVetBalanceLoader
 import org.vechain.indexer.contracts.Contract
 import org.vechain.indexer.contracts.mongo.ContractCollectionConfig
-import org.vechain.indexer.validator.Delegation
-import org.vechain.indexer.validator.DelegationCollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
 @ExtendWith(MockKExtension::class)
@@ -130,35 +128,6 @@ class StartupCollectionIndexesTest {
         every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
         ContractCollectionConfig(
-                mongoTemplate = mongoTemplate,
-                appCoroutineScope = CoroutineScope(Dispatchers.Unconfined),
-                indexerVersionService = indexerVersionService,
-            )
-            .apply {
-                initCollection()
-                createPendingIndexes()
-            }
-
-        assertTrue(
-            capturedIndexes.any {
-                it.indexKeys["blockNumber"] == -1 && it.indexOptions["name"] == "blockNumber_-1"
-            }
-        )
-    }
-
-    @Test
-    fun `delegation creates blockNumber startup index`() {
-        val capturedIndexes = mutableListOf<IndexDefinition>()
-        every {
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
-        } returns false
-        every { mongoTemplate.collectionExists(Delegation::class.java) } returns true
-        every { mongoTemplate.getCollectionName(Delegation::class.java) } returns "delegations"
-        every { mongoTemplate.indexOps(Delegation::class.java) } returns indexOperations
-        every { indexOperations.indexInfo } returns emptyList()
-        every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
-
-        DelegationCollectionConfig(
                 mongoTemplate = mongoTemplate,
                 appCoroutineScope = CoroutineScope(Dispatchers.Unconfined),
                 indexerVersionService = indexerVersionService,

@@ -8,7 +8,7 @@ import org.vechain.indexer.validator.DelegationStatus
 
 /**
  * Public API representation of a [Delegation] document, served at `/api/v1/validators/delegations`.
- * Storage-only fields (`transitionAtBlock`, `txId`, block metadata, `version`) are intentionally
+ * Storage-only fields (`transitionAtBlock`, `txId` and the block metadata) are intentionally
  * omitted.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
