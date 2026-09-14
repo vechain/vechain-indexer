@@ -4,11 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import java.math.BigInteger
 import org.springframework.boot.context.properties.bind.ConstructorBinding
-import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
-import org.vechain.indexer.IndexerNames
 
-@Document(collection = IndexerNames.VALIDATOR_BLOCK.COLLECTION)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ValidatorBlock
 @ConstructorBinding

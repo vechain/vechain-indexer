@@ -9,10 +9,6 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.data.domain.SliceImpl
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.find
-import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
 import org.vechain.indexer.prices.PriceFeed
 import org.vechain.indexer.prices.PriceFeedService
@@ -29,16 +25,15 @@ import org.vechain.indexer.validator.BlockStatus
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator
 import org.vechain.indexer.validator.ValidatorBlock
-import org.vechain.indexer.validator.ValidatorBlockRepository
+import org.vechain.indexer.validator.ValidatorBlockReadRepository
 import org.vechain.indexer.validator.ValidatorReadRepository
 import org.vechain.indexer.validator.ValidatorSlotStats
 
 @Profile("validator")
 @Service
 open class ValidatorService(
-    private val validatorBlockRepository: ValidatorBlockRepository,
+    private val validatorBlockRepository: ValidatorBlockReadRepository,
     private val validatorRepository: ValidatorReadRepository,
-    private val mongoTemplate: MongoTemplate,
     private val aggregateService: ValidatorAggregateService,
     private val priceFeedService: PriceFeedService,
     private val thorClient: ThorClient,
@@ -49,56 +44,22 @@ open class ValidatorService(
         blockNumber: Long?,
         status: BlockStatus?,
         pageable: Pageable,
-    ): PaginatedResponse<ValidatorBlock> {
-        val criteriaList = mutableListOf<Criteria>()
-
-        validator?.let {
-            criteriaList.add(
-                Criteria.where(ValidatorBlock::validator.name).`is`(it.value.lowercase())
-            )
-        }
-        blockNumber?.let {
-            val isAscending =
-                pageable.sort.getOrderFor(ValidatorBlock::blockNumber.name)?.isAscending ?: false
-            if (isAscending) {
-                criteriaList.add(Criteria.where(ValidatorBlock::blockNumber.name).gte(it))
-            } else {
-                criteriaList.add(Criteria.where(ValidatorBlock::blockNumber.name).lte(it))
+    ): PaginatedResponse<ValidatorBlock> =
+        paginatedResponse(
+            offsetSlice(pageable, ValidatorBlock::blockNumber.name) { offset, limit, direction ->
+                validatorBlockRepository.findRewards(
+                    validator?.value,
+                    blockNumber,
+                    status,
+                    direction,
+                    offset,
+                    limit,
+                )
             }
-        }
-        status?.let { criteriaList.add(Criteria.where(ValidatorBlock::status.name).`is`(it)) }
+        )
 
-        val query =
-            if (criteriaList.isNotEmpty()) {
-                Query(Criteria().andOperator(*criteriaList.toTypedArray()))
-            } else {
-                Query()
-            }
-
-        query.with(pageable).limit(pageable.pageSize + 1)
-
-        val results = mongoTemplate.find<ValidatorBlock>(query)
-        val hasNext = results.size > pageable.pageSize
-        val page = if (hasNext) results.dropLast(1) else results
-        val slice = SliceImpl(page, pageable, hasNext)
-
-        return paginatedResponse(slice)
-    }
-
-    open fun getBlockByNumber(blockNumber: Long, validator: Address?): List<ValidatorBlock> {
-        val criteriaList = mutableListOf<Criteria>()
-
-        criteriaList.add(Criteria.where(ValidatorBlock::blockNumber.name).`is`(blockNumber))
-        validator?.let {
-            criteriaList.add(
-                Criteria.where(ValidatorBlock::validator.name).`is`(it.value.lowercase())
-            )
-        }
-
-        val query = Query(Criteria().andOperator(*criteriaList.toTypedArray()))
-
-        return mongoTemplate.find<ValidatorBlock>(query)
-    }
+    open fun getBlockByNumber(blockNumber: Long, validator: Address?): List<ValidatorBlock> =
+        validatorBlockRepository.findByBlockNumber(blockNumber, validator?.value)
 
     /**
      * Retrieves block rewards data for a given timestamp range. The granularity of the data is
@@ -128,58 +89,13 @@ open class ValidatorService(
             "endTimestamp",
         )
 
-        val latestBeforeOrAt = { timestamp: Long ->
-            validatorBlockRepository
-                .findFirstByValidatorAndStatusAndBlockTimestampLessThanEqualOrderByBlockTimestampDesc(
-                    validator,
-                    BlockStatus.VALIDATED,
-                    timestamp,
-                )
+        val resolution = TimeSeriesUtils.selectResolution(endTimestamp - startTimestamp)
+        val inRange = { start: Long, end: Long ->
+            validatorBlockRepository.findValidatedInRange(validator, start, end, resolution)
         }
-
-        return when (TimeSeriesUtils.selectResolution(endTimestamp - startTimestamp)) {
-            TimeSeriesResolution.RAW ->
-                validatorBlockRepository.findAllInTimestampRange(
-                    startTimestamp,
-                    endTimestamp,
-                    validator,
-                )
-            TimeSeriesResolution.HOURLY ->
-                TimeSeriesUtils.getBookendedRecords(
-                    startTimestamp,
-                    endTimestamp,
-                    { start, end ->
-                        validatorBlockRepository.findHourlyInTimestampRange(start, end, validator)
-                    },
-                    latestBeforeOrAt,
-                )
-            TimeSeriesResolution.DAILY ->
-                TimeSeriesUtils.getBookendedRecords(
-                    startTimestamp,
-                    endTimestamp,
-                    { start, end ->
-                        validatorBlockRepository.findDailyInTimestampRange(start, end, validator)
-                    },
-                    latestBeforeOrAt,
-                )
-            TimeSeriesResolution.WEEKLY ->
-                TimeSeriesUtils.getBookendedRecords(
-                    startTimestamp,
-                    endTimestamp,
-                    { start, end ->
-                        validatorBlockRepository.findWeeklyInTimestampRange(start, end, validator)
-                    },
-                    latestBeforeOrAt,
-                )
-            TimeSeriesResolution.MONTHLY ->
-                TimeSeriesUtils.getBookendedRecords(
-                    startTimestamp,
-                    endTimestamp,
-                    { start, end ->
-                        validatorBlockRepository.findMonthlyInTimestampRange(start, end, validator)
-                    },
-                    latestBeforeOrAt,
-                )
+        if (resolution == TimeSeriesResolution.RAW) return inRange(startTimestamp, endTimestamp)
+        return TimeSeriesUtils.getBookendedRecords(startTimestamp, endTimestamp, inRange) {
+            validatorBlockRepository.findLatestValidatedAtOrBefore(validator, it)
         }
     }
 
@@ -240,10 +156,7 @@ open class ValidatorService(
             "startTimestamp",
             "endTimestamp",
         )
-        return validatorBlockRepository.aggregateSlotStatsInTimestampRange(
-            startTimestamp,
-            endTimestamp,
-        )
+        return validatorBlockRepository.slotStats(startTimestamp, endTimestamp)
     }
 
     open fun getSlotStatsForValidator(
@@ -258,7 +171,7 @@ open class ValidatorService(
             "endTimestamp",
         )
         return validatorBlockRepository
-            .aggregateSlotStatsInTimestampRangeForValidator(startTimestamp, endTimestamp, validator)
+            .slotStats(startTimestamp, endTimestamp, validator)
             .firstOrNull()
     }
 

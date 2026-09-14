@@ -1,27 +1,36 @@
 package org.vechain.indexer.validator
 
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.MongoProcessor
-import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.PostgresIndexerStore
+import org.vechain.indexer.PostgresProcessor
+import org.vechain.indexer.config.CheckpointProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
+import org.vechain.indexer.postgres.IndexerStateRepository
 
 @Profile("validator & validator-reward")
 @Component
 open class ValidatorBlockProcessor(
     private val service: ValidatorBlockService,
-    repository: ValidatorBlockRepository,
-    checkpointService: CheckpointService,
+    repository: ValidatorBlockWriteRepository,
+    state: IndexerStateRepository,
+    checkpointProperties: CheckpointProperties,
     processorMetrics: ProcessorMetrics,
+    @Value("\${indexer.version.validator-rewards:1}") version: Int = 1,
 ) :
-    MongoProcessor(
-        repository = repository,
-        indexerName = IndexerNames.VALIDATOR_BLOCK.NAME,
-        checkpointService = checkpointService,
-        collectionName = IndexerNames.VALIDATOR_BLOCK.COLLECTION,
-        processorMetrics = processorMetrics,
+    PostgresProcessor(
+        PostgresIndexerStore(
+            IndexerNames.VALIDATOR_BLOCK.COLLECTION,
+            repository,
+            state,
+            checkpointProperties,
+        ),
+        IndexerNames.VALIDATOR_BLOCK.NAME,
+        version,
+        processorMetrics,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.BlockResult) {

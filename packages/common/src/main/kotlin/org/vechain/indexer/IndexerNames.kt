@@ -164,7 +164,7 @@ object IndexerNames {
 
     object VALIDATOR_BLOCK {
         const val NAME = "ValidatorBlockIndexer"
-        const val COLLECTION = "validator_block_rewards"
+        const val COLLECTION = "validator_block"
     }
 
     object STARGATE_TOKEN {
