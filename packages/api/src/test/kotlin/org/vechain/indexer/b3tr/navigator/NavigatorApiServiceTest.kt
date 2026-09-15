@@ -3,7 +3,7 @@ package org.vechain.indexer.b3tr.navigator
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import io.mockk.slot
+import io.mockk.verify
 import java.math.BigDecimal
 import java.math.BigInteger
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -14,149 +14,29 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.query.Query
+import org.springframework.data.domain.Sort.Direction
 
 @ExtendWith(MockKExtension::class)
 internal class NavigatorApiServiceTest {
-    @MockK lateinit var mongoTemplate: MongoTemplate
-    @MockK lateinit var navigatorRepository: NavigatorRepository
-    @MockK lateinit var overviewSummaryRepository: NavigatorOverviewSummaryRepository
-    @MockK lateinit var feeSummaryRepository: NavigatorFeeSummaryRepository
+    @MockK lateinit var repository: NavigatorReadRepository
 
     private lateinit var service: NavigatorApiService
 
-    private val pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "blockTimestamp"))
+    private val nav = "0xAAAA111111111111111111111111111111111111"
+    private val citizen = "0xCCCC111111111111111111111111111111111111"
 
     @BeforeEach
     fun setUp() {
-        service =
-            NavigatorApiService(
-                mongoTemplate,
-                navigatorRepository,
-                overviewSummaryRepository,
-                feeSummaryRepository,
-            )
+        service = NavigatorApiService(repository)
     }
 
-    @Test
-    fun `findNavigators with no filters returns all navigators`() {
-        val querySlot = slot<Query>()
-        every { mongoTemplate.find(capture(querySlot), Navigator::class.java) } returns emptyList()
+    private fun pageable(field: String, direction: Direction = Direction.DESC) =
+        PageRequest.of(1, 10, Sort.by(direction, field))
 
-        val result = service.findNavigators(pageable = pageable)
-
-        assertTrue(querySlot.captured.queryObject.isEmpty())
-        assertFalse(result.hasNext())
-    }
-
-    @Test
-    fun `findNavigators filters by status list`() {
-        val querySlot = slot<Query>()
-        every { mongoTemplate.find(capture(querySlot), Navigator::class.java) } returns emptyList()
-
-        service.findNavigators(
-            statuses = listOf(NavigatorStatus.ACTIVE, NavigatorStatus.EXITING),
-            pageable = pageable,
-        )
-
-        @Suppress("UNCHECKED_CAST")
-        val statusFilter = querySlot.captured.queryObject["status"] as Map<String, Any>
-        @Suppress("UNCHECKED_CAST") val inValues = statusFilter["\$in"] as List<String>
-        assertEquals(listOf("ACTIVE", "EXITING"), inValues)
-    }
-
-    @Test
-    fun `findNavigators detects hasNext when extra record returned`() {
-        val querySlot = slot<Query>()
-        every { mongoTemplate.find(capture(querySlot), Navigator::class.java) } returns
-            (1..11).map { i -> navFixture("0xnav$i") }
-
-        val result = service.findNavigators(pageable = pageable)
-
-        assertTrue(result.hasNext())
-        assertEquals(10, result.content.size)
-    }
-
-    @Test
-    fun `getNavigatorById normalises address`() {
-        every { navigatorRepository.findById("0xnav1") } returns
-            java.util.Optional.of(navFixture("0xnav1"))
-
-        val result = service.getNavigatorById("0xNAV1")
-
-        assertEquals("0xnav1", result?.address)
-    }
-
-    @Test
-    fun `getOverview reads precomputed global summary`() {
-        every { overviewSummaryRepository.findById(NavigatorOverviewSummary.GLOBAL_ID) } returns
-            java.util.Optional.of(
-                NavigatorOverviewSummary(
-                    id = NavigatorOverviewSummary.GLOBAL_ID,
-                    version = 2,
-                    blockId = "b",
-                    blockNumber = 10L,
-                    blockTimestamp = 10L,
-                    recordType = NavigatorOverviewSummaryRecordType.GLOBAL_SUMMARY,
-                    activeNavigators = 3L,
-                    totalStaked = BigDecimal("125000"),
-                    totalCitizens = 8L,
-                    totalDelegated = BigDecimal("300000"),
-                )
-            )
-
-        val overview = service.getOverview()
-
-        assertEquals(3L, overview.activeNavigators)
-        assertEquals(BigInteger("125000"), overview.totalStaked)
-        assertEquals(8L, overview.totalCitizens)
-        assertEquals(BigInteger("300000"), overview.totalDelegated)
-    }
-
-    @Test
-    fun `getOverview returns zeros when summary is missing`() {
-        every { overviewSummaryRepository.findById(NavigatorOverviewSummary.GLOBAL_ID) } returns
-            java.util.Optional.empty()
-
-        val overview = service.getOverview()
-
-        assertEquals(0L, overview.activeNavigators)
-        assertEquals(BigInteger.ZERO, overview.totalStaked)
-        assertEquals(0L, overview.totalCitizens)
-        assertEquals(BigInteger.ZERO, overview.totalDelegated)
-    }
-
-    @Test
-    fun `getFeeSummary reads navigator specific summary`() {
-        every {
-            feeSummaryRepository.findById(NavigatorFeeSummaryDocument.navigatorSummaryId("0xnav1"))
-        } returns
-            java.util.Optional.of(
-                NavigatorFeeSummaryDocument(
-                    id = NavigatorFeeSummaryDocument.navigatorSummaryId("0xnav1"),
-                    version = 1,
-                    blockId = "b",
-                    blockNumber = 5L,
-                    blockTimestamp = 5L,
-                    recordType = NavigatorFeeSummaryRecordType.NAVIGATOR_SUMMARY,
-                    navigator = "0xnav1",
-                    totalEarned = BigDecimal("250"),
-                    totalClaimed = BigDecimal("100"),
-                )
-            )
-
-        val summary = service.getFeeSummary("0xNav1")
-
-        assertEquals(BigInteger("250"), summary.totalEarned)
-        assertEquals(BigInteger("100"), summary.totalClaimed)
-    }
-
-    private fun navFixture(address: String) =
+    private fun navigator(address: String) =
         Navigator(
             address = address,
-            version = 1,
-            blockId = "b",
+            blockId = "0xb",
             blockNumber = 1L,
             blockTimestamp = 1L,
             status = NavigatorStatus.ACTIVE,
@@ -166,9 +46,77 @@ internal class NavigatorApiServiceTest {
             metadataURI = null,
             registeredAt = 1L,
             exitAnnouncedRound = null,
-            exitEffectiveDeadline = null,
             exitEffectiveDeadlineBlock = null,
             lastReportRound = null,
             lastReportURI = null,
         )
+
+    @Test
+    fun `navigators are paged one row past the page in the requested order`() {
+        every { repository.findNavigators(any(), any(), any(), any(), any()) } returns
+            (1..11).map { navigator("0x" + it.toString().padStart(40, '0')) }
+
+        val page =
+            service.findNavigators(
+                listOf(NavigatorStatus.ACTIVE),
+                NavigatorSort.STAKE,
+                pageable("stake", Direction.ASC),
+            )
+
+        assertTrue(page.hasNext())
+        assertEquals(10, page.content.size)
+        verify {
+            repository.findNavigators(
+                listOf(NavigatorStatus.ACTIVE),
+                NavigatorSort.STAKE,
+                Direction.ASC,
+                10,
+                11,
+            )
+        }
+    }
+
+    @Test
+    fun `addresses are normalised before the lookup`() {
+        every { repository.findNavigator(nav.lowercase()) } returns navigator(nav.lowercase())
+        every { repository.findDelegationEvents(any(), any(), any(), any(), any()) } returns
+            emptyList()
+        every { repository.findCitizens(any(), any(), any(), any()) } returns emptyList()
+        every { repository.findFees(any(), any(), any(), any()) } returns emptyList()
+        every { repository.feeSummary(any()) } returns
+            NavigatorFeeSummary(BigInteger("250"), BigInteger("100"))
+
+        assertEquals(nav.lowercase(), service.getNavigatorById(nav)?.address)
+        assertFalse(
+            service.findDelegationEvents(nav, citizen, pageable("blockTimestamp")).hasNext()
+        )
+        service.findCitizens(nav, pageable("delegatedAt"))
+        service.findFeeHistory(nav, pageable("roundId", Direction.ASC))
+        assertEquals(BigInteger("250"), service.getFeeSummary(nav).totalEarned)
+
+        verify {
+            repository.findDelegationEvents(
+                nav.lowercase(),
+                citizen.lowercase(),
+                10,
+                11,
+                Direction.DESC,
+            )
+            repository.findCitizens(nav.lowercase(), 10, 11, Direction.DESC)
+            repository.findFees(nav.lowercase(), 10, 11, Direction.ASC)
+            repository.feeSummary(nav.lowercase())
+        }
+    }
+
+    @Test
+    fun `the global fee summary and the overview pass straight through`() {
+        every { repository.feeSummary(null) } returns
+            NavigatorFeeSummary(BigInteger.TWO, BigInteger.ONE)
+        every { repository.overview() } returns
+            NavigatorOverview(3L, BigInteger("125000"), 8L, BigInteger("300000"))
+
+        assertEquals(BigInteger.ONE, service.getFeeSummary(null).totalClaimed)
+        assertEquals(3L, service.getOverview().activeNavigators)
+        assertEquals(BigInteger("300000"), service.getOverview().totalDelegated)
+    }
 }

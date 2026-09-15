@@ -1,63 +1,58 @@
 package org.vechain.indexer.b3tr.navigator
 
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.StatefulMongoProcessor
-import org.vechain.indexer.VersionedDocumentAccumulator
-import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.PostgresIndexerStore
+import org.vechain.indexer.PostgresProcessor
+import org.vechain.indexer.config.CheckpointProperties
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
+import org.vechain.indexer.postgres.IndexerStateRepository
 import org.vechain.indexer.utils.BlockDetails
-import org.vechain.indexer.utils.EventUtils.groupByBlock
 
-@Profile("b3tr", "b3tr-navigator", "b3tr-navigator-main")
+@Profile("b3tr", "b3tr-navigator")
 @Component
 open class NavigatorProcessor(
-    repository: NavigatorRepository,
-    mongoTemplate: MongoTemplate,
     private val service: NavigatorService,
-    checkpointService: CheckpointService,
+    private val feeService: NavigatorFeeService,
+    private val delegationEventService: NavigatorDelegationEventService,
+    private val repository: NavigatorWriteRepository,
+    state: IndexerStateRepository,
+    checkpointProperties: CheckpointProperties,
+    horizon: InlineVersioningProperties,
     processorMetrics: ProcessorMetrics,
+    @Value("\${indexer.version.b3tr-navigator:1}") version: Int = 1,
 ) :
-    StatefulMongoProcessor(
-        repository = repository,
-        mongoTemplate = mongoTemplate,
-        indexerName = IndexerNames.NAVIGATOR.NAME,
-        checkpointService = checkpointService,
-        collectionName = IndexerNames.NAVIGATOR.COLLECTION,
-        processorMetrics = processorMetrics,
+    PostgresProcessor(
+        PostgresIndexerStore(
+            IndexerNames.NAVIGATOR.COLLECTION,
+            repository,
+            state,
+            checkpointProperties,
+            horizon,
+        ),
+        IndexerNames.NAVIGATOR.NAME,
+        version,
+        processorMetrics,
     ) {
 
+    /** Every block, events or not: an exit deadline passing is not something the chain emits. */
     override suspend fun processEntry(entry: IndexingResult) {
-        val accumulator = VersionedDocumentAccumulator<Navigator>(service::findByAddress)
-
-        if (entry is IndexingResult.BlockResult) {
-            val blockDetails =
-                BlockDetails(
-                    blockId = entry.block.id,
-                    blockNumber = entry.block.number,
-                    blockTimestamp = entry.block.timestamp,
+        require(entry is IndexingResult.BlockResult) {
+            "Expected IndexingResult.BlockResult (full block result) but got ${entry::class.simpleName}"
+        }
+        val block = BlockDetails(entry.block.id, entry.block.number, entry.block.timestamp)
+        val events = entry.events()
+        val update =
+            service
+                .processBlock(block, events)
+                .copy(
+                    delegationEvents = delegationEventService.processEvents(events),
+                    fees = feeService.processBlock(block, events),
                 )
-            accumulator.startBlock()
-
-            // Check expired exits first — transitions EXITING → DEACTIVATED
-            service.checkExpiredExits(blockDetails, accumulator)
-
-            if (entry.events().isNotEmpty()) {
-                service.processBlockEvents(entry.events(), blockDetails, accumulator)
-            }
-        } else if (entry.events().isNotEmpty()) {
-            groupByBlock(entry.events()).forEach { (blockDetails, blockEvents) ->
-                accumulator.startBlock()
-                service.processBlockEvents(blockEvents, blockDetails, accumulator)
-            }
-        }
-
-        val (updated, archives) = accumulator.results()
-        if (updated.isNotEmpty() || archives.isNotEmpty()) {
-            service.save(updated, archives)
-        }
+        if (!update.isEmpty()) repository.save(update)
     }
 }

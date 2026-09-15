@@ -1,103 +1,63 @@
 package org.vechain.indexer.b3tr.navigator
 
-import java.math.BigDecimal
-import java.math.BigInteger
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
-import org.springframework.data.domain.SliceImpl
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.data.mongodb.core.query.Query
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import org.vechain.indexer.IndexerService
+import org.vechain.indexer.thor.HexUtils
+import org.vechain.indexer.utils.PaginationUtils.offsetSlice
 
-data class NavigatorFeeSummary(val totalEarned: BigInteger, val totalClaimed: BigInteger)
-
-data class NavigatorOverview(
-    val activeNavigators: Long,
-    val totalStaked: BigInteger,
-    val totalCitizens: Long,
-    val totalDelegated: BigInteger,
-)
-
+/** Read-only service behind the navigator API; one endpoint is one query. */
 @Profile("b3tr")
 @Service
-open class NavigatorApiService(
-    private val mongoTemplate: MongoTemplate,
-    private val navigatorRepository: NavigatorRepository,
-    private val overviewSummaryRepository: NavigatorOverviewSummaryRepository,
-    private val feeSummaryRepository: NavigatorFeeSummaryRepository,
-) {
+open class NavigatorApiService(private val repository: NavigatorReadRepository) : IndexerService {
 
-    fun findNavigators(
-        statuses: List<NavigatorStatus>? = null,
+    open fun findNavigators(
+        statuses: List<NavigatorStatus>?,
+        sort: NavigatorSort,
         pageable: Pageable,
-    ): Slice<Navigator> {
-        val criteria = Criteria()
-        statuses?.let { criteria.and(Navigator::status.name).`in`(it.map { s -> s.name }) }
-        return runQuery(criteria, pageable, Navigator::class.java)
-    }
-
-    fun getNavigatorById(navigatorId: String): Navigator? =
-        navigatorRepository.findByIdOrNull(navigatorId.lowercase())
-
-    fun getOverview(): NavigatorOverview {
-        val summary = overviewSummaryRepository.findByIdOrNull(NavigatorOverviewSummary.GLOBAL_ID)
-
-        return NavigatorOverview(
-            activeNavigators = summary?.activeNavigators ?: 0L,
-            totalStaked = (summary?.totalStaked ?: BigDecimal.ZERO).toBigInteger(),
-            totalCitizens = summary?.totalCitizens ?: 0L,
-            totalDelegated = (summary?.totalDelegated ?: BigDecimal.ZERO).toBigInteger(),
-        )
-    }
-
-    fun findDelegationEvents(
-        navigator: String? = null,
-        citizen: String? = null,
-        pageable: Pageable,
-    ): Slice<NavigatorDelegationEvent> {
-        val criteria = Criteria()
-        navigator?.let {
-            criteria.and(NavigatorDelegationEvent::navigator.name).`is`(it.lowercase())
+    ): Slice<Navigator> =
+        offsetSlice(pageable, sort.property) { offset, limit, direction ->
+            repository.findNavigators(statuses, sort, direction, offset, limit)
         }
-        citizen?.let { criteria.and(NavigatorDelegationEvent::citizen.name).`is`(it.lowercase()) }
-        return runQuery(criteria, pageable, NavigatorDelegationEvent::class.java)
-    }
 
-    fun findCitizens(navigator: String, pageable: Pageable): Slice<NavigatorCitizen> {
-        val criteria =
-            Criteria.where(NavigatorCitizen::navigator.name)
-                .`is`(navigator.lowercase())
-                .and(NavigatorCitizen::active.name)
-                .`is`(true)
-        return runQuery(criteria, pageable, NavigatorCitizen::class.java)
-    }
+    open fun getNavigatorById(navigatorId: String): Navigator? =
+        repository.findNavigator(HexUtils.normalise(navigatorId))
 
-    fun getFeeSummary(navigator: String?): NavigatorFeeSummary {
-        val id =
-            navigator?.lowercase()?.let(NavigatorFeeSummaryDocument::navigatorSummaryId)
-                ?: NavigatorFeeSummaryDocument.GLOBAL_ID
-        val summary = feeSummaryRepository.findByIdOrNull(id)
+    open fun getOverview(): NavigatorOverview = repository.overview()
 
-        return NavigatorFeeSummary(
-            totalEarned = (summary?.totalEarned ?: BigDecimal.ZERO).toBigInteger(),
-            totalClaimed = (summary?.totalClaimed ?: BigDecimal.ZERO).toBigInteger(),
-        )
-    }
+    open fun findDelegationEvents(
+        navigator: String?,
+        citizen: String?,
+        pageable: Pageable,
+    ): Slice<NavigatorDelegationEvent> =
+        offsetSlice(pageable, NavigatorDelegationEvent::blockTimestamp.name) {
+            offset,
+            limit,
+            direction ->
+            repository.findDelegationEvents(
+                navigator?.let(HexUtils::normalise),
+                citizen?.let(HexUtils::normalise),
+                offset,
+                limit,
+                direction,
+            )
+        }
 
-    fun findFeeHistory(navigator: String, pageable: Pageable): Slice<NavigatorFee> {
-        val criteria = Criteria.where(NavigatorFee::navigator.name).`is`(navigator.lowercase())
-        return runQuery(criteria, pageable, NavigatorFee::class.java)
-    }
+    open fun findCitizens(navigator: String, pageable: Pageable): Slice<NavigatorCitizen> =
+        offsetSlice(pageable, NavigatorCitizen::delegatedAt.name) { offset, limit, direction ->
+            repository.findCitizens(HexUtils.normalise(navigator), offset, limit, direction)
+        }
 
-    private fun <T> runQuery(criteria: Criteria, pageable: Pageable, clazz: Class<T>): Slice<T> {
-        val query = Query(criteria).with(pageable)
-        query.limit(pageable.pageSize + 1)
-        val raw = mongoTemplate.find(query, clazz)
-        val hasNext = raw.size > pageable.pageSize
-        val content = if (hasNext) raw.dropLast(1) else raw
-        return SliceImpl(content, pageable, hasNext)
-    }
+    open fun getFeeSummary(navigator: String?): NavigatorFeeSummary =
+        repository.feeSummary(navigator?.let(HexUtils::normalise))
+
+    open fun findFeeHistory(navigator: String, pageable: Pageable): Slice<NavigatorFee> =
+        offsetSlice(pageable, NavigatorFee::roundId.name) { offset, limit, direction ->
+            repository.findFees(HexUtils.normalise(navigator), offset, limit, direction)
+        }
+
+    override fun getLatestIndexedBlocks(): Map<String, Long> =
+        mapOf("Navigator" to repository.latestBlockNumber())
 }
