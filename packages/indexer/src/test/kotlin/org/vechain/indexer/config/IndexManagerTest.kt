@@ -18,15 +18,13 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.context.ApplicationContext
+import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerRunner
-import org.vechain.indexer.MongoProcessor
 import org.vechain.indexer.Status
 import org.vechain.indexer.config.metrics.IndexerHealthMetrics
-import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.version.IndexerVersionCollectionConfig
 
 class IndexManagerTest {
 
@@ -34,7 +32,6 @@ class IndexManagerTest {
     private lateinit var metrics: IndexerHealthMetrics
     private lateinit var applicationContext: ApplicationContext
     private lateinit var thorClient: ThorClient
-    private lateinit var indexerVersionCollectionConfig: IndexerVersionCollectionConfig
 
     @BeforeEach
     fun setup() {
@@ -43,7 +40,6 @@ class IndexManagerTest {
         metrics = mockk(relaxed = true)
         applicationContext = mockk()
         thorClient = mockk()
-        indexerVersionCollectionConfig = mockk()
     }
 
     @AfterEach
@@ -65,8 +61,6 @@ class IndexManagerTest {
             IndexManager(
                 indexers = listOf(indexer),
                 processors = emptyList(),
-                collectionConfigs = emptyList(),
-                indexerVersionCollectionConfig = indexerVersionCollectionConfig,
                 indexBootstrapState = mockk(),
                 appCoroutineScope = appCoroutineScope,
                 thorClient = thorClient,
@@ -86,8 +80,8 @@ class IndexManagerTest {
 
     @Test
     fun `onShutdown flushes each processor's checkpoint`() {
-        val processorA = mockk<MongoProcessor>()
-        val processorB = mockk<MongoProcessor>()
+        val processorA = mockk<BaseProcessor>()
+        val processorB = mockk<BaseProcessor>()
         every { processorA.flushCheckpoint() } just Runs
         every { processorB.flushCheckpoint() } just Runs
 
@@ -95,8 +89,6 @@ class IndexManagerTest {
             IndexManager(
                 indexers = emptyList(),
                 processors = listOf(processorA, processorB),
-                collectionConfigs = emptyList(),
-                indexerVersionCollectionConfig = indexerVersionCollectionConfig,
                 indexBootstrapState = mockk(),
                 appCoroutineScope = appCoroutineScope,
                 thorClient = thorClient,
@@ -117,8 +109,8 @@ class IndexManagerTest {
         // The shutdown sequence must be best-effort: a single processor that fails to flush its
         // checkpoint cannot starve later processors or the final-metrics publish step. Each step
         // is independently try/catched in IndexManager.onShutdown.
-        val processorA = mockk<MongoProcessor>()
-        val processorB = mockk<MongoProcessor>()
+        val processorA = mockk<BaseProcessor>()
+        val processorB = mockk<BaseProcessor>()
         every { processorA.flushCheckpoint() } throws RuntimeException("flush A failed")
         every { processorB.flushCheckpoint() } just Runs
 
@@ -133,8 +125,6 @@ class IndexManagerTest {
             IndexManager(
                 indexers = listOf(indexer),
                 processors = listOf(processorA, processorB),
-                collectionConfigs = emptyList(),
-                indexerVersionCollectionConfig = indexerVersionCollectionConfig,
                 indexBootstrapState = mockk(),
                 appCoroutineScope = appCoroutineScope,
                 thorClient = thorClient,
@@ -152,27 +142,14 @@ class IndexManagerTest {
     }
 
     @Test
-    fun `start runs initCollection then removeStaleIndexes then createPendingIndexes for each config`() {
-        // Locks the bootstrap order: stale removal must precede index creation, otherwise renamed
-        // indexes collide with the legacy ones (MongoDB IndexOptionsConflict, error 85).
+    fun `start marks the bootstrap ready and launches the runner`() {
         mockkObject(IndexerRunner.Companion)
         val runnerJob = mockk<Job>(relaxed = true)
         every {
             IndexerRunner.launch(any(), any(), any<List<Indexer>>(), any(), any(), any(), any())
         } returns runnerJob
 
-        val collectionConfig = mockk<CollectionConfig>(relaxed = true)
-        every { collectionConfig.modelObj } returns String::class.java
-        every { collectionConfig.initCollection() } just Runs
-        every { collectionConfig.removeStaleIndexes() } just Runs
-        every { collectionConfig.createPendingIndexes() } just Runs
-
         val indexBootstrapState = mockk<IndexBootstrapState>(relaxed = true)
-        every { indexerVersionCollectionConfig.modelObj } returns Any::class.java
-        every { indexerVersionCollectionConfig.initCollection() } just Runs
-        every { indexerVersionCollectionConfig.removeStaleIndexes() } just Runs
-        every { indexerVersionCollectionConfig.createPendingIndexes() } just Runs
-
         val indexer = mockk<Indexer>(relaxed = true)
         every { indexer.name } returns "test-indexer"
 
@@ -180,8 +157,6 @@ class IndexManagerTest {
             IndexManager(
                 indexers = listOf(indexer),
                 processors = emptyList(),
-                collectionConfigs = listOf(collectionConfig),
-                indexerVersionCollectionConfig = indexerVersionCollectionConfig,
                 indexBootstrapState = indexBootstrapState,
                 appCoroutineScope = appCoroutineScope,
                 thorClient = thorClient,
@@ -194,14 +169,9 @@ class IndexManagerTest {
         manager.start()
 
         verifyOrder {
-            indexerVersionCollectionConfig.initCollection()
-            indexerVersionCollectionConfig.removeStaleIndexes()
-            indexerVersionCollectionConfig.createPendingIndexes()
-            collectionConfig.initCollection()
-            collectionConfig.removeStaleIndexes()
-            collectionConfig.createPendingIndexes()
+            indexBootstrapState.markRunning()
+            indexBootstrapState.markReady()
         }
-        verify(exactly = 1) { indexBootstrapState.markReady(any()) }
         verify(exactly = 1) {
             IndexerRunner.launch(any(), any(), any<List<Indexer>>(), any(), any(), any(), any())
         }

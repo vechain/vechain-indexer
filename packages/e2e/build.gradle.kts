@@ -10,13 +10,13 @@ dependencies {
 val execOperations = serviceOf<ExecOperations>()
 val blacklistContractAddress = objects.property<String>()
 
-val dbSetup = tasks.register<Exec>("dbSetup") {
+val createNetwork = tasks.register<Exec>("createNetwork") {
     workingDir(rootDir)
-    commandLine("make", "db-all")
+    commandLine("make", "pg-network")
 }
 
 val startThor = tasks.register<Exec>("startThor") {
-    dependsOn(dbSetup)
+    dependsOn(createNetwork)
     workingDir(rootDir)
     commandLine("docker", "compose", "-f", "packages/e2e/thor/docker-compose.yaml", "up", "--build", "-d", "--wait")
 }
@@ -99,7 +99,7 @@ val preE2e = tasks.register("preE2e") {
 val postE2e = tasks.register<Exec>("postE2e") {
     dependsOn(stopApp)
     workingDir(rootDir)
-    commandLine("make", "db-clean")
+    commandLine("make", "pg-clean")
 }
 
 tasks.named<Test>("test") {

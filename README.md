@@ -56,79 +56,18 @@ make start
 - Run:
 
 ```bash
-make db-all
+make pg-up
 ```
 
 ![img.png](images/intellij-start.png)
 
-### Connecting to MongoDB
-
-Connect for the various users with the following URIs:
-
-- `indexer` - `mongodb://indexer:password@localhost:27017/vechain?directConnection=true&authMechanism=DEFAULT&authSource=admin`
-- `api` - `mongodb://api:password@localhost:27017/vechain?directConnection=true&authMechanism=DEFAULT&authSource=admin`
-- `root` - `mongodb://root:password@localhost:27017/admin?directConnection=true&authMechanism=DEFAULT`
 - Go to IndexerApplication.kt inside IntelliJ and run/debug:
-
-### Restarting
-
-- Clean and restart the DB:
-
-```bash
-make db-all
-```
 
 ### Connecting to PostgreSQL
 
-The `chain` schema (blocks and transactions) lives in PostgreSQL. `make pg-up` starts it on
-`localhost:5432` as database `vechain`; roles `indexer` and `api`, both with password
-`password`. `make pg-psql` opens a shell, `make pg-clean` drops the data.
-
-## Backup MongoDB
-You can back up the database by running the following command:
-
-```bash
-make db-backup
-```
-- Will back up the vechain database from localhost:27017
-- The backup will be stored in the database/backups/ directory.
-- The filename follows this format: database/backups/vechain-YYYYMMDDHHMMSS
-
-You can also specify the host and port of the MongoDB instance you want to backup:
-
-```bash
-make db-backup MONGO_HOST=my-mongo-host:32423
-```
-
-## Restore MongoDB from backup
-
-You can restore the database by running the following command:
-
-```bash
-make db-restore
-```
-- If no backup exists, you will be prompted to specify a backup directory.
-- By default, it restores from the latest backup found in the database/backups/ directory.
-
-To restore from a specific backup folder, specify DIR:
-```bash
-make db-restore DIR=backup/mydatabase-20250210
-```
-
-To restore to a different DB:
-```bash
-make db-restore MONGO_HOST=myserver.com
-```
-
-## Copy collections between databases
-
-To copy specific collections from one MongoDB cluster to another (e.g. from a local indexer into an Atlas cluster) without doing a full backup/restore round-trip:
-
-```bash
-make db-copy-collections
-```
-
-This launches the interactive wrapper at `database/restore/restore.sh`, which prompts for source/destination URIs (with `MONGO_PRESET_*` env-var presets) and the collection list, then drives the underlying `restore_local_dump.sh` end-to-end. See `database/restore/README.md` for full options including non-interactive use.
+Every indexer writes to PostgreSQL. `make pg-up` starts it on `localhost:5432` as database
+`vechain`; roles `indexer` and `api`, both with password `password`. `make pg-psql` opens a
+shell, `make pg-clean` drops the data.
 
 ## Features
 
@@ -143,13 +82,6 @@ profile.
 
 As you can see from the list above, the block indexer offers the option to proxy to the Thor node. This is useful if you
 want the convenience of the Block endpoints without the overhead of indexing the data.
-
-## Pruner
-Some of the indexers are stateful indexers. This means that records are updated with each block. In order to facilitate rollbacks we must store all previous version of each record. These records are stored in collections with a `-archives` postfix. As you might imagine these archive collections can get rather large over time. To prevent the collection from blowing up we have implemented an optional pruner service that can be enabled and configured with the following env variablers.
-
-- `PRUNER_INTERVAL` - How frequently to run the pruner (in blocks)
-- `PRUNER_REMOVAL_CHUNK_SIZE` - Sometimes the number of records to prune can be very large. To prevent mongoDB from blowing up we can set a chunk size for the delete operation
-- `PRUNER_RECORD_LIMIT` - You can set a limit on the number of records to prune in each run.
 
 ## Testing
 

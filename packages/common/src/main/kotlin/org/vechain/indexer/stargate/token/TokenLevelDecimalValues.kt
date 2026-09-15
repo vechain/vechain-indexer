@@ -3,52 +3,24 @@ package org.vechain.indexer.stargate.token
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import java.math.BigDecimal
-import org.springframework.data.mongodb.core.mapping.Field
-import org.springframework.data.mongodb.core.mapping.FieldType
 
 @Suppress("PropertyName")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class TokenLevelDecimalValues(
-    @get:JsonProperty("Strength")
-    @param:JsonProperty("Strength")
-    @Field(targetType = FieldType.DECIMAL128)
-    val Strength: BigDecimal? = null,
-    @get:JsonProperty("Thunder")
-    @param:JsonProperty("Thunder")
-    @Field(targetType = FieldType.DECIMAL128)
-    val Thunder: BigDecimal? = null,
-    @get:JsonProperty("Mjolnir")
-    @param:JsonProperty("Mjolnir")
-    @Field(targetType = FieldType.DECIMAL128)
-    val Mjolnir: BigDecimal? = null,
-    @get:JsonProperty("VeThorX")
-    @param:JsonProperty("VeThorX")
-    @Field(targetType = FieldType.DECIMAL128)
-    val VeThorX: BigDecimal? = null,
+    @get:JsonProperty("Strength") @param:JsonProperty("Strength") val Strength: BigDecimal? = null,
+    @get:JsonProperty("Thunder") @param:JsonProperty("Thunder") val Thunder: BigDecimal? = null,
+    @get:JsonProperty("Mjolnir") @param:JsonProperty("Mjolnir") val Mjolnir: BigDecimal? = null,
+    @get:JsonProperty("VeThorX") @param:JsonProperty("VeThorX") val VeThorX: BigDecimal? = null,
     @get:JsonProperty("StrengthX")
     @param:JsonProperty("StrengthX")
-    @Field(targetType = FieldType.DECIMAL128)
     val StrengthX: BigDecimal? = null,
-    @get:JsonProperty("ThunderX")
-    @param:JsonProperty("ThunderX")
-    @Field(targetType = FieldType.DECIMAL128)
-    val ThunderX: BigDecimal? = null,
-    @get:JsonProperty("MjolnirX")
-    @param:JsonProperty("MjolnirX")
-    @Field(targetType = FieldType.DECIMAL128)
-    val MjolnirX: BigDecimal? = null,
-    @get:JsonProperty("Dawn")
-    @param:JsonProperty("Dawn")
-    @Field(targetType = FieldType.DECIMAL128)
-    val Dawn: BigDecimal? = null,
+    @get:JsonProperty("ThunderX") @param:JsonProperty("ThunderX") val ThunderX: BigDecimal? = null,
+    @get:JsonProperty("MjolnirX") @param:JsonProperty("MjolnirX") val MjolnirX: BigDecimal? = null,
+    @get:JsonProperty("Dawn") @param:JsonProperty("Dawn") val Dawn: BigDecimal? = null,
     @get:JsonProperty("Lightning")
     @param:JsonProperty("Lightning")
-    @Field(targetType = FieldType.DECIMAL128)
     val Lightning: BigDecimal? = null,
-    @get:JsonProperty("Flash")
-    @param:JsonProperty("Flash")
-    @Field(targetType = FieldType.DECIMAL128)
-    val Flash: BigDecimal? = null,
+    @get:JsonProperty("Flash") @param:JsonProperty("Flash") val Flash: BigDecimal? = null,
 ) {
     operator fun get(level: TokenLevel): BigDecimal? =
         when (level) {

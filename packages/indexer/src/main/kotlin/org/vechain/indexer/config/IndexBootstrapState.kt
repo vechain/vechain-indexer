@@ -18,33 +18,23 @@ class IndexBootstrapState {
         AtomicReference(
             Snapshot(
                 status = Status.NOT_STARTED,
-                message = "Collection and index bootstrap has not started yet.",
+                message = "Startup preload has not started yet.",
             )
         )
 
-    fun markRunning(initializerCount: Int) {
-        snapshot.set(
-            Snapshot(
-                status = Status.RUNNING,
-                message = "Initializing $initializerCount collection bootstrap tasks.",
-            )
-        )
+    fun markRunning() {
+        snapshot.set(Snapshot(status = Status.RUNNING, message = "Startup preload is running."))
     }
 
-    fun markReady(initializerCount: Int) {
-        snapshot.set(
-            Snapshot(
-                status = Status.READY,
-                message = "Completed $initializerCount collection bootstrap tasks.",
-            )
-        )
+    fun markReady() {
+        snapshot.set(Snapshot(status = Status.READY, message = "Startup preload completed."))
     }
 
     fun markFailed(throwable: Throwable) {
         snapshot.set(
             Snapshot(
                 status = Status.FAILED,
-                message = throwable.message ?: "Collection and index bootstrap failed.",
+                message = throwable.message ?: "Startup preload failed.",
             )
         )
     }

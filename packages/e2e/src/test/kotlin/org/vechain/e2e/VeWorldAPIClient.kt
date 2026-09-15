@@ -59,10 +59,6 @@ object VeWorldAPIClient {
 
         if (res.body?.status != "UP")
             throw Exception("Health failed with status ${res.body?.status}")
-
-        val mongoStatus = res.body?.components?.get("mongo")?.status
-
-        if (mongoStatus != "UP") throw Exception("Health failed with status $mongoStatus")
     }
 
     fun performIndexerHealthCheck(indexerComponent: String) {

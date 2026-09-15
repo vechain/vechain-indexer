@@ -217,7 +217,7 @@ data class ValidatorV2Response(
                 nextCycleAvgDelegatorYield = ncA
             }
 
-            // nftYieldsIfDelegatedNextCycle — uses MongoDB-derived next-cycle delegation stake
+            // nftYieldsIfDelegatedNextCycle — uses the indexed next-cycle delegation stake
             // (Stargate.getDelegatorsEffectiveStake is not needed).
             var nftYieldsIfDelegatedNextCycle: TokenLevelDecimalValues? = null
             if (

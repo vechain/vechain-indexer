@@ -14,7 +14,7 @@ import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.jdbc.support.JdbcTransactionManager
 
 /**
- * The Postgres store, beside Mongo in the same process. Every bean is named `postgres*` so a
+ * The Postgres store, the process's only datasource. Every bean is named `postgres*` so a
  * `@Transactional` on a Postgres write has to name `PostgresConfig.TRANSACTION_MANAGER`.
  */
 @Configuration
