@@ -16,7 +16,7 @@ import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 @ExtendWith(MockKExtension::class)
 internal class TreasuryTransferServiceTest {
 
-    @MockK lateinit var repository: TreasuryTransferRepository
+    @MockK lateinit var repository: TreasuryTransferWriteRepository
     @MockK lateinit var businessEventProperties: BusinessEventProperties
 
     private lateinit var service: TreasuryTransferService

@@ -7,6 +7,8 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.accounts.AccountTotalsSeriesProcessor
 import org.vechain.indexer.b3tr.gm.GmNftProcessor
 import org.vechain.indexer.b3tr.gm.GmNftService
+import org.vechain.indexer.b3tr.treasury.TreasuryTransferProcessor
+import org.vechain.indexer.b3tr.treasury.TreasuryTransferService
 import org.vechain.indexer.blocks.BlockTree
 import org.vechain.indexer.blocks.BlockTreeService
 import org.vechain.indexer.blocks.BlocksProcessor
@@ -68,6 +70,7 @@ class ProcessorTransactionalAnnotationsTest {
                 NftService::class.java.getDeclaredMethod("save", List::class.java),
                 ContractService::class.java.getDeclaredMethod("save", List::class.java),
                 GmNftService::class.java.getDeclaredMethod("save", List::class.java),
+                TreasuryTransferService::class.java.getDeclaredMethod("save", List::class.java),
                 HistoryService::class.java.getDeclaredMethod("save", List::class.java),
                 ValidatorService::class.java.getDeclaredMethod("save", List::class.java),
                 ValidatorBlockService::class.java.getDeclaredMethod("save", List::class.java),
@@ -101,6 +104,7 @@ class ProcessorTransactionalAnnotationsTest {
                 NftProcessor::class.java,
                 ContractProcessor::class.java,
                 GmNftProcessor::class.java,
+                TreasuryTransferProcessor::class.java,
                 HistoryProcessor::class.java,
                 ValidatorProcessor::class.java,
                 ValidatorBlockProcessor::class.java,
