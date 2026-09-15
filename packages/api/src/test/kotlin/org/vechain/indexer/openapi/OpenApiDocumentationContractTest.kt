@@ -24,6 +24,7 @@ import org.vechain.indexer.explorer.AverageFeesPerUserReadRepository
 import org.vechain.indexer.explorer.BlockUsageReadRepository
 import org.vechain.indexer.history.HistoryReadRepository
 import org.vechain.indexer.nft.NftReadRepository
+import org.vechain.indexer.safe.SafeReadRepository
 import org.vechain.indexer.stargate.staking.NftHoldersReadRepository
 import org.vechain.indexer.stargate.staking.VetStakedReadRepository
 import org.vechain.indexer.stargate.token.StargateTokenReadRepository
@@ -75,6 +76,7 @@ class OpenApiDocumentationContractTest {
     private lateinit var historicProposalsReadRepository: HistoricProposalsReadRepository
     @MockitoBean private lateinit var proposalResultReadRepository: ProposalResultReadRepository
     @MockitoBean private lateinit var proposalCommentReadRepository: ProposalCommentReadRepository
+    @MockitoBean private lateinit var safeReadRepository: SafeReadRepository
     @MockitoBean private lateinit var vevoteCommentReadRepository: VeVoteCommentReadRepository
     @MockitoBean private lateinit var vevoteResultReadRepository: VeVoteResultReadRepository
 

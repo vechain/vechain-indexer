@@ -3,32 +3,21 @@ package org.vechain.indexer.safe
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import io.mockk.slot
 import io.mockk.verify
-import java.math.BigInteger
-import java.util.Optional
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Pageable
-import org.springframework.data.domain.Slice
-import org.springframework.data.domain.SliceImpl
-import org.vechain.indexer.safe.repository.SafeMembershipRepository
-import org.vechain.indexer.safe.repository.SafeTxProposalRepository
-import org.vechain.indexer.safe.repository.SafeTxStateRepository
+import org.springframework.data.domain.Sort
+import org.springframework.data.domain.Sort.Direction
 
 @ExtendWith(MockKExtension::class)
 internal class SafeServiceTest {
 
-    @MockK lateinit var membershipRepository: SafeMembershipRepository
-    @MockK lateinit var txStateRepository: SafeTxStateRepository
-    @MockK lateinit var proposalRepository: SafeTxProposalRepository
+    @MockK lateinit var repository: SafeReadRepository
 
     private val safe = "0x1111111111111111111111111111111111111111"
     private val owner = "0xAAAA111111111111111111111111111111111111"
@@ -38,154 +27,88 @@ internal class SafeServiceTest {
 
     @BeforeEach
     fun setUp() {
-        service = SafeService(membershipRepository, txStateRepository, proposalRepository)
+        service = SafeService(repository)
     }
 
-    private fun membership(removed: Long? = null) =
+    private fun pageable(field: String) = PageRequest.of(0, 20, Sort.by(Direction.DESC, field))
+
+    private fun membership() =
         SafeMembership(
             id = SafeMembership.buildId(safe, owner),
-            safe = safe.lowercase(),
+            safe = safe,
             owner = owner.lowercase(),
             addedBlock = 5L,
             addedTimestamp = 500L,
-            removedBlock = removed,
-            removedTimestamp = removed?.let { it * 100L },
             blockId = "0xblock",
-            blockNumber = removed ?: 5L,
-            blockTimestamp = (removed ?: 5L) * 100L,
-            version = if (removed != null) 2 else 1,
-        )
-
-    private fun txState(executed: Boolean = false, failed: Boolean = false) =
-        SafeTxState(
-            id = SafeTxState.buildId(safe, txHash),
-            safe = safe.lowercase(),
-            txHash = txHash.lowercase(),
-            approvers =
-                mutableListOf(
-                    SafeTxApproval(
-                        owner = owner.lowercase(),
-                        block = 10L,
-                        blockTimestamp = 1000L,
-                        vechainTxId = "0xchaintx",
-                    )
-                ),
-            executed = executed,
-            failed = failed,
-            executor = if (executed) owner.lowercase() else null,
-            executedBlock = if (executed) 12L else null,
-            executedTimestamp = if (executed) 1200L else null,
-            vechainTxId = if (executed) "0xexec" else "0xchaintx",
-            blockId = "0xblock",
-            blockNumber = if (executed) 12L else 10L,
-            blockTimestamp = if (executed) 1200L else 1000L,
-            version = 1,
-        )
-
-    private fun proposal() =
-        SafeTxProposal(
-            id = SafeTxProposal.buildId(safe, txHash),
-            safe = safe.lowercase(),
-            txHash = txHash.lowercase(),
-            proposer = owner.lowercase(),
-            proposedBlock = 8L,
-            proposedTimestamp = 800L,
-            proposedVechainTxId = "0xchainprop",
-            to = "0x2222222222222222222222222222222222222222",
-            value = BigInteger.ZERO,
-            data = "0x",
-            operation = 0,
-            nonce = BigInteger.ONE,
-            description = "test",
-            envelopeRecorded = true,
-            blockId = "0xblock",
-            blockNumber = 8L,
-            blockTimestamp = 800L,
-            version = 1,
+            blockNumber = 5L,
+            blockTimestamp = 500L,
         )
 
     @Test
-    fun `getSafesForOwner ALL queries findByOwner`() {
-        val pageableSlot = slot<Pageable>()
-        every { membershipRepository.findByOwner(owner.lowercase(), capture(pageableSlot)) } returns
-            SliceImpl(listOf(membership()))
+    fun `an owner's Safes are read with the scope and the normalised address`() {
+        every { repository.findMembershipsByOwner(any(), any(), any(), any(), any()) } returns
+            listOf(membership())
 
-        val pageable = PageRequest.of(0, 20)
-        val result: Slice<*> = service.getSafesForOwner(owner, SafeMembershipScope.ALL, pageable)
+        val page = service.getSafesForOwner(owner, SafeMembershipScope.PAST, pageable("addedBlock"))
 
-        assertEquals(1, result.content.size)
-        verify(exactly = 1) { membershipRepository.findByOwner(owner.lowercase(), pageable) }
+        assertEquals(1, page.content.size)
+        verify {
+            repository.findMembershipsByOwner(
+                owner.lowercase(),
+                SafeMembershipScope.PAST,
+                0,
+                21,
+                Direction.DESC,
+            )
+        }
     }
 
     @Test
-    fun `getSafesForOwner CURRENT queries findByOwnerAndRemovedBlockIsNull`() {
-        every {
-            membershipRepository.findByOwnerAndRemovedBlockIsNull(owner.lowercase(), any())
-        } returns SliceImpl(listOf(membership()))
+    fun `a Safe's proposals are paged newest first`() {
+        every { repository.findProposalsBySafe(any(), any(), any(), any()) } returns emptyList()
 
-        val result =
-            service.getSafesForOwner(owner, SafeMembershipScope.CURRENT, PageRequest.of(0, 20))
+        service.listProposals(safe.uppercase(), pageable("blockNumber"))
 
-        assertEquals(1, result.content.size)
-        assertNull(result.content.single().removedBlock)
+        verify { repository.findProposalsBySafe(safe, 0, 21, Direction.DESC) }
     }
 
     @Test
-    fun `getSafesForOwner PAST queries findByOwnerAndRemovedBlockIsNotNull`() {
-        every {
-            membershipRepository.findByOwnerAndRemovedBlockIsNotNull(owner.lowercase(), any())
-        } returns SliceImpl(listOf(membership(removed = 9L)))
+    fun `an unseen transaction reads back as an empty state, not as nothing`() {
+        every { repository.findTxState(any(), any()) } returns null
 
-        val result =
-            service.getSafesForOwner(owner, SafeMembershipScope.PAST, PageRequest.of(0, 20))
+        val state = service.getTxState(safe, txHash)
 
-        assertEquals(1, result.content.size)
-        assertEquals(9L, result.content.single().removedBlock)
+        assertEquals(SafeTxState.buildId(safe, txHash), state.id)
+        assertEquals(emptyList<SafeTxApproval>(), state.approvers)
+        assertFalse(state.executed)
+        assertEquals(0L, state.blockNumber)
     }
 
     @Test
-    fun `getTxState returns the doc when present`() {
-        val id = SafeTxState.buildId(safe, txHash)
-        every { txStateRepository.findById(id) } returns Optional.of(txState(executed = true))
+    fun `a known transaction reads back with its approvals`() {
+        val state =
+            SafeTxState(
+                id = SafeTxState.buildId(safe, txHash),
+                safe = safe,
+                txHash = txHash,
+                approvers = listOf(SafeTxApproval(owner.lowercase(), 5L, 500L, "0xtx")),
+                executed = true,
+                blockId = "0xblock",
+                blockNumber = 6L,
+                blockTimestamp = 600L,
+            )
+        every { repository.findTxState(safe, txHash) } returns state
 
-        val result = service.getTxState(safe, txHash)
+        val found = service.getTxState(safe, txHash)
 
-        assertTrue(result.executed)
-        assertFalse(result.failed)
-        assertEquals(safe.lowercase(), result.safe)
-        assertEquals(txHash.lowercase(), result.txHash)
+        assertTrue(found.executed)
+        assertEquals(1, found.approvers.size)
     }
 
     @Test
-    fun `getTxState returns an empty placeholder doc when missing`() {
-        val id = SafeTxState.buildId(safe, txHash)
-        every { txStateRepository.findById(id) } returns Optional.empty()
+    fun `the indexed head comes from the proxies`() {
+        every { repository.latestBlockNumber() } returns 42L
 
-        val result = service.getTxState(safe, txHash)
-
-        assertFalse(result.executed)
-        assertEquals(0, result.approvers.size)
-        assertNull(result.executor)
-        assertEquals(0L, result.blockNumber)
-        assertEquals(0, result.version)
-        assertEquals(safe.lowercase(), result.safe)
-        assertEquals(txHash.lowercase(), result.txHash)
-    }
-
-    @Test
-    fun `listProposals queries findBySafe with normalised safe address`() {
-        val pageableSlot = slot<Pageable>()
-        every { proposalRepository.findBySafe(safe.lowercase(), capture(pageableSlot)) } returns
-            SliceImpl(listOf(proposal()))
-
-        val result = service.listProposals(safe, PageRequest.of(0, 20))
-
-        assertEquals(1, result.content.size)
-        val mapped = result.content.single()
-        assertEquals(safe.lowercase(), mapped.safe)
-        assertEquals(txHash.lowercase(), mapped.txHash)
-        assertNotNull(mapped.value)
-        assertNotNull(mapped.nonce)
-        verify(exactly = 1) { proposalRepository.findBySafe(safe.lowercase(), any()) }
+        assertEquals(mapOf("Safe" to 42L), service.getLatestIndexedBlocks())
     }
 }

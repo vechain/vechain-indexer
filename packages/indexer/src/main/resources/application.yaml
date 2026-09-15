@@ -165,10 +165,7 @@ indexer:
     stargate-staking: ${INDEXER_START_BLOCK_STARGATE_STAKING:0}
     vet-delegated-by-block: ${INDEXER_START_BLOCK_VET_DELEGATED_BY_BLOCK:0}
     account-totals-series: ${INDEXER_START_BLOCK_ACCOUNT_TOTALS_SERIES:0}
-    safe-proxies: ${INDEXER_START_BLOCK_SAFE_PROXIES:0}
-    safe-membership: ${INDEXER_START_BLOCK_SAFE_MEMBERSHIP:0}
-    safe-tx-state: ${INDEXER_START_BLOCK_SAFE_TX_STATE:0}
-    safe-tx-proposals: ${INDEXER_START_BLOCK_SAFE_TX_PROPOSALS:0}
+    safe: ${INDEXER_START_BLOCK_SAFE:0}
   sync-log-interval: ${INDEXER_SYNC_LOG_INTERVAL:10}
   checkpoint:
     save-interval-seconds: ${INDEXER_CHECKPOINT_SAVE_INTERVAL_SECONDS:5}
@@ -218,10 +215,7 @@ indexer:
     account-totals-series: ${VERSION_ACCOUNT_TOTALS_SERIES:1}
     account-overview: ${VERSION_ACCOUNT_OVERVIEW:1}
     b3tr-balance: ${VERSION_B3TR_BALANCE:1}
-    safe-proxies: ${VERSION_SAFE_PROXIES:1}
-    safe-membership: ${VERSION_SAFE_MEMBERSHIP:1}
-    safe-tx-state: ${VERSION_SAFE_TX_STATE:1}
-    safe-tx-proposals: ${VERSION_SAFE_TX_PROPOSALS:1}
+    safe: ${VERSION_SAFE:1}
   healthcheck:
     inactive-threshold-syncing: ${HEALTHCHECK_INACTIVE_THRESHOLD_SYNCING:120}
     inactive-threshold-not-syncing: ${HEALTHCHECK_INACTIVE_THRESHOLD_NOT_SYNCING:600}

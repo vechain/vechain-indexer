@@ -1,17 +1,13 @@
 package org.vechain.indexer.safe
 
 import java.math.BigInteger
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.VersionedDocumentAccumulator
-import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.safe.repository.SafeProxyRepository
-import org.vechain.indexer.safe.repository.SafeTxProposalRepository
-import org.vechain.indexer.saveVersionedDocuments
+import org.vechain.indexer.safe.SafeEventUtils.PROPOSAL_EVENTS
+import org.vechain.indexer.safe.SafeEventUtils.addressParam
+import org.vechain.indexer.safe.SafeEventUtils.safeOf
 import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.EventUtils.groupByBlock
@@ -19,170 +15,124 @@ import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
-/**
- * Aggregates the three SafeEmitter events into one document per `(safe, txHash)`. The Safe address
- * comes from the indexed `safe` event parameter; `event.address` is the emitter contract.
- */
+/** Folds the three emitter events into one row; the emitter and the `safe` it names are checked. */
 @Profile("safe")
 @Service
 open class SafeTxProposalService(
-    private val repository: SafeTxProposalRepository,
-    private val safeProxyRepository: SafeProxyRepository,
-    private val mongoTemplate: MongoTemplate,
-    private val inlineVersioningProperties: InlineVersioningProperties,
+    private val repository: SafeWriteRepository,
+    @param:Value("\${business-event.substitutions.SAFE_EMITTER_CONTRACT}")
+    private val emitterAddress: String,
 ) {
 
     companion object {
         const val SAFE_TX_PROPOSED = "SafeTxProposed"
         const val SAFE_TX_HASH_FIELDS = "SafeTxHashFields"
         const val SAFE_BATCH_TX_PROPOSED = "SafeBatchTxProposed"
-
-        private val SUPPORTED_EVENTS =
-            setOf(SAFE_TX_PROPOSED, SAFE_TX_HASH_FIELDS, SAFE_BATCH_TX_PROPOSED)
     }
 
-    open fun processBlock(
-        events: List<IndexedEvent>
-    ): Pair<List<SafeTxProposal>, List<SafeTxProposal>> {
-        val proposalEvents = events.filter { it.eventType in SUPPORTED_EVENTS }
-        if (proposalEvents.isEmpty()) {
-            return emptyList<SafeTxProposal>() to emptyList()
+    /** The new row of each (safe, txHash) pair touched in each block, in ascending block order. */
+    open fun processEvents(
+        events: List<IndexedEvent>,
+        knownSafes: Set<String>,
+    ): List<SafeTxProposal> {
+        // The signature proves nothing: any contract can name someone else's Safe in one.
+        val relevant = events.filter {
+            it.eventType in PROPOSAL_EVENTS && isEmitter(it.address) && safeOf(it) in knownSafes
         }
+        if (relevant.isEmpty()) return emptyList()
 
-        // Defence-in-depth: SafeEmitter validates the caller is a Safe owner via `isOwner`, but
-        // `isOwner` is just an arbitrary view function — a non-Safe contract could fake it. Drop
-        // proposals whose indexed `safe` param isn't a registered Safe.
-        val verifiedEvents = filterByKnownSafes(proposalEvents)
-        if (verifiedEvents.isEmpty()) {
-            return emptyList<SafeTxProposal>() to emptyList()
-        }
+        val keys = relevant.mapNotNull(::keyOf).toSet()
+        // Carries each row across the entry's blocks, so a later block builds on the earlier one.
+        val current =
+            repository
+                .findCurrentProposals(keys)
+                .associateBy { it.safe to it.txHash }
+                .toMutableMap()
+        val rows = linkedMapOf<Triple<Long, String, String>, SafeTxProposal>()
 
-        val candidateIds = mutableSetOf<String>()
-        verifiedEvents.forEach { event ->
-            val id = buildIdOrNull(event) ?: return@forEach
-            candidateIds.add(id)
-        }
-        val preloaded =
-            if (candidateIds.isNotEmpty()) {
-                repository.findAllById(candidateIds).associateBy { it.getDocumentId() }
-            } else {
-                emptyMap()
+        groupByBlock(relevant).forEach { (blockDetails, blockEvents) ->
+            blockEvents.forEach { event ->
+                val (safe, txHash) = keyOf(event) ?: return@forEach
+                val updated = apply(event, safe, txHash, current[safe to txHash], blockDetails)
+                current[safe to txHash] = updated
+                rows[Triple(blockDetails.blockNumber, safe, txHash)] = updated
             }
-
-        val accumulator =
-            VersionedDocumentAccumulator<SafeTxProposal>(
-                findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) },
-                initialVersion = 1,
-            )
-
-        groupByBlock(verifiedEvents).forEach { (blockDetails, blockEvents) ->
-            accumulator.startBlock()
-            blockEvents.forEach { event -> applyEvent(event, blockDetails, accumulator) }
         }
-
-        return accumulator.results()
+        return rows.values.toList()
     }
 
-    private fun filterByKnownSafes(events: List<IndexedEvent>): List<IndexedEvent> {
-        val candidateSafes =
-            events
-                .mapNotNull { event ->
-                    event.params.getAsString("safe")?.let { HexUtils.normalise(it) }
-                }
-                .toSet()
-        if (candidateSafes.isEmpty()) return emptyList()
-        val knownSafes = safeProxyRepository.findAllById(candidateSafes).map { it.id }.toSet()
-        return events.filter { event ->
-            event.params.getAsString("safe")?.let { HexUtils.normalise(it) in knownSafes } == true
-        }
-    }
-
-    private fun applyEvent(
+    private fun apply(
         event: IndexedEvent,
-        blockDetails: BlockDetails,
-        accumulator: VersionedDocumentAccumulator<SafeTxProposal>,
-    ) {
-        val safe = event.params.getAsString("safe")?.let { HexUtils.normalise(it) } ?: return
-        val txHash = event.params.getAsString("txHash")?.let { HexUtils.normalise(it) } ?: return
-        val recordId = SafeTxProposal.buildId(safe, txHash)
-        val (existing, nextVersion) = accumulator.resolve(recordId)
-
+        safe: String,
+        txHash: String,
+        existing: SafeTxProposal?,
+        block: BlockDetails,
+    ): SafeTxProposal {
         val base =
             existing?.copy(
-                version = nextVersion,
-                blockId = blockDetails.blockId,
-                blockNumber = blockDetails.blockNumber,
-                blockTimestamp = blockDetails.blockTimestamp,
+                blockId = block.blockId,
+                blockNumber = block.blockNumber,
+                blockTimestamp = block.blockTimestamp,
             )
                 ?: SafeTxProposal(
-                    id = recordId,
+                    id = SafeTxProposal.buildId(safe, txHash),
                     safe = safe,
                     txHash = txHash,
-                    blockId = blockDetails.blockId,
-                    blockNumber = blockDetails.blockNumber,
-                    blockTimestamp = blockDetails.blockTimestamp,
-                    version = nextVersion,
+                    blockId = block.blockId,
+                    blockNumber = block.blockNumber,
+                    blockTimestamp = block.blockTimestamp,
                 )
 
-        when (event.eventType) {
-            SAFE_TX_PROPOSED -> applyProposed(base, event, blockDetails)
-            SAFE_TX_HASH_FIELDS -> applyHashFields(base, event)
-            SAFE_BATCH_TX_PROPOSED -> applyBatch(base, event)
+        return when (event.eventType) {
+            SAFE_TX_PROPOSED ->
+                base.copy(
+                    proposer = addressParam(event, "proposer"),
+                    proposedBlock = block.blockNumber,
+                    proposedTimestamp = block.blockTimestamp,
+                    proposedVechainTxId = HexUtils.normalise(event.txId),
+                    to = addressParam(event, "to"),
+                    value = event.params.getAsBigInteger("value"),
+                    data = event.params.getAsString("data"),
+                    operation = event.params.getAsInt("operation"),
+                    nonce = event.params.getAsBigInteger("nonce"),
+                    description =
+                        event.params
+                            .getAsString("description")
+                            ?.take(SafeTxProposal.DESCRIPTION_MAX_LENGTH),
+                )
+            SAFE_TX_HASH_FIELDS ->
+                base.copy(
+                    safeTxGas = event.params.getAsBigInteger("safeTxGas"),
+                    baseGas = event.params.getAsBigInteger("baseGas"),
+                    gasPrice = event.params.getAsBigInteger("gasPrice"),
+                    gasToken = addressParam(event, "gasToken"),
+                    refundReceiver = addressParam(event, "refundReceiver"),
+                )
+            else -> base.copy(subcalls = subcalls(event) ?: base.subcalls)
         }
-        accumulator.put(recordId, existing, base)
     }
 
-    private fun applyProposed(
-        base: SafeTxProposal,
-        event: IndexedEvent,
-        blockDetails: BlockDetails,
-    ) {
-        base.proposer = event.params.getAsString("proposer")?.let { HexUtils.normalise(it) }
-        base.proposedBlock = blockDetails.blockNumber
-        base.proposedTimestamp = blockDetails.blockTimestamp
-        base.proposedVechainTxId = event.txId
-        base.to = event.params.getAsString("to")?.let { HexUtils.normalise(it) }
-        base.value = event.params.getAsBigInteger("value")
-        base.data = event.params.getAsString("data")
-        base.operation = event.params.getAsInt("operation")
-        base.nonce = event.params.getAsBigInteger("nonce")
-        base.description =
-            event.params.getAsString("description")?.take(SafeTxProposal.DESCRIPTION_MAX_LENGTH)
-        base.envelopeRecorded = true
-    }
-
-    private fun applyHashFields(base: SafeTxProposal, event: IndexedEvent) {
-        base.safeTxGas = event.params.getAsBigInteger("safeTxGas")
-        base.baseGas = event.params.getAsBigInteger("baseGas")
-        base.gasPrice = event.params.getAsBigInteger("gasPrice")
-        base.gasToken = event.params.getAsString("gasToken")?.let { HexUtils.normalise(it) }
-        base.refundReceiver =
-            event.params.getAsString("refundReceiver")?.let { HexUtils.normalise(it) }
-        base.hashFieldsRecorded = true
-    }
-
-    private fun applyBatch(base: SafeTxProposal, event: IndexedEvent) {
-        val targets = event.params.params["targets"] as? List<*> ?: return
-        val values = event.params.params["values"] as? List<*> ?: return
-        val datas = event.params.params["datas"] as? List<*> ?: return
-        val operations = event.params.params["operations"] as? List<*> ?: return
-        val labels = event.params.params["labels"] as? List<*> ?: return
+    private fun subcalls(event: IndexedEvent): List<SafeSubcall>? {
+        val targets = event.params.params["targets"] as? List<*> ?: return null
+        val values = event.params.params["values"] as? List<*> ?: return null
+        val datas = event.params.params["datas"] as? List<*> ?: return null
+        val operations = event.params.params["operations"] as? List<*> ?: return null
+        val labels = event.params.params["labels"] as? List<*> ?: return null
         val len = targets.size
         if (
             values.size != len || datas.size != len || operations.size != len || labels.size != len
         ) {
-            return
+            return null
         }
-        base.subcalls =
-            (0 until len).map { i ->
-                SafeSubcall(
-                    target = HexUtils.normalise(targets[i].toString()),
-                    value = toBigInteger(values[i]),
-                    data = datas[i].toString(),
-                    operation = toInt(operations[i]),
-                    label = labels[i].toString(),
-                )
-            }
+        return (0 until len).map { i ->
+            SafeSubcall(
+                target = HexUtils.normalise(targets[i].toString()),
+                value = toBigInteger(values[i]),
+                data = datas[i].toString(),
+                operation = toInt(operations[i]),
+                label = labels[i].toString(),
+            )
+        }
     }
 
     private fun toBigInteger(v: Any?): BigInteger =
@@ -200,22 +150,12 @@ open class SafeTxProposalService(
             else -> 0
         }
 
-    private fun buildIdOrNull(event: IndexedEvent): String? {
-        val safe = event.params.getAsString("safe")?.let { HexUtils.normalise(it) } ?: return null
-        val txHash =
-            event.params.getAsString("txHash")?.let { HexUtils.normalise(it) } ?: return null
-        return SafeTxProposal.buildId(safe, txHash)
-    }
+    private fun isEmitter(address: String?): Boolean =
+        address != null && address.equals(emitterAddress, ignoreCase = true)
 
-    @Transactional(rollbackFor = [Exception::class])
-    open fun save(updated: List<SafeTxProposal>, existing: List<SafeTxProposal>) {
-        saveVersionedDocuments(
-            updated = updated,
-            existing = existing,
-            mongoTemplate = mongoTemplate,
-            blockWindow = inlineVersioningProperties.blockWindow,
-            maxVersions = inlineVersioningProperties.maxVersions,
-            minVersions = inlineVersioningProperties.minVersions,
-        )
+    private fun keyOf(event: IndexedEvent): Pair<String, String>? {
+        val safe = safeOf(event) ?: return null
+        val txHash = addressParam(event, "txHash") ?: return null
+        return safe to txHash
     }
 }
