@@ -96,14 +96,6 @@ class ProcessorTransactionalAnnotationsTest {
                 AccountsWriteRepository::class
                     .java
                     .getDeclaredMethod("save", AccountsUpdate::class.java),
-                AccountsWriteRepository::class
-                    .java
-                    .getDeclaredMethod(
-                        "settlePassiveVtho",
-                        String::class.java,
-                        java.lang.Long.TYPE,
-                        java.lang.Long.TYPE,
-                    ),
                 // The explorer indexer saves its three tables from the repository, not a service.
                 ExplorerWriteRepository::class
                     .java

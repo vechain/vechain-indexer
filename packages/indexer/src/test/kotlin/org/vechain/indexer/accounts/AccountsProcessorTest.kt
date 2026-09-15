@@ -1,10 +1,8 @@
 package org.vechain.indexer.accounts
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
-import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.verifyOrder
@@ -96,7 +94,7 @@ class AccountsProcessorTest {
     }
 
     @Test
-    fun `the Hayabusa settlement runs ahead of the block, whose tables are saved together`() {
+    fun `the fork block saves its tables and the settlement together`() {
         val block = BlockFixtures.BLOCK_NO_CLAUSES.copy(number = 1000L)
         val overview =
             AccountOverview(
@@ -110,7 +108,6 @@ class AccountsProcessorTest {
         val balance = VetBalance(alice, block.id, block.number, block.timestamp, BigInteger.ONE)
         val totals = AccountTotalsSeries(block.id, block.number, block.timestamp, 7)
         every { overviewService.isHayabusaBlock(1000L) } returns true
-        every { overviewService.settleHayabusa(block) } just Runs
         coEvery { overviewService.processBlock(block, emptyList()) } returns
             AccountOverviewService.Update(listOf(overview), listOf(balance))
         every { totalsService.processBlock(block, emptyList()) } returns
@@ -123,9 +120,15 @@ class AccountsProcessorTest {
         }
 
         verifyOrder {
-            overviewService.settleHayabusa(block)
             repository.save(
-                AccountsUpdate(1000L, listOf(overview), listOf(balance), listOf(alice), totals)
+                AccountsUpdate(
+                    1000L,
+                    listOf(overview),
+                    listOf(balance),
+                    listOf(alice),
+                    totals,
+                    HayabusaSettlement(block.id, block.timestamp),
+                )
             )
             totalsService.saved(totals)
         }
