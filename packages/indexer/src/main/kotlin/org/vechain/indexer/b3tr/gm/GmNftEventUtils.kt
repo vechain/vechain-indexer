@@ -20,11 +20,7 @@ object GmNftEventUtils {
      * @param tokenEvents List of IndexedEvent representing the token events to process.
      * @return The updated or newly created GmNft.
      */
-    fun processAllTokenEvents(
-        existing: GmNft?,
-        tokenEvents: List<IndexedEvent>,
-        version: Int,
-    ): GmNft {
+    fun processAllTokenEvents(existing: GmNft?, tokenEvents: List<IndexedEvent>): GmNft {
         require(tokenEvents.isNotEmpty()) { "No events provided" }
 
         val firstTokenId =
@@ -58,21 +54,18 @@ object GmNftEventUtils {
 
         val startingNft = existing ?: processMintedEvent(mintEvents.first())
 
-        val updatedNft =
-            tokenEvents.fold(startingNft) { nft, event ->
-                when (event.eventType) {
-                    "B3TR_GmTransfer",
-                    "B3TR_GmBurned" -> processTransferEvent(event, nft)
-                    "B3TR_GmUpgrade" -> processUpgradedEvent(event, nft)
-                    "B3TR_GmNodeAttached" -> processNodeAttachedEvent(event, nft)
-                    "B3TR_GmNodeDetached" -> processNodeDetachedEvent(event, nft)
-                    "B3TR_GmNodeLevel" -> processLevelCheckEvent(event, nft)
-                    "B3TR_GmMinted" -> nft // Already processed
-                    else -> error("Unknown event type ${event.eventType}")
-                }
+        return tokenEvents.fold(startingNft) { nft, event ->
+            when (event.eventType) {
+                "B3TR_GmTransfer",
+                "B3TR_GmBurned" -> processTransferEvent(event, nft)
+                "B3TR_GmUpgrade" -> processUpgradedEvent(event, nft)
+                "B3TR_GmNodeAttached" -> processNodeAttachedEvent(event, nft)
+                "B3TR_GmNodeDetached" -> processNodeDetachedEvent(event, nft)
+                "B3TR_GmNodeLevel" -> processLevelCheckEvent(event, nft)
+                "B3TR_GmMinted" -> nft // Already processed
+                else -> error("Unknown event type ${event.eventType}")
             }
-
-        return if (updatedNft == existing) updatedNft else updatedNft.copy(version = version)
+        }
     }
 
     /**
@@ -95,11 +88,10 @@ object GmNftEventUtils {
         val level = GmLevelName.EARTH
 
         return GmNft(
-            version = 0,
             blockId = event.blockId,
             blockNumber = event.blockNumber,
             blockTimestamp = event.blockTimestamp,
-            id = tokenId,
+            tokenId = tokenId,
             owner = owner,
             level = level,
             b3trDonated = BigInteger.ZERO,

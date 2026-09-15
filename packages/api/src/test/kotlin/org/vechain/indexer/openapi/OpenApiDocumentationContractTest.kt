@@ -12,6 +12,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.vechain.indexer.b3tr.gm.GmNftReadRepository
 import org.vechain.indexer.blocks.BlocksReadRepository
 import org.vechain.indexer.contracts.ContractReadRepository
 import org.vechain.indexer.history.HistoryReadRepository
@@ -43,6 +44,7 @@ class OpenApiDocumentationContractTest {
     @MockitoBean private lateinit var postgresReadRepository: BlocksReadRepository
     @MockitoBean private lateinit var nftReadRepository: NftReadRepository
     @MockitoBean private lateinit var contractReadRepository: ContractReadRepository
+    @MockitoBean private lateinit var gmNftReadRepository: GmNftReadRepository
     @MockitoBean private lateinit var historyReadRepository: HistoryReadRepository
     @MockitoBean private lateinit var validatorReadRepository: ValidatorReadRepository
     @MockitoBean private lateinit var validatorBlockReadRepository: ValidatorBlockReadRepository
