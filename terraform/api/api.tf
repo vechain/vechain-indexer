@@ -650,20 +650,12 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.account-totals-series
     },
     {
-      name  = "INDEXER_START_BLOCK_SAFE_PROXIES"
-      value = each.value.indexer.start-block.safe-proxies
+      name  = "INDEXER_START_BLOCK_SAFE"
+      value = each.value.indexer.start-block.safe
     },
     {
-      name  = "INDEXER_START_BLOCK_SAFE_MEMBERSHIP"
-      value = each.value.indexer.start-block.safe-membership
-    },
-    {
-      name  = "INDEXER_START_BLOCK_SAFE_TX_STATE"
-      value = each.value.indexer.start-block.safe-tx-state
-    },
-    {
-      name  = "INDEXER_START_BLOCK_SAFE_TX_PROPOSALS"
-      value = each.value.indexer.start-block.safe-tx-proposals
+      name  = "VERSION_SAFE"
+      value = each.value.indexer.version.safe
     },
     {
       name  = "BLACKLIST_CONTRACT_ADDRESS"

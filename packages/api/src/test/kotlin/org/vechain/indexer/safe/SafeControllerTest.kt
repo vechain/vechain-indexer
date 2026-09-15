@@ -84,7 +84,6 @@ internal class SafeControllerTest {
                 blockId = "",
                 blockNumber = 0L,
                 blockTimestamp = 0L,
-                version = 0,
             )
         every { safeService.getTxState(safe, txHash) } returns doc
 

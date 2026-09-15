@@ -3,10 +3,6 @@ package org.vechain.indexer.safe
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonView
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
-import org.vechain.indexer.IndexerNames
-import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.thor.model.Views
 
@@ -20,32 +16,24 @@ data class SafeTxApproval(
     val vechainTxId: String,
 )
 
-/**
- * Aggregated state of a Safe transaction (identified by Safe address + Safe `txHash`). One document
- * per (safe, txHash). Approvers are appended as `ApproveHash` events arrive; the execution status
- * is updated on `ExecutionSuccess` / `ExecutionFailure`.
- */
-@Document(collection = IndexerNames.SAFE_TX_STATE.COLLECTION)
+/** The approvals a Safe transaction has collected and whether it has run. */
 @JsonView(Views.Public::class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class SafeTxState(
-    @Id val id: String,
+    val id: String,
     val safe: String,
     val txHash: String,
-    var approvers: MutableList<SafeTxApproval> = mutableListOf(),
-    var executed: Boolean = false,
-    var executor: String? = null,
-    var executedBlock: Long? = null,
-    var executedTimestamp: Long? = null,
-    var vechainTxId: String? = null,
-    var failed: Boolean = false,
-    @JsonIgnore override var blockId: String,
-    @JsonIgnore override var blockNumber: Long,
-    @JsonIgnore override var blockTimestamp: Long,
-    @JsonIgnore @field:JsonView(Views.Internal::class) override val version: Int,
-) : VersionedDocument {
-    @JsonIgnore override fun getDocumentId(): String = id
-
+    val approvers: List<SafeTxApproval> = emptyList(),
+    val executed: Boolean = false,
+    val executor: String? = null,
+    val executedBlock: Long? = null,
+    val executedTimestamp: Long? = null,
+    val vechainTxId: String? = null,
+    val failed: Boolean = false,
+    @JsonIgnore val blockId: String,
+    @JsonIgnore val blockNumber: Long,
+    @JsonIgnore val blockTimestamp: Long,
+) {
     companion object {
         fun buildId(safe: String, txHash: String): String =
             "${HexUtils.normalise(safe)}_${HexUtils.normalise(txHash)}"

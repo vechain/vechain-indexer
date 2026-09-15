@@ -4,63 +4,52 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Service
-import org.vechain.indexer.safe.repository.SafeMembershipRepository
-import org.vechain.indexer.safe.repository.SafeTxProposalRepository
-import org.vechain.indexer.safe.repository.SafeTxStateRepository
+import org.vechain.indexer.IndexerService
 import org.vechain.indexer.thor.HexUtils
+import org.vechain.indexer.utils.PaginationUtils.offsetSlice
 
-/**
- * Read-only service backing the Safe API. Each public method maps directly to a single Mongo lookup
- * (one API call = one DB query, per AGENTS.md). No cross-collection joins.
- */
+/** Read-only service backing the Safe API; one endpoint is one query. */
 @Profile("safe")
 @Service
-open class SafeService(
-    private val membershipRepository: SafeMembershipRepository,
-    private val txStateRepository: SafeTxStateRepository,
-    private val proposalRepository: SafeTxProposalRepository,
-) {
+open class SafeService(private val repository: SafeReadRepository) : IndexerService {
 
     /** All memberships for an owner address, filtered by `scope`. */
     open fun getSafesForOwner(
         owner: String,
         scope: SafeMembershipScope,
         pageable: Pageable,
-    ): Slice<SafeMembership> {
-        val ownerNorm = HexUtils.normalise(owner)
-        return when (scope) {
-            SafeMembershipScope.ALL -> membershipRepository.findByOwner(ownerNorm, pageable)
-            SafeMembershipScope.CURRENT ->
-                membershipRepository.findByOwnerAndRemovedBlockIsNull(ownerNorm, pageable)
-            SafeMembershipScope.PAST ->
-                membershipRepository.findByOwnerAndRemovedBlockIsNotNull(ownerNorm, pageable)
+    ): Slice<SafeMembership> =
+        offsetSlice(pageable, SafeMembership::addedBlock.name) { offset, limit, direction ->
+            repository.findMembershipsByOwner(
+                HexUtils.normalise(owner),
+                scope,
+                offset,
+                limit,
+                direction,
+            )
         }
-    }
 
-    /** Paginated proposals for a Safe, sourced from the SafeEmitter indexer. */
-    open fun listProposals(safe: String, pageable: Pageable): Slice<SafeTxProposal> {
-        return proposalRepository.findBySafe(HexUtils.normalise(safe), pageable)
-    }
+    /** Paginated proposals for a Safe, sourced from the SafeEmitter events. */
+    open fun listProposals(safe: String, pageable: Pageable): Slice<SafeTxProposal> =
+        offsetSlice(pageable, SafeTxProposal::blockNumber.name) { offset, limit, direction ->
+            repository.findProposalsBySafe(HexUtils.normalise(safe), offset, limit, direction)
+        }
 
-    /**
-     * Single (safe, txHash) lookup. Returns an empty placeholder document when the (safe, txHash)
-     * has not been observed yet, so the dapp can render the same shape without falling back to RPC.
-     */
+    /** An unseen (safe, txHash) reads back empty, so the dapp never falls back to RPC. */
     open fun getTxState(safe: String, txHash: String): SafeTxState {
         val safeNorm = HexUtils.normalise(safe)
         val txHashNorm = HexUtils.normalise(txHash)
-        val id = SafeTxState.buildId(safeNorm, txHashNorm)
-        return txStateRepository.findById(id).orElseGet {
-            SafeTxState(
-                id = id,
+        return repository.findTxState(safeNorm, txHashNorm)
+            ?: SafeTxState(
+                id = SafeTxState.buildId(safeNorm, txHashNorm),
                 safe = safeNorm,
                 txHash = txHashNorm,
-                approvers = mutableListOf(),
                 blockId = "",
                 blockNumber = 0L,
                 blockTimestamp = 0L,
-                version = 0,
             )
-        }
     }
+
+    override fun getLatestIndexedBlocks(): Map<String, Long> =
+        mapOf("Safe" to repository.latestBlockNumber())
 }

@@ -58,7 +58,7 @@ open class SafeController(private val safeService: SafeService) {
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<SafeMembership> {
-        val pageable = PaginationUtils.toPageable(page, size, direction, "addedBlock", "_id")
+        val pageable = PaginationUtils.toPageable(page, size, direction, "addedBlock", "safe")
         return paginatedResponse(safeService.getSafesForOwner(address.value, membership, pageable))
     }
 
@@ -87,7 +87,7 @@ open class SafeController(private val safeService: SafeService) {
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<SafeTxProposal> {
-        val pageable = PaginationUtils.toPageable(page, size, direction, "blockNumber", "_id")
+        val pageable = PaginationUtils.toPageable(page, size, direction, "blockNumber", "txHash")
         return paginatedResponse(safeService.listProposals(safe.value, pageable))
     }
 

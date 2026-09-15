@@ -3,290 +3,154 @@ package org.vechain.indexer.safe
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import java.util.Optional
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.AbiEventParameters
+import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.safe.repository.SafeProxyRepository
-import org.vechain.indexer.safe.repository.SafeTxStateRepository
+import org.vechain.indexer.thor.HexUtils.toHex
 
 @ExtendWith(MockKExtension::class)
 internal class SafeTxStateServiceTest {
 
-    @MockK lateinit var repository: SafeTxStateRepository
-    @MockK lateinit var safeProxyRepository: SafeProxyRepository
-    @MockK lateinit var mongoTemplate: MongoTemplate
-    @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
+    @MockK lateinit var repository: SafeWriteRepository
 
     private val safe = "0x1111111111111111111111111111111111111111"
-    private val txHash = "0x" + "a".repeat(64)
-    private val ownerA = "0xAAAA111111111111111111111111111111111111"
-    private val ownerB = "0xBBBB222222222222222222222222222222222222"
+    private val txHash = "0x" + "aa".repeat(32)
+    private val ownerA = "0xaaaa111111111111111111111111111111111111"
+    private val ownerB = "0xbbbb222222222222222222222222222222222222"
+    private val executor = "0xeeee333333333333333333333333333333333333"
+    private val chainTx = "0x" + "cc".repeat(32)
+    private val known = setOf(safe)
 
     private lateinit var service: SafeTxStateService
 
     @BeforeEach
     fun setUp() {
-        service =
-            SafeTxStateService(
-                repository,
-                safeProxyRepository,
-                mongoTemplate,
-                inlineVersioningProperties,
-            )
-        every { repository.findById(any<String>()) } returns Optional.empty()
-        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
-        every { safeProxyRepository.findAllById(any<Iterable<String>>()) } answers
-            {
-                @Suppress("UNCHECKED_CAST")
-                (firstArg<Iterable<String>>()).map { id ->
-                    SafeProxy(
-                        id = id,
-                        singleton = "0xsingleton",
-                        createdBlock = 1L,
-                        createdTimestamp = 100L,
-                        vechainTxId = "0xtx",
-                        blockId = "0xblock",
-                        blockNumber = 1L,
-                        blockTimestamp = 100L,
-                        version = 1,
-                    )
-                }
-            }
+        every { repository.findCurrentTxStates(any()) } returns emptyList()
+        service = SafeTxStateService(repository)
     }
 
-    private fun approveHashEvent(
-        owner: String,
-        blockNumber: Long = 10L,
-        blockTimestamp: Long = 1000L,
-        blockId: String = "0xblock",
-        txId: String = "0xchaintx",
-    ) =
-        buildIndexedEvent(
-            blockId = blockId,
-            blockNumber = blockNumber,
-            blockTimestamp = blockTimestamp,
-            txId = txId,
-            eventType = SafeTxStateService.APPROVE_HASH,
-            address = safe,
-            params =
-                AbiEventParameters(
-                    returnValues = mapOf("approvedHash" to txHash, "owner" to owner)
-                ),
+    private fun approve(owner: String, blockNumber: Long = 10L, address: String = safe) =
+        event(
+            SafeTxStateService.APPROVE_HASH,
+            blockNumber,
+            address,
+            mapOf("approvedHash" to txHash, "owner" to owner),
         )
 
-    private fun executionSuccessEvent(
-        executor: String? = "0xEXECUTOR",
-        blockNumber: Long = 12L,
-        blockTimestamp: Long = 1200L,
-        blockId: String = "0xblock2",
-        txId: String = "0xchainexec",
-    ) =
+    private fun executed(type: String, blockNumber: Long = 12L) =
+        event(type, blockNumber, safe, mapOf("txHash" to txHash, "payment" to "0"))
+
+    private fun event(
+        type: String,
+        blockNumber: Long,
+        address: String,
+        params: Map<String, Any>,
+    ): IndexedEvent =
         buildIndexedEvent(
-            blockId = blockId,
+            blockId = toHex(blockNumber, 64),
             blockNumber = blockNumber,
-            blockTimestamp = blockTimestamp,
-            txId = txId,
-            origin = executor ?: "origin",
-            eventType = SafeTxStateService.EXECUTION_SUCCESS,
-            address = safe,
-            params = AbiEventParameters(returnValues = mapOf("txHash" to txHash, "payment" to "0")),
+            blockTimestamp = blockNumber * 100,
+            txId = chainTx,
+            origin = executor,
+            eventType = type,
+            address = address,
+            params = AbiEventParameters(returnValues = params),
         )
 
-    private fun executionFailureEvent(
-        executor: String? = "0xEXECUTOR",
-        blockNumber: Long = 12L,
-        blockTimestamp: Long = 1200L,
-        blockId: String = "0xblock2",
-        txId: String = "0xchainfail",
-    ) =
-        buildIndexedEvent(
-            blockId = blockId,
-            blockNumber = blockNumber,
-            blockTimestamp = blockTimestamp,
-            txId = txId,
-            origin = executor ?: "origin",
-            eventType = SafeTxStateService.EXECUTION_FAILURE,
-            address = safe,
-            params = AbiEventParameters(returnValues = mapOf("txHash" to txHash, "payment" to "0")),
+    private fun state(approvers: List<SafeTxApproval>, block: Long) =
+        SafeTxState(
+            id = SafeTxState.buildId(safe, txHash),
+            safe = safe,
+            txHash = txHash,
+            approvers = approvers,
+            blockId = toHex(block, 64),
+            blockNumber = block,
+            blockTimestamp = block * 100,
         )
 
     @Test
-    fun `processBlock with no relevant events returns empty`() {
-        val (updated, existing) = service.processBlock(emptyList())
-        assertEquals(0, updated.size)
-        assertEquals(0, existing.size)
+    fun `an approval opens the state and the next one is added to it`() {
+        val first = service.processEvents(listOf(approve(ownerA)), known).single()
+        assertEquals(listOf(ownerA), first.approvers.map { it.owner })
+        assertEquals(10L, first.approvers[0].block)
+        assertEquals(chainTx, first.approvers[0].vechainTxId)
+        assertFalse(first.executed)
+
+        every { repository.findCurrentTxStates(any()) } returns
+            listOf(state(first.approvers, block = 10))
+        val second = service.processEvents(listOf(approve(ownerB, 11)), known).single()
+        assertEquals(listOf(ownerA, ownerB), second.approvers.map { it.owner })
     }
 
     @Test
-    fun `ApproveHash creates a new tx state with one approver`() {
-        val (updated, archived) = service.processBlock(listOf(approveHashEvent(ownerA)))
+    fun `an owner who approves twice is still one approver`() {
+        val rows = service.processEvents(listOf(approve(ownerA), approve(ownerA, 11)), known)
 
-        assertEquals(1, updated.size)
-        assertEquals(0, archived.size)
-        val state = updated.single()
-        assertEquals(safe.lowercase(), state.safe)
-        assertEquals(txHash.lowercase(), state.txHash)
-        assertEquals(1, state.approvers.size)
-        assertEquals(ownerA.lowercase(), state.approvers.single().owner)
-        assertFalse(state.executed)
-        assertFalse(state.failed)
-        assertEquals(1, state.version)
+        assertEquals(listOf(1, 1), rows.map { it.approvers.size })
     }
 
     @Test
-    fun `Multiple approvals across blocks accumulate`() {
-        val (firstUpdated, _) = service.processBlock(listOf(approveHashEvent(ownerA)))
-        val firstState = firstUpdated.single()
-        every { repository.findAllById(any<Iterable<String>>()) } returns listOf(firstState)
-        every { repository.findById(firstState.id) } returns Optional.of(firstState)
+    fun `an execution records who ran it, and a failure says so`() {
+        val success =
+            service
+                .processEvents(
+                    listOf(approve(ownerA), executed(SafeTxStateService.EXECUTION_SUCCESS)),
+                    known,
+                )
+                .last()
+        assertTrue(success.executed)
+        assertFalse(success.failed)
+        assertEquals(executor, success.executor)
+        assertEquals(12L, success.executedBlock)
+        assertEquals(chainTx, success.vechainTxId)
 
-        val (secondUpdated, archived) =
-            service.processBlock(
-                listOf(approveHashEvent(ownerB, blockNumber = 11L, txId = "0xtx2"))
+        val failure =
+            service
+                .processEvents(listOf(executed(SafeTxStateService.EXECUTION_FAILURE)), known)
+                .single()
+        assertTrue(failure.executed)
+        assertTrue(failure.failed)
+    }
+
+    @Test
+    fun `an approval and the execution in one block collapse into one row`() {
+        val rows =
+            service.processEvents(
+                listOf(approve(ownerA, 20), executed(SafeTxStateService.EXECUTION_SUCCESS, 20)),
+                known,
             )
 
-        assertEquals(1, secondUpdated.size)
-        assertEquals(1, archived.size)
-        val state = secondUpdated.single()
-        assertEquals(2, state.approvers.size)
-        assertEquals(2, state.version)
+        assertEquals(1, rows.size)
+        assertEquals(listOf(ownerA), rows[0].approvers.map { it.owner })
+        assertTrue(rows[0].executed)
     }
 
     @Test
-    fun `Duplicate ApproveHash from same owner is ignored`() {
-        val (firstUpdated, _) = service.processBlock(listOf(approveHashEvent(ownerA)))
-        val firstState = firstUpdated.single()
-        every { repository.findAllById(any<Iterable<String>>()) } returns listOf(firstState)
-        every { repository.findById(firstState.id) } returns Optional.of(firstState)
-
-        val (secondUpdated, secondArchived) =
-            service.processBlock(
-                listOf(approveHashEvent(ownerA, blockNumber = 11L, txId = "0xtxdup"))
+    fun `an approval and the execution in later blocks of one entry stay on one state`() {
+        val rows =
+            service.processEvents(
+                listOf(approve(ownerA, 20), executed(SafeTxStateService.EXECUTION_SUCCESS, 21)),
+                known,
             )
 
-        assertEquals(0, secondUpdated.size)
-        assertEquals(0, secondArchived.size)
+        assertEquals(listOf(20L, 21L), rows.map { it.blockNumber })
+        assertEquals(listOf(ownerA), rows.last().approvers.map { it.owner })
+        assertTrue(rows.last().executed)
     }
 
     @Test
-    fun `ExecutionSuccess marks the tx as executed and records executor`() {
-        val (updated, _) = service.processBlock(listOf(executionSuccessEvent()))
-        val state = updated.single()
-        assertTrue(state.executed)
-        assertFalse(state.failed)
-        assertEquals(12L, state.executedBlock)
-        assertNotNull(state.executor)
-        assertEquals("0xexecutor", state.executor)
-        assertEquals("0xchainexec", state.vechainTxId)
-    }
+    fun `an event from an address the factory never deployed is dropped`() {
+        val stranger = "0x9999999999999999999999999999999999999999"
 
-    @Test
-    fun `ExecutionFailure marks the tx as executed and failed`() {
-        val (updated, _) = service.processBlock(listOf(executionFailureEvent()))
-        val state = updated.single()
-        assertTrue(state.executed)
-        assertTrue(state.failed)
-        assertEquals("0xchainfail", state.vechainTxId)
-    }
-
-    @Test
-    fun `Approval and execution in the same block collapse into one current state`() {
-        val approval = approveHashEvent(ownerA, blockNumber = 10L, blockId = "0xblock")
-        val exec = executionSuccessEvent(blockNumber = 10L, blockId = "0xblock")
-        val (updated, _) = service.processBlock(listOf(approval, exec))
-        assertEquals(1, updated.size)
-        val state = updated.single()
-        assertEquals(1, state.approvers.size)
-        assertTrue(state.executed)
-    }
-
-    @Test
-    fun `tx hash on ExecutionSuccess uses txHash param not approvedHash`() {
-        val (updated, _) = service.processBlock(listOf(executionSuccessEvent()))
-        assertEquals(txHash.lowercase(), updated.single().txHash)
-    }
-
-    @Test
-    fun `Events without a Safe address are skipped`() {
-        val event =
-            buildIndexedEvent(
-                blockId = "0xblock",
-                blockNumber = 10L,
-                blockTimestamp = 1000L,
-                eventType = SafeTxStateService.APPROVE_HASH,
-                address = null,
-                params =
-                    AbiEventParameters(
-                        returnValues = mapOf("approvedHash" to txHash, "owner" to ownerA)
-                    ),
-            )
-        val (updated, _) = service.processBlock(listOf(event))
-        assertEquals(0, updated.size)
-    }
-
-    @Test
-    fun `Unknown event type is ignored`() {
-        val event =
-            buildIndexedEvent(
-                blockId = "0xblock",
-                blockNumber = 10L,
-                blockTimestamp = 1000L,
-                eventType = "SomeOtherEvent",
-                address = safe,
-                params = AbiEventParameters(returnValues = mapOf("txHash" to txHash)),
-            )
-        val (updated, _) = service.processBlock(listOf(event))
-        assertEquals(0, updated.size)
-    }
-
-    @Test
-    fun `Events from addresses not registered in the SafeProxy collection are dropped`() {
-        every { safeProxyRepository.findAllById(any<Iterable<String>>()) } answers
-            {
-                @Suppress("UNCHECKED_CAST")
-                (firstArg<Iterable<String>>())
-                    .filter { it.equals(safe.lowercase(), ignoreCase = true) }
-                    .map { id ->
-                        SafeProxy(
-                            id = id,
-                            singleton = "0xsingleton",
-                            createdBlock = 1L,
-                            createdTimestamp = 100L,
-                            vechainTxId = "0xtx",
-                            blockId = "0xblock",
-                            blockNumber = 1L,
-                            blockTimestamp = 100L,
-                            version = 1,
-                        )
-                    }
-            }
-
-        val realSafeEvent = approveHashEvent(ownerA)
-        val nonSafeEvent =
-            buildIndexedEvent(
-                blockId = "0xblock",
-                blockNumber = 11L,
-                blockTimestamp = 1100L,
-                eventType = SafeTxStateService.APPROVE_HASH,
-                address = "0xC0FFEE0000000000000000000000000000000000",
-                params =
-                    AbiEventParameters(
-                        returnValues = mapOf("approvedHash" to txHash, "owner" to ownerA)
-                    ),
-            )
-
-        val (updated, _) = service.processBlock(listOf(realSafeEvent, nonSafeEvent))
-
-        assertEquals(1, updated.size)
-        assertEquals(safe.lowercase(), updated.single().safe)
+        assertEquals(
+            emptyList<SafeTxState>(),
+            service.processEvents(listOf(approve(ownerA, address = stranger)), known),
+        )
     }
 }

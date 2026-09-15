@@ -3,295 +3,133 @@ package org.vechain.indexer.safe
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import java.util.Optional
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.AbiEventParameters
+import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.safe.repository.SafeMembershipRepository
-import org.vechain.indexer.safe.repository.SafeProxyRepository
+import org.vechain.indexer.thor.HexUtils.toHex
 
 @ExtendWith(MockKExtension::class)
 internal class SafeMembershipServiceTest {
 
-    @MockK lateinit var repository: SafeMembershipRepository
-    @MockK lateinit var safeProxyRepository: SafeProxyRepository
-    @MockK lateinit var mongoTemplate: MongoTemplate
-    @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
+    @MockK lateinit var repository: SafeWriteRepository
 
     private val safe = "0x1111111111111111111111111111111111111111"
-    private val ownerA = "0xAAAA111111111111111111111111111111111111"
-    private val ownerB = "0xBBBB222222222222222222222222222222222222"
+    private val ownerA = "0xaaaa111111111111111111111111111111111111"
+    private val ownerB = "0xbbbb222222222222222222222222222222222222"
+    private val known = setOf(safe)
 
     private lateinit var service: SafeMembershipService
 
     @BeforeEach
     fun setUp() {
-        service =
-            SafeMembershipService(
-                repository,
-                safeProxyRepository,
-                mongoTemplate,
-                inlineVersioningProperties,
-            )
-        every { repository.findById(any<String>()) } returns Optional.empty()
-        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
-        every { safeProxyRepository.findAllById(any<Iterable<String>>()) } answers
-            {
-                @Suppress("UNCHECKED_CAST")
-                (firstArg<Iterable<String>>()).map { id ->
-                    SafeProxy(
-                        id = id,
-                        singleton = "0xsingleton",
-                        createdBlock = 1L,
-                        createdTimestamp = 100L,
-                        vechainTxId = "0xtx",
-                        blockId = "0xblock",
-                        blockNumber = 1L,
-                        blockTimestamp = 100L,
-                        version = 1,
-                    )
-                }
-            }
+        every { repository.findCurrentMemberships(any()) } returns emptyList()
+        service = SafeMembershipService(repository)
     }
 
-    private fun safeSetupEvent(
+    private fun event(
+        type: String,
         owners: List<String>,
-        blockNumber: Long = 10L,
-        blockTimestamp: Long = 1000L,
-        blockId: String = "0xblock",
-    ) =
+        blockNumber: Long,
+        address: String = safe,
+    ): IndexedEvent =
         buildIndexedEvent(
-            blockId = blockId,
+            blockId = toHex(blockNumber, 64),
             blockNumber = blockNumber,
-            blockTimestamp = blockTimestamp,
-            eventType = SafeMembershipService.SAFE_SETUP,
-            address = safe,
+            blockTimestamp = blockNumber * 100,
+            eventType = type,
+            address = address,
             params =
                 AbiEventParameters(
                     returnValues =
-                        mapOf(
-                            "initiator" to "0xinitiator",
-                            "owners" to owners,
-                            "threshold" to "1",
-                            "initializer" to "0xinitializer",
-                            "fallbackHandler" to "0xfallback",
-                        )
+                        if (type == SafeMembershipService.SAFE_SETUP) mapOf("owners" to owners)
+                        else mapOf("owner" to owners.single())
                 ),
         )
 
-    private fun addedOwnerEvent(
-        owner: String,
-        blockNumber: Long = 11L,
-        blockTimestamp: Long = 1100L,
-        blockId: String = "0xblock2",
-    ) =
-        buildIndexedEvent(
-            blockId = blockId,
-            blockNumber = blockNumber,
-            blockTimestamp = blockTimestamp,
-            eventType = SafeMembershipService.ADDED_OWNER,
-            address = safe,
-            params = AbiEventParameters(returnValues = mapOf("owner" to owner)),
-        )
+    private fun setup(owners: List<String>, block: Long = 10L) =
+        event(SafeMembershipService.SAFE_SETUP, owners, block)
 
-    private fun removedOwnerEvent(
-        owner: String,
-        blockNumber: Long = 12L,
-        blockTimestamp: Long = 1200L,
-        blockId: String = "0xblock3",
-    ) =
-        buildIndexedEvent(
-            blockId = blockId,
-            blockNumber = blockNumber,
-            blockTimestamp = blockTimestamp,
-            eventType = SafeMembershipService.REMOVED_OWNER,
-            address = safe,
-            params = AbiEventParameters(returnValues = mapOf("owner" to owner)),
+    private fun added(owner: String, block: Long = 11L, address: String = safe) =
+        event(SafeMembershipService.ADDED_OWNER, listOf(owner), block, address)
+
+    private fun removed(owner: String, block: Long = 12L) =
+        event(SafeMembershipService.REMOVED_OWNER, listOf(owner), block)
+
+    private fun membership(owner: String, block: Long, removedBlock: Long? = null) =
+        SafeMembership(
+            id = SafeMembership.buildId(safe, owner),
+            safe = safe,
+            owner = owner,
+            addedBlock = block,
+            addedTimestamp = block * 100,
+            removedBlock = removedBlock,
+            removedTimestamp = removedBlock?.times(100),
+            blockId = toHex(block, 64),
+            blockNumber = block,
+            blockTimestamp = block * 100,
         )
 
     @Test
-    fun `processBlock with no relevant events returns empty`() {
-        val (updated, existing) = service.processBlock(emptyList())
-        assertEquals(0, updated.size)
-        assertEquals(0, existing.size)
+    fun `a setup opens one membership per owner and an add opens another`() {
+        val rows =
+            service.processEvents(listOf(setup(listOf(ownerA, ownerB)), added(ownerB)), known)
+
+        assertEquals(3, rows.size)
+        assertEquals(listOf(ownerA, ownerB, ownerB), rows.map { it.owner })
+        assertEquals(listOf(10L, 10L, 11L), rows.map { it.blockNumber })
+        assertEquals(SafeMembership.buildId(safe, ownerA), rows[0].id)
+        assertNull(rows[0].removedBlock)
     }
 
     @Test
-    fun `SafeSetup creates one membership per owner with version 1`() {
-        val event = safeSetupEvent(listOf(ownerA, ownerB))
-        val (updated, existing) = service.processBlock(listOf(event))
+    fun `a removal ends the membership the schema holds and a re-add restarts it`() {
+        every { repository.findCurrentMemberships(any()) } returns
+            listOf(membership(ownerA, block = 10))
 
-        assertEquals(2, updated.size)
-        assertEquals(0, existing.size)
-        val byOwner = updated.associateBy { it.owner }
-        val a = byOwner[ownerA.lowercase()]!!
-        val b = byOwner[ownerB.lowercase()]!!
-        assertEquals(safe.lowercase(), a.safe)
-        assertEquals(10L, a.addedBlock)
-        assertEquals(1000L, a.addedTimestamp)
-        assertNull(a.removedBlock)
-        assertEquals(1, a.version)
-        assertEquals(SafeMembership.buildId(safe, ownerA), a.id)
-        assertEquals(SafeMembership.buildId(safe, ownerB), b.id)
+        val removedRow = service.processEvents(listOf(removed(ownerA)), known).single()
+        assertEquals(10L, removedRow.addedBlock)
+        assertEquals(12L, removedRow.removedBlock)
+        assertEquals(1200L, removedRow.removedTimestamp)
+
+        every { repository.findCurrentMemberships(any()) } returns
+            listOf(membership(ownerA, block = 10, removedBlock = 12))
+        val reAdded = service.processEvents(listOf(added(ownerA, block = 14)), known).single()
+        assertEquals(14L, reAdded.addedBlock)
+        assertNull(reAdded.removedBlock)
+        assertNull(reAdded.removedTimestamp)
     }
 
     @Test
-    fun `AddedOwner creates a single membership when not previously known`() {
-        val (updated, existing) = service.processBlock(listOf(addedOwnerEvent(ownerA)))
+    fun `an add and a removal in one block collapse into the block's last state`() {
+        val rows = service.processEvents(listOf(added(ownerA, 20), removed(ownerA, 20)), known)
 
-        assertEquals(1, updated.size)
-        assertEquals(0, existing.size)
-        val record = updated.single()
-        assertEquals(ownerA.lowercase(), record.owner)
-        assertEquals(1, record.version)
-        assertNull(record.removedBlock)
+        assertEquals(1, rows.size)
+        assertEquals(20L, rows[0].addedBlock)
+        assertEquals(20L, rows[0].removedBlock)
     }
 
     @Test
-    fun `RemovedOwner archives an existing membership and bumps version`() {
-        val recordId = SafeMembership.buildId(safe, ownerA)
-        val initial =
-            SafeMembership(
-                id = recordId,
-                safe = safe.lowercase(),
-                owner = ownerA.lowercase(),
-                addedBlock = 5L,
-                addedTimestamp = 500L,
-                blockId = "0xinitial",
-                blockNumber = 5L,
-                blockTimestamp = 500L,
-                version = 1,
-            )
-        every { repository.findAllById(any<Iterable<String>>()) } returns listOf(initial)
-        every { repository.findById(recordId) } returns Optional.of(initial)
+    fun `a removal in a later block of one entry keeps the block the owner was added in`() {
+        val rows = service.processEvents(listOf(added(ownerA, 11), removed(ownerA, 12)), known)
 
-        val (updated, archived) = service.processBlock(listOf(removedOwnerEvent(ownerA)))
-
-        assertEquals(1, updated.size)
-        assertEquals(1, archived.size)
-        val u = updated.single()
-        assertEquals(12L, u.removedBlock)
-        assertEquals(1200L, u.removedTimestamp)
-        assertEquals(2, u.version)
-        // Archived record is the prior state
-        assertEquals(1, archived.single().version)
-        assertNull(archived.single().removedBlock)
+        assertEquals(listOf(11L, 12L), rows.map { it.blockNumber })
+        assertEquals(11L, rows.last().addedBlock)
+        assertEquals(12L, rows.last().removedBlock)
     }
 
     @Test
-    fun `Re-added owner clears removedBlock and bumps version`() {
-        val recordId = SafeMembership.buildId(safe, ownerA)
-        val initial =
-            SafeMembership(
-                id = recordId,
-                safe = safe.lowercase(),
-                owner = ownerA.lowercase(),
-                addedBlock = 5L,
-                addedTimestamp = 500L,
-                removedBlock = 8L,
-                removedTimestamp = 800L,
-                blockId = "0xprev",
-                blockNumber = 8L,
-                blockTimestamp = 800L,
-                version = 2,
-            )
-        every { repository.findAllById(any<Iterable<String>>()) } returns listOf(initial)
-        every { repository.findById(recordId) } returns Optional.of(initial)
+    fun `an event from an address the factory never deployed is dropped`() {
+        val stranger = "0x9999999999999999999999999999999999999999"
 
-        val (updated, archived) = service.processBlock(listOf(addedOwnerEvent(ownerA)))
-
-        assertEquals(1, updated.size)
-        assertEquals(1, archived.size)
-        val u = updated.single()
-        assertNull(u.removedBlock)
-        assertNull(u.removedTimestamp)
-        assertEquals(11L, u.addedBlock)
-        assertEquals(3, u.version)
-    }
-
-    @Test
-    fun `Adds and removes in the same block produce an archived first version and a current second version`() {
-        val event1 =
-            addedOwnerEvent(ownerA, blockNumber = 10L, blockId = "0xblock", blockTimestamp = 1000L)
-        val event2 =
-            removedOwnerEvent(
-                ownerA,
-                blockNumber = 10L,
-                blockId = "0xblock",
-                blockTimestamp = 1000L,
-            )
-
-        val (updated, _) = service.processBlock(listOf(event1, event2))
-
-        // The accumulator collapses both updates into one current document; the archived list
-        // captures the intermediate v1 state.
-        assertEquals(1, updated.size)
-        val u = updated.single()
-        assertNotNull(u.removedBlock)
-        assertEquals(10L, u.removedBlock)
-    }
-
-    @Test
-    fun `Address field on the event identifies the Safe`() {
-        val event =
-            buildIndexedEvent(
-                blockId = "0xblock",
-                blockNumber = 10L,
-                blockTimestamp = 1000L,
-                eventType = SafeMembershipService.ADDED_OWNER,
-                address = "0xANOTHERSAFE2222222222222222222222222222",
-                params = AbiEventParameters(returnValues = mapOf("owner" to ownerA)),
-            )
-
-        val (updated, _) = service.processBlock(listOf(event))
-        assertEquals(1, updated.size)
-        assertEquals("0xanothersafe2222222222222222222222222222", updated.single().safe)
-    }
-
-    @Test
-    fun `Events from addresses not registered in the SafeProxy collection are dropped`() {
-        // Override the default lenient mock to return only `safe` as a known proxy.
-        every { safeProxyRepository.findAllById(any<Iterable<String>>()) } answers
-            {
-                @Suppress("UNCHECKED_CAST")
-                (firstArg<Iterable<String>>())
-                    .filter { it.equals(safe.lowercase(), ignoreCase = true) }
-                    .map { id ->
-                        SafeProxy(
-                            id = id,
-                            singleton = "0xsingleton",
-                            createdBlock = 1L,
-                            createdTimestamp = 100L,
-                            vechainTxId = "0xtx",
-                            blockId = "0xblock",
-                            blockNumber = 1L,
-                            blockTimestamp = 100L,
-                            version = 1,
-                        )
-                    }
-            }
-
-        val realSafeEvent = addedOwnerEvent(ownerA)
-        val nonSafeEvent =
-            buildIndexedEvent(
-                blockId = "0xblock",
-                blockNumber = 11L,
-                blockTimestamp = 1100L,
-                eventType = SafeMembershipService.ADDED_OWNER,
-                address = "0xC0FFEE0000000000000000000000000000000000",
-                params = AbiEventParameters(returnValues = mapOf("owner" to ownerB)),
-            )
-
-        val (updated, _) = service.processBlock(listOf(realSafeEvent, nonSafeEvent))
-
-        assertEquals(1, updated.size)
-        assertEquals(safe.lowercase(), updated.single().safe)
+        assertEquals(
+            emptyList<SafeMembership>(),
+            service.processEvents(listOf(added(ownerA, address = stranger)), known),
+        )
+        assertEquals(emptyList<SafeMembership>(), service.processEvents(emptyList(), known))
     }
 }
