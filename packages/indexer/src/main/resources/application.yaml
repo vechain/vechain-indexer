@@ -43,7 +43,6 @@ logging:
         '*': ${APP_LOG_LEVEL:INFO}
       springframework:
         data: INFO
-      mongodb.driver.protocol.command: ${MONGO_DRIVER_LOG_LEVEL:INFO}
 
 management:
   endpoints:
@@ -58,7 +57,7 @@ management:
         liveness:
           include: ping
         readiness:
-          include: mongo,indexBootstrap,indexer
+          include: indexBootstrap,indexer
   metrics:
     tags:
       indexer-id: ${METRICS_ID:local-indexer}
@@ -72,10 +71,6 @@ management:
       export:
         enabled: ${PROMETHEUS_METRICS_ENABLED:true}
         step: 10s
-
-spring.data:
-  mongodb:
-    uri: ${MONGO_URI:mongodb://indexer:password@localhost:27017/vechain?authSource=admin}
 
 postgres:
   url: ${PG_URL:}

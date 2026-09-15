@@ -92,11 +92,11 @@ run-api: build-api #@ Run the api locally.
 
 # All
 start: #@ Remove, clean and start all the infrastructure and the application.
-	make db-up db-setup pg-up app-up
+	make pg-up app-up
 clean: #@ Clean all the infrastructure and the application data.
-	make app-down db-clean pg-clean
+	make app-down pg-clean
 down: #@ Stop all the infrastructure and the application.
-	make app-down db-down pg-down
+	make app-down pg-down
 
 # Application
 ensure-gradle-props:
@@ -118,44 +118,13 @@ app-logs: #@ Attach to the application logs.
 refresh-token-registry: #@ Refresh bundled token registry files from vechain.github.io.
 	bash packages/api/scripts/refresh_token_registry.sh
 
-# Database
-DB_COMMAND=docker compose -f database/docker-compose-mongo.yaml
-DB_MAKE_KEY=mkdir -p database/keys && [ -f database/keys/keyfile ] || openssl rand -base64 756 > database/keys/keyfile
-DB_REMOVE_KEY=rm -f -R database/keys
-DB_SETUP_COMMAND=docker compose -p database-setup -f database/docker-compose-mongo-setup.yaml
-MONGO_URL=mongodb://indexer:password@localhost:27017/vechain?authSource=admin
-BACKUP_DIR ?= $(PWD)/database/backups
-
-db-all: #@ Remove, clean and start the database (Docker).
-	make db-clean db-up db-setup
-db-up: db-keyfile-create #@ Start all the database (Docker)
-	$(DB_COMMAND) up -d --wait
-db-setup: db-up #@ Setup all the database (Docker)
-	@status=0; \
-	$(DB_SETUP_COMMAND) up --build --abort-on-container-exit --exit-code-from mongo-setup || status=$$?; \
-	if [ $$status -ne 0 ]; then \
-		echo "Mongo setup failed. Database container status:" >&2; \
-		$(DB_COMMAND) ps || true; \
-		echo "Recent mongo-node1 logs:" >&2; \
-		$(DB_COMMAND) logs --tail=200 mongo-node1 || true; \
-	fi; \
-	$(DB_SETUP_COMMAND) rm --force; \
-	exit $$status
-db-clean: #@ Clean all the database data (Docker)
-	$(DB_COMMAND) down -v --remove-orphans;
-db-down: #@ Stop all the database (Docker)
-	$(DB_COMMAND) down
-db-keyfile-create: #@ Generate the keyfile for the database.
-	$(DB_MAKE_KEY)
-db-keyfile-remove: #@ Remove the keyfile for the database.
-	$(DB_REMOVE_KEY)
-
 # PostgreSQL
 PG_COMMAND=docker compose -f database/docker-compose-postgres.yaml
 PG_NETWORK=docker network inspect vechain-indexer-network >/dev/null 2>&1 || docker network create vechain-indexer-network
 
-pg-up: #@ Start PostgreSQL (Docker)
+pg-network: #@ Create the shared docker network the compose stacks attach to.
 	$(PG_NETWORK)
+pg-up: pg-network #@ Start PostgreSQL (Docker)
 	$(PG_COMMAND) up -d --wait
 pg-down: #@ Stop PostgreSQL (Docker)
 	$(PG_COMMAND) down
@@ -163,24 +132,3 @@ pg-clean: #@ Remove PostgreSQL and its data (Docker)
 	$(PG_COMMAND) down -v --remove-orphans
 pg-psql: #@ Open psql against the local PostgreSQL as the indexer role.
 	docker exec -it $$($(PG_COMMAND) ps -q postgres) psql -U indexer -d vechain
-db-backup: #@ Backup MongoDB database using Docker (Compressed). Usage: make db-backup [BACKUP_DIR=/absolute/path/to/dir]
-	@case "$(BACKUP_DIR)" in /*) ;; *) echo "Error: BACKUP_DIR must be an absolute path. Got: $(BACKUP_DIR)"; exit 1;; esac
-	mkdir -p "$(BACKUP_DIR)"
-	echo "Use the command 'docker log --tail 100 -f mongo-backup' to see the progress"
-	docker rm -f mongo-backup 2>/dev/null || true
-	docker run --name mongo-backup -d --network=host -v "$(BACKUP_DIR):/backup" -u $(shell id -u):$(shell id -g) mongo:8 mongodump --uri="$(MONGO_URL)" --gzip --archive="/backup/veworld-db-$$(date +%Y%m%d%H%M%S).gz"
-db-restore: #@ Restore MongoDB database from a backup file. Usage: make db-restore FILE=/absolute/path/to/backup.gz
-	@if [ -z "$(FILE)" ]; then \
-		echo "Error: FILE is required. Usage: make db-restore FILE=/absolute/path/to/backup.gz"; \
-		exit 1; \
-	fi
-	@case "$(FILE)" in /*) ;; *) echo "Error: FILE must be an absolute path. Got: $(FILE)"; exit 1;; esac
-	@if [ ! -f "$(FILE)" ] || [ ! -r "$(FILE)" ]; then \
-		echo "Error: FILE must exist and be a readable file. Got: $(FILE)"; \
-		exit 1; \
-	fi
-	echo "Use the command 'docker log --tail 100 -f mongo-restore' to see the progress"
-	docker rm -f mongo-restore 2>/dev/null || true
-	docker run --name mongo-restore -d --network=host -v "$(FILE):/backup/backup.gz" -u $(shell id -u):$(shell id -g) mongo:8 mongorestore --uri="$(MONGO_URL)" --drop --gzip --archive="/backup/backup.gz" --numInsertionWorkersPerCollection 16
-db-copy-collections: #@ Copy specific MongoDB collections between two clusters. Interactive. See database/restore/README.md.
-	database/restore/restore.sh

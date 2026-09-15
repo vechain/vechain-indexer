@@ -99,7 +99,7 @@ data class ValidatorAggregates(
 
 /**
  * Enum-resolved view of [DelegationLevelFacet]. The repository returns the enum fields as `String`
- * to keep Spring Data MongoDB aggregation deserialization predictable; this type is the in-memory
+ * so that an unrecognised enum value cannot fail the whole query; this type is the parsed in-memory
  * form consumed by [ValidatorAggregates]. Facets whose `tokenLevel` or `status` doesn't parse to a
  * known enum value are dropped at the boundary in [ValidatorAggregateService.build].
  */

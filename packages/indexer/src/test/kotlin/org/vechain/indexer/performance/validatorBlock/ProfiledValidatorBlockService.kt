@@ -32,6 +32,6 @@ class ProfiledValidatorBlockService(
         }
 
     override fun save(records: List<ValidatorBlock>) {
-        profiler.time("      ValidatorBlockService.save (MongoDB)") { super.save(records) }
+        profiler.time("      ValidatorBlockService.save") { super.save(records) }
     }
 }

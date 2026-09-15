@@ -154,8 +154,7 @@ data class ProfilingResults(val operations: List<OperationStats>) {
             println("\n💡 RECOMMENDATIONS:")
             top5.forEach { op ->
                 when {
-                    op.name.contains("MongoDB", ignoreCase = true) ||
-                        op.name.contains("save", ignoreCase = true) ||
+                    op.name.contains("save", ignoreCase = true) ||
                         op.name.contains("repository", ignoreCase = true) -> {
                         println(
                             "  • ${op.name}: ${"%.3f".format(op.avgTimeMs)}ms avg - Consider batch writing or connection pooling"

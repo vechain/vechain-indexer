@@ -81,11 +81,6 @@ metrics:
   project-ids:
     whitelist: ${KNOWN_PROJECT_IDS:}
 
-spring.data:
-  mongodb:
-    auto-index-creation: false
-    uri: ${MONGO_URI:mongodb://api:password@localhost:27017/vechain?authSource=admin}
-
 # The indexer runs the migrations; the API only reads.
 postgres:
   url: ${PG_URL:}

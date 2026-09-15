@@ -53,9 +53,7 @@ import strikt.assertions.isTrue
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles(resolver = OpenApiActiveProfilesResolver::class)
-@TestPropertySource(
-    properties = ["de.flapdoodle.mongodb.embedded.version=7.0.14", "postgres.enabled=false"]
-)
+@TestPropertySource(properties = ["postgres.enabled=false"])
 class OpenApiDocumentationContractTest {
 
     // The block and transaction controllers need a reader; the spec comes from annotations.

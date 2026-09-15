@@ -1,12 +1,9 @@
 package org.vechain.indexer.utils
 
 import kotlin.reflect.full.memberProperties
-import org.springframework.data.domain.Sort
-import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.data.mongodb.core.query.Query
 
 /**
- * Utility class for cursor-based keyset pagination with MongoDB.
+ * Utility class for cursor-based keyset pagination.
  *
  * Cursor format: "sortValue|cursorFieldValue" The cursor points to the first record of the next
  * page.
@@ -67,103 +64,6 @@ object CursorPaginationUtils {
 
         // Fall back to String
         return sortValue
-    }
-
-    /**
-     * Applies cursor filtering to a MongoDB query for keyset pagination.
-     *
-     * The cursor points to the LAST record of the previous page. This filter excludes all records
-     * up to and including the cursor record, ensuring proper pagination without duplicates or
-     * skips.
-     *
-     * Implements proper keyset pagination with tie-breaking. Since cursorField is always sorted
-     * ASC, for DESC primary sort we use GT (>) to continue through ties, and for ASC primary sort
-     * we use LT (<).
-     * - For DESC: (sortField < value) OR (sortField == value AND cursorField > cursorValue)
-     * - For ASC: (sortField > value) OR (sortField == value AND cursorField < cursorValue)
-     *
-     * @param query The query to apply cursor filtering to
-     * @param cursor The cursor string to parse
-     * @param sortByField The field to sort by
-     * @param sortDirection The sort direction
-     * @param cursorField The field to use for tie-breaking
-     * @param parseCursorFieldValue Whether to parse the cursor field value as a number
-     */
-    fun applyCursorFilter(
-        query: Query,
-        cursor: String?,
-        sortByField: String,
-        sortDirection: Sort.Direction,
-        cursorField: String,
-        parseCursorFieldValue: Boolean = false,
-    ) {
-        val cursorInfo = parseCursor(cursor) ?: return
-
-        val parsedSortValue = parseSortValue(cursorInfo.sortValue)
-        val parsedCursorValue =
-            if (parseCursorFieldValue) parseSortValue(cursorInfo.cursorValue)
-            else cursorInfo.cursorValue
-
-        if (sortDirection == Sort.Direction.DESC) {
-            // For DESC: (sortField < value) OR (sortField == value AND cursorField > cursorValue)
-            // Use GT (>) for cursorField because it's sorted ASC
-            val cond1 = Criteria.where(sortByField).lt(parsedSortValue)
-            val cond2 =
-                Criteria.where(sortByField)
-                    .`is`(parsedSortValue)
-                    .and(cursorField)
-                    .gt(parsedCursorValue)
-            val orCriteria = Criteria().orOperator(cond1, cond2)
-            query.addCriteria(orCriteria)
-        } else {
-            // For ASC: (sortField > value) OR (sortField == value AND cursorField < cursorValue)
-            // Use LT (<) for cursorField because it's sorted ASC
-            val cond1 = Criteria.where(sortByField).gt(parsedSortValue)
-            val cond2 =
-                Criteria.where(sortByField)
-                    .`is`(parsedSortValue)
-                    .and(cursorField)
-                    .lt(parsedCursorValue)
-            val orCriteria = Criteria().orOperator(cond1, cond2)
-            query.addCriteria(orCriteria)
-        }
-    }
-
-    /**
-     * Builds a complete keyset pagination query with filtering, sorting, and cursor handling.
-     *
-     * @param baseCriteria The base filtering criteria
-     * @param size The page size
-     * @param direction The sort direction ("ASC" or "DESC")
-     * @param sortByField The field to sort by
-     * @param cursor The cursor from the previous page (optional)
-     * @param cursorField The field to use for tie-breaking (default: "entity")
-     * @param parseCursorFieldValue Whether to parse the cursor field value as a number
-     * @return A pair of (pageSize, Query)
-     */
-    fun buildCursorQuery(
-        baseCriteria: Criteria,
-        size: Int?,
-        direction: String?,
-        sortByField: String,
-        cursor: String? = null,
-        cursorField: String,
-        parseCursorFieldValue: Boolean = false,
-    ): Pair<Int, Query> {
-        val pageSize = size ?: 20
-        val sortDir =
-            if (direction?.uppercase() == "ASC") Sort.Direction.ASC else Sort.Direction.DESC
-
-        val query = Query(baseCriteria)
-
-        // Apply cursor filtering
-        applyCursorFilter(query, cursor, sortByField, sortDir, cursorField, parseCursorFieldValue)
-
-        // Apply sort and limit
-        query.with(Sort.by(sortDir, sortByField).and(Sort.by(Sort.Direction.ASC, cursorField)))
-        query.limit(pageSize + 1)
-
-        return pageSize to query
     }
 
     /**

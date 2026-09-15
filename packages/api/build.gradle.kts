@@ -17,8 +17,6 @@ dependencies {
     // Caffeine cache
     implementation("org.springframework.boot:spring-boot-starter-cache")
     implementation("com.github.ben-manes.caffeine:caffeine")
-
-    testImplementation("de.flapdoodle.embed:de.flapdoodle.embed.mongo.spring3x:4.33.0")
 }
 
 tasks.getByName<BootJar>("bootJar") {
