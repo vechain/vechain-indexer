@@ -4,14 +4,10 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import java.math.BigDecimal
-import java.util.Optional
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.b3tr.balance.repository.B3trBalanceRepository
-import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 import org.vechain.indexer.utils.BlockDetails
@@ -19,9 +15,7 @@ import org.vechain.indexer.utils.BlockDetails
 @ExtendWith(MockKExtension::class)
 internal class B3trBalanceServiceTest {
 
-    @MockK lateinit var repository: B3trBalanceRepository
-    @MockK lateinit var mongoTemplate: MongoTemplate
-    @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
+    @MockK lateinit var repository: B3trBalanceWriteRepository
 
     private val b3trContract = "0xb3tr0000000000000000000000000000000001"
     private val vot3Contract = "0xvot30000000000000000000000000000000001"
@@ -57,13 +51,10 @@ internal class B3trBalanceServiceTest {
         service =
             B3trBalanceService(
                 repository = repository,
-                mongoTemplate = mongoTemplate,
-                inlineVersioningProperties = inlineVersioningProperties,
                 b3trContractAddress = b3trContract,
                 vot3ContractAddress = vot3Contract,
             )
-        every { repository.findById(any<String>()) } returns Optional.empty()
-        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
+        every { repository.findCurrentByAddresses(any()) } returns emptyList()
     }
 
     @Test
@@ -79,10 +70,9 @@ internal class B3trBalanceServiceTest {
                 params = AbiEventParameters(returnValues = emptyMap()),
             )
 
-        val (updated, existing) = service.processBlock(blockDetails, listOf(otherEvent))
+        val updated = service.processBlock(blockDetails, listOf(otherEvent))
 
         assertEquals(0, updated.size)
-        assertEquals(0, existing.size)
     }
 
     @Test
@@ -103,10 +93,9 @@ internal class B3trBalanceServiceTest {
                 )
             )
 
-        val (updated, existing) = service.processBlock(blockDetails, events)
+        val updated = service.processBlock(blockDetails, events)
 
         assertEquals(2, updated.size)
-        assertEquals(0, existing.size)
         val byAddress = updated.associateBy { it.address }
         assertEquals(decimal("-100"), byAddress[from]!!.vot3Balance)
         assertEquals(BigDecimal.ZERO, byAddress[from]!!.b3trBalance)
@@ -134,7 +123,7 @@ internal class B3trBalanceServiceTest {
                 )
             )
 
-        val (updated, existing) = service.processBlock(blockDetails, events)
+        val updated = service.processBlock(blockDetails, events)
 
         assertEquals(2, updated.size)
         val byAddress = updated.associateBy { it.address }
@@ -173,7 +162,7 @@ internal class B3trBalanceServiceTest {
                 ),
             )
 
-        val (updated, existing) = service.processBlock(blockDetails, events)
+        val updated = service.processBlock(blockDetails, events)
 
         assertEquals(2, updated.size)
         val byAddress = updated.associateBy { it.address }
@@ -204,10 +193,9 @@ internal class B3trBalanceServiceTest {
                 )
             )
 
-        val (updated, existing) = service.processBlock(blockDetails, events)
+        val updated = service.processBlock(blockDetails, events)
 
         assertEquals(0, updated.size)
-        assertEquals(0, existing.size)
     }
 
     @Test
@@ -215,20 +203,18 @@ internal class B3trBalanceServiceTest {
         val blockDetails = BlockDetails("0xblock", 10L, 1000L)
         val from = "0xfrom0000000000000000000000000000000001"
         val to = "0xto000000000000000000000000000000000002"
-        every { repository.findById(from) } returns
-            Optional.of(
+        every { repository.findCurrentByAddresses(setOf(from, to)) } returns
+            listOf(
                 B3trBalance(
                     address = from,
                     blockId = "0xprev",
                     blockNumber = 9L,
                     blockTimestamp = 900L,
-                    version = 1,
                     vot3Balance = decimal("200"),
                     b3trBalance = decimal("50"),
                     totalBalance = decimal("250"),
                 )
             )
-        every { repository.findById(to) } returns Optional.empty()
         val events =
             listOf(
                 transferEvent(
@@ -242,7 +228,7 @@ internal class B3trBalanceServiceTest {
                 )
             )
 
-        val (updated, existing) = service.processBlock(blockDetails, events)
+        val updated = service.processBlock(blockDetails, events)
 
         assertEquals(2, updated.size)
         val byAddress = updated.associateBy { it.address }
@@ -272,7 +258,7 @@ internal class B3trBalanceServiceTest {
                 )
             )
 
-        val (updated, existing) = service.processBlock(blockDetails, events)
+        val updated = service.processBlock(blockDetails, events)
 
         assertEquals(1, updated.size)
         assertEquals(to, updated.single().address)
@@ -296,7 +282,7 @@ internal class B3trBalanceServiceTest {
                 )
             )
 
-        val (updated, existing) = service.processBlock(blockDetails, events)
+        val updated = service.processBlock(blockDetails, events)
 
         assertEquals(1, updated.size)
         assertEquals(from, updated.single().address)
