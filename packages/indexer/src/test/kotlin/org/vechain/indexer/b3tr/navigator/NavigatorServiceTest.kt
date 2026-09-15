@@ -40,9 +40,9 @@ internal class NavigatorServiceTest {
     @BeforeEach
     fun setUp() {
         every { repository.findExpiredExits(any()) } returns emptyList()
-        every { repository.findCurrentNavigators(any()) } returns emptyList()
-        every { repository.findCurrentCitizens(any()) } returns emptyList()
-        every { repository.findActiveCitizens(any()) } returns emptyList()
+        every { repository.findCurrentNavigators(any(), any()) } returns emptyList()
+        every { repository.findCurrentCitizens(any(), any()) } returns emptyList()
+        every { repository.findActiveCitizens(any(), any()) } returns emptyList()
         service = NavigatorService(repository)
     }
 
@@ -129,7 +129,7 @@ internal class NavigatorServiceTest {
 
     @Test
     fun `stake, metadata and report events rewrite the stored row at this block`() {
-        every { repository.findCurrentNavigators(setOf(nav)) } returns listOf(navigator())
+        every { repository.findCurrentNavigators(setOf(nav), any()) } returns listOf(navigator())
 
         val update =
             service.processBlock(
@@ -164,7 +164,7 @@ internal class NavigatorServiceTest {
 
     @Test
     fun `an exit announcement marks the navigator exiting until its deadline`() {
-        every { repository.findCurrentNavigators(setOf(nav)) } returns listOf(navigator())
+        every { repository.findCurrentNavigators(setOf(nav), any()) } returns listOf(navigator())
 
         val row =
             service
@@ -199,7 +199,7 @@ internal class NavigatorServiceTest {
                     deadline = 100,
                 )
             )
-        every { repository.findActiveCitizens(setOf(nav)) } returns listOf(citizenOf(nav))
+        every { repository.findActiveCitizens(setOf(nav), any()) } returns listOf(citizenOf(nav))
 
         val update = service.processBlock(block, emptyList())
 
@@ -215,9 +215,9 @@ internal class NavigatorServiceTest {
 
     @Test
     fun `a deactivation event also ends a delegation created earlier in the block`() {
-        every { repository.findCurrentNavigators(setOf(nav)) } returns
+        every { repository.findCurrentNavigators(setOf(nav), any()) } returns
             listOf(navigator(citizens = 1, delegated = "100"))
-        every { repository.findActiveCitizens(setOf(nav)) } returns listOf(citizenOf(nav))
+        every { repository.findActiveCitizens(setOf(nav), any()) } returns listOf(citizenOf(nav))
 
         val update =
             service.processBlock(
@@ -240,9 +240,10 @@ internal class NavigatorServiceTest {
 
     @Test
     fun `delegation events move the navigator's totals and the citizen's amount`() {
-        every { repository.findCurrentNavigators(setOf(nav)) } returns
+        every { repository.findCurrentNavigators(setOf(nav), any()) } returns
             listOf(navigator(citizens = 2, delegated = "300"))
-        every { repository.findCurrentCitizens(setOf(citizen)) } returns listOf(citizenOf(nav))
+        every { repository.findCurrentCitizens(setOf(citizen), any()) } returns
+            listOf(citizenOf(nav))
 
         val update =
             service.processBlock(
@@ -275,9 +276,10 @@ internal class NavigatorServiceTest {
 
     @Test
     fun `a removal ends the delegation unless the citizen has already moved on`() {
-        every { repository.findCurrentNavigators(setOf(nav)) } returns
+        every { repository.findCurrentNavigators(setOf(nav), any()) } returns
             listOf(navigator(citizens = 1, delegated = "100"))
-        every { repository.findCurrentCitizens(setOf(citizen)) } returns listOf(citizenOf(other))
+        every { repository.findCurrentCitizens(setOf(citizen), any()) } returns
+            listOf(citizenOf(other))
 
         val update =
             service.processBlock(

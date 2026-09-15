@@ -102,59 +102,68 @@ open class NavigatorWriteRepository(
         }
     }
 
-    /** The current row of every navigator in [addresses]. */
-    open fun findCurrentNavigators(addresses: Set<String>): List<Navigator> =
+    /** The row of every navigator in [addresses] as it stood before [block]. */
+    open fun findCurrentNavigators(addresses: Set<String>, block: Long): List<Navigator> =
         if (addresses.isEmpty()) emptyList()
         else
             jdbc.query(
-                "SELECT * FROM $NAVIGATOR_TABLE WHERE address = ANY(?) AND superseded_at IS NULL",
+                "SELECT * FROM $NAVIGATOR_TABLE WHERE address = ANY(?) AND $AS_OF",
                 { rs, _ -> NavigatorRowMapping.read(rs) },
                 addresses.map(::bytes).toTypedArray(),
+                block,
+                block,
             )
 
-    /** The exiting navigators whose deadline has passed by [blockNumber]. */
-    open fun findExpiredExits(blockNumber: Long): List<Navigator> =
+    /** The navigators exiting before [block] whose deadline has passed by it. */
+    open fun findExpiredExits(block: Long): List<Navigator> =
         jdbc.query(
-            "SELECT * FROM $NAVIGATOR_TABLE WHERE superseded_at IS NULL AND status = 'EXITING' " +
-                "AND exit_effective_deadline_block <= ? ORDER BY address",
+            "SELECT * FROM $NAVIGATOR_TABLE WHERE status = 'EXITING' " +
+                "AND exit_effective_deadline_block <= ? AND $AS_OF ORDER BY address",
             { rs, _ -> NavigatorRowMapping.read(rs) },
-            blockNumber,
+            block,
+            block,
+            block,
         )
 
-    /** The current row of every citizen in [addresses]. */
-    open fun findCurrentCitizens(addresses: Set<String>): List<NavigatorCitizen> =
+    /** The row of every citizen in [addresses] as it stood before [block]. */
+    open fun findCurrentCitizens(addresses: Set<String>, block: Long): List<NavigatorCitizen> =
         if (addresses.isEmpty()) emptyList()
         else
             jdbc.query(
-                "SELECT * FROM $CITIZEN_TABLE WHERE address = ANY(?) AND superseded_at IS NULL",
+                "SELECT * FROM $CITIZEN_TABLE WHERE address = ANY(?) AND $AS_OF",
                 { rs, _ -> NavigatorCitizenRowMapping.read(rs) },
                 addresses.map(::bytes).toTypedArray(),
+                block,
+                block,
             )
 
-    /** The citizens still delegating to any of [navigators]. */
-    open fun findActiveCitizens(navigators: Set<String>): List<NavigatorCitizen> =
+    /** The citizens delegating to any of [navigators] before [block]. */
+    open fun findActiveCitizens(navigators: Set<String>, block: Long): List<NavigatorCitizen> =
         if (navigators.isEmpty()) emptyList()
         else
             jdbc.query(
-                "SELECT * FROM $CITIZEN_TABLE WHERE navigator = ANY(?) AND superseded_at IS NULL " +
-                    "AND active ORDER BY delegated_at, address",
+                "SELECT * FROM $CITIZEN_TABLE WHERE navigator = ANY(?) AND active AND $AS_OF " +
+                    "ORDER BY delegated_at, address",
                 { rs, _ -> NavigatorCitizenRowMapping.read(rs) },
                 navigators.map(::bytes).toTypedArray(),
+                block,
+                block,
             )
 
     /**
-     * The current row of every (navigator, roundId) pair in [keys]. The query widens to the cross
-     * product of the two halves, whose extra rows the caller simply never looks up.
+     * The row of every (navigator, roundId) pair in [keys] before [block]. The query widens to the
+     * cross product of the two halves, whose extra rows the caller simply never looks up.
      */
-    open fun findCurrentFees(keys: Set<Pair<String, Int>>): List<NavigatorFee> =
+    open fun findCurrentFees(keys: Set<Pair<String, Int>>, block: Long): List<NavigatorFee> =
         if (keys.isEmpty()) emptyList()
         else
             jdbc.query(
-                "SELECT * FROM $FEE_TABLE WHERE navigator = ANY(?) AND round_id = ANY(?) " +
-                    "AND superseded_at IS NULL",
+                "SELECT * FROM $FEE_TABLE WHERE navigator = ANY(?) AND round_id = ANY(?) AND $AS_OF",
                 { rs: ResultSet, _ -> NavigatorFeeRowMapping.read(rs) },
                 keys.map { bytes(it.first) }.distinct().toTypedArray(),
                 keys.map { it.second }.distinct().toTypedArray(),
+                block,
+                block,
             )
 
     override fun rollbackFrom(blockNumber: Long) {
@@ -184,6 +193,10 @@ open class NavigatorWriteRepository(
         private const val FEE_TABLE = NavigatorFeeRowMapping.TABLE
         private const val DELEGATION_EVENT_TABLE = NavigatorDelegationEventRowMapping.TABLE
         private val TEMPORAL_TABLES = listOf(NAVIGATOR_TABLE, CITIZEN_TABLE, FEE_TABLE)
+
+        // Reads are as of the block before, so a replayed block starts where its first run did.
+        private const val AS_OF =
+            "block_number < ? AND (superseded_at IS NULL OR superseded_at >= ?)"
 
         private fun upsert(table: String, key: List<String>, columns: List<String>) =
             "INSERT INTO $table (" +

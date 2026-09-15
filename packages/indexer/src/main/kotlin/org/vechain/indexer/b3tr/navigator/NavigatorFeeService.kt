@@ -18,7 +18,7 @@ open class NavigatorFeeService(private val repository: NavigatorWriteRepository)
 
         val current =
             repository
-                .findCurrentFees(relevant.map { key(it) }.toSet())
+                .findCurrentFees(relevant.map { key(it) }.toSet(), block.blockNumber)
                 .associateBy { it.navigator to it.roundId }
                 .toMutableMap()
         val rows = linkedMapOf<Pair<String, Int>, NavigatorFee>()

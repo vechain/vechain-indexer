@@ -43,7 +43,7 @@ internal class NavigatorControllerTest {
         every { navigatorApiService.findFeeHistory("0xnav1", capture(pageableSlot)) } returns
             SliceImpl(emptyList())
 
-        controller.getFeeHistory("0xnav1", null, 10, "desc")
+        controller.getFeeHistory(Address("0xnav1"), null, 10, "desc")
 
         assertEquals(
             Sort.Direction.DESC,
