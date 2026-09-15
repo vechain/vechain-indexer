@@ -92,10 +92,7 @@ open class AccountOverviewService(
         to.vetBalance += value
     }
 
-    /**
-     * 0.000432 VTHO per VET per day, credited to each party of a transfer since its last credit.
-     * The fork block credits every holder it names a last time; the schema settles the rest in SQL.
-     */
+    /** 0.000432 VTHO per VET per day, until the fork block settles every holder it names. */
     private fun passiveGenerationRule(
         block: Block,
         vetTransfers: List<IndexedEvent>,
