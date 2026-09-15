@@ -195,8 +195,7 @@ indexer:
     stargate-staking: ${VERSION_STARGATE_STAKING:1}
     stargate-vet-delegated-by-block: ${VERSION_STARGATE_VET_DELEGATED_BY_BLOCK:1}
     vevote-historic: ${VERSION_VEVOTE_HISTORIC:1}
-    b3tr-proposal-comments: ${VERSION_B3TR_PROPOSAL_COMMENTS:1}
-    b3tr-proposal-results: ${VERSION_B3TR_PROPOSAL_RESULTS:1}
+    b3tr-proposal: ${VERSION_B3TR_PROPOSAL:1}
     b3tr-challenges: ${VERSION_B3TR_CHALLENGES:1}
     b3tr-user-challenges: ${VERSION_B3TR_USER_CHALLENGES:1}
     b3tr-user-all-time-action-summary: ${VERSION_B3TR_USER_ALL_TIME_ACTION_SUMMARY:1}

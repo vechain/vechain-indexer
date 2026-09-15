@@ -52,14 +52,9 @@ object IndexerNames {
         const val COLLECTION = "nft_blacklist"
     }
 
-    object PROPOSAL_COMMENT {
-        const val NAME = "ProposalCommentIndexer"
-        const val COLLECTION = "b3tr_proposal_comments"
-    }
-
-    object PROPOSAL_RESULT {
-        const val NAME = "ProposalResultIndexer"
-        const val COLLECTION = "b3tr_proposal_results"
+    object PROPOSAL {
+        const val NAME = "ProposalIndexer"
+        const val COLLECTION = "b3tr_proposal"
     }
 
     object TRANSFER {

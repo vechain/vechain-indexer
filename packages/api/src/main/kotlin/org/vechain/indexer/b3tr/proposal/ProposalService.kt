@@ -1,22 +1,18 @@
 package org.vechain.indexer.b3tr.proposal
 
-import kotlin.to
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.vechain.indexer.IndexerService
-import org.vechain.indexer.b3tr.proposal.repository.ProposalCommentRepository
-import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
 import org.vechain.indexer.b3tr.voting.Support
-import org.vechain.indexer.thor.HexUtils
+import org.vechain.indexer.utils.PaginationUtils.offsetSlice
 
 @Profile("b3tr", "b3tr-proposal")
 @Service
 open class ProposalService(
-    private val proposalResultRepository: ProposalResultRepository,
-    private val proposalCommentRepository: ProposalCommentRepository,
+    private val resultRepository: ProposalResultReadRepository,
+    private val commentRepository: ProposalCommentReadRepository,
 ) : IndexerService {
 
     /**
@@ -25,88 +21,43 @@ open class ProposalService(
      * @param proposalId Proposal ID to filter by.
      */
     open fun getProposalResult(proposalId: String): ProposalResult? =
-        proposalResultRepository.findByIdOrNull(proposalId)
+        resultRepository.findByProposalId(proposalId)
 
     /**
-     * Get all proposal results paginated.
+     * Get proposal results paginated, optionally narrowed to a set of states.
      *
+     * @param states States to filter by; every state when empty.
      * @param pageable Pagination information.
      */
-    fun getAllProposalResults(pageable: Pageable): Slice<ProposalResult> =
-        proposalResultRepository.findAll(pageable)
-
-    /**
-     * Get all proposal results paginated, filtered by states.
-     *
-     * @param states List of ProposalState values to filter by.
-     * @param pageable Pagination information.
-     */
-    fun getAllProposalResultsByStates(
+    open fun getAllProposalResults(
         states: List<ProposalState>,
         pageable: Pageable,
-    ): Slice<ProposalResult> = proposalResultRepository.findByStateIn(states, pageable)
-
-    /**
-     * Get comments for a proposal.
-     *
-     * @param proposalId Proposal ID to filter by.
-     */
-    open fun getComments(
-        proposalId: String,
-        support: Support?,
-        pageable: Pageable,
-    ): Slice<ProposalComment> =
-        if (support == null) {
-            proposalCommentRepository.findAllByProposalId(proposalId, pageable)
-        } else {
-            proposalCommentRepository.findAllByProposalIdAndSupport(proposalId, support, pageable)
+    ): Slice<ProposalResult> =
+        offsetSlice(pageable, ProposalResult::createdAtBlockNumber.name) { offset, limit, direction
+            ->
+            resultRepository.find(states, offset, limit, direction)
         }
 
     /**
-     * Get comments for a proposal.
+     * Get comments, narrowed by any of proposal, voter and support.
      *
      * @param proposalId Proposal ID to filter by.
      * @param voter Voter to filter by.
+     * @param support Support to filter by.
      */
     open fun getComments(
-        proposalId: String,
-        voter: String,
+        proposalId: String?,
+        voter: String?,
         support: Support?,
         pageable: Pageable,
     ): Slice<ProposalComment> =
-        if (support == null) {
-            proposalCommentRepository.findAllByProposalIdAndVoter(
-                proposalId,
-                HexUtils.normalise(voter),
-                pageable,
-            )
-        } else {
-            proposalCommentRepository.findAllByProposalIdAndVoterAndSupport(
-                proposalId,
-                HexUtils.normalise(voter),
-                support,
-                pageable,
-            )
-        }
-
-    open fun getCommentsForVoter(
-        voter: String,
-        support: Support?,
-        pageable: Pageable,
-    ): Slice<ProposalComment> =
-        if (support == null) {
-            proposalCommentRepository.findAllByVoter(HexUtils.normalise(voter), pageable)
-        } else {
-            proposalCommentRepository.findAllByVoterAndSupport(
-                HexUtils.normalise(voter),
-                support,
-                pageable,
-            )
+        offsetSlice(pageable, ProposalComment::blockNumber.name) { offset, limit, direction ->
+            commentRepository.find(proposalId, voter, support, offset, limit, direction)
         }
 
     override fun getLatestIndexedBlocks(): Map<String, Long> =
         mapOf(
-            "ProposalResult" to (proposalResultRepository.getLatestRecord()?.blockNumber ?: 0),
-            "ProposalComment" to (proposalCommentRepository.getLatestRecord()?.blockNumber ?: 0),
+            "ProposalResult" to resultRepository.latestBlockNumber(),
+            "ProposalComment" to commentRepository.latestBlockNumber(),
         )
 }
