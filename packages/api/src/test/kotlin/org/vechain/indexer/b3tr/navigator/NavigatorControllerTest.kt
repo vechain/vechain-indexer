@@ -5,7 +5,6 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.slot
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -50,7 +49,29 @@ internal class NavigatorControllerTest {
             Sort.Direction.DESC,
             pageableSlot.captured.sort.getOrderFor("roundId")?.direction,
         )
-        assertNotNull(pageableSlot.captured.sort.getOrderFor("_id"))
+    }
+
+    @Test
+    fun `getNavigators resolves the order field case-insensitively and defaults to registration`() {
+        val pageableSlot = slot<Pageable>()
+        every { navigatorApiService.findNavigators(any(), any(), capture(pageableSlot)) } returns
+            SliceImpl(emptyList())
+
+        controller.getNavigators(listOf("active", "EXITING"), "totaldelegated", null, 10, "asc")
+        controller.getNavigators(null, null, null, 10, null)
+
+        io.mockk.verifyOrder {
+            navigatorApiService.findNavigators(
+                listOf(NavigatorStatus.ACTIVE, NavigatorStatus.EXITING),
+                NavigatorSort.TOTAL_DELEGATED,
+                any(),
+            )
+            navigatorApiService.findNavigators(null, NavigatorSort.REGISTERED_AT, any())
+        }
+        assertEquals(
+            Sort.Direction.DESC,
+            pageableSlot.captured.sort.getOrderFor("registeredAt")?.direction,
+        )
     }
 
     @Test

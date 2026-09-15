@@ -89,13 +89,10 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<Navigator> {
-        val sortField = resolveOrderBy(orderBy)
-        val pageable = PaginationUtils.toPageable(page, size, direction, sortField, "_id")
+        val sort = NavigatorSort.parse(orderBy)
+        val pageable = PaginationUtils.toPageable(page, size, direction, sort.property, "address")
         return paginatedResponse(
-            navigatorApiService.findNavigators(
-                statuses = parseStatuses(status),
-                pageable = pageable,
-            )
+            navigatorApiService.findNavigators(parseStatuses(status), sort, pageable)
         )
     }
 
@@ -147,7 +144,7 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
                 size,
                 direction,
                 NavigatorCitizen::delegatedAt.name,
-                "_id",
+                NavigatorCitizen::address.name,
             )
         return paginatedResponse(
             navigatorApiService.findCitizens(navigator = navigator, pageable = pageable)
@@ -192,7 +189,6 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
                 direction,
                 NavigatorDelegationEvent::blockTimestamp.name,
                 NavigatorDelegationEvent::txId.name,
-                "_id",
             )
         return paginatedResponse(
             navigatorApiService.findDelegationEvents(
@@ -243,22 +239,11 @@ open class NavigatorController(private val navigatorApiService: NavigatorApiServ
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<NavigatorFee> {
-        val pageable =
-            PaginationUtils.toPageable(page, size, direction, NavigatorFee::roundId.name, "_id")
+        val pageable = PaginationUtils.toPageable(page, size, direction, NavigatorFee::roundId.name)
         return paginatedResponse(
             navigatorApiService.findFeeHistory(navigator = navigator, pageable = pageable)
         )
     }
-
-    private fun resolveOrderBy(orderBy: String?): String =
-        when (orderBy?.lowercase()) {
-            "stake" -> Navigator::stake.name
-            "totaldelegated" -> Navigator::totalDelegated.name
-            "citizencount" -> Navigator::citizenCount.name
-            "registeredat" -> Navigator::registeredAt.name
-            null -> Navigator::registeredAt.name
-            else -> Navigator::registeredAt.name
-        }
 
     private fun parseStatuses(raw: List<String>?): List<NavigatorStatus>? {
         if (raw.isNullOrEmpty()) return null

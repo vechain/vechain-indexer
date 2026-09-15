@@ -4,35 +4,25 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import java.math.BigDecimal
 import java.math.BigInteger
-import org.springframework.boot.context.properties.bind.ConstructorBinding
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
-import org.springframework.data.mongodb.core.mapping.Field
-import org.springframework.data.mongodb.core.mapping.FieldType
-import org.vechain.indexer.IndexedDocument
-import org.vechain.indexer.IndexerNames
 
-@Document(collection = IndexerNames.NAVIGATOR_DELEGATION_EVENT.COLLECTION)
-data class NavigatorDelegationEvent
-@ConstructorBinding
-constructor(
-    @JsonIgnore @Id val id: String,
-    @JsonIgnore override val blockId: String,
-    @JsonIgnore override val blockNumber: Long,
-    override val blockTimestamp: Long,
+/** One delegation change: `amount` is the delegation after it, `delta` what the event moved. */
+data class NavigatorDelegationEvent(
+    @JsonIgnore val id: String,
+    @JsonIgnore val blockId: String,
+    @JsonIgnore val blockNumber: Long,
+    val blockTimestamp: Long,
     val txId: String,
     val navigator: String,
     val citizen: String,
     val eventType: String,
-    @JsonIgnore @Field(targetType = FieldType.DECIMAL128) val amount: BigDecimal?,
-    @JsonIgnore @Field(targetType = FieldType.DECIMAL128) val delta: BigDecimal?,
-) : IndexedDocument {
-
+    @JsonIgnore val amount: BigDecimal,
+    @JsonIgnore val delta: BigDecimal,
+) {
     @get:JsonProperty("amount")
-    val amountValue: BigInteger?
-        get() = amount?.toBigInteger()
+    val amountValue: BigInteger
+        get() = amount.toBigInteger()
 
     @get:JsonProperty("delta")
-    val deltaValue: BigInteger?
-        get() = delta?.toBigInteger()
+    val deltaValue: BigInteger
+        get() = delta.toBigInteger()
 }

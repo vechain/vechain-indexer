@@ -15,6 +15,9 @@ import org.vechain.indexer.b3tr.challenges.ChallengeWriteRepository
 import org.vechain.indexer.b3tr.challenges.ChallengesProcessor
 import org.vechain.indexer.b3tr.gm.GmNftProcessor
 import org.vechain.indexer.b3tr.gm.GmNftService
+import org.vechain.indexer.b3tr.navigator.NavigatorProcessor
+import org.vechain.indexer.b3tr.navigator.NavigatorUpdate
+import org.vechain.indexer.b3tr.navigator.NavigatorWriteRepository
 import org.vechain.indexer.b3tr.proposal.ProposalProcessor
 import org.vechain.indexer.b3tr.proposal.ProposalWriteRepository
 import org.vechain.indexer.b3tr.treasury.TreasuryTransferProcessor
@@ -121,6 +124,10 @@ class ProcessorTransactionalAnnotationsTest {
                 ChallengeWriteRepository::class
                     .java
                     .getDeclaredMethod("save", ChallengeUpdate::class.java),
+                // The navigator indexer saves its four tables from the repository, not a service.
+                NavigatorWriteRepository::class
+                    .java
+                    .getDeclaredMethod("save", NavigatorUpdate::class.java),
                 // The proposal indexer saves its two tables from the repository, not a service.
                 ProposalWriteRepository::class
                     .java
@@ -166,6 +173,7 @@ class ProcessorTransactionalAnnotationsTest {
                 HistoricProposalsProcessor::class.java,
                 ActionProcessor::class.java,
                 ChallengesProcessor::class.java,
+                NavigatorProcessor::class.java,
                 ProposalProcessor::class.java,
                 XAllocResultProcessor::class.java,
                 HistoryProcessor::class.java,
