@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.b3tr.AppId
 import org.vechain.indexer.b3tr.action.response.AppOverview
-import org.vechain.indexer.b3tr.action.response.ERROR_CANT_PASS_ROUND_AND_DATE
 import org.vechain.indexer.b3tr.action.response.GlobalOverview
 import org.vechain.indexer.b3tr.action.response.UserAppOverview
+import org.vechain.indexer.b3tr.action.response.UserDailyActionSummary
 import org.vechain.indexer.b3tr.action.response.UserOverview
 import org.vechain.indexer.constants.B3TR_PATH
 import org.vechain.indexer.docs.AddressParameter
@@ -27,7 +27,6 @@ import org.vechain.indexer.docs.EndDateParameter
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.RoundIdParameter
 import org.vechain.indexer.docs.StartDateParameter
-import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.CacheFor
 import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
@@ -135,21 +134,7 @@ open class ActionController(private val service: ActionService) {
         @ValidAddress @PathVariable wallet: Address,
         @RoundIdParameter @RequestParam(required = false) roundId: Int?,
         @ValidISODateString @RequestParam(required = false) date: String?,
-    ): UserOverview {
-        if (roundId != null && date != null) {
-            throw BadRequestException(ERROR_CANT_PASS_ROUND_AND_DATE)
-        }
-
-        if (roundId != null) {
-            return service.getRoundUserOverview(wallet, roundId)
-        }
-
-        if (date != null) {
-            return service.getDailyUserOverview(wallet, date)
-        }
-
-        return service.getAllTimeUserOverview(wallet)
-    }
+    ): UserOverview = service.getUserOverview(wallet, requestedPeriod(roundId, date))
 
     @GetMapping("/actions/users/{wallet}/app/{appId}/overview")
     @Operation(
@@ -176,21 +161,7 @@ open class ActionController(private val service: ActionService) {
         @ValidAppId @PathVariable appId: AppId,
         @RoundIdParameter @RequestParam(required = false) roundId: Int?,
         @ValidISODateString @RequestParam(required = false) date: String?,
-    ): UserAppOverview {
-        if (roundId != null && date != null) {
-            throw BadRequestException(ERROR_CANT_PASS_ROUND_AND_DATE)
-        }
-
-        if (roundId != null) {
-            return service.getRoundUserAppOverview(wallet, appId, roundId)
-        }
-
-        if (date != null) {
-            return service.getDailyUserAppOverview(wallet, appId, date)
-        }
-
-        return service.getAllTimeUserAppOverview(wallet, appId)
-    }
+    ): UserAppOverview = service.getUserAppOverview(wallet, appId, requestedPeriod(roundId, date))
 
     @GetMapping("/actions/users/{wallet}/daily-summaries")
     @Operation(summary = "Get daily action summaries for a specific user within a specified range.")
@@ -241,21 +212,7 @@ open class ActionController(private val service: ActionService) {
         @ValidAppId @PathVariable appId: AppId,
         @RequestParam(required = false) roundId: Int?,
         @ValidISODateString @RequestParam(required = false) date: String?,
-    ): AppOverview {
-        if (roundId != null && date != null) {
-            throw BadRequestException(ERROR_CANT_PASS_ROUND_AND_DATE)
-        }
-
-        if (roundId != null) {
-            return service.getAppRoundOverview(appId, roundId)
-        }
-
-        if (date != null) {
-            return service.getAppDailyOverview(appId, date)
-        }
-
-        return service.getAppAllTimeOverview(appId)
-    }
+    ): AppOverview = service.getAppOverview(appId, requestedPeriod(roundId, date))
 
     @GetMapping("/actions/global/overview")
     @Operation(
@@ -277,19 +234,5 @@ open class ActionController(private val service: ActionService) {
     open fun getGlobalOverview(
         @RequestParam(required = false) roundId: Int?,
         @ValidISODateString @RequestParam(required = false) date: String?,
-    ): GlobalOverview {
-        if (roundId != null && date != null) {
-            throw BadRequestException(ERROR_CANT_PASS_ROUND_AND_DATE)
-        }
-
-        if (roundId != null) {
-            return service.getGlobalRoundOverview(roundId)
-        }
-
-        if (date != null) {
-            return service.getGlobalDailyOverview(date)
-        }
-
-        return service.getGlobalAllTimeOverview()
-    }
+    ): GlobalOverview = service.getGlobalOverview(requestedPeriod(roundId, date))
 }

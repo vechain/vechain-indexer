@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.b3tr.AppId
 import org.vechain.indexer.b3tr.action.response.AppLeaderboardItem
-import org.vechain.indexer.b3tr.action.response.ERROR_CANT_PASS_ROUND_AND_DATE
 import org.vechain.indexer.b3tr.action.response.UserAppLeaderboardItem
 import org.vechain.indexer.b3tr.action.response.UserLeaderboardItem
 import org.vechain.indexer.constants.B3TR_PATH
@@ -24,7 +23,6 @@ import org.vechain.indexer.docs.CursorPaginationParameters
 import org.vechain.indexer.docs.DateParameter
 import org.vechain.indexer.docs.RoundIdParameter
 import org.vechain.indexer.docs.SortByParameter
-import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.CacheFor
 import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
@@ -73,28 +71,10 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
         sortBy: String,
         @ValidCursor @RequestParam(required = false) cursor: String?,
     ): ResponseEntity<PaginatedResponse<UserLeaderboardItem>> {
-
-        if (roundId != null && date != null) {
-            throw BadRequestException(ERROR_CANT_PASS_ROUND_AND_DATE)
-        }
-
-        if (roundId != null) {
-            return cachedFor(
-                service.roundLeaderboardPolicy(roundId),
-                service.getUserRoundLeaderboard(roundId, size, direction, sortBy, cursor),
-            )
-        }
-
-        if (date != null) {
-            return cachedFor(
-                CachePolicy.MINUTE,
-                service.getUserDailyLeaderboard(date, size, direction, sortBy, cursor),
-            )
-        }
-
+        val period = requestedPeriod(roundId, date)
         return cachedFor(
-            CachePolicy.MINUTE,
-            service.getUserAllTimeLeaderboard(size, direction, sortBy, cursor),
+            service.leaderboardPolicy(period),
+            service.getUserLeaderboard(period, size, direction, sortBy, cursor),
         )
     }
 
@@ -130,26 +110,10 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
         sortBy: String,
         @ValidCursor @RequestParam(required = false) cursor: String?,
     ): ResponseEntity<PaginatedResponse<AppLeaderboardItem>> {
-
-        if (roundId != null && date != null) {
-            throw BadRequestException(ERROR_CANT_PASS_ROUND_AND_DATE)
-        }
-
-        if (roundId != null) {
-            return cachedFor(
-                service.roundLeaderboardPolicy(roundId),
-                service.getAppRoundLeaderboard(roundId, size, direction, sortBy, cursor),
-            )
-        }
-        if (date != null) {
-            return cachedFor(
-                CachePolicy.MINUTE,
-                service.getAppDailyLeaderboard(date, size, direction, sortBy, cursor),
-            )
-        }
+        val period = requestedPeriod(roundId, date)
         return cachedFor(
-            CachePolicy.MINUTE,
-            service.getAppAllTimeLeaderboard(size, direction, sortBy, cursor),
+            service.leaderboardPolicy(period),
+            service.getAppLeaderboard(period, size, direction, sortBy, cursor),
         )
     }
 
@@ -187,34 +151,10 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
         sortBy: String,
         @ValidCursor @RequestParam(required = false) cursor: String?,
     ): ResponseEntity<PaginatedResponse<UserAppLeaderboardItem>> {
-        if (roundId != null && date != null) {
-            throw BadRequestException(ERROR_CANT_PASS_ROUND_AND_DATE)
-        }
-
-        if (roundId != null) {
-            return cachedFor(
-                service.roundLeaderboardPolicy(roundId),
-                service.getUserAppRoundLeaderboard(
-                    appId,
-                    roundId,
-                    size,
-                    direction,
-                    sortBy,
-                    cursor,
-                ),
-            )
-        }
-
-        if (date != null) {
-            return cachedFor(
-                CachePolicy.MINUTE,
-                service.getUserAppDailyLeaderboard(appId, date, size, direction, sortBy, cursor),
-            )
-        }
-
+        val period = requestedPeriod(roundId, date)
         return cachedFor(
-            CachePolicy.MINUTE,
-            service.getUserAppAllTimeLeaderboard(appId, size, direction, sortBy, cursor),
+            service.leaderboardPolicy(period),
+            service.getUserAppLeaderboard(appId, period, size, direction, sortBy, cursor),
         )
     }
 }

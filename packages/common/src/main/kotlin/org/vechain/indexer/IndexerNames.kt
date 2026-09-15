@@ -2,21 +2,6 @@ package org.vechain.indexer
 
 /** Shared indexer names and storage unit names (a Mongo collection or a Postgres schema). */
 object IndexerNames {
-    object APP_ALL_TIME_ACTION_SUMMARY {
-        const val NAME = "AppAllTimeActionSummaryIndexer"
-        const val COLLECTION = "b3tr_app_action_summaries_all_time"
-    }
-
-    object APP_DAILY_ACTION_SUMMARY {
-        const val NAME = "AppDailyActionSummaryIndexer"
-        const val COLLECTION = "b3tr_app_action_summaries_daily"
-    }
-
-    object APP_ROUND_ACTION_SUMMARY {
-        const val NAME = "AppRoundActionSummaryIndexer"
-        const val COLLECTION = "b3tr_app_action_summaries_round"
-    }
-
     object BLOCKS {
         const val NAME = "BlocksIndexer"
         const val COLLECTION = "blocks"
@@ -65,21 +50,6 @@ object IndexerNames {
     object FUNGIBLE_TOKEN_INTERACTIONS {
         const val NAME = "FungibleTokenInteractionsIndexer"
         const val COLLECTION = "fungible_token_interactions"
-    }
-
-    object USER_ALL_TIME_ACTION_SUMMARY {
-        const val NAME = "UserAllTimeActionSummaryIndexer"
-        const val COLLECTION = "b3tr_user_action_summaries_all_time"
-    }
-
-    object USER_DAILY_ACTION_SUMMARY {
-        const val NAME = "UserDailyActionSummaryIndexer"
-        const val COLLECTION = "b3tr_user_action_summaries_daily"
-    }
-
-    object USER_ROUND_ACTION_SUMMARY {
-        const val NAME = "UserRoundActionSummaryIndexer"
-        const val COLLECTION = "b3tr_user_action_summaries_round"
     }
 
     object VEVOTE {
@@ -195,6 +165,11 @@ object IndexerNames {
     object NAVIGATOR_FEE_SUMMARY {
         const val NAME = "NavigatorFeeSummaryIndexer"
         const val COLLECTION = "b3tr_navigator_fee_summaries"
+    }
+
+    object B3TR_ACTION {
+        const val NAME = "B3trActionIndexer"
+        const val COLLECTION = "b3tr_action"
     }
 
     object B3TR_CHALLENGES {

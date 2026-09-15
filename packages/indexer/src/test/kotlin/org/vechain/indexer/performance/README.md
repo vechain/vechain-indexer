@@ -26,7 +26,6 @@ All 11 indexers with 1000 mainnet blocks (23430500-23431499):
 - ✅ StargateToken
 - ✅ TokenReward (Stargate Rewards)
 - ✅ Transaction
-- ✅ UserAllTimeActionSummary (B3TR)
 - ✅ Validator
 - ✅ ValidatorBlock
 - ✅ VthoGeneratedByBlock
@@ -169,9 +168,6 @@ All performance tests are marked with `@Disabled` to prevent them from running d
 
 **Block Usage Special Case:**
 BlockUsage indexer must start from block 0 (not 23430500) due to cumulative data requirements.
-
-**Event-Driven Indexers:**
-UserAllTimeActionSummary only processes blocks with B3TR_ActionReward events (very sparse).
 
 **Memory & CPU:**
 Tests track resource usage throughout execution, not just start/end.

@@ -1,9 +1,9 @@
 package org.vechain.indexer.b3tr.action.response
 
-import org.vechain.indexer.b3tr.action.AppAllTimeActionSummary
-import org.vechain.indexer.b3tr.action.AppDailyActionSummary
-import org.vechain.indexer.b3tr.action.AppRoundActionSummary
+import org.vechain.indexer.b3tr.action.AppUserActionSummary
 import org.vechain.indexer.b3tr.action.Impact
+import org.vechain.indexer.b3tr.action.date
+import org.vechain.indexer.b3tr.action.roundId
 
 data class UserAppLeaderboardItem(
     val appId: String,
@@ -15,40 +15,15 @@ data class UserAppLeaderboardItem(
     val totalImpact: Impact?,
 ) {
     companion object {
-        fun from(summary: AppAllTimeActionSummary): UserAppLeaderboardItem {
-            return UserAppLeaderboardItem(
+        fun from(summary: AppUserActionSummary): UserAppLeaderboardItem =
+            UserAppLeaderboardItem(
                 appId = summary.appId,
                 user = summary.user,
-                roundId = null,
-                date = null,
+                roundId = summary.period.roundId,
+                date = summary.period.date,
                 totalRewardAmount = summary.totalRewardAmount.toDouble(),
                 actionsRewarded = summary.actionsRewarded,
                 totalImpact = summary.totalImpact,
             )
-        }
-
-        fun from(summary: AppDailyActionSummary): UserAppLeaderboardItem {
-            return UserAppLeaderboardItem(
-                appId = summary.appId,
-                user = summary.user,
-                roundId = null,
-                date = summary.date,
-                totalRewardAmount = summary.totalRewardAmount.toDouble(),
-                actionsRewarded = summary.actionsRewarded,
-                totalImpact = summary.totalImpact,
-            )
-        }
-
-        fun from(summary: AppRoundActionSummary): UserAppLeaderboardItem {
-            return UserAppLeaderboardItem(
-                appId = summary.appId,
-                user = summary.user,
-                roundId = summary.roundId,
-                date = null,
-                totalRewardAmount = summary.totalRewardAmount.toDouble(),
-                actionsRewarded = summary.actionsRewarded,
-                totalImpact = summary.totalImpact,
-            )
-        }
     }
 }
