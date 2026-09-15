@@ -9,11 +9,8 @@ import kotlin.collections.set
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.getAmountAsDecimal
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.getAppId
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.getRewardsAllocationAmountAsDecimal
@@ -22,26 +19,21 @@ import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.getTotalAmountAsDecimal
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.getUnallocatedAmountAsDecimal
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.groupByRoundId
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.parseVotes
-import org.vechain.indexer.b3tr.xAlloc.repository.XAllocResultRepository
-import org.vechain.indexer.config.InlineVersioningProperties
+import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
-import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.utils.EventUtils.groupByBlock
-import org.vechain.indexer.utils.IdUtils.generateId
 
 @Profile("b3tr", "b3tr-x-alloc")
 @Service
 open class XAllocResultService(
-    private val repository: XAllocResultRepository,
-    private val mongoTemplate: MongoTemplate,
-    private val inlineVersioningProperties: InlineVersioningProperties,
+    private val repository: XAllocResultWriteRepository,
     private val thorClient: ThorClient,
     @param:Value("\${business-event.substitutions.X_ALLOC_POOL_CONTRACT}")
     private val xAllocPoolContract: String,
@@ -62,113 +54,95 @@ open class XAllocResultService(
         abi
     }
 
-    open suspend fun processEvents(
-        events: List<IndexedEvent>
-    ): Pair<List<XAllocResult>, List<XAllocResult>> {
-        // Pre-collect all record IDs and batch-load from DB
-        val allRecordIds = mutableSetOf<String>()
-        groupByBlock(events).forEach { (_, blockEvents) ->
-            groupByRoundId(blockEvents).forEach { (roundId, roundEvents) ->
-                val appIds = mutableSetOf<String>()
-                roundEvents
-                    .filter { it.eventType == "B3TR_XAllocationVote" }
-                    .forEach { event ->
-                        XAllocEventUtils.getAppIds(event).forEach { appIds.add(it) }
-                    }
-                roundEvents
-                    .filter {
-                        it.eventType == "B3TR_XAllocationRewardsClaimed" ||
-                            it.eventType == "B3TR_DBAFundsDistributed"
-                    }
-                    .forEach { event -> appIds.add(getAppId(event)) }
-                appIds.forEach { appId -> allRecordIds.add(generateId("$roundId", appId)) }
+    /** The new row of each (round, app) touched in each block, in ascending block order. */
+    open suspend fun processEvents(events: List<IndexedEvent>): List<XAllocResult> {
+        if (events.isEmpty()) return emptyList()
+
+        val rounds = mutableSetOf<Int>()
+        val apps = mutableSetOf<String>()
+        groupByRoundId(events).forEach { (roundId, roundEvents) ->
+            rounds += roundId
+            roundEvents.forEach { event ->
+                when (event.eventType) {
+                    "B3TR_XAllocationVote" -> apps += XAllocEventUtils.getAppIds(event)
+                    "B3TR_XAllocationRewardsClaimed",
+                    "B3TR_DBAFundsDistributed" -> apps += getAppId(event)
+                }
             }
         }
-        val preloaded =
-            if (allRecordIds.isNotEmpty()) {
-                repository.findAllById(allRecordIds).associateBy { it.getDocumentId() }
-            } else {
-                emptyMap()
-            }
+        val current =
+            repository
+                .findCurrent(rounds, apps)
+                .associateBy { it.roundId to it.appId }
+                .toMutableMap()
+        // One row per (block, round, app): a later event in the same block replaces the earlier.
+        val rows = linkedMapOf<Triple<Long, Int, String>, XAllocResult>()
 
-        val accumulator =
-            VersionedDocumentAccumulator<XAllocResult>(
-                findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) }
-            )
+        fun record(blockNumber: Long, updated: XAllocResult) {
+            current[updated.roundId to updated.appId] = updated
+            rows[Triple(blockNumber, updated.roundId, updated.appId)] = updated
+        }
+
         val bestBlockId = thorClient.getBlockUnexpanded(BlockRevision.Keyword.BEST).id
 
         groupByBlock(events).forEach { (blockDetails, blockEvents) ->
-            accumulator.startBlock()
             groupByRoundId(blockEvents).forEach { (roundId, roundEvents) ->
                 val isQFEnabled = isQuadraticFundingEnabled(roundId, bestBlockId)
-                // Parse vote events
                 parseVotes(
                         roundEvents.filter { it.eventType == "B3TR_XAllocationVote" },
                         isQFEnabled,
                     )
                     .forEach { (appId, aggregatedVote) ->
-                        val recordId = generateId("$roundId", appId)
-                        val (existing, nextVersion) = accumulator.resolve(recordId)
-                        val updated =
+                        record(
+                            blockDetails.blockNumber,
                             addOrCreateVoteResult(
                                 roundId = roundId,
                                 appId = appId,
                                 voters = aggregatedVote.voters,
                                 votesReceived = aggregatedVote.votesReceived,
                                 blockDetails = blockDetails,
-                                existing = existing,
-                                version = nextVersion,
-                            )
-                        accumulator.put(recordId, existing, updated)
+                                existing = current[roundId to appId],
+                            ),
+                        )
                     }
-                // Parse ClaimReward events
                 roundEvents
                     .filter { it.eventType == "B3TR_XAllocationRewardsClaimed" }
                     .forEach { event ->
                         val appId = getAppId(event)
-                        val totalAmount = getTotalAmountAsDecimal(event)
-                        val unallocatedAmount = getUnallocatedAmountAsDecimal(event)
-                        val teamAllocationAmount = getTeamAllocationAmountAsDecimal(event)
-                        val rewardsAllocationAmount = getRewardsAllocationAmountAsDecimal(event)
-                        val recordId = generateId("$roundId", appId)
-                        val (existing, nextVersion) = accumulator.resolve(recordId)
-                        val updated =
+                        record(
+                            blockDetails.blockNumber,
                             addOrCreateRewardClaimResult(
                                 roundId = roundId,
                                 appId = appId,
                                 blockDetails = blockDetails,
-                                existing = existing,
-                                totalAmount = totalAmount,
-                                unallocatedAmount = unallocatedAmount,
-                                teamAllocationAmount = teamAllocationAmount,
-                                rewardsAllocationAmount = rewardsAllocationAmount,
-                                version = nextVersion,
-                            )
-                        accumulator.put(recordId, existing, updated)
+                                existing = current[roundId to appId],
+                                totalAmount = getTotalAmountAsDecimal(event),
+                                unallocatedAmount = getUnallocatedAmountAsDecimal(event),
+                                teamAllocationAmount = getTeamAllocationAmountAsDecimal(event),
+                                rewardsAllocationAmount =
+                                    getRewardsAllocationAmountAsDecimal(event),
+                            ),
+                        )
                     }
-                // Parse DBA Funds Distributed events
                 roundEvents
                     .filter { it.eventType == "B3TR_DBAFundsDistributed" }
                     .forEach { event ->
                         val appId = getAppId(event)
-                        val amount = getAmountAsDecimal(event)
-                        val recordId = generateId("$roundId", appId)
-                        val (existing, nextVersion) = accumulator.resolve(recordId)
-                        val updated =
+                        record(
+                            blockDetails.blockNumber,
                             addOrCreateDbaFundResult(
                                 roundId = roundId,
                                 appId = appId,
                                 blockDetails = blockDetails,
-                                existing = existing,
-                                amount = amount,
-                                version = nextVersion,
-                            )
-                        accumulator.put(recordId, existing, updated)
+                                existing = current[roundId to appId],
+                                amount = getAmountAsDecimal(event),
+                            ),
+                        )
                     }
             }
         }
 
-        return accumulator.results()
+        return rows.values.toList()
     }
 
     protected fun addOrCreateVoteResult(
@@ -178,10 +152,8 @@ open class XAllocResultService(
         existing: XAllocResult?,
         voters: Long,
         votesReceived: BigInteger,
-        version: Int,
     ): XAllocResult {
         return existing?.copy(
-            version = version,
             blockId = blockDetails.blockId,
             blockNumber = blockDetails.blockNumber,
             blockTimestamp = blockDetails.blockTimestamp,
@@ -189,7 +161,6 @@ open class XAllocResultService(
             votesReceived = existing.votesReceived + votesReceived,
         )
             ?: XAllocResult(
-                version = version,
                 blockId = blockDetails.blockId,
                 blockNumber = blockDetails.blockNumber,
                 blockTimestamp = blockDetails.blockTimestamp,
@@ -213,10 +184,8 @@ open class XAllocResultService(
         unallocatedAmount: BigDecimal,
         teamAllocationAmount: BigDecimal,
         rewardsAllocationAmount: BigDecimal,
-        version: Int,
     ): XAllocResult {
         return existing?.copy(
-            version = version,
             blockId = blockDetails.blockId,
             blockNumber = blockDetails.blockNumber,
             blockTimestamp = blockDetails.blockTimestamp,
@@ -230,7 +199,6 @@ open class XAllocResultService(
                     ?: rewardsAllocationAmount,
         )
             ?: XAllocResult(
-                version = version,
                 blockId = blockDetails.blockId,
                 blockNumber = blockDetails.blockNumber,
                 blockTimestamp = blockDetails.blockTimestamp,
@@ -251,17 +219,14 @@ open class XAllocResultService(
         blockDetails: BlockDetails,
         existing: XAllocResult?,
         amount: BigDecimal,
-        version: Int,
     ): XAllocResult {
         return existing?.copy(
-            version = version,
             blockId = blockDetails.blockId,
             blockNumber = blockDetails.blockNumber,
             blockTimestamp = blockDetails.blockTimestamp,
             totalAmount = existing.totalAmount?.plus(amount) ?: amount,
         )
             ?: XAllocResult(
-                version = version,
                 blockId = blockDetails.blockId,
                 blockNumber = blockDetails.blockNumber,
                 blockTimestamp = blockDetails.blockTimestamp,
@@ -276,17 +241,11 @@ open class XAllocResultService(
             )
     }
 
-    @Transactional(rollbackFor = [Exception::class])
-    open fun save(updated: List<XAllocResult>, existing: List<XAllocResult>) {
-        saveVersionedDocuments(
-            updated,
-            existing,
-            mongoTemplate,
-            inlineVersioningProperties.blockWindow,
-            inlineVersioningProperties.maxVersions,
-            inlineVersioningProperties.minVersions,
-        )
-    }
+    @Transactional(
+        transactionManager = PostgresConfig.TRANSACTION_MANAGER,
+        rollbackFor = [Exception::class],
+    )
+    open fun save(results: List<XAllocResult>) = repository.save(results)
 
     open suspend fun isQuadraticFundingEnabled(roundId: Int, bestBlockId: String): Boolean =
         cachedIsQuadraticFundingEnabled[roundId]
