@@ -228,7 +228,7 @@ assert_stopped() {
       echo "### Dead Prod Service State"
       echo "- ECS cluster: \`${ecs_cluster}\`"
       echo "- Status: cluster missing, treated as stopped"
-      echo "- Note: the Atlas restore workflow only requires the target Atlas clusters; use the service workflow later to confirm ECS infrastructure exists before restart"
+      echo "- Note: use the service workflow later to confirm ECS infrastructure exists before restart"
     } >> "${GITHUB_STEP_SUMMARY:?GITHUB_STEP_SUMMARY is required}"
     exit 0
   fi

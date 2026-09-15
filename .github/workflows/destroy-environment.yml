@@ -49,8 +49,6 @@ jobs:
       - name: Destroy Lingering Secrets
         run: |
           echo "Deleting lingering secrets..."
-          aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/mongo_api_password --force-delete-without-recovery || true
-          aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/mongo_indexer_password --force-delete-without-recovery || true
           aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/pg_api_password --force-delete-without-recovery || true
           aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/pg_indexer_password --force-delete-without-recovery || true
 
