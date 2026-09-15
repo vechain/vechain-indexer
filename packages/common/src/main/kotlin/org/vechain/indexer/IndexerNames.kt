@@ -107,24 +107,14 @@ object IndexerNames {
         const val COLLECTION = "token_reward"
     }
 
-    object ACCOUNT_TOTALS_SERIES {
-        const val NAME = "AccountTotalsSeriesIndexer"
-        const val COLLECTION = "account_totals_series"
-    }
-
-    object ACCOUNT_OVERVIEW {
-        const val NAME = "AccountOverviewIndexer"
-        const val COLLECTION = "account_overviews"
+    object ACCOUNTS {
+        const val NAME = "AccountsIndexer"
+        const val COLLECTION = "accounts"
     }
 
     object CONTRACTS {
         const val NAME = "ContractsIndexer"
         const val COLLECTION = "contracts"
-    }
-
-    object VET_BALANCE {
-        const val NAME = "VetBalanceIndexer"
-        const val COLLECTION = "vet_balances"
     }
 
     object B3TR_BALANCE {

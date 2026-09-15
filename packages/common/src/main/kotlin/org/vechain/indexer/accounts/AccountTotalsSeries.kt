@@ -1,25 +1,14 @@
 package org.vechain.indexer.accounts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonInclude
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
-import org.vechain.indexer.IndexerNames
 
-@Document(collection = IndexerNames.ACCOUNT_TOTALS_SERIES.COLLECTION)
-@JsonInclude(JsonInclude.Include.NON_NULL)
+/** The accounts seen up to [blockNumber]; one row per block the count moved or a period closed. */
 data class AccountTotalsSeries(
-    override val blockId: String,
+    @JsonIgnore override val blockId: String,
     override val blockNumber: Long,
     override val blockTimestamp: Long,
-    @JsonIgnore
-    val recordType: AccountTotalsSeriesRecordType = AccountTotalsSeriesRecordType.SERIES,
-    val totalAccounts: Long? = null,
-    @JsonIgnore val address: String? = null,
-    @JsonIgnore val isHourly: Boolean?,
-    @JsonIgnore val isDaily: Boolean?,
-    @JsonIgnore val isWeekly: Boolean?,
-    @JsonIgnore val isMonthly: Boolean?,
-    @JsonIgnore @Id val id: String,
+    val totalAccounts: Long,
+    /** The boundaries this row is the first past, which the API samples a range by. */
+    @JsonIgnore val timeFrames: List<TimeFrame> = emptyList(),
 ) : IndexedDocument

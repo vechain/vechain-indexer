@@ -1,5 +1,7 @@
 package org.vechain.indexer.explorer
 
+import org.vechain.indexer.accounts.TimeFrame
+
 object TimestampUtils {
     private const val SLOT_STEP = 10L
 
@@ -24,6 +26,15 @@ object TimestampUtils {
 
     fun isMonthly(previousTimestamp: Long, currentTimestamp: Long): Boolean =
         isMultipleOf(previousTimestamp, currentTimestamp, ONE_MONTH)
+
+    /** The boundaries [currentTimestamp] is the first block past since [previousTimestamp]. */
+    fun timeFrames(previousTimestamp: Long, currentTimestamp: Long): List<TimeFrame> =
+        listOfNotNull(
+            TimeFrame.HOUR.takeIf { isHourly(previousTimestamp, currentTimestamp) },
+            TimeFrame.DAY.takeIf { isDaily(previousTimestamp, currentTimestamp) },
+            TimeFrame.WEEK.takeIf { isWeekly(previousTimestamp, currentTimestamp) },
+            TimeFrame.MONTH.takeIf { isMonthly(previousTimestamp, currentTimestamp) },
+        )
 
     fun isHourlyChange(previous: Long, current: Long): Boolean =
         hasBoundaryChanged(previous, current, ONE_HOUR)
