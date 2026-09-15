@@ -5,8 +5,8 @@ Performance tests for VeChain indexers. Tests fetch real blocks from mainnet and
 ## Quick Start
 
 ```bash
-# Start MongoDB
-make db-all
+# Start PostgreSQL
+make pg-up
 
 # Run all performance tests (takes ~6 minutes)
 ./gradlew :packages:indexer:test --tests "org.vechain.indexer.performance.*.*PerformanceTest"
@@ -55,7 +55,7 @@ Operation                                   Calls     Total (ms)     Avg (ms)
 ------------------------------------------------------------------------------
 Total Indexing Time                             1        161.774      161.774
     AccountsProcessor.process                   1         76.251       76.251
-      AccountsService.save (MongoDB)            1         70.141       70.141
+      AccountsService.save                      1         70.141       70.141
       AccountsService.processBlock              1          6.083        6.083
         - getNewAccounts                        1          4.383        4.383
         - updateAccountsInfo                    1          1.679        1.679
@@ -66,20 +66,8 @@ Total Indexing Time                             1        161.774      161.774
 ## Prerequisites
 
 **Required:**
-- MongoDB running on `localhost:27017` with credentials `indexer:password`
+- PostgreSQL running on `localhost:5432` with credentials `indexer:password` (`make pg-up`)
 - Internet connection to `https://mainnet.vechain.org`
-
-**MongoDB Setup:**
-```bash
-# Simple MongoDB (no auth)
-docker run -d -p 27017:27017 mongo:8
-
-# OR with authentication
-docker run -d -p 27017:27017 \
-  -e MONGO_INITDB_ROOT_USERNAME=indexer \
-  -e MONGO_INITDB_ROOT_PASSWORD=password \
-  mongo:8
-```
 
 ## Test Structure
 
@@ -135,9 +123,9 @@ processEventsMethod.invoke(service, ...)
 
 **3. Composition (for final classes):**
 ```kotlin
-class ProfiledTransactionService(private val mongoTemplate: MongoTemplate) {
+class ProfiledTransactionService(private val repository: TransactionWriteRepository) {
     fun processBlockTransactions(...) {
-        val actualService = TransactionService(mongoTemplate)
+        val actualService = TransactionService(repository)
         profiler.time("process") { actualService.processBlockTransactions(...) }
     }
 }
@@ -174,13 +162,13 @@ Tests track resource usage throughout execution, not just start/end.
 
 ## Troubleshooting
 
-**MongoDB Connection Error:**
+**PostgreSQL Connection Error:**
 ```bash
-# Check MongoDB is running
-docker ps | grep mongo
+# Check PostgreSQL is running
+docker ps | grep postgres
 
 # Check credentials match application-test.properties
-# Default: mongodb://indexer:password@localhost:27017
+# Default: jdbc:postgresql://localhost:5432/vechain as indexer:password
 ```
 
 **OutOfMemory:**

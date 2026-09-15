@@ -23,17 +23,13 @@ import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerRunner
 import org.vechain.indexer.config.metrics.IndexerHealthMetrics
-import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.history.DelegationLifecycleHistoryService
 import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.version.IndexerVersionCollectionConfig
 
 @Component
 open class IndexManager(
     private val indexers: List<Indexer>,
     private val processors: List<BaseProcessor>,
-    private val collectionConfigs: List<CollectionConfig>,
-    private val indexerVersionCollectionConfig: IndexerVersionCollectionConfig,
     private val indexBootstrapState: IndexBootstrapState,
     private val appCoroutineScope: CoroutineScope,
     private val thorClient: ThorClient,
@@ -52,52 +48,25 @@ open class IndexManager(
 
     @EventListener(ApplicationReadyEvent::class)
     open fun start() {
-        logger.info("Application ready. Starting collection and index bootstrap in background")
+        logger.info("Application ready. Starting startup preload in background")
 
         appCoroutineScope.launch {
-            val initializerCount = collectionConfigs.size
-            indexBootstrapState.markRunning(initializerCount)
+            indexBootstrapState.markRunning()
 
             try {
-                val bootstrapStart = TimeSource.Monotonic.markNow()
-                // IndexerVersion must bootstrap first: other configs' initCollection() writes to
-                // it via IndexerVersionService.checkAndResetCollectionIfVersionChanged.
-                indexerVersionCollectionConfig.initCollection()
-                indexerVersionCollectionConfig.removeStaleIndexes()
-                indexerVersionCollectionConfig.createPendingIndexes()
-                collectionConfigs
-                    .filter { it !== indexerVersionCollectionConfig }
-                    .sortedBy { it.modelObj.simpleName }
-                    .forEach {
-                        val start = TimeSource.Monotonic.markNow()
-                        it.initCollection()
-                        it.removeStaleIndexes()
-                        it.createPendingIndexes()
-                        logger.debug(
-                            "Collection bootstrap for {} completed in {}",
-                            it.modelObj.simpleName,
-                            start.elapsedNow(),
-                        )
-                    }
-                logger.info(
-                    "Bootstrapped {} collections in {}",
-                    collectionConfigs.size,
-                    bootstrapStart.elapsedNow(),
-                )
-                indexBootstrapState.markReady(initializerCount)
-
                 delegationLifecycleHistoryService?.let {
                     logger.info("Preloading delegation lifecycle state")
                     val start = TimeSource.Monotonic.markNow()
                     it.preload()
                     logger.info("Delegation lifecycle preload completed in {}", start.elapsedNow())
                 }
+                indexBootstrapState.markReady()
 
-                logger.info("Collection bootstrap complete. Starting indexers")
+                logger.info("Startup preload complete. Starting indexers")
                 startIndexers()
             } catch (throwable: Throwable) {
                 indexBootstrapState.markFailed(throwable)
-                logger.error("Collection bootstrap failed", throwable)
+                logger.error("Startup preload failed", throwable)
                 SpringApplication.exit(applicationContext, ExitCodeGenerator { 1 })
             }
         }

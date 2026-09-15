@@ -47,7 +47,6 @@ thor/.output/
 packages/e2e/src/test/resources/results.json
 keyfile
 
-mongo-data
 app-logs
 
 sample-data

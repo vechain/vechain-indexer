@@ -1,10 +1,10 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-Keep application code inside `packages/`: `indexer` holds the Spring Boot indexers, `api` exposes REST endpoints, `common` shares Kotlin utilities, `e2e` houses Gatling-style system tests, and `build` stores shared Gradle and Spotless configs. Infrastructure lives under `database/` (MongoDB compose files, backups, and the `restore/` collection-copy tooling) and `terraform/` for deployment templates. Docker assets and helper scripts reside in `images/` and `git-scripts/` respectively.
+Keep application code inside `packages/`: `indexer` holds the Spring Boot indexers, `api` exposes REST endpoints, `common` shares Kotlin utilities, `e2e` houses Gatling-style system tests, and `build` stores shared Gradle and Spotless configs. Infrastructure lives under `database/` (the PostgreSQL compose file and its init SQL) and `terraform/` for deployment templates. Docker assets and helper scripts reside in `images/` and `git-scripts/` respectively.
 
 ## Build, Test, and Development Commands
-Run `make build` for a Spotless format pass plus Gradle builds of API and indexer jars. Use `make start` to stand up MongoDB and both services via Docker Compose, or `make db-all` when you only need the database locally. Primary tests run with `make test`; targeted suites use `make test-api`, `make test-indexer`, `make test-common`, or `make test-e2e`. To explore available shortcuts, execute `make help`.
+Run `make build` for a Spotless format pass plus Gradle builds of API and indexer jars. Use `make start` to stand up PostgreSQL and both services via Docker Compose, or `make pg-up` when you only need the database locally. Primary tests run with `make test`; targeted suites use `make test-api`, `make test-indexer`, `make test-common`, or `make test-e2e`. To explore available shortcuts, execute `make help`.
 Always run `make build` after making a code change to check whether it builds and the format the code.
 
 ## Coding Style & Naming Conventions
@@ -13,20 +13,21 @@ Kotlin sources must stay formatted by ktfmt Google style with 4-space block and 
 ## Testing Guidelines
 All Gradle test tasks run on JUnit Platform and automatically wire Jacoco reports; keep coverage meaningful enough for the aggregated badges to remain green. Name Kotlin test files with the `SomethingTest.kt` suffix and align fixtures under `src/test/resources`. End-to-end runs (`make test-e2e`) spin up Docker infrastructure, so clean up with `make clean` if runs abort.
 
-## New Indexer + API Playbook (Default: Versioned)
+## New Indexer + API Playbook
 When adding a new feature indexer and endpoint, prefer copying an existing implementation and editing it in place (e.g. `accounts/AccountOverview*` or `contracts/Contract*`). Keep the flow consistent across `common` → `indexer` → `api` → config wiring.
 
 ### Common (`packages/common`)
-- Model: `@Document`, `@JsonView(Views.Public::class)`, `@JsonInclude(JsonInclude.Include.NON_NULL)`.
-- Versioned default: implement `VersionedDocument` and add a matching `*Archive : Archive<T>`.
-- Repository: add `*Repository : BaseIndexedRepository<Model, String>` and put it in `.../repository/`.
+- Migration: add `V<n>__<schema>.sql` under `src/main/resources/db/migration`, one schema per indexer. Check for sibling `feat/*-on-postgres` branches before picking `<n>` — Flyway `outOfOrder` is off.
+- Model: a data class implementing `IndexedDocument`, with `@JsonView(Views.Public::class)` and `@JsonInclude(JsonInclude.Include.NON_NULL)`.
+- `*RowMapping`: the `TABLE`, `COLUMNS` and `bind(ps, row)` that both repositories share.
+- `*WriteRepository : PostgresIndexerTables`, annotated `@Repository` and `@ConditionalOnPostgres`, writing through the injected `postgresJdbcTemplate`.
+- `*ReadRepository`: the API's queries over the same tables.
 
 ### Indexer (`packages/indexer`)
-- `IndexerNames` (in `common` package): add a nested object with `NAME` and `COLLECTION` constants for the new indexer.
-- `*Service`: constructor-inject `Repository`, `ArchiveService`, `TargetedPruner`; expose `processBlock/processEvents` and `save(...)` via `saveVersionedDocuments`. Keep business logic isolated here.
-- `*Processor`: extend `StatefulMongoProcessor` for versioned Mongo storage (rollback + archive/pruner support). Call `service.process*` then `service.save` when lists are non-empty.
-- `*Config`: wire `ArchiveService`, `TargetedPruner`, and `IndexerFactory().build()` settings (start block, batch size, included data).
-- `mongo/*CollectionConfig`: implement `CollectionConfig` version check + indexes. Add compound indexes that match API query patterns.
+- `IndexerNames` (in `common` package): add a nested object with `NAME` and `COLLECTION` constants, where `COLLECTION` is the Postgres schema name.
+- `*Service`: constructor-inject the write repository; expose `processBlock/processEvents` and `save(...)`. Keep business logic isolated here.
+- `*Processor`: extend `PostgresProcessor`, handing it a `PostgresIndexerStore` over the schema. Call `service.process*` then `service.save` when lists are non-empty.
+- `*Config`: wire `IndexerFactory().build()` settings (start block, batch size, included data).
 
 ### API (`packages/api`)
 - `*Service`: query repositories only; keep business logic minimal.
@@ -41,7 +42,7 @@ When adding a new feature indexer and endpoint, prefer copying an existing imple
   - Add the new keys and Spring profiles in `terraform/api/environments/*.yml`.
 
 ### Triggering an Indexer Resync
-To force an indexer to drop its collection and re-index from the start block, increment its deployed version number only in:
+To force an indexer to truncate its schema and re-index from the start block, increment its deployed version number only in:
 - **Deployed (prod)**: `terraform/api/environments/prod-blue.yml` and `terraform/api/environments/prod-green.yml` under `indexer.version.<key>` for both `main` and `test` net sections.
 
 Keep local defaults at `1`: do not bump `indexer.version.<key>` fallback values in `packages/indexer/src/main/resources/application.yaml`, and do not bump `VERSION_*` values in `packages/indexer/.env.example`. Each prod environment file has separate version entries for mainnet and testnet — bump both. The version value must be higher than the currently deployed value; the indexer compares its stored version against the configured one and resyncs when they differ.
@@ -59,11 +60,11 @@ Flyway runs on the indexer's startup path, before the web server answers the con
 
 ## Indexer Performance Guidelines
 
-### CRITICAL: 1 Indexer = 1 Collection (or 1 Schema)
-Each indexer MUST own exactly one storage unit: one MongoDB collection, or one PostgreSQL schema whose tables are written in one transaction per block and rolled back by one cascading delete (the Postgres tables are the model). Never create multiple collections, or tables across schemas, for a single indexer. The backup, restore, and rollback mechanisms all operate on that unit and assume a 1:1 relationship between an indexer and its collection or schema. Splitting one indexer's data across units breaks rollback consistency (partial rollbacks), backup integrity (units can drift out of sync), and restore correctness. If your data model seems to require multiple units, split it into separate indexers instead. This is a hard rule with no exceptions.
-Indexer code must only access its own collection or schema. Do not inject, call, or query another indexer's repository, collection, schema, Mongo template query, or service from inside an indexer. Cross-indexer dependencies are a huge no-no and should be treated as an architectural violation, not a trade-off to make casually.
-If data seems to require reading another indexer's collection, stop and redesign the flow. Prefer deriving it from on-chain events, reshaping the owning indexer's document, or introducing a separate dedicated indexer with its own collection. Do not solve it by wiring one indexer to another indexer's repository.
-The only allowed exception is a narrow downstream-derived pattern with an explicit `.dependsOn(...)` relationship. In that case, the downstream indexer may read the upstream collection only when the dependency is one-way, the downstream document is clearly derived from upstream data, and rollout/versioning/resync are coordinated across both indexers.
+### CRITICAL: 1 Indexer = 1 Schema
+Each indexer MUST own exactly one PostgreSQL schema, whose tables are written in one transaction per block and rolled back by one cascading delete. Never create tables across schemas for a single indexer. The backup, restore, and rollback mechanisms all operate on that schema and assume a 1:1 relationship between an indexer and it. Splitting one indexer's data across schemas breaks rollback consistency (partial rollbacks), backup integrity (schemas can drift out of sync), and restore correctness. If your data model seems to require multiple schemas, split it into separate indexers instead. This is a hard rule with no exceptions.
+Indexer code must only access its own schema. Do not inject, call, or query another indexer's repository, schema, or service from inside an indexer. Cross-indexer dependencies are a huge no-no and should be treated as an architectural violation, not a trade-off to make casually.
+If data seems to require reading another indexer's schema, stop and redesign the flow. Prefer deriving it from on-chain events, reshaping the owning indexer's tables, or introducing a separate dedicated indexer with its own schema. Do not solve it by wiring one indexer to another indexer's repository.
+The only allowed exception is a narrow downstream-derived pattern with an explicit `.dependsOn(...)` relationship. In that case, the downstream indexer may read the upstream schema only when the dependency is one-way, the downstream rows are clearly derived from upstream data, and rollout/versioning/resync are coordinated across both indexers.
 This exception still carries coupling and rollback risk. It is not a normal implementation option, not a shortcut for convenience, and not permission to build chains of indexers reading each other freely.
 The **API** may join across Postgres schemas, because it owns no rollback unit: the `nft` and `history` reads anti-join `nft_blacklist.collection_state` inline rather than carrying a denormalised flag that a later state change would have to backfill. This is a reading rule for the API only; an indexer still writes and reads its own schema. The delegation, validator-block and Stargate indexers' reads of the Postgres validators under `.dependsOn(...)` are the standing cross-store reads until they move.
 This applies even to read-only aggregations, helper lookups, "just one query", or cases where the dependency feels obvious. Those shortcuts create coupling, ordering constraints, rollout risk, and rollback inconsistency between indexers unless they follow the explicit downstream exception above.
@@ -91,7 +92,7 @@ An API endpoint should not make multiple sequential repository calls (e.g., fetc
 Avoid endpoints with many optional filter parameters. An endpoint that accepts 8 optional query params to cover every possible filtering combination is hard to optimise and hard to index. Challenge contributors: does the consumer actually need all these filters? Prefer splitting into multiple focused endpoints that each do one thing well over a single endpoint that does many things poorly.
 
 ### Index Coverage Without Bloat
-All queries must have some level of index coverage — no query should trigger a full collection scan. However, do not create a dedicated compound index for every query permutation. Strike a pragmatic balance: cover the common patterns, look for redundant or overlapping indexes, and keep index count reasonable. The MongoDB Atlas Performance Advisor can be useful but take its recommendations with a large grain of salt — it tends to suggest too many indexes. All indexes are defined in `*CollectionConfig` files in the codebase; that is the single source of truth.
+All queries must have some level of index coverage — no query should trigger a sequential scan of a large table. However, do not create a dedicated compound index for every query permutation. Strike a pragmatic balance: cover the common patterns, look for redundant or overlapping indexes, and keep index count reasonable. All indexes are declared in the Flyway migration that creates their schema; that is the single source of truth.
 
 ### Avoid Count Operations
 `countDocuments()` is expensive on large collections and should be strongly discouraged. Prefer `estimatedDocumentCount()` where an exact count is not required, but remember it cannot accept a query filter and the result must be adjusted for non-data records (e.g., `__checkpoint__` documents). When a count operation is truly unavoidable, it is a strong candidate for caching using the existing Caffeine / `@Cacheable` pattern — register the cache in `CacheConfig.CACHE_NAMES` and add configuration in `application.yaml`.
@@ -196,4 +197,4 @@ The VPC apply is scoped, because DNS records live in it and a cutover *is* a `te
 The review-time plan needs the `AWS_OIDC_ROLE_ARN` variable, pointed at the **read-only** `veworld-indexer-github-actions-prod-plan` role that `terraform/vpc` declares — not the deploy role, because the plan executes PR-controlled Terraform. Unset, the plan step skips rather than falling back to write credentials. The SSH agent for private module sources is still exposed to that code; keep module sources under review.
 
 ## Environment & Operations Tips
-Copy `.env.example` files inside each package when running outside IntelliJ; the defaults target Dockerized services on localhost. Use `make db-backup` and `make db-restore` to manage whole-database Mongo snapshots stored in `database/backups/`. For targeted collection-level copy between two live clusters, run `make db-copy-collections` (see `database/restore/README.md`).
+Copy `.env.example` files inside each package when running outside IntelliJ; the defaults target Dockerized services on localhost. `make pg-up` starts local PostgreSQL, `make pg-psql` opens a shell against it, and `make pg-clean` drops its data.

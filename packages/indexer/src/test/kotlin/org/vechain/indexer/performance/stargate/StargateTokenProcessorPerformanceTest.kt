@@ -4,7 +4,6 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
@@ -33,7 +32,6 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
 
     @Value("\${indexer.start-block.validator}") var validatorStartBlock: Long = 0L
     @Autowired lateinit var inlineVersioningProperties: InlineVersioningProperties
-    @Autowired lateinit var mongoTemplate: MongoTemplate
     @Autowired lateinit var indexerState: IndexerStateRepository
     @Autowired lateinit var checkpointProperties: CheckpointProperties
     @Autowired lateinit var processorMetrics: ProcessorMetrics

@@ -12,7 +12,7 @@ import org.vechain.indexer.validator.ValidatorReadRepository
 /**
  * Extended StargateTokenService that profiles EVERY internal method call Tracks performance of:
  * - processBlock (main processing)
- * - save (MongoDB writes)
+ * - save (database writes)
  * - validator snapshot cache loading
  * - checkMissingValidators (missing validator detection)
  * - validator lifecycle event processing

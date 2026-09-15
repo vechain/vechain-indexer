@@ -1,9 +1,9 @@
 package org.vechain.indexer.b3tr.action
 
-import com.mongodb.assertions.Assertions.assertNotNull
-import com.mongodb.assertions.Assertions.assertNull
 import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested

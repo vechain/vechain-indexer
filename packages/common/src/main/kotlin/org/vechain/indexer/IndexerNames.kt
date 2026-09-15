@@ -1,6 +1,6 @@
 package org.vechain.indexer
 
-/** Shared indexer names and storage unit names (a Mongo collection or a Postgres schema). */
+/** Shared indexer names and the Postgres schema each one owns. */
 object IndexerNames {
     object BLOCKS {
         const val NAME = "BlocksIndexer"

@@ -257,7 +257,9 @@ allprojects {
 
         // Common dependencies
         implementation("org.springframework.boot:spring-boot-starter")
-        implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
+        // Pagination types and @Transactional; versions from the Spring Boot BOM.
+        implementation("org.springframework.data:spring-data-commons")
+        implementation("org.springframework:spring-tx")
         implementation("org.springframework.boot:spring-boot-starter-webflux")
         implementation("org.springframework.boot:spring-boot-starter-jetty")
         implementation("org.springframework:spring-webflux")

@@ -4,7 +4,6 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
@@ -29,7 +28,6 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var tokenRewardRepository: TokenRewardWriteRepository
     @Autowired lateinit var tokenRewardService: TokenRewardService
     @Autowired lateinit var inlineVersioningProperties: InlineVersioningProperties
-    @Autowired lateinit var mongoTemplate: MongoTemplate
     @Autowired lateinit var validatorV2Repository: ValidatorReadRepository
     @Autowired lateinit var delegationV2Repository: DelegationReadRepository
     @Autowired lateinit var indexerState: IndexerStateRepository

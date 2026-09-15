@@ -3,7 +3,6 @@ package org.vechain.indexer
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.CheckpointProperties
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
@@ -31,7 +30,6 @@ import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedWriteRepository
  */
 class RollbackResetsCacheTest {
 
-    private val checkpointService = mockk<CheckpointService>(relaxed = true)
     private val processorMetrics = mockk<ProcessorMetrics>(relaxed = true)
 
     @Test

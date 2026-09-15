@@ -18,7 +18,7 @@ class IndexBootstrapHealthIndicatorTest {
 
     @Test
     fun `health is up after bootstrap completes`() {
-        indexBootstrapState.markReady(initializerCount = 3)
+        indexBootstrapState.markReady()
 
         val health = indicator.health()
 
