@@ -6,7 +6,6 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.mockk
-import io.mockk.verify
 import java.math.BigInteger
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -261,7 +260,12 @@ internal class AccountOverviewServiceTest {
         assertEquals(BigInteger.ZERO, before.of(bob).vthoPassiveGeneration)
         assertEquals(timestamp, before.of(bob).lastVthoSettlement)
 
-        val after = process(block(number = hayabusa), transfer)
+        val fork = process(block(number = hayabusa), transfer)
+        assertEquals(before.of(alice).vthoPassiveGeneration, fork.of(alice).vthoPassiveGeneration)
+        assertEquals(timestamp, fork.of(alice).lastVthoSettlement)
+        assertNull(fork.of(bob).lastVthoSettlement)
+
+        val after = process(block(number = hayabusa + 1), transfer)
         assertEquals(BigInteger.ZERO, after.of(alice).vthoPassiveGeneration)
         assertEquals(timestamp - 200, after.of(alice).lastVthoSettlement)
         assertNull(after.of(bob).lastVthoSettlement)
@@ -351,15 +355,23 @@ internal class AccountOverviewServiceTest {
     }
 
     @Test
-    fun `the Hayabusa settlement is the repository's, at the fork block only`() {
-        every { repository.settlePassiveVtho(any(), hayabusa, timestamp) } returns 3
+    fun `the fork block settles every holder it names, whether or not VET moved`() {
+        every { repository.findCurrentOverviews(any()) } returns
+            listOf(
+                stored(alice, vetBalance = vet(1000), lastVthoSettlement = timestamp - 200),
+                stored(bob, vetBalance = vet(1000)),
+            )
         assertTrue(service.isHayabusaBlock(hayabusa))
         assertTrue(!service.isHayabusaBlock(hayabusa + 1))
 
-        service.settleHayabusa(block(number = hayabusa))
+        val update = process(block(number = hayabusa, transactions = listOf(tx(alice), tx(bob))))
 
-        verify(exactly = 1) {
-            repository.settlePassiveVtho(block(hayabusa).id, hayabusa, timestamp)
-        }
+        assertEquals(
+            vet(1000) * BigInteger.valueOf(200 * 5) / BigInteger.TEN.pow(9),
+            update.of(alice).vthoPassiveGeneration,
+        )
+        assertEquals(timestamp, update.of(alice).lastVthoSettlement)
+        assertEquals(BigInteger.ZERO, update.of(bob).vthoPassiveGeneration)
+        assertNull(update.of(bob).lastVthoSettlement)
     }
 }

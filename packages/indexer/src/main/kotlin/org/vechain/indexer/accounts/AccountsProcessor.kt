@@ -81,7 +81,6 @@ open class AccountsProcessor(
             "Expected IndexingResult.BlockResult with full block data"
         }
         val block = entry.block
-        if (overviewService.isHayabusaBlock(block.number)) overviewService.settleHayabusa(block)
         val overview = overviewService.processBlock(block, entry.events)
         val totals = totalsService.processBlock(block, entry.events)
         repository.save(
@@ -91,6 +90,10 @@ open class AccountsProcessor(
                 balances = overview.balances,
                 newAccounts = totals.newAccounts,
                 totals = totals.totals,
+                settlement =
+                    if (overviewService.isHayabusaBlock(block.number))
+                        HayabusaSettlement(block.id, block.timestamp)
+                    else null,
             )
         )
         totalsService.saved(totals.totals)

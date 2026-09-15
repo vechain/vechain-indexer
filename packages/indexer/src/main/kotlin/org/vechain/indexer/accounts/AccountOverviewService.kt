@@ -3,7 +3,6 @@ package org.vechain.indexer.accounts
 import java.math.BigInteger
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.config.ForkConfig
@@ -29,8 +28,6 @@ open class AccountOverviewService(
     private val networkDetectionService: NetworkDetectionService,
     private val thorClient: ThorClient,
 ) {
-    private val logger = LoggerFactory.getLogger(this::class.java)
-
     /** The overviews a block changed and the VET balances that moved with them. */
     data class Update(val overviews: List<AccountOverview>, val balances: List<VetBalance>)
 
@@ -57,11 +54,9 @@ open class AccountOverviewService(
         val resolve = { address: String -> forMutation(address, block, stored, touched) }
 
         block.transactions.forEach { transactionRules(it, resolve) }
-        if (vetTransfers.isNotEmpty()) {
-            // Passive VTHO settles on the balance before this block's transfers move it.
-            passiveGenerationRule(block, vetTransfers, resolve)
-            vetTransfers.forEach { transferRule(it, resolve) }
-        }
+        // Passive VTHO settles on the balance before this block's transfers move it.
+        passiveGenerationRule(block, vetTransfers, stored, resolve)
+        vetTransfers.forEach { transferRule(it, resolve) }
         blockRewardsRule(block, events, stored, resolve)
 
         val balances =
@@ -74,13 +69,6 @@ open class AccountOverviewService(
     }
 
     open fun isHayabusaBlock(blockNumber: Long): Boolean = blockNumber == hayabusaBlock
-
-    /** Closes passive generation for every holder at the fork, ahead of the block's own rules. */
-    open fun settleHayabusa(block: Block) {
-        logger.info("Starting Hayabusa VTHO settlement at block {} {}", block.number, block.id)
-        val settled = repository.settlePassiveVtho(block.id, block.number, block.timestamp)
-        logger.info("Completed Hayabusa VTHO settlement. Total accounts settled: {}", settled)
-    }
 
     private fun transactionRules(tx: Transaction, resolve: (String) -> AccountOverview) {
         val origin = resolve(normalise(tx.origin))
@@ -106,27 +94,33 @@ open class AccountOverviewService(
 
     /**
      * 0.000432 VTHO per VET per day, credited to each party of a transfer since its last credit.
+     * The fork block credits every holder it names a last time; the schema settles the rest in SQL.
      */
     private fun passiveGenerationRule(
         block: Block,
         vetTransfers: List<IndexedEvent>,
+        stored: Map<String, AccountOverview>,
         resolve: (String) -> AccountOverview,
     ) {
-        if (block.number >= hayabusaBlock) return
+        if (block.number > hayabusaBlock) return
+        if (block.number == hayabusaBlock) {
+            stored.values
+                .filter { it.lastVthoSettlement != null && it.vetBalance > BigInteger.ZERO }
+                .forEach { settle(resolve(it.address), block.timestamp) }
+            return
+        }
         vetTransfers
             .flatMap { listOf(sender(it), recipient(it)) }
             .toSet()
-            .forEach { address ->
-                val account = resolve(address)
-                val last = account.lastVthoSettlement
-                if (
-                    last != null && account.vetBalance > BigInteger.ZERO && last < block.timestamp
-                ) {
-                    account.vthoPassiveGeneration +=
-                        passiveVtho(account.vetBalance, block.timestamp - last)
-                }
-                account.lastVthoSettlement = block.timestamp
-            }
+            .forEach { settle(resolve(it), block.timestamp) }
+    }
+
+    private fun settle(account: AccountOverview, timestamp: Long) {
+        val last = account.lastVthoSettlement
+        if (last != null && account.vetBalance > BigInteger.ZERO && last < timestamp) {
+            account.vthoPassiveGeneration += passiveVtho(account.vetBalance, timestamp - last)
+        }
+        account.lastVthoSettlement = timestamp
     }
 
     /** The reward is VTHO growth beyond transfers in, gas paid and pre-Hayabusa passive VTHO. */

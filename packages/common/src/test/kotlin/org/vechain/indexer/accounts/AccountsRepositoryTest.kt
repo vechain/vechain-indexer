@@ -96,6 +96,8 @@ class AccountsRepositoryTest {
     private fun totals(block: Long, count: Long, frames: List<TimeFrame>) =
         AccountTotalsSeries(blockId(block), block, ts(block), count, frames)
 
+    private fun settlement(block: Long) = HayabusaSettlement(blockId(block), ts(block))
+
     @Test
     fun `an overview round-trips and only its newest row is current`() {
         assertEquals(aliceAt10(), overviews.findByAddress(alice))
@@ -144,9 +146,11 @@ class AccountsRepositoryTest {
     }
 
     @Test
-    fun `the Hayabusa settlement credits every holder still generating, once`() {
-        assertEquals(2, writer.settlePassiveVtho(blockId(30), 30, ts(30)))
-        assertEquals(0, writer.settlePassiveVtho(blockId(30), 30, ts(30)))
+    fun `the fork block settles every holder still generating that its own rows did not`() {
+        val settledCarol = overview(carol, 30, vet = 100, settled = ts(30))
+        val fork = AccountsUpdate(30, overviews = listOf(settledCarol), settlement = settlement(30))
+        writer.save(fork)
+        writer.save(fork)
 
         // 900 VET over 20 hours at 5e-9 VTHO per VET-second.
         val settled = overviews.findByAddress(alice)!!
@@ -160,8 +164,9 @@ class AccountsRepositoryTest {
         assertEquals(ts(0), settled.firstSeen)
         assertEquals(1L, settled.transactionsSent)
         assertEquals(vet(900), settled.vetBalance)
-        assertEquals(30L, overviews.findByAddress(carol)?.blockNumber)
-        // Never settled, so never generating.
+        assertEquals(3, database.count("accounts.overview WHERE address = '\\x${"a".repeat(40)}'"))
+        // The block's own row stands; never settled means never generating.
+        assertEquals(settledCarol, overviews.findByAddress(carol))
         assertEquals(0L, overviews.findByAddress(bob)?.blockNumber)
 
         writer.rollbackFrom(30)

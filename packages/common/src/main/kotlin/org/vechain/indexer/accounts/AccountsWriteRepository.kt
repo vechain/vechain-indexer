@@ -10,14 +10,18 @@ import org.vechain.indexer.postgres.PostgresHex.bytes
 import org.vechain.indexer.postgres.PostgresHex.hex
 import org.vechain.indexer.postgres.PostgresIndexerTables
 
-/** Everything one block adds to the `accounts` schema. */
+/** Everything one block adds to the `accounts` schema; [settlement] only at the Hayabusa block. */
 data class AccountsUpdate(
     val blockNumber: Long,
     val overviews: List<AccountOverview> = emptyList(),
     val balances: List<VetBalance> = emptyList(),
     val newAccounts: List<String> = emptyList(),
     val totals: AccountTotalsSeries? = null,
+    val settlement: HayabusaSettlement? = null,
 )
+
+/** The fork block, at which every holder's passive VTHO is credited a last time. */
+data class HayabusaSettlement(val blockId: String, val blockTimestamp: Long)
 
 /** The `accounts` schema: the temporal overview, the balance changelog, the count and its set. */
 @Repository
@@ -33,6 +37,9 @@ open class AccountsWriteRepository(
     )
     open fun save(update: AccountsUpdate) {
         saveOverviews(update.blockNumber, update.overviews)
+        update.settlement?.let {
+            settlePassiveVtho(it.blockId, update.blockNumber, it.blockTimestamp)
+        }
         batch(VET_BALANCE_INSERT, update.balances) { ps, b -> VetBalanceRowMapping.bind(ps, b) }
         batch(SEEN_INSERT, update.newAccounts) { ps, address ->
             ps.setBytes(1, bytes(address))
@@ -75,15 +82,8 @@ open class AccountsWriteRepository(
             Boolean::class.java,
         )!!
 
-    /**
-     * Credits every current holder the passive VTHO accrued up to the Hayabusa block, closing the
-     * generation there. Each settled account gets a row at the block; returns how many.
-     */
-    @Transactional(
-        transactionManager = PostgresConfig.TRANSACTION_MANAGER,
-        rollbackFor = [Exception::class],
-    )
-    open fun settlePassiveVtho(blockId: String, blockNumber: Long, blockTimestamp: Long): Int {
+    // Holders the block itself names were settled in its rows; this closes every other current one.
+    private fun settlePassiveVtho(blockId: String, blockNumber: Long, blockTimestamp: Long) {
         val t = AccountOverviewRowMapping.TABLE
         val due =
             "superseded_at IS NULL AND block_number < ? AND vet_balance > 0 " +
@@ -105,7 +105,7 @@ open class AccountsWriteRepository(
             blockNumber,
             blockTimestamp,
         )
-        return jdbc.update(
+        jdbc.update(
             "UPDATE $t SET superseded_at = ? WHERE $due",
             blockNumber,
             blockNumber,
