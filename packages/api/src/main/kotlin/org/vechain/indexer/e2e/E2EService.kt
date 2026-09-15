@@ -2,31 +2,23 @@ package org.vechain.indexer.e2e
 
 import org.jetbrains.annotations.TestOnly
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
 import org.vechain.indexer.nft.IndexedNft
 import org.vechain.indexer.nft.NftReadRepository
 import org.vechain.indexer.transfer.IndexedTransferEvent
 import org.vechain.indexer.transfer.TransferEventType
+import org.vechain.indexer.transfer.TransferReadRepository
 
 @Profile("e2e")
 @Service
 open class E2EService(
-    private val mongoTemplate: MongoTemplate,
+    private val transferRepository: TransferReadRepository,
     private val nftRepository: NftReadRepository,
 ) {
 
     @TestOnly
-    open fun getNftTransfers(): List<IndexedTransferEvent> {
-        val query = Query()
-        val criteria =
-            Criteria.where(IndexedTransferEvent::eventType.name).`is`(TransferEventType.NFT)
-        query.addCriteria(criteria)
-
-        return mongoTemplate.find(query, IndexedTransferEvent::class.java)
-    }
+    open fun getNftTransfers(): List<IndexedTransferEvent> =
+        transferRepository.findAllByEventType(TransferEventType.NFT)
 
     @TestOnly open fun getNfts(): List<IndexedNft> = nftRepository.findAll()
 }

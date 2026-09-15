@@ -44,12 +44,7 @@ object IndexerNames {
 
     object TRANSFER {
         const val NAME = "TransferIndexer"
-        const val COLLECTION = "transfer_events"
-    }
-
-    object FUNGIBLE_TOKEN_INTERACTIONS {
-        const val NAME = "FungibleTokenInteractionsIndexer"
-        const val COLLECTION = "fungible_token_interactions"
+        const val COLLECTION = "transfers"
     }
 
     object VEVOTE {

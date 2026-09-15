@@ -54,6 +54,7 @@ import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedProcessor
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedService
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockProcessor
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockService
+import org.vechain.indexer.transfer.TransferProcessor
 import org.vechain.indexer.transfer.TransferService
 import org.vechain.indexer.validator.DelegationProcessor
 import org.vechain.indexer.validator.DelegationService
@@ -158,6 +159,9 @@ class ProcessorTransactionalAnnotationsTest {
                         "save",
                         StargateStakingService.Update::class.java,
                     ),
+                TransferService::class
+                    .java
+                    .getDeclaredMethod("save", TransferService.Update::class.java),
             )
         val processors =
             listOf(
@@ -186,6 +190,7 @@ class ProcessorTransactionalAnnotationsTest {
                 VthoGeneratedByBlockProcessor::class.java,
                 VthoClaimedProcessor::class.java,
                 StargateStakingProcessor::class.java,
+                TransferProcessor::class.java,
             )
         for (processor in processors) {
             assertEquals(PostgresProcessor::class.java, processor.superclass)
@@ -219,12 +224,6 @@ class ProcessorTransactionalAnnotationsTest {
             assertTransactional(transactional)
             assertEquals(PostgresConfig.TRANSACTION_MANAGER, transactional!!.transactionManager)
         }
-    }
-
-    @Test
-    fun `transfer service save keeps transactional semantics`() {
-        val saveMethod = TransferService::class.java.getDeclaredMethod("save", List::class.java)
-        assertTransactional(saveMethod.getAnnotation(Transactional::class.java))
     }
 
     private fun assertRollbackIsTransactional(processorClass: Class<*>) {
