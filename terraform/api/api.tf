@@ -260,14 +260,6 @@ module "ecs-lb-service-api" {
       value = each.value.indexer.business-event.substitutions.CHALLENGES_CONTRACT
     },
     {
-      name  = "MONGO_URI"
-      value = format("%s://api-${local.env.environment}:%s@%s/vechain?%s&readPreference=secondary", each.value.mongodb.proto, urlencode(aws_secretsmanager_secret_version.api_db_user_secret_version.secret_string), "${local.env.environment}-${each.value.mongodb.fqdn}", each.value.mongodb.opts)
-    },
-    {
-      name  = "MONGO_AUTHENTICATION_DATABASE",
-      value = "admin"
-    },
-    {
       name  = "PG_URL"
       value = local.pg_url[each.key]
     },
@@ -378,24 +370,12 @@ module "ecs-backend-service" {
       value = each.value.indexer.logging.pruner-log-level
     },
     {
-      name  = "MONGO_DRIVER_LOG_LEVEL"
-      value = each.value.indexer.logging.mongo-driver-log-level
-    },
-    {
       name  = "TIMING_WARN_THRESHOLD_MS"
       value = each.value.indexer.timing.warn-threshold-ms
     },
     {
       name  = "TIMING_VERY_SLOW_THRESHOLD_MS"
       value = each.value.indexer.timing.very-slow-threshold-ms
-    },
-    {
-      name  = "MONGO_URI"
-      value = format("%s://indexer-${local.env.environment}:%s@%s/vechain?%s", each.value.mongodb.proto, urlencode(aws_secretsmanager_secret_version.indexer_db_user_secret_version.secret_string), "${local.env.environment}-${each.value.mongodb.fqdn}", each.value.mongodb.opts)
-    },
-    {
-      name  = "MONGO_AUTHENTICATION_DATABASE",
-      value = "admin"
     },
     {
       name  = "PG_URL"
