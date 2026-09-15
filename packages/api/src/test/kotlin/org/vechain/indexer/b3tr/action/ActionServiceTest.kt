@@ -1,60 +1,59 @@
 package org.vechain.indexer.b3tr.action
 
-import io.mockk.MockKAnnotations
 import io.mockk.every
-import io.mockk.impl.annotations.MockK
-import io.mockk.junit5.MockKExtension
 import io.mockk.mockk
+import io.mockk.verify
 import java.math.BigDecimal
+import kotlinx.coroutines.Dispatchers
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.domain.Sort.Direction
 import org.vechain.indexer.b3tr.AppId
-import org.vechain.indexer.b3tr.action.repository.AppAllTimeActionSummaryRepository
-import org.vechain.indexer.b3tr.action.repository.AppDailyActionSummaryRepository
-import org.vechain.indexer.b3tr.action.repository.AppRoundActionSummaryRepository
-import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryRepository
-import org.vechain.indexer.b3tr.action.repository.UserDailyActionSummaryRepository
-import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
+import org.vechain.indexer.b3tr.action.ActionPeriod.AllTime
+import org.vechain.indexer.b3tr.action.ActionPeriod.Day
+import org.vechain.indexer.b3tr.action.ActionPeriod.Round
 import org.vechain.indexer.b3tr.shared.EntityType
+import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.history.HistoryEventName
 import org.vechain.indexer.history.HistoryReadRepository
 import org.vechain.indexer.history.IndexedHistoryEvent
 import org.vechain.indexer.thor.Address
 
-@ExtendWith(MockKExtension::class)
 internal class ActionServiceTest {
-    @MockK lateinit var historyRepo: HistoryReadRepository
-    @MockK lateinit var userAllTimeRepo: UserAllTimeActionSummaryRepository
-    @MockK lateinit var userDailyRepo: UserDailyActionSummaryRepository
-    @MockK lateinit var userRoundRepo: UserRoundActionSummaryRepository
-    @MockK lateinit var appAllTimeRepo: AppAllTimeActionSummaryRepository
-    @MockK lateinit var appDailyRepo: AppDailyActionSummaryRepository
-    @MockK lateinit var appRoundRepo: AppRoundActionSummaryRepository
+    private val historyRepo: HistoryReadRepository = mockk()
+    private val repository: ActionReadRepository = mockk()
+    private val service =
+        ActionService(historyRepo, repository, Dispatchers.IO.limitedParallelism(4))
 
-    private lateinit var service: ActionService
+    private val wallet = "0x" + "a".repeat(40)
+    private val appId = AppId("0x" + "7".repeat(64))
+    private val impact = Impact(carbon = 12)
 
-    @BeforeEach
-    fun setup() {
-        MockKAnnotations.init(this)
-        service =
-            ActionService(
-                historyRepo,
-                userAllTimeRepo,
-                userDailyRepo,
-                userRoundRepo,
-                appAllTimeRepo,
-                appDailyRepo,
-                appRoundRepo,
-                kotlinx.coroutines.Dispatchers.IO.limitedParallelism(4),
-            )
-    }
+    private fun entity(
+        type: EntityType,
+        entity: String,
+        period: ActionPeriod,
+        actions: Long = 3,
+        amount: String = "7.5",
+        uniqueUsers: Long = 0,
+    ) =
+        EntityActionSummary(
+            type,
+            entity,
+            period,
+            "0x01",
+            5,
+            50,
+            actions,
+            BigDecimal(amount),
+            impact,
+            uniqueUsers,
+        )
 
     @Test
     fun `user actions are the B3TR_ACTION rows to the wallet, paged one row past the page`() {
-        val wallet = Address("0x" + "A".repeat(40))
         val row =
             IndexedHistoryEvent(
                 id = "1",
@@ -63,337 +62,212 @@ internal class ActionServiceTest {
                 blockTimestamp = 50,
                 txId = "0x02",
                 eventName = HistoryEventName.B3TR_ACTION,
-                appId = "0x" + "7".repeat(64),
+                appId = appId.value,
                 from = "0x" + "d".repeat(40),
-                to = "0x" + "a".repeat(40),
+                to = wallet,
                 value = "5000000000000000000",
             )
-        every {
-            historyRepo.findActions("0x" + "a".repeat(40), null, 10L, null, 0L, 2, Direction.DESC)
-        } returns listOf(row, row)
+        every { historyRepo.findActions(wallet, null, 10L, null, 0L, 2, Direction.DESC) } returns
+            listOf(row, row)
 
-        val page =
-            service.getUserActions(
-                wallet,
-                after = 10L,
-                before = null,
-                page = 0,
-                size = 1,
-                direction = null,
-            )
+        val page = service.getUserActions(Address(wallet.uppercase()), 10L, null, 0, 1, null)
 
         assertEquals(1, page.data.size)
-        assertEquals(0, java.math.BigDecimal("5").compareTo(page.data.single().amount))
-        assertEquals(row.appId, page.data.single().appId)
+        assertEquals(0, BigDecimal("5").compareTo(page.data.single().amount))
         assertEquals(true, page.pagination.hasNext)
     }
 
     @Test
-    fun `getAllTimeUserOverview returns default overview when no data exists`() {
-        val wallet = Address("0xdef")
-        val normalized = "0xdef"
-
-        every { userAllTimeRepo.findByEntity(normalized) } returns null
-        every { appAllTimeRepo.findAppIdsByUser(normalized) } returns emptyList()
-
-        val result = service.getAllTimeUserOverview(wallet)
-        assertEquals(normalized, result.wallet)
-        assertEquals(0.0, result.totalRewardAmount)
-        assertEquals(0, result.actionsRewarded)
-        assertEquals(null, result.totalImpact)
-        assertEquals(null, result.rankByReward)
-        assertEquals(null, result.rankByActionsRewarded)
-        assertEquals(emptyList<String>(), result.uniqueXAppInteractions)
-        assertEquals(null, result.roundId)
-        assertEquals(null, result.date)
-    }
-
-    @Test
-    fun `getAllTimeUserOverview returns correct overview when data exists`() {
-        val wallet = Address("0xabc")
-        val normalized = "0xabc"
-        val impact =
-            mockk<Impact>(relaxed = true) // Replace Any with actual Impact type if available
-        val overview = mockk<UserAllTimeActionSummary>(relaxed = true)
-
-        every { userAllTimeRepo.findByEntity(normalized) } returns overview
-        every { overview.totalRewardAmount } returns BigDecimal(100)
-        every { overview.actionsRewarded } returns 5
-        every { overview.totalImpact } returns impact
+    fun `a user overview ranks the wallet one past those ahead and lists its apps`() {
+        val period = Round(4)
+        every { repository.findEntity(period, EntityType.USER, wallet) } returns
+            entity(EntityType.USER, wallet, period)
         every {
-            userAllTimeRepo.countByTotalRewardAmountGreaterThanAndEntityType(
-                BigDecimal(100),
+            repository.countEntitiesAbove(
+                period,
                 EntityType.USER,
+                ActionSortField.TOTAL_REWARD_AMOUNT,
+                BigDecimal("7.5"),
             )
         } returns 9
         every {
-            userAllTimeRepo.countByActionsRewardedGreaterThanAndEntityType(5, EntityType.USER)
-        } returns 4
-
-        val app1 = mockk<AppAllTimeActionSummary> { every { this@mockk.appId } returns "app1" }
-        val app2 = mockk<AppAllTimeActionSummary> { every { this@mockk.appId } returns "app2" }
-
-        every { appAllTimeRepo.findAppIdsByUser(normalized) } returns listOf(app1, app2)
-
-        val result = service.getAllTimeUserOverview(wallet)
-
-        assertEquals(normalized, result.wallet)
-        assertEquals(100.0, result.totalRewardAmount)
-        assertEquals(5, result.actionsRewarded)
-        assertEquals(impact, result.totalImpact)
-        assertEquals(10, result.rankByReward)
-        assertEquals(5, result.rankByActionsRewarded)
-        assertEquals(listOf("app1", "app2"), result.uniqueXAppInteractions)
-        assertEquals(null, result.roundId)
-        assertEquals(null, result.date)
-    }
-
-    @Test
-    fun `getDailyUserOverview returns default overview when no data exists`() {
-        val wallet = Address("0xdef")
-        val date = "2023-10-10"
-        val normalized = "0xdef"
-
-        every { userDailyRepo.findByEntityAndDate(normalized, date) } returns null
-        every { appDailyRepo.findByUserAndDate(normalized, date) } returns emptyList()
-
-        val result = service.getDailyUserOverview(wallet, date)
-
-        assertEquals(normalized, result.wallet)
-
-        assertEquals(0.0, result.totalRewardAmount)
-        assertEquals(0, result.actionsRewarded)
-        assertEquals(null, result.totalImpact)
-        assertEquals(null, result.rankByReward)
-        assertEquals(null, result.rankByActionsRewarded)
-        assertEquals(emptyList<String>(), result.uniqueXAppInteractions)
-        assertEquals(null, result.roundId)
-        assertEquals(date, result.date)
-    }
-
-    @Test
-    fun `getDailyUserOverview returns correct overview when data exists`() {
-        val wallet = Address("0xabc")
-        val date = "2023-10-10"
-        val normalized = "0xabc"
-        val impact =
-            mockk<Impact>(relaxed = true) // Replace Any with actual Impact type if available
-        val overview = mockk<UserDailyActionSummary>(relaxed = true)
-
-        every { userDailyRepo.findByEntityAndDate(normalized, date) } returns overview
-        every { overview.totalRewardAmount } returns BigDecimal(50)
-        every { overview.actionsRewarded } returns 3
-        every { overview.totalImpact } returns impact
-        every {
-            userDailyRepo.countByTotalRewardAmountGreaterThanAndEntityTypeAndDate(
-                BigDecimal(50),
+            repository.countEntitiesAbove(
+                period,
                 EntityType.USER,
-                date,
-            )
-        } returns 19
-        every {
-            userDailyRepo.countByActionsRewardedGreaterThanAndEntityTypeAndDate(
-                3,
-                EntityType.USER,
-                date,
-            )
-        } returns 9
-
-        val app1 = mockk<AppDailyActionSummary> { every { this@mockk.appId } returns "app1" }
-        val app2 = mockk<AppDailyActionSummary> { every { this@mockk.appId } returns "app2" }
-
-        every { appDailyRepo.findByUserAndDate(normalized, date) } returns listOf(app1, app2)
-
-        val result = service.getDailyUserOverview(wallet, date)
-
-        assertEquals(normalized, result.wallet)
-        assertEquals(50.0, result.totalRewardAmount)
-        assertEquals(3, result.actionsRewarded)
-        assertEquals(impact, result.totalImpact)
-        assertEquals(20, result.rankByReward)
-        assertEquals(10, result.rankByActionsRewarded)
-        assertEquals(listOf("app1", "app2"), result.uniqueXAppInteractions)
-        assertEquals(null, result.roundId)
-        assertEquals(date, result.date)
-    }
-
-    @Test
-    fun `getRoundUserOverview returns default overview when no data exists`() {
-        val wallet = Address("0xdef")
-        val roundId = 1
-        val normalized = "0xdef"
-
-        every { userRoundRepo.findByEntityAndRoundId(normalized, roundId) } returns null
-        every { appRoundRepo.findAppIdsByUserAndRoundId(normalized, roundId) } returns emptyList()
-
-        val result = service.getRoundUserOverview(wallet, roundId)
-
-        assertEquals(normalized, result.wallet)
-        assertEquals(0.0, result.totalRewardAmount)
-        assertEquals(0, result.actionsRewarded)
-        assertEquals(null, result.totalImpact)
-        assertEquals(null, result.rankByReward)
-        assertEquals(null, result.rankByActionsRewarded)
-        assertEquals(emptyList<String>(), result.uniqueXAppInteractions)
-        assertEquals(roundId, result.roundId)
-    }
-
-    @Test
-    fun `getRoundUserOverview returns correct overview when data exists`() {
-        val wallet = Address("0xabc")
-        val roundId = 1
-        val normalized = "0xabc"
-        val impact = mockk<Impact>(relaxed = true)
-        val overview = mockk<UserRoundActionSummary>(relaxed = true)
-
-        every { userRoundRepo.findByEntityAndRoundId(normalized, roundId) } returns overview
-        every { overview.totalRewardAmount } returns BigDecimal(75)
-        every { overview.actionsRewarded } returns 7
-        every { overview.totalImpact } returns impact
-        every {
-            userRoundRepo.countByTotalRewardAmountGreaterThanAndEntityTypeAndRoundId(
-                BigDecimal(75),
-                EntityType.USER,
-                roundId,
-            )
-        } returns 14
-        every {
-            userRoundRepo.countByActionsRewardedGreaterThanAndEntityTypeAndRoundId(
-                7,
-                EntityType.USER,
-                roundId,
-            )
-        } returns 6
-
-        val app1 = mockk<AppRoundActionSummary> { every { this@mockk.appId } returns "app1" }
-        val app2 = mockk<AppRoundActionSummary> { every { this@mockk.appId } returns "app2" }
-
-        every { appRoundRepo.findAppIdsByUserAndRoundId(normalized, roundId) } returns
-            listOf(app1, app2)
-
-        val result = service.getRoundUserOverview(wallet, roundId)
-
-        assertEquals(normalized, result.wallet)
-        assertEquals(75.0, result.totalRewardAmount)
-        assertEquals(7, result.actionsRewarded)
-        assertEquals(impact, result.totalImpact)
-        assertEquals(15, result.rankByReward)
-        assertEquals(7, result.rankByActionsRewarded)
-        assertEquals(listOf("app1", "app2"), result.uniqueXAppInteractions)
-        assertEquals(roundId, result.roundId)
-    }
-
-    @Test
-    fun `getAppAllTimeOverview returns correct overview when data exists`() {
-        val appId = AppId("app-1")
-        val impact = mockk<Impact>(relaxed = true)
-        val overview = mockk<UserAllTimeActionSummary>(relaxed = true)
-
-        every { userAllTimeRepo.findByEntity(appId.value) } returns overview
-        every { overview.totalRewardAmount } returns BigDecimal("1136571.207515180010875330")
-        every { overview.actionsRewarded } returns 12
-        every { overview.totalImpact } returns impact
-        every {
-            userAllTimeRepo.countByTotalRewardAmountGreaterThanAndEntityType(
-                BigDecimal("1136571.207515180010875330"),
-                EntityType.APP,
-            )
-        } returns 3
-        every {
-            userAllTimeRepo.countByActionsRewardedGreaterThanAndEntityType(12, EntityType.APP)
-        } returns 5
-        every { appAllTimeRepo.countByAppId(appId.value) } returns 42
-
-        val result = service.getAppAllTimeOverview(appId)
-
-        assertEquals(appId.value, result.appId)
-        assertEquals(1136571.20751518, result.totalRewardAmount)
-        assertEquals(12, result.actionsRewarded)
-        assertEquals(impact, result.totalImpact)
-        assertEquals(4, result.rankByReward)
-        assertEquals(6, result.rankByActionsRewarded)
-        assertEquals(42, result.totalUniqueUserInteractions)
-        assertEquals(null, result.roundId)
-        assertEquals(null, result.date)
-    }
-
-    @Test
-    fun `getAppDailyOverview returns correct overview when data exists`() {
-        val appId = AppId("app-2")
-        val date = "2026-03-30"
-        val impact = mockk<Impact>(relaxed = true)
-        val overview = mockk<UserDailyActionSummary>(relaxed = true)
-
-        every { userDailyRepo.findByEntityAndDate(appId.value, date) } returns overview
-        every { overview.totalRewardAmount } returns BigDecimal("422891.777656074258776724")
-        every { overview.actionsRewarded } returns 8
-        every { overview.totalImpact } returns impact
-        every {
-            userDailyRepo.countByTotalRewardAmountGreaterThanAndEntityTypeAndDate(
-                BigDecimal("422891.777656074258776724"),
-                EntityType.APP,
-                date,
+                ActionSortField.ACTIONS_REWARDED,
+                BigDecimal(3),
             )
         } returns 1
-        every {
-            userDailyRepo.countByActionsRewardedGreaterThanAndEntityTypeAndDate(
-                8,
-                EntityType.APP,
-                date,
-            )
-        } returns 2
-        every { appDailyRepo.countByAppIdAndDate(appId.value, date) } returns 15
+        every { repository.findAppIds(period, wallet) } returns listOf(appId.value)
 
-        val result = service.getAppDailyOverview(appId, date)
+        val overview = service.getUserOverview(Address(wallet.uppercase()), period)
 
-        assertEquals(appId.value, result.appId)
-        assertEquals(422891.77765607426, result.totalRewardAmount)
-        assertEquals(8, result.actionsRewarded)
-        assertEquals(impact, result.totalImpact)
-        assertEquals(2, result.rankByReward)
-        assertEquals(3, result.rankByActionsRewarded)
-        assertEquals(15, result.totalUniqueUserInteractions)
-        assertEquals(null, result.roundId)
-        assertEquals(date, result.date)
+        assertEquals(wallet, overview.wallet)
+        assertEquals(4, overview.roundId)
+        assertNull(overview.date)
+        assertEquals(7.5, overview.totalRewardAmount)
+        assertEquals(3, overview.actionsRewarded)
+        assertEquals(impact, overview.totalImpact)
+        assertEquals(10, overview.rankByReward)
+        assertEquals(2, overview.rankByActionsRewarded)
+        assertEquals(listOf(appId.value), overview.uniqueXAppInteractions)
     }
 
     @Test
-    fun `getAppRoundOverview returns correct overview when data exists`() {
-        val appId = AppId("app-4")
-        val roundId = 7
-        val impact = mockk<Impact>(relaxed = true)
-        val overview = mockk<UserRoundActionSummary>(relaxed = true)
+    fun `a wallet without a row is unranked but still shown the apps it used`() {
+        every { repository.findEntity(Day("2026-09-01"), EntityType.USER, wallet) } returns null
+        every { repository.findAppIds(Day("2026-09-01"), wallet) } returns emptyList()
 
-        every { userRoundRepo.findByEntityAndRoundId(appId.value, roundId) } returns overview
-        every { overview.totalRewardAmount } returns BigDecimal("4876.273810888064122202")
-        every { overview.actionsRewarded } returns 21
-        every { overview.totalImpact } returns impact
-        every {
-            userRoundRepo.countByTotalRewardAmountGreaterThanAndEntityTypeAndRoundId(
-                BigDecimal("4876.273810888064122202"),
-                EntityType.APP,
-                roundId,
+        val overview = service.getUserOverview(Address(wallet), Day("2026-09-01"))
+
+        assertEquals("2026-09-01", overview.date)
+        assertEquals(0.0, overview.totalRewardAmount)
+        assertEquals(0, overview.actionsRewarded)
+        assertNull(overview.rankByReward)
+        assertNull(overview.rankByActionsRewarded)
+        assertEquals(emptyList<String>(), overview.uniqueXAppInteractions)
+        verify(exactly = 0) { repository.countEntitiesAbove(any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `a user's overview on an app ranks it among the app's wallets`() {
+        every { repository.findAppUser(AllTime, appId.value, wallet) } returns
+            AppUserActionSummary(
+                appId.value,
+                wallet,
+                AllTime,
+                "0x01",
+                5,
+                50,
+                2,
+                BigDecimal("1.25"),
+                null,
             )
-        } returns 9
         every {
-            userRoundRepo.countByActionsRewardedGreaterThanAndEntityTypeAndRoundId(
-                21,
-                EntityType.APP,
-                roundId,
+            repository.countAppUsersAbove(
+                AllTime,
+                appId.value,
+                ActionSortField.TOTAL_REWARD_AMOUNT,
+                BigDecimal("1.25"),
+            )
+        } returns 0
+        every {
+            repository.countAppUsersAbove(
+                AllTime,
+                appId.value,
+                ActionSortField.ACTIONS_REWARDED,
+                BigDecimal(2),
             )
         } returns 4
-        every { appRoundRepo.countByAppIdAndRoundId(appId.value, roundId) } returns 6
 
-        val result = service.getAppRoundOverview(appId, roundId)
+        val overview = service.getUserAppOverview(Address(wallet), appId, AllTime)
 
-        assertEquals(appId.value, result.appId)
-        assertEquals(4876.273810888064, result.totalRewardAmount)
-        assertEquals(21, result.actionsRewarded)
-        assertEquals(impact, result.totalImpact)
-        assertEquals(10, result.rankByReward)
-        assertEquals(5, result.rankByActionsRewarded)
-        assertEquals(6, result.totalUniqueUserInteractions)
-        assertEquals(roundId, result.roundId)
-        assertEquals(null, result.date)
+        assertEquals(appId.value, overview.appId)
+        assertNull(overview.roundId)
+        assertEquals(1.25, overview.totalRewardAmount)
+        assertEquals(1, overview.rankByReward)
+        assertEquals(5, overview.rankByActionsRewarded)
+
+        every { repository.findAppUser(AllTime, appId.value, wallet) } returns null
+        assertNull(service.getUserAppOverview(Address(wallet), appId, AllTime).rankByReward)
+    }
+
+    @Test
+    fun `an app overview carries the wallets it has rewarded and its rank among apps`() {
+        every { repository.findEntity(AllTime, EntityType.APP, appId.value) } returns
+            entity(EntityType.APP, appId.value, AllTime, uniqueUsers = 321)
+        every {
+            repository.countEntitiesAbove(
+                AllTime,
+                EntityType.APP,
+                ActionSortField.TOTAL_REWARD_AMOUNT,
+                BigDecimal("7.5"),
+            )
+        } returns 2
+        every {
+            repository.countEntitiesAbove(
+                AllTime,
+                EntityType.APP,
+                ActionSortField.ACTIONS_REWARDED,
+                BigDecimal(3),
+            )
+        } returns 0
+
+        val overview = service.getAppOverview(appId, AllTime)
+
+        assertEquals(321, overview.totalUniqueUserInteractions)
+        assertEquals(3, overview.rankByReward)
+        assertEquals(1, overview.rankByActionsRewarded)
+
+        every { repository.findEntity(AllTime, EntityType.APP, appId.value) } returns null
+        assertEquals(0, service.getAppOverview(appId, AllTime).totalUniqueUserInteractions)
+    }
+
+    @Test
+    fun `the global overview is the GLOBAL row of the period`() {
+        every { repository.findEntity(Day("2026-09-01"), EntityType.GLOBAL, "GLOBAL") } returns
+            entity(
+                EntityType.GLOBAL,
+                "GLOBAL",
+                Day("2026-09-01"),
+                actions = 40,
+                amount = "99",
+                uniqueUsers = 17,
+            )
+
+        val overview = service.getGlobalOverview(Day("2026-09-01"))
+
+        assertEquals("2026-09-01", overview.date)
+        assertNull(overview.roundId)
+        assertEquals(99.0, overview.totalRewardAmount)
+        assertEquals(40, overview.actionsRewarded)
+        assertEquals(17, overview.totalUniqueUserInteractions)
+        assertEquals(impact, overview.totalImpact)
+    }
+
+    @Test
+    fun `daily summaries are the wallet's days in the range, one row past the page`() {
+        every {
+            repository.findDailyRange(wallet, "2026-08-01", "2026-09-01", 0, 2, Direction.DESC)
+        } returns
+            listOf(
+                entity(EntityType.USER, wallet, Day("2026-09-01"), amount = "1.5"),
+                entity(EntityType.USER, wallet, Day("2026-08-31")),
+            )
+
+        val page =
+            service.getDailySummariesForRange(
+                Address(wallet),
+                "2026-08-01",
+                "2026-09-01",
+                0,
+                1,
+                null,
+            )
+
+        assertEquals(1, page.data.size)
+        assertEquals("2026-09-01", page.data.single().date)
+        assertEquals(wallet, page.data.single().entity)
+        assertEquals(BigDecimal("1.5"), page.data.single().totalRewardAmount)
+        assertEquals(true, page.pagination.hasNext)
+
+        assertThrows(BadRequestException::class.java) {
+            service.getDailySummariesForRange(
+                Address(wallet),
+                "2026-09-02",
+                "2026-09-01",
+                0,
+                1,
+                null,
+            )
+        }
+    }
+
+    @Test
+    fun `a request may name a round or a date but not both`() {
+        assertEquals(Round(3), requestedPeriod(3, null))
+        assertEquals(Day("2026-09-01"), requestedPeriod(null, "2026-09-01"))
+        assertEquals(AllTime, requestedPeriod(null, null))
+        assertThrows(BadRequestException::class.java) { requestedPeriod(3, "2026-09-01") }
     }
 }

@@ -5,6 +5,9 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.accounts.AccountTotalsSeriesProcessor
+import org.vechain.indexer.b3tr.action.ActionProcessor
+import org.vechain.indexer.b3tr.action.ActionSummaryUpdate
+import org.vechain.indexer.b3tr.action.ActionWriteRepository
 import org.vechain.indexer.b3tr.balance.B3trBalanceProcessor
 import org.vechain.indexer.b3tr.balance.B3trBalanceService
 import org.vechain.indexer.b3tr.challenges.ChallengeUpdate
@@ -110,6 +113,10 @@ class ProcessorTransactionalAnnotationsTest {
                         List::class.java,
                         List::class.java,
                     ),
+                // The action indexer saves its six tables from the repository, not a service.
+                ActionWriteRepository::class
+                    .java
+                    .getDeclaredMethod("save", ActionSummaryUpdate::class.java),
                 // The challenges indexer saves its four tables from the repository, not a service.
                 ChallengeWriteRepository::class
                     .java
@@ -157,6 +164,7 @@ class ProcessorTransactionalAnnotationsTest {
                 TreasuryTransferProcessor::class.java,
                 VeVoteProcessor::class.java,
                 HistoricProposalsProcessor::class.java,
+                ActionProcessor::class.java,
                 ChallengesProcessor::class.java,
                 ProposalProcessor::class.java,
                 XAllocResultProcessor::class.java,

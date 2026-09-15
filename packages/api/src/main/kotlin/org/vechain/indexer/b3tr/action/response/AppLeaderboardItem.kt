@@ -1,9 +1,9 @@
 package org.vechain.indexer.b3tr.action.response
 
+import org.vechain.indexer.b3tr.action.EntityActionSummary
 import org.vechain.indexer.b3tr.action.Impact
-import org.vechain.indexer.b3tr.action.UserAllTimeActionSummary
-import org.vechain.indexer.b3tr.action.UserDailyActionSummary
-import org.vechain.indexer.b3tr.action.UserRoundActionSummary
+import org.vechain.indexer.b3tr.action.date
+import org.vechain.indexer.b3tr.action.roundId
 
 data class AppLeaderboardItem(
     val appId: String,
@@ -14,37 +14,14 @@ data class AppLeaderboardItem(
     val totalImpact: Impact?,
 ) {
     companion object {
-        fun from(summary: UserAllTimeActionSummary): AppLeaderboardItem {
-            return AppLeaderboardItem(
+        fun from(summary: EntityActionSummary): AppLeaderboardItem =
+            AppLeaderboardItem(
                 appId = summary.entity,
-                roundId = null,
-                date = null,
+                roundId = summary.period.roundId,
+                date = summary.period.date,
                 totalRewardAmount = summary.totalRewardAmount.toDouble(),
                 actionsRewarded = summary.actionsRewarded,
                 totalImpact = summary.totalImpact,
             )
-        }
-
-        fun from(summary: UserDailyActionSummary): AppLeaderboardItem {
-            return AppLeaderboardItem(
-                appId = summary.entity,
-                roundId = null,
-                date = summary.date,
-                totalRewardAmount = summary.totalRewardAmount.toDouble(),
-                actionsRewarded = summary.actionsRewarded,
-                totalImpact = summary.totalImpact,
-            )
-        }
-
-        fun from(summary: UserRoundActionSummary): AppLeaderboardItem {
-            return AppLeaderboardItem(
-                appId = summary.entity,
-                roundId = summary.roundId,
-                date = null,
-                totalRewardAmount = summary.totalRewardAmount.toDouble(),
-                actionsRewarded = summary.actionsRewarded,
-                totalImpact = summary.totalImpact,
-            )
-        }
     }
 }

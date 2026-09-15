@@ -1,9 +1,9 @@
 package org.vechain.indexer.b3tr.action.response
 
+import org.vechain.indexer.b3tr.action.EntityActionSummary
 import org.vechain.indexer.b3tr.action.Impact
-import org.vechain.indexer.b3tr.action.UserAllTimeActionSummary
-import org.vechain.indexer.b3tr.action.UserDailyActionSummary
-import org.vechain.indexer.b3tr.action.UserRoundActionSummary
+import org.vechain.indexer.b3tr.action.date
+import org.vechain.indexer.b3tr.action.roundId
 
 data class UserLeaderboardItem(
     val wallet: String,
@@ -14,37 +14,14 @@ data class UserLeaderboardItem(
     val totalImpact: Impact?,
 ) {
     companion object {
-        fun from(summary: UserAllTimeActionSummary): UserLeaderboardItem {
-            return UserLeaderboardItem(
+        fun from(summary: EntityActionSummary): UserLeaderboardItem =
+            UserLeaderboardItem(
                 wallet = summary.entity,
+                roundId = summary.period.roundId,
+                date = summary.period.date,
                 totalRewardAmount = summary.totalRewardAmount.toDouble(),
                 actionsRewarded = summary.actionsRewarded,
-                roundId = null,
-                date = null,
                 totalImpact = summary.totalImpact,
             )
-        }
-
-        fun from(summary: UserDailyActionSummary): UserLeaderboardItem {
-            return UserLeaderboardItem(
-                wallet = summary.entity,
-                totalRewardAmount = summary.totalRewardAmount.toDouble(),
-                actionsRewarded = summary.actionsRewarded,
-                roundId = null,
-                date = summary.date,
-                totalImpact = summary.totalImpact,
-            )
-        }
-
-        fun from(summary: UserRoundActionSummary): UserLeaderboardItem {
-            return UserLeaderboardItem(
-                wallet = summary.entity,
-                totalRewardAmount = summary.totalRewardAmount.toDouble(),
-                actionsRewarded = summary.actionsRewarded,
-                roundId = summary.roundId,
-                date = null,
-                totalImpact = summary.totalImpact,
-            )
-        }
     }
 }

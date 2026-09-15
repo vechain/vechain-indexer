@@ -11,12 +11,12 @@ import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("b3tr", "b3tr-actions", "b3tr-user-round-action-summary")
-open class UserRoundActionSummaryConfig {
+@Profile("b3tr", "b3tr-actions")
+open class ActionConfig {
     @Bean
-    open fun userRoundActionSummaryIndexer(
+    open fun b3trActionIndexer(
         thorClient: ThorClient,
-        processor: UserRoundActionSummaryProcessor,
+        processor: ActionProcessor,
         @Value("\${indexer.start-block.b3tr-sustainable-actions}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${business-event.substitutions.B3TR_CONTRACT}") b3trContract: String,
@@ -26,7 +26,7 @@ open class UserRoundActionSummaryConfig {
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.USER_ROUND_ACTION_SUMMARY.NAME)
+            .name(IndexerNames.B3TR_ACTION.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)
