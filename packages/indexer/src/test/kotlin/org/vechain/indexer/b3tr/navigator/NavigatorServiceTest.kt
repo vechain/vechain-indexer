@@ -1,20 +1,26 @@
 package org.vechain.indexer.b3tr.navigator
 
-import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import io.mockk.verify
 import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.VersionedDocumentAccumulator
-import org.vechain.indexer.config.InlineVersioningProperties
+import org.vechain.indexer.b3tr.navigator.NavigatorService.Companion.DEACTIVATED
+import org.vechain.indexer.b3tr.navigator.NavigatorService.Companion.DELEGATION_CREATED
+import org.vechain.indexer.b3tr.navigator.NavigatorService.Companion.DELEGATION_DECREASED
+import org.vechain.indexer.b3tr.navigator.NavigatorService.Companion.DELEGATION_INCREASED
+import org.vechain.indexer.b3tr.navigator.NavigatorService.Companion.DELEGATION_REMOVED
+import org.vechain.indexer.b3tr.navigator.NavigatorService.Companion.EXIT_ANNOUNCED
+import org.vechain.indexer.b3tr.navigator.NavigatorService.Companion.METADATA_UPDATED
+import org.vechain.indexer.b3tr.navigator.NavigatorService.Companion.MINOR_SLASHED
+import org.vechain.indexer.b3tr.navigator.NavigatorService.Companion.REGISTERED
+import org.vechain.indexer.b3tr.navigator.NavigatorService.Companion.REPORT_SUBMITTED
+import org.vechain.indexer.b3tr.navigator.NavigatorService.Companion.STAKE_ADDED
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
@@ -22,587 +28,281 @@ import org.vechain.indexer.utils.BlockDetails
 
 @ExtendWith(MockKExtension::class)
 internal class NavigatorServiceTest {
-    @MockK lateinit var repository: NavigatorRepository
-
-    @MockK lateinit var mongoTemplate: MongoTemplate
-
-    @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
+    @MockK lateinit var repository: NavigatorWriteRepository
 
     private lateinit var service: NavigatorService
 
-    private val block = BlockDetails("block-1", 100L, 1000L)
+    private val block = BlockDetails("0xblock", 100L, 1000L)
+    private val nav = "0xaaaa111111111111111111111111111111111111"
+    private val citizen = "0xcccc111111111111111111111111111111111111"
+    private val other = "0xbbbb111111111111111111111111111111111111"
 
     @BeforeEach
     fun setUp() {
-        MockKAnnotations.init(this)
-        every { inlineVersioningProperties.blockWindow } returns 10000L
-        every { inlineVersioningProperties.maxVersions } returns 100
-        every { inlineVersioningProperties.minVersions } returns 20
-        service = NavigatorService(repository, mongoTemplate, inlineVersioningProperties)
+        every { repository.findExpiredExits(any()) } returns emptyList()
+        every { repository.findCurrentNavigators(any(), any()) } returns emptyList()
+        every { repository.findCurrentCitizens(any(), any()) } returns emptyList()
+        every { repository.findActiveCitizens(any(), any()) } returns emptyList()
+        service = NavigatorService(repository)
     }
 
-    private fun newAccumulator(): VersionedDocumentAccumulator<Navigator> =
-        VersionedDocumentAccumulator(service::findByAddress)
-
-    private fun event(eventType: String, params: Map<String, Any>): IndexedEvent =
+    private fun event(type: String, vararg params: Pair<String, Any>): IndexedEvent =
         buildIndexedEvent(
-            eventType = eventType,
+            eventType = type,
             blockId = block.blockId,
             blockNumber = block.blockNumber,
             blockTimestamp = block.blockTimestamp,
-            params = AbiEventParameters(params, eventType),
+            params = AbiEventParameters(mapOf(*params), type),
         )
 
-    // ============================================================================
-    // Registration
-    // ============================================================================
-
-    @Test
-    fun `NavigatorRegistered creates new navigator with ACTIVE status`() {
-        every { repository.findById("0xnav1") } returns java.util.Optional.empty()
-
-        val acc = newAccumulator()
-        acc.startBlock()
-        service.processBlockEvents(
-            listOf(
-                event(
-                    "B3TR_NavigatorRegistered",
-                    mapOf(
-                        "navigator" to "0xNav1",
-                        "stakeAmount" to "50000",
-                        "metadataURI" to "ipfs://meta",
-                    ),
-                )
-            ),
-            block,
-            acc,
-        )
-
-        val (updated, _) = acc.results()
-        assertEquals(1, updated.size)
-        val nav = updated[0]
-        assertEquals("0xnav1", nav.address)
-        assertEquals(NavigatorStatus.ACTIVE, nav.status)
-        assertEquals(BigDecimal("50000"), nav.stake)
-        assertEquals(0, nav.citizenCount)
-        assertEquals(BigDecimal.ZERO, nav.totalDelegated)
-        assertEquals("ipfs://meta", nav.metadataURI)
-        assertEquals(1000L, nav.registeredAt)
-        assertEquals(1, nav.version)
-    }
-
-    // ============================================================================
-    // Staking
-    // ============================================================================
-
-    @Test
-    fun `StakeAdded updates stake to newTotal`() {
-        val existing = navigatorFixture("0xnav1", stake = "50000")
-        every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
-
-        val acc = newAccumulator()
-        acc.startBlock()
-        service.processBlockEvents(
-            listOf(
-                event(
-                    "B3TR_StakeAdded",
-                    mapOf("navigator" to "0xnav1", "amount" to "25000", "newTotal" to "75000"),
-                )
-            ),
-            block,
-            acc,
-        )
-
-        val (updated, _) = acc.results()
-        assertEquals(BigDecimal("75000"), updated[0].stake)
-        verify(exactly = 1) { repository.findById("0xnav1") }
-    }
-
-    @Test
-    fun `StakeAdded fails fast when required params are missing`() {
-        val existing = navigatorFixture("0xnav1", stake = "50000")
-        every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
-
-        val acc = newAccumulator()
-        acc.startBlock()
-        val exception =
-            assertThrows(IllegalStateException::class.java) {
-                service.processBlockEvents(
-                    listOf(
-                        event(
-                            "B3TR_StakeAdded",
-                            mapOf("navigator" to "0xnav1", "amount" to "10000"),
-                        )
-                    ),
-                    block,
-                    acc,
-                )
-            }
-
-        assertTrue(exception.message!!.contains("Missing param 'newTotal'"))
-    }
-
-    @Test
-    fun `StakeWithdrawn updates stake to remaining`() {
-        val existing = navigatorFixture("0xnav1", stake = "75000")
-        every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
-
-        val acc = newAccumulator()
-        acc.startBlock()
-        service.processBlockEvents(
-            listOf(
-                event(
-                    "B3TR_StakeWithdrawn",
-                    mapOf("navigator" to "0xnav1", "amount" to "25000", "remaining" to "50000"),
-                )
-            ),
-            block,
-            acc,
-        )
-
-        val (updated, _) = acc.results()
-        assertEquals(BigDecimal("50000"), updated[0].stake)
-    }
-
-    // ============================================================================
-    // Exit
-    // ============================================================================
-
-    @Test
-    fun `ExitAnnounced sets status to EXITING`() {
-        val existing = navigatorFixture("0xnav1")
-        every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
-
-        val acc = newAccumulator()
-        acc.startBlock()
-        service.processBlockEvents(
-            listOf(
-                event(
-                    "B3TR_ExitAnnounced",
-                    mapOf(
-                        "navigator" to "0xnav1",
-                        "announcedAtRound" to "5",
-                        "effectiveDeadline" to "6",
-                    ),
-                )
-            ),
-            block,
-            acc,
-        )
-
-        val (updated, _) = acc.results()
-        assertEquals(NavigatorStatus.EXITING, updated[0].status)
-        assertEquals("5", updated[0].exitAnnouncedRound)
-        assertEquals("6", updated[0].exitEffectiveDeadline)
-    }
-
-    // ============================================================================
-    // Deactivation & Slashing
-    // ============================================================================
-
-    @Test
-    fun `NavigatorDeactivated sets status to DEACTIVATED`() {
-        val existing = navigatorFixture("0xnav1")
-        every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
-
-        val acc = newAccumulator()
-        acc.startBlock()
-        service.processBlockEvents(
-            listOf(
-                event(
-                    "B3TR_NavigatorDeactivated",
-                    mapOf("navigator" to "0xnav1", "slashPercentage" to "100"),
-                )
-            ),
-            block,
-            acc,
-        )
-
-        val (updated, _) = acc.results()
-        assertEquals(NavigatorStatus.DEACTIVATED, updated[0].status)
-    }
-
-    @Test
-    fun `checkExpiredExits only updates expired exiting navigators`() {
-        val existing =
-            navigatorFixture(
-                "0xnav1",
-                status = NavigatorStatus.EXITING,
-                citizenCount = 2,
-                totalDelegated = "90000",
-                exitEffectiveDeadlineBlock = 100L,
-            )
-        every {
-            repository.findByStatusAndExitEffectiveDeadlineBlockLessThanEqual(
-                NavigatorStatus.EXITING,
-                100L,
-            )
-        } returns listOf(existing)
-        every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
-
-        val acc = newAccumulator()
-        acc.startBlock()
-
-        service.checkExpiredExits(block, acc)
-
-        val (updated, _) = acc.results()
-        assertEquals(1, updated.size)
-        assertEquals(NavigatorStatus.DEACTIVATED, updated[0].status)
-        assertEquals(0, updated[0].citizenCount)
-        assertEquals(BigDecimal.ZERO, updated[0].totalDelegated)
-    }
-
-    @Test
-    fun `NavigatorSlashed updates stake to remainingStake`() {
-        val existing = navigatorFixture("0xnav1", stake = "50000")
-        every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
-
-        val acc = newAccumulator()
-        acc.startBlock()
-        service.processBlockEvents(
-            listOf(
-                event(
-                    "B3TR_NavigatorSlashed",
-                    mapOf(
-                        "navigator" to "0xnav1",
-                        "amount" to "5000",
-                        "remainingStake" to "45000",
-                        "reason" to "missing-report",
-                    ),
-                )
-            ),
-            block,
-            acc,
-        )
-
-        val (updated, _) = acc.results()
-        assertEquals(BigDecimal("45000"), updated[0].stake)
-    }
-
-    @Test
-    fun `NavigatorMinorSlashed updates stake to remainingStake`() {
-        val existing = navigatorFixture("0xnav1", stake = "50000")
-        every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
-
-        val acc = newAccumulator()
-        acc.startBlock()
-        service.processBlockEvents(
-            listOf(
-                event(
-                    "B3TR_NavigatorMinorSlashed",
-                    mapOf(
-                        "navigator" to "0xnav1",
-                        "amount" to "5000",
-                        "remainingStake" to "45000",
-                        "roundId" to "3",
-                        "infractionFlags" to "7",
-                    ),
-                )
-            ),
-            block,
-            acc,
-        )
-
-        val (updated, _) = acc.results()
-        assertEquals(BigDecimal("45000"), updated[0].stake)
-    }
-
-    // ============================================================================
-    // Metadata & Reports
-    // ============================================================================
-
-    @Test
-    fun `MetadataURIUpdated updates metadataURI`() {
-        val existing = navigatorFixture("0xnav1", metadataURI = "ipfs://old")
-        every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
-
-        val acc = newAccumulator()
-        acc.startBlock()
-        service.processBlockEvents(
-            listOf(
-                event(
-                    "B3TR_MetadataURIUpdated",
-                    mapOf("navigator" to "0xnav1", "newURI" to "ipfs://new"),
-                )
-            ),
-            block,
-            acc,
-        )
-
-        val (updated, _) = acc.results()
-        assertEquals("ipfs://new", updated[0].metadataURI)
-    }
-
-    @Test
-    fun `ReportSubmitted updates lastReportRound and lastReportURI`() {
-        val existing = navigatorFixture("0xnav1")
-        every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
-
-        val acc = newAccumulator()
-        acc.startBlock()
-        service.processBlockEvents(
-            listOf(
-                event(
-                    "B3TR_ReportSubmitted",
-                    mapOf(
-                        "navigator" to "0xnav1",
-                        "roundId" to "3",
-                        "reportURI" to "ipfs://report",
-                    ),
-                )
-            ),
-            block,
-            acc,
-        )
-
-        val (updated, _) = acc.results()
-        assertEquals("3", updated[0].lastReportRound)
-        assertEquals("ipfs://report", updated[0].lastReportURI)
-    }
-
-    // ============================================================================
-    // Delegations
-    // ============================================================================
-
-    @Test
-    fun `DelegationCreated increments citizenCount and adds to totalDelegated`() {
-        val existing = navigatorFixture("0xnav1", citizenCount = 2, totalDelegated = "100000")
-        every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
-
-        val acc = newAccumulator()
-        acc.startBlock()
-        service.processBlockEvents(
-            listOf(
-                event(
-                    "B3TR_DelegationCreated",
-                    mapOf("navigator" to "0xnav1", "citizen" to "0xcit1", "amount" to "50000"),
-                )
-            ),
-            block,
-            acc,
-        )
-
-        val (updated, _) = acc.results()
-        assertEquals(3, updated[0].citizenCount)
-        assertEquals(BigDecimal("150000"), updated[0].totalDelegated)
-    }
-
-    @Test
-    fun `DelegationIncreased adds addedAmount to totalDelegated`() {
-        val existing = navigatorFixture("0xnav1", citizenCount = 2, totalDelegated = "100000")
-        every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
-
-        val acc = newAccumulator()
-        acc.startBlock()
-        service.processBlockEvents(
-            listOf(
-                event(
-                    "B3TR_DelegationIncreased",
-                    mapOf(
-                        "navigator" to "0xnav1",
-                        "citizen" to "0xcit1",
-                        "addedAmount" to "30000",
-                        "newTotal" to "70000",
-                    ),
-                )
-            ),
-            block,
-            acc,
-        )
-
-        val (updated, _) = acc.results()
-        assertEquals(BigDecimal("130000"), updated[0].totalDelegated)
-        assertEquals(2, updated[0].citizenCount)
-    }
-
-    @Test
-    fun `DelegationDecreased subtracts removedAmount from totalDelegated`() {
-        val existing = navigatorFixture("0xnav1", citizenCount = 2, totalDelegated = "100000")
-        every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
-
-        val acc = newAccumulator()
-        acc.startBlock()
-        service.processBlockEvents(
-            listOf(
-                event(
-                    "B3TR_DelegationDecreased",
-                    mapOf(
-                        "navigator" to "0xnav1",
-                        "citizen" to "0xcit1",
-                        "removedAmount" to "20000",
-                        "newTotal" to "20000",
-                    ),
-                )
-            ),
-            block,
-            acc,
-        )
-
-        val (updated, _) = acc.results()
-        assertEquals(BigDecimal("80000"), updated[0].totalDelegated)
-        assertEquals(2, updated[0].citizenCount)
-    }
-
-    @Test
-    fun `DelegationRemoved decrements citizenCount and subtracts amount`() {
-        val existing = navigatorFixture("0xnav1", citizenCount = 3, totalDelegated = "150000")
-        every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
-
-        val acc = newAccumulator()
-        acc.startBlock()
-        service.processBlockEvents(
-            listOf(
-                event(
-                    "B3TR_DelegationRemoved",
-                    mapOf("navigator" to "0xnav1", "citizen" to "0xcit1", "amount" to "50000"),
-                )
-            ),
-            block,
-            acc,
-        )
-
-        val (updated, _) = acc.results()
-        assertEquals(2, updated[0].citizenCount)
-        assertEquals(BigDecimal("100000"), updated[0].totalDelegated)
-    }
-
-    @Test
-    fun `DelegationRemoved does not go below zero`() {
-        val existing = navigatorFixture("0xnav1", citizenCount = 0, totalDelegated = "0")
-        every { repository.findById("0xnav1") } returns java.util.Optional.of(existing)
-
-        val acc = newAccumulator()
-        acc.startBlock()
-        service.processBlockEvents(
-            listOf(
-                event(
-                    "B3TR_DelegationRemoved",
-                    mapOf("navigator" to "0xnav1", "citizen" to "0xcit1", "amount" to "0"),
-                )
-            ),
-            block,
-            acc,
-        )
-
-        val (updated, _) = acc.results()
-        assertEquals(0, updated[0].citizenCount)
-        assertEquals(BigDecimal.ZERO, updated[0].totalDelegated)
-    }
-
-    // ============================================================================
-    // No-op events
-    // ============================================================================
-
-    @Test
-    fun `NavigatorVoteCast does not create or update navigator state`() {
-        val acc = newAccumulator()
-        acc.startBlock()
-        service.processBlockEvents(
-            listOf(
-                event(
-                    "B3TR_NavigatorVoteCast",
-                    mapOf("navigator" to "0xnav1", "citizen" to "0xcit1", "roundId" to "1"),
-                )
-            ),
-            block,
-            acc,
-        )
-
-        val (updated, _) = acc.results()
-        assertEquals(0, updated.size)
-    }
-
-    @Test
-    fun `FeeDeposited does not create or update navigator state`() {
-        val acc = newAccumulator()
-        acc.startBlock()
-        service.processBlockEvents(
-            listOf(
-                event(
-                    "B3TR_FeeDeposited",
-                    mapOf("navigator" to "0xnav1", "roundId" to "1", "amount" to "100"),
-                )
-            ),
-            block,
-            acc,
-        )
-
-        val (updated, _) = acc.results()
-        assertEquals(0, updated.size)
-    }
-
-    // ============================================================================
-    // Multiple events in same block
-    // ============================================================================
-
-    @Test
-    fun `multiple events for same navigator in same block are processed correctly`() {
-        every { repository.findById("0xnav1") } returns java.util.Optional.empty()
-
-        val acc = newAccumulator()
-        acc.startBlock()
-        service.processBlockEvents(
-            listOf(
-                event(
-                    "B3TR_NavigatorRegistered",
-                    mapOf(
-                        "navigator" to "0xnav1",
-                        "stakeAmount" to "50000",
-                        "metadataURI" to "ipfs://v1",
-                    ),
-                ),
-                event(
-                    "B3TR_DelegationCreated",
-                    mapOf("navigator" to "0xnav1", "citizen" to "0xcit1", "amount" to "10000"),
-                ),
-                event(
-                    "B3TR_DelegationCreated",
-                    mapOf("navigator" to "0xnav1", "citizen" to "0xcit2", "amount" to "20000"),
-                ),
-            ),
-            block,
-            acc,
-        )
-
-        val (updated, _) = acc.results()
-        assertEquals(1, updated.size)
-        val nav = updated[0]
-        assertEquals("0xnav1", nav.address)
-        assertEquals(NavigatorStatus.ACTIVE, nav.status)
-        assertEquals(BigDecimal("50000"), nav.stake)
-        assertEquals(2, nav.citizenCount)
-        assertEquals(BigDecimal("30000"), nav.totalDelegated)
-    }
-
-    // ============================================================================
-    // Helpers
-    // ============================================================================
-
-    private fun navigatorFixture(
-        address: String,
+    private fun navigator(
+        address: String = nav,
         status: NavigatorStatus = NavigatorStatus.ACTIVE,
-        stake: String = "50000",
-        citizenCount: Int = 0,
-        totalDelegated: String = "0",
-        metadataURI: String? = null,
-        exitEffectiveDeadlineBlock: Long? = null,
+        citizens: Int = 0,
+        delegated: String = "0",
+        deadline: Long? = null,
     ) =
         Navigator(
             address = address,
-            version = 1,
-            blockId = "block-0",
+            blockId = "0xold",
             blockNumber = 50L,
             blockTimestamp = 500L,
             status = status,
-            stake = BigDecimal(stake),
-            citizenCount = citizenCount,
-            totalDelegated = BigDecimal(totalDelegated),
-            metadataURI = metadataURI,
+            stake = BigDecimal("50000"),
+            citizenCount = citizens,
+            totalDelegated = BigDecimal(delegated),
+            metadataURI = "ipfs://meta",
             registeredAt = 500L,
-            exitAnnouncedRound = null,
-            exitEffectiveDeadline = null,
-            exitEffectiveDeadlineBlock = exitEffectiveDeadlineBlock,
+            exitAnnouncedRound = deadline?.let { 5 },
+            exitEffectiveDeadlineBlock = deadline,
             lastReportRound = null,
             lastReportURI = null,
         )
+
+    private fun citizenOf(navigator: String, address: String = citizen, amount: String = "100") =
+        NavigatorCitizen(
+            address = address,
+            blockId = "0xold",
+            blockNumber = 50L,
+            blockTimestamp = 500L,
+            navigator = navigator,
+            amount = BigDecimal(amount),
+            delegatedAt = 500L,
+            active = true,
+        )
+
+    @Test
+    fun `a registration opens an active navigator at this block`() {
+        val update =
+            service.processBlock(
+                block,
+                listOf(
+                    event(
+                        REGISTERED,
+                        "navigator" to nav.uppercase(),
+                        "stakeAmount" to "50000",
+                        "metadataURI" to "ipfs://meta",
+                    )
+                ),
+            )
+
+        val created = update.navigators.single()
+        assertEquals(nav, created.address)
+        assertEquals(NavigatorStatus.ACTIVE, created.status)
+        assertEquals(BigDecimal("50000"), created.stake)
+        assertEquals(0, created.citizenCount)
+        assertEquals(1000L, created.registeredAt)
+        assertEquals(100L, created.blockNumber)
+        assertTrue(update.citizens.isEmpty())
+    }
+
+    @Test
+    fun `events for a navigator the schema does not know are skipped`() {
+        val update =
+            service.processBlock(
+                block,
+                listOf(event(STAKE_ADDED, "navigator" to nav, "amount" to "1", "newTotal" to "2")),
+            )
+
+        assertTrue(update.isEmpty())
+    }
+
+    @Test
+    fun `stake, metadata and report events rewrite the stored row at this block`() {
+        every { repository.findCurrentNavigators(setOf(nav), any()) } returns listOf(navigator())
+
+        val update =
+            service.processBlock(
+                block,
+                listOf(
+                    event(STAKE_ADDED, "navigator" to nav, "amount" to "1", "newTotal" to "75000"),
+                    event(
+                        MINOR_SLASHED,
+                        "navigator" to nav,
+                        "amount" to "5000",
+                        "remainingStake" to "70000",
+                        "roundId" to "7",
+                        "infractionFlags" to "1",
+                    ),
+                    event(METADATA_UPDATED, "navigator" to nav, "newURI" to "ipfs://new"),
+                    event(
+                        REPORT_SUBMITTED,
+                        "navigator" to nav,
+                        "roundId" to "7",
+                        "reportURI" to "ipfs://report",
+                    ),
+                ),
+            )
+
+        val row = update.navigators.single()
+        assertEquals(BigDecimal("70000"), row.stake)
+        assertEquals("ipfs://new", row.metadataURI)
+        assertEquals("7", row.lastReportRoundValue)
+        assertEquals("ipfs://report", row.lastReportURI)
+        assertEquals(100L, row.blockNumber)
+    }
+
+    @Test
+    fun `an exit announcement marks the navigator exiting until its deadline`() {
+        every { repository.findCurrentNavigators(setOf(nav), any()) } returns listOf(navigator())
+
+        val row =
+            service
+                .processBlock(
+                    block,
+                    listOf(
+                        event(
+                            EXIT_ANNOUNCED,
+                            "navigator" to nav,
+                            "announcedAtRound" to "5",
+                            "effectiveDeadline" to "140",
+                        )
+                    ),
+                )
+                .navigators
+                .single()
+
+        assertEquals(NavigatorStatus.EXITING, row.status)
+        assertEquals("5", row.exitAnnouncedRoundValue)
+        assertEquals("140", row.exitEffectiveDeadline)
+        assertEquals(140L, row.exitEffectiveDeadlineBlock)
+    }
+
+    @Test
+    fun `an exit falling due deactivates the navigator and ends its citizens' delegations`() {
+        every { repository.findExpiredExits(100L) } returns
+            listOf(
+                navigator(
+                    status = NavigatorStatus.EXITING,
+                    citizens = 1,
+                    delegated = "100",
+                    deadline = 100,
+                )
+            )
+        every { repository.findActiveCitizens(setOf(nav), any()) } returns listOf(citizenOf(nav))
+
+        val update = service.processBlock(block, emptyList())
+
+        val row = update.navigators.single()
+        assertEquals(NavigatorStatus.DEACTIVATED, row.status)
+        assertEquals(0, row.citizenCount)
+        assertEquals(BigDecimal.ZERO, row.totalDelegated)
+        assertEquals(BigDecimal("50000"), row.stake)
+        val ended = update.citizens.single()
+        assertFalse(ended.active)
+        assertEquals(100L, ended.blockNumber)
+    }
+
+    @Test
+    fun `a deactivation event also ends a delegation created earlier in the block`() {
+        every { repository.findCurrentNavigators(setOf(nav), any()) } returns
+            listOf(navigator(citizens = 1, delegated = "100"))
+        every { repository.findActiveCitizens(setOf(nav), any()) } returns listOf(citizenOf(nav))
+
+        val update =
+            service.processBlock(
+                block,
+                listOf(
+                    event(
+                        DELEGATION_CREATED,
+                        "citizen" to other,
+                        "navigator" to nav,
+                        "amount" to "5",
+                    ),
+                    event(DEACTIVATED, "navigator" to nav, "slashPercentage" to "100"),
+                ),
+            )
+
+        assertEquals(NavigatorStatus.DEACTIVATED, update.navigators.single().status)
+        assertEquals(setOf(citizen, other), update.citizens.map { it.address }.toSet())
+        assertTrue(update.citizens.none { it.active })
+    }
+
+    @Test
+    fun `delegation events move the navigator's totals and the citizen's amount`() {
+        every { repository.findCurrentNavigators(setOf(nav), any()) } returns
+            listOf(navigator(citizens = 2, delegated = "300"))
+        every { repository.findCurrentCitizens(setOf(citizen), any()) } returns
+            listOf(citizenOf(nav))
+
+        val update =
+            service.processBlock(
+                block,
+                listOf(
+                    event(
+                        DELEGATION_INCREASED,
+                        "citizen" to citizen,
+                        "navigator" to nav,
+                        "addedAmount" to "50",
+                        "newTotal" to "150",
+                    ),
+                    event(
+                        DELEGATION_DECREASED,
+                        "citizen" to citizen,
+                        "navigator" to nav,
+                        "removedAmount" to "30",
+                        "newTotal" to "120",
+                    ),
+                ),
+            )
+
+        assertEquals(BigDecimal("320"), update.navigators.single().totalDelegated)
+        assertEquals(2, update.navigators.single().citizenCount)
+        val row = update.citizens.single()
+        assertEquals(BigDecimal("120"), row.amount)
+        assertTrue(row.active)
+        assertEquals(500L, row.delegatedAt)
+    }
+
+    @Test
+    fun `a removal ends the delegation unless the citizen has already moved on`() {
+        every { repository.findCurrentNavigators(setOf(nav), any()) } returns
+            listOf(navigator(citizens = 1, delegated = "100"))
+        every { repository.findCurrentCitizens(setOf(citizen), any()) } returns
+            listOf(citizenOf(other))
+
+        val update =
+            service.processBlock(
+                block,
+                listOf(
+                    event(
+                        DELEGATION_REMOVED,
+                        "citizen" to citizen,
+                        "navigator" to nav,
+                        "amount" to "100",
+                    )
+                ),
+            )
+
+        val row = update.navigators.single()
+        assertEquals(nav, row.address)
+        assertEquals(0, row.citizenCount)
+        assertEquals(BigDecimal.ZERO, row.totalDelegated)
+        assertTrue(update.citizens.isEmpty())
+    }
+
+    @Test
+    fun `a block with no events and no exit due writes nothing`() {
+        assertTrue(service.processBlock(block, emptyList()).isEmpty())
+    }
 }

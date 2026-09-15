@@ -462,6 +462,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.b3tr-navigator
     },
     {
+      name  = "VERSION_B3TR_NAVIGATOR"
+      value = each.value.indexer.version.b3tr-navigator
+    },
+    {
       name  = "INDEXER_START_BLOCK_B3TR_BALANCE"
       value = each.value.indexer.start-block.b3tr-balance
     },

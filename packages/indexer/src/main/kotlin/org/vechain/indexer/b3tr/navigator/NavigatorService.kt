@@ -2,377 +2,279 @@ package org.vechain.indexer.b3tr.navigator
 
 import java.math.BigDecimal
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.ResolvedRecord
-import org.vechain.indexer.VersionedDocumentAccumulator
-import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
 
+/** The navigator and citizen rows one block adds: exits fallen due first, then its events. */
+@Profile("b3tr", "b3tr-navigator")
 @Service
-@Profile("b3tr", "b3tr-navigator", "b3tr-navigator-main")
-open class NavigatorService(
-    private val repository: NavigatorRepository,
-    private val mongoTemplate: MongoTemplate,
-    private val inlineVersioningProperties: InlineVersioningProperties,
-) {
+open class NavigatorService(private val repository: NavigatorWriteRepository) {
 
-    open fun findByAddress(address: String): Navigator? = repository.findByIdOrNull(address)
+    /** What the schema holds for the keys the block touches, then what the block makes of them. */
+    private class Ledger(navigators: List<Navigator>, citizens: List<NavigatorCitizen>) {
+        val navigators = navigators.associateBy { it.address }.toMutableMap()
+        val citizens = citizens.associateBy { it.address }.toMutableMap()
+        val navigatorRows = linkedMapOf<String, Navigator>()
+        val citizenRows = linkedMapOf<String, NavigatorCitizen>()
 
-    /**
-     * Checks EXITING navigators whose exitEffectiveDeadline has passed and transitions them to
-     * DEACTIVATED. Called on every processed block so exits are resolved without an on-chain event.
-     */
-    open fun checkExpiredExits(
-        blockDetails: BlockDetails,
-        accumulator: VersionedDocumentAccumulator<Navigator>,
-    ) {
-        val exitingNavigators =
-            repository.findByStatusAndExitEffectiveDeadlineBlockLessThanEqual(
-                NavigatorStatus.EXITING,
-                blockDetails.blockNumber,
-            )
-        for (nav in exitingNavigators) {
-            val (existing, nextVersion) = accumulator.resolve(nav.address)
-            val current = existing ?: nav
-            if (current.status != NavigatorStatus.EXITING) continue
-            val updated =
-                current.copy(
-                    version = nextVersion,
-                    blockId = blockDetails.blockId,
-                    blockNumber = blockDetails.blockNumber,
-                    blockTimestamp = blockDetails.blockTimestamp,
-                    status = NavigatorStatus.DEACTIVATED,
-                    citizenCount = 0,
-                    totalDelegated = BigDecimal.ZERO,
-                )
-            accumulator.put(nav.address, current, updated)
+        fun put(navigator: Navigator) {
+            navigators[navigator.address] = navigator
+            navigatorRows[navigator.address] = navigator
+        }
+
+        fun put(citizen: NavigatorCitizen) {
+            citizens[citizen.address] = citizen
+            citizenRows[citizen.address] = citizen
         }
     }
 
-    open fun processBlockEvents(
-        events: List<IndexedEvent>,
-        blockDetails: BlockDetails,
-        accumulator: VersionedDocumentAccumulator<Navigator>,
-    ) {
-        for (ev in events) {
-            when (ev.eventType) {
-                "B3TR_NavigatorRegistered" -> handleRegistered(ev, blockDetails, accumulator)
-                "B3TR_StakeAdded" -> handleStakeAdded(ev, blockDetails, accumulator)
-                "B3TR_StakeWithdrawn" -> handleStakeWithdrawn(ev, blockDetails, accumulator)
-                "B3TR_ExitAnnounced" -> handleExitAnnounced(ev, blockDetails, accumulator)
-                "B3TR_NavigatorDeactivated" -> handleDeactivated(ev, blockDetails, accumulator)
-                "B3TR_NavigatorSlashed",
-                "B3TR_NavigatorMinorSlashed" -> handleSlashed(ev, blockDetails, accumulator)
-                "B3TR_MetadataURIUpdated" -> handleMetadataUpdated(ev, blockDetails, accumulator)
-                "B3TR_ReportSubmitted" -> handleReportSubmitted(ev, blockDetails, accumulator)
-                "B3TR_DelegationCreated" -> handleDelegationCreated(ev, blockDetails, accumulator)
-                "B3TR_DelegationIncreased" ->
-                    handleDelegationIncreased(ev, blockDetails, accumulator)
-                "B3TR_DelegationDecreased" ->
-                    handleDelegationDecreased(ev, blockDetails, accumulator)
-                "B3TR_DelegationRemoved" -> handleDelegationRemoved(ev, blockDetails, accumulator)
-                // Events that don't mutate navigator state
-                "B3TR_NavigatorVoteCast",
-                "B3TR_FeeDeposited",
-                "B3TR_FeeClaimed",
-                "B3TR_NavigatorFeeTaken" -> {}
+    open fun processBlock(block: BlockDetails, events: List<IndexedEvent>): NavigatorUpdate {
+        val relevant = events.filter { it.eventType in EVENTS }
+        val expired = repository.findExpiredExits(block.blockNumber)
+        if (relevant.isEmpty() && expired.isEmpty()) return NavigatorUpdate()
+
+        val ledger = load(relevant, expired, block.blockNumber)
+        expired.forEach { deactivate(ledger.navigators.getValue(it.address), block, ledger) }
+        relevant.forEach { apply(it, block, ledger) }
+        return NavigatorUpdate(
+            navigators = ledger.navigatorRows.values.toList(),
+            citizens = ledger.citizenRows.values.toList(),
+        )
+    }
+
+    // A navigator that ends this block takes its active citizens with it, so they load too.
+    private fun load(events: List<IndexedEvent>, expired: List<Navigator>, block: Long): Ledger {
+        val navigators = events.map { it.requireAddressParam("navigator") }.toSet()
+        val ending =
+            expired.map { it.address }.toSet() +
+                events
+                    .filter { it.eventType == DEACTIVATED }
+                    .map {
+                        it.requireAddressParam("navigator")
+                    }
+        val citizens =
+            events
+                .filter { it.eventType in DELEGATION_EVENTS }
+                .map { it.requireAddressParam("citizen") }
+                .toSet()
+        val loaded = expired.map { it.address }.toSet()
+        return Ledger(
+            navigators = expired + repository.findCurrentNavigators(navigators - loaded, block),
+            citizens =
+                repository.findActiveCitizens(ending, block) +
+                    repository.findCurrentCitizens(citizens, block),
+        )
+    }
+
+    private fun apply(ev: IndexedEvent, block: BlockDetails, ledger: Ledger) {
+        val address = ev.requireAddressParam("navigator")
+        when (ev.eventType) {
+            REGISTERED -> {
+                ev.validateRequiredParams("stakeAmount", "metadataURI")
+                ledger.put(
+                    Navigator(
+                        address = address,
+                        blockId = block.blockId,
+                        blockNumber = block.blockNumber,
+                        blockTimestamp = block.blockTimestamp,
+                        status = NavigatorStatus.ACTIVE,
+                        stake = ev.requireBigDecimalParam("stakeAmount"),
+                        citizenCount = 0,
+                        totalDelegated = BigDecimal.ZERO,
+                        metadataURI = ev.requireParam("metadataURI"),
+                        registeredAt = block.blockTimestamp,
+                        exitAnnouncedRound = null,
+                        exitEffectiveDeadlineBlock = null,
+                        lastReportRound = null,
+                        lastReportURI = null,
+                    )
+                )
+            }
+            STAKE_ADDED ->
+                update(ev, block, ledger, "amount", "newTotal") {
+                    it.copy(stake = ev.requireBigDecimalParam("newTotal"))
+                }
+            STAKE_WITHDRAWN ->
+                update(ev, block, ledger, "amount", "remaining") {
+                    it.copy(stake = ev.requireBigDecimalParam("remaining"))
+                }
+            EXIT_ANNOUNCED ->
+                update(ev, block, ledger, "announcedAtRound", "effectiveDeadline") {
+                    it.copy(
+                        status = NavigatorStatus.EXITING,
+                        exitAnnouncedRound = ev.requireLongParam("announcedAtRound"),
+                        exitEffectiveDeadlineBlock = ev.requireLongParam("effectiveDeadline"),
+                    )
+                }
+            DEACTIVATED -> {
+                ev.validateRequiredParams("slashPercentage")
+                ledger.navigators[address]?.let { deactivate(it, block, ledger) }
+            }
+            SLASHED ->
+                update(ev, block, ledger, "amount", "remainingStake", "reason") {
+                    it.copy(stake = ev.requireBigDecimalParam("remainingStake"))
+                }
+            MINOR_SLASHED ->
+                update(
+                    ev,
+                    block,
+                    ledger,
+                    "amount",
+                    "remainingStake",
+                    "roundId",
+                    "infractionFlags",
+                ) {
+                    it.copy(stake = ev.requireBigDecimalParam("remainingStake"))
+                }
+            METADATA_UPDATED ->
+                update(ev, block, ledger, "newURI") {
+                    it.copy(metadataURI = ev.requireParam("newURI"))
+                }
+            REPORT_SUBMITTED ->
+                update(ev, block, ledger, "roundId", "reportURI") {
+                    it.copy(
+                        lastReportRound = ev.requireLongParam("roundId"),
+                        lastReportURI = ev.requireParam("reportURI"),
+                    )
+                }
+            in DELEGATION_EVENTS -> delegation(ev, block, ledger)
+        }
+    }
+
+    private fun delegation(ev: IndexedEvent, block: BlockDetails, ledger: Ledger) {
+        val navigator = ev.requireAddressParam("navigator")
+        val citizen = ev.requireAddressParam("citizen")
+        val current = ledger.citizens[citizen]
+        when (ev.eventType) {
+            DELEGATION_CREATED -> {
+                val amount = ev.requireBigDecimalParam("amount")
+                update(ev, block, ledger) {
+                    it.copy(
+                        citizenCount = it.citizenCount + 1,
+                        totalDelegated = it.totalDelegated + amount,
+                    )
+                }
+                ledger.put(
+                    NavigatorCitizen(
+                        address = citizen,
+                        blockId = block.blockId,
+                        blockNumber = block.blockNumber,
+                        blockTimestamp = block.blockTimestamp,
+                        navigator = navigator,
+                        amount = amount,
+                        delegatedAt = block.blockTimestamp,
+                        active = true,
+                    )
+                )
+            }
+            DELEGATION_INCREASED -> {
+                val added = ev.requireBigDecimalParam("addedAmount")
+                val newTotal = ev.requireBigDecimalParam("newTotal")
+                update(ev, block, ledger) { it.copy(totalDelegated = it.totalDelegated + added) }
+                current?.let { ledger.put(it.at(block).copy(amount = newTotal)) }
+            }
+            DELEGATION_DECREASED -> {
+                val removed = ev.requireBigDecimalParam("removedAmount")
+                val newTotal = ev.requireBigDecimalParam("newTotal")
+                update(ev, block, ledger) {
+                    it.copy(totalDelegated = (it.totalDelegated - removed).max(BigDecimal.ZERO))
+                }
+                current?.let { ledger.put(it.at(block).copy(amount = newTotal)) }
+            }
+            DELEGATION_REMOVED -> {
+                val amount = ev.requireBigDecimalParam("amount")
+                update(ev, block, ledger) {
+                    it.copy(
+                        citizenCount = maxOf(0, it.citizenCount - 1),
+                        totalDelegated = (it.totalDelegated - amount).max(BigDecimal.ZERO),
+                    )
+                }
+                // A removal for the old navigator can trail the citizen's re-delegation to a new
+                // one.
+                if (current != null && current.navigator == navigator) {
+                    ledger.put(current.at(block).copy(active = false))
+                }
             }
         }
     }
 
-    @Transactional(rollbackFor = [Exception::class])
-    open fun save(updated: List<Navigator>, existing: List<Navigator>) {
-        saveVersionedDocuments(
-            updated,
-            existing,
-            mongoTemplate,
-            inlineVersioningProperties.blockWindow,
-            inlineVersioningProperties.maxVersions,
-            inlineVersioningProperties.minVersions,
+    /** Applies [transform] to the event's navigator, if the schema knows it. */
+    private fun update(
+        ev: IndexedEvent,
+        block: BlockDetails,
+        ledger: Ledger,
+        vararg params: String,
+        transform: (Navigator) -> Navigator,
+    ) {
+        ev.validateRequiredParams(*params)
+        val current = ledger.navigators[ev.requireAddressParam("navigator")] ?: return
+        ledger.put(transform(current.at(block)))
+    }
+
+    private fun deactivate(navigator: Navigator, block: BlockDetails, ledger: Ledger) {
+        ledger.put(
+            navigator
+                .at(block)
+                .copy(
+                    status = NavigatorStatus.DEACTIVATED,
+                    citizenCount = 0,
+                    totalDelegated = BigDecimal.ZERO,
+                )
         )
+        ledger.citizens.values
+            .filter { it.active && it.navigator == navigator.address }
+            .forEach { ledger.put(it.at(block).copy(active = false)) }
     }
 
-    private fun handleRegistered(
-        ev: IndexedEvent,
-        block: BlockDetails,
-        accumulator: VersionedDocumentAccumulator<Navigator>,
-    ) {
-        ev.validateRequiredParams("navigator", "stakeAmount", "metadataURI")
-        val address = ev.requireAddressParam("navigator")
-        val (existing, nextVersion) = accumulator.resolve(address)
-        val created =
-            Navigator(
-                address = address,
-                version = nextVersion,
-                blockId = block.blockId,
-                blockNumber = block.blockNumber,
-                blockTimestamp = block.blockTimestamp,
-                status = NavigatorStatus.ACTIVE,
-                stake = ev.requireBigDecimalParam("stakeAmount"),
-                citizenCount = 0,
-                totalDelegated = BigDecimal.ZERO,
-                metadataURI = ev.requireParam("metadataURI"),
-                registeredAt = block.blockTimestamp,
-                exitAnnouncedRound = null,
-                exitEffectiveDeadline = null,
-                exitEffectiveDeadlineBlock = null,
-                lastReportRound = null,
-                lastReportURI = null,
-            )
-        accumulator.put(address, existing, created)
-    }
+    private fun Navigator.at(block: BlockDetails) =
+        copy(
+            blockId = block.blockId,
+            blockNumber = block.blockNumber,
+            blockTimestamp = block.blockTimestamp,
+        )
 
-    private fun handleStakeAdded(
-        ev: IndexedEvent,
-        block: BlockDetails,
-        accumulator: VersionedDocumentAccumulator<Navigator>,
-    ) {
-        ev.validateRequiredParams("navigator", "amount", "newTotal")
-        val address = ev.requireAddressParam("navigator")
-        val resolved = resolveRecord(address, accumulator)
-        val nav = resolved.existing ?: return
-        val newStake = ev.requireBigDecimalParam("newTotal")
-        val updated =
-            nav.copy(
-                version = resolved.nextVersion,
-                blockId = block.blockId,
-                blockNumber = block.blockNumber,
-                blockTimestamp = block.blockTimestamp,
-                stake = newStake,
-            )
-        accumulator.put(address, nav, updated)
-    }
+    private fun NavigatorCitizen.at(block: BlockDetails) =
+        copy(
+            blockId = block.blockId,
+            blockNumber = block.blockNumber,
+            blockTimestamp = block.blockTimestamp,
+        )
 
-    private fun handleStakeWithdrawn(
-        ev: IndexedEvent,
-        block: BlockDetails,
-        accumulator: VersionedDocumentAccumulator<Navigator>,
-    ) {
-        ev.validateRequiredParams("navigator", "amount", "remaining")
-        val address = ev.requireAddressParam("navigator")
-        val resolved = resolveRecord(address, accumulator)
-        val nav = resolved.existing ?: return
-        val updated =
-            nav.copy(
-                version = resolved.nextVersion,
-                blockId = block.blockId,
-                blockNumber = block.blockNumber,
-                blockTimestamp = block.blockTimestamp,
-                stake = ev.requireBigDecimalParam("remaining"),
-            )
-        accumulator.put(address, nav, updated)
-    }
+    companion object {
+        const val REGISTERED = "B3TR_NavigatorRegistered"
+        const val STAKE_ADDED = "B3TR_StakeAdded"
+        const val STAKE_WITHDRAWN = "B3TR_StakeWithdrawn"
+        const val EXIT_ANNOUNCED = "B3TR_ExitAnnounced"
+        const val DEACTIVATED = "B3TR_NavigatorDeactivated"
+        const val SLASHED = "B3TR_NavigatorSlashed"
+        const val MINOR_SLASHED = "B3TR_NavigatorMinorSlashed"
+        const val METADATA_UPDATED = "B3TR_MetadataURIUpdated"
+        const val REPORT_SUBMITTED = "B3TR_ReportSubmitted"
+        const val DELEGATION_CREATED = "B3TR_DelegationCreated"
+        const val DELEGATION_INCREASED = "B3TR_DelegationIncreased"
+        const val DELEGATION_DECREASED = "B3TR_DelegationDecreased"
+        const val DELEGATION_REMOVED = "B3TR_DelegationRemoved"
 
-    private fun handleExitAnnounced(
-        ev: IndexedEvent,
-        block: BlockDetails,
-        accumulator: VersionedDocumentAccumulator<Navigator>,
-    ) {
-        ev.validateRequiredParams("navigator", "announcedAtRound", "effectiveDeadline")
-        val address = ev.requireAddressParam("navigator")
-        val resolved = resolveRecord(address, accumulator)
-        val nav = resolved.existing ?: return
-        val effectiveDeadline = ev.requireParam("effectiveDeadline")
-        val updated =
-            nav.copy(
-                version = resolved.nextVersion,
-                blockId = block.blockId,
-                blockNumber = block.blockNumber,
-                blockTimestamp = block.blockTimestamp,
-                status = NavigatorStatus.EXITING,
-                exitAnnouncedRound = ev.requireParam("announcedAtRound"),
-                exitEffectiveDeadline = effectiveDeadline,
-                exitEffectiveDeadlineBlock = ev.requireLongParam("effectiveDeadline"),
+        val DELEGATION_EVENTS =
+            listOf(
+                DELEGATION_CREATED,
+                DELEGATION_INCREASED,
+                DELEGATION_DECREASED,
+                DELEGATION_REMOVED,
             )
-        accumulator.put(address, nav, updated)
-    }
 
-    private fun handleDeactivated(
-        ev: IndexedEvent,
-        block: BlockDetails,
-        accumulator: VersionedDocumentAccumulator<Navigator>,
-    ) {
-        ev.validateRequiredParams("navigator", "slashPercentage")
-        val address = ev.requireAddressParam("navigator")
-        val resolved = resolveRecord(address, accumulator)
-        val nav = resolved.existing ?: return
-        val updated =
-            nav.copy(
-                version = resolved.nextVersion,
-                blockId = block.blockId,
-                blockNumber = block.blockNumber,
-                blockTimestamp = block.blockTimestamp,
-                status = NavigatorStatus.DEACTIVATED,
-                citizenCount = 0,
-                totalDelegated = BigDecimal.ZERO,
-            )
-        accumulator.put(address, nav, updated)
+        val EVENTS =
+            listOf(
+                REGISTERED,
+                STAKE_ADDED,
+                STAKE_WITHDRAWN,
+                EXIT_ANNOUNCED,
+                DEACTIVATED,
+                SLASHED,
+                MINOR_SLASHED,
+                METADATA_UPDATED,
+                REPORT_SUBMITTED,
+            ) + DELEGATION_EVENTS
     }
-
-    private fun handleSlashed(
-        ev: IndexedEvent,
-        block: BlockDetails,
-        accumulator: VersionedDocumentAccumulator<Navigator>,
-    ) {
-        if (ev.eventType == "B3TR_NavigatorMinorSlashed") {
-            ev.validateRequiredParams(
-                "navigator",
-                "amount",
-                "remainingStake",
-                "roundId",
-                "infractionFlags",
-            )
-        } else {
-            ev.validateRequiredParams("navigator", "amount", "remainingStake", "reason")
-        }
-        val address = ev.requireAddressParam("navigator")
-        val resolved = resolveRecord(address, accumulator)
-        val nav = resolved.existing ?: return
-        val updated =
-            nav.copy(
-                version = resolved.nextVersion,
-                blockId = block.blockId,
-                blockNumber = block.blockNumber,
-                blockTimestamp = block.blockTimestamp,
-                stake = ev.requireBigDecimalParam("remainingStake"),
-            )
-        accumulator.put(address, nav, updated)
-    }
-
-    private fun handleMetadataUpdated(
-        ev: IndexedEvent,
-        block: BlockDetails,
-        accumulator: VersionedDocumentAccumulator<Navigator>,
-    ) {
-        ev.validateRequiredParams("navigator", "newURI")
-        val address = ev.requireAddressParam("navigator")
-        val resolved = resolveRecord(address, accumulator)
-        val nav = resolved.existing ?: return
-        val updated =
-            nav.copy(
-                version = resolved.nextVersion,
-                blockId = block.blockId,
-                blockNumber = block.blockNumber,
-                blockTimestamp = block.blockTimestamp,
-                metadataURI = ev.requireParam("newURI"),
-            )
-        accumulator.put(address, nav, updated)
-    }
-
-    private fun handleReportSubmitted(
-        ev: IndexedEvent,
-        block: BlockDetails,
-        accumulator: VersionedDocumentAccumulator<Navigator>,
-    ) {
-        ev.validateRequiredParams("navigator", "roundId", "reportURI")
-        val address = ev.requireAddressParam("navigator")
-        val resolved = resolveRecord(address, accumulator)
-        val nav = resolved.existing ?: return
-        val updated =
-            nav.copy(
-                version = resolved.nextVersion,
-                blockId = block.blockId,
-                blockNumber = block.blockNumber,
-                blockTimestamp = block.blockTimestamp,
-                lastReportRound = ev.requireParam("roundId"),
-                lastReportURI = ev.requireParam("reportURI"),
-            )
-        accumulator.put(address, nav, updated)
-    }
-
-    private fun handleDelegationCreated(
-        ev: IndexedEvent,
-        block: BlockDetails,
-        accumulator: VersionedDocumentAccumulator<Navigator>,
-    ) {
-        ev.validateRequiredParams("citizen", "navigator", "amount")
-        val address = ev.requireAddressParam("navigator")
-        val resolved = resolveRecord(address, accumulator)
-        val nav = resolved.existing ?: return
-        val amount = ev.requireBigDecimalParam("amount")
-        val updated =
-            nav.copy(
-                version = resolved.nextVersion,
-                blockId = block.blockId,
-                blockNumber = block.blockNumber,
-                blockTimestamp = block.blockTimestamp,
-                citizenCount = nav.citizenCount + 1,
-                totalDelegated = nav.totalDelegated + amount,
-            )
-        accumulator.put(address, nav, updated)
-    }
-
-    private fun handleDelegationIncreased(
-        ev: IndexedEvent,
-        block: BlockDetails,
-        accumulator: VersionedDocumentAccumulator<Navigator>,
-    ) {
-        ev.validateRequiredParams("citizen", "navigator", "addedAmount", "newTotal")
-        val address = ev.requireAddressParam("navigator")
-        val resolved = resolveRecord(address, accumulator)
-        val nav = resolved.existing ?: return
-        val addedAmount = ev.requireBigDecimalParam("addedAmount")
-        val updated =
-            nav.copy(
-                version = resolved.nextVersion,
-                blockId = block.blockId,
-                blockNumber = block.blockNumber,
-                blockTimestamp = block.blockTimestamp,
-                totalDelegated = nav.totalDelegated + addedAmount,
-            )
-        accumulator.put(address, nav, updated)
-    }
-
-    private fun handleDelegationDecreased(
-        ev: IndexedEvent,
-        block: BlockDetails,
-        accumulator: VersionedDocumentAccumulator<Navigator>,
-    ) {
-        ev.validateRequiredParams("citizen", "navigator", "removedAmount", "newTotal")
-        val address = ev.requireAddressParam("navigator")
-        val resolved = resolveRecord(address, accumulator)
-        val nav = resolved.existing ?: return
-        val removedAmount = ev.requireBigDecimalParam("removedAmount")
-        val updated =
-            nav.copy(
-                version = resolved.nextVersion,
-                blockId = block.blockId,
-                blockNumber = block.blockNumber,
-                blockTimestamp = block.blockTimestamp,
-                totalDelegated = maxOf(BigDecimal.ZERO, nav.totalDelegated - removedAmount),
-            )
-        accumulator.put(address, nav, updated)
-    }
-
-    private fun handleDelegationRemoved(
-        ev: IndexedEvent,
-        block: BlockDetails,
-        accumulator: VersionedDocumentAccumulator<Navigator>,
-    ) {
-        ev.validateRequiredParams("citizen", "navigator", "amount")
-        val address = ev.requireAddressParam("navigator")
-        val resolved = resolveRecord(address, accumulator)
-        val nav = resolved.existing ?: return
-        val amount = ev.requireBigDecimalParam("amount")
-        val updated =
-            nav.copy(
-                version = resolved.nextVersion,
-                blockId = block.blockId,
-                blockNumber = block.blockNumber,
-                blockTimestamp = block.blockTimestamp,
-                citizenCount = maxOf(0, nav.citizenCount - 1),
-                totalDelegated = maxOf(BigDecimal.ZERO, nav.totalDelegated - amount),
-            )
-        accumulator.put(address, nav, updated)
-    }
-
-    private fun resolveRecord(
-        address: String,
-        accumulator: VersionedDocumentAccumulator<Navigator>,
-    ): ResolvedRecord<Navigator> = accumulator.resolve(address)
 }

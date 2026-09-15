@@ -10,8 +10,9 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.thor.client.ThorClient
 
+/** A block indexer: an exit deadline passes without an event, so every block is checked. */
 @Configuration
-@Profile("b3tr", "b3tr-navigator", "b3tr-navigator-main")
+@Profile("b3tr", "b3tr-navigator")
 open class NavigatorConfig {
 
     @Bean
@@ -22,10 +23,6 @@ open class NavigatorConfig {
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${business-event.substitutions.NAVIGATOR_REGISTRY_CONTRACT}")
         navigatorRegistryAddress: String,
-        @Value("\${business-event.substitutions.X_ALLOC_VOTING_CONTRACT}")
-        xAllocVotingAddress: String,
-        @Value("\${business-event.substitutions.VOTER_REWARDS_CONTRACT}")
-        voterRewardsAddress: String,
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
@@ -34,34 +31,11 @@ open class NavigatorConfig {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
+            .includeFullBlock()
             .businessEvents("business-events/b3tr", "abis/b3tr")
-            .businessEventNames(
-                listOf(
-                    // Navigator lifecycle
-                    "B3TR_NavigatorRegistered",
-                    "B3TR_StakeAdded",
-                    "B3TR_StakeWithdrawn",
-                    "B3TR_ExitAnnounced",
-                    "B3TR_NavigatorDeactivated",
-                    "B3TR_NavigatorSlashed",
-                    "B3TR_NavigatorMinorSlashed",
-                    "B3TR_MetadataURIUpdated",
-                    "B3TR_ReportSubmitted",
-                    // Delegations
-                    "B3TR_DelegationCreated",
-                    "B3TR_DelegationIncreased",
-                    "B3TR_DelegationDecreased",
-                    "B3TR_DelegationRemoved",
-                    "B3TR_NavigatorVoteCast",
-                    // Fees
-                    "B3TR_FeeDeposited",
-                    "B3TR_FeeClaimed",
-                    "B3TR_NavigatorFeeTaken",
-                )
-            )
-            .businessEventContracts(
-                listOf(navigatorRegistryAddress, xAllocVotingAddress, voterRewardsAddress)
-            )
+            .businessEventNames(NavigatorService.EVENTS + NavigatorFeeService.EVENTS)
+            .businessEventContracts(listOf(navigatorRegistryAddress))
             .businessEventSubstitutionParams(bEProperties.substitutions)
+            .excludeVetTransfers()
             .build()
 }
