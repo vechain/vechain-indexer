@@ -9,6 +9,8 @@ import org.vechain.indexer.b3tr.gm.GmNftProcessor
 import org.vechain.indexer.b3tr.gm.GmNftService
 import org.vechain.indexer.b3tr.treasury.TreasuryTransferProcessor
 import org.vechain.indexer.b3tr.treasury.TreasuryTransferService
+import org.vechain.indexer.b3tr.xAlloc.XAllocResultProcessor
+import org.vechain.indexer.b3tr.xAlloc.XAllocResultService
 import org.vechain.indexer.blocks.BlockTree
 import org.vechain.indexer.blocks.BlockTreeService
 import org.vechain.indexer.blocks.BlocksProcessor
@@ -71,6 +73,7 @@ class ProcessorTransactionalAnnotationsTest {
                 ContractService::class.java.getDeclaredMethod("save", List::class.java),
                 GmNftService::class.java.getDeclaredMethod("save", List::class.java),
                 TreasuryTransferService::class.java.getDeclaredMethod("save", List::class.java),
+                XAllocResultService::class.java.getDeclaredMethod("save", List::class.java),
                 HistoryService::class.java.getDeclaredMethod("save", List::class.java),
                 ValidatorService::class.java.getDeclaredMethod("save", List::class.java),
                 ValidatorBlockService::class.java.getDeclaredMethod("save", List::class.java),
@@ -105,6 +108,7 @@ class ProcessorTransactionalAnnotationsTest {
                 ContractProcessor::class.java,
                 GmNftProcessor::class.java,
                 TreasuryTransferProcessor::class.java,
+                XAllocResultProcessor::class.java,
                 HistoryProcessor::class.java,
                 ValidatorProcessor::class.java,
                 ValidatorBlockProcessor::class.java,
