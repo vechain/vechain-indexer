@@ -6,14 +6,14 @@ import java.util.concurrent.atomic.AtomicLong
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.vechain.indexer.b3tr.balance.repository.B3trBalanceRepository
+import org.vechain.indexer.b3tr.balance.B3trBalanceReadRepository
 import org.vechain.indexer.config.CacheProperties
 import org.vechain.indexer.config.CacheWarmer
 
 @Profile("b3tr", "b3tr-balance")
 @Component
 open class B3trRichlistCacheWarmer(
-    private val b3trBalanceRepository: B3trBalanceRepository,
+    private val repository: B3trBalanceReadRepository,
     private val b3trRichlistCountService: B3trRichlistCountService,
     private val cacheProperties: CacheProperties,
 ) : CacheWarmer {
@@ -30,7 +30,7 @@ open class B3trRichlistCacheWarmer(
         val lastWarmAt = lastWarmAtMillis.get()
         if (!isDue(now, lastWarmAt, warmer.refreshIntervalMs)) return
 
-        if (b3trBalanceRepository.getLatestRecord() == null) return
+        if (!repository.hasRows()) return
 
         if (!warming.compareAndSet(false, true)) return
 

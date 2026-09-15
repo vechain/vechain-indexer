@@ -17,10 +17,9 @@ import org.springframework.cache.annotation.EnableCaching
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.query.Query
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit.jupiter.SpringExtension
+import org.vechain.indexer.b3tr.balance.B3trBalanceReadRepository
 
 @ExtendWith(SpringExtension::class)
 @ContextConfiguration(classes = [B3trRichlistCountServiceCacheTest.TestConfig::class])
@@ -31,50 +30,51 @@ internal class B3trRichlistCountServiceCacheTest {
     open class TestConfig {
         @Bean open fun cacheManager(): CacheManager = ConcurrentMapCacheManager(CACHE_NAME)
 
-        @Bean open fun mongoTemplate(): MongoTemplate = mockk(relaxed = true)
+        @Bean open fun repository(): B3trBalanceReadRepository = mockk(relaxed = true)
 
         @Bean
-        open fun b3trRichlistCountService(mongoTemplate: MongoTemplate): B3trRichlistCountService =
-            B3trRichlistCountService(mongoTemplate)
+        open fun b3trRichlistCountService(
+            repository: B3trBalanceReadRepository
+        ): B3trRichlistCountService = B3trRichlistCountService(repository)
     }
 
     @Autowired private lateinit var service: B3trRichlistCountService
-    @Autowired private lateinit var mongoTemplate: MongoTemplate
+    @Autowired private lateinit var repository: B3trBalanceReadRepository
     @Autowired private lateinit var cacheManager: CacheManager
 
     @BeforeEach
     fun setUp() {
         cacheManager.getCache(CACHE_NAME)?.clear()
-        clearMocks(mongoTemplate)
+        clearMocks(repository)
     }
 
     @Test
     fun `repeated total holder count for same scope uses cache`() {
-        every { mongoTemplate.count(any<Query>(), any(), any<String>()) } returns 42L
+        every { repository.countGreaterThan(any(), any()) } returns 42L
 
         val first = service.getPositiveHolderCount(RichlistScope.ALL)
         val second = service.getPositiveHolderCount(RichlistScope.ALL)
 
         assertEquals(42L, first)
         assertEquals(42L, second)
-        verify(exactly = 1) { mongoTemplate.count(any<Query>(), any(), any<String>()) }
+        verify(exactly = 1) { repository.countGreaterThan(any(), any()) }
     }
 
     @Test
     fun `different scopes use different cache entries`() {
-        every { mongoTemplate.count(any<Query>(), any(), any<String>()) } returnsMany listOf(7L, 9L)
+        every { repository.countGreaterThan(any(), any()) } returnsMany listOf(7L, 9L)
 
         val all = service.getPositiveHolderCount(RichlistScope.ALL)
         val vot3 = service.getPositiveHolderCount(RichlistScope.VOT3)
 
         assertEquals(7L, all)
         assertEquals(9L, vot3)
-        verify(exactly = 2) { mongoTemplate.count(any<Query>(), any(), any<String>()) }
+        verify(exactly = 2) { repository.countGreaterThan(any(), any()) }
     }
 
     @Test
     fun `concurrent total holder count for same scope is computed once`() {
-        every { mongoTemplate.count(any<Query>(), any(), any<String>()) } answers
+        every { repository.countGreaterThan(any(), any()) } answers
             {
                 Thread.sleep(100)
                 42L
@@ -92,7 +92,7 @@ internal class B3trRichlistCountServiceCacheTest {
             executor.shutdownNow()
         }
 
-        verify(exactly = 1) { mongoTemplate.count(any<Query>(), any(), any<String>()) }
+        verify(exactly = 1) { repository.countGreaterThan(any(), any()) }
     }
 
     companion object {

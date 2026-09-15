@@ -3,12 +3,9 @@ package org.vechain.indexer.b3tr.richlist
 import java.math.BigDecimal
 import java.math.BigInteger
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.query.Criteria
+import org.springframework.data.domain.Sort.Direction
 import org.springframework.stereotype.Service
-import org.vechain.indexer.IndexerNames
-import org.vechain.indexer.b3tr.balance.B3trBalance
-import org.vechain.indexer.b3tr.balance.repository.B3trBalanceRepository
+import org.vechain.indexer.b3tr.balance.B3trBalanceReadRepository
 import org.vechain.indexer.b3tr.richlist.response.B3trRankResponse
 import org.vechain.indexer.b3tr.richlist.response.B3trRichlistItem
 import org.vechain.indexer.exception.ResourceNotFoundException
@@ -19,12 +16,9 @@ import org.vechain.indexer.utils.CursorPaginationUtils
 @Profile("b3tr", "b3tr-balance")
 @Service
 open class B3trRichlistService(
-    private val mongoTemplate: MongoTemplate,
-    private val b3trRepository: B3trBalanceRepository,
+    private val repository: B3trBalanceReadRepository,
     private val b3trRichlistCountService: B3trRichlistCountService,
 ) {
-
-    private val collection = IndexerNames.B3TR_BALANCE.COLLECTION
 
     fun getRichlist(
         size: Int?,
@@ -32,44 +26,43 @@ open class B3trRichlistService(
         cursor: String? = null,
         scope: RichlistScope = RichlistScope.ALL,
     ): PaginatedResponse<B3trRichlistItem> {
-        val sortField = scope.sortField
-        val criteria = Criteria.where(sortField).gt(BigDecimal.ZERO)
-        val (pageSize, query) =
-            CursorPaginationUtils.buildCursorQuery(
-                baseCriteria = criteria,
-                size = size,
-                direction = direction,
-                sortByField = sortField,
-                cursor = cursor,
-                cursorField = "_id",
+        val pageSize = size ?: DEFAULT_PAGE_SIZE
+        val sortDir = if (direction?.uppercase() == "ASC") Direction.ASC else Direction.DESC
+        val cursorInfo = CursorPaginationUtils.parseCursor(cursor)
+
+        val results =
+            repository.page(
+                on = scope.column,
+                limit = pageSize + 1,
+                direction = sortDir,
+                cursorBalance = cursorInfo?.sortValue?.toBigDecimalOrNull(),
+                cursorAddress = cursorInfo?.cursorValue,
             )
-
-        val results = mongoTemplate.find(query, B3trBalance::class.java, collection)
         val page = results.take(pageSize)
-
         if (page.isEmpty()) {
             return paginatedResponse(data = emptyList(), hasNext = false, cursor = null)
         }
 
-        val first = page.first()
-        val firstBalance = scope.balanceFor(first)
-        val startRank = b3trRichlistCountService.countBalancesGreaterThan(scope, firstBalance) + 1
-
-        val items = page.mapIndexed { index, doc ->
+        val startRank =
+            b3trRichlistCountService.countBalancesGreaterThan(
+                scope,
+                scope.balanceFor(page.first()),
+            ) + 1
+        val items = page.mapIndexed { index, row ->
             B3trRichlistItem(
-                address = doc.address,
-                balance = scope.balanceFor(doc).toBigIntegerExact(),
+                address = row.address,
+                balance = scope.balanceFor(row).toBigIntegerExact(),
                 rank = startRank + index,
             )
         }
 
         val nextCursor =
-            CursorPaginationUtils.calculateNextCursor(
-                results = results,
-                pageSize = pageSize,
-                sortByField = sortField,
-                cursorField = "address",
-            )
+            if (results.size <= pageSize) null
+            else
+                CursorPaginationUtils.generateCursor(
+                    scope.balanceFor(page.last()).toPlainString(),
+                    page.last().address,
+                )
 
         return paginatedResponse(
             data = items,
@@ -82,12 +75,12 @@ open class B3trRichlistService(
         address: String,
         scope: RichlistScope = RichlistScope.ALL,
     ): B3trRankResponse {
-        val doc =
-            b3trRepository.findById(address).orElse(null)
+        val row =
+            repository.findByAddress(address)
                 ?: throw ResourceNotFoundException(
                     "Address not found in B3TR/VOT3 holders: $address"
                 )
-        val balance = scope.balanceFor(doc)
+        val balance = scope.balanceFor(row)
         val totalHolders = b3trRichlistCountService.getPositiveHolderCount(scope)
         if (balance <= BigDecimal.ZERO) {
             return B3trRankResponse(
@@ -107,5 +100,9 @@ open class B3trRichlistService(
             totalHolders = totalHolders,
             topPercentage = topPercentage,
         )
+    }
+
+    companion object {
+        private const val DEFAULT_PAGE_SIZE = 20
     }
 }

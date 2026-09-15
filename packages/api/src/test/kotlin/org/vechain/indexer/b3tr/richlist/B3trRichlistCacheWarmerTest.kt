@@ -12,14 +12,13 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.vechain.indexer.b3tr.balance.B3trBalance
-import org.vechain.indexer.b3tr.balance.repository.B3trBalanceRepository
+import org.vechain.indexer.b3tr.balance.B3trBalanceReadRepository
 import org.vechain.indexer.config.CacheProperties
 
 @ExtendWith(MockKExtension::class)
 internal class B3trRichlistCacheWarmerTest {
 
-    @MockK lateinit var b3trBalanceRepository: B3trBalanceRepository
+    @MockK lateinit var b3trBalanceRepository: B3trBalanceReadRepository
     @MockK lateinit var b3trRichlistCountService: B3trRichlistCountService
 
     private lateinit var cacheProperties: CacheProperties
@@ -40,7 +39,7 @@ internal class B3trRichlistCacheWarmerTest {
 
     @Test
     fun `warmer refreshes all scopes when collection is not empty`() {
-        every { b3trBalanceRepository.getLatestRecord() } returns balance(blockNumber = 99)
+        every { b3trBalanceRepository.hasRows() } returns true
         every { b3trRichlistCountService.refreshPositiveHolderCount(any()) } returns 42L
 
         warmer.warmIfDue()
@@ -58,7 +57,7 @@ internal class B3trRichlistCacheWarmerTest {
 
     @Test
     fun `warmer skips refresh when collection is empty`() {
-        every { b3trBalanceRepository.getLatestRecord() } returns null
+        every { b3trBalanceRepository.hasRows() } returns false
 
         warmer.warmIfDue()
 
@@ -69,7 +68,7 @@ internal class B3trRichlistCacheWarmerTest {
     fun `warmer skips immediate refresh when interval has not elapsed`() {
         cacheProperties.warmers.b3trRichlistTotalHolders.refreshIntervalMs = 1_000
         warmer = testWarmer(listOf(10_000L, 10_000L, 10_000L))
-        every { b3trBalanceRepository.getLatestRecord() } returns balance(blockNumber = 99)
+        every { b3trBalanceRepository.hasRows() } returns true
         every { b3trRichlistCountService.refreshPositiveHolderCount(any()) } returns 42L
 
         warmer.warmIfDue()
@@ -95,13 +94,13 @@ internal class B3trRichlistCacheWarmerTest {
         val releaseFirstRepositoryCall = CountDownLatch(1)
         val repositoryCallCount = AtomicInteger(0)
 
-        every { b3trBalanceRepository.getLatestRecord() } answers
+        every { b3trBalanceRepository.hasRows() } answers
             {
                 if (repositoryCallCount.incrementAndGet() == 1) {
                     firstRepositoryCallStarted.countDown()
                     assertTrue(releaseFirstRepositoryCall.await(2, TimeUnit.SECONDS))
                 }
-                balance(blockNumber = 99)
+                true
             }
         every { b3trRichlistCountService.refreshPositiveHolderCount(any()) } returns 42L
 
@@ -143,16 +142,4 @@ internal class B3trRichlistCacheWarmerTest {
             ) {
             override fun currentTimeMillis(): Long = times.next()
         }
-
-    private fun balance(blockNumber: Long): B3trBalance =
-        B3trBalance(
-            address = "0xaddr",
-            blockId = "0xblock",
-            blockNumber = blockNumber,
-            blockTimestamp = 1_000L,
-            version = 1,
-            vot3Balance = java.math.BigDecimal.ONE,
-            b3trBalance = java.math.BigDecimal.ONE,
-            totalBalance = java.math.BigDecimal("2"),
-        )
 }

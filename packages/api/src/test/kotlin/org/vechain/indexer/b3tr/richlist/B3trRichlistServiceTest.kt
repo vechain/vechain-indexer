@@ -5,23 +5,20 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import java.math.BigDecimal
 import java.math.BigInteger
-import java.util.Optional
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.query.Query
+import org.springframework.data.domain.Sort.Direction
 import org.vechain.indexer.b3tr.balance.B3trBalance
-import org.vechain.indexer.b3tr.balance.repository.B3trBalanceRepository
+import org.vechain.indexer.b3tr.balance.B3trBalanceReadRepository
 import org.vechain.indexer.exception.ResourceNotFoundException
 
 @ExtendWith(MockKExtension::class)
 internal class B3trRichlistServiceTest {
 
-    @MockK lateinit var mongoTemplate: MongoTemplate
-    @MockK lateinit var b3trRepository: B3trBalanceRepository
+    @MockK lateinit var repository: B3trBalanceReadRepository
     @MockK lateinit var b3trRichlistCountService: B3trRichlistCountService
 
     private lateinit var service: B3trRichlistService
@@ -30,7 +27,7 @@ internal class B3trRichlistServiceTest {
 
     @BeforeEach
     fun setUp() {
-        service = B3trRichlistService(mongoTemplate, b3trRepository, b3trRichlistCountService)
+        service = B3trRichlistService(repository, b3trRichlistCountService)
     }
 
     @Test
@@ -42,12 +39,11 @@ internal class B3trRichlistServiceTest {
                 blockId = "0xblock",
                 blockNumber = 10L,
                 blockTimestamp = 1000L,
-                version = 1,
                 vot3Balance = decimal("100"),
                 b3trBalance = decimal("50"),
                 totalBalance = decimal("150"),
             )
-        every { b3trRepository.findById(address) } returns Optional.of(doc)
+        every { repository.findByAddress(address) } returns doc
         every { b3trRichlistCountService.getPositiveHolderCount(RichlistScope.ALL) } returns 100L
         every {
             b3trRichlistCountService.countBalancesGreaterThan(RichlistScope.ALL, decimal("150"))
@@ -71,12 +67,11 @@ internal class B3trRichlistServiceTest {
                 blockId = "0xblock",
                 blockNumber = 10L,
                 blockTimestamp = 1000L,
-                version = 1,
                 vot3Balance = decimal("200"),
                 b3trBalance = decimal("0"),
                 totalBalance = decimal("200"),
             )
-        every { b3trRepository.findById(address) } returns Optional.of(doc)
+        every { repository.findByAddress(address) } returns doc
         every { b3trRichlistCountService.getPositiveHolderCount(RichlistScope.VOT3) } returns 50L
         every {
             b3trRichlistCountService.countBalancesGreaterThan(RichlistScope.VOT3, decimal("200"))
@@ -98,12 +93,11 @@ internal class B3trRichlistServiceTest {
                 blockId = "0xblock",
                 blockNumber = 10L,
                 blockTimestamp = 1000L,
-                version = 1,
                 vot3Balance = BigDecimal.ZERO,
                 b3trBalance = decimal("75"),
                 totalBalance = decimal("75"),
             )
-        every { b3trRepository.findById(address) } returns Optional.of(doc)
+        every { repository.findByAddress(address) } returns doc
         every { b3trRichlistCountService.getPositiveHolderCount(RichlistScope.B3TR) } returns 80L
         every {
             b3trRichlistCountService.countBalancesGreaterThan(RichlistScope.B3TR, decimal("75"))
@@ -119,7 +113,7 @@ internal class B3trRichlistServiceTest {
     @Test
     fun `getAddressRank throws when address not found`() {
         val address = "0xmissing00000000000000000000000000000001"
-        every { b3trRepository.findById(address) } returns Optional.empty()
+        every { repository.findByAddress(address) } returns null
 
         assertThrows(ResourceNotFoundException::class.java) {
             service.getAddressRank(address, RichlistScope.ALL)
@@ -135,12 +129,11 @@ internal class B3trRichlistServiceTest {
                 blockId = "0xblock",
                 blockNumber = 10L,
                 blockTimestamp = 1000L,
-                version = 1,
                 vot3Balance = BigDecimal.ZERO,
                 b3trBalance = BigDecimal.ZERO,
                 totalBalance = BigDecimal.ZERO,
             )
-        every { b3trRepository.findById(address) } returns Optional.of(doc)
+        every { repository.findByAddress(address) } returns doc
         every { b3trRichlistCountService.getPositiveHolderCount(RichlistScope.ALL) } returns 42
 
         val result = service.getAddressRank(address, RichlistScope.ALL)
@@ -154,8 +147,7 @@ internal class B3trRichlistServiceTest {
 
     @Test
     fun `getRichlist empty returns empty paginated response`() {
-        every { mongoTemplate.find(any<Query>(), any<Class<*>>(), any<String>()) } returns
-            emptyList()
+        every { repository.page(any(), 21, Direction.DESC, null, null) } returns emptyList()
 
         val result = service.getRichlist(size = 20, direction = "DESC", scope = RichlistScope.ALL)
 
@@ -172,7 +164,6 @@ internal class B3trRichlistServiceTest {
                 blockId = "0xb",
                 blockNumber = 2L,
                 blockTimestamp = 2000L,
-                version = 1,
                 vot3Balance = decimal("100"),
                 b3trBalance = decimal("50"),
                 totalBalance = decimal("150"),
@@ -183,13 +174,11 @@ internal class B3trRichlistServiceTest {
                 blockId = "0xb",
                 blockNumber = 2L,
                 blockTimestamp = 2000L,
-                version = 1,
                 vot3Balance = decimal("80"),
                 b3trBalance = decimal("20"),
                 totalBalance = decimal("100"),
             )
-        every { mongoTemplate.find(any<Query>(), any<Class<*>>(), any<String>()) } returns
-            listOf(alice, bob)
+        every { repository.page(any(), 21, Direction.DESC, null, null) } returns listOf(alice, bob)
         every {
             b3trRichlistCountService.countBalancesGreaterThan(RichlistScope.ALL, decimal("150"))
         } returns 0
@@ -211,13 +200,11 @@ internal class B3trRichlistServiceTest {
                 blockId = "0xb",
                 blockNumber = 2L,
                 blockTimestamp = 2000L,
-                version = 1,
                 vot3Balance = decimal("99"),
                 b3trBalance = decimal("1"),
                 totalBalance = decimal("100"),
             )
-        every { mongoTemplate.find(any<Query>(), any<Class<*>>(), any<String>()) } returns
-            listOf(doc)
+        every { repository.page(any(), 21, Direction.DESC, null, null) } returns listOf(doc)
         every {
             b3trRichlistCountService.countBalancesGreaterThan(RichlistScope.VOT3, decimal("99"))
         } returns 0
@@ -236,13 +223,11 @@ internal class B3trRichlistServiceTest {
                 blockId = "0xb",
                 blockNumber = 2L,
                 blockTimestamp = 2000L,
-                version = 1,
                 vot3Balance = decimal("1"),
                 b3trBalance = decimal("99"),
                 totalBalance = decimal("100"),
             )
-        every { mongoTemplate.find(any<Query>(), any<Class<*>>(), any<String>()) } returns
-            listOf(doc)
+        every { repository.page(any(), 21, Direction.DESC, null, null) } returns listOf(doc)
         every {
             b3trRichlistCountService.countBalancesGreaterThan(RichlistScope.B3TR, decimal("99"))
         } returns 0
