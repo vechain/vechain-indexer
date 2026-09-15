@@ -7,13 +7,14 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.b3tr.gm.GmLevelName
 import org.vechain.indexer.config.BusinessEventProperties
+import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Service
 @Profile("b3tr", "b3tr-treasury")
 open class TreasuryTransferService(
-    private val repository: TreasuryTransferRepository,
+    private val repository: TreasuryTransferWriteRepository,
     private val businessEventProperties: BusinessEventProperties,
 ) {
 
@@ -158,8 +159,9 @@ open class TreasuryTransferService(
             GmLevelName.GALAXY -> "Galaxy"
         }
 
-    @Transactional(rollbackFor = [Exception::class])
-    open fun save(records: List<TreasuryTransfer>) {
-        if (records.isNotEmpty()) repository.saveAll(records)
-    }
+    @Transactional(
+        transactionManager = PostgresConfig.TRANSACTION_MANAGER,
+        rollbackFor = [Exception::class],
+    )
+    open fun save(records: List<TreasuryTransfer>) = repository.save(records)
 }
