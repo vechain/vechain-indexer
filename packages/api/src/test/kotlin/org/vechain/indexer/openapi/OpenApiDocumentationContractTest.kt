@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.vechain.indexer.blocks.BlocksReadRepository
+import org.vechain.indexer.contracts.ContractReadRepository
 import org.vechain.indexer.history.HistoryReadRepository
 import org.vechain.indexer.nft.NftReadRepository
 import org.vechain.indexer.stargate.staking.NftHoldersReadRepository
@@ -41,6 +42,7 @@ class OpenApiDocumentationContractTest {
     // The block and transaction controllers need a reader; the spec comes from annotations.
     @MockitoBean private lateinit var postgresReadRepository: BlocksReadRepository
     @MockitoBean private lateinit var nftReadRepository: NftReadRepository
+    @MockitoBean private lateinit var contractReadRepository: ContractReadRepository
     @MockitoBean private lateinit var historyReadRepository: HistoryReadRepository
     @MockitoBean private lateinit var validatorReadRepository: ValidatorReadRepository
     @MockitoBean private lateinit var validatorBlockReadRepository: ValidatorBlockReadRepository

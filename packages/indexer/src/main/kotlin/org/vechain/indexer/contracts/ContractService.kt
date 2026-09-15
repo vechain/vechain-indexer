@@ -1,115 +1,64 @@
 package org.vechain.indexer.contracts
 
-import kotlin.collections.component1
-import kotlin.collections.component2
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
-import org.vechain.indexer.config.InlineVersioningProperties
-import org.vechain.indexer.contracts.repository.ContractRepository
+import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.contracts.specifications.Contracts
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.ContractUtils.isContractType
 import org.vechain.indexer.utils.EventUtils.groupByBlock
 import org.vechain.indexer.utils.EventUtils.groupByContractAddress
-import org.vechain.indexer.utils.IdUtils.generateId
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
+/** Turns `$Master` events into a contract's first row and its later master changes. */
 @Profile("contracts", "contract")
 @Service
 open class ContractService(
-    private val repository: ContractRepository,
-    private val inlineVersioningProperties: InlineVersioningProperties,
-    private val mongoTemplate: MongoTemplate,
+    private val repository: ContractWriteRepository,
     private val thorClient: ThorClient,
 ) {
-    open suspend fun processBlock(
-        events: List<IndexedEvent>
-    ): Pair<List<Contract>, List<Contract>> {
+    /** The new row of each contract touched in each block, in ascending block order. */
+    open suspend fun processBlock(events: List<IndexedEvent>): List<Contract> {
         assertEventTypes(events, "\$Master")
 
-        // Pre-collect all record IDs and batch-load from DB
-        val allRecordIds = mutableSetOf<String>()
-        groupByBlock(events).forEach { (blockDetails, blockEvents) ->
-            groupByContractAddress(blockEvents).forEach { (contractAddress, _) ->
-                allRecordIds.add(generateId(blockDetails.blockId, contractAddress))
-            }
-        }
-        val preloaded =
-            if (allRecordIds.isNotEmpty()) {
-                repository.findAllById(allRecordIds).associateBy { it.getDocumentId() }
-            } else {
-                emptyMap()
-            }
+        val current =
+            repository
+                .findCurrentByAddresses(groupByContractAddress(events).keys)
+                .associateBy { it.address }
+                .toMutableMap()
+        val rows = mutableListOf<Contract>()
 
-        val accumulator =
-            VersionedDocumentAccumulator<Contract>(
-                findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) },
-                initialVersion = 1,
-            )
-        groupByBlock(events).forEach { (blockDetails, blockEvents) ->
-            accumulator.startBlock()
-            groupByContractAddress(blockEvents).forEach { (contractAddress, contractEvents) ->
-                val recordId = generateId(blockDetails.blockId, contractAddress)
-                val (existing, nextVersion) = accumulator.resolve(recordId)
+        groupByBlock(events).forEach { (block, blockEvents) ->
+            groupByContractAddress(blockEvents).forEach { (address, contractEvents) ->
+                val existing = current[address]
                 val updated =
-                    createOrUpdateExisting(
-                        blockDetails,
-                        contractAddress,
-                        contractEvents,
-                        existing,
-                        nextVersion,
-                    )
+                    if (existing == null) createNewRecord(block, address, contractEvents)
+                    else updateExistingRecord(block, contractEvents, existing)
                 if (updated != null) {
-                    accumulator.put(recordId, existing, updated)
+                    current[address] = updated
+                    rows += updated
                 }
             }
         }
-
-        return accumulator.results()
+        return rows
     }
 
-    @Transactional(rollbackFor = [Exception::class])
-    open fun save(updated: List<Contract>, existing: List<Contract>) {
-        saveVersionedDocuments(
-            updated = updated,
-            existing = existing,
-            mongoTemplate = mongoTemplate,
-            blockWindow = inlineVersioningProperties.blockWindow,
-            maxVersions = inlineVersioningProperties.maxVersions,
-            minVersions = inlineVersioningProperties.minVersions,
-        )
-    }
-
-    protected suspend fun createOrUpdateExisting(
-        blockDetails: BlockDetails,
-        contractAddress: String,
-        events: List<IndexedEvent>,
-        existing: Contract?,
-        version: Int,
-    ): Contract? {
-        return if (existing == null) {
-            createNewRecord(blockDetails, contractAddress, events, version)
-        } else {
-            updateExistingRecord(blockDetails, events, existing, version)
-        }
-    }
+    @Transactional(
+        transactionManager = PostgresConfig.TRANSACTION_MANAGER,
+        rollbackFor = [Exception::class],
+    )
+    open fun save(contracts: List<Contract>) = repository.save(contracts)
 
     protected suspend fun createNewRecord(
         blockDetails: BlockDetails,
         contractAddress: String,
         events: List<IndexedEvent>,
-        version: Int,
     ): Contract? {
-
         // Use the last $Master event in the block to derive the latest master.
         val master =
             events.asReversed().firstNotNullOfOrNull { it.params.getAsString("newMaster") }
@@ -127,7 +76,6 @@ open class ContractService(
             blockId = blockDetails.blockId,
             blockNumber = blockDetails.blockNumber,
             blockTimestamp = blockDetails.blockTimestamp,
-            version = version,
             createdOn = blockDetails.blockTimestamp,
             deploymentTxId = events.first().txId,
             deploymentClauseIndex = events.first().clauseIndex,
@@ -142,7 +90,6 @@ open class ContractService(
         blockDetails: BlockDetails,
         events: List<IndexedEvent>,
         existing: Contract,
-        version: Int,
     ): Contract {
         val newMaster =
             events.asReversed().firstNotNullOfOrNull { it.params.getAsString("newMaster") }
@@ -152,7 +99,6 @@ open class ContractService(
             blockId = blockDetails.blockId,
             blockNumber = blockDetails.blockNumber,
             blockTimestamp = blockDetails.blockTimestamp,
-            version = version,
             master = newMaster,
         )
     }
