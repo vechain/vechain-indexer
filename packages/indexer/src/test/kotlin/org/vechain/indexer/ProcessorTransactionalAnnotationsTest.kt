@@ -9,6 +9,8 @@ import org.vechain.indexer.blocks.BlockTree
 import org.vechain.indexer.blocks.BlockTreeService
 import org.vechain.indexer.blocks.BlocksProcessor
 import org.vechain.indexer.config.postgres.PostgresConfig
+import org.vechain.indexer.contracts.ContractProcessor
+import org.vechain.indexer.contracts.ContractService
 import org.vechain.indexer.history.HistoryProcessor
 import org.vechain.indexer.history.HistoryService
 import org.vechain.indexer.nft.NftBlacklistProcessor
@@ -62,6 +64,7 @@ class ProcessorTransactionalAnnotationsTest {
                 BlockTreeService::class.java.getDeclaredMethod("save", BlockTree::class.java),
                 NftBlacklistService::class.java.getDeclaredMethod("save", List::class.java),
                 NftService::class.java.getDeclaredMethod("save", List::class.java),
+                ContractService::class.java.getDeclaredMethod("save", List::class.java),
                 HistoryService::class.java.getDeclaredMethod("save", List::class.java),
                 ValidatorService::class.java.getDeclaredMethod("save", List::class.java),
                 ValidatorBlockService::class.java.getDeclaredMethod("save", List::class.java),
@@ -93,6 +96,7 @@ class ProcessorTransactionalAnnotationsTest {
                 BlocksProcessor::class.java,
                 NftBlacklistProcessor::class.java,
                 NftProcessor::class.java,
+                ContractProcessor::class.java,
                 HistoryProcessor::class.java,
                 ValidatorProcessor::class.java,
                 ValidatorBlockProcessor::class.java,

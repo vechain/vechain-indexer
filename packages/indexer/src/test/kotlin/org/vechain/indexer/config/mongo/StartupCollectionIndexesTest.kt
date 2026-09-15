@@ -26,8 +26,8 @@ import org.vechain.indexer.accounts.VetBalance
 import org.vechain.indexer.accounts.mongo.AccountOverviewCollectionConfig
 import org.vechain.indexer.accounts.mongo.VetBalanceCollectionConfig
 import org.vechain.indexer.config.genesis.GenesisVetBalanceLoader
-import org.vechain.indexer.contracts.Contract
-import org.vechain.indexer.contracts.mongo.ContractCollectionConfig
+import org.vechain.indexer.transfer.IndexedTransferEvent
+import org.vechain.indexer.transfer.TransferCollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
 @ExtendWith(MockKExtension::class)
@@ -116,18 +116,19 @@ class StartupCollectionIndexesTest {
     }
 
     @Test
-    fun `contract creates blockNumber startup index`() {
+    fun `transfer creates blockNumber startup index`() {
         val capturedIndexes = mutableListOf<IndexDefinition>()
         every {
             indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
         } returns false
-        every { mongoTemplate.collectionExists(Contract::class.java) } returns true
-        every { mongoTemplate.getCollectionName(Contract::class.java) } returns "contracts"
-        every { mongoTemplate.indexOps(Contract::class.java) } returns indexOperations
+        every { mongoTemplate.collectionExists(IndexedTransferEvent::class.java) } returns true
+        every { mongoTemplate.getCollectionName(IndexedTransferEvent::class.java) } returns
+            "transfer_events"
+        every { mongoTemplate.indexOps(IndexedTransferEvent::class.java) } returns indexOperations
         every { indexOperations.indexInfo } returns emptyList()
         every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
-        ContractCollectionConfig(
+        TransferCollectionConfig(
                 mongoTemplate = mongoTemplate,
                 appCoroutineScope = CoroutineScope(Dispatchers.Unconfined),
                 indexerVersionService = indexerVersionService,
@@ -161,10 +162,11 @@ class StartupCollectionIndexesTest {
         every {
             indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
         } returns false
-        every { mongoTemplate.collectionExists(Contract::class.java) } returns true
-        every { mongoTemplate.getCollectionName(Contract::class.java) } returns "contracts"
-        every { mongoTemplate.indexOps(Contract::class.java) } returns indexOperations
-        every { mongoTemplate.indexOps("contracts") } returns indexOperations
+        every { mongoTemplate.collectionExists(IndexedTransferEvent::class.java) } returns true
+        every { mongoTemplate.getCollectionName(IndexedTransferEvent::class.java) } returns
+            "transfer_events"
+        every { mongoTemplate.indexOps(IndexedTransferEvent::class.java) } returns indexOperations
+        every { mongoTemplate.indexOps("transfer_events") } returns indexOperations
         // First read happens during removeStaleIndexes (drop legacy);
         // second read happens during createPendingIndexes after the drop,
         // when the legacy entry is gone.
@@ -172,7 +174,7 @@ class StartupCollectionIndexesTest {
         every { indexOperations.dropIndex("blockNumber_-1_legacy") } just Runs
         every { indexOperations.createIndex(capture(createdIndexes)) } returns "created"
 
-        ContractCollectionConfig(
+        TransferCollectionConfig(
                 mongoTemplate = mongoTemplate,
                 appCoroutineScope = CoroutineScope(Dispatchers.Unconfined),
                 indexerVersionService = indexerVersionService,
@@ -212,10 +214,11 @@ class StartupCollectionIndexesTest {
         every {
             indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
         } returns false
-        every { mongoTemplate.collectionExists(Contract::class.java) } returns true
-        every { mongoTemplate.getCollectionName(Contract::class.java) } returns "contracts"
-        every { mongoTemplate.indexOps(Contract::class.java) } returns indexOperations
-        every { mongoTemplate.indexOps("contracts") } returns indexOperations
+        every { mongoTemplate.collectionExists(IndexedTransferEvent::class.java) } returns true
+        every { mongoTemplate.getCollectionName(IndexedTransferEvent::class.java) } returns
+            "transfer_events"
+        every { mongoTemplate.indexOps(IndexedTransferEvent::class.java) } returns indexOperations
+        every { mongoTemplate.indexOps("transfer_events") } returns indexOperations
         // First read happens during removeStaleIndexes (drop drifted);
         // second read happens during createPendingIndexes after the drop,
         // when the drifted entry is gone.
@@ -223,7 +226,7 @@ class StartupCollectionIndexesTest {
         every { indexOperations.dropIndex("blockNumber_-1") } just Runs
         every { indexOperations.createIndex(capture(createdIndexes)) } returns "created"
 
-        // The Contract config registers blockNumber_-1 with no partial filter override
+        // The transfer config registers blockNumber_-1 with no partial filter override
         // (default INDEXED_DOCUMENT_PARTIAL_FILTER). Build a TestConfig that uses a *different*
         // partial filter so the drift is observable.
         TestPartialFilterDriftConfig(
@@ -264,16 +267,17 @@ class StartupCollectionIndexesTest {
         every {
             indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
         } returns false
-        every { mongoTemplate.collectionExists(Contract::class.java) } returns true
-        every { mongoTemplate.getCollectionName(Contract::class.java) } returns "contracts"
-        every { mongoTemplate.indexOps(Contract::class.java) } returns indexOperations
-        every { mongoTemplate.indexOps("contracts") } returns indexOperations
+        every { mongoTemplate.collectionExists(IndexedTransferEvent::class.java) } returns true
+        every { mongoTemplate.getCollectionName(IndexedTransferEvent::class.java) } returns
+            "transfer_events"
+        every { mongoTemplate.indexOps(IndexedTransferEvent::class.java) } returns indexOperations
+        every { mongoTemplate.indexOps("transfer_events") } returns indexOperations
         every { indexOperations.indexInfo } returns listOf(legacyIndex)
         every { indexOperations.dropIndex("blockNumber_-1_legacy") } throws
             RuntimeException("mongo unavailable")
 
         val config =
-            ContractCollectionConfig(
+            TransferCollectionConfig(
                 mongoTemplate = mongoTemplate,
                 appCoroutineScope = CoroutineScope(Dispatchers.Unconfined),
                 indexerVersionService = indexerVersionService,
@@ -301,10 +305,11 @@ class StartupCollectionIndexesTest {
         every {
             indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
         } returns false
-        every { mongoTemplate.collectionExists(Contract::class.java) } returns true
-        every { mongoTemplate.getCollectionName(Contract::class.java) } returns "contracts"
-        every { mongoTemplate.indexOps(Contract::class.java) } returns indexOperations
-        every { mongoTemplate.indexOps("contracts") } returns indexOperations
+        every { mongoTemplate.collectionExists(IndexedTransferEvent::class.java) } returns true
+        every { mongoTemplate.getCollectionName(IndexedTransferEvent::class.java) } returns
+            "transfer_events"
+        every { mongoTemplate.indexOps(IndexedTransferEvent::class.java) } returns indexOperations
+        every { mongoTemplate.indexOps("transfer_events") } returns indexOperations
         every { indexOperations.indexInfo } returns listOf(driftedIndex)
 
         val config =
@@ -333,12 +338,12 @@ class StartupCollectionIndexesTest {
         org.vechain.indexer.config.mongo.CollectionConfig(
             mongoTemplate,
             appCoroutineScope,
-            Contract::class.java,
+            IndexedTransferEvent::class.java,
         ) {
         override fun initCollection() {
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
                 indexerName = "test",
-                Contract::class.java,
+                IndexedTransferEvent::class.java,
                 1,
             )
             ensureCollection()
