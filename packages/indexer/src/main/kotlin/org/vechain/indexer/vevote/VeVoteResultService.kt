@@ -1,147 +1,71 @@
 package org.vechain.indexer.vevote
 
-import kotlin.collections.component1
-import kotlin.collections.component2
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
-import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getProposalId
-import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.EventUtils.groupByBlock
-import org.vechain.indexer.utils.IdUtils.generateId
+import org.vechain.indexer.vevote.VeVoteEventUtils.getProposalId
 import org.vechain.indexer.vevote.VeVoteEventUtils.getWeight
 import org.vechain.indexer.vevote.VeVoteEventUtils.groupByProposalId
 import org.vechain.indexer.vevote.VeVoteEventUtils.groupBySupport
 
-@Profile("vevote", "vevote-results")
+@Profile("vevote")
 @Service
-open class VeVoteResultService(
-    private val repository: VeVoteProposalResultRepository,
-    private val mongoTemplate: MongoTemplate,
-    private val inlineVersioningProperties: InlineVersioningProperties,
-) {
-    open fun processEvents(
-        events: List<IndexedEvent>
-    ): Pair<List<VeVoteProposalResult>, List<VeVoteProposalResult>> {
+open class VeVoteResultService(private val repository: VeVoteWriteRepository) {
+
+    /** The new row of each (proposal, support) a vote moved, in ascending block order. */
+    open fun processEvents(events: List<IndexedEvent>): List<VeVoteProposalResult> {
         assertEventTypes(events, "VoteCast")
+        if (events.isEmpty()) return emptyList()
 
-        // Pre-collect all record IDs and batch-load from DB
-        val allRecordIds = mutableSetOf<String>()
-        groupByBlock(events).forEach { (_, blockEvents) ->
+        val current =
+            repository
+                .findCurrentResults(events.map(::getProposalId).toSet())
+                .associateBy { it.proposalId to it.support }
+                .toMutableMap()
+        // One row per (block, proposal, support): a later block supersedes the earlier row.
+        val rows = linkedMapOf<Triple<Long, String, Support>, VeVoteProposalResult>()
+
+        groupByBlock(events).forEach { (block, blockEvents) ->
             groupByProposalId(blockEvents).forEach { (proposalId, proposalEvents) ->
-                groupBySupport(proposalEvents).forEach { (support, _) ->
-                    allRecordIds.add(generateId(proposalId, support.name))
-                }
-            }
-        }
-        val preloaded =
-            if (allRecordIds.isNotEmpty()) {
-                repository.findAllById(allRecordIds).associateBy { it.getDocumentId() }
-            } else {
-                emptyMap()
-            }
-
-        val accumulator =
-            VersionedDocumentAccumulator<VeVoteProposalResult>(
-                findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) }
-            )
-
-        groupByBlock(events).forEach { (blockDetails, blockEvents) ->
-            accumulator.startBlock()
-            groupByProposalId(blockEvents).forEach { (proposalId, proposalEvents) ->
-                groupBySupport(proposalEvents).forEach { (support, supportEvents) ->
-                    val recordId = generateId(proposalId, support.name)
-                    val (existing, nextVersion) = accumulator.resolve(recordId)
-                    val updated =
-                        createOrUpdateExisting(blockDetails, supportEvents, existing, nextVersion)
-                    accumulator.put(recordId, existing, updated)
+                groupBySupport(proposalEvents).forEach { (support, votes) ->
+                    val key = proposalId to support
+                    val updated = addVotes(block, proposalId, support, votes, current[key])
+                    current[key] = updated
+                    rows[Triple(block.blockNumber, proposalId, support)] = updated
                 }
             }
         }
 
-        return accumulator.results()
+        return rows.values.toList()
     }
 
-    @Transactional(rollbackFor = [Exception::class])
-    open fun save(updated: List<VeVoteProposalResult>, existing: List<VeVoteProposalResult>) {
-        saveVersionedDocuments(
-            updated,
-            existing,
-            mongoTemplate,
-            inlineVersioningProperties.blockWindow,
-            inlineVersioningProperties.maxVersions,
-            inlineVersioningProperties.minVersions,
-        )
-    }
-
-    protected fun createOrUpdateExisting(
-        blockDetails: BlockDetails,
-        events: List<IndexedEvent>,
+    private fun addVotes(
+        block: BlockDetails,
+        proposalId: String,
+        support: Support,
+        votes: List<IndexedEvent>,
         existing: VeVoteProposalResult?,
-        version: Int,
     ): VeVoteProposalResult {
-        require(events.isNotEmpty()) { "No events provided" }
+        val weight = votes.sumOf { getWeight(it) }
 
-        // All events must have the same proposalId and block details
-        val proposalId = getProposalId(events.first())
-
-        require(
-            events.all {
-                getProposalId(it) == proposalId &&
-                    it.blockNumber == blockDetails.blockNumber &&
-                    it.blockId == blockDetails.blockId
-            }
-        ) {
-            "All events must have the same proposalId and block"
-        }
-
-        // All events must have the same support, and the same as the existing record if present
-        val support = VeVoteEventUtils.getSupport(events.first())
-        require(events.all { VeVoteEventUtils.getSupport(it) == support }) {
-            "All events must have the same support"
-        }
-        if (existing != null) {
-            require(existing.support == support) {
-                "Existing record's support does not match the events' support"
-            }
-        }
-
-        val weight = events.sumOf { getWeight(it) }
-
-        return if (existing != null) {
-            require(existing.proposalId == proposalId) {
-                "Existing record's proposalId does not match the events' proposalId"
-            }
-
-            VeVoteProposalResult(
-                id = existing.id,
-                version = version,
-                blockId = blockDetails.blockId,
-                blockNumber = blockDetails.blockNumber,
-                blockTimestamp = blockDetails.blockTimestamp,
-                proposalId = existing.proposalId,
-                support = existing.support,
-                totalWeight = existing.totalWeight + weight,
-                totalVoters = existing.totalVoters + events.size,
-            )
-        } else {
-            VeVoteProposalResult(
-                version = version,
-                blockId = blockDetails.blockId,
-                blockNumber = blockDetails.blockNumber,
-                blockTimestamp = blockDetails.blockTimestamp,
+        return existing?.copy(
+            blockId = block.blockId,
+            blockNumber = block.blockNumber,
+            blockTimestamp = block.blockTimestamp,
+            totalWeight = existing.totalWeight + weight,
+            totalVoters = existing.totalVoters + votes.size,
+        )
+            ?: VeVoteProposalResult(
+                blockId = block.blockId,
+                blockNumber = block.blockNumber,
+                blockTimestamp = block.blockTimestamp,
                 proposalId = proposalId,
                 support = support,
                 totalWeight = weight,
-                totalVoters = events.size,
+                totalVoters = votes.size,
             )
-        }
     }
 }

@@ -12,10 +12,9 @@ import org.vechain.indexer.utils.IdUtils.generateId
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
-@Profile("vevote", "vevote-comments")
+@Profile("vevote")
 @Service
 class VeVoteCommentService(
-    private val repository: VevoteCommentRepository,
     @Value("\${comments.min-length}") private val minLength: Int,
     @Value("\${comments.language.confidence}") private val confidenceThreshold: String,
 ) {
@@ -37,11 +36,11 @@ class VeVoteCommentService(
             )
             .build()
 
-    fun processComment(processedEvents: List<IndexedEvent>): List<VeVoteProposalComment> =
+    fun processComments(processedEvents: List<IndexedEvent>): List<VeVoteProposalComment> =
         processedEvents
             .mapNotNull { extractVeVoteCommentEvent(it) }
             .filter { it.reason.isNotBlank() }
-            .filter { allowComment(it.proposalId, it.reason) }
+            .filter { allowComment(it.reason) }
 
     fun extractVeVoteCommentEvent(event: IndexedEvent): VeVoteProposalComment? {
         val params = event.params
@@ -69,21 +68,9 @@ class VeVoteCommentService(
         )
     }
 
-    fun allowComment(proposalId: String, comment: String): Boolean =
-        !isTooShort(comment) && !isSpam(proposalId, comment) && isEnglish(comment)
+    fun allowComment(comment: String): Boolean = !isTooShort(comment) && isEnglish(comment)
 
     fun isTooShort(comment: String?): Boolean = comment == null || comment.trim().length < minLength
-
-    fun isSpam(proposalId: String, comment: String): Boolean {
-        val id = generateId(proposalId, comment)
-        val isDuplicate = repository.existsById(id)
-
-        if (isDuplicate) {
-            logger.info("Duplicate comment detected for proposal $proposalId: $comment")
-        }
-
-        return isDuplicate
-    }
 
     fun isEnglish(comment: String): Boolean {
         val shortened = comment.take(400) // Using only first 400 chars to try avoid memory issues

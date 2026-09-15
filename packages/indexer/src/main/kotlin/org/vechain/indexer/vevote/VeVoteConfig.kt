@@ -10,18 +10,18 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("vevote", "vevote-comments")
-open class VeVoteCommentConfig {
+@Profile("vevote")
+open class VeVoteConfig {
     @Bean
-    open fun vevoteCommentIndexer(
+    open fun vevoteIndexer(
         thorClient: ThorClient,
-        processor: VeVoteCommentProcessor,
+        processor: VeVoteProcessor,
         @Value("\${indexer.start-block.vevote}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${business-event.substitutions.VEVOTE_CONTRACT}") contractAddress: String,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.VEVOTE_COMMENT.NAME)
+            .name(IndexerNames.VEVOTE.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)

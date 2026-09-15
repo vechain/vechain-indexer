@@ -22,7 +22,7 @@ import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validation.ValidProposalId
 
-@Profile("vevote", "vevote-comments")
+@Profile("vevote")
 @Tag(name = "VeVote", description = "Indexer API for VeVote.")
 @Validated
 @RestController
@@ -43,38 +43,13 @@ open class VeVoteCommentsController(private val vevoteService: VeVoteService) {
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
-    ): PaginatedResponse<VeVoteProposalComment> {
-        val pageable = toPageable(page, size, direction, VeVoteProposalComment::blockNumber.name)
-
-        val result =
-            when {
-                proposalId != null && voter != null && support != null ->
-                    vevoteService.getCommentsByProposalAndVoterAndSupport(
-                        proposalId.value,
-                        voter.value,
-                        support,
-                        pageable,
-                    )
-                proposalId != null && voter != null ->
-                    vevoteService.getCommentsByProposalAndVoter(
-                        proposalId.value,
-                        voter.value,
-                        pageable,
-                    )
-                proposalId != null && support != null ->
-                    vevoteService.getCommentsByProposalAndSupport(
-                        proposalId.value,
-                        support,
-                        pageable,
-                    )
-                proposalId != null ->
-                    vevoteService.getCommentsByProposalId(proposalId.value, pageable)
-                voter != null && support != null ->
-                    vevoteService.getCommentsByVoterAndSupport(voter.value, support, pageable)
-                voter != null -> vevoteService.getCommentsByVoter(voter.value, pageable)
-                else -> vevoteService.getCommentsBySupport(support!!, pageable)
-            }
-
-        return paginatedResponse(result)
-    }
+    ): PaginatedResponse<VeVoteProposalComment> =
+        paginatedResponse(
+            vevoteService.getComments(
+                proposalId?.value,
+                voter?.value,
+                support,
+                toPageable(page, size, direction, VeVoteProposalComment::blockNumber.name),
+            )
+        )
 }

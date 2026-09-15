@@ -45,7 +45,7 @@ enabled_nets:
       memory: 2048
       min_capacity: 2
       max_capacity: 8
-      spring_profile: nfts,blocks,transfers,history,vevote-results,vevote-historic-proposals,stargate,b3tr,explorer,validator,accounts,contracts,safe
+      spring_profile: nfts,blocks,transfers,history,vevote,vevote-historic-proposals,stargate,b3tr,explorer,validator,accounts,contracts,safe
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       logging:
         app-log-level: "INFO"
@@ -127,7 +127,7 @@ enabled_nets:
       cpu: 4096
       memory: 8192
       enabled: true
-      spring_profile: indexer,nfts,blocks,transfers,history,vevote-results,stargate,b3tr,explorer,validator,validator-reward,token-reward,accounts,vevote-historic-proposals,contracts,safe
+      spring_profile: indexer,nfts,blocks,transfers,history,vevote,stargate,b3tr,explorer,validator,validator-reward,token-reward,accounts,vevote-historic-proposals,contracts,safe
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       logging:
         app-log-level: "INFO"
@@ -189,8 +189,7 @@ enabled_nets:
         fungible-token-interactions: "3"
         history: "4"
         nft-blacklist: "3"
-        vevote-comments: "3"
-        vevote-results: "6"
+        vevote: "1"
         stargate-vtho-claimed: "1"
         stargate-vtho-generated-by-block: "10"
         stargate-staking: "1"
@@ -288,7 +287,7 @@ enabled_nets:
       memory: 1024
       min_capacity: 1
       max_capacity: 2
-      spring_profile: nfts,blocks,transfers,history,vevote-results,vevote-historic-proposals,stargate,b3tr,explorer,validator,accounts,contracts,safe
+      spring_profile: nfts,blocks,transfers,history,vevote,vevote-historic-proposals,stargate,b3tr,explorer,validator,accounts,contracts,safe
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       logging:
         app-log-level: "INFO"
@@ -370,7 +369,7 @@ enabled_nets:
       cpu: 2048
       memory: 4096
       enabled: true
-      spring_profile: indexer,nfts,blocks,transfers,history,vevote-results,stargate,b3tr,explorer,token-reward,validator,validator-reward,accounts,contracts,safe
+      spring_profile: indexer,nfts,blocks,transfers,history,vevote,stargate,b3tr,explorer,token-reward,validator,validator-reward,accounts,contracts,safe
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       logging:
         app-log-level: "INFO"
@@ -432,8 +431,7 @@ enabled_nets:
         fungible-token-interactions: "3"
         history: "4"
         nft-blacklist: "3"
-        vevote-comments: "3"
-        vevote-results: "6"
+        vevote: "1"
         stargate-vtho-claimed: "1"
         stargate-vtho-generated-by-block: "10"
         stargate-staking: "1"

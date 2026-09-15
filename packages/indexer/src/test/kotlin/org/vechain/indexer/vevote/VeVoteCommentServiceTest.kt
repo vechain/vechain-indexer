@@ -1,26 +1,10 @@
 package org.vechain.indexer.vevote
 
-import io.mockk.MockKAnnotations
-import io.mockk.impl.annotations.MockK
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class VeVoteCommentServiceTest {
-    @MockK lateinit var repository: VevoteCommentRepository
-
-    private lateinit var service: VeVoteCommentService
-
-    @BeforeEach
-    fun setup() {
-        MockKAnnotations.init(this)
-        service =
-            VeVoteCommentService(
-                repository = repository,
-                minLength = 5,
-                confidenceThreshold = "0.9",
-            )
-    }
+    private val service = VeVoteCommentService(minLength = 5, confidenceThreshold = "0.9")
 
     @Test
     fun `returns true for English text`() {

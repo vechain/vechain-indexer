@@ -4,28 +4,18 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Service
+import org.vechain.indexer.utils.PaginationUtils.offsetSlice
 
-@Profile("vevote", "vevote-results")
+@Profile("vevote")
 @Service
-open class VeVoteResultsService(
-    private val vevoteProposalResultRepository: VeVoteProposalResultRepository
-) {
-    open fun getResultsByProposalIdAndSupport(
-        proposalId: String,
-        support: Support,
+open class VeVoteResultsService(private val repository: VeVoteResultReadRepository) {
+    /** The current tally of each support of a proposal, or of one support across proposals. */
+    open fun getResults(
+        proposalId: String?,
+        support: Support?,
         pageable: Pageable,
     ): Slice<VeVoteProposalResult> =
-        vevoteProposalResultRepository.findByProposalIdAndSupport(proposalId, support, pageable)
-
-    open fun getResultsByProposalId(
-        proposalId: String,
-        pageable: Pageable,
-    ): Slice<VeVoteProposalResult> =
-        vevoteProposalResultRepository.findAllByProposalId(proposalId, pageable)
-
-    open fun getResultsBySupport(
-        support: Support,
-        pageable: Pageable,
-    ): Slice<VeVoteProposalResult> =
-        vevoteProposalResultRepository.findAllBySupport(support, pageable)
+        offsetSlice(pageable, VeVoteProposalResult::blockNumber.name) { offset, limit, direction ->
+            repository.find(proposalId, support, offset, limit, direction)
+        }
 }
