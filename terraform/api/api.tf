@@ -650,10 +650,6 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.account-totals-series
     },
     {
-      name  = "INDEXER_START_BLOCK_AVERAGE_FEES_PER_USER"
-      value = each.value.indexer.start-block.average-fees-per-user
-    },
-    {
       name  = "INDEXER_START_BLOCK_SAFE_PROXIES"
       value = each.value.indexer.start-block.safe-proxies
     },
@@ -966,12 +962,8 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.b3tr-gm-nft-level-overview
     },
     {
-      name  = "VERSION_BLOCK_USAGE"
-      value = each.value.indexer.version.block-usage
-    },
-    {
-      name  = "VERSION_AVERAGE_FEES_PER_USER"
-      value = each.value.indexer.version.average-fees-per-user
+      name  = "VERSION_EXPLORER"
+      value = each.value.indexer.version.explorer
     },
     {
       name  = "VERSION_VALIDATOR"

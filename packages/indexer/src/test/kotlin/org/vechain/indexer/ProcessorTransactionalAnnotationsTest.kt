@@ -19,6 +19,10 @@ import org.vechain.indexer.blocks.BlocksProcessor
 import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.contracts.ContractProcessor
 import org.vechain.indexer.contracts.ContractService
+import org.vechain.indexer.explorer.AverageFeesPerUser
+import org.vechain.indexer.explorer.BlockUsage
+import org.vechain.indexer.explorer.ExplorerProcessor
+import org.vechain.indexer.explorer.ExplorerWriteRepository
 import org.vechain.indexer.history.HistoryProcessor
 import org.vechain.indexer.history.HistoryService
 import org.vechain.indexer.nft.NftBlacklistProcessor
@@ -75,6 +79,15 @@ class ProcessorTransactionalAnnotationsTest {
                 ContractService::class.java.getDeclaredMethod("save", List::class.java),
                 GmNftService::class.java.getDeclaredMethod("save", List::class.java),
                 B3trBalanceService::class.java.getDeclaredMethod("save", List::class.java),
+                // The explorer indexer saves its three tables from the repository, not a service.
+                ExplorerWriteRepository::class
+                    .java
+                    .getDeclaredMethod(
+                        "save",
+                        BlockUsage::class.java,
+                        AverageFeesPerUser::class.java,
+                        List::class.java,
+                    ),
                 TreasuryTransferService::class.java.getDeclaredMethod("save", List::class.java),
                 XAllocResultService::class.java.getDeclaredMethod("save", List::class.java),
                 HistoryService::class.java.getDeclaredMethod("save", List::class.java),
@@ -109,6 +122,7 @@ class ProcessorTransactionalAnnotationsTest {
                 NftBlacklistProcessor::class.java,
                 NftProcessor::class.java,
                 ContractProcessor::class.java,
+                ExplorerProcessor::class.java,
                 GmNftProcessor::class.java,
                 B3trBalanceProcessor::class.java,
                 TreasuryTransferProcessor::class.java,

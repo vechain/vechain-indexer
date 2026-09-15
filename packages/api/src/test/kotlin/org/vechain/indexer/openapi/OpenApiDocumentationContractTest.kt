@@ -18,6 +18,8 @@ import org.vechain.indexer.b3tr.treasury.TreasuryTransferReadRepository
 import org.vechain.indexer.b3tr.xAlloc.XAllocResultReadRepository
 import org.vechain.indexer.blocks.BlocksReadRepository
 import org.vechain.indexer.contracts.ContractReadRepository
+import org.vechain.indexer.explorer.AverageFeesPerUserReadRepository
+import org.vechain.indexer.explorer.BlockUsageReadRepository
 import org.vechain.indexer.history.HistoryReadRepository
 import org.vechain.indexer.nft.NftReadRepository
 import org.vechain.indexer.stargate.staking.NftHoldersReadRepository
@@ -49,6 +51,8 @@ class OpenApiDocumentationContractTest {
     @MockitoBean private lateinit var contractReadRepository: ContractReadRepository
     @MockitoBean private lateinit var gmNftReadRepository: GmNftReadRepository
     @MockitoBean private lateinit var b3trBalanceReadRepository: B3trBalanceReadRepository
+    @MockitoBean private lateinit var blockUsageReadRepository: BlockUsageReadRepository
+    @MockitoBean private lateinit var averageFeesReadRepository: AverageFeesPerUserReadRepository
     @MockitoBean private lateinit var treasuryReadRepository: TreasuryTransferReadRepository
     @MockitoBean private lateinit var xAllocReadRepository: XAllocResultReadRepository
     @MockitoBean private lateinit var historyReadRepository: HistoryReadRepository

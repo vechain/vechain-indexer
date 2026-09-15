@@ -19,7 +19,7 @@ import org.vechain.indexer.rest.cachedByAge
 import org.vechain.indexer.utils.TimeValidationUtils
 import org.vechain.indexer.validation.ValidNonNegativeLong
 
-@Profile("explorer", "average-fees-per-user")
+@Profile("explorer")
 @Tag(name = "Explorer", description = "Blockchain explorer analytics")
 @Validated
 @RestController

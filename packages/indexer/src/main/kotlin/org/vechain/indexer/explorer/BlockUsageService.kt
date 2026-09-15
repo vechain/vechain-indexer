@@ -2,20 +2,18 @@ package org.vechain.indexer.explorer
 
 import java.math.BigInteger
 import org.springframework.context.annotation.Profile
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import org.vechain.indexer.explorer.TimestampUtils.calculateTimeBoundary
+import org.vechain.indexer.accounts.TimeFrame
 import org.vechain.indexer.explorer.TimestampUtils.isDaily
 import org.vechain.indexer.explorer.TimestampUtils.isHourly
 import org.vechain.indexer.explorer.TimestampUtils.isMonthly
 import org.vechain.indexer.explorer.TimestampUtils.isWeekly
-import org.vechain.indexer.explorer.repository.BlockUsageRepository
 import org.vechain.indexer.thor.HexUtils.toBigInteger
 import org.vechain.indexer.thor.model.Block
 
-@Profile("explorer", "block-usage")
+@Profile("explorer")
 @Service
-open class BlockUsageService(private val repository: BlockUsageRepository) {
+open class BlockUsageService(private val repository: ExplorerWriteRepository) {
     // Cache to store the last processed block usage to avoid DB lookups for sequential processing.
     // Not @Volatile: IndexerRunner serialises process() and rollback() per processor on a single
     // coroutine, and coroutine suspension points provide the happens-before this field needs.
@@ -65,7 +63,7 @@ open class BlockUsageService(private val repository: BlockUsageRepository) {
         }
 
         // Cache miss - fall back to database lookup
-        return repository.findByIdOrNull((blockNumber - 1).toString())
+        return repository.findUsageAt(blockNumber - 1)
     }
 
     /**
@@ -108,26 +106,7 @@ open class BlockUsageService(private val repository: BlockUsageRepository) {
             cumulativeBaseFeePerGas = parseBaseFeePerGas(block.baseFeePerGas),
             cumulativeNumTransactions = block.transactions.size.toBigInteger(),
             cumulativeNumClauses = calculateTotalClauses(block),
-            isHourly =
-                calculateTimeBoundary(
-                    maxOf(0L, block.timestamp - 10L),
-                    block.timestamp,
-                    ::isHourly,
-                ),
-            isDaily =
-                calculateTimeBoundary(maxOf(0L, block.timestamp - 10L), block.timestamp, ::isDaily),
-            isWeekly =
-                calculateTimeBoundary(
-                    maxOf(0L, block.timestamp - 10L),
-                    block.timestamp,
-                    ::isWeekly,
-                ),
-            isMonthly =
-                calculateTimeBoundary(
-                    maxOf(0L, block.timestamp - 10L),
-                    block.timestamp,
-                    ::isMonthly,
-                ),
+            timeFrames = timeFrames(maxOf(0L, block.timestamp - 10L), block.timestamp),
         )
 
     /**
@@ -147,30 +126,16 @@ open class BlockUsageService(private val repository: BlockUsageRepository) {
             cumulativeBaseFeePerGas = calculateCumulativeBaseFeePerGas(previousBlockUsage, block),
             cumulativeNumTransactions = calculateCumulativeTransactions(previousBlockUsage, block),
             cumulativeNumClauses = calculateCumulativeClauses(previousBlockUsage, block),
-            isHourly =
-                calculateTimeBoundary(
-                    previousBlockUsage.blockTimestamp,
-                    block.timestamp,
-                    ::isHourly,
-                ),
-            isDaily =
-                calculateTimeBoundary(
-                    previousBlockUsage.blockTimestamp,
-                    block.timestamp,
-                    ::isDaily,
-                ),
-            isWeekly =
-                calculateTimeBoundary(
-                    previousBlockUsage.blockTimestamp,
-                    block.timestamp,
-                    ::isWeekly,
-                ),
-            isMonthly =
-                calculateTimeBoundary(
-                    previousBlockUsage.blockTimestamp,
-                    block.timestamp,
-                    ::isMonthly,
-                ),
+            timeFrames = timeFrames(previousBlockUsage.blockTimestamp, block.timestamp),
+        )
+
+    /** The boundaries [to] is the first block past since [from]. */
+    internal fun timeFrames(from: Long, to: Long): List<TimeFrame> =
+        listOfNotNull(
+            TimeFrame.HOUR.takeIf { isHourly(from, to) },
+            TimeFrame.DAY.takeIf { isDaily(from, to) },
+            TimeFrame.WEEK.takeIf { isWeekly(from, to) },
+            TimeFrame.MONTH.takeIf { isMonthly(from, to) },
         )
 
     /**
@@ -257,14 +222,4 @@ open class BlockUsageService(private val repository: BlockUsageRepository) {
         previousBlockUsage: BlockUsage,
         block: Block,
     ): BigInteger = previousBlockUsage.cumulativeNumClauses + calculateTotalClauses(block)
-
-    /**
-     * Save a BlockUsage record to the repository.
-     *
-     * @param blockUsage The BlockUsage record to save
-     */
-    // No @Transactional needed: single-document writes are always atomic in MongoDB.
-    open fun save(blockUsage: BlockUsage) {
-        repository.save(blockUsage)
-    }
 }

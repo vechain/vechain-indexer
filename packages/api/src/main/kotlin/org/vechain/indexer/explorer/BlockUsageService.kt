@@ -2,14 +2,14 @@ package org.vechain.indexer.explorer
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
-import org.vechain.indexer.explorer.repository.BlockUsageRepository
+import org.vechain.indexer.accounts.TimeFrame
 import org.vechain.indexer.timeseries.TimeSeriesResolution
 import org.vechain.indexer.utils.TimeSeriesUtils
 import org.vechain.indexer.utils.TimeValidationUtils
 
-@Profile("explorer", "block-usage")
+@Profile("explorer")
 @Service
-open class BlockUsageService(private val blockUsageRepository: BlockUsageRepository) {
+open class BlockUsageService(private val repository: BlockUsageReadRepository) {
     /**
      * Retrieves block usage data for a given timestamp range. The granularity of the data is
      * automatically determined based on the size of the time range to optimize for reasonable data
@@ -36,39 +36,19 @@ open class BlockUsageService(private val blockUsageRepository: BlockUsageReposit
 
         return when (TimeSeriesUtils.selectResolution(endTimestamp - startTimestamp)) {
             TimeSeriesResolution.RAW ->
-                blockUsageRepository.findAllInTimestampRange(startTimestamp, endTimestamp)
-            TimeSeriesResolution.HOURLY ->
-                TimeSeriesUtils.getBookendedRecords(
-                    startTimestamp,
-                    endTimestamp,
-                    blockUsageRepository::findHourlyInTimestampRange,
-                    blockUsageRepository::
-                        findFirstByBlockTimestampLessThanEqualOrderByBlockTimestampDesc,
-                )
-            TimeSeriesResolution.DAILY ->
-                TimeSeriesUtils.getBookendedRecords(
-                    startTimestamp,
-                    endTimestamp,
-                    blockUsageRepository::findDailyInTimestampRange,
-                    blockUsageRepository::
-                        findFirstByBlockTimestampLessThanEqualOrderByBlockTimestampDesc,
-                )
-            TimeSeriesResolution.WEEKLY ->
-                TimeSeriesUtils.getBookendedRecords(
-                    startTimestamp,
-                    endTimestamp,
-                    blockUsageRepository::findWeeklyInTimestampRange,
-                    blockUsageRepository::
-                        findFirstByBlockTimestampLessThanEqualOrderByBlockTimestampDesc,
-                )
-            TimeSeriesResolution.MONTHLY ->
-                TimeSeriesUtils.getBookendedRecords(
-                    startTimestamp,
-                    endTimestamp,
-                    blockUsageRepository::findMonthlyInTimestampRange,
-                    blockUsageRepository::
-                        findFirstByBlockTimestampLessThanEqualOrderByBlockTimestampDesc,
-                )
+                repository.findAllInTimestampRange(startTimestamp, endTimestamp)
+            TimeSeriesResolution.HOURLY -> sampled(TimeFrame.HOUR, startTimestamp, endTimestamp)
+            TimeSeriesResolution.DAILY -> sampled(TimeFrame.DAY, startTimestamp, endTimestamp)
+            TimeSeriesResolution.WEEKLY -> sampled(TimeFrame.WEEK, startTimestamp, endTimestamp)
+            TimeSeriesResolution.MONTHLY -> sampled(TimeFrame.MONTH, startTimestamp, endTimestamp)
         }
     }
+
+    private fun sampled(frame: TimeFrame, from: Long, to: Long): List<BlockUsage> =
+        TimeSeriesUtils.getBookendedRecords(
+            from,
+            to,
+            { after, before -> repository.findFrameInTimestampRange(frame, after, before) },
+            repository::findLatestAtOrBefore,
+        )
 }
