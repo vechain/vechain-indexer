@@ -5,18 +5,11 @@ import java.util.concurrent.ConcurrentHashMap
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.VersionedDocumentAccumulator
-import org.vechain.indexer.b3tr.challenges.repository.B3trUserChallengeRepository
-import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
-import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.AddressUtils
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockRevision
@@ -27,9 +20,7 @@ import org.vechain.indexer.utils.EventUtils.groupByBlock
 @Profile("b3tr", "b3tr-challenges")
 @Service
 open class B3trUserChallengesService(
-    private val repository: B3trUserChallengeRepository,
-    private val mongoTemplate: MongoTemplate,
-    private val inlineVersioningProperties: InlineVersioningProperties,
+    private val repository: ChallengeWriteRepository,
     private val thorClient: ThorClient,
     @Value("\${business-event.substitutions.CHALLENGES_CONTRACT}")
     private val challengesContractAddress: String,
@@ -52,11 +43,10 @@ open class B3trUserChallengesService(
 
     private val abiCache: ConcurrentHashMap<String, AbiElement> = ConcurrentHashMap()
 
-    open suspend fun processEvents(
-        events: List<IndexedEvent>
-    ): Pair<List<B3trUserChallenge>, List<B3trUserChallenge>> {
+    /** The new row of each (wallet, challenge) pair touched in each block. */
+    open suspend fun processEvents(events: List<IndexedEvent>): List<B3trUserChallenge> {
         val relevantEvents = events.filter { it.eventType in trackedEventTypes }
-        if (relevantEvents.isEmpty()) return emptyList<B3trUserChallenge>() to emptyList()
+        if (relevantEvents.isEmpty()) return emptyList()
 
         val completionChallengeIds =
             relevantEvents
@@ -64,35 +54,29 @@ open class B3trUserChallengesService(
                 .map(B3trUserChallengeEventUtils::getChallengeId)
                 .toSet()
 
-        val preloaded = mutableMapOf<String, B3trUserChallenge>()
-        // Track every (challengeId -> wallets) pair we've seen. Completion fanout iterates this
-        // union of preloaded participants plus wallets created earlier in the batch.
-        val walletsByChallenge = mutableMapOf<Long, MutableSet<String>>()
-
-        relevantEvents.forEach { event ->
-            val challengeId = B3trUserChallengeEventUtils.getChallengeId(event)
-            B3trUserChallengeEventUtils.relevantWallets(event).forEach { wallet ->
-                val id = B3trUserChallenge.documentId(wallet, challengeId)
-                if (id !in preloaded) {
-                    repository.findByWalletAndChallengeId(wallet, challengeId)?.let {
-                        preloaded[id] = it
-                    }
+        val keys =
+            relevantEvents
+                .flatMap { event ->
+                    val challengeId = B3trUserChallengeEventUtils.getChallengeId(event)
+                    B3trUserChallengeEventUtils.relevantWallets(event).map { it to challengeId }
                 }
-                walletsByChallenge.getOrPut(challengeId) { mutableSetOf() }.add(wallet)
+                .toSet()
+        // A completion decides a winner for every wallet already in the challenge, not just the
+        // ones this batch names.
+        val current =
+            (repository.findCurrentUsers(keys.filter { it in keys }.toSet()) +
+                    repository.findCurrentUsersOfChallenge(completionChallengeIds))
+                .associateBy { it.wallet to it.challengeId }
+        val walletsByChallenge =
+            (keys + current.keys).groupBy({ it.second }, { it.first }).mapValues {
+                it.value.toSet()
             }
-        }
-        completionChallengeIds.forEach { challengeId ->
-            repository.findAllByChallengeId(challengeId).forEach {
-                preloaded.putIfAbsent(it.getDocumentId(), it)
-                walletsByChallenge.getOrPut(challengeId) { mutableSetOf() }.add(it.wallet)
-            }
-        }
 
         val createdAtByChallengeId =
-            preloaded.values
+            current.values
                 .groupBy(B3trUserChallenge::challengeId)
-                .mapValues { (_, docs) ->
-                    docs.minOf(B3trUserChallenge::challengeCreatedAtBlockTimestamp)
+                .mapValues { (_, rows) ->
+                    rows.minOf(B3trUserChallenge::challengeCreatedAtBlockTimestamp)
                 }
                 .toMutableMap()
         relevantEvents
@@ -102,41 +86,23 @@ open class B3trUserChallengesService(
                 createdAtByChallengeId.putIfAbsent(challengeId, it.blockTimestamp)
             }
 
-        val accumulator =
-            VersionedDocumentAccumulator<B3trUserChallenge>(
-                findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) }
-            )
+        val states = current.toMutableMap()
+        val rows = linkedMapOf<Triple<Long, String, Long>, B3trUserChallenge>()
 
         groupByBlock(relevantEvents).forEach { (_, blockEvents) ->
-            accumulator.startBlock()
-            processBlock(blockEvents, createdAtByChallengeId, walletsByChallenge, accumulator)
+            processBlock(blockEvents, createdAtByChallengeId, walletsByChallenge, states, rows)
         }
 
-        return accumulator.results()
+        return rows.values.toList()
     }
 
-    @Transactional(rollbackFor = [Exception::class])
-    open fun save(updated: List<B3trUserChallenge>, existing: List<B3trUserChallenge>) {
-        saveVersionedDocuments(
-            updated = updated,
-            existing = existing,
-            mongoTemplate = mongoTemplate,
-            blockWindow = inlineVersioningProperties.blockWindow,
-            maxVersions = inlineVersioningProperties.maxVersions,
-            minVersions = inlineVersioningProperties.minVersions,
-        )
-    }
-
-    /**
-     * Within a block, group events by (wallet, challengeId) pair and produce exactly one `put` per
-     * pair. Folding all events for a pair into a single state transition ensures the accumulator
-     * archives only actually-persisted prior versions, not in-batch transients.
-     */
+    /** One row per (wallet, challenge), so a block's transient states never reach the schema. */
     private suspend fun processBlock(
         blockEvents: List<IndexedEvent>,
         createdAtByChallengeId: MutableMap<Long, Long>,
         walletsByChallenge: Map<Long, Set<String>>,
-        accumulator: VersionedDocumentAccumulator<B3trUserChallenge>,
+        states: MutableMap<Pair<String, Long>, B3trUserChallenge>,
+        rows: MutableMap<Triple<Long, String, Long>, B3trUserChallenge>,
     ) {
         val completionsByChallenge =
             blockEvents
@@ -179,25 +145,26 @@ open class B3trUserChallengesService(
                 directEvents = directEventsByPair[wallet to challengeId] ?: emptyList(),
                 completionEvent = completionsByChallenge[challengeId],
                 createdAtByChallengeId = createdAtByChallengeId,
-                accumulator = accumulator,
+                states = states,
+                rows = rows,
                 walletsForCompletion = walletsByChallenge[challengeId].orEmpty(),
                 actionsByWalletForCompletion = completionActionsByChallenge[challengeId].orEmpty(),
             )
         }
     }
 
-    private suspend fun processPair(
+    private fun processPair(
         wallet: String,
         challengeId: Long,
         directEvents: List<IndexedEvent>,
         completionEvent: IndexedEvent?,
         createdAtByChallengeId: MutableMap<Long, Long>,
-        accumulator: VersionedDocumentAccumulator<B3trUserChallenge>,
+        states: MutableMap<Pair<String, Long>, B3trUserChallenge>,
+        rows: MutableMap<Triple<Long, String, Long>, B3trUserChallenge>,
         walletsForCompletion: Set<String>,
         actionsByWalletForCompletion: Map<String, BigInteger>,
     ) {
-        val recordId = B3trUserChallenge.documentId(wallet, challengeId)
-        val (existing, nextVersion) = accumulator.resolve(recordId)
+        val existing = states[wallet to challengeId]
 
         val fallbackEvent = directEvents.firstOrNull() ?: completionEvent ?: return
         val createdAt =
@@ -222,8 +189,8 @@ open class B3trUserChallengesService(
                             challengeId = challengeId,
                             challengeCreatedAtBlockTimestamp = createdAt,
                         )
-                    else -> return // completion-only for a wallet with no prior record; nothing to
-                // update
+                    // Completion-only for a wallet with no prior row; nothing to update.
+                    else -> return
                 }
 
         directEvents.forEach { event ->
@@ -248,8 +215,9 @@ open class B3trUserChallengesService(
         if (!businessStateChanged(existing, state)) return
 
         val latestEvent = completionEvent ?: directEvents.last()
-        val updated = state.toDocument(nextVersion, latestEvent)
-        accumulator.put(recordId, existing, updated)
+        val updated = state.toDocument(latestEvent)
+        states[wallet to challengeId] = updated
+        rows[Triple(latestEvent.blockNumber, wallet, challengeId)] = updated
     }
 
     private fun businessStateChanged(

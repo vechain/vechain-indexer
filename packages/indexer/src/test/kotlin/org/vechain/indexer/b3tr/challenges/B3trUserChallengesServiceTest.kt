@@ -14,9 +14,6 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.b3tr.challenges.repository.B3trUserChallengeRepository
-import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 import org.vechain.indexer.thor.client.ThorClient
@@ -25,9 +22,7 @@ import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.thor.model.InspectionResult
 
 class B3trUserChallengesServiceTest {
-    private val repository: B3trUserChallengeRepository = mockk()
-    private val mongoTemplate: MongoTemplate = mockk()
-    private val inlineVersioningProperties: InlineVersioningProperties = mockk()
+    private val repository: ChallengeWriteRepository = mockk()
     private val thorClient: ThorClient = mockk()
 
     private lateinit var service: B3trUserChallengesService
@@ -35,17 +30,11 @@ class B3trUserChallengesServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        every { inlineVersioningProperties.blockWindow } returns 10_000L
-        every { inlineVersioningProperties.maxVersions } returns 100
-        every { inlineVersioningProperties.minVersions } returns 20
-        every { repository.findAllByChallengeId(any()) } returns emptyList()
-        every { repository.findByWalletAndChallengeId(any(), any()) } returns null
-        every { repository.findById(any<String>()) } returns java.util.Optional.empty()
+        every { repository.findCurrentUsers(any()) } returns emptyList()
+        every { repository.findCurrentUsersOfChallenge(any()) } returns emptyList()
         service =
             B3trUserChallengesService(
                 repository = repository,
-                mongoTemplate = mongoTemplate,
-                inlineVersioningProperties = inlineVersioningProperties,
                 thorClient = thorClient,
                 challengesContractAddress = "0x892c882bb59df89b381530230b0bbc370cfe9a96",
             )
@@ -65,10 +54,9 @@ class B3trUserChallengesServiceTest {
                     ),
             )
 
-        val (updated, archived) = runBlocking { service.processEvents(listOf(event)) }
+        val updated = runBlocking { service.processEvents(listOf(event)) }
 
         assertEquals(1, updated.size)
-        assertEquals(0, archived.size)
         val record = updated.single()
         assertEquals(ADDR_A, record.wallet)
         assertTrue(record.isCreator)
@@ -89,7 +77,7 @@ class B3trUserChallengesServiceTest {
                     ),
             )
 
-        val (updated, _) = runBlocking { service.processEvents(listOf(event)) }
+        val updated = runBlocking { service.processEvents(listOf(event)) }
 
         val record = updated.single()
         assertTrue(record.isCreator)
@@ -113,20 +101,17 @@ class B3trUserChallengesServiceTest {
                 returnValues = mapOf("participant" to ADDR_B),
             )
 
-        val (updated, archived) = runBlocking { service.processEvents(listOf(invite, join)) }
+        val updated = runBlocking { service.processEvents(listOf(invite, join)) }
 
         assertEquals(1, updated.size)
-        assertEquals(0, archived.size) // new record, nothing to archive
         val record = updated.single()
         assertEquals(ParticipantStatus.Joined, record.participantStatus)
-        assertEquals(1, record.version)
     }
 
     @Test
     fun `re-invite of declined wallet moves state back to Invited`() {
         val declined =
             B3trUserChallenge(
-                version = 1,
                 blockId = "0xexisting",
                 blockNumber = 10L,
                 blockTimestamp = 10L,
@@ -135,7 +120,7 @@ class B3trUserChallengesServiceTest {
                 challengeCreatedAtBlockTimestamp = 1L,
                 participantStatus = ParticipantStatus.Declined,
             )
-        every { repository.findByWalletAndChallengeId(ADDR_B, 1L) } returns declined
+        every { repository.findCurrentUsers(any()) } returns listOf(declined)
 
         val invite =
             challengeEvent(
@@ -145,19 +130,16 @@ class B3trUserChallengesServiceTest {
                 returnValues = mapOf("invitee" to ADDR_B),
             )
 
-        val (updated, archived) = runBlocking { service.processEvents(listOf(invite)) }
+        val updated = runBlocking { service.processEvents(listOf(invite)) }
 
         assertEquals(1, updated.size)
-        assertEquals(1, archived.size)
         assertEquals(ParticipantStatus.Invited, updated.single().participantStatus)
-        assertEquals(2, updated.single().version)
     }
 
     @Test
     fun `ChallengePayoutClaimed sets isWinner and hasClaimedPrize`() {
         val existing =
             B3trUserChallenge(
-                version = 3,
                 blockId = "0xexisting",
                 blockNumber = 10L,
                 blockTimestamp = 10L,
@@ -166,7 +148,7 @@ class B3trUserChallengesServiceTest {
                 challengeCreatedAtBlockTimestamp = 1L,
                 participantStatus = ParticipantStatus.Joined,
             )
-        every { repository.findByWalletAndChallengeId(ADDR_A, 1L) } returns existing
+        every { repository.findCurrentUsers(any()) } returns listOf(existing)
 
         val event =
             challengeEvent(
@@ -176,7 +158,7 @@ class B3trUserChallengesServiceTest {
                 returnValues = mapOf("account" to ADDR_A),
             )
 
-        val (updated, _) = runBlocking { service.processEvents(listOf(event)) }
+        val updated = runBlocking { service.processEvents(listOf(event)) }
 
         val record = updated.single()
         assertTrue(record.isWinner)
@@ -194,7 +176,7 @@ class B3trUserChallengesServiceTest {
                 returnValues = mapOf("winner" to ADDR_C),
             )
 
-        val (updated, _) = runBlocking { service.processEvents(listOf(event)) }
+        val updated = runBlocking { service.processEvents(listOf(event)) }
 
         val record = updated.single()
         assertEquals(ADDR_C, record.wallet)
@@ -213,7 +195,7 @@ class B3trUserChallengesServiceTest {
                 returnValues = mapOf("account" to ADDR_A),
             )
 
-        val (updated, _) = runBlocking { service.processEvents(listOf(event)) }
+        val updated = runBlocking { service.processEvents(listOf(event)) }
 
         assertTrue(updated.single().hasClaimedRefund)
     }
@@ -228,7 +210,7 @@ class B3trUserChallengesServiceTest {
                 returnValues = mapOf("creator" to ADDR_A),
             )
 
-        val (updated, _) = runBlocking { service.processEvents(listOf(event)) }
+        val updated = runBlocking { service.processEvents(listOf(event)) }
 
         assertTrue(updated.single().hasClaimedRefund)
     }
@@ -237,7 +219,6 @@ class B3trUserChallengesServiceTest {
     fun `ChallengeCompleted MaxActions marks participants whose score equals bestScore as winners`() {
         val winner =
             B3trUserChallenge(
-                version = 1,
                 blockId = "0xexisting",
                 blockNumber = 10L,
                 blockTimestamp = 10L,
@@ -248,7 +229,6 @@ class B3trUserChallengesServiceTest {
             )
         val nonWinner =
             B3trUserChallenge(
-                version = 1,
                 blockId = "0xexisting",
                 blockNumber = 10L,
                 blockTimestamp = 10L,
@@ -257,7 +237,7 @@ class B3trUserChallengesServiceTest {
                 challengeCreatedAtBlockTimestamp = 1L,
                 participantStatus = ParticipantStatus.Joined,
             )
-        every { repository.findAllByChallengeId(1L) } returns listOf(winner, nonWinner)
+        every { repository.findCurrentUsersOfChallenge(any()) } returns listOf(winner, nonWinner)
 
         val bestScore = BigInteger.valueOf(7)
         val clausesSlot = slot<List<Clause>>()
@@ -288,13 +268,12 @@ class B3trUserChallengesServiceTest {
                     ),
             )
 
-        val (updated, archived) = runBlocking { service.processEvents(listOf(event)) }
+        val updated = runBlocking { service.processEvents(listOf(event)) }
 
         val winnerUpdated = updated.single { it.wallet == ADDR_A }
         assertTrue(winnerUpdated.isWinner)
         val nonWinnerPresent = updated.any { it.wallet == ADDR_B }
         assertFalse(nonWinnerPresent) // non-winner's record didn't change; not in updated set
-        assertEquals(1, archived.size) // winner's prior version archived
         assertEquals(2, clausesSlot.captured.size)
         assertEquals(BlockRevision.Id(BLOCK_ID), revisionSlot.captured)
         coVerify(exactly = 1) { thorClient.inspectClauses(any<List<Clause>>(), any()) }
@@ -304,7 +283,6 @@ class B3trUserChallengesServiceTest {
     fun `ChallengeCompleted SplitWinCompleted is a no-op for per-user state`() {
         val participant =
             B3trUserChallenge(
-                version = 1,
                 blockId = "0xexisting",
                 blockNumber = 10L,
                 blockTimestamp = 10L,
@@ -313,7 +291,7 @@ class B3trUserChallengesServiceTest {
                 challengeCreatedAtBlockTimestamp = 1L,
                 participantStatus = ParticipantStatus.Joined,
             )
-        every { repository.findAllByChallengeId(1L) } returns listOf(participant)
+        every { repository.findCurrentUsersOfChallenge(any()) } returns listOf(participant)
 
         val event =
             challengeEvent(
@@ -328,17 +306,15 @@ class B3trUserChallengesServiceTest {
                     ),
             )
 
-        val (updated, archived) = runBlocking { service.processEvents(listOf(event)) }
+        val updated = runBlocking { service.processEvents(listOf(event)) }
 
         assertEquals(emptyList<B3trUserChallenge>(), updated)
-        assertEquals(emptyList<B3trUserChallenge>(), archived)
     }
 
     @Test
     fun `ChallengeCompleted MaxActions fails when participant action lookup reverts`() {
         val participant =
             B3trUserChallenge(
-                version = 1,
                 blockId = "0xexisting",
                 blockNumber = 10L,
                 blockTimestamp = 10L,
@@ -347,7 +323,7 @@ class B3trUserChallengesServiceTest {
                 challengeCreatedAtBlockTimestamp = 1L,
                 participantStatus = ParticipantStatus.Joined,
             )
-        every { repository.findAllByChallengeId(1L) } returns listOf(participant)
+        every { repository.findCurrentUsersOfChallenge(any()) } returns listOf(participant)
         coEvery { thorClient.inspectClauses(any<List<Clause>>(), any()) } returns
             listOf(
                 InspectionResult(
@@ -396,10 +372,9 @@ class B3trUserChallengesServiceTest {
                 params = AbiEventParameters(returnValues = mapOf("receiver" to "0xabc")),
             )
 
-        val (updated, archived) = runBlocking { service.processEvents(listOf(event)) }
+        val updated = runBlocking { service.processEvents(listOf(event)) }
 
         assertEquals(emptyList<B3trUserChallenge>(), updated)
-        assertEquals(emptyList<B3trUserChallenge>(), archived)
     }
 
     private fun challengeEvent(

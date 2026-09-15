@@ -175,12 +175,8 @@ internal fun B3trUserChallenge.toMutableState(): MutableUserChallengeState =
         hasClaimedRefund = hasClaimedRefund,
     )
 
-internal fun MutableUserChallengeState.toDocument(
-    version: Int,
-    latestEvent: IndexedEvent,
-): B3trUserChallenge =
+internal fun MutableUserChallengeState.toDocument(latestEvent: IndexedEvent): B3trUserChallenge =
     B3trUserChallenge(
-        version = version,
         blockId = latestEvent.blockId,
         blockNumber = latestEvent.blockNumber,
         blockTimestamp = latestEvent.blockTimestamp,

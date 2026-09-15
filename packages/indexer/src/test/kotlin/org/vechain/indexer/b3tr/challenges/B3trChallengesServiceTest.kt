@@ -11,18 +11,12 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertIterableEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.query.Query
-import org.vechain.indexer.b3tr.challenges.repository.B3trChallengeRepository
 import org.vechain.indexer.b3tr.round.B3trRoundService
-import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 
 class B3trChallengesServiceTest {
-    private val repository: B3trChallengeRepository = mockk()
-    private val mongoTemplate: MongoTemplate = mockk()
-    private val inlineVersioningProperties: InlineVersioningProperties = mockk()
+    private val repository: ChallengeWriteRepository = mockk()
     private val b3trRoundService: B3trRoundService = mockk()
 
     private lateinit var service: B3trChallengesService
@@ -30,23 +24,16 @@ class B3trChallengesServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        every { inlineVersioningProperties.blockWindow } returns 10_000L
-        every { inlineVersioningProperties.maxVersions } returns 100
-        every { inlineVersioningProperties.minVersions } returns 20
-        every { repository.findById(any()) } returns java.util.Optional.empty()
+        every { repository.findCurrent(any()) } returns emptyList()
+        every { repository.findCurrentMembers(any()) } returns emptyMap()
+        every { repository.findCurrentByRounds(any(), any()) } returns emptyList()
         stubCurrentRound()
-        service =
-            B3trChallengesService(
-                repository = repository,
-                mongoTemplate = mongoTemplate,
-                inlineVersioningProperties = inlineVersioningProperties,
-                b3trRoundService = b3trRoundService,
-            )
+        service = B3trChallengesService(repository, b3trRoundService)
     }
 
     @Test
     fun `processEvents creates challenge from events and tracks claims`() {
-        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
+        every { repository.findCurrent(any()) } returns emptyList()
 
         val createEvent =
             challengeCreatedEvent(
@@ -90,15 +77,14 @@ class B3trChallengesServiceTest {
                     ),
             )
 
-        val (updated, archived) =
-            runBlocking {
-                service.processEvents(listOf(createEvent, inviteEvent, completedEvent, payoutEvent))
-            }
+        val update = runBlocking {
+            service.processEvents(listOf(createEvent, inviteEvent, completedEvent, payoutEvent))
+        }
+        val updated = update.challenges
 
         assertEquals(1, updated.size)
-        assertEquals(0, archived.size)
         val challenge = updated.single()
-        assertEquals(1, challenge.version)
+        assertEquals(listOf(listOf("0xapp1")), update.apps.map { it.appIds })
         assertEquals("0xcreate", challenge.createdTxId)
         assertEquals(100L, challenge.createdAtBlockNumber)
         assertEquals(ChallengeStatus.Completed, challenge.onChainStatus)
@@ -140,7 +126,6 @@ class B3trChallengesServiceTest {
     fun `processEvents replays lifecycle updates without contract reads`() {
         val existing =
             challenge(
-                version = 2,
                 participants =
                     listOf(
                         "0x0000000000000000000000000000000000000abc",
@@ -156,7 +141,7 @@ class B3trChallengesServiceTest {
                     ),
                 totalPrize = BigInteger.valueOf(20),
             )
-        every { repository.findAllById(any<Iterable<String>>()) } returns listOf(existing)
+        stubExisting(existing)
 
         val joinEvent =
             challengeEvent(
@@ -215,17 +200,15 @@ class B3trChallengesServiceTest {
                     ),
             )
 
-        val (updated, archived) =
-            runBlocking {
-                service.processEvents(
-                    listOf(joinEvent, leaveEvent, inviteEvent, cancelEvent, refundEvent)
-                )
-            }
+        val update = runBlocking {
+            service.processEvents(
+                listOf(joinEvent, leaveEvent, inviteEvent, cancelEvent, refundEvent)
+            )
+        }
+        val updated = update.challenges
 
         assertEquals(1, updated.size)
-        assertEquals(1, archived.size)
         val challenge = updated.single()
-        assertEquals(3, challenge.version)
         assertEquals(ChallengeStatus.Cancelled, challenge.onChainStatus)
         assertEquals(BigInteger.valueOf(20), challenge.totalPrize)
         assertIterableEquals(
@@ -260,7 +243,7 @@ class B3trChallengesServiceTest {
     @Test
     fun `processEvents bootstraps current round from contract read`() {
         stubCurrentRound(5)
-        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
+        every { repository.findCurrent(any()) } returns emptyList()
 
         val createEvent =
             challengeCreatedEvent(
@@ -270,16 +253,15 @@ class B3trChallengesServiceTest {
                 kind = ChallengeKind.Sponsored,
             )
 
-        val (updated, archived) = runBlocking { service.processEvents(listOf(createEvent)) }
+        val updated = runBlocking { service.processEvents(listOf(createEvent)) }.challenges
 
         assertEquals(1, updated.size)
-        assertEquals(0, archived.size)
         assertEquals(ChallengeStatus.Invalid, updated.single().status)
     }
 
     @Test
     fun `processEvents restores current round from first block in batch`() {
-        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
+        every { repository.findCurrent(any()) } returns emptyList()
         coEvery { b3trRoundService.getCurrentRound("0xblock-50") } returns 5
 
         val createEvent =
@@ -294,18 +276,17 @@ class B3trChallengesServiceTest {
         val laterEmission =
             emissionEvent(id = "emission", cycle = 5, blockId = "0xblock-51", blockNumber = 51L)
 
-        val (updated, archived) =
-            runBlocking { service.processEvents(listOf(laterEmission, createEvent)) }
+        val updated =
+            runBlocking { service.processEvents(listOf(laterEmission, createEvent)) }.challenges
 
         assertEquals(1, updated.size)
-        assertEquals(0, archived.size)
         assertEquals(ChallengeStatus.Invalid, updated.single().status)
         coVerify(exactly = 1) { b3trRoundService.getCurrentRound("0xblock-50") }
     }
 
     @Test
     fun `processEvents falls back to zero when contract read reverts`() {
-        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
+        every { repository.findCurrent(any()) } returns emptyList()
         coEvery { b3trRoundService.getCurrentRound("0xblock-50") } returns null
 
         val createEvent =
@@ -318,10 +299,9 @@ class B3trChallengesServiceTest {
                 blockNumber = 50L,
             )
 
-        val (updated, archived) = runBlocking { service.processEvents(listOf(createEvent)) }
+        val updated = runBlocking { service.processEvents(listOf(createEvent)) }.challenges
 
         assertEquals(1, updated.size)
-        assertEquals(0, archived.size)
         assertEquals(ChallengeStatus.Pending, updated.single().status)
     }
 
@@ -330,7 +310,6 @@ class B3trChallengesServiceTest {
         stubCurrentRound(4)
         val existing =
             challenge(
-                version = 2,
                 kind = ChallengeKind.Sponsored,
                 challengeType = ChallengeType.SplitWin,
                 participants = listOf("0x0000000000000000000000000000000000000abc"),
@@ -340,17 +319,47 @@ class B3trChallengesServiceTest {
                 totalPrize = BigInteger.TEN,
                 status = ChallengeStatus.Pending,
             )
-        every { repository.findById(B3trChallenge.documentId(1L)) } returns
-            java.util.Optional.of(existing)
-        every { mongoTemplate.find(any<Query>(), B3trChallenge::class.java) } returnsMany
-            listOf(listOf(existing), emptyList())
+        every { repository.findCurrentByRounds(4, 5) } returns listOf(existing)
 
-        val (updated, archived) =
+        val updated =
             runBlocking { service.processEvents(listOf(emissionEvent(id = "emission", cycle = 5))) }
+                .challenges
 
         assertEquals(1, updated.size)
-        assertEquals(1, archived.size)
         assertEquals(ChallengeStatus.Active, updated.single().status)
+    }
+
+    @Test
+    fun `a challenge this entry created is refreshed by a round change later in it`() {
+        stubCurrentRound(4)
+        val createEvent = challengeCreatedEvent(id = "create", txId = "0xcreate", challengeId = 1L)
+        val joinEvent =
+            challengeEvent(
+                eventType = "ChallengeJoined",
+                id = "join",
+                txId = "0xjoin",
+                challengeId = 1L,
+                returnValues = mapOf("participant" to "0x0000000000000000000000000000000000000def"),
+            )
+
+        // The challenge has no stored row yet, so only the entry's own rows can carry it.
+        val updated =
+            runBlocking {
+                    service.processEvents(
+                        listOf(
+                            createEvent,
+                            joinEvent,
+                            emissionEvent(id = "emission", cycle = 5, blockId = "0xnext"),
+                        )
+                    )
+                }
+                .challenges
+
+        assertEquals(
+            listOf(ChallengeStatus.Pending, ChallengeStatus.Active),
+            updated.map { it.status },
+        )
+        assertEquals(listOf(100L, 101L), updated.map { it.blockNumber })
     }
 
     private fun challengeEvent(
@@ -443,7 +452,6 @@ class B3trChallengesServiceTest {
         )
 
     private fun challenge(
-        version: Int,
         kind: ChallengeKind = ChallengeKind.Stake,
         challengeType: ChallengeType = ChallengeType.MaxActions,
         participants: List<String>,
@@ -454,7 +462,6 @@ class B3trChallengesServiceTest {
         status: ChallengeStatus = ChallengeStatus.Pending,
     ) =
         B3trChallenge(
-            version = version,
             blockId = "0xold",
             blockNumber = 90L,
             blockTimestamp = 900L,
@@ -505,5 +512,20 @@ class B3trChallengesServiceTest {
 
     private fun stubCurrentRound(cycle: Int? = null) {
         coEvery { b3trRoundService.getCurrentRound(any<String>()) } returns cycle
+    }
+
+    /** The stored challenge and the member rows the schema holds for it. */
+    private fun stubExisting(existing: B3trChallenge) {
+        every { repository.findCurrent(any()) } returns listOf(existing)
+        every { repository.findCurrentMembers(any()) } returns
+            mapOf(
+                existing.challengeId to
+                    mapOf(
+                        ChallengeMemberRole.PARTICIPANT to existing.participants,
+                        ChallengeMemberRole.INVITED to existing.invited,
+                        ChallengeMemberRole.DECLINED to existing.declined,
+                        ChallengeMemberRole.ELIGIBLE_INVITEE to existing.eligibleInvitees,
+                    )
+            )
     }
 }

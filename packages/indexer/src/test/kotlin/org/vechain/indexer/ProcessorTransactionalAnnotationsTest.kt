@@ -7,6 +7,9 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.accounts.AccountTotalsSeriesProcessor
 import org.vechain.indexer.b3tr.balance.B3trBalanceProcessor
 import org.vechain.indexer.b3tr.balance.B3trBalanceService
+import org.vechain.indexer.b3tr.challenges.ChallengeUpdate
+import org.vechain.indexer.b3tr.challenges.ChallengeWriteRepository
+import org.vechain.indexer.b3tr.challenges.ChallengesProcessor
 import org.vechain.indexer.b3tr.gm.GmNftProcessor
 import org.vechain.indexer.b3tr.gm.GmNftService
 import org.vechain.indexer.b3tr.proposal.ProposalProcessor
@@ -107,6 +110,10 @@ class ProcessorTransactionalAnnotationsTest {
                         List::class.java,
                         List::class.java,
                     ),
+                // The challenges indexer saves its four tables from the repository, not a service.
+                ChallengeWriteRepository::class
+                    .java
+                    .getDeclaredMethod("save", ChallengeUpdate::class.java),
                 // The proposal indexer saves its two tables from the repository, not a service.
                 ProposalWriteRepository::class
                     .java
@@ -150,6 +157,7 @@ class ProcessorTransactionalAnnotationsTest {
                 TreasuryTransferProcessor::class.java,
                 VeVoteProcessor::class.java,
                 HistoricProposalsProcessor::class.java,
+                ChallengesProcessor::class.java,
                 ProposalProcessor::class.java,
                 XAllocResultProcessor::class.java,
                 HistoryProcessor::class.java,

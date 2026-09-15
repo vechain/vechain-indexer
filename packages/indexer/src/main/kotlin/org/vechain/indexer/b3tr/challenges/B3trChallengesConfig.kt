@@ -15,7 +15,7 @@ open class B3trChallengesConfig {
     @Bean
     open fun b3trChallengesIndexer(
         thorClient: ThorClient,
-        processor: B3trChallengesProcessor,
+        processor: ChallengesProcessor,
         @Value("\${indexer.start-block.b3tr-challenges}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${business-event.substitutions.CHALLENGES_CONTRACT}")
