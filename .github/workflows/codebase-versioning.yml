@@ -6,6 +6,13 @@ on:
       - main
     types: [closed]
 
+# The upstream job reads the newest tag, then pushes the next one. Merging a stack fires several
+# at once, they all read the same tag, and every loser's push is rejected. Serialising them means
+# each reads a tag the one before it has already pushed.
+concurrency:
+  group: codebase-versioning
+  cancel-in-progress: false
+
 permissions: {}
 
 jobs:
