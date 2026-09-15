@@ -95,7 +95,7 @@ resource "aws_db_parameter_group" "postgres" {
   }
 }
 
-# Credentials: one password per role per colour, in Secrets Manager like the Mongo ones
+# Credentials: one password per role per colour, in Secrets Manager
 
 resource "random_password" "pg_indexer_password" {
   length           = 24
@@ -154,8 +154,7 @@ resource "aws_db_instance" "postgres" {
   publicly_accessible    = false
   multi_az               = each.value.multi_az
 
-  # Daily snapshot lands beside the Atlas one (reference_hour_of_day = 7), so both restores of a
-  # dead colour start from roughly the same chain head.
+  # Daily snapshot, so a dead colour's restore starts from the previous day's chain head.
   backup_retention_period = 7
   backup_window           = "06:00-07:00"
   maintenance_window      = "sun:03:00-sun:04:00"
@@ -177,7 +176,7 @@ resource "aws_db_instance" "postgres" {
     Backup      = "${var.project}-pg"
   }
 
-  # Storage autoscaling grows it out of band, as the Atlas disk does.
+  # Storage autoscaling grows it out of band.
   # snapshot_identifier is ForceNew: a later empty override must not replace the restored instance.
   lifecycle {
     ignore_changes = [allocated_storage, snapshot_identifier]

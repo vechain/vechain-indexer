@@ -55,10 +55,6 @@ fi
 {
   echo "source_color=${source_color}"
   echo "target_color=${target_color}"
-  echo "source_main_cluster=${source_color}-Mainnet"
-  echo "source_test_cluster=${source_color}-Testnet"
-  echo "target_main_cluster=${target_color}-Mainnet"
-  echo "target_test_cluster=${target_color}-Testnet"
   echo "ecs_cluster=${target_color}-veworld-cluster"
 } >> "${GITHUB_OUTPUT:?GITHUB_OUTPUT is required}"
 
@@ -66,8 +62,4 @@ fi
   echo "### Dead Prod Recovery Context"
   echo "- Live prod color: \`${source_color}\`"
   echo "- Dead prod color: \`${target_color}\`"
-  echo "- Source mainnet cluster: \`${source_color}-Mainnet\`"
-  echo "- Source testnet cluster: \`${source_color}-Testnet\`"
-  echo "- Target mainnet cluster: \`${target_color}-Mainnet\`"
-  echo "- Target testnet cluster: \`${target_color}-Testnet\`"
 } >> "${GITHUB_STEP_SUMMARY:?GITHUB_STEP_SUMMARY is required}"

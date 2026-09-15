@@ -22,7 +22,7 @@ Write reviewer-facing prose at final length — don't draft long and trim. The b
 
 ## One Deploy Applies Every Stack
 
-`.github/workflows/deploy.yml` is the only apply path for prod. It applies `terraform/vpc` (full), `terraform/observability`, `terraform/observability-grafana`, `terraform/cloudfront` (`shared`, `staging`, `prod`, `dead`), restores the live Atlas snapshots into a cold dead colour when the plan calls for it, applies `terraform/api` for the target colour, then re-applies the dead Route53 records. Every stack runs on every deploy, so one with no change is a plain no-op.
+`.github/workflows/deploy.yml` is the only apply path for prod. It applies `terraform/vpc` (full), `terraform/observability`, `terraform/observability-grafana`, `terraform/cloudfront` (`shared`, `staging`, `prod`, `dead`), restores the live Postgres snapshots into a cold dead colour when the plan calls for it, applies `terraform/api` for the target colour, then re-applies the dead Route53 records. Every stack runs on every deploy, so one with no change is a plain no-op.
 
 The colour is not an operator choice by default. `.github/workflows/scripts/plan_release.sh` recommends dead when the dead colour is running or the indexer changed against live (image content hash or `terraform/api`), and live otherwise; a `confirm` job on the `prod-release-approval` environment pauses for a reviewer before any apply. `target: live` is refused when the indexer changed. The DNS cutover remains a separate, manual `switch-live-dns.yml` run.
 

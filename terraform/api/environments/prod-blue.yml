@@ -31,9 +31,6 @@ alb:
   # True only across a token rotation; see terraform/cloudfront/README.md.
   origin_verify_accept_previous: false
 
-mongoatlas_project_id: 64d6337acba67e1132a3a4e1
-slack_secret_arn: arn:aws:secretsmanager:eu-west-1:905964754131:secret:veworld-mongodb-alerts/slack/api-token-NvxUZd
-
 observability_sidecar_enabled: true
 
 enabled_nets:
@@ -82,7 +79,6 @@ enabled_nets:
         app-log-level: "INFO"
         timing-log-level: "INFO"
         pruner-log-level: "INFO"
-        mongo-driver-log-level: "INFO"
       timing:
         warn-threshold-ms: "1000"
         very-slow-threshold-ms: "10000"
@@ -193,16 +189,7 @@ enabled_nets:
           steering-committee: "0x7E54f0790153647Ec0651c35cEd28171Adb5D44A"
           all-stakeholders: "0xA6416A72F816d3a69f33D0814700545C8E3fe4BE"
     mongodb:
-      type: atlas
-      fqdn: mainnet.rsmhw.mongodb.net
-      proto: mongodb+srv
-      opts: retryWrites=true&w=majority
-      cluster_tier: M30_GEN_2
-      disk_size_gb: 500
-      iops: 2000
       secret_arn: arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
-      auto_scaling_compute_max_instance_size: M40_GEN_2
-      auto_scaling_compute_min_instance_size: M30_GEN_2
     postgres:
       enabled: true
       engine_version: "16"
@@ -255,7 +242,6 @@ enabled_nets:
         app-log-level: "INFO"
         timing-log-level: "INFO"
         pruner-log-level: "INFO"
-        mongo-driver-log-level: "INFO"
       timing:
         warn-threshold-ms: "1000"
         very-slow-threshold-ms: "10000"
@@ -364,16 +350,7 @@ enabled_nets:
           steering-committee: "0x7E54f0790153647Ec0651c35cEd28171Adb5D44A"
           all-stakeholders: "0xA6416A72F816d3a69f33D0814700545C8E3fe4BE"
     mongodb:
-      type: atlas
-      fqdn: testnet.rsmhw.mongodb.net
-      proto: mongodb+srv
-      opts: retryWrites=true&w=majority
-      cluster_tier: M30
-      disk_size_gb: 250
-      iops: 1000
       secret_arn: arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
-      auto_scaling_compute_max_instance_size: M50
-      auto_scaling_compute_min_instance_size: M30
     postgres:
       enabled: true
       engine_version: "16"
