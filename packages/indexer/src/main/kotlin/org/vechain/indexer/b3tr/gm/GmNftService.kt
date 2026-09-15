@@ -1,86 +1,46 @@
 package org.vechain.indexer.b3tr.gm
 
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.b3tr.gm.GmNftEventUtils.groupByTokenId
 import org.vechain.indexer.b3tr.gm.GmNftEventUtils.processAllTokenEvents
-import org.vechain.indexer.b3tr.gm.repository.GmNftRepository
-import org.vechain.indexer.config.InlineVersioningProperties
+import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.EventUtils.groupByBlock
-import org.vechain.indexer.utils.ParamUtils.getAsString
 
+/** Turns GM mint, transfer, upgrade and node events into each token's state per block. */
 @Profile("b3tr", "b3tr-gm-nft")
 @Service
-open class GmNftService(
-    private val repository: GmNftRepository,
-    private val mongoTemplate: MongoTemplate,
-    private val inlineVersioningProperties: InlineVersioningProperties,
-) {
+open class GmNftService(private val repository: GmNftWriteRepository) {
 
-    /**
-     * Processes a list of IndexedEvents related to GM NFTs and returns a pair of lists:
-     * - The first list contains updated GmNft objects to be saved.
-     * - The second list contains GmNft objects that should be archived. This method groups events
-     *   by block number and token ID, then processes each group to update or create GmNft objects.
-     *
-     * @param events A list of IndexedEvent objects representing NFT-related events.
-     * @return A pair of lists: the first containing updated GmNft objects, the second containing
-     *   GmNft objects to be archived.
-     */
-    open fun processEvents(events: List<IndexedEvent>): Pair<List<GmNft>, List<GmNft>> {
-        if (events.isEmpty()) return emptyList<GmNft>() to emptyList()
+    /** The new row of each token touched in each block, in ascending block order. */
+    open fun processEvents(events: List<IndexedEvent>): List<GmNft> {
+        if (events.isEmpty()) return emptyList()
 
-        // Pre-collect all token IDs and batch-load from DB
-        val allTokenIds =
-            events
-                .mapNotNull {
-                    it.params.getAsString("tokenId")?.lowercase(java.util.Locale.getDefault())
-                }
-                .toSet()
-        val preloaded =
-            if (allTokenIds.isNotEmpty()) {
-                repository.findAllById(allTokenIds).associateBy { it.getDocumentId() }
-            } else {
-                emptyMap()
-            }
-
-        val accumulator =
-            VersionedDocumentAccumulator<GmNft>(
-                findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) }
-            )
+        val current =
+            repository
+                .findCurrentByTokenIds(groupByTokenId(events).keys)
+                .associateBy { it.tokenId }
+                .toMutableMap()
+        val rows = mutableListOf<GmNft>()
 
         groupByBlock(events).forEach { (_, blockEvents) ->
-            accumulator.startBlock()
             groupByTokenId(blockEvents).forEach { (tokenId, tokenEvents) ->
-                val (existing, nextVersion) = accumulator.resolve(tokenId)
-                val updated = processAllTokenEvents(existing, tokenEvents, nextVersion)
-
-                // If the updated record is different from the existing one, update it and archive
-                // the old
+                val existing = current[tokenId]
+                val updated = processAllTokenEvents(existing, tokenEvents)
                 if (existing != updated) {
-                    accumulator.put(tokenId, existing, updated)
+                    current[tokenId] = updated
+                    rows += updated
                 }
             }
         }
-
-        return accumulator.results()
+        return rows
     }
 
-    @Transactional(rollbackFor = [Exception::class])
-    open fun save(updated: List<GmNft>, existing: List<GmNft>) {
-        saveVersionedDocuments(
-            updated,
-            existing,
-            mongoTemplate,
-            inlineVersioningProperties.blockWindow,
-            inlineVersioningProperties.maxVersions,
-            inlineVersioningProperties.minVersions,
-        )
-    }
+    @Transactional(
+        transactionManager = PostgresConfig.TRANSACTION_MANAGER,
+        rollbackFor = [Exception::class],
+    )
+    open fun save(nfts: List<GmNft>) = repository.save(nfts)
 }

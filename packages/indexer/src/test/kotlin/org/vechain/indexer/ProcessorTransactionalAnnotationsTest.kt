@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.accounts.AccountTotalsSeriesProcessor
+import org.vechain.indexer.b3tr.gm.GmNftProcessor
+import org.vechain.indexer.b3tr.gm.GmNftService
 import org.vechain.indexer.blocks.BlockTree
 import org.vechain.indexer.blocks.BlockTreeService
 import org.vechain.indexer.blocks.BlocksProcessor
@@ -65,6 +67,7 @@ class ProcessorTransactionalAnnotationsTest {
                 NftBlacklistService::class.java.getDeclaredMethod("save", List::class.java),
                 NftService::class.java.getDeclaredMethod("save", List::class.java),
                 ContractService::class.java.getDeclaredMethod("save", List::class.java),
+                GmNftService::class.java.getDeclaredMethod("save", List::class.java),
                 HistoryService::class.java.getDeclaredMethod("save", List::class.java),
                 ValidatorService::class.java.getDeclaredMethod("save", List::class.java),
                 ValidatorBlockService::class.java.getDeclaredMethod("save", List::class.java),
@@ -97,6 +100,7 @@ class ProcessorTransactionalAnnotationsTest {
                 NftBlacklistProcessor::class.java,
                 NftProcessor::class.java,
                 ContractProcessor::class.java,
+                GmNftProcessor::class.java,
                 HistoryProcessor::class.java,
                 ValidatorProcessor::class.java,
                 ValidatorBlockProcessor::class.java,

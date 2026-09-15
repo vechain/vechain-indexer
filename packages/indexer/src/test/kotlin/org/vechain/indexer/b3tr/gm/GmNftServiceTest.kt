@@ -1,204 +1,110 @@
 package org.vechain.indexer.b3tr.gm
 
-import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import java.math.BigInteger
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.repository.findByIdOrNull
-import org.vechain.indexer.b3tr.gm.repository.GmNftRepository
-import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 
 @ExtendWith(MockKExtension::class)
 internal class GmNftServiceTest {
-    @MockK lateinit var repository: GmNftRepository
-
-    @MockK lateinit var mongoTemplate: MongoTemplate
-
-    @MockK lateinit var inlineVersioningProperties: InlineVersioningProperties
+    @MockK lateinit var repository: GmNftWriteRepository
 
     private lateinit var service: GmNftService
 
     @BeforeEach
     fun setUp() {
-        MockKAnnotations.init(this)
-        every { inlineVersioningProperties.blockWindow } returns 10000L
-        every { inlineVersioningProperties.maxVersions } returns 100
-        every { inlineVersioningProperties.minVersions } returns 20
-        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
-        service = GmNftService(repository, mongoTemplate, inlineVersioningProperties)
+        service = GmNftService(repository)
+        every { repository.findCurrentByTokenIds(any()) } returns emptyList()
+    }
+
+    private fun event(
+        eventType: String,
+        tokenId: String,
+        blockNumber: Long,
+        vararg params: Pair<String, Any>,
+    ) =
+        buildIndexedEvent(
+            blockId = "block-$blockNumber",
+            blockNumber = blockNumber,
+            eventType = eventType,
+            params = AbiEventParameters(returnValues = mapOf("tokenId" to tokenId, *params)),
+        )
+
+    private fun nft(tokenId: String, owner: String, level: GmLevelName = GmLevelName.EARTH) =
+        GmNft(
+            tokenId = tokenId,
+            blockId = "block-1",
+            blockNumber = 1L,
+            blockTimestamp = 100L,
+            owner = owner,
+            level = level,
+            attachedNodeId = null,
+            b3trDonated = BigInteger.valueOf(500),
+        )
+
+    @Test
+    fun `a mint and a later transfer yield one row per block`() {
+        val rows =
+            service.processEvents(
+                listOf(
+                    event("B3TR_GmMinted", "1", 1, "to" to "owner1"),
+                    event("B3TR_GmTransfer", "1", 2, "from" to "owner1", "to" to "owner2"),
+                )
+            )
+
+        assertEquals(listOf(1L, 2L), rows.map { it.blockNumber })
+        assertEquals(listOf("owner1", "owner2"), rows.map { it.owner })
+        assertEquals(listOf("1", "1"), rows.map { it.tokenId })
     }
 
     @Test
-    fun `processEvents should return updatedNfts and archiveNfts correctly`() {
-        // Create two events for the same tokenId, different blockNumbers
-        val tokenId = "token-1"
-        val event1 =
-            buildIndexedEvent(
-                id = "e1",
-                blockId = "block-1",
-                blockNumber = 1L,
-                eventType = "B3TR_GmMinted",
-                params =
-                    AbiEventParameters(
-                        returnValues = mapOf("tokenId" to tokenId, "to" to "owner1")
-                    ),
-            )
-        val event2 =
-            buildIndexedEvent(
-                id = "e2",
-                blockId = "block-2",
-                blockNumber = 2L,
-                eventType = "B3TR_GmTransfer",
-                params =
-                    AbiEventParameters(
-                        returnValues =
-                            mapOf("tokenId" to tokenId, "from" to "owner1", "to" to "owner2")
-                    ),
-            )
-
-        // Mock repository to return null for first lookup
-        every { repository.findByIdOrNull(tokenId) } returns null
-
-        val (updated, archived) = service.processEvents(listOf(event1, event2))
-
-        // Only one updated NFT should be returned (latest event)
-        assertEquals(1, updated.size)
-        // Only one archived NFT should be returned (previous state)
-        assertEquals(1, archived.size)
-        // The updated NFT should have id = tokenId
-        assertEquals(tokenId, updated.first().id)
-        assertEquals("owner2", updated.first().owner)
-        assertEquals(2, updated.first().version)
-
-        // The archived NFT should also have id = tokenId
-        assertEquals(tokenId, archived.first().id)
-        assertEquals("owner1", archived.first().owner)
-        assertEquals(1, archived.first().version)
+    fun `no events yield no rows`() {
+        assertTrue(service.processEvents(emptyList()).isEmpty())
     }
 
     @Test
-    fun `processEvents with empty events returns empty lists`() {
-        val (updated, archived) = service.processEvents(emptyList())
-        assertEquals(0, updated.size)
-        assertEquals(0, archived.size)
+    fun `two tokens minted in the same block yield a row each`() {
+        val rows =
+            service.processEvents(
+                listOf(
+                    event("B3TR_GmMinted", "1", 1, "to" to "owner1"),
+                    event("B3TR_GmMinted", "2", 1, "to" to "owner2"),
+                )
+            )
+
+        assertEquals(setOf("1", "2"), rows.map { it.tokenId }.toSet())
+        assertEquals(setOf(1L), rows.map { it.blockNumber }.toSet())
     }
 
     @Test
-    fun `processEvents with multiple tokenIds returns correct updated and archived lists`() {
-        val tokenId1 = "token-1"
-        val tokenId2 = "token-2"
-        val event1 =
-            buildIndexedEvent(
-                id = "e1",
-                blockNumber = 1L,
-                eventType = "B3TR_GmMinted",
-                params =
-                    AbiEventParameters(
-                        returnValues = mapOf("tokenId" to tokenId1, "to" to "owner1")
-                    ),
-            )
-        val event2 =
-            buildIndexedEvent(
-                id = "e2",
-                blockNumber = 2L,
-                eventType = "B3TR_GmMinted",
-                params =
-                    AbiEventParameters(
-                        returnValues = mapOf("tokenId" to tokenId2, "to" to "owner2")
-                    ),
-            )
-        every { repository.findByIdOrNull(tokenId1) } returns null
-        every { repository.findByIdOrNull(tokenId2) } returns null
+    fun `a transfer carries the stored token forward`() {
+        every { repository.findCurrentByTokenIds(setOf("1")) } returns listOf(nft("1", "owner1"))
 
-        val (updated, archived) = service.processEvents(listOf(event1, event2))
-        assertEquals(2, updated.size)
-        updated.forEach { assertEquals(1, it.version) }
-        assertEquals(0, archived.size)
-        assertEquals(setOf(tokenId1, tokenId2), updated.map { it.id }.toSet())
+        val updated =
+            service
+                .processEvents(
+                    listOf(event("B3TR_GmTransfer", "1", 2, "from" to "owner1", "to" to "owner2"))
+                )
+                .single()
+
+        assertEquals("owner2", updated.owner)
+        assertEquals(BigInteger.valueOf(500), updated.b3trDonated)
+        assertEquals(2L, updated.blockNumber)
     }
 
     @Test
-    fun `processEvents archives existing NFT and updates it`() {
-        val tokenId = "token-1"
+    fun `an event that changes nothing writes no row`() {
+        every { repository.findCurrentByTokenIds(setOf("1")) } returns listOf(nft("1", "owner1"))
 
-        val event1 =
-            buildIndexedEvent(
-                id = "e2",
-                blockNumber = 2L,
-                eventType = "B3TR_GmTransfer",
-                params =
-                    AbiEventParameters(
-                        returnValues =
-                            mapOf("tokenId" to tokenId, "from" to "owner1", "to" to "owner2")
-                    ),
-            )
-        val existingNft =
-            GmNft(
-                tokenId = tokenId,
-                version = 1,
-                blockId = "block1",
-                blockNumber = 1L,
-                blockTimestamp = 100L,
-                owner = "owner1",
-                level = GmLevelName.EARTH,
-                attachedNodeId = null,
-                b3trDonated = BigInteger.valueOf(500),
-            )
-
-        every { repository.findByIdOrNull(tokenId) } returns existingNft
-
-        val (updated, archived) = service.processEvents(listOf(event1))
-
-        assertEquals(1, updated.size)
-        assertEquals(1, archived.size)
-        assertEquals(tokenId, updated.first().id)
-        assertEquals(tokenId, archived.first().id)
-        assertEquals("owner2", updated.first().owner)
-        assertEquals("owner1", archived.first().owner)
-        assertEquals(2, updated.first().version)
-        assertEquals(1, archived.first().version)
-    }
-
-    @Test
-    fun `processEvents is the existing and updated NFT are the same, no archive or update occurs`() {
-        val tokenId = "token-1"
-
-        val event1 =
-            buildIndexedEvent(
-                id = "e2",
-                blockNumber = 2L,
-                eventType = "B3TR_GmNodeLevel",
-                params =
-                    AbiEventParameters(returnValues = mapOf("tokenId" to tokenId, "level" to 1)),
-            )
-
-        // Existing NFT has same level as event1 so no change should occur
-        val existingNft =
-            GmNft(
-                tokenId = tokenId,
-                version = 1,
-                blockId = "block1",
-                blockNumber = 1L,
-                blockTimestamp = 100L,
-                owner = "owner1",
-                level = GmLevelName.EARTH,
-                attachedNodeId = null,
-                b3trDonated = BigInteger.valueOf(500),
-            )
-
-        every { repository.findByIdOrNull(tokenId) } returns existingNft
-
-        val (updated, archived) = service.processEvents(listOf(event1))
-
-        assertEquals(0, updated.size)
-        assertEquals(0, archived.size)
+        assertTrue(
+            service.processEvents(listOf(event("B3TR_GmNodeLevel", "1", 2, "level" to 1))).isEmpty()
+        )
     }
 }

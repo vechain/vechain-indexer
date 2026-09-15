@@ -26,9 +26,9 @@ class GmNftEventUtilsTest {
                         ),
                 )
 
-            val result = GmNftEventUtils.processAllTokenEvents(null, listOf(mintEvent), 1)
+            val result = GmNftEventUtils.processAllTokenEvents(null, listOf(mintEvent))
 
-            assertEquals("0xMinted", result.id)
+            assertEquals("0xMinted", result.tokenId)
             assertEquals("0xOwner", result.owner)
             assertEquals(100L, result.blockNumber)
             assertEquals("block-mint", result.blockId)
@@ -70,13 +70,12 @@ class GmNftEventUtilsTest {
                 )
 
             val result =
-                GmNftEventUtils.processAllTokenEvents(null, listOf(mintEvent, upgradeEvent), 1)
+                GmNftEventUtils.processAllTokenEvents(null, listOf(mintEvent, upgradeEvent))
 
             assertEquals(GmLevelName.MOON, result.level)
             assertEquals(java.math.BigInteger.valueOf(150), result.b3trDonated)
             assertEquals("block-upgrade", result.blockId)
             assertEquals(1_666_100L, result.blockTimestamp)
-            assertEquals(1, result.version)
         }
 
         @Test
@@ -103,7 +102,7 @@ class GmNftEventUtilsTest {
 
             val exception =
                 assertThrows<IllegalArgumentException> {
-                    GmNftEventUtils.processAllTokenEvents(null, listOf(event1, event2), 1)
+                    GmNftEventUtils.processAllTokenEvents(null, listOf(event1, event2))
                 }
 
             assertTrue(exception.message!!.contains("All events must have the same tokenId"))
@@ -124,7 +123,7 @@ class GmNftEventUtilsTest {
 
             val exception =
                 assertThrows<IllegalArgumentException> {
-                    GmNftEventUtils.processAllTokenEvents(null, listOf(event), 1)
+                    GmNftEventUtils.processAllTokenEvents(null, listOf(event))
                 }
 
             assertTrue(exception.message!!.contains("No mint event found for tokenId"))
@@ -153,7 +152,7 @@ class GmNftEventUtilsTest {
 
             val exception =
                 assertThrows<IllegalArgumentException> {
-                    GmNftEventUtils.processAllTokenEvents(null, listOf(event1, event2), 1)
+                    GmNftEventUtils.processAllTokenEvents(null, listOf(event1, event2))
                 }
 
             assertTrue(
@@ -186,7 +185,7 @@ class GmNftEventUtilsTest {
 
             val exception =
                 assertThrows<IllegalArgumentException> {
-                    GmNftEventUtils.processAllTokenEvents(null, listOf(event1, event2), 1)
+                    GmNftEventUtils.processAllTokenEvents(null, listOf(event1, event2))
                 }
 
             assertTrue(exception.message!!.contains("Multiple mint events"))
@@ -207,7 +206,7 @@ class GmNftEventUtilsTest {
 
             val exception =
                 assertThrows<IllegalArgumentException> {
-                    GmNftEventUtils.processAllTokenEvents(null, listOf(event), 1)
+                    GmNftEventUtils.processAllTokenEvents(null, listOf(event))
                 }
 
             assertTrue(exception.message!!.contains("No mint event"))
@@ -218,7 +217,6 @@ class GmNftEventUtilsTest {
             val existing =
                 GmNft(
                     tokenId = "0xMinted",
-                    version = 1,
                     blockId = "blk",
                     blockNumber = 10,
                     blockTimestamp = 1000,
@@ -239,7 +237,7 @@ class GmNftEventUtilsTest {
 
             val exception =
                 assertThrows<IllegalArgumentException> {
-                    GmNftEventUtils.processAllTokenEvents(existing, listOf(mintEvent), 2)
+                    GmNftEventUtils.processAllTokenEvents(existing, listOf(mintEvent))
                 }
 
             assertTrue(exception.message!!.contains("Mint event should not be present"))
@@ -265,7 +263,7 @@ class GmNftEventUtilsTest {
 
             val nft = GmNftEventUtils.processMintedEvent(event)
 
-            assertEquals("0xMinted", nft.id)
+            assertEquals("0xMinted", nft.tokenId)
             assertEquals("0xOwner", nft.owner)
             assertEquals(GmLevelName.EARTH, nft.level)
             assertEquals("block-mint", nft.blockId)
@@ -325,11 +323,10 @@ class GmNftEventUtilsTest {
     inner class ProcessUpgradedEventTest {
         private val baseNft =
             GmNft(
-                version = 1,
                 blockId = "original-block",
                 blockNumber = 100,
                 blockTimestamp = 1_000_000,
-                id = "0x123",
+                tokenId = "0x123",
                 owner = "0xabc",
                 level = GmLevelName.EARTH,
                 b3trDonated = java.math.BigInteger.valueOf(100),
@@ -427,11 +424,10 @@ class GmNftEventUtilsTest {
     inner class ProcessNodeAttachedEventTest {
         private val baseNft =
             GmNft(
-                version = 1,
                 blockId = "block-id",
                 blockNumber = 100,
                 blockTimestamp = 1_000_000,
-                id = "0x123",
+                tokenId = "0x123",
                 owner = "0xabc",
                 level = GmLevelName.MARS,
                 b3trDonated = java.math.BigInteger.ZERO,
@@ -527,11 +523,10 @@ class GmNftEventUtilsTest {
     inner class ProcessNodeDetachedEventTest {
         private val baseNft =
             GmNft(
-                version = 1,
                 blockId = "block-id",
                 blockNumber = 100,
                 blockTimestamp = 1_000_000,
-                id = "0x123",
+                tokenId = "0x123",
                 owner = "0xabc",
                 level = GmLevelName.MARS,
                 b3trDonated = java.math.BigInteger.ZERO,
@@ -599,11 +594,10 @@ class GmNftEventUtilsTest {
     inner class ProcessTransferEventTest {
         private val baseNft =
             GmNft(
-                version = 1,
                 blockId = "block-id",
                 blockNumber = 100,
                 blockTimestamp = 1_000_000,
-                id = "0x123",
+                tokenId = "0x123",
                 owner = "0xabc",
                 level = GmLevelName.EARTH,
                 b3trDonated = java.math.BigInteger.ZERO,
@@ -691,11 +685,10 @@ class GmNftEventUtilsTest {
     inner class ProcessLevelCheckEventTest {
         private val baseNft =
             GmNft(
-                version = 1,
                 blockId = "block-id",
                 blockNumber = 100,
                 blockTimestamp = 1_000_000,
-                id = "0x123",
+                tokenId = "0x123",
                 owner = "0xabc",
                 level = GmLevelName.EARTH,
                 b3trDonated = java.math.BigInteger.ZERO,

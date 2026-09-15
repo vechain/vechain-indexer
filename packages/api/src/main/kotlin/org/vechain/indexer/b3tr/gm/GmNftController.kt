@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
-import org.vechain.indexer.b3tr.gm.repository.GmNftRepository
 import org.vechain.indexer.constants.GM_NFT_PATH
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.GmNftLevelParameter
@@ -20,7 +19,7 @@ import org.vechain.indexer.rest.CachePolicy
 @Validated
 @RestController
 @RequestMapping(GM_NFT_PATH)
-open class GmNftController(private val gmNftRepository: GmNftRepository) {
+open class GmNftController(private val gmNftService: GmNftService) {
     @Operation(
         summary = "Get B3TR GM Level UserAllTimeActionSummary",
         description =
@@ -33,9 +32,9 @@ open class GmNftController(private val gmNftRepository: GmNftRepository) {
     open fun getLevelOverviews(
         @RequestParam(required = false) level: GmLevelName?
     ): List<GMLevelOverview> =
-        if (level == null || level.name == "ALL") {
-            gmNftRepository.levelCounts()
+        if (level == null || level == GmLevelName.ALL) {
+            gmNftService.levelOverviews()
         } else {
-            listOf(GMLevelOverview(level, gmNftRepository.countByLevelAndOwnerNot(level)))
+            listOf(gmNftService.levelOverview(level))
         }
 }

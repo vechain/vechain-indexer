@@ -1,44 +1,43 @@
 package org.vechain.indexer.b3tr.gm
 
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.StatefulMongoProcessor
-import org.vechain.indexer.b3tr.gm.repository.GmNftRepository
-import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.PostgresIndexerStore
+import org.vechain.indexer.PostgresProcessor
+import org.vechain.indexer.config.CheckpointProperties
+import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
+import org.vechain.indexer.postgres.IndexerStateRepository
 
 @Profile("b3tr", "b3tr-gm-nft")
 @Component
 open class GmNftProcessor(
-    repository: GmNftRepository,
-    mongoTemplate: MongoTemplate,
     private val service: GmNftService,
-    checkpointService: CheckpointService,
+    repository: GmNftWriteRepository,
+    state: IndexerStateRepository,
+    checkpointProperties: CheckpointProperties,
+    horizon: InlineVersioningProperties,
     processorMetrics: ProcessorMetrics,
+    @Value("\${indexer.version.b3tr-gm-nft:1}") version: Int = 1,
 ) :
-    StatefulMongoProcessor(
-        repository = repository,
-        mongoTemplate = mongoTemplate,
-        indexerName = IndexerNames.GM_NFT.NAME,
-        checkpointService = checkpointService,
-        collectionName = IndexerNames.GM_NFT.COLLECTION,
-        processorMetrics = processorMetrics,
+    PostgresProcessor(
+        PostgresIndexerStore(
+            IndexerNames.GM_NFT.COLLECTION,
+            repository,
+            state,
+            checkpointProperties,
+            horizon,
+        ),
+        IndexerNames.GM_NFT.NAME,
+        version,
+        processorMetrics,
     ) {
-
     override suspend fun processEntry(entry: IndexingResult) {
-        if (entry.events().isEmpty()) {
-            return
-        }
-
-        // Process the events using the service
-        val (updated, existing) = service.processEvents(entry.events())
-
-        // Save the updated NFTs and archives
-        if (updated.isNotEmpty() || existing.isNotEmpty()) {
-            service.save(updated, existing)
-        }
+        if (entry.events().isEmpty()) return
+        val nfts = service.processEvents(entry.events())
+        if (nfts.isNotEmpty()) service.save(nfts)
     }
 }
