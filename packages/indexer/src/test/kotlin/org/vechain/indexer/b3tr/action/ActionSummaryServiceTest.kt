@@ -1,7 +1,6 @@
 package org.vechain.indexer.b3tr.action
 
 import io.mockk.coEvery
-import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import java.math.BigDecimal
@@ -41,7 +40,6 @@ class ActionSummaryServiceTest {
     fun setUp() {
         every { repository.findCurrentEntities(any(), any()) } returns emptyList()
         every { repository.findCurrentAppUsers(any(), any()) } returns emptyList()
-        coEvery { roundService.getCurrentRound(any<BlockRevision>()) } returns 3
     }
 
     private fun blockId(block: Long) = "0x" + block.toString(16).padStart(64, '0')
@@ -83,9 +81,10 @@ class ActionSummaryServiceTest {
             params = AbiEventParameters(returnValues = mapOf("cycle" to "$cycle")),
         )
 
-    private fun process(vararg events: IndexedEvent) = runBlocking {
-        service.processEvents(events.toList())
-    }
+    private fun result(vararg events: IndexedEvent, roundBefore: Int = 3) =
+        service.processEvents(events.toList(), roundBefore)
+
+    private fun process(vararg events: IndexedEvent) = result(*events).update
 
     private fun ActionSummaryUpdate.entity(
         period: ActionPeriod,
@@ -190,21 +189,20 @@ class ActionSummaryServiceTest {
 
     @Test
     fun `an emission moves the rewards after it into the next round, in block order`() {
-        val update =
-            process(
+        val result =
+            result(
                 reward(1, alice, appX),
                 reward(2, bob, appX, id = "before"),
                 emission(2, 4),
                 reward(2, alice, appX, id = "after"),
                 reward(3, bob, appY),
             )
+        val update = result.update
 
+        assertEquals(4, result.round)
         assertEquals(
             setOf(3, 4),
-            update.entities
-                .filter { it.period is Round }
-                .map { (it.period as Round).roundId }
-                .toSet(),
+            update.entities.mapNotNull { (it.period as? Round)?.roundId }.toSet(),
         )
         assertEquals(1L, update.entity(Round(3), EntityType.USER, bob, 2).actionsRewarded)
         assertEquals(1L, update.entity(Round(4), EntityType.USER, alice, 2).actionsRewarded)
@@ -212,44 +210,31 @@ class ActionSummaryServiceTest {
         assertEquals(2L, update.entity(Round(4), EntityType.GLOBAL, global, 3).uniqueUsers)
         // The day does not care about rounds: block 2 carries both rewards.
         assertEquals(3L, update.entity(day, EntityType.GLOBAL, global, 2).actionsRewarded)
-
-        // The round is kept for the next entry rather than asked of the contract again.
-        val next = process(reward(4, alice, appX))
-        assertEquals(
-            Round(4),
-            next.entities
-                .single { it.period is Round && it.entityType == EntityType.GLOBAL }
-                .period,
-        )
-        coVerify(exactly = 1) { roundService.getCurrentRound(any<BlockRevision>()) }
     }
 
     @Test
     fun `an entry of emissions alone advances the round and adds nothing`() {
-        assertTrue(process(emission(1, 4), emission(2, 5)).isEmpty())
-        assertEquals(
-            Round(5),
-            process(reward(3, alice, appX)).entities.first { it.period is Round }.period,
-        )
+        val result = result(emission(1, 4), emission(2, 5))
+
+        assertTrue(result.update.isEmpty())
+        assertEquals(5, result.round)
     }
 
     @Test
-    fun `the round is asked of the block before the first event, and again after a rollback`() {
-        process(reward(7, alice, appX))
-        coVerify(exactly = 1) { roundService.getCurrentRound(BlockRevision.Number(6)) }
+    fun `the round before an entry is the contract's at the block ahead, or 0 before Emissions`() {
+        coEvery { roundService.getCurrentRound(BlockRevision.Number(6)) } returns 3
+        assertEquals(3, runBlocking { service.roundBefore(7) })
 
-        service.invalidateRuntimeState()
-        process(reward(8, alice, appX))
-        coVerify(exactly = 1) { roundService.getCurrentRound(BlockRevision.Number(7)) }
+        coEvery { roundService.getCurrentRound(BlockRevision.Number(0)) } returns null
+        assertEquals(0, runBlocking { service.roundBefore(0) })
     }
 
     @Test
     fun `a round that skips ahead or has not started is refused`() {
         assertThrows(IllegalStateException::class.java) { process(emission(1, 5)) }
-
-        coEvery { roundService.getCurrentRound(any<BlockRevision>()) } returns null
-        service.invalidateRuntimeState()
-        assertThrows(IllegalStateException::class.java) { process(reward(1, alice, appX)) }
+        assertThrows(IllegalStateException::class.java) {
+            result(reward(1, alice, appX), roundBefore = 0)
+        }
         assertThrows(IllegalStateException::class.java) {
             process(buildIndexedEvent(eventType = "Transfer", blockNumber = 1))
         }
