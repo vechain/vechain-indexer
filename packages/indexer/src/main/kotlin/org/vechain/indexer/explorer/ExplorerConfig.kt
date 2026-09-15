@@ -10,16 +10,16 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("explorer", "block-usage")
-open class BlockUsageConfig {
+@Profile("explorer")
+open class ExplorerConfig {
     @Bean
-    open fun blockUsageIndexer(
+    open fun explorerIndexer(
         thorClient: ThorClient,
-        processor: BlockUsageProcessor,
+        processor: ExplorerProcessor,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.BLOCK_USAGE.NAME)
+            .name(IndexerNames.EXPLORER.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .syncLoggerInterval(syncLoggerInterval)

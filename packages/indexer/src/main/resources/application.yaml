@@ -165,7 +165,6 @@ indexer:
     stargate-staking: ${INDEXER_START_BLOCK_STARGATE_STAKING:0}
     vet-delegated-by-block: ${INDEXER_START_BLOCK_VET_DELEGATED_BY_BLOCK:0}
     account-totals-series: ${INDEXER_START_BLOCK_ACCOUNT_TOTALS_SERIES:0}
-    average-fees-per-user: ${INDEXER_START_BLOCK_AVERAGE_FEES_PER_USER:0}
     safe-proxies: ${INDEXER_START_BLOCK_SAFE_PROXIES:0}
     safe-membership: ${INDEXER_START_BLOCK_SAFE_MEMBERSHIP:0}
     safe-tx-state: ${INDEXER_START_BLOCK_SAFE_TX_STATE:0}
@@ -214,8 +213,7 @@ indexer:
     b3tr-navigator: ${VERSION_B3TR_NAVIGATOR:1}
     b3tr-gm-nft: ${VERSION_B3TR_GM_NFT:1}
     b3tr-gm-nft-level-overview: ${VERSION_B3TR_GM_NFT_LEVEL_OVERVIEW:1}
-    block-usage: ${VERSION_BLOCK_USAGE:1}
-    average-fees-per-user: ${VERSION_AVERAGE_FEES_PER_USER:1}
+    explorer: ${VERSION_EXPLORER:1}
     validator: ${VERSION_VALIDATOR:1}
     validator-rewards: ${VERSION_VALIDATOR_BLOCKS:1}
     delegation: ${VERSION_DELEGATION:1}

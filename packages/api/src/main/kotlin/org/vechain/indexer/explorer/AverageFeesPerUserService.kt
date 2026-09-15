@@ -4,12 +4,11 @@ import java.time.Instant
 import java.time.ZoneOffset
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
-import org.vechain.indexer.explorer.repository.AverageFeesPerUserRepository
 import org.vechain.indexer.utils.TimeValidationUtils
 
-@Profile("explorer", "average-fees-per-user")
+@Profile("explorer")
 @Service
-open class AverageFeesPerUserService(private val repository: AverageFeesPerUserRepository) {
+open class AverageFeesPerUserService(private val repository: AverageFeesPerUserReadRepository) {
     open fun getAverageFeesPerUser(
         startTimestamp: Long,
         endTimestamp: Long,
@@ -21,12 +20,9 @@ open class AverageFeesPerUserService(private val repository: AverageFeesPerUserR
             "endTimestamp",
         )
 
-        val startDayStartTimestamp = dayStartTimestamp(startTimestamp)
-        val endDayStartTimestamp = dayStartTimestamp(endTimestamp)
-        return repository.findAllByRecordTypeAndDayStartTimestampBetween(
-            AverageFeesPerUserRecordType.SUMMARY,
-            startDayStartTimestamp,
-            endDayStartTimestamp,
+        return repository.findBetween(
+            dayStartTimestamp(startTimestamp),
+            dayStartTimestamp(endTimestamp),
         )
     }
 

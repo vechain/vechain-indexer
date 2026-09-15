@@ -5,14 +5,14 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.vechain.indexer.accounts.TimeFrame
 import org.vechain.indexer.exception.BadRequestException
-import org.vechain.indexer.explorer.repository.BlockUsageRepository
 import strikt.api.expectThat
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
 
 class BlockUsageServiceTest {
-    private val repository: BlockUsageRepository = mockk()
+    private val repository: BlockUsageReadRepository = mockk()
     private val service = BlockUsageService(repository)
 
     @Test
@@ -33,12 +33,13 @@ class BlockUsageServiceTest {
         val sampled = listOf(blockUsage(blockNumber = 360L, blockTimestamp = 3_600L))
         val endBoundary = blockUsage(blockNumber = 600L, blockTimestamp = 6_000L)
 
-        every { repository.findHourlyInTimestampRange(1_000L, 6_000L) } returns sampled
+        every { repository.findFrameInTimestampRange(TimeFrame.HOUR, 1_000L, 6_000L) } returns
+            sampled
         every {
-            repository.findFirstByBlockTimestampLessThanEqualOrderByBlockTimestampDesc(1_000L)
+            repository.findLatestAtOrBefore(1_000L)
         } returns startBoundary
         every {
-            repository.findFirstByBlockTimestampLessThanEqualOrderByBlockTimestampDesc(6_000L)
+            repository.findLatestAtOrBefore(6_000L)
         } returns endBoundary
 
         val result = service.getBlockUsage(1_000L, 6_000L)
@@ -49,14 +50,17 @@ class BlockUsageServiceTest {
 
     @Test
     fun `getBlockUsage uses monthly samples for very large ranges`() {
-        every { repository.findMonthlyInTimestampRange(0L, 40_000_000L) } returns emptyList()
+        every { repository.findFrameInTimestampRange(TimeFrame.MONTH, 0L, 40_000_000L) } returns
+            emptyList()
         every {
-            repository.findFirstByBlockTimestampLessThanEqualOrderByBlockTimestampDesc(any())
+            repository.findLatestAtOrBefore(any())
         } returns null
 
         service.getBlockUsage(0L, 40_000_000L)
 
-        verify(exactly = 1) { repository.findMonthlyInTimestampRange(0L, 40_000_000L) }
+        verify(exactly = 1) {
+            repository.findFrameInTimestampRange(TimeFrame.MONTH, 0L, 40_000_000L)
+        }
     }
 
     @Test
@@ -80,9 +84,5 @@ class BlockUsageServiceTest {
             cumulativeBaseFeePerGas = java.math.BigInteger.ONE,
             cumulativeNumTransactions = java.math.BigInteger.ONE,
             cumulativeNumClauses = java.math.BigInteger.ONE,
-            isHourly = null,
-            isDaily = null,
-            isWeekly = null,
-            isMonthly = null,
         )
 }

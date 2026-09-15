@@ -7,9 +7,10 @@ import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.config.CheckpointProperties
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
-import org.vechain.indexer.explorer.BlockUsageProcessor
+import org.vechain.indexer.explorer.AverageFeesPerUserService
 import org.vechain.indexer.explorer.BlockUsageService
-import org.vechain.indexer.explorer.repository.BlockUsageRepository
+import org.vechain.indexer.explorer.ExplorerProcessor
+import org.vechain.indexer.explorer.ExplorerWriteRepository
 import org.vechain.indexer.stargate.staking.StargateStakingProcessor
 import org.vechain.indexer.stargate.staking.StargateStakingService
 import org.vechain.indexer.stargate.staking.StargateStakingWriteRepository
@@ -107,11 +108,18 @@ class RollbackResetsCacheTest {
     }
 
     @Test
-    fun `BlockUsageProcessor rollback resets service cache`() {
+    fun `ExplorerProcessor rollback resets service cache`() {
         val service = mockk<BlockUsageService>(relaxed = true)
-        val repository = mockk<BlockUsageRepository>(relaxed = true)
         val processor =
-            BlockUsageProcessor(repository, service, checkpointService, processorMetrics)
+            ExplorerProcessor(
+                service,
+                mockk<AverageFeesPerUserService>(relaxed = true),
+                mockk<ExplorerWriteRepository>(relaxed = true),
+                mockk(relaxed = true),
+                CheckpointProperties(),
+                InlineVersioningProperties(),
+                processorMetrics,
+            )
 
         processor.rollback(100)
 

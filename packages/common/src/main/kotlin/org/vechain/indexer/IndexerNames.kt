@@ -22,14 +22,9 @@ object IndexerNames {
         const val COLLECTION = "blocks"
     }
 
-    object BLOCK_USAGE {
-        const val NAME = "BlockUsageIndexer"
-        const val COLLECTION = "block_usage"
-    }
-
-    object AVERAGE_FEES_PER_USER {
-        const val NAME = "AverageFeesPerUserIndexer"
-        const val COLLECTION = "average_fees_per_user_daily"
+    object EXPLORER {
+        const val NAME = "ExplorerIndexer"
+        const val COLLECTION = "explorer"
     }
 
     object GM_NFT {
