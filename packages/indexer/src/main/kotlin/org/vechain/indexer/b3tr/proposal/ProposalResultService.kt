@@ -5,11 +5,7 @@ import kotlin.collections.component1
 import kotlin.collections.component2
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getDescription
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getPower
@@ -17,15 +13,11 @@ import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getProposalId
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getStartRoundId
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getWeight
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.groupByProposalId
-import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.groupBySupport
 import org.vechain.indexer.b3tr.proposal.ProposalState.Companion.nonFinalizedStates
-import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
 import org.vechain.indexer.b3tr.voting.Support
-import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockRevision
@@ -33,13 +25,12 @@ import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.ContractUtils
+import org.vechain.indexer.utils.EventUtils.groupByBlock
 
-@Profile("b3tr", "b3tr-proposal", "b3tr-proposal-results")
+@Profile("b3tr", "b3tr-proposal")
 @Service
 open class ProposalResultService(
-    private val repository: ProposalResultRepository,
-    private val mongoTemplate: MongoTemplate,
-    private val inlineVersioningProperties: InlineVersioningProperties,
+    private val repository: ProposalWriteRepository,
     private val thorClient: ThorClient,
     @param:Value("\${business-event.substitutions.B3TR_GOVERNOR_CONTRACT}")
     private val governorContract: String,
@@ -55,87 +46,94 @@ open class ProposalResultService(
         statusAbi = response.first()
     }
 
-    open fun findByProposalId(proposalId: String): ProposalResult? =
-        repository.findByIdOrNull(proposalId)
+    /** The new row of each proposal touched in each block, in ascending block order. */
+    open fun processEvents(events: List<IndexedEvent>): List<ProposalResult> {
+        val relevant = events.filter {
+            it.eventType == "B3TR_ProposalCreated" || it.eventType == "B3TR_ProposalVote"
+        }
+        if (relevant.isEmpty()) return emptyList()
 
-    open suspend fun updateStatuses(
+        val current =
+            repository
+                .findCurrent(relevant.map(::getProposalId).toSet())
+                .associateBy { it.proposalId }
+                .toMutableMap()
+        // One row per (block, proposal): a later event in the same block replaces the earlier.
+        val rows = linkedMapOf<Pair<Long, String>, ProposalResult>()
+
+        groupByBlock(relevant).forEach { (blockDetails, blockEvents) ->
+            processBlockEvents(blockEvents, blockDetails, current).forEach { updated ->
+                current[updated.proposalId] = updated
+                rows[blockDetails.blockNumber to updated.proposalId] = updated
+            }
+        }
+        return rows.values.toList()
+    }
+
+    /**
+     * The proposals whose on-chain state has moved since it was last read, as of [block]. Only
+     * called at the chain head: a state changes with the round, not with an event, so nothing
+     * during a fast sync can observe it.
+     */
+    open suspend fun refreshStates(
         block: BlockDetails,
-        accumulator: VersionedDocumentAccumulator<ProposalResult>,
-    ) {
-        val proposals = repository.findByStateIn(nonFinalizedStates)
-        if (proposals.isEmpty()) return
+        pending: List<ProposalResult>,
+    ): List<ProposalResult> {
+        val fromEvents = pending.associateBy { it.proposalId }
+        val proposals =
+            (repository.findCurrentByStates(nonFinalizedStates).map {
+                    fromEvents[it.proposalId] ?: it
+                } + fromEvents.values.filter { it.state in nonFinalizedStates })
+                .distinctBy { it.proposalId }
+        if (proposals.isEmpty()) return emptyList()
 
-        proposals.chunked(50).forEach { batch ->
-            val clauses = createStatusClauses(batch)
-            val responses = thorClient.inspectClauses(clauses, BlockRevision.Id(block.blockId))
-
-            batch.forEachIndexed { index, proposal ->
+        return proposals.chunked(STATUS_BATCH_SIZE).flatMap { batch ->
+            val responses =
+                thorClient.inspectClauses(
+                    createStatusClauses(batch),
+                    BlockRevision.Id(block.blockId),
+                )
+            batch.mapIndexedNotNull { index, proposal ->
                 val response =
                     responses.getOrNull(index)
                         ?: error("Failed to fetch status for proposalId=${proposal.proposalId}")
                 val state = parseProposalState(response, proposal.proposalId)
-
-                if (state != null && state != proposal.state) {
-                    val (existing, nextVersion) = accumulator.resolve(proposal.proposalId)
-                    val updated =
-                        proposal.copy(
-                            version = nextVersion,
-                            blockId = block.blockId,
-                            blockNumber = block.blockNumber,
-                            blockTimestamp = block.blockTimestamp,
-                            state = state,
-                        )
-                    accumulator.put(proposal.proposalId, existing, updated)
-                }
+                if (state == null || state == proposal.state) null
+                else
+                    proposal.copy(
+                        blockId = block.blockId,
+                        blockNumber = block.blockNumber,
+                        blockTimestamp = block.blockTimestamp,
+                        state = state,
+                    )
             }
         }
     }
 
-    open fun processBlockEvents(
+    private fun processBlockEvents(
         events: List<IndexedEvent>,
-        accumulator: VersionedDocumentAccumulator<ProposalResult>,
-    ) {
+        blockDetails: BlockDetails,
+        current: Map<String, ProposalResult>,
+    ): List<ProposalResult> {
         assertEventTypes(events, "B3TR_ProposalCreated", "B3TR_ProposalVote")
 
-        groupByProposalId(events).forEach { (proposalId, proposalEvents) ->
+        return groupByProposalId(events).map { (proposalId, proposalEvents) ->
             val createdEvent = proposalEvents.firstOrNull { it.eventType == "B3TR_ProposalCreated" }
-            if (createdEvent != null) {
-                val blockDetails =
-                    BlockDetails(
-                        createdEvent.blockId,
-                        createdEvent.blockNumber,
-                        createdEvent.blockTimestamp,
-                    )
-                val (existing, nextVersion) = accumulator.resolve(proposalId)
-                if (existing != null) {
-                    error("Existing ProposalResult found for creation event: $proposalId")
-                }
-                val created =
-                    processCreatedEvent(proposalId, blockDetails, createdEvent, nextVersion)
-                accumulator.put(proposalId, existing, created)
-            }
             val voteEvents = proposalEvents.filter { it.eventType == "B3TR_ProposalVote" }
-            if (voteEvents.isNotEmpty()) {
-                val blockDetails =
-                    BlockDetails(
-                        voteEvents.first().blockId,
-                        voteEvents.first().blockNumber,
-                        voteEvents.first().blockTimestamp,
-                    )
-                val (existing, nextVersion) = accumulator.resolve(proposalId)
-                val existingResult =
-                    existing
-                        ?: error("No existing ProposalResult found for vote event: $proposalId")
-                val updated =
-                    processVoteEvents(
-                        proposalId,
-                        blockDetails,
-                        voteEvents,
-                        existingResult,
-                        nextVersion,
-                    )
-                accumulator.put(proposalId, existing, updated)
-            }
+            val existing = current[proposalId]
+
+            val created =
+                if (createdEvent == null) {
+                    existing ?: error("No existing ProposalResult found for vote: $proposalId")
+                } else {
+                    require(existing == null) {
+                        "Existing ProposalResult found for creation event: $proposalId"
+                    }
+                    processCreatedEvent(proposalId, blockDetails, createdEvent)
+                }
+
+            if (voteEvents.isEmpty()) created
+            else processVoteEvents(blockDetails, voteEvents, created)
         }
     }
 
@@ -169,27 +167,6 @@ open class ProposalResultService(
     }
 
     /**
-     * Saves the updated proposal results and archives the existing ones. This method is
-     * transactional and will roll back in case of any exception.
-     *
-     * @param updated The list of updated proposal results to save.
-     * @param existing The list of existing proposal results to archive.
-     * @throws Exception if any error occurs during the save operation.
-     * @see ProposalResultRepository.saveAll
-     */
-    @Transactional(rollbackFor = [Exception::class])
-    open fun save(updated: List<ProposalResult>, existing: List<ProposalResult>) {
-        saveVersionedDocuments(
-            updated,
-            existing,
-            mongoTemplate,
-            inlineVersioningProperties.blockWindow,
-            inlineVersioningProperties.maxVersions,
-            inlineVersioningProperties.minVersions,
-        )
-    }
-
-    /**
      * Processes a ProposalCreated event and returns a new ProposalResult.
      *
      * @param proposalId The ID of the proposal.
@@ -201,11 +178,9 @@ open class ProposalResultService(
         proposalId: String,
         blockDetails: BlockDetails,
         event: IndexedEvent,
-        version: Int,
     ) =
         ProposalResult(
             proposalId = proposalId,
-            version = version,
             blockId = blockDetails.blockId,
             blockNumber = blockDetails.blockNumber,
             blockTimestamp = blockDetails.blockTimestamp,
@@ -217,53 +192,23 @@ open class ProposalResultService(
         )
 
     /**
-     * Processes a list of events and returns a ProposalResult. If an existing ProposalResult is
-     * provided, it updates it; otherwise, it creates a new one.
+     * Adds a block's votes to the running totals of [existing].
      *
-     * An error is thrown if the events are empty or if they do not have consistent proposalId and
-     * block number.
-     *
-     * @param proposalId The ID of the proposal.
      * @param blockDetails The details of the block containing the events.
      * @param voteEvents The list of IndexedEvents representing votes.
-     * @param existing The existing ProposalResult to update, or null to create a new one.
-     * @return A ProposalResult containing the aggregated data from the events.
+     * @param existing The ProposalResult the votes are cast against.
      */
     protected fun processVoteEvents(
-        proposalId: String,
         blockDetails: BlockDetails,
         voteEvents: List<IndexedEvent>,
         existing: ProposalResult,
-        version: Int,
-    ): ProposalResult {
-        require(voteEvents.isNotEmpty()) { "No events provided" }
-
-        // All events must have the same proposalId and block number
-        require(
-            voteEvents.all {
-                getProposalId(it) == proposalId && it.blockNumber == blockDetails.blockNumber
-            }
-        ) {
-            "All events must have the same proposalId and block number"
-        }
-
-        require(existing.proposalId == proposalId) {
-            "Existing record's proposalId does not match the events' proposalId"
-        }
-
-        return ProposalResult(
-            proposalId = proposalId,
-            version = version,
+    ): ProposalResult =
+        existing.copy(
             blockId = blockDetails.blockId,
             blockNumber = blockDetails.blockNumber,
             blockTimestamp = blockDetails.blockTimestamp,
-            createdAtBlockNumber = existing.createdAtBlockNumber,
-            startRoundId = existing.startRoundId,
-            state = existing.state,
             results = updateResults(existing.results, voteEvents),
-            description = existing.description,
         )
-    }
 
     /**
      * Updates the VoteResults based on the provided vote events.
@@ -276,7 +221,7 @@ open class ProposalResultService(
         results: VoteResults?,
         voteEvents: List<IndexedEvent>,
     ): VoteResults {
-        val votesBySupport = groupBySupport(voteEvents)
+        val votesBySupport = ProposalEventUtils.groupBySupport(voteEvents)
 
         // If results is null, initialize with zero values
         val existingResults =
@@ -318,5 +263,9 @@ open class ProposalResultService(
             totalWeight = result.totalWeight + events.sumOf { getWeight(it) },
             totalPower = result.totalPower + events.sumOf { getPower(it) },
         )
+    }
+
+    private companion object {
+        const val STATUS_BATCH_SIZE = 50
     }
 }

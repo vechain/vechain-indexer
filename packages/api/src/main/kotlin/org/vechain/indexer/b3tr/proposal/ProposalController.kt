@@ -47,14 +47,11 @@ open class ProposalController(private val proposalService: ProposalService) {
         @ValidProposalStates @RequestParam(required = false) states: List<String>?,
     ): PaginatedResponse<ProposalResult> {
         val pageable = toPageable(page, size, direction, ProposalResult::createdAtBlockNumber.name)
-        return if (states == null || states.isEmpty()) {
-            paginatedResponse(proposalService.getAllProposalResults(pageable))
-        } else {
-            val statesList = states.mapNotNull { state ->
+        val statesList =
+            states.orEmpty().mapNotNull { state ->
                 ProposalState.entries.find { it.name.equals(state.trim(), ignoreCase = true) }
             }
-            paginatedResponse(proposalService.getAllProposalResultsByStates(statesList, pageable))
-        }
+        return paginatedResponse(proposalService.getAllProposalResults(statesList, pageable))
     }
 
     @GetMapping("$B3TR_PATH_V2/proposals/{proposalId}/results")
@@ -103,7 +100,7 @@ open class ProposalController(private val proposalService: ProposalService) {
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<ProposalComment> {
         val pageable = toPageable(page, size, direction, ProposalComment::blockNumber.name)
-        val result = proposalService.getComments(proposalId.value, support, pageable)
+        val result = proposalService.getComments(proposalId.value, null, support, pageable)
         return paginatedResponse(result)
     }
 
@@ -125,20 +122,12 @@ open class ProposalController(private val proposalService: ProposalService) {
     ): PaginatedResponse<ProposalComment> {
         val pageable = toPageable(page, size, direction, ProposalComment::blockNumber.name)
         val result =
-            if (proposalId != null) {
-                proposalService.getComments(
-                    proposalId = proposalId.value,
-                    voter = wallet.value,
-                    support = support,
-                    pageable = pageable,
-                )
-            } else {
-                proposalService.getCommentsForVoter(
-                    voter = wallet.value,
-                    support = support,
-                    pageable = pageable,
-                )
-            }
+            proposalService.getComments(
+                proposalId = proposalId?.value,
+                voter = wallet.value,
+                support = support,
+                pageable = pageable,
+            )
         return paginatedResponse(result)
     }
 }

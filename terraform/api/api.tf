@@ -902,12 +902,8 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.vevote-historic
     },
     {
-      name  = "VERSION_B3TR_PROPOSAL_COMMENTS"
-      value = each.value.indexer.version.b3tr-proposal-comments
-    },
-    {
-      name  = "VERSION_B3TR_PROPOSAL_RESULTS"
-      value = each.value.indexer.version.b3tr-proposal-results
+      name  = "VERSION_B3TR_PROPOSAL"
+      value = each.value.indexer.version.b3tr-proposal
     },
     {
       name  = "VERSION_B3TR_CHALLENGES"

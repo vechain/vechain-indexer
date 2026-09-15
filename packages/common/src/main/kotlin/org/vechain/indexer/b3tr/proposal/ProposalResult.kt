@@ -2,19 +2,11 @@ package org.vechain.indexer.b3tr.proposal
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import java.math.BigInteger
-import org.springframework.boot.context.properties.bind.ConstructorBinding
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
-import org.vechain.indexer.IndexerNames
-import org.vechain.indexer.VersionedDocument
+import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.b3tr.voting.Support
 
-@Document(collection = IndexerNames.PROPOSAL_RESULT.COLLECTION)
-data class ProposalResult
-@ConstructorBinding
-constructor(
-    @Id val proposalId: String,
-    @JsonIgnore override val version: Int,
+data class ProposalResult(
+    val proposalId: String,
     @JsonIgnore override val blockId: String,
     @JsonIgnore override val blockNumber: Long,
     @JsonIgnore override val blockTimestamp: Long,
@@ -23,9 +15,7 @@ constructor(
     val state: ProposalState,
     val results: VoteResults?,
     val description: String,
-) : VersionedDocument {
-    @JsonIgnore override fun getDocumentId(): String = proposalId
-
+) : IndexedDocument {
     // Convert to deprecated format
     fun toDeprecated(): List<ProposalResultDeprecated> =
         results?.let {
@@ -68,7 +58,7 @@ data class ProposalResultDeprecated(
 )
 
 // ProposalState enum to store the state of a proposal
-// Serialized as string in both MongoDB and JSON API responses
+// Serialized as string in both the database and JSON API responses
 enum class ProposalState {
     Pending,
     Active,

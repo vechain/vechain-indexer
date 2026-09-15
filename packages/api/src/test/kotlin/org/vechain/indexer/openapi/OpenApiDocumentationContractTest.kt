@@ -14,6 +14,8 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.vechain.indexer.b3tr.balance.B3trBalanceReadRepository
 import org.vechain.indexer.b3tr.gm.GmNftReadRepository
+import org.vechain.indexer.b3tr.proposal.ProposalCommentReadRepository
+import org.vechain.indexer.b3tr.proposal.ProposalResultReadRepository
 import org.vechain.indexer.b3tr.treasury.TreasuryTransferReadRepository
 import org.vechain.indexer.b3tr.xAlloc.XAllocResultReadRepository
 import org.vechain.indexer.blocks.BlocksReadRepository
@@ -71,6 +73,8 @@ class OpenApiDocumentationContractTest {
     @MockitoBean private lateinit var nftHoldersReadRepository: NftHoldersReadRepository
     @MockitoBean
     private lateinit var historicProposalsReadRepository: HistoricProposalsReadRepository
+    @MockitoBean private lateinit var proposalResultReadRepository: ProposalResultReadRepository
+    @MockitoBean private lateinit var proposalCommentReadRepository: ProposalCommentReadRepository
     @MockitoBean private lateinit var vevoteCommentReadRepository: VeVoteCommentReadRepository
     @MockitoBean private lateinit var vevoteResultReadRepository: VeVoteResultReadRepository
 

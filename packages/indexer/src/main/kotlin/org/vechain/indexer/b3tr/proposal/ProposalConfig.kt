@@ -11,12 +11,13 @@ import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("b3tr", "b3tr-proposal", "b3tr-proposal-comments")
-open class ProposalCommentConfig {
+@Profile("b3tr", "b3tr-proposal")
+open class ProposalConfig {
+
     @Bean
-    open fun proposalCommentIndexer(
+    open fun proposalIndexer(
         thorClient: ThorClient,
-        processor: ProposalCommentProcessor,
+        processor: ProposalProcessor,
         @Value("\${indexer.start-block.b3tr-proposal}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${business-event.substitutions.B3TR_GOVERNOR_CONTRACT}")
@@ -24,14 +25,15 @@ open class ProposalCommentConfig {
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.PROPOSAL_COMMENT.NAME)
+            .name(IndexerNames.PROPOSAL.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
             .businessEvents("business-events/b3tr", "abis/b3tr")
-            .businessEventNames(listOf("B3TR_ProposalVote"))
+            .businessEventNames(listOf("B3TR_ProposalCreated", "B3TR_ProposalVote"))
             .businessEventContracts(listOf(b3trGovernorContract))
             .businessEventSubstitutionParams(bEProperties.substitutions)
+            .excludeVetTransfers()
             .build()
 }
