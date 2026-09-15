@@ -92,14 +92,9 @@ object IndexerNames {
         const val COLLECTION = "b3tr_user_action_summaries_round"
     }
 
-    object VEVOTE_COMMENT {
-        const val NAME = "VeVoteCommentIndexer"
-        const val COLLECTION = "vevote_proposal_comments"
-    }
-
-    object VEVOTE_RESULT {
-        const val NAME = "VeVoteResultIndexer"
-        const val COLLECTION = "vevote_proposal_results"
+    object VEVOTE {
+        const val NAME = "VeVoteIndexer"
+        const val COLLECTION = "vevote"
     }
 
     object STARGATE_STAKING {

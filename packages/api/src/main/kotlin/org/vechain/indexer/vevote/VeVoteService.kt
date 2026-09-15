@@ -4,74 +4,19 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Service
-import org.vechain.indexer.thor.HexUtils
+import org.vechain.indexer.utils.PaginationUtils.offsetSlice
 
-@Profile("vevote", "vevote-comments")
+@Profile("vevote")
 @Service
-open class VeVoteService(private val vevoteCommentRepository: VevoteCommentRepository) {
-    /** Get comments for a specific proposal. */
-    open fun getCommentsByProposalId(
-        proposalId: String,
+open class VeVoteService(private val repository: VeVoteCommentReadRepository) {
+    /** Comments, narrowed by any of proposal, voter and support. */
+    open fun getComments(
+        proposalId: String?,
+        voter: String?,
+        support: Support?,
         pageable: Pageable,
     ): Slice<VeVoteProposalComment> =
-        vevoteCommentRepository.findAllByProposalId(proposalId, pageable)
-
-    /** Get comments by a specific voter. */
-    open fun getCommentsByVoter(voter: String, pageable: Pageable): Slice<VeVoteProposalComment> =
-        vevoteCommentRepository.findAllByVoter(HexUtils.normalise(voter), pageable)
-
-    /** Get comments for a specific proposal and voter. */
-    open fun getCommentsByProposalAndVoter(
-        proposalId: String,
-        voter: String,
-        pageable: Pageable,
-    ): Slice<VeVoteProposalComment> =
-        vevoteCommentRepository.findAllByProposalIdAndVoter(
-            proposalId,
-            HexUtils.normalise(voter),
-            pageable,
-        )
-
-    /** Get comments that contain a specific support. */
-    open fun getCommentsBySupport(
-        support: Support,
-        pageable: Pageable,
-    ): Slice<VeVoteProposalComment> = vevoteCommentRepository.findAllBySupport(support, pageable)
-
-    /** Get comments for a specific proposal that contain a specific support. */
-    open fun getCommentsByProposalAndSupport(
-        proposalId: String,
-        support: Support,
-        pageable: Pageable,
-    ): Slice<VeVoteProposalComment> {
-        println(support)
-        println(proposalId)
-        return vevoteCommentRepository.findAllByProposalIdAndSupport(proposalId, support, pageable)
-    }
-
-    /** Get comments by a specific voter that contain a specific support. */
-    open fun getCommentsByVoterAndSupport(
-        voter: String,
-        support: Support,
-        pageable: Pageable,
-    ): Slice<VeVoteProposalComment> =
-        vevoteCommentRepository.findAllByVoterAndSupport(
-            HexUtils.normalise(voter),
-            support,
-            pageable,
-        )
-
-    /** Get comments for a specific proposal and voter that contain a specific support. */
-    open fun getCommentsByProposalAndVoterAndSupport(
-        proposalId: String,
-        voter: String,
-        support: Support,
-        pageable: Pageable,
-    ): Slice<VeVoteProposalComment> =
-        vevoteCommentRepository.findAllByProposalIdAndVoterAndSupport(
-            proposalId,
-            HexUtils.normalise(voter),
-            support,
-            pageable,
-        )
+        offsetSlice(pageable, VeVoteProposalComment::blockNumber.name) { offset, limit, direction ->
+            repository.find(proposalId, voter, support, offset, limit, direction)
+        }
 }

@@ -878,12 +878,8 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.nft-blacklist
     },
     {
-      name  = "VERSION_VEVOTE_COMMENTS"
-      value = each.value.indexer.version.vevote-comments
-    },
-    {
-      name  = "VERSION_VEVOTE_RESULTS"
-      value = each.value.indexer.version.vevote-results
+      name  = "VERSION_VEVOTE"
+      value = each.value.indexer.version.vevote
     },
     {
       name  = "VERSION_STARGATE_VTHO_CLAIMED"

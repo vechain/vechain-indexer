@@ -3,7 +3,6 @@ package org.vechain.indexer.vevote
 import io.swagger.v3.oas.annotations.*
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
-import org.springframework.data.domain.Slice
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.VEVOTE_PATH
@@ -21,7 +20,7 @@ import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validation.ValidProposalId
 
-@Profile("vevote", "vevote-results")
+@Profile("vevote")
 @Tag(name = "VeVote", description = "Indexer API for VeVote.")
 @Validated
 @RestController
@@ -45,21 +44,12 @@ open class VeVoteResultController(private val resultService: VeVoteResultsServic
             throw BadRequestException("Either a proposalId or support must be provided")
         }
 
-        val pageable = toPageable(page, size, direction, VeVoteProposalResult::blockNumber.name)
-
-        val result: Slice<VeVoteProposalResult> =
-            when {
-                proposalId != null && support != null ->
-                    resultService.getResultsByProposalIdAndSupport(
-                        proposalId.value,
-                        support,
-                        pageable,
-                    )
-                proposalId != null ->
-                    resultService.getResultsByProposalId(proposalId.value, pageable)
-                else -> resultService.getResultsBySupport(support!!, pageable)
-            }
-
-        return paginatedResponse(result)
+        return paginatedResponse(
+            resultService.getResults(
+                proposalId?.value,
+                support,
+                toPageable(page, size, direction, VeVoteProposalResult::blockNumber.name),
+            )
+        )
     }
 }

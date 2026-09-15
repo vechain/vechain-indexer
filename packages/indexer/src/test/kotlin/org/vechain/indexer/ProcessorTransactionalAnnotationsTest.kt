@@ -50,6 +50,8 @@ import org.vechain.indexer.validator.ValidatorBlockProcessor
 import org.vechain.indexer.validator.ValidatorBlockService
 import org.vechain.indexer.validator.ValidatorProcessor
 import org.vechain.indexer.validator.ValidatorService
+import org.vechain.indexer.vevote.VeVoteProcessor
+import org.vechain.indexer.vevote.VeVoteWriteRepository
 
 class ProcessorTransactionalAnnotationsTest {
 
@@ -89,6 +91,10 @@ class ProcessorTransactionalAnnotationsTest {
                         List::class.java,
                     ),
                 TreasuryTransferService::class.java.getDeclaredMethod("save", List::class.java),
+                // The vevote indexer saves its two tables from the repository, not a service.
+                VeVoteWriteRepository::class
+                    .java
+                    .getDeclaredMethod("save", List::class.java, List::class.java),
                 XAllocResultService::class.java.getDeclaredMethod("save", List::class.java),
                 HistoryService::class.java.getDeclaredMethod("save", List::class.java),
                 ValidatorService::class.java.getDeclaredMethod("save", List::class.java),
@@ -126,6 +132,7 @@ class ProcessorTransactionalAnnotationsTest {
                 GmNftProcessor::class.java,
                 B3trBalanceProcessor::class.java,
                 TreasuryTransferProcessor::class.java,
+                VeVoteProcessor::class.java,
                 XAllocResultProcessor::class.java,
                 HistoryProcessor::class.java,
                 ValidatorProcessor::class.java,
