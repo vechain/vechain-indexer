@@ -228,16 +228,34 @@ class NavigatorRepositoryTest {
     fun `the writer finds the exits that fall due, their citizens and the fees a block touches`() {
         assertTrue(writer.findExpiredExits(39).isEmpty())
         assertEquals(listOf(navB), writer.findExpiredExits(40).map { it.address })
-        assertEquals(listOf(citizen2), writer.findActiveCitizens(setOf(navB)).map { it.address })
+        assertEquals(
+            listOf(citizen2),
+            writer.findActiveCitizens(setOf(navB), 40).map { it.address },
+        )
         assertEquals(
             BigDecimal("5"),
-            writer.findCurrentFees(setOf(navA to 1)).single().claimedAmount,
+            writer.findCurrentFees(setOf(navA to 1), 40).single().claimedAmount,
         )
         assertEquals(
             setOf(navA, navC),
-            writer.findCurrentNavigators(setOf(navA, navC)).map { it.address }.toSet(),
+            writer.findCurrentNavigators(setOf(navA, navC), 40).map { it.address }.toSet(),
         )
-        assertEquals(BigDecimal.TEN, writer.findCurrentCitizens(setOf(citizen1)).single().amount)
+        assertEquals(
+            BigDecimal.TEN,
+            writer.findCurrentCitizens(setOf(citizen1), 40).single().amount,
+        )
+    }
+
+    @Test
+    @Order(1)
+    fun `a replayed block reads the state its first run started from`() {
+        val before = writer.findCurrentNavigators(setOf(navB, navC), 30)
+        assertEquals(setOf(NavigatorStatus.ACTIVE), before.map { it.status }.toSet())
+        assertEquals(setOf(10L), before.map { it.blockNumber }.toSet())
+        assertTrue(writer.findCurrentCitizens(setOf(citizen2), 30).isEmpty())
+        assertNull(writer.findCurrentFees(setOf(navA to 1), 30).single().claimedAmount)
+        assertEquals(listOf(navB), writer.findExpiredExits(45).map { it.address })
+        assertTrue(writer.findExpiredExits(30).isEmpty())
     }
 
     @Test

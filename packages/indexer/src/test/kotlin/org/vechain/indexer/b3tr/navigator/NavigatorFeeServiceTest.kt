@@ -30,7 +30,7 @@ internal class NavigatorFeeServiceTest {
 
     @BeforeEach
     fun setUp() {
-        every { repository.findCurrentFees(any()) } returns emptyList()
+        every { repository.findCurrentFees(any(), any()) } returns emptyList()
         service = NavigatorFeeService(repository)
     }
 
@@ -81,7 +81,7 @@ internal class NavigatorFeeServiceTest {
 
     @Test
     fun `a deposit builds on the stored row and keeps when it was first deposited`() {
-        every { repository.findCurrentFees(setOf(nav to 5)) } returns listOf(stored("1000"))
+        every { repository.findCurrentFees(setOf(nav to 5), any()) } returns listOf(stored("1000"))
 
         val row = service.processBlock(block, listOf(event(FEE_DEPOSITED, "5", "250"))).single()
 
@@ -92,7 +92,7 @@ internal class NavigatorFeeServiceTest {
 
     @Test
     fun `a claim records what was paid and when`() {
-        every { repository.findCurrentFees(setOf(nav to 5)) } returns listOf(stored("1000"))
+        every { repository.findCurrentFees(setOf(nav to 5), any()) } returns listOf(stored("1000"))
 
         val row = service.processBlock(block, listOf(event(FEE_CLAIMED, "5", "1000"))).single()
 

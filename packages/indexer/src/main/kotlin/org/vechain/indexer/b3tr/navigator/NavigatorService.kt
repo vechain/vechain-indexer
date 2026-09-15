@@ -34,7 +34,7 @@ open class NavigatorService(private val repository: NavigatorWriteRepository) {
         val expired = repository.findExpiredExits(block.blockNumber)
         if (relevant.isEmpty() && expired.isEmpty()) return NavigatorUpdate()
 
-        val ledger = load(relevant, expired)
+        val ledger = load(relevant, expired, block.blockNumber)
         expired.forEach { deactivate(ledger.navigators.getValue(it.address), block, ledger) }
         relevant.forEach { apply(it, block, ledger) }
         return NavigatorUpdate(
@@ -44,7 +44,7 @@ open class NavigatorService(private val repository: NavigatorWriteRepository) {
     }
 
     // A navigator that ends this block takes its active citizens with it, so they load too.
-    private fun load(events: List<IndexedEvent>, expired: List<Navigator>): Ledger {
+    private fun load(events: List<IndexedEvent>, expired: List<Navigator>, block: Long): Ledger {
         val navigators = events.map { it.requireAddressParam("navigator") }.toSet()
         val ending =
             expired.map { it.address }.toSet() +
@@ -60,9 +60,10 @@ open class NavigatorService(private val repository: NavigatorWriteRepository) {
                 .toSet()
         val loaded = expired.map { it.address }.toSet()
         return Ledger(
-            navigators = expired + repository.findCurrentNavigators(navigators - loaded),
+            navigators = expired + repository.findCurrentNavigators(navigators - loaded, block),
             citizens =
-                repository.findActiveCitizens(ending) + repository.findCurrentCitizens(citizens),
+                repository.findActiveCitizens(ending, block) +
+                    repository.findCurrentCitizens(citizens, block),
         )
     }
 
