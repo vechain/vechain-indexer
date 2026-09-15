@@ -32,6 +32,7 @@ import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedReadRepository
 import org.vechain.indexer.validator.DelegationReadRepository
 import org.vechain.indexer.validator.ValidatorBlockReadRepository
 import org.vechain.indexer.validator.ValidatorReadRepository
+import org.vechain.indexer.vevote.HistoricProposalsReadRepository
 import org.vechain.indexer.vevote.VeVoteCommentReadRepository
 import org.vechain.indexer.vevote.VeVoteResultReadRepository
 import strikt.api.expectThat
@@ -68,6 +69,8 @@ class OpenApiDocumentationContractTest {
     @MockitoBean private lateinit var vthoClaimedReadRepository: VthoClaimedReadRepository
     @MockitoBean private lateinit var vetStakedReadRepository: VetStakedReadRepository
     @MockitoBean private lateinit var nftHoldersReadRepository: NftHoldersReadRepository
+    @MockitoBean
+    private lateinit var historicProposalsReadRepository: HistoricProposalsReadRepository
     @MockitoBean private lateinit var vevoteCommentReadRepository: VeVoteCommentReadRepository
     @MockitoBean private lateinit var vevoteResultReadRepository: VeVoteResultReadRepository
 

@@ -27,7 +27,7 @@ import org.vechain.indexer.validation.ValidPageSize
 @Tag(name = "VeVote Historic Proposals", description = "Query VeVote Historic Proposals")
 @Validated
 @RestController
-@Profile("vevote", "vevote-historic-proposals")
+@Profile("vevote", "vevote-historic")
 @RequestMapping(VEVOTE_PATH)
 open class HistoricController(private val historicApiService: HistoricApiService) {
     @GetMapping("/historic-proposals")

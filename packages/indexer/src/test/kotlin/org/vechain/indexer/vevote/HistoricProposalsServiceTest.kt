@@ -13,6 +13,7 @@ import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.thor.model.InspectionResult
+import org.vechain.indexer.utils.ParamUtils.getAsString
 import strikt.api.expectThat
 import strikt.assertions.*
 
@@ -34,7 +35,6 @@ internal class HistoricProposalsServiceTest {
         service =
             HistoricProposalsService(
                 thorClient = thorClient,
-                repository = mockk(relaxed = true),
                 steeringCommitteeAddress = "0x7e54f0790153647ec0651c35ced28171adb5d44a",
                 allStakeholdersAddress = "0xa6416a72f816d3a69f33d0814700545c8e3fe4be",
                 testProposalsProps = props,
@@ -48,6 +48,40 @@ internal class HistoricProposalsServiceTest {
         val result = service.processNewProposals(emptyList())
         expectThat(result.size).isEqualTo(0)
     }
+
+    @Test
+    fun `a description names the proposal it belongs to`() {
+        val result =
+            service.processProposalDescription(
+                listOf(
+                    descriptionEvent("0x7e54f0790153647ec0651c35ced28171adb5d44a-7", "ipfs://x"),
+                    descriptionEvent("no separator", "ipfs://y"),
+                    descriptionEvent(
+                        "0x7e54f0790153647ec0651c35ced28171adb5d44a-seven",
+                        "ipfs://z",
+                    ),
+                )
+            )
+
+        expectThat(result)
+            .isEqualTo(
+                listOf(
+                    HistoricProposalDescription(
+                        "0x7e54f0790153647ec0651c35ced28171adb5d44a",
+                        "7",
+                        "ipfs://x",
+                        4510484L,
+                    )
+                )
+            )
+    }
+
+    private fun descriptionEvent(id: String, ipfsHash: String) =
+        mockk<IndexedEvent> {
+            every { params.getAsString("id") } returns id
+            every { params.getAsString("ipfsHash") } returns ipfsHash
+            every { blockNumber } returns 4510484L
+        }
 
     @Test
     fun `extractNewProposalEvent returns null for event with null address`(): Unit = runBlocking {

@@ -1,40 +1,43 @@
 package org.vechain.indexer.vevote
 
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.MongoProcessor
-import org.vechain.indexer.checkpoint.CheckpointService
+import org.vechain.indexer.PostgresIndexerStore
+import org.vechain.indexer.PostgresProcessor
+import org.vechain.indexer.config.CheckpointProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
+import org.vechain.indexer.postgres.IndexerStateRepository
 
-@Profile("vevote", "vevote-historic-proposals")
+@Profile("vevote", "vevote-historic")
 @Component
 open class HistoricProposalsProcessor(
-    private val repository: HistoricProposalsRepository,
-    private val historicProposalsService: HistoricProposalsService,
-    checkpointService: CheckpointService,
+    private val proposalsService: HistoricProposalsService,
+    private val voteService: HistoricProposalsVoteService,
+    private val repository: HistoricProposalsWriteRepository,
+    state: IndexerStateRepository,
+    checkpointProperties: CheckpointProperties,
     processorMetrics: ProcessorMetrics,
+    @Value("\${indexer.version.vevote-historic:1}") version: Int = 1,
 ) :
-    MongoProcessor(
-        repository = repository,
-        indexerName = IndexerNames.HISTORIC_PROPOSALS.NAME,
-        checkpointService = checkpointService,
-        collectionName = IndexerNames.HISTORIC_PROPOSALS.COLLECTION,
-        processorMetrics = processorMetrics,
+    PostgresProcessor(
+        PostgresIndexerStore(
+            IndexerNames.HISTORIC_PROPOSALS.COLLECTION,
+            repository,
+            state,
+            checkpointProperties,
+        ),
+        IndexerNames.HISTORIC_PROPOSALS.NAME,
+        version,
+        processorMetrics,
     ) {
 
     override suspend fun processEntry(entry: IndexingResult) {
-        // No events to process
         if (entry.events().isEmpty()) return
-
-        // Process new proposals or events with their descriptions
-        val proposals: List<HistoricProposals> =
-            historicProposalsService.processEvents(entry.events())
-
-        // Save the results
-        if (proposals.isNotEmpty()) {
-            historicProposalsService.save(proposals)
-        }
+        val (votes, proposalEvents) = entry.events().partition { it.eventType == "NewVote" }
+        val update = proposalsService.processEvents(proposalEvents)
+        repository.save(update.proposals, update.descriptions, voteService.processVotes(votes))
     }
 }

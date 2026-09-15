@@ -6,7 +6,7 @@ import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.utils.ParamUtils.getAsLong
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
-@Profile("vevote", "vevote-historic-proposals")
+@Profile("vevote", "vevote-historic")
 @Service
 open class HistoricProposalsVoteService {
     fun processVotes(events: List<IndexedEvent>): List<HistoricProposalsVote> {
@@ -19,19 +19,18 @@ open class HistoricProposalsVoteService {
                         ?: return@mapNotNull null
                 val encodedChoices = event.params.getAsLong("options") ?: return@mapNotNull null
                 val smartContractAddress = event.address ?: return@mapNotNull null
-                val choices = decodeChoices(encodedChoices)
 
                 HistoricProposalsVote(
-                    id = "$proposalId-$voter-$smartContractAddress",
                     proposalId = proposalId,
                     contract = smartContractAddress,
-                    choices = choices,
+                    voter = voter,
+                    choices = decodeChoices(encodedChoices),
                     blockNumber = event.blockNumber,
                     blockTimestamp = event.blockTimestamp,
                     blockId = event.blockId,
                 )
             }
-            .groupBy { it.id }
+            .groupBy { Triple(it.contract, it.proposalId, it.voter) }
             .mapValues { (_, votes) -> votes.maxBy { it.blockNumber } }
             .values
             .toList()

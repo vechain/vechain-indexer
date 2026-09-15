@@ -50,6 +50,8 @@ import org.vechain.indexer.validator.ValidatorBlockProcessor
 import org.vechain.indexer.validator.ValidatorBlockService
 import org.vechain.indexer.validator.ValidatorProcessor
 import org.vechain.indexer.validator.ValidatorService
+import org.vechain.indexer.vevote.HistoricProposalsProcessor
+import org.vechain.indexer.vevote.HistoricProposalsWriteRepository
 import org.vechain.indexer.vevote.VeVoteProcessor
 import org.vechain.indexer.vevote.VeVoteWriteRepository
 
@@ -95,6 +97,14 @@ class ProcessorTransactionalAnnotationsTest {
                 VeVoteWriteRepository::class
                     .java
                     .getDeclaredMethod("save", List::class.java, List::class.java),
+                HistoricProposalsWriteRepository::class
+                    .java
+                    .getDeclaredMethod(
+                        "save",
+                        List::class.java,
+                        List::class.java,
+                        List::class.java,
+                    ),
                 XAllocResultService::class.java.getDeclaredMethod("save", List::class.java),
                 HistoryService::class.java.getDeclaredMethod("save", List::class.java),
                 ValidatorService::class.java.getDeclaredMethod("save", List::class.java),
@@ -133,6 +143,7 @@ class ProcessorTransactionalAnnotationsTest {
                 B3trBalanceProcessor::class.java,
                 TreasuryTransferProcessor::class.java,
                 VeVoteProcessor::class.java,
+                HistoricProposalsProcessor::class.java,
                 XAllocResultProcessor::class.java,
                 HistoryProcessor::class.java,
                 ValidatorProcessor::class.java,
