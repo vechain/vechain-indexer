@@ -150,7 +150,6 @@ indexer:
     stargate: ${INDEXER_START_BLOCK_STARGATE:0}
     b3tr: ${INDEXER_START_BLOCK_B3TR:0}
     b3tr-challenges: ${INDEXER_START_BLOCK_B3TR_CHALLENGES:0}
-    b3tr-user-challenges: ${INDEXER_START_BLOCK_B3TR_USER_CHALLENGES:0}
     b3tr-treasury: ${INDEXER_START_BLOCK_B3TR_TREASURY:0}
     b3tr-navigator: ${INDEXER_START_BLOCK_B3TR_NAVIGATOR:0}
     b3tr-balance: ${INDEXER_START_BLOCK_B3TR_BALANCE:0}
@@ -194,7 +193,6 @@ indexer:
     vevote-historic: ${VERSION_VEVOTE_HISTORIC:1}
     b3tr-proposal: ${VERSION_B3TR_PROPOSAL:1}
     b3tr-challenges: ${VERSION_B3TR_CHALLENGES:1}
-    b3tr-user-challenges: ${VERSION_B3TR_USER_CHALLENGES:1}
     b3tr-user-all-time-action-summary: ${VERSION_B3TR_USER_ALL_TIME_ACTION_SUMMARY:1}
     b3tr-user-round-action-summary: ${VERSION_B3TR_USER_ROUND_ACTION_SUMMARY:1}
     b3tr-user-daily-action-summary: ${VERSION_B3TR_USER_DAILY_ACTION_SUMMARY:1}

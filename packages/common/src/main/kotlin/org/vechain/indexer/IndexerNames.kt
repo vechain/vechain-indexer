@@ -202,11 +202,6 @@ object IndexerNames {
         const val COLLECTION = "b3tr_challenges"
     }
 
-    object B3TR_USER_CHALLENGES {
-        const val NAME = "B3trUserChallengesIndexer"
-        const val COLLECTION = "b3tr_user_challenges"
-    }
-
     object SAFE {
         const val NAME = "SafeIndexer"
         const val COLLECTION = "safe"

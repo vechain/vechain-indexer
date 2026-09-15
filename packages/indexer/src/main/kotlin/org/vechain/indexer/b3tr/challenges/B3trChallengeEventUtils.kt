@@ -162,7 +162,8 @@ internal object B3trChallengeEventUtils {
     }
 }
 
-internal fun B3trChallenge.toMutableState() =
+/** The document's address lists are member rows now, so the caller brings them. */
+internal fun B3trChallenge.toMutableState(members: Map<ChallengeMemberRole, List<String>>) =
     MutableChallengeState(
         kind = kind,
         visibility = visibility,
@@ -186,14 +187,14 @@ internal fun B3trChallenge.toMutableState() =
         bestScore = bestScore,
         bestCount = bestCount,
         payoutsClaimed = payoutsClaimed,
-        participants = participants.toMutableList(),
-        invited = invited.toMutableList(),
-        declined = declined.toMutableList(),
+        participants = members[ChallengeMemberRole.PARTICIPANT].orEmpty().toMutableList(),
+        invited = members[ChallengeMemberRole.INVITED].orEmpty().toMutableList(),
+        declined = members[ChallengeMemberRole.DECLINED].orEmpty().toMutableList(),
         selectedApps = selectedApps,
-        winners = winners.toMutableList(),
-        eligibleInvitees = eligibleInvitees.toMutableList(),
-        claimedBy = claimedBy.toMutableList(),
-        refundedBy = refundedBy.toMutableList(),
+        winners = members[ChallengeMemberRole.WINNER].orEmpty().toMutableList(),
+        eligibleInvitees = members[ChallengeMemberRole.ELIGIBLE_INVITEE].orEmpty().toMutableList(),
+        claimedBy = members[ChallengeMemberRole.CLAIMED].orEmpty().toMutableList(),
+        refundedBy = members[ChallengeMemberRole.REFUNDED].orEmpty().toMutableList(),
         creatorRefunded = creatorRefunded,
         createdAtBlockNumber = createdAtBlockNumber,
         createdAtBlockTimestamp = createdAtBlockTimestamp,
@@ -202,12 +203,10 @@ internal fun B3trChallenge.toMutableState() =
 
 internal fun MutableChallengeState.toDocument(
     challengeId: Long,
-    version: Int,
     latestEvent: IndexedEvent,
     runtimeState: ChallengeRuntimeState,
 ) =
     B3trChallenge(
-        version = version,
         blockId = latestEvent.blockId,
         blockNumber = latestEvent.blockNumber,
         blockTimestamp = latestEvent.blockTimestamp,
