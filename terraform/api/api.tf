@@ -510,10 +510,6 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.vet-delegated-by-block
     },
     {
-      name  = "INDEXER_START_BLOCK_ACCOUNT_TOTALS_SERIES"
-      value = each.value.indexer.start-block.account-totals-series
-    },
-    {
       name  = "INDEXER_START_BLOCK_SAFE"
       value = each.value.indexer.start-block.safe
     },
@@ -670,12 +666,8 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.delegation
     },
     {
-      name  = "VERSION_ACCOUNT_TOTALS_SERIES"
-      value = each.value.indexer.version.account-totals-series
-    },
-    {
-      name  = "VERSION_ACCOUNT_OVERVIEW"
-      value = each.value.indexer.version.account-overview
+      name  = "VERSION_ACCOUNTS"
+      value = each.value.indexer.version.accounts
     },
     {
       name  = "VERSION_B3TR_BALANCE"
@@ -684,10 +676,6 @@ module "ecs-backend-service" {
     {
       name  = "VERSION_CONTRACTS"
       value = each.value.indexer.version.contracts
-    },
-    {
-      name  = "VERSION_VET_BALANCE"
-      value = each.value.indexer.version.vet-balance
     },
     {
       name  = "MIN_COMMENT_LEN"

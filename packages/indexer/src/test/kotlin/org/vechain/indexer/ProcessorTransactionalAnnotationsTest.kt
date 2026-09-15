@@ -4,7 +4,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.accounts.AccountTotalsSeriesProcessor
+import org.vechain.indexer.accounts.AccountsProcessor
+import org.vechain.indexer.accounts.AccountsUpdate
+import org.vechain.indexer.accounts.AccountsWriteRepository
 import org.vechain.indexer.b3tr.action.ActionProcessor
 import org.vechain.indexer.b3tr.action.ActionSummaryUpdate
 import org.vechain.indexer.b3tr.action.ActionWriteRepository
@@ -79,11 +81,6 @@ class ProcessorTransactionalAnnotationsTest {
     }
 
     @Test
-    fun `account totals series processor rollback keeps transactional semantics`() {
-        assertRollbackIsTransactional(AccountTotalsSeriesProcessor::class.java)
-    }
-
-    @Test
     fun `postgres processor rollback and service save name the postgres transaction manager`() {
         val rollback =
             PostgresProcessor::class.java.getDeclaredMethod("rollback", java.lang.Long.TYPE)
@@ -95,6 +92,18 @@ class ProcessorTransactionalAnnotationsTest {
                 ContractService::class.java.getDeclaredMethod("save", List::class.java),
                 GmNftService::class.java.getDeclaredMethod("save", List::class.java),
                 B3trBalanceService::class.java.getDeclaredMethod("save", List::class.java),
+                // The accounts indexer saves its four tables from the repository, not a service.
+                AccountsWriteRepository::class
+                    .java
+                    .getDeclaredMethod("save", AccountsUpdate::class.java),
+                AccountsWriteRepository::class
+                    .java
+                    .getDeclaredMethod(
+                        "settlePassiveVtho",
+                        String::class.java,
+                        java.lang.Long.TYPE,
+                        java.lang.Long.TYPE,
+                    ),
                 // The explorer indexer saves its three tables from the repository, not a service.
                 ExplorerWriteRepository::class
                     .java
@@ -165,6 +174,7 @@ class ProcessorTransactionalAnnotationsTest {
             )
         val processors =
             listOf(
+                AccountsProcessor::class.java,
                 BlocksProcessor::class.java,
                 NftBlacklistProcessor::class.java,
                 NftProcessor::class.java,
@@ -224,11 +234,6 @@ class ProcessorTransactionalAnnotationsTest {
             assertTransactional(transactional)
             assertEquals(PostgresConfig.TRANSACTION_MANAGER, transactional!!.transactionManager)
         }
-    }
-
-    private fun assertRollbackIsTransactional(processorClass: Class<*>) {
-        val rollbackMethod = processorClass.getDeclaredMethod("rollback", java.lang.Long.TYPE)
-        assertTransactional(rollbackMethod.getAnnotation(Transactional::class.java))
     }
 
     private fun assertTransactional(transactional: Transactional?) {

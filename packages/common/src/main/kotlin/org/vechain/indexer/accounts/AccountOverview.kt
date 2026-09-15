@@ -4,21 +4,17 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonView
 import java.math.BigInteger
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
-import org.vechain.indexer.IndexerNames
-import org.vechain.indexer.VersionedDocument
+import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.thor.model.Views
 
-@Document(collection = IndexerNames.ACCOUNT_OVERVIEW.COLLECTION)
+/** An address's running totals as of [blockNumber]; the current row is the one not superseded. */
 @JsonView(Views.Public::class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class AccountOverview(
-    @Id val address: String,
+    val address: String,
     @JsonIgnore override val blockId: String,
     @JsonIgnore override val blockNumber: Long,
     @JsonIgnore override val blockTimestamp: Long,
-    @JsonIgnore @field:JsonView(Views.Internal::class) override val version: Int,
     val firstSeen: Long,
     var lastSeen: Long,
     var transactionsSent: Long = 0L,
@@ -31,8 +27,6 @@ data class AccountOverview(
     var vetBalance: BigInteger = BigInteger.ZERO,
     var vthoBlockRewards: BigInteger = BigInteger.ZERO,
     var vthoPassiveGeneration: BigInteger = BigInteger.ZERO,
-    /** Timestamp when passive VTHO was last settled (for calculating time-based generation) */
+    /** When passive VTHO was last credited, which the time-based generation counts from. */
     @JsonIgnore var lastVthoSettlement: Long? = null,
-) : VersionedDocument {
-    @JsonIgnore override fun getDocumentId(): String = address
-}
+) : IndexedDocument

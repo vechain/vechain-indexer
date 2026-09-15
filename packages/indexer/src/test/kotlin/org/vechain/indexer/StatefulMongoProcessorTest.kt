@@ -66,14 +66,13 @@ class StatefulMongoProcessorTest {
                 mongoTemplate,
                 checkpointService,
                 mockk(relaxed = true),
-                IndexerNames.ACCOUNT_OVERVIEW.COLLECTION,
+                OTHER_COLLECTION,
             )
 
-        every { checkpointService.saveCheckpoint(IndexerNames.ACCOUNT_OVERVIEW.COLLECTION, 9) } just
-            Runs
+        every { checkpointService.saveCheckpoint(OTHER_COLLECTION, 9) } just Runs
         every {
             InlineVersionService.rollback(
-                IndexerNames.ACCOUNT_OVERVIEW.COLLECTION,
+                OTHER_COLLECTION,
                 10,
                 mongoTemplate,
                 1,
@@ -83,11 +82,11 @@ class StatefulMongoProcessorTest {
         processor.rollback(10)
 
         verify(exactly = 1) {
-            checkpointService.saveCheckpoint(IndexerNames.ACCOUNT_OVERVIEW.COLLECTION, 9)
+            checkpointService.saveCheckpoint(OTHER_COLLECTION, 9)
         }
         verify(exactly = 1) {
             InlineVersionService.rollback(
-                IndexerNames.ACCOUNT_OVERVIEW.COLLECTION,
+                OTHER_COLLECTION,
                 10,
                 mongoTemplate,
                 1,
@@ -128,6 +127,7 @@ class StatefulMongoProcessorTest {
     }
 
     companion object {
+        private const val OTHER_COLLECTION = "other_collection"
         private const val TEST_INDEXER_NAME = "TestStatefulIndexer"
         private const val TEST_COLLECTION = "test_collection"
     }

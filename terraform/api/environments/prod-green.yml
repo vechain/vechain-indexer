@@ -109,7 +109,6 @@ enabled_nets:
         vtho-claimed: "22044000"
         stargate-staking: "22083535"
         vet-delegated-by-block: "23415238"
-        account-totals-series: "0"
         safe: "24713855"
       sync-log-interval: "10"
       channel-batch-size: "5"
@@ -128,7 +127,6 @@ enabled_nets:
       version:
         blocks: "1"
         contracts: "6"
-        vet-balance: "3"
         nfts: "6"
         transfers: "4"
         history: "4"
@@ -153,8 +151,7 @@ enabled_nets:
         stargate-token: "15"
         token-rewards: "12"
         delegation: "18"
-        account-totals-series: "3"
-        account-overview: "7"
+        accounts: "1"
         b3tr-balance: "6"
         safe: "1"
       business-event:
@@ -285,7 +282,6 @@ enabled_nets:
         vtho-claimed: "23188260"
         stargate-staking: "23188723"
         vet-delegated-by-block: "23222700"
-        account-totals-series: "0"
         safe: "24762886"
       sync-log-interval: "10"
       channel-batch-size: "5"
@@ -304,7 +300,6 @@ enabled_nets:
       version:
         blocks: "1"
         contracts: "6"
-        vet-balance: "3"
         nfts: "6"
         transfers: "4"
         history: "4"
@@ -329,8 +324,7 @@ enabled_nets:
         stargate-token: "16"
         token-rewards: "11"
         delegation: "17"
-        account-totals-series: "3"
-        account-overview: "7"
+        accounts: "1"
         b3tr-balance: "6"
         safe: "1"
       business-event:

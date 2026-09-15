@@ -4,10 +4,6 @@ import java.math.BigInteger
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.accounts.TimeFrame
-import org.vechain.indexer.explorer.TimestampUtils.isDaily
-import org.vechain.indexer.explorer.TimestampUtils.isHourly
-import org.vechain.indexer.explorer.TimestampUtils.isMonthly
-import org.vechain.indexer.explorer.TimestampUtils.isWeekly
 import org.vechain.indexer.thor.HexUtils.toBigInteger
 import org.vechain.indexer.thor.model.Block
 
@@ -131,12 +127,7 @@ open class BlockUsageService(private val repository: ExplorerWriteRepository) {
 
     /** The boundaries [to] is the first block past since [from]. */
     internal fun timeFrames(from: Long, to: Long): List<TimeFrame> =
-        listOfNotNull(
-            TimeFrame.HOUR.takeIf { isHourly(from, to) },
-            TimeFrame.DAY.takeIf { isDaily(from, to) },
-            TimeFrame.WEEK.takeIf { isWeekly(from, to) },
-            TimeFrame.MONTH.takeIf { isMonthly(from, to) },
-        )
+        TimestampUtils.timeFrames(from, to)
 
     /**
      * Parse base fee per gas from hex string to BigInteger.

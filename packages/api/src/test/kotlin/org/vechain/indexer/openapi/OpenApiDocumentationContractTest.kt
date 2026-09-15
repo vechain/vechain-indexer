@@ -12,6 +12,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.vechain.indexer.accounts.AccountOverviewReadRepository
+import org.vechain.indexer.accounts.AccountTotalsReadRepository
+import org.vechain.indexer.accounts.VetBalanceReadRepository
 import org.vechain.indexer.b3tr.action.ActionReadRepository
 import org.vechain.indexer.b3tr.balance.B3trBalanceReadRepository
 import org.vechain.indexer.b3tr.challenges.ChallengeReadRepository
@@ -62,6 +65,9 @@ class OpenApiDocumentationContractTest {
     @MockitoBean private lateinit var gmNftReadRepository: GmNftReadRepository
     @MockitoBean private lateinit var b3trBalanceReadRepository: B3trBalanceReadRepository
     @MockitoBean private lateinit var actionReadRepository: ActionReadRepository
+    @MockitoBean private lateinit var accountOverviewReadRepository: AccountOverviewReadRepository
+    @MockitoBean private lateinit var accountTotalsReadRepository: AccountTotalsReadRepository
+    @MockitoBean private lateinit var vetBalanceReadRepository: VetBalanceReadRepository
     @MockitoBean private lateinit var blockUsageReadRepository: BlockUsageReadRepository
     @MockitoBean private lateinit var averageFeesReadRepository: AverageFeesPerUserReadRepository
     @MockitoBean private lateinit var treasuryReadRepository: TreasuryTransferReadRepository

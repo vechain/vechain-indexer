@@ -5,7 +5,6 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
@@ -14,17 +13,17 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
-import org.vechain.indexer.accounts.repository.AccountTotalsSeriesRepository
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 import org.vechain.indexer.thor.Address
+import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @ExtendWith(MockKExtension::class)
 class AccountTotalsSeriesServiceTest {
-    @MockK lateinit var repository: AccountTotalsSeriesRepository
+    @MockK lateinit var repository: AccountsWriteRepository
 
     private lateinit var service: AccountTotalsSeriesService
 
@@ -32,39 +31,38 @@ class AccountTotalsSeriesServiceTest {
     fun setUp() {
         MockKAnnotations.init(this)
         service = AccountTotalsSeriesService(repository)
+        every { repository.findSeen(any()) } returns emptySet()
     }
 
     @Test
-    fun `getPreviousSeries returns null for genesis block`() {
-        val result = service.getPreviousSeries(0L)
-        assertNull(result)
+    fun `previousTotals is null for the genesis block`() {
+        assertNull(service.previousTotals(0L))
     }
 
     @Test
-    fun `getPreviousSeries queries repository for non-genesis block`() {
-        val previousSeries = createSeries(blockNumber = 99L, blockTimestamp = 1_526_403_590L)
-        every {
-            repository.findFirstByRecordTypeAndBlockNumberLessThanOrderByBlockNumberDesc(
-                AccountTotalsSeriesRecordType.SERIES,
-                100L,
-            )
-        } returns previousSeries
+    fun `previousTotals reads the schema until a row has been saved`() {
+        val previous = totals(blockNumber = 90L, blockTimestamp = 1_526_403_590L)
+        every { repository.findTotalsBefore(any()) } returns previous
 
-        val result = service.getPreviousSeries(100L)
+        assertEquals(previous, service.previousTotals(100L))
+        verify(exactly = 1) { repository.findTotalsBefore(100L) }
 
-        assertEquals(previousSeries, result)
-        verify(exactly = 1) {
-            repository.findFirstByRecordTypeAndBlockNumberLessThanOrderByBlockNumberDesc(
-                AccountTotalsSeriesRecordType.SERIES,
-                100L,
-            )
-        }
+        service.saved(totals(blockNumber = 99L, blockTimestamp = 1_526_403_600L))
+        assertEquals(99L, service.previousTotals(100L)?.blockNumber)
+        assertEquals(previous, service.previousTotals(99L))
+
+        service.resetCache()
+        assertEquals(previous, service.previousTotals(100L))
+        verify(exactly = 3) { repository.findTotalsBefore(any()) }
     }
 
     @Test
-    fun `validatePreviousSeries throws when previous record is missing`() {
+    fun `processBlock refuses a block whose predecessor was never written`() {
+        every { repository.findTotalsBefore(100L) } returns null
+        val block = BlockFixtures.BLOCK_NO_CLAUSES.copy(number = 100L)
+
         val exception =
-            assertThrows<IllegalArgumentException> { service.validatePreviousSeries(null, 100L) }
+            assertThrows<IllegalArgumentException> { service.processBlock(block, emptyList()) }
 
         assertTrue(
             exception.message!!.contains(
@@ -74,79 +72,56 @@ class AccountTotalsSeriesServiceTest {
     }
 
     @Test
-    fun `validatePreviousSeries allows genesis without previous record`() {
-        assertDoesNotThrow { service.validatePreviousSeries(null, 0L) }
-    }
-
-    @Test
-    fun `processBlock creates genesis cumulative record and account markers`() {
-        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
+    fun `the genesis block opens every period and counts each address it names`() {
         val block = BlockFixtures.BLOCK_RANDOM_TX.copy(number = 0L, id = "0xgenesis")
-        val expectedIds = extractExpectedAccountIds(block, emptyList())
+        val expected = extractExpectedAccountIds(block, emptyList())
 
-        val records = service.processBlock(block, emptyList())
-        val series = records.last()
-        val markers = records.dropLast(1)
+        val update = service.processBlock(block, emptyList())
 
-        assertEquals(expectedIds.size.toLong(), series.totalAccounts)
-        assertEquals(expectedIds.size, markers.size)
-        assertTrue(series.isHourly == true)
-        assertTrue(series.isDaily == true)
-        assertTrue(series.isWeekly == true)
-        assertTrue(series.isMonthly == true)
-        assertTrue(markers.all { it.recordType == AccountTotalsSeriesRecordType.ACCOUNT })
+        assertEquals(expected, update.newAccounts.toSet())
+        assertEquals(expected.size.toLong(), update.totals?.totalAccounts)
+        assertEquals(
+            listOf(TimeFrame.HOUR, TimeFrame.DAY, TimeFrame.WEEK, TimeFrame.MONTH),
+            update.totals?.timeFrames,
+        )
     }
 
     @Test
-    fun `processBlock increments only for newly discovered accounts`() {
+    fun `processBlock counts only the addresses not yet seen`() {
         val block =
             BlockFixtures.BLOCK_RANDOM_TX.copy(number = 1L, id = "0x1", timestamp = 1_526_404_810L)
-        val previousSeries =
-            createSeries(blockNumber = 0L, blockTimestamp = 1_526_403_590L, totalAccounts = 10L)
-        val expectedIds = extractExpectedAccountIds(block, emptyList())
-        val existingId = expectedIds.first()
+        val previous =
+            totals(blockNumber = 0L, blockTimestamp = 1_526_403_590L, totalAccounts = 10L)
+        val expected = extractExpectedAccountIds(block, emptyList())
+        val seen = expected.first()
+        every { repository.findTotalsBefore(1L) } returns previous
+        every { repository.findSeen(expected) } returns setOf(seen)
 
-        every {
-            repository.findFirstByRecordTypeAndBlockNumberLessThanOrderByBlockNumberDesc(
-                AccountTotalsSeriesRecordType.SERIES,
-                1L,
-            )
-        } returns previousSeries
-        every { repository.findAllById(any<Iterable<String>>()) } returns
-            listOf(createAccountMarker(existingId, previousSeries.blockTimestamp))
+        val update = service.processBlock(block, emptyList())
 
-        val records = service.processBlock(block, emptyList())
-        val series = records.last()
-        val markers = records.dropLast(1)
-
-        assertEquals(10L + expectedIds.size - 1L, series.totalAccounts)
-        assertEquals(expectedIds.size - 1, markers.size)
-        assertTrue(series.isHourly == true)
+        assertEquals(expected - seen, update.newAccounts.toSet())
+        assertEquals(10L + expected.size - 1L, update.totals?.totalAccounts)
+        assertEquals(listOf(TimeFrame.HOUR), update.totals?.timeFrames)
     }
 
     @Test
-    fun `processBlock skips series write when nothing changed and no boundary crossed`() {
-        val previousSeries =
-            createSeries(blockNumber = 50L, blockTimestamp = 1_526_403_610L, totalAccounts = 10L)
+    fun `processBlock writes no row when nothing changed and no boundary was crossed`() {
+        val previous =
+            totals(blockNumber = 50L, blockTimestamp = 1_526_403_610L, totalAccounts = 10L)
         val block =
             BlockFixtures.BLOCK_NO_CLAUSES.copy(
                 number = 51L,
                 id = "0x51",
-                timestamp = previousSeries.blockTimestamp + 10L,
+                timestamp = previous.blockTimestamp + 10L,
                 beneficiary = Address.ZERO_ADDRESS,
                 transactions = emptyList(),
             )
+        every { repository.findTotalsBefore(51L) } returns previous
 
-        every {
-            repository.findFirstByRecordTypeAndBlockNumberLessThanOrderByBlockNumberDesc(
-                AccountTotalsSeriesRecordType.SERIES,
-                51L,
-            )
-        } returns previousSeries
+        val update = service.processBlock(block, emptyList())
 
-        val records = service.processBlock(block, emptyList())
-
-        assertTrue(records.isEmpty())
+        assertTrue(update.newAccounts.isEmpty())
+        assertNull(update.totals)
     }
 
     @Test
@@ -196,9 +171,7 @@ class AccountTotalsSeriesServiceTest {
                 transactions = emptyList(),
             )
 
-        val accountIds = service.extractAccountIds(block, emptyList())
-
-        assertTrue(accountIds.isEmpty())
+        assertTrue(service.extractAccountIds(block, emptyList()).isEmpty())
     }
 
     @Test
@@ -222,9 +195,7 @@ class AccountTotalsSeriesServiceTest {
                 ),
             )
 
-        val accountIds = service.extractAccountIds(block, events)
-
-        assertEquals(setOf(shared), accountIds)
+        assertEquals(setOf(shared), service.extractAccountIds(block, events))
     }
 
     @Test
@@ -255,38 +226,33 @@ class AccountTotalsSeriesServiceTest {
                 ),
             )
 
-        val accountIds = service.extractAccountIds(block, events)
-
-        assertEquals(setOf(validFrom, validTo), accountIds)
+        assertEquals(setOf(validFrom, validTo), service.extractAccountIds(block, events))
     }
 
-    private fun extractExpectedAccountIds(
-        block: org.vechain.indexer.thor.model.Block,
-        events: List<IndexedEvent>,
-    ): Set<String> = buildSet {
-        block.transactions.forEach { tx ->
-            add(tx.origin.lowercase())
-            add(tx.gasPayer.lowercase())
-            tx.clauses.mapNotNull { it.to?.lowercase() }.forEach(::add)
-        }
-
-        if (block.number > 0L && block.beneficiary.lowercase() != Address.ZERO_ADDRESS) {
-            add(block.beneficiary.lowercase())
-        }
-
-        events
-            .filter {
-                it.eventType in setOf("VET_TRANSFER", "Transfer", "TransferSingle", "TransferBatch")
+    private fun extractExpectedAccountIds(block: Block, events: List<IndexedEvent>): Set<String> =
+        buildSet {
+            block.transactions.forEach { tx ->
+                add(tx.origin.lowercase())
+                add(tx.gasPayer.lowercase())
+                tx.clauses.mapNotNull { it.to?.lowercase() }.forEach(::add)
             }
-            .flatMap { event ->
-                listOfNotNull(
-                    event.params.getAsString("from")?.lowercase(),
-                    event.params.getAsString("to")?.lowercase(),
-                )
+            if (block.number > 0L && block.beneficiary.lowercase() != Address.ZERO_ADDRESS) {
+                add(block.beneficiary.lowercase())
             }
-            .filterNot { it == Address.ZERO_ADDRESS }
-            .forEach(::add)
-    }
+            events
+                .filter {
+                    it.eventType in
+                        setOf("VET_TRANSFER", "Transfer", "TransferSingle", "TransferBatch")
+                }
+                .flatMap { event ->
+                    listOfNotNull(
+                        event.params.getAsString("from")?.lowercase(),
+                        event.params.getAsString("to")?.lowercase(),
+                    )
+                }
+                .filterNot { it == Address.ZERO_ADDRESS }
+                .forEach(::add)
+        }
 
     private fun buildTransferEvent(
         eventType: String,
@@ -323,37 +289,9 @@ class AccountTotalsSeriesServiceTest {
             params = AbiEventParameters(params as Map<String, Any>, eventType),
         )
 
-    private fun createSeries(
+    private fun totals(
         blockNumber: Long = 1L,
         blockTimestamp: Long = 1_526_403_590L,
         totalAccounts: Long = 1L,
-    ) =
-        AccountTotalsSeries(
-            id = "series-$blockNumber",
-            blockId = "0x$blockNumber",
-            blockNumber = blockNumber,
-            blockTimestamp = blockTimestamp,
-            recordType = AccountTotalsSeriesRecordType.SERIES,
-            totalAccounts = totalAccounts,
-            address = null,
-            isHourly = null,
-            isDaily = null,
-            isWeekly = null,
-            isMonthly = null,
-        )
-
-    private fun createAccountMarker(address: String, blockTimestamp: Long) =
-        AccountTotalsSeries(
-            id = "account-$address",
-            blockId = "0x0",
-            blockNumber = 0L,
-            blockTimestamp = blockTimestamp,
-            recordType = AccountTotalsSeriesRecordType.ACCOUNT,
-            totalAccounts = null,
-            address = address,
-            isHourly = null,
-            isDaily = null,
-            isWeekly = null,
-            isMonthly = null,
-        )
+    ) = AccountTotalsSeries("0x$blockNumber", blockNumber, blockTimestamp, totalAccounts)
 }

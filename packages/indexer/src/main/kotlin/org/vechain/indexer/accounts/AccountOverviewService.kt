@@ -5,620 +5,230 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
-import org.springframework.data.domain.Pageable
-import org.springframework.data.domain.Slice
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.VersionedDocumentAccumulator
-import org.vechain.indexer.accounts.repository.AccountOverviewRepository
-import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.config.ForkConfig
-import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.NetworkDetectionService
-import org.vechain.indexer.config.VeChainNetwork
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.saveVersionedDocuments
+import org.vechain.indexer.thor.HexUtils.normalise
 import org.vechain.indexer.thor.HexUtils.toBigInteger
 import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.BlockRevision
+import org.vechain.indexer.thor.model.Transaction
 import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
-@Profile("accounts", "account-overview")
+/** Rolls each block into the overview of every address it touches, VTHO earnings included. */
+@Profile("accounts")
 @Service
 open class AccountOverviewService(
-    private val repository: AccountOverviewRepository,
-    private val inlineVersioningProperties: InlineVersioningProperties,
-    private val mongoTemplate: MongoTemplate,
+    private val repository: AccountsWriteRepository,
     private val forkConfig: ForkConfig,
     private val networkDetectionService: NetworkDetectionService,
     private val thorClient: ThorClient,
 ) {
-
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    private val detectedNetwork: VeChainNetwork by lazy {
-        networkDetectionService.detectBlocking().network
+    /** The overviews a block changed and the VET balances that moved with them. */
+    data class Update(val overviews: List<AccountOverview>, val balances: List<VetBalance>)
+
+    private val hayabusaBlock: Long by lazy {
+        forkConfig.getHayabusaBlock(networkDetectionService.detectBlocking().network)
     }
 
-    open suspend fun processBlock(
+    open suspend fun processBlock(block: Block, events: List<IndexedEvent>): Update {
+        val vetTransfers = events.filter { it.eventType == VET_TRANSFER }
+        val addresses =
+            buildSet<String> {
+                block.transactions.forEach {
+                    add(normalise(it.origin))
+                    add(normalise(it.gasPayer))
+                }
+                vetTransfers.forEach {
+                    add(sender(it))
+                    add(recipient(it))
+                }
+                if (block.number > 0L) add(normalise(block.beneficiary))
+            }
+        val stored = repository.findCurrentOverviews(addresses).associateBy { it.address }
+        val touched = linkedMapOf<String, AccountOverview>()
+        val resolve = { address: String -> forMutation(address, block, stored, touched) }
+
+        block.transactions.forEach { transactionRules(it, resolve) }
+        if (vetTransfers.isNotEmpty()) {
+            // Passive VTHO settles on the balance before this block's transfers move it.
+            passiveGenerationRule(block, vetTransfers, resolve)
+            vetTransfers.forEach { transferRule(it, resolve) }
+        }
+        blockRewardsRule(block, events, stored, resolve)
+
+        val balances =
+            touched.values
+                .filter { it.vetBalance != (stored[it.address]?.vetBalance ?: BigInteger.ZERO) }
+                .map {
+                    VetBalance(it.address, block.id, block.number, block.timestamp, it.vetBalance)
+                }
+        return Update(touched.values.toList(), balances)
+    }
+
+    open fun isHayabusaBlock(blockNumber: Long): Boolean = blockNumber == hayabusaBlock
+
+    /** Closes passive generation for every holder at the fork, ahead of the block's own rules. */
+    open fun settleHayabusa(block: Block) {
+        logger.info("Starting Hayabusa VTHO settlement at block {} {}", block.number, block.id)
+        val settled = repository.settlePassiveVtho(block.id, block.number, block.timestamp)
+        logger.info("Completed Hayabusa VTHO settlement. Total accounts settled: {}", settled)
+    }
+
+    private fun transactionRules(tx: Transaction, resolve: (String) -> AccountOverview) {
+        val origin = resolve(normalise(tx.origin))
+        origin.transactionsSent += 1
+        origin.clausesSent += tx.clauses.size.toLong()
+        origin.gasUsed += BigInteger.valueOf(tx.gasUsed)
+
+        val paid = toBigInteger(tx.paid)
+        val payer = resolve(normalise(tx.gasPayer))
+        payer.vthoBurned += paid
+        if (origin.address != payer.address) payer.vthoDelegated += paid
+    }
+
+    private fun transferRule(event: IndexedEvent, resolve: (String) -> AccountOverview) {
+        val value = event.params.getAsBigInteger("amount") ?: BigInteger.ZERO
+        val from = resolve(sender(event))
+        from.vetSent += value
+        from.vetBalance -= value
+        val to = resolve(recipient(event))
+        to.vetReceived += value
+        to.vetBalance += value
+    }
+
+    /**
+     * 0.000432 VTHO per VET per day, credited to each party of a transfer since its last credit.
+     */
+    private fun passiveGenerationRule(
+        block: Block,
+        vetTransfers: List<IndexedEvent>,
+        resolve: (String) -> AccountOverview,
+    ) {
+        if (block.number >= hayabusaBlock) return
+        vetTransfers
+            .flatMap { listOf(sender(it), recipient(it)) }
+            .toSet()
+            .forEach { address ->
+                val account = resolve(address)
+                val last = account.lastVthoSettlement
+                if (
+                    last != null && account.vetBalance > BigInteger.ZERO && last < block.timestamp
+                ) {
+                    account.vthoPassiveGeneration +=
+                        passiveVtho(account.vetBalance, block.timestamp - last)
+                }
+                account.lastVthoSettlement = block.timestamp
+            }
+    }
+
+    /** The reward is VTHO growth beyond transfers in, gas paid and pre-Hayabusa passive VTHO. */
+    private suspend fun blockRewardsRule(
         block: Block,
         events: List<IndexedEvent>,
-    ): Pair<List<AccountOverview>, List<AccountOverview>> {
-        assertEventTypes(events, "VET_TRANSFER", "Transfer")
+        stored: Map<String, AccountOverview>,
+        resolve: (String) -> AccountOverview,
+    ) {
+        if (block.number == 0L) return
+        val beneficiary = normalise(block.beneficiary)
+        val (before, after) =
+            coroutineScope {
+                val parent = async {
+                    thorClient.getAccountState(block.beneficiary, BlockRevision.Id(block.parentID))
+                }
+                val current = async {
+                    thorClient.getAccountState(block.beneficiary, BlockRevision.Id(block.id))
+                }
+                parent.await() to current.await()
+            }
+        val passive =
+            passiveVthoForBlock(before.balance.hexToBigInteger(), block.number, stored[beneficiary])
+        val expected = before.energy.hexToBigInteger() + passive
+        val used =
+            block.transactions
+                .filter { normalise(it.gasPayer) == beneficiary }
+                .sumOf { toBigInteger(it.paid) }
+        val reward =
+            after.energy.hexToBigInteger() - vthoTransferDelta(beneficiary, events) + used -
+                expected
+        if (reward <= BigInteger.ZERO) return
+        resolve(beneficiary).vthoBlockRewards += reward
+    }
 
-        // Pre-collect all addresses that will be needed and batch-load from DB
-        val allAddresses = mutableSetOf<String>()
-        block.transactions.forEach { tx ->
-            allAddresses.add(tx.origin)
-            allAddresses.add(tx.gasPayer)
-        }
+    /**
+     * The block's ten seconds of passive VTHO on [vetBalance], for an account already generating.
+     */
+    internal fun passiveVthoForBlock(
+        vetBalance: BigInteger,
+        blockNumber: Long,
+        account: AccountOverview?,
+    ): BigInteger =
+        if (blockNumber < hayabusaBlock && account?.lastVthoSettlement != null)
+            passiveVtho(vetBalance, BLOCK_SECONDS)
+        else BigInteger.ZERO
+
+    internal fun passiveVtho(vetBalance: BigInteger, seconds: Long): BigInteger =
+        vetBalance
+            .multiply(BigInteger.valueOf(seconds))
+            .multiply(BigInteger.valueOf(5))
+            .divide(BigInteger.valueOf(1_000_000_000))
+
+    /** VTHO in minus VTHO out for [address] over the block's VTHO transfers. */
+    private fun vthoTransferDelta(address: String, events: List<IndexedEvent>): BigInteger =
         events
-            .filter { it.eventType == "VET_TRANSFER" }
-            .forEach { event ->
-                event.params.getAsString("from")?.let { allAddresses.add(it) }
-                event.params.getAsString("to")?.let { allAddresses.add(it) }
+            .filter {
+                it.eventType == "Transfer" && it.address.equals(VTHO_CONTRACT_ADDRESS, true)
             }
-        if (block.number > 0L) {
-            allAddresses.add(block.beneficiary)
-        }
-        val preloaded =
-            if (allAddresses.isNotEmpty()) {
-                repository.findAllById(allAddresses).associateBy { it.getDocumentId() }
-            } else {
-                emptyMap()
+            .fold(BigInteger.ZERO) { delta, event ->
+                val value = event.params.getAsBigInteger("value") ?: BigInteger.ZERO
+                delta + (if (recipient(event) == address) value else BigInteger.ZERO) -
+                    (if (sender(event) == address) value else BigInteger.ZERO)
             }
 
-        val accumulator =
-            VersionedDocumentAccumulator<AccountOverview>(
-                findById = { id -> preloaded[id] ?: repository.findByIdOrNull(id) },
-                initialVersion = 1,
+    private fun forMutation(
+        address: String,
+        block: Block,
+        stored: Map<String, AccountOverview>,
+        touched: MutableMap<String, AccountOverview>,
+    ): AccountOverview =
+        touched.getOrPut(address) {
+            stored[address]?.copy(
+                blockId = block.id,
+                blockNumber = block.number,
+                blockTimestamp = block.timestamp,
+                lastSeen = block.timestamp,
             )
-        accumulator.startBlock()
-        val resolved = mutableMapOf<String, AccountOverview>()
-
-        // Execute rules
-        if (block.transactions.isNotEmpty()) {
-            transactionsSentRule(block, accumulator, resolved)
-            vthoBurnedRule(block, accumulator, resolved)
-            vthoDelegatedRule(block, accumulator, resolved)
-            gasUsedRule(block, accumulator, resolved)
-        }
-
-        val vetTransferEvents = events.filter { it.eventType == "VET_TRANSFER" }
-        if (vetTransferEvents.isNotEmpty()) {
-            // Calculate passive VTHO before updating balances (settles earnings since last
-            // activity)
-            vthoPassiveGenerationRule(block, vetTransferEvents, accumulator, resolved)
-            // Update VET sent/received totals and balance
-            vetSentRule(block, vetTransferEvents, accumulator, resolved)
-            vetReceivedRule(block, vetTransferEvents, accumulator, resolved)
-        }
-
-        // Calculate and apply block rewards for pre-Hayabusa blocks
-        vthoBlockRewardsRule(block, events, accumulator, resolved, preloaded)
-
-        return accumulator.results()
-    }
-
-    @Transactional(rollbackFor = [Exception::class])
-    open fun save(updated: List<AccountOverview>, existing: List<AccountOverview>) {
-        saveVersionedDocuments(
-            updated = updated,
-            existing = existing,
-            mongoTemplate = mongoTemplate,
-            blockWindow = inlineVersioningProperties.blockWindow,
-            maxVersions = inlineVersioningProperties.maxVersions,
-            minVersions = inlineVersioningProperties.minVersions,
-        )
-    }
-
-    /**
-     * Add number of transactions and clauses sent per account
-     *
-     * @param block Block being processed
-     * @param accumulator The versioned document accumulator
-     * @param resolved Local cache of records already resolved in this block
-     */
-    protected fun transactionsSentRule(
-        block: Block,
-        accumulator: VersionedDocumentAccumulator<AccountOverview>,
-        resolved: MutableMap<String, AccountOverview>,
-    ) {
-        block.transactions.forEach { tx ->
-            val recordId = tx.origin
-            val updated = resolveForMutation(recordId, block, accumulator, resolved)
-
-            // Update counts
-            updated.transactionsSent += 1
-            updated.clausesSent += tx.clauses.size.toLong()
-        }
-    }
-
-    /**
-     * Add VTHO burned per account
-     *
-     * @param block Block being processed
-     * @param accumulator The versioned document accumulator
-     * @param resolved Local cache of records already resolved in this block
-     */
-    protected fun vthoBurnedRule(
-        block: Block,
-        accumulator: VersionedDocumentAccumulator<AccountOverview>,
-        resolved: MutableMap<String, AccountOverview>,
-    ) {
-        block.transactions.forEach { tx ->
-            val recordId = tx.gasPayer
-            val updated = resolveForMutation(recordId, block, accumulator, resolved)
-
-            // Update VTHO burned
-            updated.vthoBurned += toBigInteger(tx.paid)
-        }
-    }
-
-    /**
-     * Add VTHO delegated per account
-     *
-     * @param block Block being processed
-     * @param accumulator The versioned document accumulator
-     * @param resolved Local cache of records already resolved in this block
-     */
-    protected fun vthoDelegatedRule(
-        block: Block,
-        accumulator: VersionedDocumentAccumulator<AccountOverview>,
-        resolved: MutableMap<String, AccountOverview>,
-    ) {
-        block.transactions
-            .filter { it.origin != it.gasPayer }
-            .forEach { tx ->
-                val recordId = tx.gasPayer
-                val updated = resolveForMutation(recordId, block, accumulator, resolved)
-
-                // Update VTHO delegated
-                updated.vthoDelegated += toBigInteger(tx.paid)
-            }
-    }
-
-    /**
-     * Add gas used where the account is the origin
-     *
-     * @param block Block being processed
-     * @param accumulator The versioned document accumulator
-     * @param resolved Local cache of records already resolved in this block
-     */
-    protected fun gasUsedRule(
-        block: Block,
-        accumulator: VersionedDocumentAccumulator<AccountOverview>,
-        resolved: MutableMap<String, AccountOverview>,
-    ) {
-        block.transactions.forEach { tx ->
-            val recordId = tx.origin
-            val updated = resolveForMutation(recordId, block, accumulator, resolved)
-
-            // Update gas used
-            updated.gasUsed += BigInteger.valueOf(tx.gasUsed)
-        }
-    }
-
-    /**
-     * Add VET sent per account and update balance
-     *
-     * @param block Block being processed
-     * @param vetTransferEvents List of VET_TRANSFER events in the block
-     * @param accumulator The versioned document accumulator
-     * @param resolved Local cache of records already resolved in this block
-     */
-    protected fun vetSentRule(
-        block: Block,
-        vetTransferEvents: List<IndexedEvent>,
-        accumulator: VersionedDocumentAccumulator<AccountOverview>,
-        resolved: MutableMap<String, AccountOverview>,
-    ) {
-        vetTransferEvents.forEach { event ->
-            val recordId =
-                event.params.getAsString("from")
-                    ?: error("Invalid VET_TRANSFER event: missing 'from' param")
-            val updated = resolveForMutation(recordId, block, accumulator, resolved)
-
-            // Update VET sent and decrease balance
-            val value = event.params.getAsBigInteger("amount") ?: BigInteger.ZERO
-            updated.vetSent += value
-            updated.vetBalance -= value
-        }
-    }
-
-    /**
-     * Add VET received per account and update balance
-     *
-     * @param block Block being processed
-     * @param vetTransferEvents List of VET_TRANSFER events in the block
-     * @param accumulator The versioned document accumulator
-     * @param resolved Local cache of records already resolved in this block
-     */
-    protected fun vetReceivedRule(
-        block: Block,
-        vetTransferEvents: List<IndexedEvent>,
-        accumulator: VersionedDocumentAccumulator<AccountOverview>,
-        resolved: MutableMap<String, AccountOverview>,
-    ) {
-        vetTransferEvents.forEach { event ->
-            val recordId =
-                event.params.getAsString("to")
-                    ?: error("Invalid VET_TRANSFER event: missing 'to' param")
-            val updated = resolveForMutation(recordId, block, accumulator, resolved)
-
-            // Update VET received and increase balance
-            val value = event.params.getAsBigInteger("amount") ?: BigInteger.ZERO
-            updated.vetReceived += value
-            updated.vetBalance += value
-        }
-    }
-
-    /**
-     * Calculate and apply passive VTHO generation for accounts involved in VET transfers.
-     *
-     * This rule settles the passive VTHO earned since the last settlement, based on the account's
-     * VET balance and the time elapsed. The rate is 0.000432 VTHO/VET/day (≈5e-9 VTHO/VET/second).
-     *
-     * Only processes pre-Hayabusa blocks as passive generation ends at the Hayabusa fork.
-     *
-     * @param block Block being processed
-     * @param vetTransferEvents List of VET_TRANSFER events in the block
-     * @param accumulator The versioned document accumulator
-     * @param resolved Local cache of records already resolved in this block
-     */
-    protected fun vthoPassiveGenerationRule(
-        block: Block,
-        vetTransferEvents: List<IndexedEvent>,
-        accumulator: VersionedDocumentAccumulator<AccountOverview>,
-        resolved: MutableMap<String, AccountOverview>,
-    ) {
-        val hayabusaBlock = forkConfig.getHayabusaBlock(detectedNetwork)
-
-        // Only process pre-Hayabusa blocks (passive generation ends at Hayabusa)
-        if (block.number >= hayabusaBlock) {
-            return
-        }
-
-        // Collect all unique addresses involved in VET transfers
-        val addresses = mutableSetOf<String>()
-        vetTransferEvents.forEach { event ->
-            event.params.getAsString("from")?.let { addresses.add(it) }
-            event.params.getAsString("to")?.let { addresses.add(it) }
-        }
-
-        // For each address, calculate passive VTHO earned since last settlement
-        addresses.forEach { address ->
-            val updated = resolveForMutation(address, block, accumulator, resolved)
-
-            // Use lastVthoSettlement if available, otherwise this is a new account with no prior
-            // VET
-            val lastSettlement = updated.lastVthoSettlement
-            if (
-                lastSettlement != null &&
-                    updated.vetBalance > BigInteger.ZERO &&
-                    lastSettlement < block.timestamp
-            ) {
-                val durationSeconds = BigInteger.valueOf(block.timestamp - lastSettlement)
-                val passiveVtho = calculatePassiveVtho(updated.vetBalance, durationSeconds)
-                updated.vthoPassiveGeneration += passiveVtho
-            }
-
-            // Update settlement timestamp for next calculation
-            updated.lastVthoSettlement = block.timestamp
-        }
-    }
-
-    /** Check if the given block is the Hayabusa fork block. */
-    open fun isHayabusaBlock(blockNumber: Long): Boolean {
-        val hayabusaBlock = forkConfig.getHayabusaBlock(detectedNetwork)
-        return blockNumber == hayabusaBlock
-    }
-
-    /**
-     * Get a batch of accounts that need passive VTHO settlement at Hayabusa.
-     *
-     * @param hayabusaTimestamp The timestamp of the Hayabusa block
-     * @param pageable Pagination parameters
-     * @return Slice of accounts needing settlement
-     */
-    open fun getAccountsNeedingHayabusaSettlement(
-        hayabusaTimestamp: Long,
-        pageable: Pageable,
-    ): Slice<AccountOverview> {
-        return repository.findAccountsNeedingVthoSettlement(hayabusaTimestamp, pageable)
-    }
-
-    /**
-     * Settle passive VTHO for a batch of accounts at the Hayabusa fork.
-     *
-     * Calculates the final passive VTHO earnings from each account's lastVthoSettlement up to the
-     * Hayabusa block's timestamp, stamps updated records with the block's id/number/timestamp, then
-     * saves the updates.
-     *
-     * @param accounts The batch of accounts to settle
-     * @param block The Hayabusa fork block used for settlement timestamp and record stamping
-     */
-    @Transactional
-    open fun settleHayabusaBatch(accounts: List<AccountOverview>, block: Block) {
-        val updated = mutableListOf<AccountOverview>()
-        val existing = mutableListOf<AccountOverview>()
-
-        accounts.forEach { account ->
-            val lastSettlement = account.lastVthoSettlement ?: return@forEach
-
-            // Calculate passive VTHO from last settlement to Hayabusa
-            val durationSeconds = BigInteger.valueOf(block.timestamp - lastSettlement)
-            val passiveVtho = calculatePassiveVtho(account.vetBalance, durationSeconds)
-
-            // Create updated record with settled passive VTHO
-            val updatedAccount =
-                account.copy(
+                ?: AccountOverview(
+                    address = address,
                     blockId = block.id,
                     blockNumber = block.number,
                     blockTimestamp = block.timestamp,
-                    version = account.version + 1,
+                    firstSeen = block.timestamp,
                     lastSeen = block.timestamp,
                 )
-            updatedAccount.vthoPassiveGeneration += passiveVtho
-            updatedAccount.lastVthoSettlement = block.timestamp
-
-            existing.add(account)
-            updated.add(updatedAccount)
         }
 
-        if (updated.isNotEmpty()) {
-            save(updated, existing)
-        }
-    }
-
-    /**
-     * Calculate and apply block rewards to the block beneficiary using universal balance-based
-     * calculation. This methodology works across all eras.
-     *
-     * All values relate to the beneficiary B:
-     * - vthoAtNMinus1 = settled VTHO balance at block n-1
-     * - vthoAtN = settled VTHO balance at block n
-     * - passiveVtho = passive VTHO generation (pre-Hayabusa only)
-     * - vthoTransferDelta = VTHO_in - VTHO_out (positive if net inflow)
-     * - vthoUsed = VTHO paid as gas in block n
-     * - btrue = vthoAtNMinus1 + passiveVtho
-     *
-     * Block reward: R = (vthoAtN - vthoTransferDelta + vthoUsed) - btrue
-     *
-     * @param block Block being processed
-     * @param events List of all events in the block
-     * @param accumulator The versioned document accumulator
-     * @param resolved Local cache of records already resolved in this block
-     */
-    protected suspend fun vthoBlockRewardsRule(
-        block: Block,
-        events: List<IndexedEvent>,
-        accumulator: VersionedDocumentAccumulator<AccountOverview>,
-        resolved: MutableMap<String, AccountOverview>,
-        preloaded: Map<String, AccountOverview> = emptyMap(),
-    ) {
-        // Skip genesis block (no parent block to compare against)
-        if (block.number == 0L) {
-            return
-        }
-
-        val beneficiary = block.beneficiary
-
-        // 1. Fetch account state at block n-1 and block n in parallel
-        val (accountStateAtNMinus1, accountStateAtN) =
-            coroutineScope {
-                val deferredNMinus1 = async {
-                    thorClient.getAccountState(beneficiary, BlockRevision.Id(block.parentID))
-                }
-                val deferredN = async {
-                    thorClient.getAccountState(beneficiary, BlockRevision.Id(block.id))
-                }
-                deferredNMinus1.await() to deferredN.await()
-            }
-
-        val vthoAtNMinus1 = accountStateAtNMinus1.energy.hexToBigInteger()
-        val vetAtNMinus1 = accountStateAtNMinus1.balance.hexToBigInteger()
-
-        // 2. Calculate passive VTHO generation from timestamp(n-1) to timestamp(n)
-        // Use the pre-block DB state (from batch preload) to check lastVthoSettlement
-        val beneficiaryAccount = preloaded[beneficiary]
-        val passiveVtho =
-            calculatePassiveVthoForBlock(vetAtNMinus1, block.number, beneficiaryAccount)
-
-        // 3. Calculate Btrue (settled balance at n-1 plus passive generation up to block n)
-        val btrue = vthoAtNMinus1 + passiveVtho
-
-        // 4. Get VTHO balance at block n (already fetched above)
-        val vthoAtN = accountStateAtN.energy.hexToBigInteger()
-
-        // 5. Calculate VTHO transfer delta in block n
-        val vthoTransferDelta = calculateVthoTransferDelta(beneficiary, events)
-
-        // 6. Calculate VTHO used by beneficiary as gasPayer in block n
-        val vthoUsed = calculateVthoUsedByBeneficiary(beneficiary, block)
-
-        // 7. Calculate block reward: R = (balanceAtN - delta + used) - Btrue
-        val adjustedBalance = vthoAtN - vthoTransferDelta + vthoUsed
-        val reward = adjustedBalance - btrue
-
-        if (reward <= BigInteger.ZERO) {
-            return
-        }
-
-        val updated = resolveForMutation(beneficiary, block, accumulator, resolved)
-
-        updated.vthoBlockRewards += reward
-    }
-
-    /**
-     * Calculate passive VTHO generation based on VET balance and time duration.
-     *
-     * Rate: 0.000432 VTHO/VET/day = 5e-9 VTHO/VET/second Formula: passiveVtho = vetBalance *
-     * durationSeconds * 5 / 1_000_000_000
-     *
-     * @param vetBalance The VET balance
-     * @param durationSeconds The duration in seconds
-     * @return The passive VTHO generated
-     */
-    protected fun calculatePassiveVtho(
-        vetBalance: BigInteger,
-        durationSeconds: BigInteger,
-    ): BigInteger {
-        return vetBalance
-            .multiply(durationSeconds)
-            .multiply(BigInteger.valueOf(5))
-            .divide(BigInteger.valueOf(1_000_000_000))
-    }
-
-    /**
-     * Calculate passive VTHO generation for a single block (10 seconds).
-     *
-     * Passive VTHO is only generated pre-Hayabusa for accounts with a lastVthoSettlement.
-     *
-     * @param vetBalance The VET balance at block n-1
-     * @param blockNumber The current block number
-     * @param beneficiaryAccount The beneficiary's AccountOverview (may be null)
-     * @return The passive VTHO generated (BigInteger.ZERO if not applicable)
-     */
-    protected fun calculatePassiveVthoForBlock(
-        vetBalance: BigInteger,
-        blockNumber: Long,
-        beneficiaryAccount: AccountOverview?,
-    ): BigInteger {
-        val hayabusaBlock = forkConfig.getHayabusaBlock(detectedNetwork)
-
-        if (
-            blockNumber < hayabusaBlock &&
-                beneficiaryAccount != null &&
-                beneficiaryAccount.lastVthoSettlement != null
-        ) {
-            return calculatePassiveVtho(vetBalance, BigInteger.TEN)
-        }
-
-        return BigInteger.ZERO
-    }
-
-    /**
-     * Calculate the VTHO transfer delta for an address in a block.
-     *
-     * Delta = VTHO_in - VTHO_out (positive if net inflow, negative if net outflow)
-     *
-     * @param address The address to calculate the delta for
-     * @param events All events in the block
-     * @return The net VTHO transfer delta
-     */
-    private fun calculateVthoTransferDelta(
-        address: String,
-        events: List<IndexedEvent>,
-    ): BigInteger {
-        val vthoTransfers = events.filter {
-            it.eventType == "Transfer" && it.address == VTHO_CONTRACT_ADDRESS
-        }
-
-        var delta = BigInteger.ZERO
-        vthoTransfers.forEach { event ->
-            val from = event.params.getAsString("from")
-            val to = event.params.getAsString("to")
-            val value = event.params.getAsBigInteger("value") ?: BigInteger.ZERO
-
-            if (to == address) delta += value // Inflow
-            if (from == address) delta -= value // Outflow
-        }
-        return delta
-    }
-
-    /**
-     * Calculate the VTHO used by the beneficiary as gasPayer in this block.
-     *
-     * @param beneficiary The beneficiary address
-     * @param block The block containing transactions
-     * @return The total VTHO used (from tx.paid)
-     */
-    private fun calculateVthoUsedByBeneficiary(beneficiary: String, block: Block): BigInteger {
-        return block.transactions
-            .filter { it.gasPayer == beneficiary }
-            .sumOf { toBigInteger(it.paid) }
-    }
-
-    /**
-     * Creates a new AccountOverview record with initial values from the given block.
-     *
-     * @param address The account address
-     * @param block The block in which the account was first seen
-     * @return A new AccountOverview record
-     */
-    protected fun createNewAccountOverview(address: String, block: Block): AccountOverview {
-        return AccountOverview(
-            address = address,
-            blockId = block.id,
-            blockNumber = block.number,
-            blockTimestamp = block.timestamp,
-            version = 1,
-            firstSeen = block.timestamp,
-            lastSeen = block.timestamp,
-            transactionsSent = 0L,
-            clausesSent = 0L,
-            vthoBurned = BigInteger.ZERO,
-            vthoDelegated = BigInteger.ZERO,
-            gasUsed = BigInteger.ZERO,
-            vetSent = BigInteger.ZERO,
-            vetReceived = BigInteger.ZERO,
-            vetBalance = BigInteger.ZERO,
-            vthoBlockRewards = BigInteger.ZERO,
-            vthoPassiveGeneration = BigInteger.ZERO,
+    private fun sender(event: IndexedEvent): String =
+        normalise(
+            event.params.getAsString("from")
+                ?: error("Invalid ${event.eventType} event: missing 'from' param (${event.id})")
         )
-    }
 
-    /**
-     * Resolves an AccountOverview for in-place mutation using the accumulator.
-     *
-     * On first call for a given [recordId] in the current block: looks up the record via the
-     * accumulator (DB or cache), creates a version-bumped copy (or new record), registers it with
-     * the accumulator, and caches it in [resolved]. On subsequent calls for the same [recordId]:
-     * returns the cached mutable copy directly.
-     *
-     * @param recordId The ID of the AccountOverview record
-     * @param block The current block being processed
-     * @param accumulator The versioned document accumulator managing resolve/archive/version logic
-     * @param resolved Local cache of records already resolved in this block
-     * @return The mutable AccountOverview record for in-place updates
-     */
-    protected fun resolveForMutation(
-        recordId: String,
-        block: Block,
-        accumulator: VersionedDocumentAccumulator<AccountOverview>,
-        resolved: MutableMap<String, AccountOverview>,
-    ): AccountOverview {
-        resolved[recordId]?.let {
-            return it
-        }
+    private fun recipient(event: IndexedEvent): String =
+        normalise(
+            event.params.getAsString("to")
+                ?: error("Invalid ${event.eventType} event: missing 'to' param (${event.id})")
+        )
 
-        val (existing, nextVersion) = accumulator.resolve(recordId)
-        val result =
-            if (existing != null) {
-                val copy =
-                    existing.copy(
-                        blockId = block.id,
-                        blockNumber = block.number,
-                        blockTimestamp = block.timestamp,
-                        version = nextVersion,
-                        lastSeen = block.timestamp,
-                    )
-                accumulator.put(recordId, existing, copy)
-                copy
-            } else {
-                val newRecord = createNewAccountOverview(recordId, block)
-                accumulator.put(recordId, null, newRecord)
-                newRecord
-            }
-
-        resolved[recordId] = result
-        return result
+    companion object {
+        const val VET_TRANSFER = "VET_TRANSFER"
+        private const val BLOCK_SECONDS = 10L
     }
 }

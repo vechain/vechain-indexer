@@ -26,6 +26,7 @@ internal class VersionedDocumentPersistenceTest {
     @MockK(relaxed = true) private lateinit var collection: MongoCollection<Document>
 
     companion object {
+        private const val OTHER_COLLECTION = "other_collection"
         private const val BLOCK_WINDOW = 10000L
         private const val MAX_VERSIONS = 100
         private const val MIN_VERSIONS = 20
@@ -393,12 +394,11 @@ internal class VersionedDocumentPersistenceTest {
                 )
             )
 
-        every { mongoTemplate.getCollection(IndexerNames.ACCOUNT_OVERVIEW.COLLECTION) } returns
-            collection
+        every { mongoTemplate.getCollection(OTHER_COLLECTION) } returns collection
         every { mongoTemplate.converter } returns converter
         every { converter.write(any(), any<Document>()) } just Runs
 
-        persist(updated, emptyList(), IndexerNames.ACCOUNT_OVERVIEW.COLLECTION)
+        persist(updated, emptyList(), OTHER_COLLECTION)
 
         verify(exactly = 1) {
             collection.bulkWrite(
