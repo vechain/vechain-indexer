@@ -122,17 +122,13 @@ Use the schema-driven harness when you need to validate the public API in a depl
 
 ## Disaster Recovery
 
-MongoDB Atlas snapshots are automatically exported daily to S3 (`veworld-indexer-atlas-backups`). In the event of data loss or cluster corruption where Atlas native snapshot restores are unavailable, the indexer can be restored from these S3 exports.
-
-The restore process involves downloading the gzipped JSON exports to an EC2 instance, streaming them into the target Atlas cluster via parallel `mongoimport` processes, and rebuilding indexes from the exported metadata files.
-
-For the full step-by-step runbook, see: **[Disaster Recovery Runbook](https://vechain.atlassian.net/wiki/x/AYCfe)**
+RDS keeps 7 days of automated snapshots of every Postgres instance. Recovery of a colour is a restore from the other colour's newest snapshot, which the workflow below drives.
 
 ### Dead Prod Restore Workflow
 
-For snapshot-native recovery of the current dead prod color, use the **Restore Dead Prod From Live Snapshots** workflow. It restores both dead-prod Atlas clusters from the latest completed Atlas snapshots belonging to the current live prod color, and in a parallel job rebuilds the dead colour's Postgres instances from the live colour's newest automated RDS snapshots.
+For snapshot-native recovery of the current dead prod color, use the **Restore Dead Prod From Live Snapshots** workflow. It rebuilds the dead colour's Postgres instances from the live colour's newest automated RDS snapshots.
 
-Postgres differs from Atlas in three ways. RDS cannot restore into an existing instance, so each one is replaced from the snapshot under the same identifier — that is the only operation allowed to destroy a Postgres instance, and every other plan is refused by a guard in **Plan or Apply Terraform**. A net whose live instance does not exist yet is skipped, leaving the dead colour's own data alone. A restored instance lazy-loads its pages from S3, so the job starts a `pg-prewarm` ECS task per net and reports its ARN; reads stay slow until it stops, which takes hours on mainnet.
+RDS cannot restore into an existing instance, so each one is replaced from the snapshot under the same identifier — that is the only operation allowed to destroy a Postgres instance, and every other plan is refused by a guard in **Plan or Apply Terraform**. A net whose live instance does not exist yet is skipped, leaving the dead colour's own data alone. A restored instance lazy-loads its pages from S3, so the job starts a `pg-prewarm` ECS task per net and reports its ARN; reads stay slow until it stops, which takes hours on mainnet.
 
 This workflow does not stop or start ECS services. The dead environment must already be quiesced before restore. Use the **Stop or Start Dead Prod Environment Services** workflow first, then run the restore, then start services again once the restore summary looks correct.
 
@@ -140,7 +136,7 @@ Recommended sequence:
 
 1. Run **Stop or Start Dead Prod Environment Services** with `stop`.
 2. Run **Restore Dead Prod From Live Snapshots**. To restore Postgres from a specific snapshot — a manual one taken before a risky operation, or a rehearsal against the dead colour's own data — pass it as `pg_snapshot_main` / `pg_snapshot_test`.
-3. Review the restore summary artifacts: the Atlas restore job IDs, and the RDS snapshot and prewarm task per net.
+3. Review the restore summary artifact: the RDS snapshot and prewarm task per net.
 4. Run **Stop or Start Dead Prod Environment Services** with `start`.
 5. Run the schema or regression tests against the dead environment before switching traffic.
 
@@ -181,9 +177,9 @@ The plan follows three rules:
 
 - A running dead colour is the one being staged, so it gets the release.
 - A cold dead colour and an indexer unchanged against live: live takes the release directly, with no indexing gap.
-- A cold dead colour and a changed indexer: the dead colour gets the release after its Atlas clusters are restored from the latest live snapshots. A changed indexer on live pauses indexing while it restarts, and a cold colour's data is stale.
+- A cold dead colour and a changed indexer: the dead colour gets the release after its Postgres instances are restored from the latest live snapshots. A changed indexer on live pauses indexing while it restarts, and a cold colour's data is stale.
 
-`target: live` is refused for a changed indexer. `skip_restore` only skips the restore: the colour indexes on from whatever its Atlas clusters hold, which for a stopped colour is a stale checkpoint, not genesis. A reindex from genesis is an `indexer.version` bump (see `AGENTS.md` "Triggering an Indexer Resync"), not a skipped restore.
+`target: live` is refused for a changed indexer. `skip_restore` only skips the restore: the colour indexes on from whatever its Postgres instances hold, which for a stopped colour is a stale checkpoint, not genesis. A reindex from genesis is an `indexer.version` bump (see `AGENTS.md` "Triggering an Indexer Resync"), not a skipped restore.
 
 One deploy applies every stack — shared infra, observability, the CloudFront distributions, the restore when needed, and the application — in dependency order, so a stack with no change is a no-op rather than a run someone has to remember. `AGENTS.md` "One Deploy Applies Every Stack" has the order and the reasoning.
 
@@ -195,7 +191,7 @@ Do that once every indexer on both networks reports fully synced; the summary li
 Following the DNS switch, please wait at least 48 hours before tearing down the old live (now dead) environment. This is to allow any remote DNS caches to update to the new live environment.
 
 ### Testing
-The dead colour doubles as a testing environment: it is an exact replica of live, Atlas cluster included. To put a release on it regardless of what the plan would pick, dispatch the [Deploy workflow](https://github.com/vechain/veworld-indexer/actions/workflows/deploy.yml) with `target: dead`. A cold colour is restored from the live snapshots first unless `skip_restore` is ticked. Merging to main deploys nothing. While the dead colour is running, `auto` sends every release to it, so tear it down or switch to it when testing is done.
+The dead colour doubles as a testing environment: it is an exact replica of live, database included. To put a release on it regardless of what the plan would pick, dispatch the [Deploy workflow](https://github.com/vechain/veworld-indexer/actions/workflows/deploy.yml) with `target: dead`. A cold colour is restored from the live snapshots first unless `skip_restore` is ticked. Merging to main deploys nothing. While the dead colour is running, `auto` sends every release to it, so tear it down or switch to it when testing is done.
 
 ### Environment Tear-down
 When testing is complete, or when a DNS switch has migrated traffic from one environment to the other, the dead environment can be safely torn down until needed again. To do this, run the [Cluster Destroy](https://github.com/vechain/veworld-indexer/actions/workflows/destroy-environment.yml) workflow, and select the appropriate environment when prompted.
