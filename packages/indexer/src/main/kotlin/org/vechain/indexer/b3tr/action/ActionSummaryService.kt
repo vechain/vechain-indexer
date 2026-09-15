@@ -20,8 +20,8 @@ import org.vechain.indexer.utils.EventUtils.groupByBlock
 
 /**
  * Rolls every `B3TR_ActionReward` into the six summaries, each new row built on the row before it.
- * The round an action belongs to is tracked across entries: restored from the Emissions contract on
- * the first one, then advanced by each `EmissionDistributed`.
+ * The round an action belongs to advances with each `EmissionDistributed`; the processor keeps it
+ * between entries, so a save that fails leaves the entry to be replayed from the same round.
  */
 @Profile("b3tr", "b3tr-actions")
 @Service
@@ -30,8 +30,6 @@ open class ActionSummaryService(
     private val b3trRoundService: B3trRoundService,
     private val impactConfig: ActionImpactConfig,
 ) {
-    private var currentRound: Int? = null
-
     /** One block's rewards that belong to one period. */
     private class Slice(
         val block: BlockDetails,
@@ -52,9 +50,13 @@ open class ActionSummaryService(
         val appUsers = mutableListOf<AppUserActionSummary>()
     }
 
-    open suspend fun processEvents(events: List<IndexedEvent>): ActionSummaryUpdate {
+    /** The rows an entry adds and the round in force after it. */
+    data class Result(val update: ActionSummaryUpdate, val round: Int)
+
+    /** [roundBefore] is the round in force ahead of the first event. */
+    open fun processEvents(events: List<IndexedEvent>, roundBefore: Int): Result {
         assertEventTypes(events, ACTION_REWARD, *ROUND_TRANSITIONS)
-        var round = currentRound ?: restoreRound(events.first().blockNumber)
+        var round = roundBefore
 
         val slices = mutableListOf<Slice>()
         groupByBlock(events).forEach { (block, blockEvents) ->
@@ -92,16 +94,11 @@ open class ActionSummaryService(
         val rows = Rows()
         slices.forEach { apply(it, ledgers.getValue(it.period), rows) }
 
-        currentRound = round
-        return ActionSummaryUpdate(rows.entities, rows.appUsers)
+        return Result(ActionSummaryUpdate(rows.entities, rows.appUsers), round)
     }
 
-    open fun invalidateRuntimeState() {
-        currentRound = null
-    }
-
-    /** Null means Emissions was not yet deployed: round 0 until an EmissionDistributed arrives. */
-    private suspend fun restoreRound(firstBlock: Long): Int =
+    /** The round in force before [firstBlock]; 0 while Emissions is not yet deployed there. */
+    open suspend fun roundBefore(firstBlock: Long): Int =
         b3trRoundService.getCurrentRound(BlockRevision.Number((firstBlock - 1).coerceAtLeast(0)))
             ?: 0
 

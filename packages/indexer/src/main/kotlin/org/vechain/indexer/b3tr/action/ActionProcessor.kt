@@ -37,11 +37,17 @@ open class ActionProcessor(
         version,
         processorMetrics,
     ) {
-    override suspend fun processEntry(entry: IndexingResult) {
-        if (entry.events().isEmpty()) return
+    // Advanced only once the entry is saved, so a failed save is replayed from the same round.
+    private var round: Int? = null
 
-        val update = service.processEvents(entry.events())
-        if (!update.isEmpty()) repository.save(update)
+    override suspend fun processEntry(entry: IndexingResult) {
+        val events = entry.events()
+        if (events.isEmpty()) return
+
+        val result =
+            service.processEvents(events, round ?: service.roundBefore(events.first().blockNumber))
+        if (!result.update.isEmpty()) repository.save(result.update)
+        round = result.round
     }
 
     @Transactional(
@@ -49,7 +55,7 @@ open class ActionProcessor(
         rollbackFor = [Exception::class],
     )
     override fun rollback(blockNumber: Long) {
-        service.invalidateRuntimeState()
+        round = null
         super.rollback(blockNumber)
     }
 }
