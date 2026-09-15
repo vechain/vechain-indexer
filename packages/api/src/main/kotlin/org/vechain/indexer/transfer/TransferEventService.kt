@@ -3,23 +3,19 @@ package org.vechain.indexer.transfer
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
-import org.springframework.data.domain.SliceImpl
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
+import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.utils.CursorPaginationUtils
+import org.vechain.indexer.utils.PaginationUtils.offsetSlice
 
 @Profile("transfers")
 @Service
 open class TransferEventService(
-    private val transferEventRepository: TransferEventRepository,
-    private val fungibleTokenInteractionsRepository: FungibleTokenInteractionsRepository,
+    private val repository: TransferReadRepository,
     private val officialTokenService: OfficialTokenService,
-    private val mongoTemplate: MongoTemplate,
 ) {
 
     fun find(
@@ -31,137 +27,80 @@ open class TransferEventService(
         after: Long? = null,
         before: Long? = null,
         pageable: Pageable,
-    ): Slice<IndexedTransferEvent> {
-        val criteria =
-            buildCriteria(
-                to = to?.value,
-                from = from?.value,
-                toOrFrom = toOrFrom?.value,
-                tokenAddress = tokenAddress?.value,
-                eventTypes = eventTypes,
-                after = after,
-                before = before,
+    ): Slice<IndexedTransferEvent> =
+        offsetSlice(pageable, IndexedTransferEvent::blockTimestamp.name) { offset, limit, direction
+            ->
+            repository.find(
+                to?.value,
+                from?.value,
+                toOrFrom?.value,
+                tokenAddress?.value,
+                eventTypes,
+                after,
+                before,
+                offset,
+                limit,
+                direction,
             )
-        return runQuery(criteria, pageable)
-    }
+        }
 
     fun findByBlockNumber(
         blockNumber: Long,
         addresses: List<Address>,
         pageable: Pageable,
-    ): Slice<IndexedTransferEvent> {
-        return transferEventRepository.findByBlockNumberAndToOrFromIn(
-            blockNumber,
-            addresses.map { it.value },
-            pageable,
-        )
-    }
+    ): Slice<IndexedTransferEvent> =
+        offsetSlice(pageable, IndexedTransferEvent::blockNumber.name) { offset, limit, direction ->
+            repository.findByBlockNumber(
+                blockNumber,
+                addresses.map { it.value },
+                offset,
+                limit,
+                direction,
+            )
+        }
 
     fun findFungibleTokensContractsByAddress(
         address: Address,
         officialTokensOnly: Boolean,
         pageable: Pageable,
-    ): Slice<String> {
-        val interactions =
-            if (officialTokensOnly) {
-                fungibleTokenInteractionsRepository.findAllByWalletAddressAndContractAddresses(
-                    address.value,
-                    officialTokenService.getOfficialTokenAddresses(),
-                    pageable,
-                )
-            } else {
-                fungibleTokenInteractionsRepository.findByWalletAddress(address.value, pageable)
-            }
-        return interactions.map { it.contractAddress }
-    }
+    ): Slice<String> =
+        offsetSlice(pageable, FungibleTokenInteraction::blockNumber.name) { offset, limit, direction
+            ->
+            val contracts =
+                if (officialTokensOnly) officialTokenService.getOfficialTokenAddresses() else null
+            repository.findInteractedContracts(address.value, contracts, offset, limit, direction)
+        }
 
+    /** Cursor is `blockNumber|transferIndex` of the last row served, as before. */
     fun findLatestByType(
         eventTypes: Collection<TransferEventType>,
         size: Int?,
         cursor: String? = null,
     ): PaginatedResponse<IndexedTransferEvent> {
         require(eventTypes.isNotEmpty()) { "eventTypes must not be empty" }
-        val (pageSize, query) =
-            CursorPaginationUtils.buildCursorQuery(
-                baseCriteria =
-                    Criteria.where(IndexedTransferEvent::eventType.name).`in`(eventTypes),
-                size = size,
-                direction = "DESC",
-                sortByField = IndexedTransferEvent::blockNumber.name,
-                cursor = cursor,
-                cursorField = IndexedTransferEvent::transferIndex.name,
-                parseCursorFieldValue = true,
-            )
-
-        val results = mongoTemplate.find(query, IndexedTransferEvent::class.java)
-        val page = results.take(pageSize)
-        val nextCursor =
-            CursorPaginationUtils.calculateNextCursor(
-                results = results,
-                pageSize = pageSize,
-                sortByField = IndexedTransferEvent::blockNumber.name,
-                cursorField = IndexedTransferEvent::transferIndex.name,
-            )
-
+        val pageSize = size ?: DEFAULT_PAGE_SIZE
+        val after =
+            CursorPaginationUtils.parseCursor(cursor)?.let {
+                LatestTransferCursor(
+                    it.sortValue.toLongOrNull() ?: throw BadRequestException("Invalid cursor"),
+                    it.cursorValue.toLongOrNull() ?: throw BadRequestException("Invalid cursor"),
+                )
+            }
+        val results = repository.findLatest(eventTypes, after, pageSize + 1)
         return paginatedResponse(
-            data = page,
+            data = results.take(pageSize),
             hasNext = results.size > pageSize,
-            cursor = nextCursor,
+            cursor =
+                CursorPaginationUtils.calculateNextCursor(
+                    results = results,
+                    pageSize = pageSize,
+                    sortByField = IndexedTransferEvent::blockNumber.name,
+                    cursorField = IndexedTransferEvent::transferIndex.name,
+                ),
         )
     }
 
-    private fun buildCriteria(
-        to: String? = null,
-        from: String? = null,
-        toOrFrom: String? = null,
-        tokenAddress: String? = null,
-        eventTypes: List<TransferEventType>? = null,
-        after: Long? = null,
-        before: Long? = null,
-    ): Criteria {
-        val criteria = Criteria()
-
-        if (toOrFrom != null) {
-            criteria.orOperator(
-                Criteria.where(IndexedTransferEvent::to.name).`is`(toOrFrom),
-                Criteria.where(IndexedTransferEvent::from.name).`is`(toOrFrom),
-            )
-        } else {
-            if (to != null) {
-                criteria.and(IndexedTransferEvent::to.name).`is`(to)
-            }
-            if (from != null) {
-                criteria.and(IndexedTransferEvent::from.name).`is`(from)
-            }
-        }
-
-        if (tokenAddress != null) {
-            criteria.and(IndexedTransferEvent::tokenAddress.name).`is`(tokenAddress)
-        }
-
-        if (!eventTypes.isNullOrEmpty()) {
-            criteria.and(IndexedTransferEvent::eventType.name).`in`(eventTypes)
-        }
-
-        if (before != null && after != null) {
-            criteria.and(IndexedTransferEvent::blockTimestamp.name).gte(after).lte(before)
-        } else if (before != null) {
-            criteria.and(IndexedTransferEvent::blockTimestamp.name).lte(before)
-        } else if (after != null) {
-            criteria.and(IndexedTransferEvent::blockTimestamp.name).gte(after)
-        }
-
-        return criteria
-    }
-
-    private fun runQuery(criteria: Criteria, pageable: Pageable): Slice<IndexedTransferEvent> {
-        val query = Query(criteria).with(pageable)
-        query.limit(pageable.pageSize + 1)
-        val raw = mongoTemplate.find(query, IndexedTransferEvent::class.java)
-
-        val hasNext = raw.size > pageable.pageSize
-        val content = if (hasNext) raw.dropLast(1) else raw
-
-        return SliceImpl(content, pageable, hasNext)
+    companion object {
+        private const val DEFAULT_PAGE_SIZE = 20
     }
 }

@@ -21,13 +21,12 @@ import org.springframework.data.mongodb.core.index.IndexField
 import org.springframework.data.mongodb.core.index.IndexInfo
 import org.springframework.data.mongodb.core.index.IndexOperations
 import org.springframework.data.mongodb.core.query.Query
+import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.accounts.AccountOverview
 import org.vechain.indexer.accounts.VetBalance
 import org.vechain.indexer.accounts.mongo.AccountOverviewCollectionConfig
 import org.vechain.indexer.accounts.mongo.VetBalanceCollectionConfig
 import org.vechain.indexer.config.genesis.GenesisVetBalanceLoader
-import org.vechain.indexer.transfer.IndexedTransferEvent
-import org.vechain.indexer.transfer.TransferCollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
 @ExtendWith(MockKExtension::class)
@@ -116,19 +115,18 @@ class StartupCollectionIndexesTest {
     }
 
     @Test
-    fun `transfer creates blockNumber startup index`() {
+    fun `a collection config creates the blockNumber startup index`() {
         val capturedIndexes = mutableListOf<IndexDefinition>()
         every {
             indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
         } returns false
-        every { mongoTemplate.collectionExists(IndexedTransferEvent::class.java) } returns true
-        every { mongoTemplate.getCollectionName(IndexedTransferEvent::class.java) } returns
-            "transfer_events"
-        every { mongoTemplate.indexOps(IndexedTransferEvent::class.java) } returns indexOperations
+        every { mongoTemplate.collectionExists(TestDocument::class.java) } returns true
+        every { mongoTemplate.getCollectionName(TestDocument::class.java) } returns "test_documents"
+        every { mongoTemplate.indexOps(TestDocument::class.java) } returns indexOperations
         every { indexOperations.indexInfo } returns emptyList()
         every { indexOperations.createIndex(capture(capturedIndexes)) } returns "created"
 
-        TransferCollectionConfig(
+        TestBlockNumberConfig(
                 mongoTemplate = mongoTemplate,
                 appCoroutineScope = CoroutineScope(Dispatchers.Unconfined),
                 indexerVersionService = indexerVersionService,
@@ -162,11 +160,10 @@ class StartupCollectionIndexesTest {
         every {
             indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
         } returns false
-        every { mongoTemplate.collectionExists(IndexedTransferEvent::class.java) } returns true
-        every { mongoTemplate.getCollectionName(IndexedTransferEvent::class.java) } returns
-            "transfer_events"
-        every { mongoTemplate.indexOps(IndexedTransferEvent::class.java) } returns indexOperations
-        every { mongoTemplate.indexOps("transfer_events") } returns indexOperations
+        every { mongoTemplate.collectionExists(TestDocument::class.java) } returns true
+        every { mongoTemplate.getCollectionName(TestDocument::class.java) } returns "test_documents"
+        every { mongoTemplate.indexOps(TestDocument::class.java) } returns indexOperations
+        every { mongoTemplate.indexOps("test_documents") } returns indexOperations
         // First read happens during removeStaleIndexes (drop legacy);
         // second read happens during createPendingIndexes after the drop,
         // when the legacy entry is gone.
@@ -174,7 +171,7 @@ class StartupCollectionIndexesTest {
         every { indexOperations.dropIndex("blockNumber_-1_legacy") } just Runs
         every { indexOperations.createIndex(capture(createdIndexes)) } returns "created"
 
-        TransferCollectionConfig(
+        TestBlockNumberConfig(
                 mongoTemplate = mongoTemplate,
                 appCoroutineScope = CoroutineScope(Dispatchers.Unconfined),
                 indexerVersionService = indexerVersionService,
@@ -214,11 +211,10 @@ class StartupCollectionIndexesTest {
         every {
             indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
         } returns false
-        every { mongoTemplate.collectionExists(IndexedTransferEvent::class.java) } returns true
-        every { mongoTemplate.getCollectionName(IndexedTransferEvent::class.java) } returns
-            "transfer_events"
-        every { mongoTemplate.indexOps(IndexedTransferEvent::class.java) } returns indexOperations
-        every { mongoTemplate.indexOps("transfer_events") } returns indexOperations
+        every { mongoTemplate.collectionExists(TestDocument::class.java) } returns true
+        every { mongoTemplate.getCollectionName(TestDocument::class.java) } returns "test_documents"
+        every { mongoTemplate.indexOps(TestDocument::class.java) } returns indexOperations
+        every { mongoTemplate.indexOps("test_documents") } returns indexOperations
         // First read happens during removeStaleIndexes (drop drifted);
         // second read happens during createPendingIndexes after the drop,
         // when the drifted entry is gone.
@@ -226,7 +222,7 @@ class StartupCollectionIndexesTest {
         every { indexOperations.dropIndex("blockNumber_-1") } just Runs
         every { indexOperations.createIndex(capture(createdIndexes)) } returns "created"
 
-        // The transfer config registers blockNumber_-1 with no partial filter override
+        // TestBlockNumberConfig registers blockNumber_-1 with no partial filter override
         // (default INDEXED_DOCUMENT_PARTIAL_FILTER). Build a TestConfig that uses a *different*
         // partial filter so the drift is observable.
         TestPartialFilterDriftConfig(
@@ -267,17 +263,16 @@ class StartupCollectionIndexesTest {
         every {
             indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
         } returns false
-        every { mongoTemplate.collectionExists(IndexedTransferEvent::class.java) } returns true
-        every { mongoTemplate.getCollectionName(IndexedTransferEvent::class.java) } returns
-            "transfer_events"
-        every { mongoTemplate.indexOps(IndexedTransferEvent::class.java) } returns indexOperations
-        every { mongoTemplate.indexOps("transfer_events") } returns indexOperations
+        every { mongoTemplate.collectionExists(TestDocument::class.java) } returns true
+        every { mongoTemplate.getCollectionName(TestDocument::class.java) } returns "test_documents"
+        every { mongoTemplate.indexOps(TestDocument::class.java) } returns indexOperations
+        every { mongoTemplate.indexOps("test_documents") } returns indexOperations
         every { indexOperations.indexInfo } returns listOf(legacyIndex)
         every { indexOperations.dropIndex("blockNumber_-1_legacy") } throws
             RuntimeException("mongo unavailable")
 
         val config =
-            TransferCollectionConfig(
+            TestBlockNumberConfig(
                 mongoTemplate = mongoTemplate,
                 appCoroutineScope = CoroutineScope(Dispatchers.Unconfined),
                 indexerVersionService = indexerVersionService,
@@ -305,11 +300,10 @@ class StartupCollectionIndexesTest {
         every {
             indexerVersionService.checkAndResetCollectionIfVersionChanged(any(), any(), any())
         } returns false
-        every { mongoTemplate.collectionExists(IndexedTransferEvent::class.java) } returns true
-        every { mongoTemplate.getCollectionName(IndexedTransferEvent::class.java) } returns
-            "transfer_events"
-        every { mongoTemplate.indexOps(IndexedTransferEvent::class.java) } returns indexOperations
-        every { mongoTemplate.indexOps("transfer_events") } returns indexOperations
+        every { mongoTemplate.collectionExists(TestDocument::class.java) } returns true
+        every { mongoTemplate.getCollectionName(TestDocument::class.java) } returns "test_documents"
+        every { mongoTemplate.indexOps(TestDocument::class.java) } returns indexOperations
+        every { mongoTemplate.indexOps("test_documents") } returns indexOperations
         every { indexOperations.indexInfo } returns listOf(driftedIndex)
 
         val config =
@@ -325,6 +319,29 @@ class StartupCollectionIndexesTest {
         assertTrue(ex.message!!.contains("mismatched options"))
     }
 
+    private data class TestDocument(
+        override val blockId: String,
+        override val blockNumber: Long,
+        override val blockTimestamp: Long,
+    ) : IndexedDocument
+
+    /** Test fixture: the one `blockNumber_-1` index every collection config registers. */
+    private class TestBlockNumberConfig(
+        mongoTemplate: MongoTemplate,
+        appCoroutineScope: CoroutineScope,
+        private val indexerVersionService: IndexerVersionService,
+    ) : CollectionConfig(mongoTemplate, appCoroutineScope, TestDocument::class.java) {
+        override fun initCollection() {
+            indexerVersionService.checkAndResetCollectionIfVersionChanged(
+                indexerName = "test",
+                TestDocument::class.java,
+                1,
+            )
+            ensureCollection()
+            ensureIndexes(listOf(buildIndex("blockNumber" to Sort.Direction.DESC)))
+        }
+    }
+
     /**
      * Test fixture: a CollectionConfig that registers a single `blockNumber_-1` index whose partial
      * filter does not match the legacy `INDEXED_DOCUMENT_PARTIAL_FILTER`, exercising the
@@ -338,12 +355,12 @@ class StartupCollectionIndexesTest {
         org.vechain.indexer.config.mongo.CollectionConfig(
             mongoTemplate,
             appCoroutineScope,
-            IndexedTransferEvent::class.java,
+            TestDocument::class.java,
         ) {
         override fun initCollection() {
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
                 indexerName = "test",
-                IndexedTransferEvent::class.java,
+                TestDocument::class.java,
                 1,
             )
             ensureCollection()

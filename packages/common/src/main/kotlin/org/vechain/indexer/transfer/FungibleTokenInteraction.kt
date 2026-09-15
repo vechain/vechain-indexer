@@ -1,39 +1,12 @@
 package org.vechain.indexer.transfer
 
-import org.springframework.boot.context.properties.bind.ConstructorBinding
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
-import org.vechain.indexer.IndexerNames
-import org.vechain.indexer.utils.IdUtils.generateId
 
-/**
- * Used to track fungible token contracts that a wallet has interacted with. If a user has sent or
- * received a token from a fungible token contract, an entry will be created here.
- */
-@Document(collection = IndexerNames.FUNGIBLE_TOKEN_INTERACTIONS.COLLECTION)
-data class FungibleTokenInteraction
-@ConstructorBinding
-constructor(
-    @Id val id: String,
+/** A wallet's first transfer to or from a fungible token contract. */
+data class FungibleTokenInteraction(
+    val contractAddress: String,
     override val blockId: String,
     override val blockNumber: Long,
     override val blockTimestamp: Long,
-    val contractAddress: String,
     val walletAddress: String,
-) : IndexedDocument {
-    constructor(
-        contractAddress: String,
-        blockId: String,
-        blockNumber: Long,
-        blockTimestamp: Long,
-        walletAddress: String,
-    ) : this(
-        id = generateId(contractAddress, walletAddress),
-        blockId = blockId,
-        blockNumber = blockNumber,
-        blockTimestamp = blockTimestamp,
-        contractAddress = contractAddress,
-        walletAddress = walletAddress,
-    )
-}
+) : IndexedDocument
