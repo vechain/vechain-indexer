@@ -3,52 +3,27 @@ package org.vechain.indexer.vevote
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
-import org.springframework.data.domain.SliceImpl
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.vechain.indexer.thor.Address
+import org.vechain.indexer.utils.PaginationUtils.offsetSlice
 
-@Profile("vevote", "vevote-historic-proposals")
+@Profile("vevote", "vevote-historic")
 @Service
-open class HistoricApiService(
-    private val historicProposalsRepository: HistoricProposalsRepository
-) {
+open class HistoricApiService(private val repository: HistoricProposalsReadRepository) {
     fun findAll(
         proposalId: String?,
         contractAddress: Address?,
-        testProposals: Boolean? = false,
+        testProposals: Boolean?,
         pageable: Pageable,
-    ): Slice<HistoricProposals> {
-        val address = contractAddress?.value?.lowercase()
-
-        // Case 1: Filter by both proposalId and contractAddress
-        if (proposalId != null && address != null) {
-            val id = "$address-$proposalId"
-            val proposal = historicProposalsRepository.findByIdOrNull(id)
-            val content = proposal?.let { listOf(it) } ?: emptyList()
-            return SliceImpl(content, pageable, false)
+    ): Slice<HistoricProposals> =
+        offsetSlice(pageable, HistoricProposals::blockNumber.name) { offset, limit, direction ->
+            repository.find(
+                proposalId,
+                contractAddress?.value,
+                testProposals,
+                offset,
+                limit,
+                direction,
+            )
         }
-
-        // Case 2: Filter by proposalId only
-        if (proposalId != null) {
-            return historicProposalsRepository.findByProposalId(proposalId, pageable)
-        }
-
-        // Case 3: Filter by contractAddress (with or without test flag)
-        if (address != null) {
-            return if (testProposals == true) {
-                historicProposalsRepository.findByContractAddressAndTest(address, true, pageable)
-            } else {
-                historicProposalsRepository.findByContractAddress(address, pageable)
-            }
-        }
-
-        // Case 4: Filter by test flag only
-        if (testProposals != null) {
-            return historicProposalsRepository.findByTest(testProposals, pageable)
-        }
-
-        // Default: return all
-        return historicProposalsRepository.findAll(pageable)
-    }
 }

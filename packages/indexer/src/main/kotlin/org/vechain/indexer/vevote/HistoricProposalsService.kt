@@ -4,7 +4,6 @@ import java.util.concurrent.ConcurrentHashMap
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.contracts.abi.HistoricProposalABI
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
@@ -14,11 +13,10 @@ import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
-@Profile("vevote-historic-proposals")
+@Profile("vevote", "vevote-historic")
 @Service
 open class HistoricProposalsService(
     private val thorClient: ThorClient,
-    private val repository: HistoricProposalsRepository,
     @param:Value("\${veworld.contract.historic-proposals.steering-committee}")
     private val steeringCommitteeAddress: String,
     @param:Value("\${veworld.contract.historic-proposals.all-stakeholders}")
@@ -27,15 +25,15 @@ open class HistoricProposalsService(
 ) {
     private val cachedAbi: ConcurrentHashMap<String, AbiElement> = ConcurrentHashMap()
 
-    open suspend fun processEvents(events: List<IndexedEvent>): List<HistoricProposals> {
-        if (events.isEmpty()) return emptyList()
+    /** The proposals a block created and the descriptions it published for earlier ones. */
+    data class Update(
+        val proposals: List<HistoricProposals>,
+        val descriptions: List<HistoricProposalDescription>,
+    )
 
-        val updates = events.filter { it.eventType == "LegacyVeVoteDescription" }
-        val creations = events.filter { it.eventType != "LegacyVeVoteDescription" }
-
-        val updatedProposals = processProposalDescription(updates)
-        val newProposals = processNewProposals(creations)
-        return updatedProposals + newProposals
+    open suspend fun processEvents(events: List<IndexedEvent>): Update {
+        val (updates, creations) = events.partition { it.eventType == "LegacyVeVoteDescription" }
+        return Update(processNewProposals(creations), processProposalDescription(updates))
     }
 
     suspend fun processNewProposals(events: List<IndexedEvent>): List<HistoricProposals> {
@@ -44,32 +42,22 @@ open class HistoricProposalsService(
         return events.mapNotNull { extractNewProposalEvent(it) }
     }
 
-    fun processProposalDescription(events: List<IndexedEvent>): List<HistoricProposals> {
-        if (events.isEmpty()) return emptyList()
-
-        val ids = events.mapNotNull { it.params.getAsString("id") }.distinct()
-
-        val proposals = repository.findAllById(ids).associateBy { it.id }
-        val updatedDocs = mutableListOf<HistoricProposals>()
-
-        for (event in events) {
-            val proposalId = event.params.getAsString("id") ?: continue
-            val existing = proposals[proposalId] ?: continue
-
-            val newDesc = event.params.getAsString("ipfsHash")
-
-            val updated = existing.copy(description = newDesc ?: existing.description)
-
-            updatedDocs.add(updated)
+    /** The event's `id` is the proposal's own, `<contract>-<proposalId>`. */
+    fun processProposalDescription(events: List<IndexedEvent>): List<HistoricProposalDescription> =
+        events.mapNotNull { event ->
+            val id = event.params.getAsString("id") ?: return@mapNotNull null
+            val description = event.params.getAsString("ipfsHash") ?: return@mapNotNull null
+            val contract = id.substringBeforeLast('-', "")
+            val proposalId = id.substringAfterLast('-')
+            if (contract.isEmpty() || proposalId.toBigIntegerOrNull() == null) null
+            else
+                HistoricProposalDescription(
+                    contract,
+                    proposalId,
+                    description,
+                    event.blockNumber,
+                )
         }
-
-        return updatedDocs
-    }
-
-    @Transactional(rollbackFor = [Exception::class])
-    open fun save(events: List<HistoricProposals>) {
-        repository.saveAll(events)
-    }
 
     suspend fun extractNewProposalEvent(event: IndexedEvent): HistoricProposals? {
         try {

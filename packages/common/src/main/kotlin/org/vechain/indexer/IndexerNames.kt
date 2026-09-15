@@ -34,12 +34,7 @@ object IndexerNames {
 
     object HISTORIC_PROPOSALS {
         const val NAME = "HistoricProposalsIndexer"
-        const val COLLECTION = "historic_proposals"
-    }
-
-    object HISTORIC_PROPOSALS_VOTE {
-        const val NAME = "HistoricProposalsVoteIndexer"
-        const val COLLECTION = "historic_proposals_votes"
+        const val COLLECTION = "vevote_historic"
     }
 
     object HISTORY {

@@ -45,7 +45,7 @@ enabled_nets:
       memory: 2048
       min_capacity: 2
       max_capacity: 8
-      spring_profile: nfts,blocks,transfers,history,vevote,vevote-historic-proposals,stargate,b3tr,explorer,validator,accounts,contracts,safe
+      spring_profile: nfts,blocks,transfers,history,vevote,vevote-historic,stargate,b3tr,explorer,validator,accounts,contracts,safe
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       logging:
         app-log-level: "INFO"
@@ -127,7 +127,7 @@ enabled_nets:
       cpu: 4096
       memory: 8192
       enabled: true
-      spring_profile: indexer,nfts,blocks,transfers,history,vevote,stargate,b3tr,explorer,validator,validator-reward,token-reward,accounts,vevote-historic-proposals,contracts,safe
+      spring_profile: indexer,nfts,blocks,transfers,history,vevote,stargate,b3tr,explorer,validator,validator-reward,token-reward,accounts,vevote-historic,contracts,safe
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       logging:
         app-log-level: "INFO"
@@ -145,7 +145,7 @@ enabled_nets:
         history: "751"
         vevote: "22331866"
         stargate: "22044000"
-        historic-proposals: "4510483"
+        vevote-historic: "4510483"
         b3tr: "18868500"
         b3tr-challenges: "24565096"
         b3tr-user-challenges: "24565096"
@@ -210,7 +210,7 @@ enabled_nets:
         b3tr-gm-nft: "6"
         b3tr-gm-nft-level-overview: "2"
         explorer: "1"
-        historic-proposals: "4"
+        vevote-historic: "1"
         validator: "17"
         validator-rewards: "11"
         stargate-token: "15"
@@ -287,7 +287,7 @@ enabled_nets:
       memory: 1024
       min_capacity: 1
       max_capacity: 2
-      spring_profile: nfts,blocks,transfers,history,vevote,vevote-historic-proposals,stargate,b3tr,explorer,validator,accounts,contracts,safe
+      spring_profile: nfts,blocks,transfers,history,vevote,vevote-historic,stargate,b3tr,explorer,validator,accounts,contracts,safe
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       logging:
         app-log-level: "INFO"
@@ -396,7 +396,7 @@ enabled_nets:
         b3tr-x-alloc-result: "22126050"
         b3tr-sustainable-actions: "22126050"
         b3tr-proposal: "22126050"
-        historic-proposals: "22087000"
+        vevote-historic: "22087000"
         validator: "23221800"
         delegation: "23222706"
         vtho-generated-by-block: "23282270"
@@ -452,7 +452,7 @@ enabled_nets:
         b3tr-gm-nft: "6"
         b3tr-gm-nft-level-overview: "2"
         explorer: "1"
-        historic-proposals: "3"
+        vevote-historic: "1"
         validator: "17"
         validator-rewards: "11"
         stargate-token: "16"

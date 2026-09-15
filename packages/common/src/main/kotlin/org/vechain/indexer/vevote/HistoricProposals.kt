@@ -1,14 +1,10 @@
 package org.vechain.indexer.vevote
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
-import org.vechain.indexer.IndexerNames
 
-@Document(collection = IndexerNames.HISTORIC_PROPOSALS.COLLECTION)
 data class HistoricProposals(
-    @Id val id: String,
+    val id: String,
     val proposalId: String,
     val contractAddress: String,
     val createdDate: String,
@@ -27,3 +23,11 @@ data class HistoricProposals(
     override val blockNumber: Long,
     override val blockTimestamp: Long,
 ) : IndexedDocument
+
+/** An `ipfsHash` the legacy descriptions contract published for a proposal already indexed. */
+data class HistoricProposalDescription(
+    val contractAddress: String,
+    val proposalId: String,
+    val description: String,
+    val blockNumber: Long,
+)

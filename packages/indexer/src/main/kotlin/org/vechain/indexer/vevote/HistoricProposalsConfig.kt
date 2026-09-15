@@ -10,13 +10,13 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("vevote-historic-proposals")
+@Profile("vevote", "vevote-historic")
 open class HistoricProposalsConfig {
     @Bean
     open fun historicProposalsIndexer(
         thorClient: ThorClient,
         processor: HistoricProposalsProcessor,
-        @Value("\${indexer.start-block.historic-proposals}") startBlock: Long,
+        @Value("\${indexer.start-block.vevote-historic}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${veworld.contract.historic-proposals.steering-committee}")
         steeringCommittee: String,
@@ -32,7 +32,7 @@ open class HistoricProposalsConfig {
             .syncLoggerInterval(syncLoggerInterval)
             .abis("abis/historic-proposals")
             .abiContracts(listOf(steeringCommittee, allStakeholders, legacyDescriptions))
-            .abiEventNames(listOf("NewProposal", "LegacyVeVoteDescription"))
+            .abiEventNames(listOf("NewProposal", "LegacyVeVoteDescription", "NewVote"))
             .excludeVetTransfers()
             .build()
 }

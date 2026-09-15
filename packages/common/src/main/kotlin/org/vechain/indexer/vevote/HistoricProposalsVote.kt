@@ -1,15 +1,12 @@
 package org.vechain.indexer.vevote
 
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
-import org.vechain.indexer.IndexerNames
 
-@Document(collection = IndexerNames.HISTORIC_PROPOSALS_VOTE.COLLECTION)
+/** One voter's ballot on a legacy proposal; [choices] are the 1-based options it selected. */
 data class HistoricProposalsVote(
-    @Id val id: String,
     val proposalId: String,
     val contract: String,
+    val voter: String,
     val choices: List<Int>,
     override val blockId: String,
     override val blockNumber: Long,

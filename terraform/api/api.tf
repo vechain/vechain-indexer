@@ -618,8 +618,8 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.b3tr-sustainable-actions
     },
     {
-      name  = "INDEXER_START_BLOCK_HISTORIC_PROPOSALS"
-      value = each.value.indexer.start-block.historic-proposals
+      name  = "INDEXER_START_BLOCK_VEVOTE_HISTORIC"
+      value = each.value.indexer.start-block.vevote-historic
     },
     {
       name  = "INDEXER_START_BLOCK_VALIDATOR"
@@ -898,8 +898,8 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.stargate-vet-delegated-by-block
     },
     {
-      name  = "VERSION_HISTORIC_PROPOSALS"
-      value = each.value.indexer.version.historic-proposals
+      name  = "VERSION_VEVOTE_HISTORIC"
+      value = each.value.indexer.version.vevote-historic
     },
     {
       name  = "VERSION_B3TR_PROPOSAL_COMMENTS"
