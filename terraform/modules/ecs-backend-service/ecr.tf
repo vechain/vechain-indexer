@@ -16,8 +16,3 @@ module "ecr" {
   scan_filter_pattern = "*"
   scan_filter_type    = "WILDCARD"
 }
-
-resource "aws_ecr_repository" "repo" {
-  count = var.is_create_repo ? 1 : 0
-  name  = lower("${var.project}/${var.app_name}")
-}
