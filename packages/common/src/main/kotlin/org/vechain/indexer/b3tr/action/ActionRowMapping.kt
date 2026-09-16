@@ -3,6 +3,7 @@ package org.vechain.indexer.b3tr.action
 import com.fasterxml.jackson.core.type.TypeReference
 import java.sql.PreparedStatement
 import java.sql.ResultSet
+import java.sql.Types
 import java.time.LocalDate
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.postgres.PostgresHex.bytes
@@ -14,7 +15,7 @@ object ActionRowMapping {
     const val SCHEMA = "b3tr_action"
     const val ENTITY_TYPE = "$SCHEMA.entity_type"
 
-    /** The columns after the key and `block_number`, in the order [bindMeasures] sets them. */
+    /** The columns between `block_number` and `superseded_at`, as [bindMeasures] sets them. */
     val MEASURES =
         listOf(
             "block_id",
@@ -50,7 +51,8 @@ object ActionRowMapping {
             ActionPeriodKind.ROUND -> ActionPeriod.Round(rs.getInt("round_id"))
         }
 
-    fun bindEntity(ps: PreparedStatement, s: EntityActionSummary) {
+    /** [supersededAt] is the block of this key's next row in the same entry, null on its last. */
+    fun bindEntity(ps: PreparedStatement, s: EntityActionSummary, supersededAt: Long?) {
         var i = 1
         ps.setString(i++, s.entityType.name)
         ps.setBytes(i++, entityBytes(s.entityType, s.entity))
@@ -66,24 +68,31 @@ object ActionRowMapping {
                 s.totalRewardAmount,
                 s.totalImpact,
             )
-        ps.setLong(i, s.uniqueUsers)
+        ps.setLong(i++, s.uniqueUsers)
+        bindSupersededAt(ps, i, supersededAt)
     }
 
-    fun bindAppUser(ps: PreparedStatement, s: AppUserActionSummary) {
+    fun bindAppUser(ps: PreparedStatement, s: AppUserActionSummary, supersededAt: Long?) {
         var i = 1
         ps.setBytes(i++, bytes(s.appId))
         ps.setBytes(i++, bytes(s.user))
         keyValue(s.period)?.let { ps.setObject(i++, it) }
         ps.setLong(i++, s.blockNumber)
-        bindMeasures(
-            ps,
-            i,
-            s.blockId,
-            s.blockTimestamp,
-            s.actionsRewarded,
-            s.totalRewardAmount,
-            s.totalImpact,
-        )
+        i =
+            bindMeasures(
+                ps,
+                i,
+                s.blockId,
+                s.blockTimestamp,
+                s.actionsRewarded,
+                s.totalRewardAmount,
+                s.totalImpact,
+            )
+        bindSupersededAt(ps, i, supersededAt)
+    }
+
+    private fun bindSupersededAt(ps: PreparedStatement, index: Int, at: Long?) {
+        if (at == null) ps.setNull(index, Types.BIGINT) else ps.setLong(index, at)
     }
 
     private fun bindMeasures(

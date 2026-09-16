@@ -365,6 +365,46 @@ class ActionRepositoryTest {
     }
 
     @Test
+    fun `a key the entry touches on several blocks leaves one open row per rollback point`() {
+        writer.truncate()
+        val dave = "0x" + "ee".repeat(20)
+        val blocks = listOf(30L, 40L, 50L)
+        writer.save(
+            ActionSummaryUpdate(
+                entities =
+                    blocks.mapIndexed { i, b ->
+                        entity(EntityType.USER, dave, AllTime, b, i + 1L, "${i + 1}")
+                    },
+                appUsers =
+                    blocks.mapIndexed { i, b ->
+                        appUser(appX, dave, AllTime, b, i + 1L, "${i + 1}")
+                    },
+            )
+        )
+        assertEquals(1, open("entity_all_time"))
+        assertEquals(1, open("app_user_all_time"))
+        assertEquals(50L, reader.findEntity(AllTime, EntityType.USER, dave)!!.blockNumber)
+        assertEquals(50L, reader.findAppUser(AllTime, appX, dave)!!.blockNumber)
+
+        writer.rollbackFrom(50)
+        assertEquals(1, open("entity_all_time"))
+        assertEquals(40L, reader.findEntity(AllTime, EntityType.USER, dave)!!.blockNumber)
+        assertEquals(40L, reader.findAppUser(AllTime, appX, dave)!!.blockNumber)
+
+        writer.rollbackFrom(40)
+        assertEquals(30L, reader.findEntity(AllTime, EntityType.USER, dave)!!.blockNumber)
+
+        writer.truncate()
+        seed()
+    }
+
+    private fun open(table: String) =
+        database.jdbc.queryForObject(
+            "SELECT count(*) FROM b3tr_action.$table WHERE superseded_at IS NULL",
+            Int::class.java,
+        )!!
+
+    @Test
     fun `prune drops superseded rows below the horizon and reports how many`() {
         assertEquals(0, writer.prune(20))
         // Alice's row and the GLOBAL row that block 20 replaced, in each of the three periods.

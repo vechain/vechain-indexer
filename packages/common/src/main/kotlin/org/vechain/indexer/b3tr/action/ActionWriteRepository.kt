@@ -30,68 +30,57 @@ open class ActionWriteRepository(
     )
     open fun save(update: ActionSummaryUpdate) {
         for (kind in ActionPeriodKind.entries) {
-            update.entities
-                .filter { it.period.kind == kind }
-                .groupBy { it.blockNumber }
-                .toSortedMap()
-                .forEach { (block, rows) -> saveEntities(kind, block, rows) }
-            update.appUsers
-                .filter { it.period.kind == kind }
-                .groupBy { it.blockNumber }
-                .toSortedMap()
-                .forEach { (block, rows) -> saveAppUsers(kind, block, rows) }
+            saveEntities(kind, update.entities.filter { it.period.kind == kind })
+            saveAppUsers(kind, update.appUsers.filter { it.period.kind == kind })
         }
     }
 
     // `block_number < ?` keeps a replayed block from closing its own rows; upsert does the rest.
-    private fun saveEntities(
-        kind: ActionPeriodKind,
-        blockNumber: Long,
-        block: List<EntityActionSummary>,
-    ) {
-        // The driver rewrites the batch into one INSERT, which no primary key may hit twice.
-        val rows = block.associateBy { Triple(it.entityType, it.entity, it.period) }.values.toList()
+    private fun saveEntities(kind: ActionPeriodKind, entries: List<EntityActionSummary>) {
+        val chains = chains(entries) { Triple(it.entityType, it.entity, it.period) }
+        if (chains.isEmpty()) return
+        val opening = chains.map { it.first() }
         jdbc.batchUpdate(
             "UPDATE ${entityTable(kind)} SET superseded_at = ? " +
                 "WHERE entity_type = CAST(? AS $ENTITY_TYPE) AND entity = ? ${key(kind)}" +
                 "AND superseded_at IS NULL AND block_number < ?",
-            rows,
-            rows.size,
+            opening,
+            opening.size,
         ) { ps, s ->
             var i = 1
-            ps.setLong(i++, blockNumber)
+            ps.setLong(i++, s.blockNumber)
             ps.setString(i++, s.entityType.name)
             ps.setBytes(i++, entityBytes(s.entityType, s.entity))
             keyValue(s.period)?.let { ps.setObject(i++, it) }
-            ps.setLong(i, blockNumber)
+            ps.setLong(i, s.blockNumber)
         }
-        jdbc.batchUpdate(ENTITY_INSERT.getValue(kind), rows, rows.size) { ps, s ->
-            ActionRowMapping.bindEntity(ps, s)
+        val rows = chains.flatMap(::versions)
+        jdbc.batchUpdate(ENTITY_INSERT.getValue(kind), rows, rows.size) { ps, v ->
+            ActionRowMapping.bindEntity(ps, v.row, v.supersededAt)
         }
     }
 
-    private fun saveAppUsers(
-        kind: ActionPeriodKind,
-        blockNumber: Long,
-        block: List<AppUserActionSummary>,
-    ) {
-        val rows = block.associateBy { Triple(it.appId, it.user, it.period) }.values.toList()
+    private fun saveAppUsers(kind: ActionPeriodKind, entries: List<AppUserActionSummary>) {
+        val chains = chains(entries) { Triple(it.appId, it.user, it.period) }
+        if (chains.isEmpty()) return
+        val opening = chains.map { it.first() }
         jdbc.batchUpdate(
             "UPDATE ${appUserTable(kind)} SET superseded_at = ? " +
                 "WHERE app_id = ? AND wallet = ? ${key(kind)}" +
                 "AND superseded_at IS NULL AND block_number < ?",
-            rows,
-            rows.size,
+            opening,
+            opening.size,
         ) { ps, s ->
             var i = 1
-            ps.setLong(i++, blockNumber)
+            ps.setLong(i++, s.blockNumber)
             ps.setBytes(i++, bytes(s.appId))
             ps.setBytes(i++, bytes(s.user))
             keyValue(s.period)?.let { ps.setObject(i++, it) }
-            ps.setLong(i, blockNumber)
+            ps.setLong(i, s.blockNumber)
         }
-        jdbc.batchUpdate(APP_USER_INSERT.getValue(kind), rows, rows.size) { ps, s ->
-            ActionRowMapping.bindAppUser(ps, s)
+        val rows = chains.flatMap(::versions)
+        jdbc.batchUpdate(APP_USER_INSERT.getValue(kind), rows, rows.size) { ps, v ->
+            ActionRowMapping.bindAppUser(ps, v.row, v.supersededAt)
         }
     }
 
@@ -102,19 +91,17 @@ open class ActionWriteRepository(
     ): List<EntityActionSummary> {
         if (keys.isEmpty()) return emptyList()
         val kind = period.kind
-        val of = { type: EntityType ->
-            keys.filter { it.first == type }.map { bytes(it.second) }.distinct().toTypedArray()
-        }
+        val distinct = keys.distinct()
         return jdbc.query(
-            "SELECT * FROM ${entityTable(kind)} WHERE superseded_at IS NULL ${key(kind)}" +
-                "AND ((entity_type = 'USER' AND entity = ANY(?)) " +
-                "OR (entity_type = 'APP' AND entity = ANY(?)) OR (entity_type = 'GLOBAL' AND ?))",
+            "SELECT t.* FROM ${entityTable(kind)} t " +
+                "JOIN unnest(CAST(? AS $ENTITY_TYPE[]), ?::bytea[]) AS k(entity_type, entity) " +
+                "ON k.entity_type = t.entity_type AND k.entity = t.entity " +
+                "WHERE t.superseded_at IS NULL ${key(kind, "t.")}",
             { rs, _ -> ActionRowMapping.readEntity(rs, kind) },
             *listOfNotNull(
+                    distinct.map { it.first.name }.toTypedArray(),
+                    distinct.map { entityBytes(it.first, it.second) }.toTypedArray(),
                     keyValue(period),
-                    of(EntityType.USER),
-                    of(EntityType.APP),
-                    keys.any { it.first == EntityType.GLOBAL },
                 )
                 .toTypedArray(),
         )
@@ -161,7 +148,24 @@ open class ActionWriteRepository(
         jdbc.update("DELETE FROM $it WHERE superseded_at < ?", before)
     }
 
+    /** One row of an entry and the block that replaces it: the next row of its key, if any. */
+    private class Version<T>(val row: T, val supersededAt: Long?)
+
     companion object {
+        /**
+         * An entry's rows by key, ordered by block and one per block: a batch spanning the entry
+         * carries each row's successor, where a batch per block left the next one to close it.
+         */
+        private fun <T : ActionSummaryRow, K> chains(rows: List<T>, key: (T) -> K): List<List<T>> =
+            rows.groupBy(key).values.map {
+                it.associateBy { row -> row.blockNumber }.toSortedMap().values.toList()
+            }
+
+        private fun <T : ActionSummaryRow> versions(chain: List<T>): List<Version<T>> =
+            chain.mapIndexed { i, row ->
+                Version(row, chain.getOrNull(i + 1)?.blockNumber)
+            }
+
         private val TABLES =
             ActionPeriodKind.entries.flatMap { listOf(entityTable(it), appUserTable(it)) }
 
@@ -176,16 +180,17 @@ open class ActionWriteRepository(
             measures: List<String>,
         ): String {
             val period = listOfNotNull(kind.keyColumn)
-            val columns = keyColumns + period + "block_number" + measures
+            val written = measures + "superseded_at"
+            val columns = keyColumns + period + "block_number" + written
             val placeholders =
                 keyPlaceholders +
                     period.map { "?" } +
                     "?" +
-                    measures.map { if (it == "total_impact") "CAST(? AS jsonb)" else "?" }
+                    written.map { if (it == "total_impact") "CAST(? AS jsonb)" else "?" }
             return "INSERT INTO $table (${columns.joinToString()}) " +
                 "VALUES (${placeholders.joinToString()}) " +
                 "ON CONFLICT (${(keyColumns + period + "block_number").joinToString()}) " +
-                "DO UPDATE SET ${measures.joinToString { "$it = EXCLUDED.$it" }}"
+                "DO UPDATE SET ${written.joinToString { "$it = EXCLUDED.$it" }}"
         }
 
         private val ENTITY_INSERT =
