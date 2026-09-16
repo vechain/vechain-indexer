@@ -932,6 +932,7 @@
         "defaults": {
           "unit": "short",
           "min": 0,
+          "mappings": [{ "type": "value", "options": { "0": { "text": "synced", "color": "green", "index": 0 } } }],
           "thresholds": {
             "mode": "absolute",
             "steps": [
