@@ -40,20 +40,16 @@ open class ActionWriteRepository(
         val chains = chains(entries) { Triple(it.entityType, it.entity, it.period) }
         if (chains.isEmpty()) return
         val opening = chains.map { it.first() }
-        jdbc.batchUpdate(
-            "UPDATE ${entityTable(kind)} SET superseded_at = ? " +
-                "WHERE entity_type = CAST(? AS $ENTITY_TYPE) AND entity = ? ${key(kind)}" +
-                "AND superseded_at IS NULL AND block_number < ?",
-            opening,
-            opening.size,
-        ) { ps, s ->
-            var i = 1
-            ps.setLong(i++, s.blockNumber)
-            ps.setString(i++, s.entityType.name)
-            ps.setBytes(i++, entityBytes(s.entityType, s.entity))
-            keyValue(s.period)?.let { ps.setObject(i++, it) }
-            ps.setLong(i, s.blockNumber)
-        }
+        jdbc.update(
+            ENTITY_SUPERSEDE.getValue(kind),
+            *arguments(
+                listOf(
+                    opening.map { it.entityType.name }.toTypedArray(),
+                    opening.map { entityBytes(it.entityType, it.entity) }.toTypedArray(),
+                ),
+                opening,
+            ),
+        )
         val rows = chains.flatMap(::versions)
         jdbc.batchUpdate(ENTITY_INSERT.getValue(kind), rows, rows.size) { ps, v ->
             ActionRowMapping.bindEntity(ps, v.row, v.supersededAt)
@@ -64,20 +60,16 @@ open class ActionWriteRepository(
         val chains = chains(entries) { Triple(it.appId, it.user, it.period) }
         if (chains.isEmpty()) return
         val opening = chains.map { it.first() }
-        jdbc.batchUpdate(
-            "UPDATE ${appUserTable(kind)} SET superseded_at = ? " +
-                "WHERE app_id = ? AND wallet = ? ${key(kind)}" +
-                "AND superseded_at IS NULL AND block_number < ?",
-            opening,
-            opening.size,
-        ) { ps, s ->
-            var i = 1
-            ps.setLong(i++, s.blockNumber)
-            ps.setBytes(i++, bytes(s.appId))
-            ps.setBytes(i++, bytes(s.user))
-            keyValue(s.period)?.let { ps.setObject(i++, it) }
-            ps.setLong(i, s.blockNumber)
-        }
+        jdbc.update(
+            APP_USER_SUPERSEDE.getValue(kind),
+            *arguments(
+                listOf(
+                    opening.map { bytes(it.appId) }.toTypedArray(),
+                    opening.map { bytes(it.user) }.toTypedArray(),
+                ),
+                opening,
+            ),
+        )
         val rows = chains.flatMap(::versions)
         jdbc.batchUpdate(APP_USER_INSERT.getValue(kind), rows, rows.size) { ps, v ->
             ActionRowMapping.bindAppUser(ps, v.row, v.supersededAt)
@@ -164,6 +156,60 @@ open class ActionWriteRepository(
         private fun <T : ActionSummaryRow> versions(chain: List<T>): List<Version<T>> =
             chain.mapIndexed { i, row ->
                 Version(row, chain.getOrNull(i + 1)?.blockNumber)
+            }
+
+        /**
+         * Closes every key the entry opens in one statement, where a statement per key had the
+         * server parse and plan thousands of them for a single fast-sync batch.
+         */
+        private fun supersede(
+            table: String,
+            kind: ActionPeriodKind,
+            keyColumns: List<String>,
+            keyArrayTypes: List<String>,
+        ): String {
+            val columns = keyColumns + listOfNotNull(kind.keyColumn)
+            val types = keyArrayTypes + listOfNotNull(kind.keyArrayType)
+            return "UPDATE $table t SET superseded_at = k.at " +
+                "FROM unnest(${types.joinToString { "CAST(? AS $it)" }}, ?::bigint[]) " +
+                "AS k(${(columns + "at").joinToString()}) " +
+                "WHERE ${columns.joinToString(" AND ") { "t.$it = k.$it" }} " +
+                "AND t.superseded_at IS NULL AND t.block_number < k.at"
+        }
+
+        /** [keys] first, then the period column's values where it has one, then the blocks. */
+        private fun arguments(
+            keys: List<Array<out Any>>,
+            opening: List<ActionSummaryRow>,
+        ): Array<Any> =
+            (keys +
+                    listOfNotNull(
+                        opening
+                            .takeIf { it.first().period.kind.keyColumn != null }
+                            ?.map { keyValue(it.period).toString() }
+                            ?.toTypedArray(),
+                        opening.map { it.blockNumber }.toTypedArray(),
+                    ))
+                .toTypedArray()
+
+        private val ENTITY_SUPERSEDE =
+            ActionPeriodKind.entries.associateWith {
+                supersede(
+                    entityTable(it),
+                    it,
+                    listOf("entity_type", "entity"),
+                    listOf("$ENTITY_TYPE[]", "bytea[]"),
+                )
+            }
+
+        private val APP_USER_SUPERSEDE =
+            ActionPeriodKind.entries.associateWith {
+                supersede(
+                    appUserTable(it),
+                    it,
+                    listOf("app_id", "wallet"),
+                    listOf("bytea[]", "bytea[]"),
+                )
             }
 
         private val TABLES =

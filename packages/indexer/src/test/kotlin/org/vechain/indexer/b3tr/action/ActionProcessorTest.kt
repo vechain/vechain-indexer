@@ -72,9 +72,7 @@ class ActionProcessorTest {
         coEvery { service.roundBefore(1) } returns 3
         every { service.processEvents(any(), 3) } returns result(4)
         every { service.processEvents(any(), 4) } returns result(4)
-        every { repository.save(any()) } throws
-            IllegalStateException("connection lost") andThen
-            Unit
+        every { service.save(any()) } throws IllegalStateException("connection lost") andThen Unit
 
         assertThrows(IllegalStateException::class.java) {
             runBlocking { processor.process(entry(1)) }
@@ -92,7 +90,8 @@ class ActionProcessorTest {
     fun `a rollback forgets the round, so the next entry asks the contract again`() {
         coEvery { service.roundBefore(any()) } returns 3
         every { service.processEvents(any(), 3) } returns result(3)
-        every { repository.save(any()) } just Runs
+        every { service.save(any()) } just Runs
+        every { service.forget() } just Runs
         every { repository.rollbackFrom(any()) } just Runs
 
         runBlocking { processor.process(entry(1)) }

@@ -18,7 +18,7 @@ import org.vechain.indexer.postgres.IndexerStateRepository
 @Component
 open class ActionProcessor(
     private val service: ActionSummaryService,
-    private val repository: ActionWriteRepository,
+    repository: ActionWriteRepository,
     state: IndexerStateRepository,
     checkpointProperties: CheckpointProperties,
     horizon: InlineVersioningProperties,
@@ -46,16 +46,19 @@ open class ActionProcessor(
 
         val result =
             service.processEvents(events, round ?: service.roundBefore(events.first().blockNumber))
-        if (!result.update.isEmpty()) repository.save(result.update)
+        if (!result.update.isEmpty()) service.save(result.update)
         round = result.round
+    }
+
+    override fun resetProcessingState() {
+        round = null
+        service.forget()
+        super.resetProcessingState()
     }
 
     @Transactional(
         transactionManager = PostgresConfig.TRANSACTION_MANAGER,
         rollbackFor = [Exception::class],
     )
-    override fun rollback(blockNumber: Long) {
-        round = null
-        super.rollback(blockNumber)
-    }
+    override fun rollback(blockNumber: Long) = super.rollback(blockNumber)
 }
