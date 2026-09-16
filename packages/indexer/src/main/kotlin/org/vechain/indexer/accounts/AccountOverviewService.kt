@@ -128,18 +128,19 @@ open class AccountOverviewService(
     ) {
         if (block.number == 0L) return
         val beneficiary = normalise(block.beneficiary)
+        // The fork block still generates passive VTHO and issues none, so it earns fees only.
         val reward =
-            if (block.number < hayabusaBlock) feeReward(block)
+            if (block.number <= hayabusaBlock) feeReward(block)
             else measuredReward(block, beneficiary, events, stored)
         if (reward <= BigInteger.ZERO) return
         resolve(beneficiary).vthoBlockRewards += reward
     }
 
-    /** Before Hayabusa the proposer earns only its cut of each transaction's fee. */
+    /** Up to and including the fork block, the proposer earns only its cut of each fee. */
     private fun feeReward(block: Block): BigInteger =
         block.transactions.fold(BigInteger.ZERO) { total, tx -> total + toBigInteger(tx.reward) }
 
-    /** Hayabusa issues VTHO to the validator beyond the fees, so the reward has to be measured. */
+    /** Past the fork Hayabusa issues VTHO beyond the fees, so the reward has to be measured. */
     private suspend fun measuredReward(
         block: Block,
         beneficiary: String,
