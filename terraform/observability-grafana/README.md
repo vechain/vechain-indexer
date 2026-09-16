@@ -6,7 +6,7 @@ Terraform stack that provisions AMG data sources and (eventually) dashboards, on
 
 - **AMP data source** — Prometheus with SigV4 auth against the workspace in `terraform/observability/`. UID `amp`.
 - **CloudWatch data source** — for log-based diagnostics and any CW-native metrics we keep. UID `cloudwatch`.
-- **Dashboards** — JSON files under `dashboards/`, iterated by `dashboards.tf` via `for_each`. `overview` covers indexer sync, API, errors, ECS resources, MongoDB, the CloudFront/WAF edge rows and the per-network WAF request detail rows; `logs` is a single Logs Insights view over every ECS service log group.
+- **Dashboards** — JSON files under `dashboards/`, iterated by `dashboards.tf` via `for_each`. `overview` covers indexer sync, API, errors, ECS resources, MongoDB, the CloudFront/WAF edge rows, the proximity-group row and the per-network WAF request detail rows; `logs` is a single Logs Insights view over every ECS service log group.
 
 ## Adding a dashboard
 
@@ -57,6 +57,28 @@ which is what makes the chain order-independent.
 The `indexer_name` variable reads `indexer_sync_status`, not `indexer_current_block`: the latter is
 only emitted once an indexer is past `NOT_INITIALISED`, so sourcing the picker from it hid exactly
 the indexers you open this row to find.
+
+### Proximity groups (Logs Insights)
+
+A collapsed row over the four indexer log groups, showing the grouping `IndexerRunner` logged rather
+than one inferred from block positions. The grouping is single-linkage — sort by current block, merge
+adjacent pairs inside `proximityThreshold`, with `dependsOn` edges pre-linked — which PromQL cannot
+express, so the log is the only faithful source short of a new metric. `indexer-core` carries no
+micrometer dependency, so emitting one would mean a callback hook on `IndexerRunner.launch` and a
+version bump, not a line in the library.
+
+- **A quiet panel is the normal state on a synced colour.** `runWithProximityGroups` logs the
+  converged single group once, then hands off to `runIndexers` and returns — and the outer `run()`
+  loop only re-enters after a reorg or a stuck block. A newest entry reading `1 groups` with nothing
+  after it is the healthy steady state, not a broken query.
+- **The network picker deliberately does not apply**, and the query does not reference it. `overview`
+  carries `mainnet`/`testnet` while log group names carry `main`/`test`, so `${network:pipe}` against
+  `@log` matches nothing — silently, which is the worst failure available here. Colour and network are
+  parsed out of `@log` and shown as row labels instead. `deployment` does filter: its values match the
+  log-group token exactly.
+- Entries land every ~10 minutes while regrouping (`reshuffleInterval`) and every 5 minutes during
+  catch-up (`indexer.catch-up-interval-seconds`), per task. Keep the row collapsed — that is what stops
+  the Logs Insights scan running on every dashboard load.
 
 ### Edge rows (CloudFront + WAF)
 
