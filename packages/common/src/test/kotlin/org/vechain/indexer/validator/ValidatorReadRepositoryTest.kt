@@ -85,6 +85,11 @@ class ValidatorReadRepositoryTest {
     }
 
     @Test
+    fun `the watermark counts superseded rows, so a re-stated validator moves it`() {
+        assertEquals(20L, repository.latestWrittenBlock())
+    }
+
+    @Test
     fun `findById is case-insensitive and null for an unknown address`() {
         assertEquals(20L, repository.findById(active.uppercase().replace("0X", "0x"))?.blockNumber)
         assertNull(repository.findById("0x" + "9".repeat(40)))

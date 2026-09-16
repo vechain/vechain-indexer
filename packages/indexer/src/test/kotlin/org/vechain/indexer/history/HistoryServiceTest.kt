@@ -5,6 +5,7 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -64,6 +65,7 @@ class HistoryServiceTest {
                 thirdArg<Long>() + 5L
             }
         every { validatorRepository.findAll() } returns emptyList()
+        every { validatorRepository.latestWrittenBlock() } returns 1L
 
         val delegationLifecycleHistoryService =
             DelegationLifecycleHistoryService(
@@ -159,6 +161,21 @@ class HistoryServiceTest {
             assertThat(record.eventName).isEqualTo(HistoryEventName.TRANSFER_VET)
             assertThat(record.txId).isEqualTo(transaction.id)
         }
+
+    @Test
+    fun `the validator set is read again only once its watermark moves`() {
+        val block = BlockFixtures.BLOCK_TRANSFERS
+        every { validatorRepository.latestWrittenBlock() } returnsMany listOf(7L, 7L, 9L)
+
+        runBlocking {
+            historyService.processBlock(emptyList(), block)
+            historyService.processBlock(emptyList(), block)
+            historyService.processBlock(emptyList(), block)
+        }
+
+        verify(exactly = 3) { validatorRepository.latestWrittenBlock() }
+        verify(exactly = 2) { validatorRepository.findAll() }
+    }
 
     private suspend fun captureIndexerResults(
         blocks: List<org.vechain.indexer.thor.model.Block>
