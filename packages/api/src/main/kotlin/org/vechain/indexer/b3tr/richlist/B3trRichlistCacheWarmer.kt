@@ -30,7 +30,10 @@ open class B3trRichlistCacheWarmer(
         val lastWarmAt = lastWarmAtMillis.get()
         if (!isDue(now, lastWarmAt, warmer.refreshIntervalMs)) return
 
-        if (!repository.hasRows()) return
+        // A colour still backfilling recomputes a count nothing reads, over a table being bulk
+        // loaded. Warm only once the newest indexed block is recent enough to be the chain head.
+        val newestBlock = repository.newestBlockTimestamp() ?: return
+        if (now / 1_000 - newestBlock > warmer.staleAfterSeconds) return
 
         if (!warming.compareAndSet(false, true)) return
 

@@ -3,7 +3,6 @@ package org.vechain.indexer.b3tr.balance
 import java.math.BigDecimal
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -107,12 +106,15 @@ class B3trBalanceRepositoryTest {
 
     @Test
     fun `rollback reopens the superseded row and truncate empties the table`() {
+        assertEquals(200L, reader.newestBlockTimestamp())
+
         writer.rollbackFrom(20)
         assertEquals(10L, reader.findByAddress(spent)?.blockNumber)
         assertEquals(4L, reader.countGreaterThan(B3trBalanceColumn.TOTAL, BigDecimal.ZERO))
+        assertEquals(100L, reader.newestBlockTimestamp())
 
         writer.truncate()
-        assertFalse(reader.hasRows())
+        assertNull(reader.newestBlockTimestamp())
         seed()
     }
 

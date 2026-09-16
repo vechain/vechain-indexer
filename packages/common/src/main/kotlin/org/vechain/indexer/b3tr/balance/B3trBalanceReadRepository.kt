@@ -73,7 +73,12 @@ open class B3trBalanceReadRepository(
             threshold,
         )!!
 
-    /** False until the indexer has written its first block, which the cache warmer waits for. */
-    open fun hasRows(): Boolean =
-        jdbc.queryForObject("SELECT EXISTS (SELECT 1 FROM $TABLE)", Boolean::class.java)!!
+    /** The newest indexed block's timestamp, or null while empty; the cache warmer reads it. */
+    open fun newestBlockTimestamp(): Long? =
+        jdbc
+            .query(
+                "SELECT block_timestamp FROM $TABLE ORDER BY block_number DESC LIMIT 1",
+                { rs, _ -> rs.getLong(1) },
+            )
+            .firstOrNull()
 }
