@@ -1,7 +1,7 @@
 # ECR Repository for backend service
 
 module "ecr-api" {
-  source               = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecr?ref=v.3.1.21"
+  source               = "../modules/ecr"
   project              = local.env.application
   app_name             = "api"
   image_tag_mutability = "MUTABLE"
@@ -13,7 +13,7 @@ module "ecr-api" {
 # ECR Repository for frontend service
 
 module "ecr-indexer" {
-  source               = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecr?ref=v.3.1.21"
+  source               = "../modules/ecr"
   project              = local.env.application
   app_name             = "indexer"
   image_tag_mutability = "MUTABLE"
