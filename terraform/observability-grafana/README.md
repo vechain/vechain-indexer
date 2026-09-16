@@ -24,6 +24,33 @@ Invariants worth knowing before editing:
 - Both are `custom`, not `label_values`. Query-variable options vanish when the backing series briefly disappears (no testnet `indexer_current_block` mid-deploy), taking dependent panels with them. The trade is that the values are now hardcoded, so they must track the sidecar's external labels.
 - Prometheus-side ad-hoc filtering goes through the `filters` variable, not per-label textboxes. Ad-hoc filters only apply to their own datasource, so they never reach the CloudWatch panels.
 
+### Sync row
+
+"Indexer mode" and "Indexers by sync status" read the same `indexer_sync_status` one-hot gauge — the
+pie counts how many indexers are in each state, the table says which. Both wrap the selector in
+`last_over_time(...[45s])`: remote write carries no staleness markers, so without it a replaced
+task's final status wins the `max` for the full 5m lookback and a `SHUT_DOWN` ghost paints the panel
+after every deploy.
+
+"Time to fully synced" divides the sync gap by the rate the gap is closing —
+`rate(indexer_blocks_processed_total[30m])` less the chain's own growth,
+`deriv(thor_best_block_number[30m])`. Things worth knowing before trusting a number on it:
+
+- **It is a rate extrapolation, not a schedule.** `IndexerRunner` batches indexers into proximity
+  groups and alternates them against catch-up slices, so an indexer idling behind its group records
+  no throughput and reads as `> 7d` until its turn comes round.
+- **Fast sync and the live loop are different regimes.** A `FAST_SYNCING` indexer runs an order of
+  magnitude faster, so its estimate jumps the moment it reaches `READY_TO_SYNC`. Read it next to the
+  mode table, which is why they sit side by side.
+- **The 30m windows are the floor, not a default.** Log indexers process in adaptive ranges; the 1m
+  window "Blocks / sec" uses is far too twitchy to divide by.
+- The denominator is clamped at 0.001 blocks/s so a stalled indexer lands past the `> 7d` mapping
+  instead of dividing by zero, and `FULLY_SYNCED` is pinned to 0 the same way the gap panel pins it.
+
+The `indexer_name` variable reads `indexer_sync_status`, not `indexer_current_block`: the latter is
+only emitted once an indexer is past `NOT_INITIALISED`, so sourcing the picker from it hid exactly
+the indexers you open this row to find.
+
 ### Edge rows (CloudFront + WAF)
 
 One collapsed row per network, with the distribution ids and WebACL names hardcoded. Neither picker applies to them: CloudFront and WAF are shared across blue/green, and their CloudWatch dimensions can't be templated off `$network` — the ids are opaque and the mainnet WebACL carries no network token, so nothing is derivable.
