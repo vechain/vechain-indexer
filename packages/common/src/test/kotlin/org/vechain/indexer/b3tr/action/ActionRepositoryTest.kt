@@ -398,6 +398,36 @@ class ActionRepositoryTest {
         seed()
     }
 
+    @Test
+    fun `replaying an entry over the same or a wider range leaves one open row`() {
+        val frank = "0x" + "ab".repeat(20)
+        fun chain(vararg blocks: Long) =
+            ActionSummaryUpdate(
+                entities = blocks.map { entity(EntityType.USER, frank, AllTime, it, it, "$it") },
+                appUsers = blocks.map { appUser(appX, frank, AllTime, it, it, "$it") },
+            )
+        fun openRowsOf(user: String) =
+            database.jdbc.queryForObject(
+                "SELECT count(*) FROM b3tr_action.entity_all_time " +
+                    "WHERE superseded_at IS NULL AND entity = decode(?, 'hex')",
+                Int::class.java,
+                user.removePrefix("0x"),
+            )!!
+
+        writer.truncate()
+        writer.save(chain(100, 130))
+        writer.save(chain(100, 130))
+        assertEquals(1, openRowsOf(frank), "same range")
+        assertEquals(130L, reader.findEntity(AllTime, EntityType.USER, frank)!!.blockNumber)
+
+        writer.save(chain(100, 130, 150))
+        assertEquals(1, openRowsOf(frank), "longer range")
+        assertEquals(150L, reader.findEntity(AllTime, EntityType.USER, frank)!!.blockNumber)
+
+        writer.truncate()
+        seed()
+    }
+
     private fun open(table: String) =
         database.jdbc.queryForObject(
             "SELECT count(*) FROM b3tr_action.$table WHERE superseded_at IS NULL",
