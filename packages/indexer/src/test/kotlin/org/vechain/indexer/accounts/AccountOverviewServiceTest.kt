@@ -86,10 +86,11 @@ internal class AccountOverviewServiceTest {
         paid: String = "0x0",
         gasUsed: Long = 0,
         clauses: Int = 1,
+        reward: String = "0x0",
     ): Transaction =
         Transaction(
             id = "0x1",
-            reward = "0x0",
+            reward = reward,
             chainTag = 1,
             blockRef = "0x00",
             expiration = 720,
@@ -273,9 +274,10 @@ internal class AccountOverviewServiceTest {
 
     @Test
     fun `the beneficiary earns the VTHO its balance grew by`() {
-        energy(block(), before = "0x3e8", after = "0x5dc")
+        val postFork = block(number = hayabusa + 1)
+        energy(postFork, before = "0x3e8", after = "0x5dc")
 
-        val update = process(block())
+        val update = process(postFork)
 
         assertEquals(BigInteger.valueOf(500), update.of(beneficiary).vthoBlockRewards)
         assertEquals(listOf(beneficiary), update.overviews.map { it.address })
@@ -283,11 +285,12 @@ internal class AccountOverviewServiceTest {
 
     @Test
     fun `VTHO transferred to or from the beneficiary is no reward`() {
-        energy(block(), before = "0x3e8", after = "0x5dc")
+        val postFork = block(number = hayabusa + 1)
+        energy(postFork, before = "0x3e8", after = "0x5dc")
 
         val update =
             process(
-                block(),
+                postFork,
                 listOf(
                     vthoTransfer(alice, beneficiary, "200"),
                     vthoTransfer(beneficiary, bob, "50"),
@@ -299,10 +302,14 @@ internal class AccountOverviewServiceTest {
 
     @Test
     fun `gas the beneficiary paid is added back before measuring the reward`() {
-        energy(block(), before = "0x3e8", after = "0x5dc")
+        val postFork =
+            block(
+                number = hayabusa + 1,
+                transactions = listOf(tx(alice, gasPayer = beneficiary, paid = "0x64")),
+            )
+        energy(postFork, before = "0x3e8", after = "0x5dc")
 
-        val update =
-            process(block(transactions = listOf(tx(alice, gasPayer = beneficiary, paid = "0x64"))))
+        val update = process(postFork)
 
         assertEquals(BigInteger.valueOf(600), update.of(beneficiary).vthoBlockRewards)
         assertEquals(BigInteger.valueOf(100), update.of(beneficiary).vthoBurned)
@@ -322,7 +329,6 @@ internal class AccountOverviewServiceTest {
             )
         }
 
-        assertEquals(BigInteger.valueOf(500), process(block()).of(beneficiary).vthoBlockRewards)
         assertEquals(
             BigInteger.valueOf(500) + passive,
             process(block(number = hayabusa + 1)).of(beneficiary).vthoBlockRewards,
@@ -331,9 +337,31 @@ internal class AccountOverviewServiceTest {
 
     @Test
     fun `a beneficiary whose balance did not grow is left untouched`() {
-        energy(block(), before = "0x3e8", after = "0x3e8")
+        val postFork = block(number = hayabusa + 1)
+        energy(postFork, before = "0x3e8", after = "0x3e8")
 
-        assertTrue(process(block()).overviews.isEmpty())
+        assertTrue(process(postFork).overviews.isEmpty())
+    }
+
+    @Test
+    fun `before Hayabusa the reward is the transaction fee cut, read off the block`() {
+        energy(block(), before = "0x3e8", after = "0x5dc")
+
+        val update =
+            process(
+                block(transactions = listOf(tx(alice, reward = "0x64"), tx(bob, reward = "0x1f4")))
+            )
+
+        assertEquals(BigInteger.valueOf(600), update.of(beneficiary).vthoBlockRewards)
+        coVerify(exactly = 0) { thorClient.getAccountState(any(), any()) }
+    }
+
+    @Test
+    fun `a block before Hayabusa with no transactions costs no calls and no reward`() {
+        val update = process(block())
+
+        assertTrue(update.overviews.isEmpty())
+        coVerify(exactly = 0) { thorClient.getAccountState(any(), any()) }
     }
 
     @Test
