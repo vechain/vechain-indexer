@@ -85,8 +85,10 @@ class ValidatorReadRepositoryTest {
     }
 
     @Test
-    fun `the watermark counts superseded rows, so a re-stated validator moves it`() {
-        assertEquals(20L, repository.latestWrittenBlock())
+    fun `the watermark counts superseded rows and carries the block id`() {
+        val watermark = repository.latestWrittenBlock()
+        assertEquals(20L, watermark?.number)
+        assertEquals("0x" + "0".repeat(62) + "14", watermark?.id)
     }
 
     @Test

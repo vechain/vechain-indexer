@@ -10,6 +10,7 @@ import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.thor.model.BlockIdentifier
 import org.vechain.indexer.utils.EventUtils
 import org.vechain.indexer.utils.ParamUtils.getAsBoolean
 import org.vechain.indexer.utils.ParamUtils.getAsInt
@@ -106,7 +107,7 @@ open class HistoryService(
     }
 
     // Only the processor thread reaches these, so they need no lock.
-    private var snapshotWatermark: Long? = null
+    private var snapshotWatermark: BlockIdentifier? = null
     private var snapshots: Map<String, ValidatorSnapshot> = emptyMap()
 
     /** The set only changes when the validator indexer writes, so cache it on that watermark. */
