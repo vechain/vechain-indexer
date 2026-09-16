@@ -60,7 +60,7 @@
         "label": "Indexer",
         "type": "query",
         "datasource": { "type": "prometheus", "uid": "amp" },
-        "query": { "query": "label_values(indexer_current_block{deployment=~\"$deployment\", network=~\"$network\"}, indexer_name)", "refId": "indexer_name" },
+        "query": { "query": "label_values(indexer_sync_status{deployment=~\"$deployment\", network=~\"$network\"}, indexer_name)", "refId": "indexer_name" },
         "refresh": 2,
         "sort": 1,
         "multi": true,
@@ -953,11 +953,141 @@
       }
     },
     {
+      "id": 24,
+      "type": "table",
+      "title": "Indexer mode",
+      "description": "The status each indexer currently reports, one row per indexer per colour/network. Same series as the pie chart beside it, keeping indexer_name instead of counting it away — the pie says how many are fast-syncing, this says which. Constrained to the last 45s for the same reason: remote write carries no staleness markers, so a replaced task's final status would otherwise win the max for the 5m lookback.",
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 11 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max by (deployment, network, indexer_name, status) (last_over_time(indexer_sync_status{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\", service=\"indexer\"}[45s])) == 1",
+          "format": "table",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true, "Value": true },
+            "indexByName": { "indexer_name": 0, "status": 1, "deployment": 2, "network": 3 },
+            "renameByName": {
+              "indexer_name": "Indexer",
+              "status": "Mode",
+              "deployment": "Colour",
+              "network": "Network"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": { "fields": {}, "sort": [{ "field": "Indexer", "desc": false }] }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "filterable": true } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Mode" },
+            "properties": [
+              { "id": "custom.cellOptions", "value": { "type": "color-background", "mode": "gradient" } },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "FULLY_SYNCED": { "color": "green", "index": 0 },
+                      "SYNCING": { "color": "blue", "index": 1 },
+                      "FAST_SYNCING": { "color": "light-blue", "index": 2 },
+                      "READY_TO_SYNC": { "color": "yellow", "index": 3 },
+                      "READY_TO_FAST_SYNC": { "color": "yellow", "index": 4 },
+                      "NOT_INITIALISED": { "color": "orange", "index": 5 },
+                      "SHUT_DOWN": { "color": "red", "index": 6 }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "footer": { "show": false, "reducer": ["sum"], "countRows": false, "fields": "" }
+      }
+    },
+    {
+      "id": 25,
+      "type": "bargauge",
+      "title": "Time to fully synced — at the current rate",
+      "description": "Sync gap divided by the rate the gap is closing: rate(indexer_blocks_processed_total[30m]) minus the chain's own growth, deriv(thor_best_block_number[30m]). Read it as \"at the rate of the last 30 minutes\", not as a schedule — the runner batches indexers into proximity groups and alternates them against catch-up slices, so an indexer idling behind its group shows no throughput and reads as \"> 7d\" until its turn comes round. A fast-syncing indexer runs an order of magnitude faster than the live loop, so its estimate drops sharply the moment it leaves FAST_SYNCING; check the mode panel beside this one before believing a jump. FULLY_SYNCED indexers are pinned to 0 the same way the gap panel pins them.",
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 11 },
+      "datasource": { "type": "prometheus", "uid": "amp" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "clamp_min((max by (deployment, network) (thor_best_block_number{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}) - on(deployment, network) group_right() max by (deployment, network, indexer_name) (indexer_current_block{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\", service=\"indexer\"})) * on(deployment, network, indexer_name) group_left() (1 - max by (deployment, network, indexer_name) (indexer_sync_status{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\", status=\"FULLY_SYNCED\", service=\"indexer\"})), 0) / clamp_min(sum by (deployment, network, indexer_name) (rate(indexer_blocks_processed_total{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\", service=\"indexer\"}[30m])) - on(deployment, network) group_left() clamp_min(max by (deployment, network) (deriv(thor_best_block_number{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[30m])), 0), 0.001)",
+          "legendFormat": "{{indexer_name}} · {{deployment}}/{{network}}",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "reducers": ["lastNotNull"],
+            "mode": "seriesToRows",
+            "includeTimeField": false
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": { "fields": {}, "sort": [{ "field": "Field", "desc": false }] }
+        },
+        {
+          "id": "sortBy",
+          "options": { "fields": {}, "sort": [{ "field": "Last *", "desc": true }] }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "min": 0,
+          "decimals": 0,
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "synced", "color": "green", "index": 0 } } },
+            { "type": "range", "options": { "from": 604800, "to": null, "result": { "text": "> 7d", "color": "red", "index": 1 } } }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 3600 },
+              { "color": "red", "value": 86400 }
+            ]
+          },
+          "color": { "mode": "thresholds" },
+          "displayName": "${__data.fields.Field}"
+        }
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "reduceOptions": { "values": true, "calcs": [], "fields": "" },
+        "valueMode": "color"
+      }
+    },
+    {
       "id": 21,
       "type": "timeseries",
       "title": "Blocks / sec",
       "description": "rate(indexer_blocks_processed_total[1m]) per indexer.",
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 11 },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 21 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -973,7 +1103,7 @@
       "id": 22,
       "type": "timeseries",
       "title": "Processor duration — p95",
-      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 11 },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 21 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -989,7 +1119,7 @@
       "id": 23,
       "type": "timeseries",
       "title": "Thor client — p95 by endpoint",
-      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 11 },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 21 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -1006,7 +1136,7 @@
       "type": "row",
       "title": "API",
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 19 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 29 },
       "panels": []
     },
     {
@@ -1014,7 +1144,7 @@
       "type": "stat",
       "title": "Total requests",
       "description": "Every request the API served over the dashboard time range — the denominator the two topk panels beside it hide. `increase()` is summed per step rather than taken over `$__range` in one shot so the sparkline has a shape; the step is floored at 1m because the sidecar scrapes at 15s and a shorter window can hold too few samples for `increase()` to return anything. Counts what reached the API, so it sits below the Edge row's 'CloudFront requests': cache hits and WAF blocks never arrive here.",
-      "gridPos": { "h": 8, "w": 4, "x": 0, "y": 20 },
+      "gridPos": { "h": 8, "w": 4, "x": 0, "y": 30 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "interval": "1m",
       "targets": [
@@ -1037,7 +1167,7 @@
       "type": "bargauge",
       "title": "Top URIs by total origin time",
       "description": "topk(15) of sum by (uri) (increase(http_server_requests_seconds_sum[$__range])) — total seconds of server time each endpoint consumed over the dashboard time range, i.e. request count × mean latency. This is the panel to act on: an endpoint can be the busiest by count and cost almost nothing here (the usual shape for cheap per-user lookups), while a low-volume endpoint with a slow query can dominate. Pair with 'API — avg latency by URI' to see which of the two factors drives a bar.",
-      "gridPos": { "h": 8, "w": 10, "x": 4, "y": 20 },
+      "gridPos": { "h": 8, "w": 10, "x": 4, "y": 30 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -1074,7 +1204,7 @@
       "type": "bargauge",
       "title": "Top URIs by total requests",
       "description": "topk(15) of sum by (uri) (increase(http_server_requests_seconds_count[$__range])) — absolute request counts over the dashboard time range, not a rate, so bursty and steady traffic are comparable. Ranks by count, not by cost: a path can top this panel and still be near-free, so check 'Top URIs by total origin time' before acting on a bar here. `/**` is Spring's catch-all pattern: every request whose path matched no controller mapping, i.e. all unmatched-path 404s aggregated into one bar. The `uri` label is the matched Spring pattern with the query string stripped, so every parameter shape of one endpoint shares a bar. Full paths and query strings come from the ALB access logs in S3 (prod-{blue,green}-veworld-{main,test}-api-ecs-lb-bucket, prefix veworld-lb/). The mainnet WAF log group logs BLOCKed requests only (logging_filter_block_only), so it is not a traffic census; testnet's logs everything.",
-      "gridPos": { "h": 8, "w": 10, "x": 14, "y": 20 },
+      "gridPos": { "h": 8, "w": 10, "x": 14, "y": 30 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -1111,7 +1241,7 @@
       "type": "timeseries",
       "title": "API — avg latency by URI",
       "description": "rate(sum) / rate(count). Real p95 needs percentile histograms enabled server-side (management.metrics.distribution.percentiles-histogram.http.server.requests=true).",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 38 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -1128,7 +1258,7 @@
       "type": "piechart",
       "title": "Requests by X-Project-Id",
       "description": "sum by (project) of api_requests_by_project_total increases over the dashboard time range. `unknown` = header missing; `other` = header set but not on the KNOWN_PROJECT_IDS whitelist (raw value logged); the rest are known callers.",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 38 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -1159,7 +1289,7 @@
       "type": "timeseries",
       "title": "Top URIs by rate",
       "description": "topk(10) of request rate by uri, ranked per timestamp — a URI that goes quiet drops out of the top 10, so its line breaks into a gap rather than sitting at zero. Legend shows Max/Last only: Mean would average the bursts and ignore the gaps, which reads ~20x too high on spiky series like `/**`. For volume use 'Top URIs by total requests'. Narrow to a single endpoint with the Filters bar at the top (uri = …).",
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 36 },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 46 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -1176,7 +1306,7 @@
       "type": "row",
       "title": "Errors",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 44 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 54 },
       "panels": [
         {
           "id": 50,
@@ -1249,14 +1379,76 @@
       "type": "row",
       "title": "Resources",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 45 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 55 },
       "panels": [
+        {
+          "id": 60,
+          "type": "timeseries",
+          "title": "CPU utilised — per task",
+          "description": "ecs_task_cpu_utilized / ecs_task_cpu_reserved × 100 for indexer + api. Dashed line = 80%.",
+          "gridPos": { "h": 10, "w": 12, "x": 0, "y": 46 },
+          "datasource": { "type": "prometheus", "uid": "amp" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "(ecs_task_cpu_utilized_None{deployment=~\"$deployment\", network=~\"$network\", service=~\"indexer|api\"} / ecs_task_cpu_reserved_None{deployment=~\"$deployment\", network=~\"$network\", service=~\"indexer|api\"}) * 100",
+              "legendFormat": "{{service}} — {{task_id}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "custom": { "thresholdsStyle": { "mode": "dashed" } },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "orange", "value": 80 }
+                ]
+              }
+            }
+          },
+          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+        },
+        {
+          "id": 61,
+          "type": "timeseries",
+          "title": "Memory utilised — per task",
+          "description": "ecs_task_memory_utilized / ecs_task_memory_reserved × 100 for indexer + api. Dashed line = 80%.",
+          "gridPos": { "h": 10, "w": 12, "x": 12, "y": 46 },
+          "datasource": { "type": "prometheus", "uid": "amp" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "(ecs_task_memory_utilized_Megabytes{deployment=~\"$deployment\", network=~\"$network\", service=~\"indexer|api\"} / ecs_task_memory_reserved_Megabytes{deployment=~\"$deployment\", network=~\"$network\", service=~\"indexer|api\"}) * 100",
+              "legendFormat": "{{service}} — {{task_id}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "custom": { "thresholdsStyle": { "mode": "dashed" } },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "orange", "value": 80 }
+                ]
+              }
+            }
+          },
+          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
+        },
         {
           "id": 62,
           "type": "timeseries",
           "title": "API tasks running against desired",
-          "description": "A gap that outlasts a rolling deploy is a stuck deploy or a placement failure; the `*-api-tasks-below-desired` alarm fires on the same two metrics. API services only: the indexers deploy at deployment_minimum_healthy_percent = 0, so a rolling replacement legitimately sits at zero running tasks for minutes and a gap there says nothing. Service-level counts come from ECS itself, so a dead task reads as a drop to zero — the ADOT per-task series behind the two panels below just go absent instead. CloudWatch dimensions cannot be templated, so both colours and both networks are hardcoded here and neither picker applies.",
-          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 46 },
+          "description": "A gap that outlasts a rolling deploy is a stuck deploy or a placement failure; the `*-api-tasks-below-desired` alarm fires on the same two metrics. API services only: the indexers deploy at deployment_minimum_healthy_percent = 0, so a rolling replacement legitimately sits at zero running tasks for minutes and a gap there says nothing. Service-level counts come from ECS itself, so a dead task reads as a drop to zero — the ADOT per-task series behind the two panels above just go absent instead. CloudWatch dimensions cannot be templated, so both colours and both networks are hardcoded here and neither picker applies.",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 56 },
           "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
           "targets": [
             {
@@ -1330,68 +1522,6 @@
             ]
           },
           "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "min"] }, "tooltip": { "mode": "multi" } }
-        },
-        {
-          "id": 60,
-          "type": "timeseries",
-          "title": "CPU utilised — per task",
-          "description": "ecs_task_cpu_utilized / ecs_task_cpu_reserved × 100 for indexer + api. Dashed line = 80%.",
-          "gridPos": { "h": 10, "w": 12, "x": 0, "y": 54 },
-          "datasource": { "type": "prometheus", "uid": "amp" },
-          "targets": [
-            {
-              "refId": "A",
-              "expr": "(ecs_task_cpu_utilized_None{deployment=~\"$deployment\", network=~\"$network\", service=~\"indexer|api\"} / ecs_task_cpu_reserved_None{deployment=~\"$deployment\", network=~\"$network\", service=~\"indexer|api\"}) * 100",
-              "legendFormat": "{{service}} — {{task_id}}"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "percent",
-              "min": 0,
-              "max": 100,
-              "custom": { "thresholdsStyle": { "mode": "dashed" } },
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  { "color": "green", "value": null },
-                  { "color": "orange", "value": 80 }
-                ]
-              }
-            }
-          },
-          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
-        },
-        {
-          "id": 61,
-          "type": "timeseries",
-          "title": "Memory utilised — per task",
-          "description": "ecs_task_memory_utilized / ecs_task_memory_reserved × 100 for indexer + api. Dashed line = 80%.",
-          "gridPos": { "h": 10, "w": 12, "x": 12, "y": 54 },
-          "datasource": { "type": "prometheus", "uid": "amp" },
-          "targets": [
-            {
-              "refId": "A",
-              "expr": "(ecs_task_memory_utilized_Megabytes{deployment=~\"$deployment\", network=~\"$network\", service=~\"indexer|api\"} / ecs_task_memory_reserved_Megabytes{deployment=~\"$deployment\", network=~\"$network\", service=~\"indexer|api\"}) * 100",
-              "legendFormat": "{{service}} — {{task_id}}"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "percent",
-              "min": 0,
-              "max": 100,
-              "custom": { "thresholdsStyle": { "mode": "dashed" } },
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  { "color": "green", "value": null },
-                  { "color": "orange", "value": 80 }
-                ]
-              }
-            }
-          },
-          "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
         }
       ]
     },
@@ -1400,7 +1530,7 @@
       "type": "row",
       "title": "MongoDB · Indexer",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 46 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 56 },
       "panels": [
         {
           "id": 70,
@@ -1547,7 +1677,7 @@
       "type": "row",
       "title": "MongoDB · API",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 47 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 57 },
       "panels": [
         {
           "id": 80,
@@ -1694,7 +1824,7 @@
       "type": "row",
       "title": "Postgres · Indexer",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 48 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 58 },
       "panels": [
         {
           "id": 135,
@@ -1817,7 +1947,7 @@
       "type": "row",
       "title": "Postgres · API",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 49 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 59 },
       "panels": [
         {
           "id": 141,
@@ -1940,7 +2070,7 @@
       "type": "row",
       "title": "WAF request detail · Mainnet — Logs Insights, runs only while expanded",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 50 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 60 },
       "panels": [
         {
           "id": 120,
@@ -2057,7 +2187,7 @@
       "type": "row",
       "title": "WAF request detail · Testnet — Logs Insights, runs only while expanded",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 51 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 61 },
       "panels": [
         {
           "id": 130,
