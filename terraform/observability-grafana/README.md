@@ -26,11 +26,18 @@ Invariants worth knowing before editing:
 
 ### Sync row
 
-"Indexer mode" and "Indexers by sync status" read the same `indexer_sync_status` one-hot gauge — the
-pie counts how many indexers are in each state, the table says which. Both wrap the selector in
-`last_over_time(...[45s])`: remote write carries no staleness markers, so without it a replaced
-task's final status wins the `max` for the full 5m lookback and a `SHUT_DOWN` ghost paints the panel
-after every deploy.
+Both bar gauges carry the indexer's mode in the bar label rather than devoting a panel to it. The
+mode comes from the `indexer_sync_status` one-hot, joined in with
+`* on (deployment, network, indexer_name) group_left(status) (... == 1)` — multiplying by the
+selected 1 leaves the value alone and carries the `status` label across. It is wrapped in
+`last_over_time(...[45s])` for the same reason the pie chart is: remote write carries no staleness
+markers, so without it a replaced task's final status wins the `max` for the full 5m lookback.
+
+Labels are shortened by `label_replace` because 28 indexers × colour × network does not fit a bar:
+the trailing `Indexer` comes off the name, the colour is cut to its initial, `-net` is dropped from
+the network, and each status maps to a short form. The status rules all target lowercase, so no rule
+can re-match a value an earlier one already rewrote — `label_replace` regexes are fully anchored,
+which is what makes the chain order-independent.
 
 "Time to fully synced" divides the sync gap by the rate the gap is closing —
 `rate(indexer_blocks_processed_total[30m])` less the chain's own growth,
@@ -39,9 +46,9 @@ after every deploy.
 - **It is a rate extrapolation, not a schedule.** `IndexerRunner` batches indexers into proximity
   groups and alternates them against catch-up slices, so an indexer idling behind its group records
   no throughput and reads as `> 7d` until its turn comes round.
-- **Fast sync and the live loop are different regimes.** A `FAST_SYNCING` indexer runs an order of
-  magnitude faster, so its estimate jumps the moment it reaches `READY_TO_SYNC`. Read it next to the
-  mode table, which is why they sit side by side.
+- **Fast sync and the live loop are different regimes.** A `fast` indexer runs an order of magnitude
+  faster, so its estimate jumps the moment it reaches `ready`. The mode in the bar label is what
+  tells you a jump was a phase change rather than a stall clearing.
 - **The 30m windows are the floor, not a default.** Log indexers process in adaptive ranges; the 1m
   window "Blocks / sec" uses is far too twitchy to divide by.
 - The denominator is clamped at 0.001 blocks/s so a stalled indexer lands past the `> 7d` mapping
