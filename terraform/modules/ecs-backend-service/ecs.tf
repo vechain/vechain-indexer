@@ -32,7 +32,7 @@ resource "aws_ecs_task_definition" "ecs_task_definition" {
         // Static first container definition
         {
           name  = "${var.env}-${var.project}-${var.app_name}-task"
-          image = var.ecr_repo_uri != "" ? "${var.ecr_repo_uri}:${var.ecr_image_tag}" : (var.is_create_repo ? "${aws_ecr_repository.repo[0].repository_url}:${var.ecr_image_tag}" : "")
+          image = var.ecr_repo_uri != "" ? "${var.ecr_repo_uri}:${var.ecr_image_tag}" : (var.is_create_repo ? "${module.ecr[0].repository_url}:${var.ecr_image_tag}" : "")
           #if no other containers are here all the cpu is for the service container
           cpu         = (var.additional_containers != [] && var.main_cpu != null) ? var.main_cpu : var.cpu
           memory      = (var.additional_containers != [] && var.main_memory != null) ? var.main_memory : var.memory

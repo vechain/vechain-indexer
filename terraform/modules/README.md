@@ -29,6 +29,13 @@ describe a `git::` source.
   a container had three failed checks, about 90s, to finish booting. The field is now
   mapped explicitly. `api/modules/ecs-loadbalanced-webservice` had the same bug and the
   same fix, so the API tasks were affected too.
+- `ecs-backend-service` created its ECR repository twice: `module.ecr` and a bare
+  `aws_ecr_repository.repo`, both gated on `is_create_repo` and both named
+  `<project>/<app_name>`, so an apply with that variable true — its default — hit a
+  repository-already-exists conflict. The bare resource is gone and the task image now
+  reads `module.ecr[0].repository_url`; the module's copy is also the better one, carrying
+  encryption, scanning and a lifecycle policy the bare resource had none of. Both call
+  sites in `api/api.tf` pass `is_create_repo = false`, so nothing here was creating either.
 - `terraform fmt` over the vendored files.
 
 ## Known follow-ups
