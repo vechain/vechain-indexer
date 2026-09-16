@@ -345,15 +345,35 @@ internal class AccountOverviewServiceTest {
 
     @Test
     fun `before Hayabusa the reward is the transaction fee cut, read off the block`() {
-        energy(block(), before = "0x3e8", after = "0x5dc")
-
-        val update =
-            process(
-                block(transactions = listOf(tx(alice, reward = "0x64"), tx(bob, reward = "0x1f4")))
+        val preFork =
+            block(
+                number = hayabusa - 1,
+                transactions = listOf(tx(alice, reward = "0x64"), tx(bob, reward = "0x1f4")),
             )
+        energy(preFork, before = "0x3e8", after = "0x5dc")
+
+        val update = process(preFork)
 
         assertEquals(BigInteger.valueOf(600), update.of(beneficiary).vthoBlockRewards)
         coVerify(exactly = 0) { thorClient.getAccountState(any(), any()) }
+    }
+
+    @Test
+    fun `the fork block earns its fees, not the passive VTHO it still generates`() {
+        // Settled into vthoPassiveGeneration by passiveGenerationRule; measuring would count
+        // it twice. 0x64 of fee against a block of passive generation on 1000 VET.
+        val passive = vet(1000) * BigInteger.valueOf(10 * 5) / BigInteger.TEN.pow(9)
+        val forkBlock = block(number = hayabusa, transactions = listOf(tx(alice, reward = "0x64")))
+        energy(
+            forkBlock,
+            before = "0x0",
+            after = "0x" + (passive + BigInteger.valueOf(100)).toString(16),
+            vetBefore = "0x" + vet(1000).toString(16),
+        )
+
+        val update = process(forkBlock)
+
+        assertEquals(BigInteger.valueOf(100), update.of(beneficiary).vthoBlockRewards)
     }
 
     @Test
