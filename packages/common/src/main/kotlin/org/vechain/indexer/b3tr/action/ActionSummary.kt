@@ -50,6 +50,12 @@ val ActionPeriod.roundId: Int?
 val ActionPeriod.date: String?
     get() = (this as? ActionPeriod.Day)?.date
 
+/** A row of either rollup, identified by the window it covers and the block it was current at. */
+sealed interface ActionSummaryRow {
+    val period: ActionPeriod
+    val blockNumber: Long
+}
+
 /**
  * What one entity has been rewarded over [period], as of [blockNumber]. [uniqueUsers] is the
  * wallets an app has rewarded, or every rewarded wallet on the GLOBAL row.
@@ -57,28 +63,28 @@ val ActionPeriod.date: String?
 data class EntityActionSummary(
     val entityType: EntityType,
     val entity: String,
-    val period: ActionPeriod,
+    override val period: ActionPeriod,
     val blockId: String,
-    val blockNumber: Long,
+    override val blockNumber: Long,
     val blockTimestamp: Long,
     val actionsRewarded: Long,
     val totalRewardAmount: BigDecimal,
     val totalImpact: Impact?,
     val uniqueUsers: Long = 0,
-)
+) : ActionSummaryRow
 
 /** What one wallet has been rewarded on one app over [period], as of [blockNumber]. */
 data class AppUserActionSummary(
     val appId: String,
     val user: String,
-    val period: ActionPeriod,
+    override val period: ActionPeriod,
     val blockId: String,
-    val blockNumber: Long,
+    override val blockNumber: Long,
     val blockTimestamp: Long,
     val actionsRewarded: Long,
     val totalRewardAmount: BigDecimal,
     val totalImpact: Impact?,
-)
+) : ActionSummaryRow
 
 /** Everything one entry adds to the schema. */
 data class ActionSummaryUpdate(
