@@ -346,6 +346,12 @@ module "ecs-backend-service" {
       name  = "APPLICATION_NAME"
       value = "indexer"
     },
+    # Without this the JVM takes its default 25% of the task, leaving most of the memory unused,
+    # and survives a heap OOM as a process whose indexer coroutines are all dead.
+    {
+      name  = "JAVA_TOOL_OPTIONS"
+      value = "-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError"
+    },
     {
       name  = "APP_VERSION"
       value = local.service_image_version[each.key].indexer
