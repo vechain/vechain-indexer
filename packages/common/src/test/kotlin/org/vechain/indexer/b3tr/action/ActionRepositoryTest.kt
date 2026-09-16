@@ -428,6 +428,34 @@ class ActionRepositoryTest {
         seed()
     }
 
+    @Test
+    fun `an entry spanning two days and two rounds closes each on its own period`() {
+        writer.truncate()
+        val erin = "0x" + "ff".repeat(20)
+        val spanned = listOf(Day("2026-09-01"), Day("2026-09-02"), Round(7), Round(8))
+        fun update(block: Long, actions: Long) =
+            ActionSummaryUpdate(
+                entities =
+                    spanned.map { entity(EntityType.USER, erin, it, block, actions, "$actions") },
+                appUsers = spanned.map { appUser(appX, erin, it, block, actions, "$actions") },
+            )
+        writer.save(update(60, 1))
+        writer.save(update(70, 2))
+
+        assertEquals(2, open("entity_daily"))
+        assertEquals(2, open("entity_round"))
+        assertEquals(2, open("app_user_daily"))
+        assertEquals(2, open("app_user_round"))
+        spanned.forEach {
+            assertEquals(70L, reader.findEntity(it, EntityType.USER, erin)!!.blockNumber, "$it")
+            assertEquals(2L, reader.findEntity(it, EntityType.USER, erin)!!.actionsRewarded, "$it")
+            assertEquals(70L, reader.findAppUser(it, appX, erin)!!.blockNumber, "$it")
+        }
+
+        writer.truncate()
+        seed()
+    }
+
     private fun open(table: String) =
         database.jdbc.queryForObject(
             "SELECT count(*) FROM b3tr_action.$table WHERE superseded_at IS NULL",

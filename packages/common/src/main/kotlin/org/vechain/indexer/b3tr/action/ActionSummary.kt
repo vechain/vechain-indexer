@@ -8,10 +8,11 @@ enum class ActionPeriodKind(
     val entityTable: String,
     val appUserTable: String,
     val keyColumn: String?,
+    val keyArrayType: String?,
 ) {
-    ALL_TIME("entity_all_time", "app_user_all_time", null),
-    DAILY("entity_daily", "app_user_daily", "date"),
-    ROUND("entity_round", "app_user_round", "round_id"),
+    ALL_TIME("entity_all_time", "app_user_all_time", null, null),
+    DAILY("entity_daily", "app_user_daily", "date", "date[]"),
+    ROUND("entity_round", "app_user_round", "round_id", "int[]"),
 }
 
 /** The window a summary covers: everything so far, one UTC day, or one B3TR round. */

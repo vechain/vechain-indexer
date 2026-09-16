@@ -1,7 +1,9 @@
 package org.vechain.indexer.b3tr.action
 
+import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import java.math.BigDecimal
 import kotlinx.coroutines.runBlocking
@@ -24,7 +26,8 @@ import org.vechain.indexer.thor.model.BlockRevision
 class ActionSummaryServiceTest {
     private val repository: ActionWriteRepository = mockk()
     private val roundService: B3trRoundService = mockk()
-    private val service = ActionSummaryService(repository, roundService, ActionImpactConfig())
+    private val service =
+        ActionSummaryService(repository, roundService, ActionImpactConfig(), ActionLedgerCache(100))
 
     private val alice = "0x" + "aa".repeat(20)
     private val bob = "0x" + "bb".repeat(20)
@@ -100,6 +103,40 @@ class ActionSummaryServiceTest {
 
     private fun assertAmount(expected: String, actual: BigDecimal) =
         assertEquals(0, BigDecimal(expected).compareTo(actual), "expected $expected, was $actual")
+
+    @Test
+    fun `the next entry chains onto the rows the last one committed`() {
+        every { repository.save(any()) } just Runs
+        service.save(process(reward(1, alice, appX)))
+
+        val next = process(reward(2, alice, appX))
+
+        assertEquals(2L, next.entity(AllTime, EntityType.GLOBAL, global, 2).actionsRewarded)
+        assertEquals(2L, next.entity(AllTime, EntityType.USER, alice, 2).actionsRewarded)
+        assertEquals(1L, next.entity(AllTime, EntityType.GLOBAL, global, 2).uniqueUsers)
+        assertEquals(2L, next.appUsers.single { it.period == AllTime }.actionsRewarded)
+    }
+
+    @Test
+    fun `a save that fails remembers nothing, so the replay reads the schema again`() {
+        every { repository.save(any()) } throws IllegalStateException("connection lost")
+        assertThrows(IllegalStateException::class.java) {
+            service.save(process(reward(1, alice, appX)))
+        }
+
+        val replay = process(reward(1, alice, appX))
+        assertEquals(1L, replay.entity(AllTime, EntityType.GLOBAL, global, 1).actionsRewarded)
+    }
+
+    @Test
+    fun `forget sends the next entry back to the schema`() {
+        every { repository.save(any()) } just Runs
+        service.save(process(reward(1, alice, appX)))
+        service.forget()
+
+        val next = process(reward(2, alice, appX))
+        assertEquals(1L, next.entity(AllTime, EntityType.GLOBAL, global, 2).actionsRewarded)
+    }
 
     @Test
     fun `one block rolls its rewards into every period and counts the wallets it meets`() {

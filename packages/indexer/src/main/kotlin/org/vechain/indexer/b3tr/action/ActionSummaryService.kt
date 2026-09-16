@@ -29,6 +29,7 @@ open class ActionSummaryService(
     private val repository: ActionWriteRepository,
     private val b3trRoundService: B3trRoundService,
     private val impactConfig: ActionImpactConfig,
+    private val cache: ActionLedgerCache,
 ) {
     /** One block's rewards that belong to one period. */
     private class Slice(
@@ -97,6 +98,15 @@ open class ActionSummaryService(
         return Result(ActionSummaryUpdate(rows.entities, rows.appUsers), round)
     }
 
+    /** Only a committed row may be cached, since a failed save leaves the entry to be replayed. */
+    open fun save(update: ActionSummaryUpdate) {
+        repository.save(update)
+        cache.remember(update)
+    }
+
+    /** Called when the schema is rolled back: what was cached may no longer be in it. */
+    open fun forget() = cache.clear()
+
     /** The round in force before [firstBlock]; 0 while Emissions is not yet deployed there. */
     open suspend fun roundBefore(firstBlock: Long): Int =
         b3trRoundService.getCurrentRound(BlockRevision.Number((firstBlock - 1).coerceAtLeast(0)))
@@ -124,12 +134,26 @@ open class ActionSummaryService(
             actions.map { EntityType.USER to it.receiver } +
                 actions.map { EntityType.APP to it.appId } +
                 (EntityType.GLOBAL to EntityType.GLOBAL.name)
-        repository.findCurrentEntities(period, entities.toSet()).forEach {
+        val unknown = mutableSetOf<Pair<EntityType, String>>()
+        entities.toSet().forEach {
+            val cached = cache.entity(period, it)
+            if (cached == null) unknown += it else ledger.entities[it] = cached
+        }
+        repository.findCurrentEntities(period, unknown).forEach {
             ledger.entities[it.entityType to it.entity] = it
         }
-        repository
-            .findCurrentAppUsers(period, actions.map { it.appId to it.receiver }.toSet())
-            .forEach { ledger.appUsers[it.appId to it.user] = it }
+
+        val unknownPairs = mutableSetOf<Pair<String, String>>()
+        actions
+            .map { it.appId to it.receiver }
+            .toSet()
+            .forEach {
+                val cached = cache.appUser(period, it)
+                if (cached == null) unknownPairs += it else ledger.appUsers[it] = cached
+            }
+        repository.findCurrentAppUsers(period, unknownPairs).forEach {
+            ledger.appUsers[it.appId to it.user] = it
+        }
         return ledger
     }
 
