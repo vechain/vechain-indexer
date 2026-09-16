@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.config.postgres.ConditionalOnPostgres
 import org.vechain.indexer.postgres.PostgresHex
+import org.vechain.indexer.thor.model.BlockIdentifier
 
 /** Reads of the current validator set, for the API and the indexers under `.dependsOn(...)`. */
 @Repository
@@ -20,15 +21,22 @@ open class ValidatorReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTempla
 
     /**
      * The newest block any validator row was written at, superseded rows included, or null while
-     * the table is empty. The current set can only differ from an earlier read once this moves — a
-     * rollback moves it down — so a per-block reader can cache [findAll] against it.
+     * the table is empty. Carries the block id because a same-height reorg replaces the rows at an
+     * unchanged number, so a per-block reader caching [findAll] needs the chain identity too.
      */
-    open fun latestWrittenBlock(): Long? =
-        jdbc.queryForObject(
-            "SELECT max(block_number) FROM validator.state",
-            MapSqlParameterSource(),
-            Long::class.javaObjectType,
-        )
+    open fun latestWrittenBlock(): BlockIdentifier? =
+        jdbc
+            .query(
+                "SELECT block_number, block_id FROM validator.state " +
+                    "ORDER BY block_number DESC LIMIT 1",
+                MapSqlParameterSource(),
+            ) { rs, _ ->
+                BlockIdentifier(
+                    rs.getLong("block_number"),
+                    PostgresHex.hex(rs.getBytes("block_id")),
+                )
+            }
+            .firstOrNull()
 
     open fun findById(id: String): Validator? =
         query("$CURRENT AND id = :id", MapSqlParameterSource("id", PostgresHex.bytes(id)))

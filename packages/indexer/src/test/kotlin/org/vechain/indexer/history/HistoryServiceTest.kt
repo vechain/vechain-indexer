@@ -20,6 +20,7 @@ import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.BusinessEventParamFixtures.BUSINESS_EVENT_PARAMS
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.thor.model.BlockIdentifier
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.ValidatorDelegationService
@@ -65,7 +66,7 @@ class HistoryServiceTest {
                 thirdArg<Long>() + 5L
             }
         every { validatorRepository.findAll() } returns emptyList()
-        every { validatorRepository.latestWrittenBlock() } returns 1L
+        every { validatorRepository.latestWrittenBlock() } returns block(1, "a")
 
         val delegationLifecycleHistoryService =
             DelegationLifecycleHistoryService(
@@ -164,17 +165,29 @@ class HistoryServiceTest {
 
     @Test
     fun `the validator set is read again only once its watermark moves`() {
-        val block = BlockFixtures.BLOCK_TRANSFERS
-        every { validatorRepository.latestWrittenBlock() } returnsMany listOf(7L, 7L, 9L)
+        every { validatorRepository.latestWrittenBlock() } returnsMany
+            listOf(block(7, "a"), block(7, "a"), block(9, "a"))
 
-        runBlocking {
-            historyService.processBlock(emptyList(), block)
-            historyService.processBlock(emptyList(), block)
-            historyService.processBlock(emptyList(), block)
-        }
+        processThreeBlocks()
 
         verify(exactly = 3) { validatorRepository.latestWrittenBlock() }
         verify(exactly = 2) { validatorRepository.findAll() }
+    }
+
+    @Test
+    fun `a same-height reorg of the validator set invalidates the cache`() {
+        every { validatorRepository.latestWrittenBlock() } returnsMany
+            listOf(block(7, "a"), block(7, "b"), block(7, "b"))
+
+        processThreeBlocks()
+
+        verify(exactly = 2) { validatorRepository.findAll() }
+    }
+
+    private fun block(number: Long, id: String) = BlockIdentifier(number, "0x" + id.repeat(64))
+
+    private fun processThreeBlocks() = runBlocking {
+        repeat(3) { historyService.processBlock(emptyList(), BlockFixtures.BLOCK_TRANSFERS) }
     }
 
     private suspend fun captureIndexerResults(
