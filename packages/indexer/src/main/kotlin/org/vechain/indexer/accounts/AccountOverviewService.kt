@@ -120,7 +120,6 @@ open class AccountOverviewService(
         account.lastVthoSettlement = timestamp
     }
 
-    /** The reward is VTHO growth beyond transfers in, gas paid and pre-Hayabusa passive VTHO. */
     private suspend fun blockRewardsRule(
         block: Block,
         events: List<IndexedEvent>,
@@ -129,6 +128,24 @@ open class AccountOverviewService(
     ) {
         if (block.number == 0L) return
         val beneficiary = normalise(block.beneficiary)
+        val reward =
+            if (block.number < hayabusaBlock) feeReward(block)
+            else measuredReward(block, beneficiary, events, stored)
+        if (reward <= BigInteger.ZERO) return
+        resolve(beneficiary).vthoBlockRewards += reward
+    }
+
+    /** Before Hayabusa the proposer earns only its cut of each transaction's fee. */
+    private fun feeReward(block: Block): BigInteger =
+        block.transactions.fold(BigInteger.ZERO) { total, tx -> total + toBigInteger(tx.reward) }
+
+    /** Hayabusa issues VTHO to the validator beyond the fees, so the reward has to be measured. */
+    private suspend fun measuredReward(
+        block: Block,
+        beneficiary: String,
+        events: List<IndexedEvent>,
+        stored: Map<String, AccountOverview>,
+    ): BigInteger {
         val (before, after) =
             coroutineScope {
                 val parent = async {
@@ -146,11 +163,8 @@ open class AccountOverviewService(
             block.transactions
                 .filter { normalise(it.gasPayer) == beneficiary }
                 .sumOf { toBigInteger(it.paid) }
-        val reward =
-            after.energy.hexToBigInteger() - vthoTransferDelta(beneficiary, events) + used -
-                expected
-        if (reward <= BigInteger.ZERO) return
-        resolve(beneficiary).vthoBlockRewards += reward
+        return after.energy.hexToBigInteger() - vthoTransferDelta(beneficiary, events) + used -
+            expected
     }
 
     /**

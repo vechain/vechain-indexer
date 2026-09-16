@@ -151,7 +151,7 @@ enabled_nets:
         stargate-token: "15"
         token-rewards: "12"
         delegation: "18"
-        accounts: "1"
+        accounts: "2"
         b3tr-balance: "6"
         safe: "1"
       business-event:
@@ -324,7 +324,7 @@ enabled_nets:
         stargate-token: "16"
         token-rewards: "11"
         delegation: "17"
-        accounts: "1"
+        accounts: "2"
         b3tr-balance: "6"
         safe: "1"
       business-event:
