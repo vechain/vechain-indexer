@@ -6,7 +6,7 @@ Terraform stack that provisions AMG data sources and (eventually) dashboards, on
 
 - **AMP data source** — Prometheus with SigV4 auth against the workspace in `terraform/observability/`. UID `amp`.
 - **CloudWatch data source** — for log-based diagnostics and any CW-native metrics we keep. UID `cloudwatch`.
-- **Dashboards** — JSON files under `dashboards/`, iterated by `dashboards.tf` via `for_each`. `overview` covers indexer sync, the API indexes a backfill drops, the block prefetch, API, errors, ECS resources, MongoDB, the CloudFront/WAF edge rows and the per-network WAF request detail rows; `logs` is a single Logs Insights view over every ECS service log group.
+- **Dashboards** — JSON files under `dashboards/`, iterated by `dashboards.tf` via `for_each`. `overview` covers indexer sync, the API indexes a backfill drops, the block prefetch, API, errors, ECS resources, Postgres, the CloudFront/WAF edge rows and the per-network WAF request detail rows; `logs` is a single Logs Insights view over every ECS service log group.
 
 ## Adding a dashboard
 

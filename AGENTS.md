@@ -228,7 +228,7 @@ Write reviewer-facing prose at final length — don't draft long and trim. The b
 ### One Deploy Applies Every Stack
 [deploy.yml](.github/workflows/deploy.yml) is the single apply path for prod. Its one real input is `target`: `auto` (the default), `live` or `dead`. Both networks always deploy together. The run plans first, pauses for confirmation, then applies, in dependency order:
 
-1. `terraform/vpc`, scope `full` — VPC, Route53, ECR, Atlas access, the CloudFront WAFs
+1. `terraform/vpc`, scope `full` — VPC, Route53, ECR, the CloudFront WAFs
 2. `terraform/observability` then `terraform/observability-grafana` — in parallel with the VPC stack; `terraform/api` reads both stacks' outputs
 3. `terraform/cloudfront` — `shared`, `staging`, `prod`, `dead`, which is a dependency chain
 4. the live RDS snapshots into the dead colour, when the plan says so ([restore-dead-prod-snapshots.yml](.github/workflows/restore-dead-prod-snapshots.yml), called)
