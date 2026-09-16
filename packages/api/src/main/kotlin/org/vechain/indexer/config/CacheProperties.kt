@@ -19,7 +19,11 @@ data class CacheProperties(
         var b3trRichlistTotalHolders: WarmerSpec = WarmerSpec(),
     )
 
-    data class WarmerSpec(var enabled: Boolean = false, var refreshIntervalMs: Long = 540_000)
+    data class WarmerSpec(
+        var enabled: Boolean = false,
+        var refreshIntervalMs: Long = 540_000,
+        var staleAfterSeconds: Long = 900,
+    )
 
     /** Gets the effective max size for a cache, falling back to global default if not specified */
     fun getMaxSize(cacheName: String): Int {

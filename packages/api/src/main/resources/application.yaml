@@ -139,3 +139,4 @@ cache:
     b3tr-richlist-total-holders:
       enabled: ${CACHE_B3TR_RICHLIST_TOTAL_HOLDERS_WARMER_ENABLED:true}
       refresh-interval-ms: ${CACHE_B3TR_RICHLIST_TOTAL_HOLDERS_WARMER_REFRESH_INTERVAL_MS:540000}
+      stale-after-seconds: ${CACHE_B3TR_RICHLIST_TOTAL_HOLDERS_WARMER_STALE_AFTER_SECONDS:900}
