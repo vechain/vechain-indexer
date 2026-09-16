@@ -63,8 +63,15 @@ IGNORED = [
     re.compile(r"\.(jar|png|jpg|jpeg|gif|ico|pdf|zip|gz)$", re.I),
 ]
 
-# Scanned but never blocking: prose is the point.
-ADVISORY_ONLY = [re.compile(r"\.mdx?$", re.I)]
+# Scanned but never blocking: prose is the point, and vendored modules carry upstream's
+# comment style (terraform/modules/README.md lists which are vendored and which are ours).
+ADVISORY_ONLY = [
+    re.compile(r"\.mdx?$", re.I),
+    re.compile(
+        r"^terraform/modules/"
+        r"(cloudwatchalarm|cloudwatchdashboard|ecr|ecs-backend-service|ecs_cluster|logs|vpcendpoint)/"
+    ),
+]
 
 SLASH = {"kt", "kts", "java", "go", "ts", "tsx", "js", "jsx", "mjs", "sol", "css", "scss"}
 HASH = {"tf", "tfvars", "yml", "yaml", "sh", "bash", "zsh", "py", "toml", "properties", "conf"}
