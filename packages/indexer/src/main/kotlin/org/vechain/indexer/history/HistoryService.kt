@@ -105,16 +105,28 @@ open class HistoryService(
         return indexedHistoryEvents
     }
 
-    private fun loadValidatorSnapshots(): Map<String, ValidatorSnapshot> =
-        validatorRepository.findAll().associate { v ->
-            v.id to
-                ValidatorSnapshot(
-                    validatorId = v.id,
-                    stakingPeriodLength = v.cyclePeriodLength ?: 0L,
-                    startBlock = v.startBlock ?: 0L,
-                    exitBlock = v.exitBlock ?: 0L,
-                )
-        }
+    // Only the processor thread reaches these, so they need no lock.
+    private var snapshotWatermark: Long? = null
+    private var snapshots: Map<String, ValidatorSnapshot> = emptyMap()
+
+    /** The set only changes when the validator indexer writes, so cache it on that watermark. */
+    private fun loadValidatorSnapshots(): Map<String, ValidatorSnapshot> {
+        val watermark = validatorRepository.latestWrittenBlock()
+        if (watermark == snapshotWatermark) return snapshots
+
+        snapshots =
+            validatorRepository.findAll().associate { v ->
+                v.id to
+                    ValidatorSnapshot(
+                        validatorId = v.id,
+                        stakingPeriodLength = v.cyclePeriodLength ?: 0L,
+                        startBlock = v.startBlock ?: 0L,
+                        exitBlock = v.exitBlock ?: 0L,
+                    )
+            }
+        snapshotWatermark = watermark
+        return snapshots
+    }
 
     @Transactional(
         transactionManager = PostgresConfig.TRANSACTION_MANAGER,

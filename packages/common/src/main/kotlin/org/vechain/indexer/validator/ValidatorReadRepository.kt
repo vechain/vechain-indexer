@@ -18,6 +18,18 @@ open class ValidatorReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTempla
 
     open fun findAll(): List<Validator> = query("$CURRENT ORDER BY id", MapSqlParameterSource())
 
+    /**
+     * The newest block any validator row was written at, superseded rows included, or null while
+     * the table is empty. The current set can only differ from an earlier read once this moves — a
+     * rollback moves it down — so a per-block reader can cache [findAll] against it.
+     */
+    open fun latestWrittenBlock(): Long? =
+        jdbc.queryForObject(
+            "SELECT max(block_number) FROM validator.state",
+            MapSqlParameterSource(),
+            Long::class.javaObjectType,
+        )
+
     open fun findById(id: String): Validator? =
         query("$CURRENT AND id = :id", MapSqlParameterSource("id", PostgresHex.bytes(id)))
             .firstOrNull()
