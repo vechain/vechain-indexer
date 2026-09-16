@@ -73,8 +73,8 @@ enabled_nets:
           thor-url: "https://mainnet.vechain.org"
           contract-address: "0x49eC7192BF804Abc289645ca86F1eD01a6C17713"
     indexer:
-      cpu: 4096
-      memory: 8192
+      cpu: 2048
+      memory: 4096
       enabled: true
       spring_profile: indexer,nfts,blocks,transfers,history,vevote,stargate,b3tr,explorer,validator,validator-reward,token-reward,accounts,vevote-historic,contracts,safe
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
