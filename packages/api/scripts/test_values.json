@@ -503,6 +503,9 @@
       "txHash": [
         "0x5cdcc988f895f9e1c969c8d417a56d018e8a7186e66b98dfc892c816822f0853"
       ]
+    },
+    "/api/v1/vevote/proposals/comments": {
+      "expect_fail": "Only the candidate serves this endpoint; v1 predates it"
     }
   }
 }
