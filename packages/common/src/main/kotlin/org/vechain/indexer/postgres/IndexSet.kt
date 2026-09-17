@@ -26,6 +26,8 @@ import org.vechain.indexer.transfer.TransferIndexes
 import org.vechain.indexer.validator.DelegationIndexes
 import org.vechain.indexer.validator.ValidatorBlockIndexes
 import org.vechain.indexer.validator.ValidatorIndexes
+import org.vechain.indexer.vevote.HistoricProposalsIndexes
+import org.vechain.indexer.vevote.VeVoteIndexes
 
 /** An index only `packages/api` reads, so a backfill can do without it until the head. */
 data class DeferrableIndex(
@@ -69,5 +71,7 @@ object IndexSets {
             ContractIndexes.SET,
             NftIndexes.SET,
             NftBlacklistIndexes.SET,
+            VeVoteIndexes.SET,
+            HistoricProposalsIndexes.SET,
         )
 }

@@ -234,6 +234,28 @@ class IndexSetCoverageTest {
                 "contracts" to listOf("state_pkey", "state_block_idx", "state_prune_idx"),
                 "nft" to listOf("ownership_pkey", "ownership_block_idx", "ownership_prune_idx"),
                 "nft_blacklist" to listOf("collection_state_pkey", "collection_state_block_idx"),
+                // The running weight per (proposal, support), which every vote reads back.
+                "vevote" to
+                    listOf(
+                        "comment_pkey",
+                        "comment_block_idx",
+                        "result_pkey",
+                        "result_current_proposal_idx",
+                        "result_block_idx",
+                        "result_prune_idx",
+                    ),
+                // Three foreign keys point at proposal; their cascade reads each child's prefix.
+                "vevote_historic" to
+                    listOf(
+                        "proposal_pkey",
+                        "proposal_block_idx",
+                        "proposal_choice_pkey",
+                        "proposal_tally_pkey",
+                        "description_pkey",
+                        "description_block_idx",
+                        "vote_pkey",
+                        "vote_block_idx",
+                    ),
             )
     }
 }

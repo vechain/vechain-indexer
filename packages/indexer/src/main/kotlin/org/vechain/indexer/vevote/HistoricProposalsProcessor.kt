@@ -7,6 +7,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.PostgresIndexerStore
 import org.vechain.indexer.PostgresProcessor
+import org.vechain.indexer.backfill.BackfillCoordinatorFactory
 import org.vechain.indexer.config.CheckpointProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.postgres.IndexerStateRepository
@@ -20,6 +21,7 @@ open class HistoricProposalsProcessor(
     state: IndexerStateRepository,
     checkpointProperties: CheckpointProperties,
     processorMetrics: ProcessorMetrics,
+    backfill: BackfillCoordinatorFactory? = null,
     @Value("\${indexer.version.vevote-historic:1}") version: Int = 1,
 ) :
     PostgresProcessor(
@@ -32,6 +34,7 @@ open class HistoricProposalsProcessor(
         IndexerNames.HISTORIC_PROPOSALS.NAME,
         version,
         processorMetrics,
+        backfill?.create(HistoricProposalsIndexes.SET),
     ) {
 
     override suspend fun processEntry(entry: IndexingResult) {

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.data.domain.Sort.Direction.DESC
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -104,6 +105,31 @@ class VeVoteRepositoryTest {
             result(Support.FOR, 20, "25", 2),
             results.find(null, Support.FOR, 0, 10, DESC).single(),
         )
+    }
+
+    @Test
+    fun `the running total still reads back with the deferrable indexes dropped`() {
+        val builder = IndexBuilder(database.properties)
+        builder.drop(VeVoteIndexes.SET)
+        try {
+            writer.save(
+                listOf(comment(3, alice, Support.ABSTAIN, 30)),
+                listOf(result(Support.FOR, 30, "40", 3)),
+            )
+
+            assertEquals(
+                listOf(30L),
+                writer.findCurrentResults(setOf(proposal)).map { it.blockNumber },
+            )
+
+            writer.rollbackFrom(30)
+            assertEquals(
+                listOf(20L),
+                writer.findCurrentResults(setOf(proposal)).map { it.blockNumber },
+            )
+        } finally {
+            builder.build(VeVoteIndexes.SET)
+        }
     }
 
     @Test

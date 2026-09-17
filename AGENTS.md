@@ -91,7 +91,8 @@ block. The builder returns one as `CREATE UNIQUE INDEX` and then relabels it, wh
 A rebuild costs the size of the table whatever the gap, so the threshold is where the write saving
 overtakes it. Adding a deferrable index means adding it to the schema's `IndexSet`, not only to a
 migration: `IndexSetCoverageTest` drops each set and fails unless what stands is exactly the list
-of needed indexes it names, so an index classified nowhere fails the build.
+of needed indexes it names, so an index classified nowhere fails the build. All twenty-eight
+schemas now declare one, so that test covers every index in the database.
 
 A schema that upserts cannot defer the unique index its `ON CONFLICT (...)` names — that is the
 write semantics, not replay protection, and history could only defer its keys because it is
@@ -104,6 +105,12 @@ other twenty-four; `BlocksIndexes` defers three address b-trees and keeps six;
 `TransferIndexes` defers five of eight, keeping rollback's block index and the key that holds
 a wallet's first touch of a token. A series table's pair — its timestamp index and the GIN
 index a frame's page scans — is always the API's, so `SeriesIndexes.of(table)` names it once.
+
+Across the schema the split lands at about fifty deferrable indexes, and it is lopsided by design:
+the ones worth having are the random-by-address b-trees on the tables that take a row per block,
+while a dozen schemas give up one or two page orderings each. Index count predicts none of this —
+b3tr_challenges carries fifteen secondary indexes and defers three, because its round, member and
+per-challenge lookups are all reads the indexer makes.
 
 ## Indexer Performance Guidelines
 
