@@ -63,6 +63,16 @@ class IndexSetCoverageTest {
                                 "${it}_prune_idx",
                             )
                         },
+                // The keys two foreign keys point at, and the ones their cascade deletes read.
+                "blocks" to
+                    listOf(
+                        "block_pkey",
+                        "transaction_pkey",
+                        "transaction_block_idx",
+                        "clause_pkey",
+                        "event_pkey",
+                        "transfer_pkey",
+                    ),
             )
     }
 }

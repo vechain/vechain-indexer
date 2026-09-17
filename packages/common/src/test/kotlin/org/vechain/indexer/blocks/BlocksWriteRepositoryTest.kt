@@ -15,6 +15,7 @@ import org.vechain.indexer.blocks.BlocksFixtures.decodedEvent
 import org.vechain.indexer.blocks.BlocksFixtures.rawEvent
 import org.vechain.indexer.blocks.BlocksFixtures.transaction
 import org.vechain.indexer.blocks.BlocksFixtures.transfer
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresApiRole
 import org.vechain.indexer.postgres.PostgresHex
 import org.vechain.indexer.postgres.PostgresJson
@@ -156,6 +157,25 @@ class BlocksWriteRepositoryTest {
 
         assertNull(repository.lastSynced())
         assertEquals(0, count("transaction") + count("clause") + count("event") + count("transfer"))
+    }
+
+    @Test
+    fun `the cascade still reaches every child with the deferrable indexes dropped`() {
+        val builder = IndexBuilder(database.properties)
+        builder.drop(BlocksIndexes.SET)
+        try {
+            insertTwoBlocks()
+
+            repository.rollbackFrom(1)
+
+            assertNull(repository.lastSynced())
+            assertEquals(
+                0,
+                count("transaction") + count("clause") + count("event") + count("transfer"),
+            )
+        } finally {
+            builder.build(BlocksIndexes.SET)
+        }
     }
 
     @Test

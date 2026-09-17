@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.PostgresProcessor
+import org.vechain.indexer.backfill.BackfillCoordinatorFactory
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 
 @Profile("blocks")
@@ -14,8 +15,16 @@ open class BlocksProcessor(
     private val service: BlockTreeService,
     store: BlocksIndexerStore,
     processorMetrics: ProcessorMetrics,
+    backfill: BackfillCoordinatorFactory? = null,
     @Value("\${indexer.version.blocks:1}") version: Int = 1,
-) : PostgresProcessor(store, IndexerNames.BLOCKS.NAME, version, processorMetrics) {
+) :
+    PostgresProcessor(
+        store,
+        IndexerNames.BLOCKS.NAME,
+        version,
+        processorMetrics,
+        backfill?.create(BlocksIndexes.SET),
+    ) {
 
     override fun bootstrap() {
         super.bootstrap()
