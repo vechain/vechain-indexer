@@ -54,7 +54,7 @@ internal class B3trBalanceServiceTest {
                 b3trContractAddress = b3trContract,
                 vot3ContractAddress = vot3Contract,
             )
-        every { repository.findCurrentByAddresses(any()) } returns emptyList()
+        every { repository.findCurrentByAddresses(any(), any()) } returns emptyList()
     }
 
     @Test
@@ -203,7 +203,7 @@ internal class B3trBalanceServiceTest {
         val blockDetails = BlockDetails("0xblock", 10L, 1000L)
         val from = "0xfrom0000000000000000000000000000000001"
         val to = "0xto000000000000000000000000000000000002"
-        every { repository.findCurrentByAddresses(setOf(from, to)) } returns
+        every { repository.findCurrentByAddresses(setOf(from, to), 10L) } returns
             listOf(
                 B3trBalance(
                     address = from,

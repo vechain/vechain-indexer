@@ -148,7 +148,7 @@ enabled_nets:
         token-rewards: "12"
         delegation: "18"
         accounts: "2"
-        b3tr-balance: "6"
+        b3tr-balance: "7"
         safe: "1"
       business-event:
         substitutions:
@@ -311,7 +311,7 @@ enabled_nets:
         token-rewards: "11"
         delegation: "17"
         accounts: "2"
-        b3tr-balance: "6"
+        b3tr-balance: "7"
         safe: "1"
       business-event:
         substitutions:
