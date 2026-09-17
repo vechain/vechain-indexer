@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -171,6 +172,31 @@ class AccountsRepositoryTest {
 
         writer.rollbackFrom(30)
         assertEquals(aliceAt10(), overviews.findByAddress(alice))
+    }
+
+    @Test
+    fun `the write path holds up with the totals series indexes dropped`() {
+        val builder = IndexBuilder(database.properties)
+        builder.drop(AccountsIndexes.SET)
+        try {
+            writer.save(
+                AccountsUpdate(
+                    blockNumber = 30,
+                    overviews = listOf(overview(bob, 30, vet = 400, settled = ts(30))),
+                    balances = listOf(balance(bob, 30, 400)),
+                    totals = totals(30, 3, listOf(TimeFrame.HOUR)),
+                )
+            )
+
+            assertEquals(30L, writer.findCurrentOverviews(setOf(bob)).single().blockNumber)
+            assertEquals(30L, writer.findTotalsBefore(31)?.blockNumber)
+            assertEquals(setOf(alice, bob, carol), writer.findSeen(setOf(alice, bob, carol)))
+
+            writer.rollbackFrom(30)
+            assertEquals(20L, writer.findTotalsBefore(31)?.blockNumber)
+        } finally {
+            builder.build(AccountsIndexes.SET)
+        }
     }
 
     @Test

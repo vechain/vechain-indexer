@@ -7,6 +7,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.PostgresIndexerStore
 import org.vechain.indexer.PostgresProcessor
+import org.vechain.indexer.backfill.BackfillCoordinatorFactory
 import org.vechain.indexer.config.CheckpointProperties
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
@@ -21,6 +22,7 @@ open class ContractProcessor(
     checkpointProperties: CheckpointProperties,
     horizon: InlineVersioningProperties,
     processorMetrics: ProcessorMetrics,
+    backfill: BackfillCoordinatorFactory? = null,
     @Value("\${indexer.version.contracts:1}") version: Int = 1,
 ) :
     PostgresProcessor(
@@ -34,6 +36,7 @@ open class ContractProcessor(
         IndexerNames.CONTRACTS.NAME,
         version,
         processorMetrics,
+        backfill?.create(ContractIndexes.SET),
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) return

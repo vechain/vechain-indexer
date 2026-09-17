@@ -1,5 +1,6 @@
 package org.vechain.indexer.postgres
 
+import org.vechain.indexer.accounts.AccountsIndexes
 import org.vechain.indexer.b3tr.action.ActionIndexes
 import org.vechain.indexer.b3tr.balance.B3trBalanceIndexes
 import org.vechain.indexer.b3tr.challenges.ChallengeIndexes
@@ -9,7 +10,11 @@ import org.vechain.indexer.b3tr.proposal.ProposalIndexes
 import org.vechain.indexer.b3tr.treasury.TreasuryTransferIndexes
 import org.vechain.indexer.b3tr.xAlloc.XAllocResultIndexes
 import org.vechain.indexer.blocks.BlocksIndexes
+import org.vechain.indexer.contracts.ContractIndexes
+import org.vechain.indexer.explorer.ExplorerIndexes
 import org.vechain.indexer.history.HistoryIndexes
+import org.vechain.indexer.nft.NftBlacklistIndexes
+import org.vechain.indexer.nft.NftIndexes
 import org.vechain.indexer.safe.SafeIndexes
 import org.vechain.indexer.stargate.staking.StargateStakingIndexes
 import org.vechain.indexer.stargate.token.StargateTokenIndexes
@@ -59,5 +64,10 @@ object IndexSets {
             NavigatorIndexes.SET,
             ProposalIndexes.SET,
             SafeIndexes.SET,
+            AccountsIndexes.SET,
+            ExplorerIndexes.SET,
+            ContractIndexes.SET,
+            NftIndexes.SET,
+            NftBlacklistIndexes.SET,
         )
 }

@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -130,6 +131,23 @@ class NftBlacklistWriteRepositoryTest {
         writer.prune(before = 25)
 
         assertEquals(listOf(listOf(a, 20L, false, 30L), listOf(a, 30L, true, null)), rows())
+    }
+
+    @Test
+    fun `the write path holds up with the anti-join index dropped`() {
+        val builder = IndexBuilder(database.properties)
+        builder.drop(NftBlacklistIndexes.SET)
+        try {
+            writer.save(listOf(state(a, 10, flagged = true)))
+            writer.save(listOf(state(a, 20, flagged = false)))
+            assertEquals(2, rows().size)
+
+            writer.rollbackFrom(20)
+            assertEquals(1, rows().size)
+            writer.prune(30)
+        } finally {
+            builder.build(NftBlacklistIndexes.SET)
+        }
     }
 
     @Test

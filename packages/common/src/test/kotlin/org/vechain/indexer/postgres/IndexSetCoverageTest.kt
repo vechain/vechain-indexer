@@ -208,6 +208,32 @@ class IndexSetCoverageTest {
                         "tx_subcall_pkey",
                         "tx_subcall_block_idx",
                     ),
+                // The overview sweep is a scan by design; nothing else here is the API's alone.
+                "accounts" to
+                    listOf(
+                        "overview_pkey",
+                        "overview_block_idx",
+                        "overview_prune_idx",
+                        "vet_balance_pkey",
+                        "vet_balance_block_idx",
+                        "totals_pkey",
+                        "seen_pkey",
+                        "seen_block_idx",
+                    ),
+                // The daily rollup the indexer reads back per day, and the origins it counts.
+                "explorer" to
+                    listOf(
+                        "block_usage_pkey",
+                        "daily_fees_pkey",
+                        "daily_fees_current_idx",
+                        "daily_fees_block_idx",
+                        "daily_fees_prune_idx",
+                        "daily_origin_pkey",
+                        "daily_origin_block_idx",
+                    ),
+                "contracts" to listOf("state_pkey", "state_block_idx", "state_prune_idx"),
+                "nft" to listOf("ownership_pkey", "ownership_block_idx", "ownership_prune_idx"),
+                "nft_blacklist" to listOf("collection_state_pkey", "collection_state_block_idx"),
             )
     }
 }
