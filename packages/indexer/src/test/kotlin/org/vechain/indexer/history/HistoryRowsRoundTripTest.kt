@@ -18,7 +18,6 @@ import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.BusinessEventParamFixtures.BUSINESS_EVENT_PARAMS
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
-import org.vechain.indexer.thor.model.BlockIdentifier
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.ValidatorDelegationService
@@ -69,8 +68,7 @@ class HistoryRowsRoundTripTest {
                     ),
                 validatorRepository =
                     mockk {
-                        every { findAll() } returns emptyList()
-                        every { latestWrittenBlock() } returns BlockIdentifier(1, "0x01")
+                        every { snapshotsSince(any()) } returns emptyList()
                     },
                 validatorStartBlock = 0L,
             )
