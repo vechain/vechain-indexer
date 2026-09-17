@@ -44,14 +44,17 @@ open class B3trBalanceWriteRepository(
         jdbc.batchUpdate(INSERT, rows, rows.size) { ps, b -> B3trBalanceRowMapping.bind(ps, b) }
     }
 
-    /** The current balance of each of [addresses], which the block's transfers move. */
-    open fun findCurrentByAddresses(addresses: Set<String>): List<B3trBalance> =
+    /** Each of [addresses]' balance as it stood before [block], so a replayed block starts over. */
+    open fun findCurrentByAddresses(addresses: Set<String>, block: Long): List<B3trBalance> =
         if (addresses.isEmpty()) emptyList()
         else
             jdbc.query(
-                "SELECT * FROM $TABLE WHERE address = ANY(?) AND superseded_at IS NULL",
+                "SELECT * FROM $TABLE WHERE address = ANY(?) AND block_number < ? " +
+                    "AND (superseded_at IS NULL OR superseded_at >= ?)",
                 { rs, _ -> B3trBalanceRowMapping.read(rs) },
                 addresses.map(::bytes).toTypedArray(),
+                block,
+                block,
             )
 
     override fun rollbackFrom(blockNumber: Long) {

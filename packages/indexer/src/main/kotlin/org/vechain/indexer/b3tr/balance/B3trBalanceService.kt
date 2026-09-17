@@ -41,7 +41,10 @@ open class B3trBalanceService(
             event.params.getAsString("from")?.let { addresses.add(it) }
             event.params.getAsString("to")?.let { addresses.add(it) }
         }
-        val stored = repository.findCurrentByAddresses(addresses).associateBy { it.address }
+        val stored =
+            repository.findCurrentByAddresses(addresses, blockDetails.blockNumber).associateBy {
+                it.address
+            }
         val touched = linkedMapOf<String, B3trBalance>()
 
         transfers.forEach { event ->

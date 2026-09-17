@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.data.domain.Sort.Direction
+import org.vechain.indexer.b3tr.balance.B3trBalanceRowMapping.TABLE as TABLE_REF
 import org.vechain.indexer.postgres.PostgresTestDatabase
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -116,6 +117,38 @@ class B3trBalanceRepositoryTest {
         writer.truncate()
         assertNull(reader.newestBlockTimestamp())
         seed()
+    }
+
+    /** A retried batch re-reads block 20 against the rows block 20 first started from. */
+    @Test
+    fun `the balance before a block ignores that block's own row and the rows it closed`() {
+        assertEquals(
+            listOf(10L),
+            writer.findCurrentByAddresses(setOf(spent), 20).map { it.blockNumber },
+        )
+        assertEquals(
+            BigDecimal.ONE,
+            writer.findCurrentByAddresses(setOf(spent), 20).single().vot3Balance,
+        )
+        assertEquals(
+            listOf(20L),
+            writer.findCurrentByAddresses(setOf(spent), 21).map { it.blockNumber },
+        )
+        assertEquals(emptyList<B3trBalance>(), writer.findCurrentByAddresses(setOf(spent), 10))
+        assertEquals(
+            setOf(alice, bob),
+            writer
+                .findCurrentByAddresses(setOf(alice, bob, "0x" + "9".repeat(40)), 30)
+                .map { it.address }
+                .toSet(),
+        )
+
+        writer.save(listOf(balance(spent, 20, vot3 = 0, b3tr = 0)))
+        assertEquals(20L, reader.findByAddress(spent)?.blockNumber)
+        assertEquals(
+            2,
+            database.count("$TABLE_REF WHERE address = decode('${spent.drop(2)}', 'hex')"),
+        )
     }
 
     @Test
