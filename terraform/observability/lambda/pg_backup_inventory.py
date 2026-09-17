@@ -23,12 +23,17 @@ _EVENT_WINDOW_MINUTES = 20160  # 14 days, all DescribeEvents retains
 
 
 def _tagged_instances() -> list[str]:
-    identifiers = []
+    identifiers, seen = [], set()
     for page in _rds.get_paginator("describe_db_instances").paginate():
         for instance in page["DBInstances"]:
             tags = {tag["Key"]: tag["Value"] for tag in instance.get("TagList", [])}
             if tags.get(_TAG_KEY) == _TAG_VALUE:
                 identifiers.append(instance["DBInstanceIdentifier"])
+            elif _TAG_KEY in tags:
+                seen.add(tags[_TAG_KEY])
+    if not identifiers:
+        # Name the mismatch rather than leaving a bare zero to work backwards from.
+        print(f"no instance tagged {_TAG_KEY}={_TAG_VALUE}; values seen: {sorted(seen) or 'none'}")
     return identifiers
 
 
