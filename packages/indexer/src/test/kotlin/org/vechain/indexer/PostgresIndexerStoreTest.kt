@@ -5,7 +5,6 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
-import io.mockk.verifyOrder
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -32,13 +31,11 @@ class PostgresIndexerStoreTest {
     }
 
     @Test
-    fun `rollback undoes the tables and then moves the checkpoint below the block`() {
+    fun `rollback hands the tables and the block to the repository, which pairs them`() {
         store().rollbackFrom(500)
 
-        verifyOrder {
-            tables.rollbackFrom(500)
-            state.saveCheckpoint("test", BlockIdentifier(499, null))
-        }
+        verify { state.rollbackFrom("test", tables, 500) }
+        verify(exactly = 0) { state.saveCheckpoint(any(), any()) }
     }
 
     @Test
@@ -46,11 +43,10 @@ class PostgresIndexerStoreTest {
         every { state.prunedBelow("test") } returns 5_000
 
         assertThrows<IllegalStateException> { store().rollbackFrom(4_999) }
-        verify(exactly = 0) { tables.rollbackFrom(any()) }
-        verify(exactly = 0) { state.saveCheckpoint(any(), any()) }
+        verify(exactly = 0) { state.rollbackFrom(any(), any(), any()) }
 
         store().rollbackFrom(5_000)
-        verify { tables.rollbackFrom(5_000) }
+        verify { state.rollbackFrom("test", tables, 5_000) }
     }
 
     @Test
