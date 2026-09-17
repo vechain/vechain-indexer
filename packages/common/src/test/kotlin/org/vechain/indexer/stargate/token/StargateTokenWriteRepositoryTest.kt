@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.validator.Status
@@ -122,6 +123,37 @@ class StargateTokenWriteRepositoryTest {
             writer.findAllDistinctValidatorIds().toSet(),
         )
         assertEquals(20L, writer.findAllById(setOf("1")).single().blockNumber)
+    }
+
+    @Test
+    fun `the indexer's own reads still work with the deferrable indexes dropped`() {
+        val builder = IndexBuilder(database.properties)
+        builder.drop(StargateTokenIndexes.SET)
+        try {
+            writer.save(listOf(token("1", 10, Status.QUEUED, validator, nextPeriod = 100)))
+            writer.save(listOf(token("1", 20, Status.EXITING, validator, nextPeriod = 100)))
+
+            assertEquals(
+                listOf("1"),
+                writer.findByValidatorIdIn(setOf(validator)).map { it.tokenId },
+            )
+            assertEquals(
+                listOf("1"),
+                writer
+                    .findByDelegationNextPeriodAndDelegationStatusIn(
+                        listOf(100L),
+                        listOf(Status.EXITING.name),
+                    )
+                    .map { it.tokenId },
+            )
+            assertEquals(listOf(validator), writer.findAllDistinctValidatorIds())
+            assertEquals(20L, writer.findAllById(setOf("1")).single().blockNumber)
+
+            writer.rollbackFrom(20)
+            assertEquals(listOf("1:10:QUEUED:-"), rows())
+        } finally {
+            builder.build(StargateTokenIndexes.SET)
+        }
     }
 
     @Test

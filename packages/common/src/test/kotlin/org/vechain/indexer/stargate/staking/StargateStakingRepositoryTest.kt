@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.vechain.indexer.accounts.TimeFrame
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.timeseries.TimeFramePeriod
@@ -130,6 +131,31 @@ class StargateStakingRepositoryTest {
             writer.latestBalancesBefore(setOf(alice, bob), 20),
         )
         assertEquals(emptyList<NftOwnerBalance>(), writer.latestBalancesBefore(setOf(bob), 20))
+    }
+
+    @Test
+    fun `both series are written and the balances read back with the indexes dropped`() {
+        val builder = IndexBuilder(database.properties)
+        val before = writer.latestVetStaked()?.blockNumber
+        builder.drop(StargateStakingIndexes.SET)
+        try {
+            writer.save(
+                listOf(staked(50, 900, listOf(TimeFrame.DAY))),
+                listOf(holders(50, 3, listOf(TimeFrame.DAY))),
+                listOf(balance(alice, 50, 3)),
+            )
+            assertEquals(50L, writer.latestVetStaked()?.blockNumber)
+            assertEquals(50L, writer.latestNftHolders()?.blockNumber)
+            assertEquals(
+                listOf(3L),
+                writer.latestBalancesBefore(setOf(alice), 51).map { it.total },
+            )
+
+            writer.rollbackFrom(50)
+            assertEquals(before, writer.latestVetStaked()?.blockNumber)
+        } finally {
+            builder.build(StargateStakingIndexes.SET)
+        }
     }
 
     @Test

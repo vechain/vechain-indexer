@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.vechain.indexer.accounts.TimeFrame
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 import org.vechain.indexer.timeseries.TimeFramePeriod
 
@@ -109,6 +110,32 @@ class VthoClaimedRepositoryTest {
             writer.findCurrentByAccounts(setOf(alice)).sortedBy { it.tokenId },
         )
         assertEquals(20L, writer.latest()?.blockNumber)
+    }
+
+    @Test
+    fun `both tables are written and read back with the deferrable indexes dropped`() {
+        val builder = IndexBuilder(database.properties)
+        val before = writer.latest()?.blockNumber
+        builder.drop(VthoClaimedIndexes.SET)
+        try {
+            writer.save(
+                listOf(series(50, 900, listOf(TimeFrame.DAY))),
+                listOf(token(alice, "1", 50, legacy = 4, delegation = 206)),
+            )
+            assertEquals(50L, writer.latest()?.blockNumber)
+            assertEquals(
+                listOf(50L, 10L),
+                writer
+                    .findCurrentByAccounts(setOf(alice))
+                    .map { it.blockNumber }
+                    .sortedDescending(),
+            )
+
+            writer.rollbackFrom(50)
+            assertEquals(before, writer.latest()?.blockNumber)
+        } finally {
+            builder.build(VthoClaimedIndexes.SET)
+        }
     }
 
     @Test
