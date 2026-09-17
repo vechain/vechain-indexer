@@ -24,13 +24,14 @@ class AccountsProcessorTest {
     private val totalsService = mockk<AccountTotalsSeriesService>(relaxed = true)
     private val repository = mockk<AccountsWriteRepository>(relaxed = true)
     private val genesisLoader = mockk<GenesisVetBalanceLoader>()
+    private val state = mockk<IndexerStateRepository>(relaxed = true)
     private val processor =
         AccountsProcessor(
             overviewService,
             totalsService,
             repository,
             genesisLoader,
-            mockk<IndexerStateRepository>(relaxed = true),
+            state,
             CheckpointProperties(),
             InlineVersioningProperties(),
             ProcessorMetrics(SimpleMeterRegistry()),
@@ -148,6 +149,6 @@ class AccountsProcessorTest {
         processor.rollback(5L)
 
         verify(exactly = 1) { totalsService.resetCache() }
-        verify(exactly = 1) { repository.rollbackFrom(5L) }
+        verify(exactly = 1) { state.rollbackFrom(any(), repository, 5L) }
     }
 }

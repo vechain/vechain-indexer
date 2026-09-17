@@ -94,6 +94,16 @@ open class IndexerStateRepository(
         )
     }
 
+    /** A schema's undo and its resume marker in one transaction, so they cannot disagree. */
+    @Transactional(
+        transactionManager = PostgresConfig.TRANSACTION_MANAGER,
+        rollbackFor = [Exception::class],
+    )
+    open fun rollbackFrom(schema: String, tables: PostgresIndexerTables, blockNumber: Long) {
+        tables.rollbackFrom(blockNumber)
+        saveCheckpoint(schema, BlockIdentifier(blockNumber - 1, null))
+    }
+
     open fun prunedBelow(schema: String): Long? =
         jdbc
             .query(

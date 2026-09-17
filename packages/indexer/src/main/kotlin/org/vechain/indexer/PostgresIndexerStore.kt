@@ -28,16 +28,15 @@ open class PostgresIndexerStore(
 
     override fun lastSynced(): BlockIdentifier? = state.checkpoint(schema)
 
-    /** Runs inside the processor's Postgres transaction, so the data and the marker agree. */
+    /** The repository pairs the tables with the marker, so a self-invoked call is atomic too. */
     override fun rollbackFrom(blockNumber: Long) {
         val prunedBelow = state.prunedBelow(schema)
         check(prunedBelow == null || blockNumber >= prunedBelow) {
             "$schema: cannot roll back to block $blockNumber, rows superseded before $prunedBelow " +
                 "were pruned; raise indexer.version to resync"
         }
-        tables.rollbackFrom(blockNumber)
+        state.rollbackFrom(schema, tables, blockNumber)
         lastObserved = null
-        state.saveCheckpoint(schema, BlockIdentifier(blockNumber - 1, null))
     }
 
     /** Throttled by `indexer.checkpoint.save-interval-seconds`; failures only log. */
