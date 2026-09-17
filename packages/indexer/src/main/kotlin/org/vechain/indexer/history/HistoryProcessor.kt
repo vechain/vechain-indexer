@@ -8,6 +8,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.PostgresIndexerStore
 import org.vechain.indexer.PostgresProcessor
+import org.vechain.indexer.backfill.BackfillCoordinatorFactory
 import org.vechain.indexer.config.CheckpointProperties
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
@@ -23,6 +24,7 @@ open class HistoryProcessor(
     checkpointProperties: CheckpointProperties,
     horizon: InlineVersioningProperties,
     processorMetrics: ProcessorMetrics,
+    backfill: BackfillCoordinatorFactory? = null,
     @Value("\${indexer.version.history:1}") version: Int = 1,
 ) :
     PostgresProcessor(
@@ -36,6 +38,7 @@ open class HistoryProcessor(
         IndexerNames.HISTORY.NAME,
         version,
         processorMetrics,
+        backfill?.create(HistoryIndexes.SET),
     ) {
 
     override suspend fun processEntry(entry: IndexingResult) {

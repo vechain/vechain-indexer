@@ -11,18 +11,20 @@ import org.junit.jupiter.api.Test
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.Status
+import org.vechain.indexer.backfill.BackfillState
 
 class IndexerHealthServiceTest {
 
     private val syncingThreshold = 120L
     private val notSyncingThreshold = 30L
 
+    private val backfillState = BackfillState()
     private lateinit var service: IndexerHealthService
 
     @BeforeEach
     fun setup() {
         clearAllMocks()
-        service = IndexerHealthService(syncingThreshold, notSyncingThreshold)
+        service = IndexerHealthService(backfillState, syncingThreshold, notSyncingThreshold)
     }
 
     // --- Status-based early returns ---
@@ -275,5 +277,19 @@ class IndexerHealthServiceTest {
             .isEqualTo(
                 "Last processed at $oldTime which is more than $notSyncingThreshold seconds ago"
             )
+    }
+
+    @Test
+    fun `an indexer held still by a rebuild is up`() {
+        val indexer = mockk<BlockIndexer>()
+        every { indexer.getStatus() } returns Status.SYNCING
+        every { indexer.timeLastProcessed } returns
+            LocalDateTime.now(ZoneOffset.UTC).minusSeconds(syncingThreshold * 100)
+        backfillState.record("history", BackfillState.Phase.BUILDING)
+
+        val (status, message) = service.getIndexerHealth(indexer)
+
+        assertThat(status).isEqualTo(HealthStatus.UP)
+        assertThat(message).contains("history")
     }
 }

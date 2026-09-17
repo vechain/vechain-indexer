@@ -162,6 +162,12 @@ indexer:
   sync-log-interval: ${INDEXER_SYNC_LOG_INTERVAL:10}
   checkpoint:
     save-interval-seconds: ${INDEXER_CHECKPOINT_SAVE_INTERVAL_SECONDS:5}
+  backfill:
+    enabled: ${INDEXER_BACKFILL_ENABLED:true}
+    enter-behind-blocks: ${INDEXER_BACKFILL_ENTER_BEHIND_BLOCKS:500000}
+    build-workers: ${INDEXER_BACKFILL_BUILD_WORKERS:4}
+    maintenance-work-mem: ${INDEXER_BACKFILL_MAINTENANCE_WORK_MEM:1GB}
+    parallel-maintenance-workers: ${INDEXER_BACKFILL_PARALLEL_MAINTENANCE_WORKERS:2}
   channel-batch-size: ${INDEXER_CHANNEL_BATCH_SIZE:10}
   catch-up-interval-seconds: ${INDEXER_CATCH_UP_INTERVAL_SECONDS:300}
   inline-versioning:

@@ -1,7 +1,6 @@
 package org.vechain.indexer.config.metrics
 
 import io.mockk.clearAllMocks
-import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -9,22 +8,23 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.Status
+import org.vechain.indexer.backfill.BackfillState
+import org.vechain.indexer.chain.ChainHead
 import org.vechain.indexer.config.HealthStatus
 import org.vechain.indexer.config.IndexerHealthService
-import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.thor.model.BlockUnexpanded
 
 class IndexerMetricsReporterTest {
 
     private lateinit var metrics: IndexerHealthMetrics
-    private lateinit var thorClient: ThorClient
+    private lateinit var chainHead: ChainHead
     private lateinit var indexerHealthService: IndexerHealthService
+    private val backfillState = BackfillState()
 
     @BeforeEach
     fun setup() {
         clearAllMocks()
         metrics = mockk(relaxed = true)
-        thorClient = mockk()
+        chainHead = mockk()
         indexerHealthService = mockk()
     }
 
@@ -38,9 +38,7 @@ class IndexerMetricsReporterTest {
     }
 
     private fun stubBestBlock(blockNumber: Long) {
-        val block = mockk<BlockUnexpanded>()
-        every { block.number } returns blockNumber
-        coEvery { thorClient.getBlockUnexpanded(any()) } returns block
+        every { chainHead.bestBlockNumber() } returns blockNumber
     }
 
     @Test
@@ -49,7 +47,13 @@ class IndexerMetricsReporterTest {
         stubBestBlock(1000L)
 
         val reporter =
-            IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
+            IndexerMetricsReporter(
+                listOf(indexer),
+                metrics,
+                chainHead,
+                indexerHealthService,
+                backfillState,
+            )
         reporter.reportMetrics()
 
         every { indexer.getCurrentBlockNumber() } returns 200L
@@ -64,7 +68,13 @@ class IndexerMetricsReporterTest {
         stubBestBlock(1000L)
 
         val reporter =
-            IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
+            IndexerMetricsReporter(
+                listOf(indexer),
+                metrics,
+                chainHead,
+                indexerHealthService,
+                backfillState,
+            )
         reporter.reportMetrics()
 
         verify(exactly = 0) { metrics.incrementBlocksProcessed(any(), any()) }
@@ -76,7 +86,13 @@ class IndexerMetricsReporterTest {
         stubBestBlock(1000L)
 
         val reporter =
-            IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
+            IndexerMetricsReporter(
+                listOf(indexer),
+                metrics,
+                chainHead,
+                indexerHealthService,
+                backfillState,
+            )
         reporter.reportMetrics()
         reporter.reportMetrics()
 
@@ -90,7 +106,13 @@ class IndexerMetricsReporterTest {
         stubBestBlock(1000L)
 
         val reporter =
-            IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
+            IndexerMetricsReporter(
+                listOf(indexer),
+                metrics,
+                chainHead,
+                indexerHealthService,
+                backfillState,
+            )
         reporter.reportMetrics()
 
         every { indexer.getCurrentBlockNumber() } returns 400_000L
@@ -106,7 +128,13 @@ class IndexerMetricsReporterTest {
         stubBestBlock(1010L)
 
         val reporter =
-            IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
+            IndexerMetricsReporter(
+                listOf(indexer),
+                metrics,
+                chainHead,
+                indexerHealthService,
+                backfillState,
+            )
         reporter.reportMetrics()
 
         every { indexer.getCurrentBlockNumber() } returns 1005L
@@ -122,7 +150,13 @@ class IndexerMetricsReporterTest {
         stubBestBlock(1_000_000L)
 
         val reporter =
-            IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
+            IndexerMetricsReporter(
+                listOf(indexer),
+                metrics,
+                chainHead,
+                indexerHealthService,
+                backfillState,
+            )
         reporter.reportMetrics()
 
         // Indexer transitions to SYNCING and has caught up significantly. The first
@@ -141,7 +175,13 @@ class IndexerMetricsReporterTest {
         stubBestBlock(1_000_000L)
 
         val reporter =
-            IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
+            IndexerMetricsReporter(
+                listOf(indexer),
+                metrics,
+                chainHead,
+                indexerHealthService,
+                backfillState,
+            )
         reporter.reportMetrics()
 
         every { indexer.getStatus() } returns Status.SYNCING
@@ -164,8 +204,9 @@ class IndexerMetricsReporterTest {
             IndexerMetricsReporter(
                 listOf(indexerA, indexerB),
                 metrics,
-                thorClient,
+                chainHead,
                 indexerHealthService,
+                backfillState,
             )
         reporter.reportMetrics()
 
@@ -183,7 +224,13 @@ class IndexerMetricsReporterTest {
         stubBestBlock(1000L)
 
         val reporter =
-            IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
+            IndexerMetricsReporter(
+                listOf(indexer),
+                metrics,
+                chainHead,
+                indexerHealthService,
+                backfillState,
+            )
         reporter.reportMetrics()
 
         verify { metrics.setIndexerCurrentBlock("test-indexer", 500L) }
@@ -196,7 +243,13 @@ class IndexerMetricsReporterTest {
         stubBestBlock(1000L)
 
         val reporter =
-            IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
+            IndexerMetricsReporter(
+                listOf(indexer),
+                metrics,
+                chainHead,
+                indexerHealthService,
+                backfillState,
+            )
         reporter.reportMetrics()
 
         verify(exactly = 0) { metrics.setIndexerCurrentBlock(any(), any()) }
@@ -208,7 +261,13 @@ class IndexerMetricsReporterTest {
         stubBestBlock(1_000_000L)
 
         val reporter =
-            IndexerMetricsReporter(listOf(indexer), metrics, thorClient, indexerHealthService)
+            IndexerMetricsReporter(
+                listOf(indexer),
+                metrics,
+                chainHead,
+                indexerHealthService,
+                backfillState,
+            )
         // First SYNCING tick — populates previousBlockNumbers.
         reporter.reportMetrics()
 

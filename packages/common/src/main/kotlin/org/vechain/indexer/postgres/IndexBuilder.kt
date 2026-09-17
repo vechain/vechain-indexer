@@ -1,0 +1,133 @@
+package org.vechain.indexer.postgres
+
+import java.sql.Connection
+import java.sql.DriverManager
+import java.util.Properties
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.nanoseconds
+import org.slf4j.LoggerFactory
+import org.vechain.indexer.config.postgres.PostgresProperties
+
+/** Drops and rebuilds a schema's [DeferrableIndex]es, under a running indexer or a paused one. */
+class IndexBuilder(
+    private val properties: PostgresProperties,
+    private val settings: Settings = Settings(),
+) {
+
+    /** Per-session build memory, and how many indexes are grown at once by [build]. */
+    data class Settings(
+        val workers: Int = 4,
+        val maintenanceWorkMem: String = "1GB",
+        val parallelMaintenanceWorkers: Int = 2,
+    )
+
+    private val logger = LoggerFactory.getLogger(this::class.java)
+
+    /** The indexes of [set] that are absent, or left invalid by an interrupted build. */
+    fun missing(set: IndexSet): List<DeferrableIndex> =
+        connect().use { c -> set.indexes.filter { validity(c, set.schema, it.name) != true } }
+
+    /** Milliseconds each: the row those indexes were costing stops paying for them at once. */
+    fun drop(set: IndexSet) {
+        connect().use { c ->
+            set.indexes.forEach { execute(c, "DROP INDEX IF EXISTS ${set.schema}.${it.name}") }
+        }
+    }
+
+    /** Serial and online: the caller keeps processing blocks while these grow. */
+    fun buildConcurrently(set: IndexSet, indexes: List<DeferrableIndex> = missing(set)) {
+        if (indexes.isEmpty()) return
+        connect().use { c -> indexes.forEach { build(c, set.schema, it, concurrently = true) } }
+    }
+
+    /** Several at a time, their SHARE locks not conflicting; only for a paused processor. */
+    fun build(set: IndexSet, indexes: List<DeferrableIndex> = missing(set)) {
+        if (indexes.isEmpty()) return
+        val started = System.nanoTime()
+        val pool = Executors.newFixedThreadPool(minOf(settings.workers, indexes.size))
+        try {
+            pool
+                .invokeAll(
+                    indexes.map { index ->
+                        Callable {
+                            connect().use { c -> build(c, set.schema, index, concurrently = false) }
+                        }
+                    }
+                )
+                // get() rethrows the first failure; the rest have finished or failed by now.
+                .forEach { it.get() }
+        } finally {
+            pool.shutdown()
+            pool.awaitTermination(1, TimeUnit.MINUTES)
+        }
+        logger.info(
+            "{}: built {} deferrable indexes in {}",
+            set.schema,
+            indexes.size,
+            (System.nanoTime() - started).nanoseconds,
+        )
+    }
+
+    private fun build(
+        c: Connection,
+        schema: String,
+        index: DeferrableIndex,
+        concurrently: Boolean,
+    ) {
+        // An interrupted CONCURRENTLY build leaves the index behind, invalid, and does not replace
+        // it; a plain CREATE INDEX rolls back and leaves nothing.
+        if (validity(c, schema, index.name) == false) {
+            execute(c, "DROP INDEX IF EXISTS $schema.${index.name}")
+        }
+        val started = System.nanoTime()
+        execute(
+            c,
+            "CREATE INDEX ${if (concurrently) "CONCURRENTLY " else ""}IF NOT EXISTS " +
+                "${index.name} ON $schema.${index.table} ${index.definition}",
+        )
+        logger.info(
+            "{}.{} built in {}",
+            schema,
+            index.name,
+            (System.nanoTime() - started).nanoseconds,
+        )
+    }
+
+    /** True when the index is valid, false when a build left it invalid, null when absent. */
+    private fun validity(c: Connection, schema: String, name: String): Boolean? =
+        c.prepareStatement(
+                "SELECT i.indisvalid FROM pg_index i JOIN pg_class x ON x.oid = i.indexrelid " +
+                    "JOIN pg_namespace n ON n.oid = x.relnamespace WHERE n.nspname = ? AND x.relname = ?"
+            )
+            .use { ps ->
+                ps.setString(1, schema)
+                ps.setString(2, name)
+                ps.executeQuery().use { rs -> if (rs.next()) rs.getBoolean(1) else null }
+            }
+
+    private fun execute(c: Connection, sql: String) = c.createStatement().use { it.execute(sql) }
+
+    // Not pooled: those connections time out a read after minutes, and a build sends nothing for
+    // hours. Autocommit, because CONCURRENTLY refuses to run inside a transaction.
+    private fun connect(): Connection =
+        DriverManager.getConnection(
+                properties.url,
+                Properties().apply {
+                    setProperty("user", properties.username)
+                    setProperty("password", properties.password)
+                    setProperty("socketTimeout", "0")
+                    setProperty("tcpKeepAlive", "true")
+                    setProperty("ApplicationName", "index-builder")
+                },
+            )
+            .also {
+                it.autoCommit = true
+                execute(it, "SET maintenance_work_mem = '${settings.maintenanceWorkMem}'")
+                execute(
+                    it,
+                    "SET max_parallel_maintenance_workers = ${settings.parallelMaintenanceWorkers}",
+                )
+            }
+}

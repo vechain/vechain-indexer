@@ -7,9 +7,11 @@ import org.springframework.stereotype.Service
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.Status
+import org.vechain.indexer.backfill.BackfillState
 
 @Service
 class IndexerHealthService(
+    private val backfillState: BackfillState,
     @param:Value("\${indexer.healthcheck.inactive-threshold-syncing}")
     private val inactiveThresholdSyncing: Long,
     @param:Value("\${indexer.healthcheck.inactive-threshold-not-syncing}")
@@ -22,6 +24,10 @@ class IndexerHealthService(
      * determine if it is down.
      */
     fun getIndexerHealth(indexer: Indexer): Pair<HealthStatus, String> {
+        // A rebuild stops the whole proximity group, not just the schema being rebuilt.
+        val building = backfillState.building()
+        if (building.isNotEmpty()) return HealthStatus.UP to "Paused while $building rebuilds"
+
         when (indexer.getStatus()) {
             Status.NOT_INITIALISED -> return HealthStatus.UP to "Indexer is not initialised"
             Status.READY_TO_FAST_SYNC -> return HealthStatus.UP to "Indexer is ready to fast sync"

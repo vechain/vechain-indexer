@@ -13,14 +13,21 @@ import org.springframework.boot.actuate.health.Status.UP
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.Status
+import org.vechain.indexer.backfill.BackfillState
 
 class IndexerLivenessHealthIndicatorTest {
 
     private val stallThreshold = 1800L
     private val bootstrapState = IndexBootstrapState()
+    private val backfillState = BackfillState()
 
     private fun indicator(vararg indexers: Indexer) =
-        IndexerLivenessHealthIndicator(indexers.toList(), bootstrapState, stallThreshold)
+        IndexerLivenessHealthIndicator(
+            indexers.toList(),
+            bootstrapState,
+            backfillState,
+            stallThreshold,
+        )
 
     private fun blockIndexer(status: Status, secondsSinceProgress: Long) =
         mockk<BlockIndexer> {
@@ -68,6 +75,17 @@ class IndexerLivenessHealthIndicatorTest {
                 .health()
 
         assertThat(health.status).isEqualTo(UP)
+    }
+
+    @Test
+    fun `a rebuild holding every indexer still keeps the process alive`() {
+        bootstrapState.markReady()
+        backfillState.record("history", BackfillState.Phase.BUILDING)
+
+        val health = indicator(blockIndexer(Status.SYNCING, stallThreshold + 600)).health()
+
+        assertThat(health.status).isEqualTo(UP)
+        assertThat(health.details["message"] as String).contains("history")
     }
 
     @Test

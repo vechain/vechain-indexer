@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 import org.springframework.stereotype.Component
 import org.vechain.indexer.Status
+import org.vechain.indexer.backfill.BackfillState
 
 @Component
 class IndexerHealthMetrics(private val registry: MeterRegistry) {
@@ -15,6 +16,8 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
     private val syncStatusGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
     private val currentSyncStatus = ConcurrentHashMap<String, Status>()
     private val currentBlockGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
+    private val backfillPhaseGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
+    private val currentBackfillPhase = ConcurrentHashMap<String, BackfillState.Phase>()
     private val bestBlockGauge = AtomicReference(0.0)
     private var bestBlockGaugeInitialized = false
     private val blocksProcessedCounters = ConcurrentHashMap<String, Counter>()
@@ -51,6 +54,30 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
             syncStatus
         }
     }
+
+    /** One-hot per schema, as [setIndexerSyncStatus] is per indexer; only this thread writes it. */
+    fun setBackfillPhase(schema: String, phase: BackfillState.Phase) {
+        if (currentBackfillPhase.put(schema, phase) == phase) return
+        BackfillState.Phase.entries.forEach {
+            backfillPhaseGauge(schema, it).set(if (it == phase) 1.0 else 0.0)
+        }
+    }
+
+    private fun backfillPhaseGauge(
+        schema: String,
+        phase: BackfillState.Phase,
+    ): AtomicReference<Double> =
+        backfillPhaseGauges.computeIfAbsent("$schema:${phase.name}") {
+            val ref = AtomicReference(0.0)
+            registry.gauge(
+                "indexer_backfill_phase",
+                listOf(Tag.of("schema", schema), Tag.of("phase", phase.name)),
+                ref,
+            ) {
+                it.get()
+            }
+            ref
+        }
 
     fun setIndexerCurrentBlock(indexerName: String, blockNumber: Long) {
         getOrCreateCurrentBlockGauge(indexerName).set(blockNumber.toDouble())
