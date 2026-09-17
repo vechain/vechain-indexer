@@ -20,6 +20,44 @@ def load_module(name: str, path: Path):
 
 MODULE = load_module("compare_from_spec", SCRIPTS_DIR / "compare_from_spec.py")
 
+BASELINE_URL = "https://baseline.example.com"
+CANDIDATE_URL = "https://candidate.example.com"
+ENDPOINTS = [("baseline", BASELINE_URL), ("candidate", CANDIDATE_URL)]
+
+
+def fetch_stub(baseline, candidate, baseline_again=None):
+    """Serve by URL, so a re-read of the baseline is answered like the first."""
+    seen = {"baseline": 0}
+
+    def stub(url, headers, timeout, context):
+        if url.startswith(BASELINE_URL):
+            seen["baseline"] += 1
+            body = baseline if seen["baseline"] == 1 or baseline_again is None else baseline_again
+        else:
+            body = candidate
+        if isinstance(body, Exception):
+            raise body
+        return body, {}
+
+    return stub
+
+
+def run_case(test_case, baseline, candidate, baseline_again=None, **kwargs):
+    with patch.object(
+        MODULE, "fetch_json_with_headers", side_effect=fetch_stub(baseline, candidate, baseline_again)
+    ):
+        return MODULE.execute_test_case(
+            test_case,
+            endpoints=ENDPOINTS,
+            common_headers=kwargs.pop("common_headers", {}),
+            timeout=kwargs.pop("timeout", 5),
+            insecure=kwargs.pop("insecure", False),
+            cafile=kwargs.pop("cafile", None),
+            ignored_paths=kwargs.pop("ignored_paths", set()),
+            unordered_lists=kwargs.pop("unordered_lists", False),
+            **kwargs,
+        )
+
 
 class CompareFromSpecTest(unittest.TestCase):
     def test_galaxy_member_level_overview_ignores_tie_ordering(self) -> None:
@@ -51,20 +89,7 @@ class CompareFromSpecTest(unittest.TestCase):
             {"level": "MARS", "totalNFTs": 24},
         ]
 
-        with patch.object(MODULE, "fetch_json", side_effect=[baseline, candidate]):
-            result = MODULE.execute_test_case(
-                test_case,
-                endpoints=[
-                    ("baseline", "https://baseline.example.com"),
-                    ("candidate", "https://candidate.example.com"),
-                ],
-                common_headers={},
-                timeout=5,
-                insecure=False,
-                cafile=None,
-                ignored_paths=set(),
-                unordered_lists=False,
-            )
+        result = run_case(test_case, baseline, candidate)
 
         self.assertTrue(result.all_match)
         self.assertEqual(result.diffs["baseline vs candidate"], [])
@@ -84,20 +109,7 @@ class CompareFromSpecTest(unittest.TestCase):
             url="https://example.com/api/v1/b3tr/richlist/0xeb0c565f69557481c6c7fa347cae273128a0996e?scope=ALL",
         )
 
-        with patch.object(MODULE, "fetch_json", side_effect=[not_found, not_found]):
-            result = MODULE.execute_test_case(
-                test_case,
-                endpoints=[
-                    ("baseline", "https://baseline.example.com"),
-                    ("candidate", "https://candidate.example.com"),
-                ],
-                common_headers={},
-                timeout=5,
-                insecure=False,
-                cafile=None,
-                ignored_paths=set(),
-                unordered_lists=False,
-            )
+        result = run_case(test_case, not_found, not_found)
 
         self.assertTrue(result.all_match)
         self.assertFalse(result.has_mismatch)
@@ -135,20 +147,7 @@ class CompareFromSpecTest(unittest.TestCase):
             url="https://candidate.example.com",
         )
 
-        with patch.object(MODULE, "fetch_json", side_effect=[baseline_error, candidate_error]):
-            result = MODULE.execute_test_case(
-                test_case,
-                endpoints=[
-                    ("baseline", "https://baseline.example.com"),
-                    ("candidate", "https://candidate.example.com"),
-                ],
-                common_headers={},
-                timeout=5,
-                insecure=False,
-                cafile=None,
-                ignored_paths=set(),
-                unordered_lists=False,
-            )
+        result = run_case(test_case, baseline_error, candidate_error)
 
         self.assertTrue(result.all_match)
         self.assertFalse(result.has_mismatch)
@@ -176,20 +175,7 @@ class CompareFromSpecTest(unittest.TestCase):
             url="https://candidate.example.com",
         )
 
-        with patch.object(MODULE, "fetch_json", side_effect=[not_found, server_error]):
-            result = MODULE.execute_test_case(
-                test_case,
-                endpoints=[
-                    ("baseline", "https://baseline.example.com"),
-                    ("candidate", "https://candidate.example.com"),
-                ],
-                common_headers={},
-                timeout=5,
-                insecure=False,
-                cafile=None,
-                ignored_paths=set(),
-                unordered_lists=False,
-            )
+        result = run_case(test_case, not_found, server_error)
 
         self.assertFalse(result.all_match)
         self.assertIn(
@@ -211,21 +197,7 @@ class ToleratedDriftTest(unittest.TestCase):
             query_params={"scope": "ALL"},
             label="GET /api/v1/b3tr/richlist/{address}",
         )
-        with patch.object(MODULE, "fetch_json", side_effect=[baseline, candidate]):
-            return MODULE.execute_test_case(
-                test_case,
-                endpoints=[
-                    ("baseline", "https://baseline.example.com"),
-                    ("candidate", "https://candidate.example.com"),
-                ],
-                common_headers={},
-                timeout=5,
-                insecure=False,
-                cafile=None,
-                ignored_paths=set(),
-                unordered_lists=False,
-                **tol,
-            )
+        return run_case(test_case, baseline, candidate, **tol)
 
     def test_tolerated_only_does_not_fail_the_run(self):
         # Mirrors the real richlist drift: totalHolders and rank ±1, topPercentage
@@ -362,20 +334,7 @@ class PerEndpointIgnorePathsTest(unittest.TestCase):
             "totalRevertedTransactions": "20281900",
             "totalRevertedClauses": "21849300",
         }
-        with patch.object(MODULE, "fetch_json", side_effect=[baseline, candidate]):
-            result = MODULE.execute_test_case(
-                tc,
-                endpoints=[
-                    ("baseline", "https://baseline.example.com"),
-                    ("candidate", "https://candidate.example.com"),
-                ],
-                common_headers={},
-                timeout=5,
-                insecure=False,
-                cafile=None,
-                ignored_paths=set(),
-                unordered_lists=False,
-            )
+        result = run_case(tc, baseline, candidate)
         self.assertTrue(result.all_match)
         self.assertFalse(result.has_mismatch)
 
@@ -398,20 +357,7 @@ class PerEndpointIgnorePathsTest(unittest.TestCase):
                 {"address": "0xbbb", "balance": "51", "rank": 2},
             ]
         }
-        with patch.object(MODULE, "fetch_json", side_effect=[baseline, candidate]):
-            result = MODULE.execute_test_case(
-                tc,
-                endpoints=[
-                    ("baseline", "https://baseline.example.com"),
-                    ("candidate", "https://candidate.example.com"),
-                ],
-                common_headers={},
-                timeout=5,
-                insecure=False,
-                cafile=None,
-                ignored_paths=set(),
-                unordered_lists=False,
-            )
+        result = run_case(tc, baseline, candidate)
         self.assertTrue(result.all_match)
 
     def test_ignore_paths_as_string_is_wrapped_not_split(self) -> None:
@@ -459,20 +405,7 @@ class PerEndpointIgnorePathsTest(unittest.TestCase):
         )
         baseline = {"data": [{"balance": "100", "rank": 1}]}
         candidate = {"data": [{"balance": "101", "rank": 2}]}
-        with patch.object(MODULE, "fetch_json", side_effect=[baseline, candidate]):
-            result = MODULE.execute_test_case(
-                tc,
-                endpoints=[
-                    ("baseline", "https://baseline.example.com"),
-                    ("candidate", "https://candidate.example.com"),
-                ],
-                common_headers={},
-                timeout=5,
-                insecure=False,
-                cafile=None,
-                ignored_paths=set(),
-                unordered_lists=False,
-            )
+        result = run_case(tc, baseline, candidate)
         self.assertTrue(result.has_mismatch)
         rank_diffs = [
             (p, m)
@@ -550,17 +483,7 @@ class VacuousClassificationTest(unittest.TestCase):
     def _run(self, baseline, candidate, deprecated=False):
         op = MODULE.Operation(path="/api/v1/nfts", method="GET", deprecated=deprecated)
         tc = MODULE.TestCase(operation=op, label="GET /api/v1/nfts")
-        with patch.object(MODULE, "fetch_json", side_effect=[baseline, candidate]):
-            return MODULE.execute_test_case(
-                tc,
-                endpoints=[("baseline", "https://b.example"), ("candidate", "https://c.example")],
-                common_headers={},
-                timeout=5,
-                insecure=False,
-                cafile=None,
-                ignored_paths=set(),
-                unordered_lists=False,
-            )
+        return run_case(tc, baseline, candidate)
 
     def test_response_shapes(self) -> None:
         self.assertEqual(MODULE.response_shape(None, 200), "empty")
@@ -580,11 +503,7 @@ class VacuousClassificationTest(unittest.TestCase):
         err = MODULE.HttpResponseError(404, "Not Found", {"id": "x", "status": 404}, "u")
         op = MODULE.Operation(path="/api/v1/accounts/overview/{address}", method="GET")
         tc = MODULE.TestCase(operation=op, label="x")
-        with patch.object(MODULE, "fetch_json", side_effect=[err, err]):
-            result = MODULE.execute_test_case(
-                tc, endpoints=[("baseline", "b"), ("candidate", "c")], common_headers={},
-                timeout=5, insecure=False, cafile=None, ignored_paths=set(), unordered_lists=False,
-            )
+        result = run_case(tc, err, err)
         self.assertEqual(result.baseline_shape, "error")
         self.assertEqual(MODULE.status_of(result), "vacuous")
 
@@ -600,3 +519,95 @@ class VacuousClassificationTest(unittest.TestCase):
         self.assertEqual(summary["vacuous"], 1)
         self.assertEqual(summary["passed"], 1)
         self.assertEqual(summary["operations_without_data"], ["GET /api/v1/nfts"])
+
+
+class ConvergenceTest(unittest.TestCase):
+    """A baseline that moves mid-comparison is retried, not reported as a difference."""
+
+    def _case(self):
+        op = MODULE.Operation(path="/api/v1/transfers/latest", method="GET")
+        return MODULE.TestCase(operation=op, label="GET /api/v1/transfers/latest")
+
+    def test_a_candidate_that_catches_up_passes_on_a_later_attempt(self) -> None:
+        head = {"data": [{"blockNumber": 100}]}
+        behind = {"data": [{"blockNumber": 99}]}
+        candidate_bodies = iter([behind, head, head])
+
+        def stub(url, headers, timeout, context):
+            return (head if url.startswith(BASELINE_URL) else next(candidate_bodies)), {}
+
+        with patch.object(MODULE, "fetch_json_with_headers", side_effect=stub):
+            result = MODULE.execute_test_case(
+                self._case(), endpoints=ENDPOINTS, common_headers={}, timeout=5, insecure=False,
+                cafile=None, ignored_paths=set(), unordered_lists=False, attempts=3,
+            )
+        self.assertFalse(result.has_mismatch)
+        self.assertEqual(result.attempts, 2)
+
+    def test_a_real_difference_still_fails_after_every_attempt(self) -> None:
+        result = run_case(self._case(), {"data": [{"value": "1"}]}, {"data": [{"value": "2"}]}, attempts=3)
+        self.assertTrue(result.has_mismatch)
+        self.assertEqual(result.attempts, 3)
+
+    def test_a_baseline_that_moves_between_its_two_reads_is_inconclusive(self) -> None:
+        # Baseline reads 100 then 101 around the candidate's 101: the window, not a regression.
+        first = {"data": [{"blockNumber": 100}]}
+        second = {"data": [{"blockNumber": 101}]}
+        baseline_bodies = iter([first, second, second, second, second, second])
+
+        def stub(url, headers, timeout, context):
+            return (next(baseline_bodies) if url.startswith(BASELINE_URL) else second), {}
+
+        with patch.object(MODULE, "fetch_json_with_headers", side_effect=stub):
+            result = MODULE.execute_test_case(
+                self._case(), endpoints=ENDPOINTS, common_headers={}, timeout=5, insecure=False,
+                cafile=None, ignored_paths=set(), unordered_lists=False, attempts=2,
+            )
+        self.assertFalse(result.has_mismatch)
+        self.assertEqual(result.attempts, 2)
+
+
+class CacheBustingTest(unittest.TestCase):
+    def test_the_nonce_is_appended_to_the_query_string(self) -> None:
+        op = MODULE.Operation(path="/api/v1/transfers", method="GET")
+        tc = MODULE.TestCase(operation=op, query_params={"address": "0xabc"}, label="x")
+        self.assertEqual(tc.path_with(None), "/api/v1/transfers?address=0xabc")
+        self.assertEqual(tc.path_with("n1"), f"/api/v1/transfers?address=0xabc&{MODULE.CACHE_BUST_PARAM}=n1")
+
+    def test_the_default_nonce_differs_per_request(self) -> None:
+        self.assertNotEqual(MODULE.fresh_nonce(1), MODULE.fresh_nonce(1))
+
+    def test_every_attempt_uses_a_fresh_nonce_and_both_sides_share_it(self) -> None:
+        op = MODULE.Operation(path="/api/v1/transfers/latest", method="GET")
+        tc = MODULE.TestCase(operation=op, label="x")
+        urls = []
+
+        def stub(url, headers, timeout, context):
+            urls.append(url)
+            return {"data": [{"v": len(urls)}]}, {}
+
+        with patch.object(MODULE, "fetch_json_with_headers", side_effect=stub):
+            MODULE.execute_test_case(
+                tc, endpoints=ENDPOINTS, common_headers={}, timeout=5, insecure=False, cafile=None,
+                ignored_paths=set(), unordered_lists=False, attempts=2, cache_bust=True,
+                nonce_for=lambda attempt: f"n{attempt}",
+            )
+        self.assertTrue(all(f"{MODULE.CACHE_BUST_PARAM}=n1" in u for u in urls[:3]), urls)
+        self.assertTrue(any(f"{MODULE.CACHE_BUST_PARAM}=n2" in u for u in urls[3:]), urls)
+
+    def test_a_cached_response_is_reported(self) -> None:
+        op = MODULE.Operation(path="/api/v1/b3tr/richlist", method="GET")
+        tc = MODULE.TestCase(operation=op, label="x")
+        body = {"data": [{"rank": 1}]}
+
+        def stub(url, headers, timeout, context):
+            served = "Hit from cloudfront" if url.startswith(CANDIDATE_URL) else "Miss from cloudfront"
+            return body, {"x-cache": served, "cache-control": "public, max-age=600"}
+
+        with patch.object(MODULE, "fetch_json_with_headers", side_effect=stub):
+            result = MODULE.execute_test_case(
+                tc, endpoints=ENDPOINTS, common_headers={}, timeout=5, insecure=False, cafile=None,
+                ignored_paths=set(), unordered_lists=False,
+            )
+        self.assertEqual(MODULE.cache_hits(result), {"candidate": "Hit from cloudfront"})
+        self.assertEqual(result.cache_control["baseline"], "public, max-age=600")

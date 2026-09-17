@@ -62,6 +62,8 @@ def render(report: Dict[str, Any], seed: Dict[str, Any] | None, candidate: str, 
         f"| **Tolerated drift** | {s.get('tolerated', 0)} |",
         f"| **Deprecated Reported** | {s.get('deprecated', 0)} |",
         f"| **Failed** | {s['failed']} |",
+        f"| **Retried while the head moved** | {s.get('retried', 0)} |",
+        f"| **Served from a CDN cache** | {s.get('cache_hits', 0)} |",
         "",
     ]
 
