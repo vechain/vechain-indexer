@@ -24,9 +24,18 @@ Usage:
   # Save detailed JSON report
   python compare_from_spec.py --config-file endpoints.json --output report.json
 
+Cases per operation:
+  base     required params, plus optional params that path_overrides[path] configures
+           or that carry a spec default. parameters[name] only supplies values.
+  variant  base plus one remaining optional param, so each filter is exercised alone
+  extra    base with the next value of any list the base case drew from
+
+A case whose baseline response is empty or an error is "vacuous": it compares nothing.
+An operation with only vacuous cases fails the run unless --allow-vacuous-operations.
+
 Exit codes:
   0 -> All responses match across endpoints
-  1 -> Some responses differ
+  1 -> Some responses differ, or an operation compared no data
   2 -> Runtime or input error
 """
 
@@ -51,6 +60,7 @@ from compare_endpoints import (
     compare_json,
     fetch_json,
     ignored_paths_for_matching_error_statuses,
+    is_primitive,
     normalize_ignored_paths,
     ssl_context_for,
 )
@@ -132,6 +142,11 @@ class ComparisonResult:
     diffs: Dict[str, List[Tuple[str, str]]]
     errors: Dict[str, str]
     tolerated_diffs: Dict[str, List[Tuple[str, str]]] = field(default_factory=dict)
+    baseline_shape: str = "data"
+
+    @property
+    def vacuous(self) -> bool:
+        return self.baseline_shape in ("empty", "error") and not self.has_mismatch
 
     @property
     def all_match(self) -> bool:
@@ -161,6 +176,21 @@ class ComparisonResult:
     @property
     def effective_pass(self) -> bool:
         return not self.has_mismatch or self.ignored_due_to_deprecation
+
+
+def response_shape(body: Any, status_code: int) -> str:
+    """'error', 'empty', 'scalar' or 'data': what a comparison against *body* can prove."""
+    if status_code >= 400:
+        return "error"
+    if body is None or body == [] or body == {}:
+        return "empty"
+    if isinstance(body, dict):
+        for key in ("data", "content"):
+            if key in body and body[key] in ([], None):
+                return "empty"
+    if is_primitive(body):
+        return "scalar"
+    return "data"
 
 
 def normalize_response_for_test_case(tc: TestCase, response: Any) -> Any:
@@ -362,6 +392,13 @@ _SKIP = object()  # sentinel: "don't send this parameter"
 
 _DEFAULT_ADDRESS = "0xc5213085d3fc19b6a883a92a5703f7733360f063"
 _DEFAULT_CONTRACT = "0x0000000000000000000000000000456e65726779"  # VTHO token
+_PLACEHOLDER_EXAMPLE_PARAMS = frozenset(
+    {"starttimestamp", "endtimestamp", "after", "before", "from", "to", "addresses",
+     "excludecollections"}
+)
+
+# path_overrides keys that configure the comparison rather than name a parameter.
+RESERVED_OVERRIDE_KEYS = frozenset({"ignore_paths"})
 
 
 def generate_value(param: Parameter, test_values: Dict) -> Any:
@@ -377,16 +414,17 @@ def generate_value(param: Parameter, test_values: Dict) -> Any:
     if user_vals is not None:
         return user_vals[0] if isinstance(user_vals, list) else user_vals
 
-    # 2. Spec example / default / enum
-    if param.example is not None:
-        return param.example
+    nl = name.lower()
+
+    # 2. Spec default / example / enum; window and address-list examples are placeholders.
     if param.default is not None:
         return param.default
+    if param.example is not None and nl not in _PLACEHOLDER_EXAMPLE_PARAMS:
+        return param.example
     if param.enum:
         return param.enum[0]
 
     # 3. Name-based heuristics
-    nl = name.lower()
 
     # -- addresses (various naming conventions) --
     if "contract" in nl and "address" in nl:
@@ -440,7 +478,7 @@ def generate_value(param: Parameter, test_values: Dict) -> Any:
     if nl in ("after", "from", "start", "starttime", "start_time", "starttimestamp"):
         return 1704067200
     if nl in ("before", "to", "end", "endtime", "end_time", "endtimestamp"):
-        return 1735689600
+        return 1789000000
     if nl in ("timeframe", "time_frame"):
         return "DAY"
 
@@ -559,103 +597,98 @@ def _normalize_ignore_paths(raw: Any) -> List[str]:
     return [item for item in raw if isinstance(item, str) and item]
 
 
+def _configured_values(
+    name: str, path_overrides: Dict, test_values: Dict
+) -> Tuple[bool, List[Any]]:
+    """(overridden, values); an explicit null override drops the parameter."""
+    if name in path_overrides:
+        raw = path_overrides[name]
+        if raw is None:
+            return True, []
+        return True, list(raw) if isinstance(raw, list) else [raw]
+    raw = test_values.get("parameters", {}).get(name)
+    if raw is None:
+        return False, []
+    return False, list(raw) if isinstance(raw, list) else [raw]
+
+
+def _with_param(tc: TestCase, param: Parameter, value: Any, label: str) -> TestCase:
+    extra = TestCase(
+        operation=tc.operation,
+        path_params=dict(tc.path_params),
+        query_params=dict(tc.query_params),
+        headers=dict(tc.headers),
+        body=tc.body,
+        label=label,
+        extra_ignore_paths=list(tc.extra_ignore_paths),
+    )
+    if param.location == "path":
+        extra.path_params[param.name] = value
+    elif param.location == "query":
+        extra.query_params[param.name] = value
+    elif param.location == "header":
+        extra.headers[param.name] = str(value)
+    return extra
+
+
 def generate_test_cases(
     op: Operation, test_values: Dict, spec: Dict
 ) -> List[TestCase]:
     path_overrides = test_values.get("path_overrides", {}).get(op.path, {})
     extra_ignore_paths = _normalize_ignore_paths(path_overrides.get("ignore_paths"))
 
-    path_params: Dict[str, Any] = {}
-    query_params: Dict[str, Any] = {}
-    headers: Dict[str, str] = {}
+    base = TestCase(
+        operation=op,
+        body=generate_body(op.request_body, test_values, spec),
+        label=f"{op.method} {op.path}" + (f" ({op.summary})" if op.summary else ""),
+        extra_ignore_paths=list(extra_ignore_paths),
+    )
+    extra_values: List[Tuple[Parameter, List[Any]]] = []
+    variants: List[Parameter] = []
 
     for param in op.parameters:
-        if param.name == "ignore_paths":
-            # Reserved meta-key; not an OpenAPI parameter.
+        if param.name in RESERVED_OVERRIDE_KEYS:
             continue
-        if param.name in path_overrides:
-            v = path_overrides[param.name]
-            if v is None:
-                value = _SKIP  # explicit null in JSON means "omit this parameter"
-            else:
-                value = v[0] if isinstance(v, list) else v
+        overridden, values = _configured_values(param.name, path_overrides, test_values)
+        if overridden and not values:
+            continue
+        if overridden or param.required:
+            value = values[0] if values else generate_value(param, test_values)
+        elif param.default is not None:
+            value = param.default
         else:
-            value = generate_value(param, test_values)
+            variants.append(param)
+            continue
 
         if value is _SKIP:
-            if param.required:
-                print(
-                    f"  Warning: Skipping required param '{param.name}' on "
-                    f"{op.method} {op.path} (no valid value available)",
-                    file=sys.stderr,
-                )
+            print(
+                f"  Warning: Skipping required param '{param.name}' on "
+                f"{op.method} {op.path} (no valid value available)",
+                file=sys.stderr,
+            )
             continue
-
-        if param.location == "path":
-            path_params[param.name] = value
-        elif param.location == "query":
-            query_params[param.name] = value
-        elif param.location == "header":
-            headers[param.name] = str(value)
+        base = _with_param(base, param, value, base.label)
+        if len(values) > 1:
+            extra_values.append((param, values[1:]))
 
     # Fill any path placeholders that weren't covered by declared parameters
     for placeholder in re.findall(r"\{(\w+)\}", op.path):
-        if placeholder not in path_params:
+        if placeholder not in base.path_params:
             uv = test_values.get("parameters", {}).get(placeholder)
             if uv is not None:
-                path_params[placeholder] = uv[0] if isinstance(uv, list) else uv
+                base.path_params[placeholder] = uv[0] if isinstance(uv, list) else uv
             else:
-                path_params[placeholder] = "unknown"
+                base.path_params[placeholder] = "unknown"
 
-    body = generate_body(op.request_body, test_values, spec)
-
-    label = f"{op.method} {op.path}"
-    if op.summary:
-        label += f" ({op.summary})"
-
-    base_case = TestCase(
-        operation=op,
-        path_params=path_params,
-        query_params=query_params,
-        headers=headers,
-        body=body,
-        label=label,
-        extra_ignore_paths=list(extra_ignore_paths),
-    )
-    cases = [base_case]
-
-    # Extra cases for parameters with multiple user-supplied values
-    multi: Dict[str, Tuple[str, List[Any]]] = {}
-    for param in op.parameters:
-        name = param.name
-        if name == "ignore_paths":
+    cases = [base]
+    for param, values in extra_values:
+        for val in values:
+            cases.append(_with_param(base, param, val, f"{base.label} [{param.name}={val}]"))
+    for param in variants:
+        value = generate_value(param, test_values)
+        if value is _SKIP:
             continue
-        if name in path_overrides:
-            source = path_overrides[name]
-        else:
-            source = test_values.get("parameters", {}).get(name)
-        if isinstance(source, list) and len(source) > 1:
-            multi[name] = (param.location, source[1:])
-
-    for pname, (loc, extras) in multi.items():
-        for val in extras:
-            extra = TestCase(
-                operation=op,
-                path_params=dict(path_params),
-                query_params=dict(query_params),
-                headers=dict(headers),
-                body=body,
-                label=f"{label} [{pname}={val}]",
-                extra_ignore_paths=list(extra_ignore_paths),
-            )
-            if loc == "path":
-                extra.path_params[pname] = val
-            elif loc == "query":
-                extra.query_params[pname] = val
-            elif loc == "header":
-                extra.headers[pname] = str(val)
-            cases.append(extra)
-
+        cases.append(_with_param(base, param, value, f"{base.label} [+{param.name}={value}]"))
     return cases
 
 
@@ -787,6 +820,7 @@ def execute_test_case(
             diffs[key] = pair_diffs
             tolerated[key] = pair_tolerated
 
+    baseline_name = endpoints[0][0]
     return ComparisonResult(
         test_case=tc,
         responses=responses,
@@ -794,6 +828,11 @@ def execute_test_case(
         diffs=diffs,
         errors=errors,
         tolerated_diffs=tolerated,
+        baseline_shape=(
+            "error"
+            if baseline_name in errors
+            else response_shape(responses.get(baseline_name), status_codes.get(baseline_name, 0))
+        ),
     )
 
 
@@ -801,32 +840,52 @@ def execute_test_case(
 # Reporting
 # ---------------------------------------------------------------------------
 
-def print_summary(results: List[ComparisonResult]) -> None:
-    total = len(results)
-    passed = sum(1 for r in results if r.all_match)
-    tolerated_only = sum(1 for r in results if r.tolerated_only)
-    deprecated = sum(1 for r in results if r.ignored_due_to_deprecation)
-    failed = sum(1 for r in results if r.has_mismatch and not r.ignored_due_to_deprecation)
+def status_of(result: ComparisonResult) -> str:
+    if result.has_mismatch:
+        return "deprecated" if result.ignored_due_to_deprecation else "fail"
+    if result.vacuous:
+        return "vacuous"
+    if result.has_tolerated:
+        return "tolerated"
+    return "pass"
 
+
+def summarize(results: List[ComparisonResult]) -> Dict[str, Any]:
+    counts = {"pass": 0, "vacuous": 0, "tolerated": 0, "deprecated": 0, "fail": 0}
+    with_data: Dict[str, bool] = {}
+    for r in results:
+        status = status_of(r)
+        counts[status] += 1
+        key = f"{r.test_case.operation.method} {r.test_case.operation.path}"
+        with_data[key] = with_data.get(key, False) or status not in ("vacuous", "fail")
+    return {
+        "total": len(results),
+        "passed": counts["pass"],
+        "vacuous": counts["vacuous"],
+        "tolerated": counts["tolerated"],
+        "deprecated": counts["deprecated"],
+        "failed": counts["fail"],
+        "operations_without_data": sorted(k for k, ok in with_data.items() if not ok),
+    }
+
+
+def print_summary(results: List[ComparisonResult]) -> None:
+    s = summarize(results)
     print(f"\n{'=' * 70}")
     print("COMPARISON SUMMARY")
     print(f"{'=' * 70}")
-    print(f"  Total test cases : {total}")
-    print(f"  Matching         : {passed}")
-    print(f"  Tolerated drift  : {tolerated_only}")
-    print(f"  Deprecated       : {deprecated}")
-    print(f"  Differing        : {failed}")
+    print(f"  Total test cases : {s['total']}")
+    print(f"  Matching         : {s['passed']}")
+    print(f"  Vacuous          : {s['vacuous']}")
+    print(f"  Tolerated drift  : {s['tolerated']}")
+    print(f"  Deprecated       : {s['deprecated']}")
+    print(f"  Differing        : {s['failed']}")
+    print(f"  Ops without data : {len(s['operations_without_data'])}")
     print(f"{'=' * 70}\n")
 
     for result in results:
-        if result.all_match:
-            icon = "PASS"
-        elif result.tolerated_only:
-            icon = "WARN"
-        elif result.ignored_due_to_deprecation:
-            icon = "DEPRECATED"
-        else:
-            icon = "FAIL"
+        icon = {"pass": "PASS", "vacuous": "VACUOUS", "tolerated": "WARN",
+                "deprecated": "DEPRECATED", "fail": "FAIL"}[status_of(result)]
         print(f"[{icon}] {result.test_case.label}")
         print(f"   Request: {result.test_case.operation.method} {result.test_case.full_path}")
 
@@ -852,34 +911,28 @@ def print_summary(results: List[ComparisonResult]) -> None:
                         print(f"      ... and {len(tdiffs) - 5} more")
         print()
 
+    if s["operations_without_data"]:
+        print("Operations whose every case was vacuous (empty or error on the baseline):")
+        for op in s["operations_without_data"]:
+            print(f"  - {op}")
+        print()
+
 
 def save_report(results: List[ComparisonResult], output_file: str) -> None:
     report: Dict[str, Any] = {
         "timestamp": datetime.now().isoformat(),
-        "summary": {
-            "total": len(results),
-            "passed": sum(1 for r in results if r.all_match),
-            "tolerated": sum(1 for r in results if r.tolerated_only),
-            "deprecated": sum(1 for r in results if r.ignored_due_to_deprecation),
-            "failed": sum(1 for r in results if r.has_mismatch and not r.ignored_due_to_deprecation),
-        },
+        "summary": summarize(results),
         "results": [],
     }
     for r in results:
-        if r.all_match:
-            status = "pass"
-        elif r.tolerated_only:
-            status = "tolerated"
-        elif r.ignored_due_to_deprecation:
-            status = "deprecated"
-        else:
-            status = "fail"
         report["results"].append(
             {
                 "label": r.test_case.label,
                 "method": r.test_case.operation.method,
+                "operation": r.test_case.operation.path,
                 "path": r.test_case.full_path,
-                "status": status,
+                "status": status_of(r),
+                "baseline_shape": r.baseline_shape,
                 "deprecated": r.test_case.operation.deprecated,
                 "errors": r.errors,
                 "status_codes": r.status_codes,
@@ -960,6 +1013,12 @@ def main() -> None:
     tls = parser.add_argument_group("TLS")
     tls.add_argument("--insecure", action="store_true", help="Skip TLS certificate verification")
     tls.add_argument("--cafile", default=None, help="Path to CA bundle file")
+
+    comp.add_argument(
+        "--allow-vacuous-operations",
+        action="store_true",
+        help="Do not fail when an operation's every case compared an empty or error baseline response",
+    )
 
     out = parser.add_argument_group("output")
     out.add_argument("--output", help="Save detailed JSON report to this file")
@@ -1092,20 +1151,26 @@ def main() -> None:
             num_rel_tolerance=args.num_rel_tolerance,
         )
         results.append(result)
-        if result.all_match:
-            status = "All endpoints match"
-        elif result.tolerated_only:
-            status = "Tolerated drift only"
-        else:
-            status = "Differences found"
-        print(f"   {status}")
+        print(
+            "   "
+            + {
+                "pass": "All endpoints match",
+                "vacuous": "Match, but the baseline returned nothing to compare",
+                "tolerated": "Tolerated drift only",
+                "deprecated": "Differences found (deprecated)",
+                "fail": "Differences found",
+            }[status_of(result)]
+        )
 
     print_summary(results)
 
     if args.output:
         save_report(results, args.output)
 
-    sys.exit(0 if all(r.effective_pass for r in results) else 1)
+    ok = all(r.effective_pass for r in results)
+    if summarize(results)["operations_without_data"] and not args.allow_vacuous_operations:
+        ok = False
+    sys.exit(0 if ok else 1)
 
 
 if __name__ == "__main__":

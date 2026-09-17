@@ -484,3 +484,119 @@ class PerEndpointIgnorePathsTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CaseGenerationTest(unittest.TestCase):
+    """Base case, one variant per optional filter, extra cases per configured list."""
+
+    def _op(self):
+        return MODULE.Operation(
+            path="/api/v1/transfers/from",
+            method="GET",
+            parameters=[
+                MODULE.Parameter(name="address", location="query", required=True),
+                MODULE.Parameter(name="tokenAddress", location="query"),
+                MODULE.Parameter(name="eventType", location="query", enum=["VET", "NFT"]),
+                MODULE.Parameter(name="size", location="query", schema_type="integer", default=20),
+                MODULE.Parameter(name="cursor", location="query"),
+            ],
+        )
+
+    def test_base_case_sends_required_configured_and_defaulted_params_only(self) -> None:
+        cases = MODULE.generate_test_cases(self._op(), {"parameters": {"address": ["0xabc"]}}, {})
+        self.assertEqual(cases[0].query_params, {"address": "0xabc", "size": 20})
+
+    def test_each_unconfigured_optional_filter_becomes_its_own_variant(self) -> None:
+        cases = MODULE.generate_test_cases(self._op(), {"parameters": {"address": ["0xabc"]}}, {})
+        variants = {c.label.split("[+")[1].rstrip("]") for c in cases[1:]}
+        # cursor has no generatable value and is skipped rather than sent as junk.
+        self.assertEqual(variants, {"tokenAddress=" + MODULE._DEFAULT_CONTRACT, "eventType=VET"})
+        for case in cases[1:]:
+            self.assertEqual(len(case.query_params), 3, case.label)
+
+    def test_overridden_filter_joins_the_base_case_and_lists_fan_out(self) -> None:
+        test_values = {
+            "parameters": {"address": ["0xabc", "0xdef"], "tokenAddress": ["0xtoken"]},
+            "path_overrides": {"/api/v1/transfers/from": {"eventType": ["NFT"]}},
+        }
+        cases = MODULE.generate_test_cases(self._op(), test_values, {})
+        self.assertEqual(cases[0].query_params, {"address": "0xabc", "eventType": "NFT", "size": 20})
+        by_label = {c.label: c.query_params for c in cases}
+        self.assertIn("GET /api/v1/transfers/from [address=0xdef]", by_label)
+        self.assertEqual(by_label["GET /api/v1/transfers/from [address=0xdef]"]["eventType"], "NFT")
+        # A global value feeds the variant without pulling the filter into the base case.
+        self.assertEqual(
+            by_label["GET /api/v1/transfers/from [+tokenAddress=0xtoken]"]["tokenAddress"], "0xtoken"
+        )
+
+    def test_null_override_drops_a_parameter_entirely(self) -> None:
+        test_values = {
+            "parameters": {"address": ["0xabc"]},
+            "path_overrides": {"/api/v1/transfers/from": {"eventType": None}},
+        }
+        cases = MODULE.generate_test_cases(self._op(), test_values, {})
+        self.assertFalse(any("eventType" in c.query_params for c in cases))
+
+    def test_placeholder_spec_examples_lose_to_the_window_heuristics(self) -> None:
+        param = MODULE.Parameter(
+            name="startTimestamp", location="query", required=True, example=1704143600
+        )
+        self.assertEqual(MODULE.generate_value(param, {}), 1704067200)
+        other = MODULE.Parameter(name="level", location="query", example="Strength")
+        self.assertEqual(MODULE.generate_value(other, {}), "Strength")
+
+
+class VacuousClassificationTest(unittest.TestCase):
+    def _run(self, baseline, candidate, deprecated=False):
+        op = MODULE.Operation(path="/api/v1/nfts", method="GET", deprecated=deprecated)
+        tc = MODULE.TestCase(operation=op, label="GET /api/v1/nfts")
+        with patch.object(MODULE, "fetch_json", side_effect=[baseline, candidate]):
+            return MODULE.execute_test_case(
+                tc,
+                endpoints=[("baseline", "https://b.example"), ("candidate", "https://c.example")],
+                common_headers={},
+                timeout=5,
+                insecure=False,
+                cafile=None,
+                ignored_paths=set(),
+                unordered_lists=False,
+            )
+
+    def test_response_shapes(self) -> None:
+        self.assertEqual(MODULE.response_shape(None, 200), "empty")
+        self.assertEqual(MODULE.response_shape([], 200), "empty")
+        self.assertEqual(MODULE.response_shape({"data": [], "pagination": {}}, 200), "empty")
+        self.assertEqual(MODULE.response_shape({"id": 1}, 404), "error")
+        self.assertEqual(MODULE.response_shape(15135786, 200), "scalar")
+        self.assertEqual(MODULE.response_shape({"data": [{"a": 1}]}, 200), "data")
+
+    def test_matching_empty_pages_are_vacuous_not_passes(self) -> None:
+        result = self._run({"data": [], "pagination": {"hasNext": False}},
+                           {"data": [], "pagination": {"hasNext": False}})
+        self.assertEqual(MODULE.status_of(result), "vacuous")
+        self.assertTrue(result.effective_pass)
+
+    def test_matching_errors_are_vacuous(self) -> None:
+        err = MODULE.HttpResponseError(404, "Not Found", {"id": "x", "status": 404}, "u")
+        op = MODULE.Operation(path="/api/v1/accounts/overview/{address}", method="GET")
+        tc = MODULE.TestCase(operation=op, label="x")
+        with patch.object(MODULE, "fetch_json", side_effect=[err, err]):
+            result = MODULE.execute_test_case(
+                tc, endpoints=[("baseline", "b"), ("candidate", "c")], common_headers={},
+                timeout=5, insecure=False, cafile=None, ignored_paths=set(), unordered_lists=False,
+            )
+        self.assertEqual(result.baseline_shape, "error")
+        self.assertEqual(MODULE.status_of(result), "vacuous")
+
+    def test_an_empty_baseline_against_data_is_still_a_failure(self) -> None:
+        result = self._run({"data": []}, {"data": [{"tokenId": "1"}]})
+        self.assertEqual(MODULE.status_of(result), "fail")
+
+    def test_operations_without_data_are_listed(self) -> None:
+        empty = self._run({"data": []}, {"data": []})
+        full = self._run({"data": [{"a": 1}]}, {"data": [{"a": 1}]})
+        full.test_case.operation.path = "/api/v1/nfts/contracts"
+        summary = MODULE.summarize([empty, full])
+        self.assertEqual(summary["vacuous"], 1)
+        self.assertEqual(summary["passed"], 1)
+        self.assertEqual(summary["operations_without_data"], ["GET /api/v1/nfts"])
