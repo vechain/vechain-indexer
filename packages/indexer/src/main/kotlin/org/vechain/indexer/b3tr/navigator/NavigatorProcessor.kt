@@ -7,6 +7,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.PostgresIndexerStore
 import org.vechain.indexer.PostgresProcessor
+import org.vechain.indexer.backfill.BackfillCoordinatorFactory
 import org.vechain.indexer.config.CheckpointProperties
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
@@ -24,6 +25,7 @@ open class NavigatorProcessor(
     checkpointProperties: CheckpointProperties,
     horizon: InlineVersioningProperties,
     processorMetrics: ProcessorMetrics,
+    backfill: BackfillCoordinatorFactory? = null,
     @Value("\${indexer.version.b3tr-navigator:1}") version: Int = 1,
 ) :
     PostgresProcessor(
@@ -37,6 +39,7 @@ open class NavigatorProcessor(
         IndexerNames.NAVIGATOR.NAME,
         version,
         processorMetrics,
+        backfill?.create(NavigatorIndexes.SET),
     ) {
 
     /** Every block, events or not: an exit deadline passing is not something the chain emits. */

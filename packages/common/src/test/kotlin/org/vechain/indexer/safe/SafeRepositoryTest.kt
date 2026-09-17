@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.data.domain.Sort.Direction
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -210,6 +211,28 @@ class SafeRepositoryTest {
         )
         assertEquals(setOf(safeA, safeB), writer.knownSafes(setOf(safeA, safeB, ownerA)))
         assertEquals(emptySet<String>(), writer.knownSafes(emptySet()))
+    }
+
+    @Test
+    fun `the indexer's own reads still work with the two page indexes dropped`() {
+        val builder = IndexBuilder(database.properties)
+        builder.drop(SafeIndexes.SET)
+        try {
+            assertEquals(
+                listOf(30L, 10L, 12L),
+                writer
+                    .findCurrentMemberships(
+                        setOf(safeA to ownerA, safeA to ownerB, safeB to ownerB)
+                    )
+                    .sortedWith(compareBy({ it.safe }, { it.owner }))
+                    .map { it.blockNumber },
+            )
+            assertEquals(1, writer.findCurrentTxStates(setOf(safeA to txHash)).size)
+            assertEquals(1, writer.findCurrentProposals(setOf(safeA to txHash)).size)
+            assertEquals(setOf(safeA, safeB), writer.knownSafes(setOf(safeA, safeB, ownerA)))
+        } finally {
+            builder.build(SafeIndexes.SET)
+        }
     }
 
     @Test

@@ -4,10 +4,12 @@ import java.math.BigInteger
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.data.domain.Sort.Direction
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -252,6 +254,35 @@ class ChallengeRepositoryTest {
         val byRound = writer.findCurrentByRounds(4, 5)
         assertEquals(listOf(1L, 2L), byRound.map { it.challengeId })
         assertEquals(listOf(2, 0), byRound.map { it.participantCount })
+    }
+
+    @Test
+    fun `the indexer's own reads still work with the deferrable indexes dropped`() {
+        val builder = IndexBuilder(database.properties)
+        builder.drop(ChallengeIndexes.SET)
+        try {
+            writer.save(
+                ChallengeUpdate(
+                    challenges = listOf(challenge(9, 90)),
+                    members = listOf(member(9, creator, ChallengeMemberRole.PARTICIPANT, 90)),
+                    userChallenges = listOf(user(creator, 9, 90, isCreator = true)),
+                )
+            )
+
+            assertEquals(listOf(9L), writer.findCurrent(setOf(9)).map { it.challengeId })
+            assertEquals(
+                listOf(creator),
+                writer.findCurrentMembers(setOf(9))[9]!![ChallengeMemberRole.PARTICIPANT],
+            )
+            assertEquals(1, writer.findCurrentUsersOfChallenge(setOf(9)).size)
+            assertEquals(1, writer.findCurrentUsers(setOf(creator to 9L)).size)
+            assertTrue(writer.findCurrentByRounds(4, 5).any { it.challengeId == 9L })
+
+            writer.rollbackFrom(90)
+            assertEquals(emptyList<Long>(), writer.findCurrent(setOf(9)).map { it.challengeId })
+        } finally {
+            builder.build(ChallengeIndexes.SET)
+        }
     }
 
     @Test
