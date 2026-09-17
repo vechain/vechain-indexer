@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
 import org.vechain.indexer.config.CheckpointProperties
@@ -30,6 +31,7 @@ class HistoryProcessorIntegrationTest {
 
     private val database = PostgresTestDatabase()
     private lateinit var repository: HistoryWriteRepository
+    private lateinit var state: IndexerStateRepository
     private lateinit var lifecycle: DelegationLifecycleHistoryService
     private lateinit var processor: HistoryProcessor
 
@@ -37,6 +39,7 @@ class HistoryProcessorIntegrationTest {
     fun start() {
         database.start()
         repository = HistoryWriteRepository(database.jdbc)
+        state = IndexerStateRepository(database.jdbc)
         val delegation = mockk<ValidatorDelegationService>()
         every { delegation.nextStatus(org.vechain.indexer.validator.Status.QUEUED) } returns
             org.vechain.indexer.validator.Status.ACTIVE
@@ -62,7 +65,7 @@ class HistoryProcessorIntegrationTest {
             HistoryProcessor(
                 service,
                 repository,
-                IndexerStateRepository(database.jdbc),
+                state,
                 CheckpointProperties().apply { saveIntervalSeconds = 0 },
                 InlineVersioningProperties(),
                 ProcessorMetrics(SimpleMeterRegistry()),
@@ -81,7 +84,7 @@ class HistoryProcessorIntegrationTest {
     }
 
     @Test
-    fun `blocks are written, resumed from, replayed and rolled back`() {
+    fun `blocks are written, resumed from, replayed, rolled back and trimmed`() {
         assertNull(processor.getLastSyncedBlock())
         val early = BlockFixtures.BLOCK_MULTIPLE_TXS // block 8, ten transactions, no decoded events
         val late = BlockFixtures.BLOCK_TRANSFERS // block 22223545
@@ -107,6 +110,19 @@ class HistoryProcessorIntegrationTest {
         assertEquals(early.transactions.size, database.count("history.event WHERE $both"))
         assertEquals(0, database.count("history.event_address WHERE block_number = ${late.number}"))
         assertEquals(BlockIdentifier(late.number - 1, null), processor.getLastSyncedBlock())
+
+        // A crash leaves the throttled checkpoint behind the rows: the next start undoes the
+        // difference rather than replaying over it, and resumes from the same block id.
+        process(late, IndexedEventsFixtures.INDEXED_EVENTS_TRANSFERS)
+        state.saveCheckpoint(
+            IndexerNames.HISTORY.COLLECTION,
+            BlockIdentifier(early.number, early.id),
+        )
+
+        processor.bootstrap()
+
+        assertEquals(early.transactions.size, database.count("history.event WHERE $both"))
+        assertEquals(BlockIdentifier(early.number, early.id), processor.getLastSyncedBlock())
     }
 
     @Test

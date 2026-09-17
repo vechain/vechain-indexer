@@ -104,6 +104,19 @@ open class IndexerStateRepository(
         saveCheckpoint(schema, BlockIdentifier(blockNumber - 1, null))
     }
 
+    /**
+     * Deletes whatever landed past [checkpoint], which the save throttle can leave a few seconds of
+     * behind a crash. The marker already names the resume point, so it stays as it is:
+     * [rollbackFrom] would clear the block id reorg detection reads on the next block.
+     */
+    @Transactional(
+        transactionManager = PostgresConfig.TRANSACTION_MANAGER,
+        rollbackFor = [Exception::class],
+    )
+    open fun trimTo(tables: PostgresIndexerTables, checkpoint: Long) {
+        tables.rollbackFrom(checkpoint + 1)
+    }
+
     open fun prunedBelow(schema: String): Long? =
         jdbc
             .query(
