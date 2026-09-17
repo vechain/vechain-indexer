@@ -20,30 +20,46 @@ def load_module(name: str, path: Path):
 MODULE = load_module("check_sync_gate", SCRIPTS_DIR / "check_sync_gate.py")
 
 
-def status(**schemas):
-    return {name: {"schema": name, "blockNumber": block} for name, block in schemas.items()}
+def checkpoints(**schemas):
+    return [{"schema": name, "blockNumber": block} for name, block in schemas.items()]
 
 
 class SyncGateTest(unittest.TestCase):
-    def test_a_small_lag_is_allowed(self) -> None:
+    def test_a_small_lag_behind_the_chain_is_allowed(self) -> None:
         self.assertEqual(
-            MODULE.compare(status(blocks=1000, history=1000), status(blocks=990, history=1000), 100),
-            [],
+            MODULE.compare(checkpoints(blocks=990, history=1000), best_block=1000, max_gap=100), []
         )
 
     def test_a_single_lagging_indexer_is_named(self) -> None:
         problems = MODULE.compare(
-            status(blocks=1000, history=1000), status(blocks=999, history=400), 100
+            checkpoints(blocks=999, history=400), best_block=1000, max_gap=100
         )
-        self.assertEqual(problems, ["history: 600 blocks behind the baseline"])
+        self.assertEqual(problems, ["history: 600 blocks behind the chain head"])
 
     def test_an_indexer_that_has_written_nothing_fails(self) -> None:
-        problems = MODULE.compare(status(blocks=1000), status(blocks=None), 100)
-        self.assertEqual(problems, ["blocks: the candidate has indexed no block"])
+        problems = MODULE.compare(checkpoints(blocks=None), best_block=1000, max_gap=100)
+        self.assertEqual(problems, ["blocks: has indexed no block"])
 
-    def test_an_indexer_only_one_colour_runs_is_reported(self) -> None:
-        problems = MODULE.compare(status(blocks=10), status(blocks=10, safe=10), 100)
-        self.assertEqual(problems, ["safe: the baseline does not run this indexer"])
+    def test_an_empty_status_response_fails_rather_than_passing_vacuously(self) -> None:
+        self.assertEqual(
+            MODULE.compare([], best_block=1000, max_gap=100),
+            ["the candidate reported no indexers at all"],
+        )
 
-    def test_a_candidate_ahead_of_the_baseline_is_fine(self) -> None:
-        self.assertEqual(MODULE.compare(status(blocks=1000), status(blocks=1200), 100), [])
+    def test_an_indexer_at_or_past_the_head_is_fine(self) -> None:
+        # Thor was read a moment after the status, so a checkpoint can lead the recorded head.
+        self.assertEqual(
+            MODULE.compare(checkpoints(blocks=1002), best_block=1000, max_gap=100), []
+        )
+
+    def test_every_lagging_indexer_is_reported_in_schema_order(self) -> None:
+        problems = MODULE.compare(
+            checkpoints(safe=10, blocks=20), best_block=1000, max_gap=100
+        )
+        self.assertEqual(
+            problems,
+            [
+                "blocks: 980 blocks behind the chain head",
+                "safe: 990 blocks behind the chain head",
+            ],
+        )

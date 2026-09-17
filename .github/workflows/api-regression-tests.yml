@@ -14,10 +14,15 @@ on:
         required: false
         type: string
       max_block_gap:
-        description: "Blocks an indexer on the candidate may trail the baseline by"
+        description: "Blocks an indexer on the candidate may trail the chain head by"
         default: 100
         required: false
         type: number
+      thor_url:
+        description: "Thor node the sync gate reads the chain head from"
+        default: "https://mainnet.vechain.org"
+        required: false
+        type: string
   workflow_call:
     inputs:
       candidate_url:
@@ -31,10 +36,15 @@ on:
         type: string
         default: "https://indexer.mainnet.vechain.org"
       max_block_gap:
-        description: "Blocks an indexer on the candidate may trail the baseline by"
+        description: "Blocks an indexer on the candidate may trail the chain head by"
         required: false
         type: number
         default: 100
+      thor_url:
+        description: "Thor node the sync gate reads the chain head from"
+        required: false
+        type: string
+        default: "https://mainnet.vechain.org"
 
 permissions:
   contents: read
@@ -55,17 +65,17 @@ jobs:
         with:
           python-version: '3.14'
 
-      - name: Check both colours are in sync
+      - name: Check the candidate has caught up with the chain
         id: sync
         continue-on-error: true
         env:
           CANDIDATE_URL: ${{ inputs.candidate_url || 'https://mainnet.dead.veworld.vechain.org' }}
-          BASELINE_URL: ${{ inputs.baseline_url || 'https://indexer.mainnet.vechain.org' }}
+          THOR_URL: ${{ inputs.thor_url || 'https://mainnet.vechain.org' }}
           MAX_BLOCK_GAP: ${{ inputs.max_block_gap || 100 }}
         run: |
           packages/api/scripts/check_sync_gate.py \
-            --baseline-url "$BASELINE_URL" \
             --candidate-url "$CANDIDATE_URL" \
+            --thor-url "$THOR_URL" \
             --max-gap "$MAX_BLOCK_GAP"
 
       - name: Run regression comparison (candidate vs baseline)
@@ -95,8 +105,8 @@ jobs:
             --output "$GITHUB_STEP_SUMMARY"
 
           if [[ "$SYNC_OUTCOME" != "success" ]]; then
-            echo "> **The colours were not in sync when this ran**, so differences below may be" \
-              "lag rather than regressions. See the sync gate step." >> "$GITHUB_STEP_SUMMARY"
+            echo "> **The candidate had not caught up when this ran**, so differences below may" \
+              "be lag rather than regressions. See the sync gate step." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Upload regression report
