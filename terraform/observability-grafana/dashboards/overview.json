@@ -1999,11 +1999,334 @@
       ]
     },
     {
+      "id": 146,
+      "type": "row",
+      "title": "Postgres · Backups",
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 52 },
+      "panels": [
+        {
+          "id": 147,
+          "type": "stat",
+          "title": "Newest restorable backup",
+          "description": "Age of the newest automated snapshot in `available` state, per instance — what restore_dead_prod_pg_snapshots.sh would pick for a dead colour. This is NOT how long ago a backup started: a snapshot is not restorable until it finishes, and mainnet's take hours, so this peaks at roughly 25h plus the run time and drops when the run completes. 'Backup age' below separates the two. Red at 48h is the pg-backup-stale alarm in terraform/api/alarms.tf.",
+          "gridPos": { "h": 5, "w": 8, "x": 0, "y": 53 },
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+              "namespace": "VeWorld/RDSBackups",
+              "metricName": "NewestSnapshotAge",
+              "statistic": "Maximum",
+              "dimensions": { "DBInstanceIdentifier": ["*"] },
+              "region": "default",
+              "period": "",
+              "matchExact": true,
+              "metricQueryType": 0,
+              "metricEditorMode": 0,
+              "label": "${PROP('Dim.DBInstanceIdentifier')}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "decimals": 1,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 172800 }]
+              }
+            }
+          },
+          "options": {
+            "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" },
+            "colorMode": "value",
+            "graphMode": "area",
+            "textMode": "value_and_name"
+          }
+        },
+        {
+          "id": 148,
+          "type": "stat",
+          "title": "Backups retained",
+          "description": "Available automated snapshots per instance. backup_retention_period is 7 days, so a steady state is 7 or 8. A number that falls and stays down means backups stopped before the retention window emptied. Manual snapshots are deliberately excluded — they are not what a restore selects — but they do appear in the table below.",
+          "gridPos": { "h": 5, "w": 8, "x": 8, "y": 53 },
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+              "namespace": "VeWorld/RDSBackups",
+              "metricName": "SnapshotsAvailable",
+              "statistic": "Maximum",
+              "dimensions": { "DBInstanceIdentifier": ["*"] },
+              "region": "default",
+              "period": "",
+              "matchExact": true,
+              "metricQueryType": 0,
+              "metricEditorMode": 0,
+              "label": "${PROP('Dim.DBInstanceIdentifier')}"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short", "decimals": 0 } },
+          "options": {
+            "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" },
+            "colorMode": "none",
+            "graphMode": "none",
+            "textMode": "value_and_name"
+          }
+        },
+        {
+          "id": 149,
+          "type": "stat",
+          "title": "Last backup duration",
+          "description": "Wall time between the `Backing up DB instance` and `Finished DB Instance backup` events, which is the only completion signal RDS gives — a snapshot carries a start time and no end time. Mainnet currently runs for hours, which is why neither backup alarm is threshold-ed on completion. Sourced from DescribeEvents, which retains 14 days; an instance quiet longer than that reports nothing here even while its snapshots are fine.",
+          "gridPos": { "h": 5, "w": 8, "x": 16, "y": 53 },
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+              "namespace": "VeWorld/RDSBackups",
+              "metricName": "LastBackupDuration",
+              "statistic": "Maximum",
+              "dimensions": { "DBInstanceIdentifier": ["*"] },
+              "region": "default",
+              "period": "",
+              "matchExact": true,
+              "metricQueryType": 0,
+              "metricEditorMode": 0,
+              "label": "${PROP('Dim.DBInstanceIdentifier')}"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "s", "decimals": 0 } },
+          "options": {
+            "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" },
+            "colorMode": "none",
+            "graphMode": "area",
+            "textMode": "value_and_name"
+          }
+        },
+        {
+          "id": 150,
+          "type": "timeseries",
+          "title": "Backup age — started, restorable, oldest",
+          "description": "Three lines per instance, and the gap between the first two is the point of the panel. `started` is how long ago RDS last began a snapshot, counting one still running — it drops to zero daily no matter how slow the backup is, and is what the pg-backup-not-starting alarm reads. `restorable` only moves when a run finishes, so it trails `started` by the run time. `oldest` is the far edge of the restore window, normally flat at ~7 days. All three climbing together means backups have stopped and the window is ageing out.",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 58 },
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+              "namespace": "VeWorld/RDSBackups",
+              "metricName": "LastBackupStartedAge",
+              "statistic": "Maximum",
+              "dimensions": { "DBInstanceIdentifier": ["*"] },
+              "region": "default",
+              "period": "",
+              "matchExact": true,
+              "metricQueryType": 0,
+              "metricEditorMode": 0,
+              "label": "started — ${PROP('Dim.DBInstanceIdentifier')}"
+            },
+            {
+              "refId": "B",
+              "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+              "namespace": "VeWorld/RDSBackups",
+              "metricName": "NewestSnapshotAge",
+              "statistic": "Maximum",
+              "dimensions": { "DBInstanceIdentifier": ["*"] },
+              "region": "default",
+              "period": "",
+              "matchExact": true,
+              "metricQueryType": 0,
+              "metricEditorMode": 0,
+              "label": "restorable — ${PROP('Dim.DBInstanceIdentifier')}"
+            },
+            {
+              "refId": "C",
+              "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+              "namespace": "VeWorld/RDSBackups",
+              "metricName": "OldestSnapshotAge",
+              "statistic": "Maximum",
+              "dimensions": { "DBInstanceIdentifier": ["*"] },
+              "region": "default",
+              "period": "",
+              "matchExact": true,
+              "metricQueryType": 0,
+              "metricEditorMode": 0,
+              "label": "oldest — ${PROP('Dim.DBInstanceIdentifier')}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "min": 0,
+              "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 0, "showPoints": "never" }
+            },
+            "overrides": [
+              {
+                "matcher": { "id": "byRegexp", "options": "/^oldest/" },
+                "properties": [{ "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [8, 6] } }]
+              }
+            ]
+          },
+          "options": {
+            "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["max"] },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 151,
+          "type": "timeseries",
+          "title": "Backup in progress",
+          "description": "PercentProgress of any automated snapshot in `creating`, sampled every 5 minutes. Empty is the normal state between runs. Because mainnet backups run for hours this is the panel that shows one actually moving — a bar that stops climbing is a stuck run, which no alarm catches until 'Newest restorable backup' crosses 48h.",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 58 },
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+              "namespace": "VeWorld/RDSBackups",
+              "metricName": "SnapshotProgress",
+              "statistic": "Minimum",
+              "dimensions": { "DBInstanceIdentifier": ["*"] },
+              "region": "default",
+              "period": "",
+              "matchExact": true,
+              "metricQueryType": 0,
+              "metricEditorMode": 0,
+              "label": "${PROP('Dim.DBInstanceIdentifier')}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "custom": { "drawStyle": "bars", "fillOpacity": 60, "showPoints": "never" }
+            }
+          },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom" },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 152,
+          "type": "timeseries",
+          "title": "Backup duration",
+          "description": "How long each daily backup took, from the paired RDS backup events. The value is republished on every 5-minute poll until the next backup finishes, so the line is a step, not a sample per backup — read the step changes. Backup time tracks changed blocks since the last snapshot, so a jump usually follows a resync or a bulk rewrite.",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 66 },
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+              "namespace": "VeWorld/RDSBackups",
+              "metricName": "LastBackupDuration",
+              "statistic": "Maximum",
+              "dimensions": { "DBInstanceIdentifier": ["*"] },
+              "region": "default",
+              "period": "",
+              "matchExact": true,
+              "metricQueryType": 0,
+              "metricEditorMode": 0,
+              "label": "${PROP('Dim.DBInstanceIdentifier')}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "min": 0,
+              "custom": { "drawStyle": "line", "lineInterpolation": "stepAfter", "lineWidth": 1, "fillOpacity": 10, "showPoints": "never" }
+            }
+          },
+          "options": {
+            "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "max"] },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 153,
+          "type": "timeseries",
+          "title": "Volume covered by the newest backup",
+          "description": "AllocatedStorage of the newest automated snapshot — the size of the volume it covers, which is as close to a backup size as RDS will give. It is NOT the bytes the snapshot consumes: the API exposes no per-snapshot size, the first snapshot of an instance is a full copy and the rest are incremental, and the three AWS/RDS backup-storage metrics (TotalBackupStorageBilled, BackupRetentionPeriodStorageUsed, SnapshotStorageUsed) publish no datapoints for non-Aurora instances — verified against this account, dimensioned and not. Actual backup bytes are a billing-only figure, via Cost Explorer. The step up when the volume autoscales is the growth signal to watch.",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 66 },
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+              "namespace": "VeWorld/RDSBackups",
+              "metricName": "NewestSnapshotAllocatedStorage",
+              "statistic": "Maximum",
+              "dimensions": { "DBInstanceIdentifier": ["*"] },
+              "region": "default",
+              "period": "",
+              "matchExact": true,
+              "metricQueryType": 0,
+              "metricEditorMode": 0,
+              "label": "${PROP('Dim.DBInstanceIdentifier')}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "gbytes",
+              "min": 0,
+              "custom": { "drawStyle": "line", "lineInterpolation": "stepAfter", "lineWidth": 1, "fillOpacity": 10, "showPoints": "never" }
+            }
+          },
+          "options": {
+            "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull"] },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 154,
+          "type": "table",
+          "title": "Snapshots that exist",
+          "description": "Every snapshot the inventory Lambda saw over the dashboard's time range, one row each — automated and manual, unlike the metrics above, which track automated only. The Lambda logs the whole list every 5 minutes, so rows are collapsed to the newest sighting per snapshot with `stats latest(...) by instance, snapshot`; without that the table repeats each snapshot once per poll. At the default now-1h that is exactly the current inventory; widen the range to see snapshots that have since aged out of retention. `volume_gib` is the instance's allocated storage at snapshot time, not the snapshot's own size.",
+          "gridPos": { "h": 12, "w": 24, "x": 0, "y": 74 },
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+              "queryMode": "Logs",
+              "region": "default",
+              "logGroupNames": ["/aws/lambda/veworld-indexer-prod-pg-backup-inventory"],
+              "expression": "fields @timestamp\n| parse @message /rds_snapshot\\|(?<instance>[^|]*)\\|(?<snapshot>[^|]*)\\|(?<type>[^|]*)\\|(?<status>[^|]*)\\|(?<created>[^|]*)\\|(?<age_hours>[^|]*)\\|(?<volume_gib>[^|]*)\\|(?<progress>[^|]*)/\n| filter ispresent(snapshot)\n| stats latest(type) as type, latest(status) as status, latest(created) as created, latest(age_hours) as age_hours, latest(volume_gib) as volume_gib, latest(progress) as progress by instance, snapshot\n| sort created desc\n| limit 200"
+            }
+          ],
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "renameByName": {
+                  "instance": "Instance",
+                  "snapshot": "Snapshot",
+                  "type": "Type",
+                  "status": "Status",
+                  "created": "Created (UTC)",
+                  "age_hours": "Age (h)",
+                  "volume_gib": "Volume (GiB)",
+                  "progress": "Progress (%)"
+                }
+              }
+            }
+          ],
+          "fieldConfig": { "defaults": { "custom": { "align": "left", "filterable": true } } },
+          "options": { "showHeader": true, "cellHeight": "sm", "footer": { "show": false } }
+        }
+      ]
+    },
+    {
       "id": 12,
       "type": "row",
       "title": "WAF request detail · Mainnet — Logs Insights, runs only while expanded",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 52 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 53 },
       "panels": [
         {
           "id": 120,
@@ -2120,7 +2443,7 @@
       "type": "row",
       "title": "WAF request detail · Testnet — Logs Insights, runs only while expanded",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 53 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 54 },
       "panels": [
         {
           "id": 130,

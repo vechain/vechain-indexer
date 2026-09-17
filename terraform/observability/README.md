@@ -46,10 +46,14 @@ dead colour restored onto week-old data.
 
 `lambda/pg_backup_inventory.py` runs every 5 minutes, finds every RDS instance tagged
 `Backup = <project>-pg`, and publishes under the `VeWorld/RDSBackups` namespace, dimensioned by
-`DBInstanceIdentifier`:
+`DBInstanceIdentifier`. Every metric covers **automated snapshots only**, because that is what
+`restore_dead_prod_pg_snapshots.sh` selects (`--snapshot-type automated`); a manual snapshot taken
+by hand would otherwise read as a healthy backup while the one a restore picks went stale. Manual
+snapshots are still logged, so they appear in the dashboard table:
 
 | Metric | Unit | What it is |
 | --- | --- | --- |
+| `LastBackupStartedAge` | Seconds | Age of the newest snapshot of any status — how long ago a backup last *began* |
 | `NewestSnapshotAge` | Seconds | Age of the newest `available` snapshot — what a restore would start from |
 | `OldestSnapshotAge` | Seconds | Age of the oldest, i.e. the far edge of the restore window |
 | `SnapshotsAvailable` | Count | Automated and manual snapshots that are restorable now |
@@ -65,17 +69,31 @@ wraps stdout in its own envelope, so JSON auto-discovery does not fire on the pa
 
 Things worth knowing before reading a number off it:
 
-- **There is no per-snapshot size, anywhere.** RDS does not expose one, and the question is not
-  well posed: the first snapshot of an instance is a full copy and every later one is incremental
-  against it. `NewestSnapshotAllocatedStorage` is the *volume* the snapshot covers, not its own
-  bytes. Real consumption is `AWS/RDS BackupRetentionPeriodStorageUsed` (the whole window) and
-  `TotalBackupStorageBilled` (that, less a free allowance equal to allocated storage — so it
-  legitimately reads zero while backups fit inside the instance's own size).
+- **There is no backup size available, from any API.** RDS exposes no per-snapshot size, and the
+  question is not well posed anyway: the first snapshot of an instance is a full copy and every
+  later one is incremental against it. The three metrics that would answer it —
+  `TotalBackupStorageBilled`, `BackupRetentionPeriodStorageUsed`, `SnapshotStorageUsed` — are
+  documented under `AWS/RDS` but publish **no datapoints for non-Aurora instances**; checked
+  against this account, dimensioned by `DBInstanceIdentifier` and undimensioned, both empty while
+  `FreeStorageSpace` returned data over the same window. Do not add panels for them. What is left
+  is `NewestSnapshotAllocatedStorage`, the *volume* a snapshot covers, and that is what the
+  dashboard shows. True consumed bytes are a billing figure only, reachable through Cost Explorer
+  (`ce:GetCostAndUsage`) — deliberately not wired up here, since Cost Explorer bills per request
+  and would need its own daily schedule rather than the 5-minute poll.
 - **Duration comes from events, not from the snapshot.** A snapshot carries a start time and no
   end time, so the `Backing up DB instance` / `Finished DB Instance backup` event pair is the only
   completion signal. `DescribeEvents` retains 14 days; an instance with no backup in that window
   publishes no duration even though its snapshots are fine. The events are matched on message
   text, which is what will break first if AWS rewords them.
+- **Started and restorable are different clocks, and the gap is the backup's run time.** A snapshot
+  is not restorable until it finishes; mainnet's backups currently run for hours. So
+  `NewestSnapshotAge` climbs past 25 hours every morning while that day's backup is still running,
+  and only drops when it completes. `LastBackupStartedAge` counts the in-flight snapshot, so it
+  resets when the backup begins. Alarm on the second, not the first.
+- **The event window is 14 days, not 24 hours.** A backup that starts at 06:00 and finishes at
+  noon puts its two events more than a day apart from the next poll's point of view, so a 24-hour
+  `DescribeEvents` window loses the pair and `LastBackupDuration` disappears for part of every day.
+  The events are also sorted by date before pairing — the API documents no ordering guarantee.
 - **The metric is a step, not a sample per backup.** Every metric here is republished on each
   5-minute poll, so a Grafana line holds its last value between backups rather than drawing one
   point a day. Read the step changes.
@@ -85,23 +103,35 @@ Things worth knowing before reading a number off it:
 
 ### Alarms
 
-Two, deliberately split by what they can see.
+Three, deliberately split by what each can see. None is threshold-ed on how long a backup takes,
+because that would page every morning while a multi-hour run is still going.
 
-`pg-backup-stale`, one per instance, lives in `terraform/api/alarms.tf` with the other Postgres
-alarms and the per-colour Slack header they share. It fires when `NewestSnapshotAge` passes 26
-hours — a daily backup inside a one-hour window peaks just past 25. It treats missing data as
-*hold*, not breach, because a dead-colour restore replaces the instance wholesale and the
-inventory is blind for as long as that takes.
+`pg-backup-not-starting`, per instance, in `terraform/api/alarms.tf` with the other Postgres alarms
+and the per-colour Slack header they share. `LastBackupStartedAge` over 26 hours against a daily
+schedule: RDS has stopped beginning backups. Duration-independent, so it is the one that should
+fire first for the common failure.
 
-`pg-backup-inventory-stalled` lives here, on `InstancesInventoried < 1` for 30 minutes with
-missing data breaching. Because a failed run publishes nothing, that one alarm covers a run that
-threw, a schedule that stopped, and the `Backup` tag going missing from the instances — the three
-ways the staleness alarms could go quiet without anything being wrong with the backups.
+`pg-backup-stale`, its companion, covers backups that start on time and never finish — which the
+first alarm cannot see. `NewestSnapshotAge` over 48 hours is two whole cycles, well clear of the
+hours a run currently takes. Raise it if backup duration ever approaches a day; a run that stalls
+part-way is visible long before that in the "Backup in progress" panel.
+
+Both use `treat_missing_data = "ignore"`, which is the setting that actually holds the last state —
+`missing` sends an alarm to `INSUFFICIENT_DATA` once every point in the window is absent. Holding is
+what a dead-colour restore needs, since it replaces the instance wholesale and the inventory is
+blind for as long as that takes. `pg-backup-inventory-stalled` lives
+here and is what makes that safe: `InstancesInventoried < 1` for 30 minutes, missing data breaching.
+Because a failed run publishes nothing, that one alarm covers a run that threw and a schedule that
+stopped. It does **not** catch a single instance dropping out of the inventory — the count would
+fall from two to one and stay above the threshold — but the `Backup` tag is set on the instance
+resource in `terraform/api/postgres.tf`, so an instance can only lose it through a terraform
+change, not through runtime drift.
 
 `VeWorld/RDSBackups` is written out as a literal in all three files that name it — `backups.tf`,
-the api alarm, and `dashboards/backups.json` — rather than crossing stacks as an output. An output would
-make every `terraform/api` plan fail until this stack had been applied, and a PR only ever plans
-this stack, so the api check could not go green before merge. Grep the namespace before renaming it.
+the api alarms, and `dashboards/overview.json` — rather than crossing stacks as an output. An output
+would make every `terraform/api` plan fail until this stack had been applied, and a PR only ever
+plans this stack, so the api check could not go green before merge. Grep the namespace before
+renaming it.
 
 
 ## Apply order
