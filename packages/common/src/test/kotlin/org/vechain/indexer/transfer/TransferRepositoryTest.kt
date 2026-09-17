@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.data.domain.Sort.Direction
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -188,6 +189,25 @@ class TransferRepositoryTest {
             listOf(token2, token1),
             reader.findInteractedContracts(a, null, 0, 10, Direction.DESC),
         )
+    }
+
+    @Test
+    fun `the write path holds up with the deferrable indexes dropped`() {
+        val builder = IndexBuilder(database.properties)
+        val repeat = transfer("07", 40, 0, TransferEventType.FUNGIBLE_TOKEN, a, b, token1)
+        builder.drop(TransferIndexes.SET)
+        try {
+            // No key is left to absorb the repeat: the batch's own distinctBy keeps it to one.
+            writer.save(listOf(repeat, repeat.copy(to = c)), listOf(interaction(a, token1, 40)))
+
+            assertEquals(7, database.count(TransferRowMapping.TABLE))
+            assertEquals(3, database.count(TransferRowMapping.INTERACTION_TABLE))
+
+            writer.rollbackFrom(40)
+            assertEquals(6, database.count(TransferRowMapping.TABLE))
+        } finally {
+            builder.build(TransferIndexes.SET)
+        }
     }
 
     @Test

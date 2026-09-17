@@ -73,6 +73,13 @@ class IndexSetCoverageTest {
                         "event_pkey",
                         "transfer_pkey",
                     ),
+                // Rollback by block, and the key that keeps a wallet's first touch of a token.
+                "transfers" to
+                    listOf(
+                        "transfer_block_idx",
+                        "token_interaction_pkey",
+                        "token_interaction_block_idx",
+                    ),
             )
     }
 }
