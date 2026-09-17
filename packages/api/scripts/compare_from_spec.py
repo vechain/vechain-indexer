@@ -40,6 +40,7 @@ Exit codes:
 """
 
 import argparse
+import itertools
 import json
 import os
 import re
@@ -50,7 +51,7 @@ import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 # Ensure sibling modules can be imported regardless of cwd
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -58,7 +59,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from compare_endpoints import (
     HttpResponseError,
     compare_json,
-    fetch_json,
+    fetch_json_with_headers,
     ignored_paths_for_matching_error_statuses,
     is_primitive,
     normalize_ignored_paths,
@@ -66,6 +67,16 @@ from compare_endpoints import (
 )
 
 Path = str
+
+# CloudFront keys on the whole query string, so an unknown parameter forces a miss.
+CACHE_BUST_PARAM = "_rt"
+_RUN_ID = f"{os.getpid()}-{int(datetime.now().timestamp())}"
+_REQUEST_SEQUENCE = itertools.count(1)
+
+
+def fresh_nonce(_attempt: int) -> str:
+    """Unique per request, since two cases can resolve to the same URL."""
+    return f"{_RUN_ID}-{next(_REQUEST_SEQUENCE)}"
 
 
 # ---------------------------------------------------------------------------
@@ -127,10 +138,16 @@ class TestCase:
 
     @property
     def full_path(self) -> str:
+        return self.path_with(None)
+
+    def path_with(self, nonce: Optional[str]) -> str:
+        """The request path; *nonce* adds a parameter the API ignores and a CDN keys on."""
         path = self.resolved_path
-        if self.query_params:
-            qs = urllib.parse.urlencode(self.query_params, doseq=True)
-            path = f"{path}?{qs}"
+        query = dict(self.query_params)
+        if nonce is not None:
+            query[CACHE_BUST_PARAM] = nonce
+        if query:
+            path = f"{path}?{urllib.parse.urlencode(query, doseq=True)}"
         return path
 
 
@@ -143,6 +160,12 @@ class ComparisonResult:
     errors: Dict[str, str]
     tolerated_diffs: Dict[str, List[Tuple[str, str]]] = field(default_factory=dict)
     baseline_shape: str = "data"
+    attempts: int = 1
+    cache_headers: Dict[str, Dict[str, str]] = field(default_factory=dict)
+
+    @property
+    def cache_control(self) -> Dict[str, str]:
+        return {name: headers.get("cache-control", "") for name, headers in self.cache_headers.items()}
 
     @property
     def vacuous(self) -> bool:
@@ -744,49 +767,59 @@ def fetch_json_with_body(
         raise RuntimeError(f"Network error {method} {url}: {e.reason}") from e
 
 
-def execute_test_case(
+@dataclass
+class Fetched:
+    body: Any = None
+    status_code: int = 0
+    error: Optional[str] = None
+    headers: Dict[str, str] = field(default_factory=dict)
+
+
+def fetch_case(
     tc: TestCase,
-    endpoints: List[Tuple[str, str]],
-    common_headers: Dict[str, str],
+    base_url: str,
+    headers: Dict[str, str],
     timeout: int,
-    insecure: bool,
-    cafile: Optional[str],
+    ctx: ssl.SSLContext | None,
+    nonce: Optional[str],
+) -> Fetched:
+    url = base_url.rstrip("/") + tc.path_with(nonce)
+    try:
+        if tc.operation.method == "GET":
+            body, response_headers = fetch_json_with_headers(url, headers, timeout, ctx)
+        else:
+            body = fetch_json_with_body(
+                url, tc.operation.method, headers, tc.body, timeout, ctx
+            )
+            response_headers = {}
+        return Fetched(
+            body=normalize_response_for_test_case(tc, body),
+            status_code=200,
+            headers=response_headers,
+        )
+    except HttpResponseError as e:
+        return Fetched(
+            body=normalize_response_for_test_case(tc, e.body),
+            status_code=e.status_code,
+            headers=e.headers,
+        )
+    except RuntimeError as e:
+        msg = str(e)
+        m = re.search(r"(\d{3})", msg)
+        return Fetched(status_code=int(m.group(1)) if m else 0, error=msg)
+    except Exception as e:
+        return Fetched(error=str(e))
+
+
+def _pairwise_diffs(
+    responses: Dict[str, Any],
+    status_codes: Dict[str, int],
+    tc: TestCase,
     ignored_paths: Set[str],
     unordered_lists: bool,
-    num_abs_tolerance: float = 0.0,
-    num_rel_tolerance: float = 0.0,
-) -> ComparisonResult:
-    ctx = ssl_context_for(insecure, cafile)
-    responses: Dict[str, Any] = {}
-    status_codes: Dict[str, int] = {}
-    errors: Dict[str, str] = {}
-
-    merged_headers = {**common_headers, **tc.headers}
-    merged_headers.setdefault("User-Agent", "compare-from-spec/1.0")
-
-    for name, base_url in endpoints:
-        full_url = base_url.rstrip("/") + tc.full_path
-        try:
-            if tc.operation.method == "GET":
-                resp = fetch_json(full_url, merged_headers, timeout, ctx)
-            else:
-                resp = fetch_json_with_body(
-                    full_url, tc.operation.method, merged_headers, tc.body, timeout, ctx
-                )
-            responses[name] = normalize_response_for_test_case(tc, resp)
-            status_codes[name] = 200
-        except HttpResponseError as e:
-            responses[name] = normalize_response_for_test_case(tc, e.body)
-            status_codes[name] = e.status_code
-        except RuntimeError as e:
-            msg = str(e)
-            m = re.search(r"(\d{3})", msg)
-            if m:
-                status_codes[name] = int(m.group(1))
-            errors[name] = msg
-        except Exception as e:
-            errors[name] = str(e)
-
+    num_abs_tolerance: float,
+    num_rel_tolerance: float,
+) -> Tuple[Dict[str, List[Tuple[str, str]]], Dict[str, List[Tuple[str, str]]]]:
     diffs: Dict[str, List[Tuple[str, str]]] = {}
     tolerated: Dict[str, List[Tuple[str, str]]] = {}
     ep_names = list(responses.keys())
@@ -819,26 +852,86 @@ def execute_test_case(
             )
             diffs[key] = pair_diffs
             tolerated[key] = pair_tolerated
+    return diffs, tolerated
 
+
+def execute_test_case(
+    tc: TestCase,
+    endpoints: List[Tuple[str, str]],
+    common_headers: Dict[str, str],
+    timeout: int,
+    insecure: bool,
+    cafile: Optional[str],
+    ignored_paths: Set[str],
+    unordered_lists: bool,
+    num_abs_tolerance: float = 0.0,
+    num_rel_tolerance: float = 0.0,
+    attempts: int = 1,
+    cache_bust: bool = False,
+    nonce_for: Callable[[int], str] = fresh_nonce,
+) -> ComparisonResult:
+    """Compare one case, re-fetching while the baseline is still moving.
+
+    The baseline is read before and after the candidate. A baseline that changed
+    between those two reads was mid-block, so the comparison is inconclusive and the
+    attempt is spent rather than reported as a difference.
+    """
+    ctx = ssl_context_for(insecure, cafile)
+    merged_headers = {**common_headers, **tc.headers}
+    merged_headers.setdefault("User-Agent", "compare-from-spec/1.0")
     baseline_name = endpoints[0][0]
-    return ComparisonResult(
-        test_case=tc,
-        responses=responses,
-        status_codes=status_codes,
-        diffs=diffs,
-        errors=errors,
-        tolerated_diffs=tolerated,
-        baseline_shape=(
-            "error"
-            if baseline_name in errors
-            else response_shape(responses.get(baseline_name), status_codes.get(baseline_name, 0))
-        ),
-    )
+    result: Optional[ComparisonResult] = None
+
+    for attempt in range(1, max(1, attempts) + 1):
+        nonce = nonce_for(attempt) if cache_bust else None
+        fetched = {name: fetch_case(tc, url, merged_headers, timeout, ctx, nonce)
+                   for name, url in endpoints}
+        recheck = fetch_case(tc, endpoints[0][1], merged_headers, timeout, ctx, nonce)
+
+        responses = {name: f.body for name, f in fetched.items() if f.error is None}
+        status_codes = {name: f.status_code for name, f in fetched.items() if f.status_code}
+        errors = {name: f.error for name, f in fetched.items() if f.error is not None}
+
+        diffs, tolerated = _pairwise_diffs(
+            responses, status_codes, tc, ignored_paths, unordered_lists,
+            num_abs_tolerance, num_rel_tolerance,
+        )
+        result = ComparisonResult(
+            test_case=tc,
+            responses=responses,
+            status_codes=status_codes,
+            diffs=diffs,
+            errors=errors,
+            tolerated_diffs=tolerated,
+            baseline_shape=(
+                "error" if baseline_name in errors
+                else response_shape(responses.get(baseline_name), status_codes.get(baseline_name, 0))
+            ),
+            attempts=attempt,
+            cache_headers={name: f.headers for name, f in fetched.items() if f.headers},
+        )
+        if recheck.error is not None or recheck.body != fetched[baseline_name].body:
+            continue  # the baseline moved mid-comparison, so the diff proves nothing
+        if not result.has_mismatch:
+            return result
+        # A settled baseline and a difference: the candidate may have been mid-block, so retry.
+
+    assert result is not None
+    return result
 
 
 # ---------------------------------------------------------------------------
 # Reporting
 # ---------------------------------------------------------------------------
+
+def cache_hits(result: ComparisonResult) -> Dict[str, str]:
+    """Endpoints that served this case from a CDN cache, by their x-cache header."""
+    return {
+        name: headers["x-cache"]
+        for name, headers in result.cache_headers.items()
+        if "hit" in headers.get("x-cache", "").lower()
+    }
+
 
 def status_of(result: ComparisonResult) -> str:
     if result.has_mismatch:
@@ -865,6 +958,8 @@ def summarize(results: List[ComparisonResult]) -> Dict[str, Any]:
         "tolerated": counts["tolerated"],
         "deprecated": counts["deprecated"],
         "failed": counts["fail"],
+        "retried": sum(1 for r in results if r.attempts > 1),
+        "cache_hits": sum(1 for r in results if cache_hits(r)),
         "operations_without_data": sorted(k for k, ok in with_data.items() if not ok),
     }
 
@@ -881,6 +976,8 @@ def print_summary(results: List[ComparisonResult]) -> None:
     print(f"  Deprecated       : {s['deprecated']}")
     print(f"  Differing        : {s['failed']}")
     print(f"  Ops without data : {len(s['operations_without_data'])}")
+    print(f"  Retried          : {s['retried']}")
+    print(f"  Served from cache: {s['cache_hits']}")
     print(f"{'=' * 70}\n")
 
     for result in results:
@@ -933,6 +1030,9 @@ def save_report(results: List[ComparisonResult], output_file: str) -> None:
                 "path": r.test_case.full_path,
                 "status": status_of(r),
                 "baseline_shape": r.baseline_shape,
+                "attempts": r.attempts,
+                "cache_hits": cache_hits(r),
+                "cache_control": r.cache_control,
                 "deprecated": r.test_case.operation.deprecated,
                 "errors": r.errors,
                 "status_codes": r.status_codes,
@@ -1014,6 +1114,17 @@ def main() -> None:
     tls.add_argument("--insecure", action="store_true", help="Skip TLS certificate verification")
     tls.add_argument("--cafile", default=None, help="Path to CA bundle file")
 
+    comp.add_argument(
+        "--attempts",
+        type=int,
+        default=3,
+        help="Re-fetch a case up to this many times while the baseline is still moving (default: 3)",
+    )
+    comp.add_argument(
+        "--no-cache-bust",
+        action="store_true",
+        help=f"Do not add the {CACHE_BUST_PARAM} parameter that forces a CDN miss on both sides",
+    )
     comp.add_argument(
         "--allow-vacuous-operations",
         action="store_true",
@@ -1149,6 +1260,8 @@ def main() -> None:
             unordered_lists=args.unordered_lists,
             num_abs_tolerance=args.num_abs_tolerance,
             num_rel_tolerance=args.num_rel_tolerance,
+            attempts=args.attempts,
+            cache_bust=not args.no_cache_bust,
         )
         results.append(result)
         print(
