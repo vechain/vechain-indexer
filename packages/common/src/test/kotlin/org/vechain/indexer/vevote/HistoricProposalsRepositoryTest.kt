@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.data.domain.Sort.Direction.DESC
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -126,6 +127,27 @@ class HistoricProposalsRepositoryTest {
         )
 
         assertEquals(0, reader.find("99", null, null, 0, 10, DESC).size)
+    }
+
+    @Test
+    fun `the cascade still reaches every child with the proposalId index dropped`() {
+        val builder = IndexBuilder(database.properties)
+        builder.drop(HistoricProposalsIndexes.SET)
+        try {
+            writer.save(
+                listOf(proposal("3", 50)),
+                listOf(HistoricProposalDescription(contract, "3", "ipfs://third", 50)),
+                listOf(vote("3", alice, listOf(2), 50)),
+            )
+            assertEquals("ipfs://third", description("3"))
+
+            writer.rollbackFrom(50)
+            assertNull(reader.find("3", null, null, 0, 10, DESC).firstOrNull())
+        } finally {
+            builder.build(HistoricProposalsIndexes.SET)
+            writer.truncate()
+            seed()
+        }
     }
 
     @Test
