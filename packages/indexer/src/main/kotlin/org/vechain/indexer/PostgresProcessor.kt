@@ -19,6 +19,7 @@ abstract class PostgresProcessor(
     @PostConstruct
     open fun bootstrap() {
         store.ensureVersion(version)
+        store.trimToCheckpoint()
     }
 
     override fun onProcessed(latest: BlockIdentifier) = store.onProcessed(latest)

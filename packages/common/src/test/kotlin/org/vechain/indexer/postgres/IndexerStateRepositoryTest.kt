@@ -15,10 +15,13 @@ class IndexerStateRepositoryTest {
     private val database = PostgresTestDatabase()
     private lateinit var repository: IndexerStateRepository
     private val truncated = mutableListOf<String>()
+    private val rolledBackFrom = mutableListOf<Long>()
     private var pruned = 0
     private val tables =
         object : PostgresIndexerTables {
-            override fun rollbackFrom(blockNumber: Long) = Unit
+            override fun rollbackFrom(blockNumber: Long) {
+                rolledBackFrom += blockNumber
+            }
 
             override fun truncate() {
                 truncated += SCHEMA
@@ -43,6 +46,7 @@ class IndexerStateRepositoryTest {
             OTHER_SCHEMA,
         )
         truncated.clear()
+        rolledBackFrom.clear()
     }
 
     @Test
@@ -118,6 +122,18 @@ class IndexerStateRepositoryTest {
         repository.recordVersion(SCHEMA, 1)
 
         assertEquals(7L, repository.checkpoint(SCHEMA)?.number)
+    }
+
+    @Test
+    fun `a trim undoes the blocks past the checkpoint and leaves the marker alone`() {
+        repository.recordVersion(SCHEMA, 1)
+        val checkpoint = BlockIdentifier(7, "0x" + "07".repeat(32))
+        repository.saveCheckpoint(SCHEMA, checkpoint)
+
+        repository.trimTo(tables, checkpoint.number)
+
+        assertEquals(listOf(8L), rolledBackFrom)
+        assertEquals(checkpoint, repository.checkpoint(SCHEMA))
     }
 
     companion object {

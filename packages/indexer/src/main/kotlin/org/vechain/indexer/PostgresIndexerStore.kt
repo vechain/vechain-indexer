@@ -39,6 +39,17 @@ open class PostgresIndexerStore(
         lastObserved = null
     }
 
+    /**
+     * Undoes the blocks the save throttle left past the checkpoint before the runner replays them.
+     * Replay used to be a no-op because every row carried a unique key; the keys the API needs are
+     * the ones a backfill drops, so the resume point has to be clean on its own.
+     */
+    open fun trimToCheckpoint() {
+        val checkpoint = state.checkpoint(schema)?.number ?: return
+        state.trimTo(tables, checkpoint)
+        logger.info("{}: trimmed anything past block {} before resuming", schema, checkpoint)
+    }
+
     /** Throttled by `indexer.checkpoint.save-interval-seconds`; failures only log. */
     open fun onProcessed(latest: BlockIdentifier) {
         lastObserved = latest
