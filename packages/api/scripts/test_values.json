@@ -12,10 +12,12 @@
       "0xDf94739bd169C84fe6478D8420Bb807F1f47b135"
     ],
     "page": [
-      0
+      0,
+      3
     ],
     "size": [
-      20
+      20,
+      150
     ],
     "direction": [
       "DESC"
@@ -77,6 +79,10 @@
     ],
     "endTimestamp": [
       1787604800
+    ],
+    "expanded": [
+      true,
+      false
     ]
   },
   "path_overrides": {
@@ -107,31 +113,24 @@
         "root.totalRevertedClauses"
       ]
     },
-    "/api/v1/transactions/latest": {
-      "ignore_paths": [
-        "root.data",
-        "root.pagination.cursor"
-      ]
-    },
-    "/api/v1/transfers/latest": {
-      "ignore_paths": [
-        "root.data",
-        "root.pagination.cursor"
-      ]
-    },
+    "/api/v1/transactions/latest": {},
+    "/api/v1/transfers/latest": {},
     "/api/v1/transactions": {
       "direction": [
-        "ASC"
+        "ASC",
+        "DESC"
       ]
     },
     "/api/v1/transactions/contract": {
       "direction": [
-        "ASC"
+        "ASC",
+        "DESC"
       ]
     },
     "/api/v1/transactions/delegated": {
       "direction": [
-        "ASC"
+        "ASC",
+        "DESC"
       ]
     },
     "/api/v1/accounts/balance/vet/{address}": {
@@ -158,8 +157,7 @@
     "/api/v1/b3tr/richlist": {
       "ignore_paths": [
         "root.data[*].balance",
-        "root.data[*].rank",
-        "root.pagination.cursor"
+        "root.data[*].rank"
       ]
     },
     "/api/v1/b3tr/richlist/{address}": {
