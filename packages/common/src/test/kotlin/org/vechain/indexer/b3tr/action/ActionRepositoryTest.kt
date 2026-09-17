@@ -12,6 +12,7 @@ import org.vechain.indexer.b3tr.action.ActionPeriod.AllTime
 import org.vechain.indexer.b3tr.action.ActionPeriod.Day
 import org.vechain.indexer.b3tr.action.ActionPeriod.Round
 import org.vechain.indexer.b3tr.shared.EntityType
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -346,6 +347,36 @@ class ActionRepositoryTest {
             emptyList<EntityActionSummary>(),
             writer.findCurrentEntities(Round(9), setOf(EntityType.USER to alice)),
         )
+    }
+
+    @Test
+    fun `the indexer's whole surface works with the deferrable indexes dropped`() {
+        val builder = IndexBuilder(database.properties)
+        val dave = "0x" + "dd".repeat(20)
+        builder.drop(ActionIndexes.SET)
+        try {
+            writer.save(
+                ActionSummaryUpdate(
+                    entities = listOf(entity(EntityType.USER, dave, AllTime, 30, 1, "7")),
+                    appUsers = listOf(appUser(appX, dave, AllTime, 30, 1, "7")),
+                )
+            )
+
+            assertEquals(
+                listOf(dave),
+                writer.findCurrentEntities(AllTime, setOf(EntityType.USER to dave)).map {
+                    it.entity
+                },
+            )
+            assertEquals(
+                listOf(dave),
+                writer.findCurrentAppUsers(AllTime, setOf(appX to dave)).map { it.user },
+            )
+            writer.rollbackFrom(30)
+            writer.prune(30)
+        } finally {
+            builder.build(ActionIndexes.SET)
+        }
     }
 
     @Test

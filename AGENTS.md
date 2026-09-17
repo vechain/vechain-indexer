@@ -90,7 +90,15 @@ block. The builder returns one as `CREATE UNIQUE INDEX` and then relabels it, wh
 
 A rebuild costs the size of the table whatever the gap, so the threshold is where the write saving
 overtakes it. Adding a deferrable index means adding it to the schema's `IndexSet`, not only to a
-migration; `BackfillCoordinatorTest` fails on an index in neither half of the split.
+migration: `IndexSetCoverageTest` drops each set and fails unless what stands is exactly the list
+of needed indexes it names, so an index classified nowhere fails the build.
+
+A schema that upserts cannot defer the unique index its `ON CONFLICT (...)` names — that is the
+write semantics, not replay protection, and history could only defer its keys because it is
+append-only. A temporal schema also keeps the `WHERE superseded_at IS NULL` lookup its supersede
+`UPDATE` reads, its `block_number` index for rollback and its `superseded_at` index for prune.
+What is left over is the API's: `ActionIndexes` defers b3tr_action's twelve leaderboards and three
+wallet lookups and keeps the other twenty-four.
 
 ## Indexer Performance Guidelines
 
