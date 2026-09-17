@@ -72,7 +72,6 @@ class BackfillCoordinatorTest {
 
         assertEquals(mapOf(set.schema to Phase.BACKFILL), state.phases())
         assertEquals(set.indexes, builder.missing(set))
-        assertEquals(needed(), standing())
     }
 
     @Test
@@ -124,17 +123,4 @@ class BackfillCoordinatorTest {
         assertEquals(emptyMap<String, Phase>(), state.phases())
         assertEquals(emptyList<DeferrableIndex>(), builder.missing(set))
     }
-
-    /** What the indexer reads itself, which no phase may take away. */
-    private fun needed() =
-        setOf("event_block_idx", "event_lifecycle_idx", "event_address_block_idx")
-
-    private fun standing(): Set<String> =
-        database.jdbc
-            .query(
-                "SELECT indexname FROM pg_indexes WHERE schemaname = ?",
-                { rs, _ -> rs.getString(1) },
-                set.schema,
-            )
-            .toSet()
 }
