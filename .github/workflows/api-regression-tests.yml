@@ -23,6 +23,11 @@ on:
         default: "https://mainnet.vechain.org"
         required: false
         type: string
+      sweep_windows:
+        description: "Block windows to compare row by row (0 skips the sweep)"
+        default: 6
+        required: false
+        type: number
   workflow_call:
     inputs:
       candidate_url:
@@ -45,6 +50,11 @@ on:
         required: false
         type: string
         default: "https://mainnet.vechain.org"
+      sweep_windows:
+        description: "Block windows to compare row by row (0 skips the sweep)"
+        required: false
+        type: number
+        default: 6
 
 permissions:
   contents: read
@@ -115,4 +125,73 @@ jobs:
         with:
           name: regression-report
           path: ./regression-output
+          if-no-files-found: ignore
+
+  sweep:
+    name: Block window sweep
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    if: ${{ (inputs.sweep_windows == null && 6 || inputs.sweep_windows) != 0 }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.14'
+
+      - name: Compare whole block windows
+        env:
+          CANDIDATE_URL: ${{ inputs.candidate_url || 'https://mainnet.dead.veworld.vechain.org' }}
+          BASELINE_URL: ${{ inputs.baseline_url || 'https://indexer.mainnet.vechain.org' }}
+          SWEEP_WINDOWS: ${{ inputs.sweep_windows || 6 }}
+        run: |
+          mkdir -p sweep-output
+          printf '{"endpoints":{"baseline":"%s","candidate":"%s"}}' "$BASELINE_URL" "$CANDIDATE_URL" \
+            > sweep-output/endpoints.json
+          packages/api/scripts/sweep_blocks.py \
+            --config-file sweep-output/endpoints.json \
+            --windows "$SWEEP_WINDOWS" \
+            --output sweep-output/sweep.json
+
+      - name: Summarise the sweep
+        if: always()
+        run: |
+          python3 - <<'PYEOF' >> "$GITHUB_STEP_SUMMARY"
+          import json, pathlib
+          path = pathlib.Path("sweep-output/sweep.json")
+          if not path.exists():
+              print("### Block window sweep\n\n> No report generated.")
+              raise SystemExit(0)
+          report = json.loads(path.read_text())
+          s = report["summary"]
+          print("### Block window sweep\n")
+          print("| | |\n|---|---|")
+          print(f"| **Candidate head** | {s['candidate_head']} |")
+          print(f"| **Windows** | {s['windows']} |")
+          print(f"| **Blocks compared** | {s['blocks_compared']} |")
+          print(f"| **Transactions compared** | {s['transactions_compared']} |")
+          print(f"| **Findings** | {s['findings']} |\n")
+          for window in report["windows"]:
+              if not window["findings"]:
+                  continue
+              start = window["window"]["start"]
+              print(f"<details><summary>Blocks {start}-{start + window['window']['count'] - 1}</summary>\n")
+              print("```")
+              for finding in window["findings"][:20]:
+                  subject = finding.get("block") or finding.get("transaction")
+                  for path_, description in finding["diffs"][:5]:
+                      print(f"  {subject} {path_}: {description}")
+              print("```\n</details>\n")
+          PYEOF
+
+      - name: Upload sweep report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sweep-report
+          path: ./sweep-output
           if-no-files-found: ignore
