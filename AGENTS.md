@@ -79,6 +79,12 @@ runner on every entry, with nothing stored:
   stops taking blocks at the top of `process`, outside any transaction, while several plain
   `CREATE INDEX`es run at once; the liveness check is told, because that stall is the work.
 
+A primary key can be deferrable too, where it exists for the API's join rather than for a write:
+`history.event(id)` is a sha1, so it is a cold random b-tree on every insert. What replaces it is
+the start-up trim — the indexer deletes past its checkpoint rather than replaying over it — and a
+`distinctBy` on the batch, because `ON CONFLICT DO NOTHING` quietly absorbed a repeated id within a
+block. The builder returns one as `CREATE UNIQUE INDEX` and then relabels it, which is instant.
+
 A rebuild costs the size of the table whatever the gap, so the threshold is where the write saving
 overtakes it. Adding a deferrable index means adding it to the schema's `IndexSet`, not only to a
 migration; `BackfillCoordinatorTest` fails on an index in neither half of the split.

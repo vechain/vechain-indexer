@@ -46,6 +46,15 @@ object HistoryIndexes {
                     "event_address",
                     "(address, event_name, block_timestamp, event_id)",
                 ),
+                // The API's join and its account range scan. The indexer replays no row it has
+                // not first deleted, so neither key guards a write.
+                DeferrableIndex("event_pkey", "event", "(id)", primaryKey = true),
+                DeferrableIndex(
+                    "event_address_pkey",
+                    "event_address",
+                    "(address, block_timestamp, event_id)",
+                    primaryKey = true,
+                ),
             ),
         )
 }

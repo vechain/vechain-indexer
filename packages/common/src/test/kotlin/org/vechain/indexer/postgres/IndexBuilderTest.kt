@@ -44,6 +44,19 @@ class IndexBuilderTest {
     }
 
     @Test
+    fun `a rebuilt primary key comes back as the constraint, not a bare unique index`() {
+        builder.drop(set)
+        assertEquals(emptyList<String>(), constraints())
+
+        builder.build(set)
+
+        assertEquals(
+            set.indexes.filter { it.primaryKey }.map { it.name }.sorted(),
+            constraints().sorted(),
+        )
+    }
+
+    @Test
     fun `an index an interrupted build left invalid counts as missing and is replaced`() {
         val invalid = set.indexes.first()
         database.jdbc.execute(
@@ -69,6 +82,14 @@ class IndexBuilderTest {
             )
             .toSet()
             .intersect(set.indexes.map { it.name }.toSet())
+
+    private fun constraints(): List<String> =
+        database.jdbc.query(
+            "SELECT c.conname FROM pg_constraint c JOIN pg_namespace n ON n.oid = c.connamespace " +
+                "WHERE c.contype = 'p' AND n.nspname = ?",
+            { rs, _ -> rs.getString(1) },
+            set.schema,
+        )
 
     private fun oid(index: String): Long =
         database.jdbc.queryForObject(

@@ -25,21 +25,36 @@ class IndexBuilder(
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    /** The indexes of [set] that are absent, or left invalid by an interrupted build. */
+    /** The indexes of [set] that are absent, or left invalid or unlabelled by a build. */
     fun missing(set: IndexSet): List<DeferrableIndex> =
-        connect().use { c -> set.indexes.filter { validity(c, set.schema, it.name) != true } }
+        connect().use { c -> set.indexes.filter { !stands(c, set.schema, it) } }
+
+    private fun stands(c: Connection, schema: String, index: DeferrableIndex): Boolean =
+        validity(c, schema, index.name) == true &&
+            (!index.primaryKey || isPrimaryKey(c, schema, index.name))
 
     /** Milliseconds each: the row those indexes were costing stops paying for them at once. */
     fun drop(set: IndexSet) {
         connect().use { c ->
-            set.indexes.forEach { execute(c, "DROP INDEX IF EXISTS ${set.schema}.${it.name}") }
+            set.indexes.forEach {
+                if (it.primaryKey) {
+                    execute(
+                        c,
+                        "ALTER TABLE ${set.schema}.${it.table} DROP CONSTRAINT IF EXISTS ${it.name}",
+                    )
+                }
+                execute(c, "DROP INDEX IF EXISTS ${set.schema}.${it.name}")
+            }
         }
     }
 
     /** Serial and online: the caller keeps processing blocks while these grow. */
     fun buildConcurrently(set: IndexSet, indexes: List<DeferrableIndex> = missing(set)) {
         if (indexes.isEmpty()) return
-        connect().use { c -> indexes.forEach { build(c, set.schema, it, concurrently = true) } }
+        connect().use { c ->
+            indexes.forEach { create(c, set.schema, it, concurrently = true) }
+            label(c, set.schema, indexes)
+        }
     }
 
     /** Several at a time, their SHARE locks not conflicting; only for a paused processor. */
@@ -52,7 +67,9 @@ class IndexBuilder(
                 .invokeAll(
                     indexes.map { index ->
                         Callable {
-                            connect().use { c -> build(c, set.schema, index, concurrently = false) }
+                            connect().use { c ->
+                                create(c, set.schema, index, concurrently = false)
+                            }
                         }
                     }
                 )
@@ -62,6 +79,8 @@ class IndexBuilder(
             pool.shutdown()
             pool.awaitTermination(1, TimeUnit.MINUTES)
         }
+        // Not inside the parallel phase: the ALTER wants the table exclusively.
+        connect().use { label(it, set.schema, indexes) }
         logger.info(
             "{}: built {} deferrable indexes in {}",
             set.schema,
@@ -70,7 +89,7 @@ class IndexBuilder(
         )
     }
 
-    private fun build(
+    private fun create(
         c: Connection,
         schema: String,
         index: DeferrableIndex,
@@ -84,7 +103,8 @@ class IndexBuilder(
         val started = System.nanoTime()
         execute(
             c,
-            "CREATE INDEX ${if (concurrently) "CONCURRENTLY " else ""}IF NOT EXISTS " +
+            "CREATE ${if (index.primaryKey) "UNIQUE " else ""}INDEX " +
+                "${if (concurrently) "CONCURRENTLY " else ""}IF NOT EXISTS " +
                 "${index.name} ON $schema.${index.table} ${index.definition}",
         )
         logger.info(
@@ -94,6 +114,16 @@ class IndexBuilder(
             (System.nanoTime() - started).nanoseconds,
         )
     }
+
+    /**
+     * Relabels a built unique index as the key, which is instant: the columns are still NOT NULL.
+     */
+    private fun label(c: Connection, schema: String, indexes: List<DeferrableIndex>) =
+        indexes
+            .filter { it.primaryKey && !isPrimaryKey(c, schema, it.name) }
+            .forEach {
+                execute(c, "ALTER TABLE $schema.${it.table} ADD PRIMARY KEY USING INDEX ${it.name}")
+            }
 
     /** True when the index is valid, false when a build left it invalid, null when absent. */
     private fun validity(c: Connection, schema: String, name: String): Boolean? =
@@ -105,6 +135,17 @@ class IndexBuilder(
                 ps.setString(1, schema)
                 ps.setString(2, name)
                 ps.executeQuery().use { rs -> if (rs.next()) rs.getBoolean(1) else null }
+            }
+
+    private fun isPrimaryKey(c: Connection, schema: String, name: String): Boolean =
+        c.prepareStatement(
+                "SELECT true FROM pg_constraint c JOIN pg_namespace n ON n.oid = c.connamespace " +
+                    "WHERE c.contype = 'p' AND n.nspname = ? AND c.conname = ?"
+            )
+            .use { ps ->
+                ps.setString(1, schema)
+                ps.setString(2, name)
+                ps.executeQuery().use { it.next() }
             }
 
     private fun execute(c: Connection, sql: String) = c.createStatement().use { it.execute(sql) }

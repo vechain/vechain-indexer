@@ -127,13 +127,7 @@ class BackfillCoordinatorTest {
 
     /** What the indexer reads itself, which no phase may take away. */
     private fun needed() =
-        setOf(
-            "event_pkey",
-            "event_block_idx",
-            "event_lifecycle_idx",
-            "event_address_pkey",
-            "event_address_block_idx",
-        )
+        setOf("event_block_idx", "event_lifecycle_idx", "event_address_block_idx")
 
     private fun standing(): Set<String> =
         database.jdbc
