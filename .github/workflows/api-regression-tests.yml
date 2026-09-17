@@ -13,6 +13,11 @@ on:
         default: "https://indexer.mainnet.vechain.org"
         required: false
         type: string
+      max_block_gap:
+        description: "Blocks an indexer on the candidate may trail the baseline by"
+        default: 100
+        required: false
+        type: number
   workflow_call:
     inputs:
       candidate_url:
@@ -25,6 +30,11 @@ on:
         required: false
         type: string
         default: "https://indexer.mainnet.vechain.org"
+      max_block_gap:
+        description: "Blocks an indexer on the candidate may trail the baseline by"
+        required: false
+        type: number
+        default: 100
 
 permissions:
   contents: read
@@ -45,6 +55,19 @@ jobs:
         with:
           python-version: '3.14'
 
+      - name: Check both colours are in sync
+        id: sync
+        continue-on-error: true
+        env:
+          CANDIDATE_URL: ${{ inputs.candidate_url || 'https://mainnet.dead.veworld.vechain.org' }}
+          BASELINE_URL: ${{ inputs.baseline_url || 'https://indexer.mainnet.vechain.org' }}
+          MAX_BLOCK_GAP: ${{ inputs.max_block_gap || 100 }}
+        run: |
+          packages/api/scripts/check_sync_gate.py \
+            --baseline-url "$BASELINE_URL" \
+            --candidate-url "$CANDIDATE_URL" \
+            --max-gap "$MAX_BLOCK_GAP"
+
       - name: Run regression comparison (candidate vs baseline)
         env:
           CANDIDATE_URL: ${{ inputs.candidate_url || 'https://mainnet.dead.veworld.vechain.org' }}
@@ -61,6 +84,8 @@ jobs:
         env:
           CANDIDATE: ${{ inputs.candidate_url || 'https://mainnet.dead.veworld.vechain.org' }}
           BASELINE: ${{ inputs.baseline_url || 'https://indexer.mainnet.vechain.org' }}
+          SYNC_OUTCOME: ${{ steps.sync.outcome }}
+        shell: bash
         run: |
           python3 packages/api/scripts/regression_summary.py \
             --report regression-output/report.json \
@@ -68,6 +93,11 @@ jobs:
             --candidate "$CANDIDATE" \
             --baseline "$BASELINE" \
             --output "$GITHUB_STEP_SUMMARY"
+
+          if [[ "$SYNC_OUTCOME" != "success" ]]; then
+            echo "> **The colours were not in sync when this ran**, so differences below may be" \
+              "lag rather than regressions. See the sync gate step." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Upload regression report
         if: always()

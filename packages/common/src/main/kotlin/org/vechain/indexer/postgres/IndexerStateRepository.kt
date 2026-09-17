@@ -53,6 +53,20 @@ open class IndexerStateRepository(
         )
     }
 
+    /** Every indexer's resume point, for the sync gate ahead of a colour switch. */
+    open fun checkpoints(): List<IndexerCheckpoint> =
+        jdbc.query(
+            "SELECT name, version, checkpoint_block, checkpoint_block_id FROM public.indexer_state " +
+                "ORDER BY name"
+        ) { rs, _ ->
+            IndexerCheckpoint(
+                schema = rs.getString(1),
+                version = rs.getInt(2),
+                blockNumber = rs.getObject(3) as Long?,
+                blockId = PostgresHex.hexOrNull(rs.getBytes(4)),
+            )
+        }
+
     open fun checkpoint(schema: String): BlockIdentifier? =
         jdbc
             .query(
