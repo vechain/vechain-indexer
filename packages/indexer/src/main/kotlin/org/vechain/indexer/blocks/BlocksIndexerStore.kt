@@ -8,7 +8,7 @@ import org.vechain.indexer.config.CheckpointProperties
 import org.vechain.indexer.postgres.IndexerStateRepository
 import org.vechain.indexer.thor.model.BlockIdentifier
 
-/** Every block writes a row, so the newest one is the resume point and no checkpoint is kept. */
+/** Every block writes a row, so the newest one is the resume point rather than the checkpoint. */
 @Profile("blocks")
 @Component
 open class BlocksIndexerStore(
@@ -17,7 +17,6 @@ open class BlocksIndexerStore(
     checkpointProperties: CheckpointProperties,
 ) : PostgresIndexerStore(IndexerNames.BLOCKS.COLLECTION, repository, state, checkpointProperties) {
 
-    override val usesCheckpoint: Boolean = false
-
+    // The checkpoint is still written, unused here, because /api/v1/status reports it.
     override fun lastSynced(): BlockIdentifier? = repository.lastSynced()
 }
