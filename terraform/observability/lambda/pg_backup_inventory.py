@@ -19,7 +19,7 @@ _cloudwatch = boto3.client("cloudwatch")
 _NAMESPACE = os.environ["METRIC_NAMESPACE"]
 _TAG_KEY = os.environ["BACKUP_TAG_KEY"]
 _TAG_VALUE = os.environ["BACKUP_TAG_VALUE"]
-_EVENT_WINDOW_MINUTES = 1440
+_EVENT_WINDOW_MINUTES = 20160  # 14 days, all DescribeEvents retains
 
 
 def _tagged_instances() -> list[str]:
@@ -48,7 +48,8 @@ def _last_backup_duration_seconds(identifier: str) -> float | None:
     """Seconds between the most recent paired backup start and finish, or None if unpaired.
 
     RDS exposes no completion time on a snapshot, so the pair of `backup` events either side of
-    it is the only source. DescribeEvents keeps 14 days and returns them oldest first.
+    it is the only source. A multi-hour backup can put its start and finish in different days,
+    so the window is the full 14 days DescribeEvents retains.
     """
     events = _rds.describe_events(
         SourceIdentifier=identifier,
@@ -59,7 +60,7 @@ def _last_backup_duration_seconds(identifier: str) -> float | None:
     )["Events"]
 
     started, duration = None, None
-    for event in events:
+    for event in sorted(events, key=lambda e: e["Date"]):
         message = event.get("Message", "").lower()
         if message.startswith("backing up"):
             started = event["Date"]
@@ -98,28 +99,40 @@ def _instance_metrics(identifier: str, now: dt.datetime) -> list[dict]:
     snapshots = _snapshots(identifier)
     data = []
 
-    # A snapshot has no create time until it has one; treat those as in progress only.
-    ages = {}
+    # Metrics cover automated snapshots only: restore_dead_prod_pg_snapshots.sh passes
+    # --snapshot-type automated, so a manual snapshot taken by hand would otherwise read as a
+    # healthy backup while the one a restore actually picks went stale. Both are logged.
+    ages, started_ages, in_progress = {}, [], []
     for snapshot in snapshots:
         created = snapshot.get("SnapshotCreateTime")
         age = (now - created).total_seconds() if created else None
-        if snapshot.get("Status") == "available" and age is not None:
-            ages[snapshot["DBSnapshotIdentifier"]] = (age, snapshot)
         _log_snapshot(identifier, snapshot, age)
-
-    in_progress = [s for s in snapshots if s.get("Status") == "creating"]
+        if snapshot.get("SnapshotType") != "automated":
+            continue
+        if snapshot.get("Status") == "creating":
+            in_progress.append(snapshot)
+        # A snapshot has no create time until it has one; treat those as in progress only.
+        if age is not None:
+            started_ages.append(age)
+            if snapshot.get("Status") == "available":
+                ages[snapshot["DBSnapshotIdentifier"]] = (age, snapshot)
     data.append(_datum("SnapshotsAvailable", len(ages), "Count", identifier))
     data.append(_datum("SnapshotsInProgress", len(in_progress), "Count", identifier))
     if in_progress:
         progress = min(s.get("PercentProgress", 0) for s in in_progress)
         data.append(_datum("SnapshotProgress", progress, "Percent", identifier))
 
+    # Counts a snapshot still being taken, so this tracks "a backup started" independently of how
+    # long one runs — which is what the staleness alarm needs.
+    if started_ages:
+        data.append(_datum("LastBackupStartedAge", min(started_ages), "Seconds", identifier))
+
     if ages:
         newest_age, newest = min(ages.values(), key=lambda pair: pair[0])
         data.append(_datum("NewestSnapshotAge", newest_age, "Seconds", identifier))
         data.append(_datum("OldestSnapshotAge", max(age for age, _ in ages.values()), "Seconds", identifier))
-        # The volume the snapshot covers, not the bytes it consumes — RDS exposes no per-snapshot
-        # size. Consumed bytes are AWS/RDS TotalBackupStorageBilled, across the whole retention.
+        # The volume the snapshot covers, not the bytes it consumes: RDS publishes no snapshot
+        # size, and no backup-storage metric at all for non-Aurora instances.
         data.append(
             _datum("NewestSnapshotAllocatedStorage", newest.get("AllocatedStorage", 0), "Gigabytes", identifier)
         )

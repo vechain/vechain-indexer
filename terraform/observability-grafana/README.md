@@ -6,7 +6,7 @@ Terraform stack that provisions AMG data sources and (eventually) dashboards, on
 
 - **AMP data source** — Prometheus with SigV4 auth against the workspace in `terraform/observability/`. UID `amp`.
 - **CloudWatch data source** — for log-based diagnostics and any CW-native metrics we keep. UID `cloudwatch`.
-- **Dashboards** — JSON files under `dashboards/`, iterated by `dashboards.tf` via `for_each`. `overview` covers indexer sync, API, errors, ECS resources, MongoDB, the CloudFront/WAF edge rows and the per-network WAF request detail rows; `logs` is a single Logs Insights view over every ECS service log group; `backups` covers the Postgres RDS snapshots.
+- **Dashboards** — JSON files under `dashboards/`, iterated by `dashboards.tf` via `for_each`. `overview` covers indexer sync, API, errors, ECS resources, MongoDB, the CloudFront/WAF edge rows and the per-network WAF request detail rows; `logs` is a single Logs Insights view over every ECS service log group.
 
 ## Adding a dashboard
 
@@ -24,28 +24,34 @@ Invariants worth knowing before editing:
 - Both are `custom`, not `label_values`. Query-variable options vanish when the backing series briefly disappears (no testnet `indexer_current_block` mid-deploy), taking dependent panels with them. The trade is that the values are now hardcoded, so they must track the sidecar's external labels.
 - Prometheus-side ad-hoc filtering goes through the `filters` variable, not per-label textboxes. Ad-hoc filters only apply to their own datasource, so they never reach the CloudWatch panels.
 
-### Backups dashboard
+### Postgres · Backups row
 
-Reads the `VeWorld/RDSBackups` metrics published by the inventory Lambda in
-`terraform/observability/backups.tf`, alongside the three `AWS/RDS` backup-storage metrics. The
-"Backup inventory" section of that stack's README is where the metrics and their caveats are
-documented — in particular why no panel here shows a per-snapshot size.
+Collapsed, after the two other Postgres rows. Every panel reads the `VeWorld/RDSBackups` metrics
+published by the inventory Lambda in `terraform/observability/backups.tf`; that stack's "Backup
+inventory" section documents the metrics and their caveats.
 
-- **No template variables, on purpose.** Custom-namespace panels take `DBInstanceIdentifier: ["*"]`,
-  which is already scoped to instances carrying the `Backup` tag. The `AWS/RDS` panels hardcode the
-  four identifiers instead, because a wildcard there would pull in every RDS instance in the
-  account. Four series read fine on one panel, and the Edge rows above are the cautionary tale
-  about templating CloudWatch dimensions.
-- **"Snapshots that exist" collapses repeats with `stats … by instance, snapshot`.** The Lambda
-  logs the whole list every 5 minutes, so without the `stats` the table would show each snapshot
-  once per poll in the range. The consequence is that the table is scoped to the dashboard's time
-  range: a snapshot that aged out of retention leaves the table once the range moves past its last
-  sighting, and widening the range is how you see what existed at some point in the past.
-- **`parse` uses a regex, not a glob.** The Lambda's line is pipe-delimited, and a regex is
-  unanchored for certain — a glob pattern would depend on whether the Lambda runtime prefixes the
-  line, which differs by log format.
-- **Adding a Postgres instance means editing the hardcoded identifier lists** in the two `AWS/RDS`
-  panels. The custom-namespace panels pick it up on their own.
+- **Keep it collapsed.** The table panel is Logs Insights, and collapsed rows do not execute their
+  queries. Same rule as the WAF rows.
+- **No `AWS/RDS` backup metrics, on purpose.** `TotalBackupStorageBilled`,
+  `BackupRetentionPeriodStorageUsed` and `SnapshotStorageUsed` are documented but publish nothing
+  for non-Aurora instances — verified empty against this account both dimensioned and undimensioned.
+  A panel for them renders blank forever, which is worse than not having one. "Volume covered by the
+  newest backup" is the size signal that does exist; there is no true backup-bytes figure outside
+  billing.
+- **No pickers, and no hardcoded instance ids either.** Every target takes
+  `DBInstanceIdentifier: ["*"]`, already scoped to instances carrying the `Backup` tag, so a new
+  Postgres instance appears without editing this file. `$deployment`/`$network` cannot reach a
+  CloudWatch dimension anyway — see the Edge rows for that cautionary tale.
+- **"Backup age" draws `started` and `restorable` separately on purpose.** A snapshot is not
+  restorable until it finishes and mainnet's backups run for hours, so the two lines differ by the
+  run time. Reading `restorable` as "when the last backup ran" is the mistake the panel exists to
+  prevent.
+- **"Snapshots that exist" collapses repeats with `stats … by instance, snapshot`.** The Lambda logs
+  the whole list every 5 minutes, so without it the table would show each snapshot once per poll.
+  The consequence is that the table is scoped to the dashboard's time range: at the default now-1h
+  it is the current inventory, and widening the range brings back snapshots that have since aged
+  out. It is also the only place manual snapshots appear — the metrics track automated ones only.
+  The `parse` uses a regex rather than a glob because a regex is unanchored for certain.
 
 
 ### Sync row

@@ -249,13 +249,35 @@ resource "aws_cloudwatch_metric_alarm" "pg_connections" {
   ok_actions    = local.alerts_topic_arns
 }
 
-# A daily backup inside a one-hour window peaks just past 25 hours old, and missing data holds the
-# state because a restore replaces the instance whole. See terraform/observability/README.md.
+# Measured on when a backup last started, not when one last became restorable, so a backup that
+# runs for hours cannot trip it. See terraform/observability/README.md.
+resource "aws_cloudwatch_metric_alarm" "pg_backup_not_starting" {
+  for_each = local.alarm_pg
+
+  alarm_name        = "${local.alarm_name_prefix}-${each.key}-pg-backup-not-starting"
+  alarm_description = "${local.alarm_pg_headers[each.key]}: No backup started — RDS has not begun a snapshot in over 26 hours, against a daily schedule."
+
+  namespace           = "VeWorld/RDSBackups"
+  metric_name         = "LastBackupStartedAge"
+  dimensions          = { DBInstanceIdentifier = each.value }
+  statistic           = "Maximum"
+  period              = 3600
+  evaluation_periods  = 1
+  comparison_operator = "GreaterThanThreshold"
+  threshold           = 26 * 3600
+  treat_missing_data  = "ignore"
+
+  alarm_actions = local.alerts_topic_arns
+  ok_actions    = local.alerts_topic_arns
+}
+
+# The companion: backups that start daily but never finish leave nothing restorable. 48h is two
+# whole cycles, so it clears the multi-hour runs the mainnet instance currently takes.
 resource "aws_cloudwatch_metric_alarm" "pg_backup_stale" {
   for_each = local.alarm_pg
 
   alarm_name        = "${local.alarm_name_prefix}-${each.key}-pg-backup-stale"
-  alarm_description = "${local.alarm_pg_headers[each.key]}: No recent backup — the newest snapshot is over 26 hours old, so a dead-colour restore would start from stale data."
+  alarm_description = "${local.alarm_pg_headers[each.key]}: No restorable backup — the newest available snapshot is over 48 hours old, so a dead-colour restore would start from stale data."
 
   namespace           = "VeWorld/RDSBackups"
   metric_name         = "NewestSnapshotAge"
@@ -264,8 +286,8 @@ resource "aws_cloudwatch_metric_alarm" "pg_backup_stale" {
   period              = 3600
   evaluation_periods  = 1
   comparison_operator = "GreaterThanThreshold"
-  threshold           = 26 * 3600
-  treat_missing_data  = "missing"
+  threshold           = 48 * 3600
+  treat_missing_data  = "ignore"
 
   alarm_actions = local.alerts_topic_arns
   ok_actions    = local.alerts_topic_arns
