@@ -13,7 +13,7 @@ class BackfillProperties {
     /** The gap at which the write saving overtakes the one rebuild: a resync, not a restore. */
     var enterBehindBlocks: Long = 500_000
 
-    /** Indexes grown at once by a paused rebuild, each on its own connection. */
+    /** Indexes grown at once across every schema, each on its own connection. */
     var buildWorkers: Int = 4
 
     /** `maintenance_work_mem` per build session; [buildWorkers] of them exist at once. */
