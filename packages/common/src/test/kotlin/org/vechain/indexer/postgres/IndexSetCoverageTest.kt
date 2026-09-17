@@ -146,6 +146,68 @@ class IndexSetCoverageTest {
                 "b3tr_gm" to listOf("state_pkey", "state_block_idx", "state_prune_idx"),
                 "b3tr_treasury" to listOf("transfer_pkey", "transfer_block_idx"),
                 "b3tr_x_alloc" to listOf("result_pkey", "result_block_idx", "result_prune_idx"),
+                // The round boundary re-derives a status, and a completion fans out over members.
+                "b3tr_challenges" to
+                    listOf("challenge", "challenge_member", "user_challenge").flatMap {
+                        listOf("${it}_pkey", "${it}_block_idx", "${it}_prune_idx")
+                    } +
+                        listOf(
+                            "challenge_current_idx",
+                            "challenge_current_start_round_idx",
+                            "challenge_current_end_round_idx",
+                            "challenge_member_current_idx",
+                            "user_challenge_current_challenge_idx",
+                            "challenge_app_pkey",
+                            "challenge_app_block_idx",
+                        ),
+                // The exits due this block and the delegations one of them ends.
+                "b3tr_navigator" to
+                    listOf("navigator", "citizen", "fee").flatMap {
+                        listOf(
+                            "${it}_pkey",
+                            "${it}_current_idx",
+                            "${it}_block_idx",
+                            "${it}_prune_idx",
+                        )
+                    } +
+                        listOf(
+                            "navigator_exit_idx",
+                            "citizen_navigator_idx",
+                            "delegation_event_pkey",
+                            "delegation_event_block_idx",
+                        ),
+                // findCurrentByStates leads on state, so that page is the indexer's too.
+                "b3tr_proposal" to
+                    listOf(
+                        "result_pkey",
+                        "result_current_idx",
+                        "result_current_state_idx",
+                        "result_block_idx",
+                        "result_prune_idx",
+                        "comment_pkey",
+                        "comment_block_idx",
+                    ),
+                // Four foreign keys point at safe.proxy; their cascade reads each key's safe
+                // prefix.
+                "safe" to
+                    listOf(
+                        "proxy_pkey",
+                        "proxy_block_idx",
+                        "membership_pkey",
+                        "membership_block_idx",
+                        "membership_prune_idx",
+                        "tx_state_pkey",
+                        "tx_state_current_idx",
+                        "tx_state_block_idx",
+                        "tx_state_prune_idx",
+                        "tx_approval_pkey",
+                        "tx_approval_block_idx",
+                        "tx_proposal_pkey",
+                        "tx_proposal_block_idx",
+                        "tx_proposal_prune_idx",
+                        "tx_subcall_pkey",
+                        "tx_subcall_block_idx",
+                    ),
             )
     }
 }

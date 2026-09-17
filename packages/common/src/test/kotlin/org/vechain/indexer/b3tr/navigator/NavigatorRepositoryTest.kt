@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestMethodOrder
 import org.springframework.data.domain.Sort.Direction
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -256,6 +257,28 @@ class NavigatorRepositoryTest {
         assertNull(writer.findCurrentFees(setOf(navA to 1), 30).single().claimedAmount)
         assertEquals(listOf(navB), writer.findExpiredExits(45).map { it.address })
         assertTrue(writer.findExpiredExits(30).isEmpty())
+    }
+
+    @Test
+    @Order(1)
+    fun `the exit and citizen lookups survive the delegation feed being dropped`() {
+        val builder = IndexBuilder(database.properties)
+        builder.drop(NavigatorIndexes.SET)
+        try {
+            assertEquals(listOf(navB), writer.findExpiredExits(40).map { it.address })
+            assertEquals(
+                listOf(citizen2),
+                writer.findActiveCitizens(setOf(navB), 40).map { it.address },
+            )
+            assertEquals(
+                setOf(navA, navC),
+                writer.findCurrentNavigators(setOf(navA, navC), 40).map { it.address }.toSet(),
+            )
+            assertEquals(1, writer.findCurrentCitizens(setOf(citizen1), 40).size)
+            assertEquals(1, writer.findCurrentFees(setOf(navA to 1), 40).size)
+        } finally {
+            builder.build(NavigatorIndexes.SET)
+        }
     }
 
     @Test

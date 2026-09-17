@@ -4,11 +4,13 @@ import java.math.BigInteger
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.data.domain.Sort.Direction
 import org.vechain.indexer.b3tr.voting.Support
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -132,6 +134,30 @@ class ProposalRepositoryTest {
 
         writer.truncate()
         seed()
+    }
+
+    @Test
+    fun `the indexer's own reads still work with the deferrable indexes dropped`() {
+        val builder = IndexBuilder(database.properties)
+        builder.drop(ProposalIndexes.SET)
+        try {
+            writer.save(
+                listOf(result("3", 40)),
+                listOf(comment("3", alice, 40, "late but keen")),
+            )
+
+            assertEquals(listOf("3"), writer.findCurrent(setOf("3")).map { it.proposalId })
+            assertTrue(
+                writer.findCurrentByStates(ProposalState.nonFinalizedStates).any {
+                    it.proposalId == "3"
+                }
+            )
+
+            writer.rollbackFrom(40)
+            assertEquals(emptyList<String>(), writer.findCurrent(setOf("3")).map { it.proposalId })
+        } finally {
+            builder.build(ProposalIndexes.SET)
+        }
     }
 
     @Test

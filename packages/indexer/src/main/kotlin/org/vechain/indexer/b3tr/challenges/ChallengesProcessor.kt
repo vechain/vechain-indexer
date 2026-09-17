@@ -8,6 +8,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.PostgresIndexerStore
 import org.vechain.indexer.PostgresProcessor
+import org.vechain.indexer.backfill.BackfillCoordinatorFactory
 import org.vechain.indexer.config.CheckpointProperties
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
@@ -24,6 +25,7 @@ open class ChallengesProcessor(
     checkpointProperties: CheckpointProperties,
     horizon: InlineVersioningProperties,
     processorMetrics: ProcessorMetrics,
+    backfill: BackfillCoordinatorFactory? = null,
     @Value("\${indexer.version.b3tr-challenges:1}") version: Int = 1,
 ) :
     PostgresProcessor(
@@ -37,6 +39,7 @@ open class ChallengesProcessor(
         IndexerNames.B3TR_CHALLENGES.NAME,
         version,
         processorMetrics,
+        backfill?.create(ChallengeIndexes.SET),
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) return
