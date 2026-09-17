@@ -97,8 +97,10 @@ A schema that upserts cannot defer the unique index its `ON CONFLICT (...)` name
 write semantics, not replay protection, and history could only defer its keys because it is
 append-only. A temporal schema also keeps the `WHERE superseded_at IS NULL` lookup its supersede
 `UPDATE` reads, its `block_number` index for rollback and its `superseded_at` index for prune.
-What is left over is the API's: `ActionIndexes` defers b3tr_action's twelve leaderboards and three
-wallet lookups and keeps the other twenty-four.
+A foreign key is stricter still: Postgres refuses to drop the key it points at, and the cascade
+delete on the referencing side reads an index of its own. What is left over is the API's:
+`ActionIndexes` defers b3tr_action's twelve leaderboards and three wallet lookups and keeps the
+other twenty-four; `BlocksIndexes` defers three address b-trees and keeps six.
 
 ## Indexer Performance Guidelines
 
