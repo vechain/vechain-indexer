@@ -21,6 +21,9 @@ abstract class BaseProcessor(
     protected val startupLogger: Logger = LoggerFactory.getLogger(this::class.java)
     private val metricsRecorder = ProcessorMetricsRecorder(indexerName, processorMetrics)
 
+    // The first block of an entry whose processEntry threw; its retry rolls that back first.
+    private var failedFrom: Long? = null
+
     abstract suspend fun processEntry(entry: IndexingResult)
 
     /** Runs after a successful [processEntry] with the newest block the entry covered. */
@@ -38,13 +41,23 @@ abstract class BaseProcessor(
         val start = TimeSource.Monotonic.markNow()
         try {
             assertEventsInBlockOrder(entry.events())
+            failedFrom?.let(::rollback)
+            failedFrom = firstBlock(entry)
             processEntry(entry)
+            failedFrom = null
             onProcessed(latestBlock(entry))
             metricsRecorder.recordEvents(entry.events().size)
         } finally {
             metricsRecorder.record(entry, start.elapsedNow())
         }
     }
+
+    /** The first block an entry can have written: a log batch's rows start at its first event. */
+    private fun firstBlock(entry: IndexingResult): Long =
+        when (entry) {
+            is IndexingResult.BlockResult -> entry.block.number
+            else -> entry.events().firstOrNull()?.blockNumber ?: entry.latestBlockNumber()
+        }
 
     /** A log batch may end on a block without events, whose id the entry does not carry. */
     private fun latestBlock(entry: IndexingResult): BlockIdentifier =
@@ -86,6 +99,7 @@ abstract class BaseProcessor(
         val start = TimeSource.Monotonic.markNow()
         resetProcessingState()
         store.rollbackFrom(blockNumber)
+        failedFrom = null
         logTimed("rollback", start.elapsedNow(), "at block $blockNumber")
     }
 
