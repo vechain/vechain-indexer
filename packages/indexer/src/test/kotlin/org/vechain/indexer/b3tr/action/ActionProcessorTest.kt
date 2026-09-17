@@ -73,6 +73,8 @@ class ActionProcessorTest {
         every { service.processEvents(any(), 3) } returns result(4)
         every { service.processEvents(any(), 4) } returns result(4)
         every { service.save(any()) } throws IllegalStateException("connection lost") andThen Unit
+        every { service.forget() } just Runs
+        every { repository.rollbackFrom(any()) } just Runs
 
         assertThrows(IllegalStateException::class.java) {
             runBlocking { processor.process(entry(1)) }
@@ -84,6 +86,7 @@ class ActionProcessorTest {
         verify(exactly = 2) { service.processEvents(any(), 3) }
         verify(exactly = 1) { service.processEvents(any(), 4) }
         coVerify(exactly = 2) { service.roundBefore(1) }
+        verify(exactly = 1) { repository.rollbackFrom(1) }
     }
 
     @Test
