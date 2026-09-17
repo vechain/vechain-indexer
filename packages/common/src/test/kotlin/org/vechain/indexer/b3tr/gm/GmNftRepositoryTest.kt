@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 import org.vechain.indexer.thor.Address
 
@@ -76,6 +77,22 @@ class GmNftRepositoryTest {
         )
         assertEquals(1L, reader.countByLevel(GmLevelName.EARTH))
         assertEquals(0L, reader.countByLevel(GmLevelName.GALAXY))
+    }
+
+    @Test
+    fun `the write path holds up with the level index dropped`() {
+        val builder = IndexBuilder(database.properties)
+        builder.drop(GmNftIndexes.SET)
+        try {
+            writer.save(listOf(nft("1", 40, bob, GmLevelName.MARS)))
+
+            assertEquals(40L, writer.findCurrentByTokenIds(setOf("1")).single().blockNumber)
+
+            writer.rollbackFrom(40)
+            assertEquals(20L, writer.findCurrentByTokenIds(setOf("1")).single().blockNumber)
+        } finally {
+            builder.build(GmNftIndexes.SET)
+        }
     }
 
     @Test
