@@ -2286,7 +2286,7 @@
           "id": 154,
           "type": "table",
           "title": "Snapshots that exist",
-          "description": "Every snapshot the inventory Lambda saw over the dashboard's time range, one row each — automated and manual, unlike the metrics above, which track automated only. The Lambda logs the whole list every 5 minutes, so rows are collapsed to the newest sighting per snapshot with `stats latest(...) by instance, snapshot`; without that the table repeats each snapshot once per poll. At the default now-1h that is exactly the current inventory; widen the range to see snapshots that have since aged out of retention. `volume_gib` is the instance's allocated storage at snapshot time, not the snapshot's own size.",
+          "description": "Every snapshot the inventory Lambda saw over the dashboard's time range, one row each — automated and manual, unlike the metrics above, which track automated only. The Lambda logs the whole list every 5 minutes, so rows are collapsed to the newest sighting per snapshot with `stats latest(...) by instance, snapshot`; without that the table repeats each snapshot once per poll. At the default now-1h that is exactly the current inventory; widen the range to see snapshots that have since aged out of retention. `volume_gib` is the instance's allocated storage at snapshot time, not the snapshot's own size. The aggregated columns are parsed into `r_*` names and renamed by `stats`, because aliasing `latest(type) as type` over a field `parse` already defined is rejected with `Ephemeral field is already defined`; `instance` and `snapshot` keep their names only because the `by` clause never re-defines them.",
           "gridPos": { "h": 12, "w": 24, "x": 0, "y": 74 },
           "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
           "targets": [
@@ -2296,7 +2296,7 @@
               "queryMode": "Logs",
               "region": "default",
               "logGroupNames": ["/aws/lambda/veworld-indexer-prod-pg-backup-inventory"],
-              "expression": "fields @timestamp\n| parse @message /rds_snapshot\\|(?<instance>[^|]*)\\|(?<snapshot>[^|]*)\\|(?<type>[^|]*)\\|(?<status>[^|]*)\\|(?<created>[^|]*)\\|(?<age_hours>[^|]*)\\|(?<volume_gib>[^|]*)\\|(?<progress>[^|]*)/\n| filter ispresent(snapshot)\n| stats latest(type) as type, latest(status) as status, latest(created) as created, latest(age_hours) as age_hours, latest(volume_gib) as volume_gib, latest(progress) as progress by instance, snapshot\n| sort created desc\n| limit 200"
+              "expression": "fields @timestamp\n| parse @message /rds_snapshot\\|(?<instance>[^|]*)\\|(?<snapshot>[^|]*)\\|(?<r_type>[^|]*)\\|(?<r_status>[^|]*)\\|(?<r_created>[^|]*)\\|(?<r_age>[^|]*)\\|(?<r_volume>[^|]*)\\|(?<r_progress>[^|]*)/\n| filter ispresent(snapshot)\n| stats latest(r_type) as type, latest(r_status) as status, latest(r_created) as created, latest(r_age) as age_hours, latest(r_volume) as volume_gib, latest(r_progress) as progress by instance, snapshot\n| sort created desc\n| limit 200"
             }
           ],
           "transformations": [

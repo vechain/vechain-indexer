@@ -51,7 +51,9 @@ inventory" section documents the metrics and their caveats.
   The consequence is that the table is scoped to the dashboard's time range: at the default now-1h
   it is the current inventory, and widening the range brings back snapshots that have since aged
   out. It is also the only place manual snapshots appear — the metrics track automated ones only.
-  The `parse` uses a regex rather than a glob because a regex is unanchored for certain.
+  The `parse` uses a regex rather than a glob because a regex is unanchored for certain, and the
+  aggregated fields are parsed as `r_*` then renamed by `stats` — Logs Insights rejects
+  `latest(x) as x` over a field `parse` defined, with `Ephemeral field is already defined`.
 
 
 ### Sync row
