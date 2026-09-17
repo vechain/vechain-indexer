@@ -488,17 +488,20 @@
     },
     "/api/v1/safes/owner/{address}": {
       "address": [
-        "0xc5213085d3fc19b6a883a92a5703f7733360f063"
+        "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
       ]
     },
     "/api/v1/safes/{safe}/transactions": {
       "safe": [
-        "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+        "0x8b7276982819a955963b935f4642011235eec39b"
       ]
     },
     "/api/v1/safes/{safe}/transactions/{txHash}/state": {
       "safe": [
-        "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+        "0x8b7276982819a955963b935f4642011235eec39b"
+      ],
+      "txHash": [
+        "0x5cdcc988f895f9e1c969c8d417a56d018e8a7186e66b98dfc892c816822f0853"
       ]
     }
   }

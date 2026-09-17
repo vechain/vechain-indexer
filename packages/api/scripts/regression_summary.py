@@ -65,6 +65,19 @@ def render(report: Dict[str, Any], seed: Dict[str, Any] | None, candidate: str, 
         "",
     ]
 
+    if seed and seed.get("seeders"):
+        skipped = {name: why for name, why in seed["seeders"].items() if why != "ok"}
+        lines += [
+            "### Seeding",
+            "",
+            f"{len(seed['seeders']) - len(skipped)} of {len(seed['seeders'])} families seeded "
+            "their identifiers from the baseline.",
+            "",
+        ]
+        if skipped:
+            lines += [f"- `{esc(name)}` — {esc(why)}" for name, why in sorted(skipped.items())]
+            lines.append("")
+
     if seed:
         lines += [
             "### Validator Sampling",

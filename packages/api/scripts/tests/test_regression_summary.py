@@ -59,8 +59,15 @@ class RenderTest(unittest.TestCase):
 
     def test_seed_metadata_and_clean_run(self) -> None:
         report = {"summary": {"total": 1, "passed": 1, "failed": 0}, "results": [_result("pass")]}
-        seed = {"validatorSeed": 1337, "sampledValidatorIds": ["0xv1"]}
+        seed = {
+            "validatorSeed": 1337,
+            "sampledValidatorIds": ["0xv1"],
+            "seeders": {"seed_transfers": "ok", "seed_safes": "skipped: LookupError: no safe"},
+        }
         text = MODULE.render(report, seed, "c", "b")
         self.assertIn("### Validator Sampling", text)
         self.assertIn("- `0xv1`", text)
+        self.assertIn("1 of 2 families seeded", text)
+        self.assertIn("`seed_safes` — skipped: LookupError: no safe", text)
+        self.assertNotIn("seed_transfers", text)
         self.assertIn("All endpoints matched.", text)
