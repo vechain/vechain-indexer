@@ -100,7 +100,9 @@ append-only. A temporal schema also keeps the `WHERE superseded_at IS NULL` look
 A foreign key is stricter still: Postgres refuses to drop the key it points at, and the cascade
 delete on the referencing side reads an index of its own. What is left over is the API's:
 `ActionIndexes` defers b3tr_action's twelve leaderboards and three wallet lookups and keeps the
-other twenty-four; `BlocksIndexes` defers three address b-trees and keeps six.
+other twenty-four; `BlocksIndexes` defers three address b-trees and keeps six;
+`TransferIndexes` defers five of eight, keeping rollback's block index and the key that holds
+a wallet's first touch of a token.
 
 ## Indexer Performance Guidelines
 

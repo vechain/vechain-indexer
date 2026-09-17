@@ -56,7 +56,7 @@ open class TransferWriteRepository(
                 COLUMNS.joinToString {
                     if (it == "event_type") "CAST(? AS transfers.event_type)" else "?"
                 } +
-                ") ON CONFLICT (id) DO NOTHING"
+                ") ON CONFLICT DO NOTHING"
 
         private val INTERACTION_INSERT =
             "INSERT INTO $INTERACTION_TABLE (" +
