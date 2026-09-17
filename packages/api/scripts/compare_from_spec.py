@@ -27,7 +27,9 @@ Usage:
 Cases per operation:
   base     required params, plus optional params that path_overrides[path] configures
            or that carry a spec default. parameters[name] only supplies values.
-  variant  base plus one remaining optional param, so each filter is exercised alone
+  variant  base plus one remaining optional param, so each filter is exercised alone;
+           up to VARIANT_VALUE_LIMIT values of it, which is where deep pages and the
+           maximum page size come from
   extra    base with the next value of any list the base case drew from
 
 A case whose baseline response is empty or an error is "vacuous": it compares nothing.
@@ -455,6 +457,9 @@ _PLACEHOLDER_EXAMPLE_PARAMS = frozenset(
      "excludecollections"}
 )
 
+# How many configured values one optional filter contributes, so a long list cannot explode the run.
+VARIANT_VALUE_LIMIT = 2
+
 # path_overrides keys that configure the comparison rather than name a parameter.
 RESERVED_OVERRIDE_KEYS = frozenset({"ignore_paths", "expect_fail"})
 
@@ -745,10 +750,11 @@ def generate_test_cases(
         for val in values:
             cases.append(_with_param(base, param, val, f"{base.label} [{param.name}={val}]"))
     for param in variants:
-        value = generate_value(param, test_values)
-        if value is _SKIP:
-            continue
-        cases.append(_with_param(base, param, value, f"{base.label} [+{param.name}={value}]"))
+        _, configured = _configured_values(param.name, path_overrides, test_values)
+        for value in configured[:VARIANT_VALUE_LIMIT] or [generate_value(param, test_values)]:
+            if value is _SKIP:
+                continue
+            cases.append(_with_param(base, param, value, f"{base.label} [+{param.name}={value}]"))
     return cases
 
 
@@ -810,6 +816,49 @@ class Fetched:
     status_code: int = 0
     error: Optional[str] = None
     headers: Dict[str, str] = field(default_factory=dict)
+
+
+# Keyset pagination: /blocks resumes through `from`, everything else through `cursor`.
+CURSOR_PARAM_NAMES = ("cursor", "from")
+
+
+def cursor_param(op: Operation) -> Optional[Parameter]:
+    for param in op.parameters:
+        if param.location == "query" and param.name in CURSOR_PARAM_NAMES:
+            return param
+    return None
+
+
+def next_cursor(body: Any) -> Optional[str]:
+    if not isinstance(body, dict):
+        return None
+    pagination = body.get("pagination")
+    if not isinstance(pagination, dict) or not pagination.get("hasNext"):
+        return None
+    cursor = pagination.get("cursor")
+    return None if cursor is None else str(cursor)
+
+
+def cursor_follow_up(
+    result: "ComparisonResult", baseline_name: str, page: int
+) -> Optional[TestCase]:
+    """The next page, resumed on both colours from the baseline's own cursor.
+
+    Feeding the baseline's cursor to the candidate is what a client holding one across
+    the cutover does, so a cursor the candidate cannot resume is a finding here.
+    """
+    param = cursor_param(result.test_case.operation)
+    if param is None:
+        return None
+    cursor = next_cursor(result.responses.get(baseline_name))
+    if cursor is None:
+        return None
+    stem = re.sub(r" \[page \d+ from the baseline cursor\]$", "", result.test_case.label)
+    follow_up = _with_param(
+        result.test_case, param, cursor, f"{stem} [page {page} from the baseline cursor]"
+    )
+    follow_up.expected_failure = result.test_case.expected_failure
+    return follow_up
 
 
 # Statuses that say "ask again", not "the two colours disagree".
@@ -1189,6 +1238,12 @@ def main() -> None:
     tls.add_argument("--cafile", default=None, help="Path to CA bundle file")
 
     comp.add_argument(
+        "--cursor-pages",
+        type=int,
+        default=3,
+        help="Follow this many further pages from the baseline's cursor on both sides (default: 3)",
+    )
+    comp.add_argument(
         "--candidate-spec-url",
         help="Also read operations from the candidate's spec, so an endpoint on one side only is a finding",
     )
@@ -1347,8 +1402,14 @@ def main() -> None:
         sys.exit(0)
 
     results: List[ComparisonResult] = []
-    for idx, tc in enumerate(all_cases, 1):
-        print(f"[{idx}/{len(all_cases)}] {tc.operation.method} {tc.full_path}")
+    baseline_name = endpoints[0][0]
+    pending = list(all_cases)
+    walked: Dict[str, int] = {}
+    idx = 0
+    while idx < len(pending):
+        tc = pending[idx]
+        idx += 1
+        print(f"[{idx}/{len(pending)}] {tc.operation.method} {tc.full_path}")
         result = execute_test_case(
             tc,
             endpoints=endpoints,
@@ -1365,6 +1426,12 @@ def main() -> None:
             backoff_seconds=args.backoff_seconds,
         )
         results.append(result)
+        page = walked.get(tc.label, 1) + 1
+        if page <= args.cursor_pages + 1 and not result.has_mismatch:
+            follow_up = cursor_follow_up(result, baseline_name, page)
+            if follow_up is not None:
+                walked[follow_up.label] = page
+                pending.append(follow_up)
         print(
             "   "
             + {

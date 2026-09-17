@@ -479,6 +479,36 @@ class CaseGenerationTest(unittest.TestCase):
         self.assertEqual(MODULE.generate_value(other, {}), "Strength")
 
 
+class VariantValuesTest(unittest.TestCase):
+    def test_a_variant_covers_more_than_one_configured_value(self) -> None:
+        op = MODULE.Operation(
+            path="/api/v1/nfts",
+            method="GET",
+            parameters=[
+                MODULE.Parameter(name="address", location="query", required=True),
+                MODULE.Parameter(name="page", location="query", schema_type="integer"),
+                MODULE.Parameter(name="size", location="query", schema_type="integer"),
+            ],
+        )
+        values = {"parameters": {"address": ["0xabc"], "page": [0, 3], "size": [20, 150]}}
+        cases = MODULE.generate_test_cases(op, values, {})
+        self.assertEqual(cases[0].query_params, {"address": "0xabc"})
+        self.assertEqual(
+            sorted(c.label.split("[+")[1].rstrip("]") for c in cases[1:]),
+            ["page=0", "page=3", "size=150", "size=20"],
+        )
+
+    def test_the_variant_value_limit_caps_a_long_list(self) -> None:
+        op = MODULE.Operation(
+            path="/api/v1/transfers",
+            method="GET",
+            parameters=[MODULE.Parameter(name="tokenAddress", location="query")],
+        )
+        values = {"parameters": {"tokenAddress": ["0xa", "0xb", "0xc", "0xd"]}}
+        cases = MODULE.generate_test_cases(op, values, {})
+        self.assertEqual(len(cases) - 1, MODULE.VARIANT_VALUE_LIMIT)
+
+
 class VacuousClassificationTest(unittest.TestCase):
     def _run(self, baseline, candidate, deprecated=False):
         op = MODULE.Operation(path="/api/v1/nfts", method="GET", deprecated=deprecated)
@@ -715,3 +745,48 @@ class SpecUnionTest(unittest.TestCase):
         merged, only = MODULE.merge_operations(ops, list(ops))
         self.assertEqual(len(merged), 1)
         self.assertEqual(only, [])
+
+
+class CursorWalkTest(unittest.TestCase):
+    def _result(self, path, params, body, name="baseline"):
+        op = MODULE.Operation(
+            path=path,
+            method="GET",
+            parameters=[MODULE.Parameter(name=n, location="query") for n in params],
+        )
+        tc = MODULE.TestCase(operation=op, label=f"GET {path}")
+        return MODULE.ComparisonResult(
+            test_case=tc, responses={name: body}, status_codes={name: 200}, diffs={}, errors={}
+        )
+
+    def test_the_next_page_resumes_both_sides_from_the_baseline_cursor(self) -> None:
+        body = {"data": [{"a": 1}], "pagination": {"hasNext": True, "cursor": "25910018|1"}}
+        result = self._result("/api/v1/transfers/latest", ["size", "cursor"], body)
+        follow_up = MODULE.cursor_follow_up(result, "baseline", 2)
+        self.assertEqual(follow_up.query_params, {"cursor": "25910018|1"})
+        self.assertEqual(follow_up.label, "GET /api/v1/transfers/latest [page 2 from the baseline cursor]")
+
+    def test_blocks_resumes_through_its_from_parameter(self) -> None:
+        body = {"data": [{"number": 10}], "pagination": {"hasNext": True, "cursor": 25910016}}
+        result = self._result("/api/v1/blocks", ["from", "size"], body)
+        self.assertEqual(MODULE.cursor_follow_up(result, "baseline", 2).query_params, {"from": "25910016"})
+
+    def test_the_label_does_not_compound_across_pages(self) -> None:
+        body = {"data": [{"a": 1}], "pagination": {"hasNext": True, "cursor": "c1"}}
+        result = self._result("/api/v1/transfers/latest", ["cursor"], body)
+        page_two = MODULE.cursor_follow_up(result, "baseline", 2)
+        result.test_case = page_two
+        page_three = MODULE.cursor_follow_up(result, "baseline", 3)
+        self.assertEqual(
+            page_three.label, "GET /api/v1/transfers/latest [page 3 from the baseline cursor]"
+        )
+
+    def test_the_last_page_and_a_non_paginated_response_end_the_walk(self) -> None:
+        last = {"data": [{"a": 1}], "pagination": {"hasNext": False, "cursor": None}}
+        self.assertIsNone(
+            MODULE.cursor_follow_up(self._result("/api/v1/transfers/latest", ["cursor"], last), "baseline", 2)
+        )
+        offset = {"data": [{"a": 1}], "pagination": {"hasNext": True}}
+        self.assertIsNone(
+            MODULE.cursor_follow_up(self._result("/api/v1/nfts", ["page", "size"], offset), "baseline", 2)
+        )
