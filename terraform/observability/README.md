@@ -10,6 +10,7 @@ Amazon Managed Prometheus (AMP) + Amazon Managed Grafana (AMG) workspaces for th
 - Terraform-provider service account with an admin token in Secrets Manager, rotated every 25 days.
 - Okta SAML configuration — gated on `okta_saml_metadata_url` being non-empty. Empty by default until the Okta app is registered.
 - **Alerting** — AMP rule groups + Alertmanager definition, delivered to Slack via SNS → bridge Lambda. See `alerts.tf` and `locals.tf` for rules and the alertmanager template. Ported from `agent-marketplace/infra/terraform/observability-aws`.
+- **Backup inventory** — a scheduled Lambda that turns RDS snapshot state into CloudWatch metrics. See `backups.tf` and the section below.
 - **SNS topic shared with CloudWatch** — the same topic receives the CloudWatch alarms defined in `terraform/api/alarms.tf`; the topic policy here grants `cloudwatch.amazonaws.com` publish rights.
 
 Deliberately not in this stack (yet): dashboards, scrape targets, recording rules. Dashboards live in `terraform/observability-grafana`.
@@ -33,6 +34,75 @@ The services do not know which colour is live, and neither do the rules: the Rou
 Two consequences: a suppressed alert is re-evaluated on every Alertmanager repeat, so a colour that goes live mid-incident starts paging on the next repeat; and an alert that was firing on the colour that just went dead never gets a Slack "resolved", because that is dropped too.
 
 `LiveIndexerBehindHead`, `LiveIndexerThorHeadStale` and `LiveIndexerTelemetryMissing` use it. The last one is `absent_over_time` per colour and network, which only works behind a delivery-time gate: at rule time, a cold dead colour and a broken live one look the same.
+
+## Backup inventory
+
+The Postgres backups are RDS automated snapshots — `backup_retention_period = 7` and a
+`06:00-07:00` window, set in `terraform/api/postgres.tf`. RDS publishes how much backup storage it
+bills for and nothing at all about the snapshots themselves: no age, no count, no duration, no
+progress. `.github/workflows/scripts/restore_dead_prod_pg_snapshots.sh` rebuilds a dead colour from
+the newest available snapshot, so without this the first sign that backups had stopped would be a
+dead colour restored onto week-old data.
+
+`lambda/pg_backup_inventory.py` runs every 5 minutes, finds every RDS instance tagged
+`Backup = <project>-pg`, and publishes under the `VeWorld/RDSBackups` namespace, dimensioned by
+`DBInstanceIdentifier`:
+
+| Metric | Unit | What it is |
+| --- | --- | --- |
+| `NewestSnapshotAge` | Seconds | Age of the newest `available` snapshot — what a restore would start from |
+| `OldestSnapshotAge` | Seconds | Age of the oldest, i.e. the far edge of the restore window |
+| `SnapshotsAvailable` | Count | Automated and manual snapshots that are restorable now |
+| `SnapshotsInProgress` | Count | Snapshots in `creating` |
+| `SnapshotProgress` | Percent | Lowest `PercentProgress` among those, published only while one is running |
+| `NewestSnapshotAllocatedStorage` | Gigabytes | Volume size the newest snapshot covers |
+| `LastBackupDuration` | Seconds | Most recent completed backup's wall time |
+| `InstancesInventoried` | Count | Instances the run found; undimensioned |
+
+It also logs one pipe-delimited `rds_snapshot|…` line per snapshot per run, which is what the
+Grafana table reads back through a Logs Insights `parse`. Pipes rather than JSON because Lambda
+wraps stdout in its own envelope, so JSON auto-discovery does not fire on the payload.
+
+Things worth knowing before reading a number off it:
+
+- **There is no per-snapshot size, anywhere.** RDS does not expose one, and the question is not
+  well posed: the first snapshot of an instance is a full copy and every later one is incremental
+  against it. `NewestSnapshotAllocatedStorage` is the *volume* the snapshot covers, not its own
+  bytes. Real consumption is `AWS/RDS BackupRetentionPeriodStorageUsed` (the whole window) and
+  `TotalBackupStorageBilled` (that, less a free allowance equal to allocated storage — so it
+  legitimately reads zero while backups fit inside the instance's own size).
+- **Duration comes from events, not from the snapshot.** A snapshot carries a start time and no
+  end time, so the `Backing up DB instance` / `Finished DB Instance backup` event pair is the only
+  completion signal. `DescribeEvents` retains 14 days; an instance with no backup in that window
+  publishes no duration even though its snapshots are fine. The events are matched on message
+  text, which is what will break first if AWS rewords them.
+- **The metric is a step, not a sample per backup.** Every metric here is republished on each
+  5-minute poll, so a Grafana line holds its last value between backups rather than drawing one
+  point a day. Read the step changes.
+- **A failed run publishes nothing.** The handler lets exceptions propagate rather than publishing
+  a partial set, because a half-published run reads as a healthy one. That is what makes the
+  `missing` treatment on the staleness alarm safe — see below.
+
+### Alarms
+
+Two, deliberately split by what they can see.
+
+`pg-backup-stale`, one per instance, lives in `terraform/api/alarms.tf` with the other Postgres
+alarms and the per-colour Slack header they share. It fires when `NewestSnapshotAge` passes 26
+hours — a daily backup inside a one-hour window peaks just past 25. It treats missing data as
+*hold*, not breach, because a dead-colour restore replaces the instance wholesale and the
+inventory is blind for as long as that takes.
+
+`pg-backup-inventory-stalled` lives here, on `InstancesInventoried < 1` for 30 minutes with
+missing data breaching. Because a failed run publishes nothing, that one alarm covers a run that
+threw, a schedule that stopped, and the `Backup` tag going missing from the instances — the three
+ways the staleness alarms could go quiet without anything being wrong with the backups.
+
+`VeWorld/RDSBackups` is written out as a literal in all three files that name it — `backups.tf`,
+the api alarm, and `dashboards/backups.json` — rather than crossing stacks as an output. An output would
+make every `terraform/api` plan fail until this stack had been applied, and a PR only ever plans
+this stack, so the api check could not go green before merge. Grep the namespace before renaming it.
+
 
 ## Apply order
 

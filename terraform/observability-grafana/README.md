@@ -6,7 +6,7 @@ Terraform stack that provisions AMG data sources and (eventually) dashboards, on
 
 - **AMP data source** — Prometheus with SigV4 auth against the workspace in `terraform/observability/`. UID `amp`.
 - **CloudWatch data source** — for log-based diagnostics and any CW-native metrics we keep. UID `cloudwatch`.
-- **Dashboards** — JSON files under `dashboards/`, iterated by `dashboards.tf` via `for_each`. `overview` covers indexer sync, API, errors, ECS resources, MongoDB, the CloudFront/WAF edge rows and the per-network WAF request detail rows; `logs` is a single Logs Insights view over every ECS service log group.
+- **Dashboards** — JSON files under `dashboards/`, iterated by `dashboards.tf` via `for_each`. `overview` covers indexer sync, API, errors, ECS resources, MongoDB, the CloudFront/WAF edge rows and the per-network WAF request detail rows; `logs` is a single Logs Insights view over every ECS service log group; `backups` covers the Postgres RDS snapshots.
 
 ## Adding a dashboard
 
@@ -23,6 +23,30 @@ Invariants worth knowing before editing:
 - **`network` values differ by datasource.** Metrics carry `mainnet`/`testnet` (the `network_label` map in `terraform/api/observability.tf`, emitted as an external label by the sidecar); log group names use `main`/`test`. `overview` uses the former, `logs` the latter. That is why the Logs dashboard link sets `includeVars: false` — carrying the value across would silently match nothing.
 - Both are `custom`, not `label_values`. Query-variable options vanish when the backing series briefly disappears (no testnet `indexer_current_block` mid-deploy), taking dependent panels with them. The trade is that the values are now hardcoded, so they must track the sidecar's external labels.
 - Prometheus-side ad-hoc filtering goes through the `filters` variable, not per-label textboxes. Ad-hoc filters only apply to their own datasource, so they never reach the CloudWatch panels.
+
+### Backups dashboard
+
+Reads the `VeWorld/RDSBackups` metrics published by the inventory Lambda in
+`terraform/observability/backups.tf`, alongside the three `AWS/RDS` backup-storage metrics. The
+"Backup inventory" section of that stack's README is where the metrics and their caveats are
+documented — in particular why no panel here shows a per-snapshot size.
+
+- **No template variables, on purpose.** Custom-namespace panels take `DBInstanceIdentifier: ["*"]`,
+  which is already scoped to instances carrying the `Backup` tag. The `AWS/RDS` panels hardcode the
+  four identifiers instead, because a wildcard there would pull in every RDS instance in the
+  account. Four series read fine on one panel, and the Edge rows above are the cautionary tale
+  about templating CloudWatch dimensions.
+- **"Snapshots that exist" collapses repeats with `stats … by instance, snapshot`.** The Lambda
+  logs the whole list every 5 minutes, so without the `stats` the table would show each snapshot
+  once per poll in the range. The consequence is that the table is scoped to the dashboard's time
+  range: a snapshot that aged out of retention leaves the table once the range moves past its last
+  sighting, and widening the range is how you see what existed at some point in the past.
+- **`parse` uses a regex, not a glob.** The Lambda's line is pipe-delimited, and a regex is
+  unanchored for certain — a glob pattern would depend on whether the Lambda runtime prefixes the
+  line, which differs by log format.
+- **Adding a Postgres instance means editing the hardcoded identifier lists** in the two `AWS/RDS`
+  panels. The custom-namespace panels pick it up on their own.
+
 
 ### Sync row
 
