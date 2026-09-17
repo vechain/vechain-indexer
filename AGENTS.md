@@ -56,7 +56,7 @@ More detailed templates and copy/paste snippets live in `notes/indexer-api-playb
 
 ## Postgres Migrations Are Metadata-Only
 
-Flyway runs on the indexer's startup path, before the web server answers the container's liveness check, and the task is killed if that takes more than a few minutes. A migration must therefore finish in milliseconds regardless of table size: drop and re-add a column, add a nullable column, create an empty table. Never rewrite a populated table with `ALTER COLUMN ... TYPE`. When a column's contents must change shape, drop and re-add it and bump `indexer.version.<key>` on both colours and both nets so the resync repopulates it.
+Flyway runs on the indexer's startup path, before the web server answers the container's liveness check, and the task is killed if that takes more than a few minutes. A migration must therefore finish in milliseconds regardless of table size: drop and re-add a column, add a nullable column, create an empty table. Never rewrite a populated table with `ALTER COLUMN ... TYPE`. When a column's contents must change shape, drop and re-add it and bump `indexer.version.<key>` on both colours and both nets so the resync repopulates it. An index a populated table cannot build in that time is built after start by `ConcurrentIndexBuilder`, with `CREATE INDEX CONCURRENTLY` on its own connection while the indexer runs; the migration keeps the instant path for a small table. `V32__history_action_indexes.sql` with `HistoryIndexMaintenance` is the pattern.
 
 ## Indexer Performance Guidelines
 

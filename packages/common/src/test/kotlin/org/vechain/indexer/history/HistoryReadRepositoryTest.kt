@@ -425,4 +425,31 @@ class HistoryReadRepositoryTest {
             keys(repository.findActions(alice, null, 140, 160, 0, 20, ASC)),
         )
     }
+
+    @Test
+    fun `the action queries are planned on the B3TR_ACTION partial indexes`() {
+        val shapes =
+            mapOf(
+                "e.to_address = decode('01', 'hex')" to "event_action_to_idx",
+                "e.to_address = decode('01', 'hex') AND e.app_id = decode('02', 'hex')" to
+                    "event_action_to_app_idx",
+                "e.app_id = decode('02', 'hex')" to "event_action_app_idx",
+            )
+        database.dataSource.connection.use { c ->
+            c.createStatement().execute("SET enable_seqscan = off")
+            shapes.forEach { (where, index) ->
+                val plan =
+                    c.createStatement()
+                        .executeQuery(
+                            "EXPLAIN SELECT e.* FROM history.event e WHERE e.event_name = 'B3TR_ACTION' " +
+                                "AND $where ORDER BY e.block_timestamp DESC, e.id DESC LIMIT 20"
+                        )
+                        .use { rs ->
+                            generateSequence { if (rs.next()) rs.getString(1) else null }
+                                .joinToString("\n")
+                        }
+                assertTrue(plan.contains(index), "$where:\n$plan")
+            }
+        }
+    }
 }
