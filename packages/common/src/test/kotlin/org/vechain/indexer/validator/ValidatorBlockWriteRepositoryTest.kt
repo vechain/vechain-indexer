@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 import org.vechain.indexer.timeseries.TimeSeriesResolution
 
@@ -111,6 +112,22 @@ class ValidatorBlockWriteRepositoryTest {
             writer.latestSampled(TimeSeriesResolution.HOURLY),
         )
         assertEquals(emptyMap<String, Long>(), writer.latestSampled(TimeSeriesResolution.DAILY))
+    }
+
+    @Test
+    fun `the sampled lookup survives the deferrable indexes being dropped`() {
+        val builder = IndexBuilder(database.properties)
+        builder.drop(ValidatorBlockIndexes.SET)
+        try {
+            writer.save(listOf(validated(alice, 10, hourly = true), missed(bob, 20)))
+
+            assertEquals(mapOf(alice to 100L), writer.latestSampled(TimeSeriesResolution.HOURLY))
+
+            writer.rollbackFrom(20)
+            assertEquals(listOf(10L), all().map { it.blockNumber })
+        } finally {
+            builder.build(ValidatorBlockIndexes.SET)
+        }
     }
 
     @Test

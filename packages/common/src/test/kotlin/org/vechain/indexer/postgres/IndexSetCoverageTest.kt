@@ -114,6 +114,33 @@ class IndexSetCoverageTest {
                         "owner_balance_pkey",
                         "owner_balance_block_idx",
                     ),
+                // Who just missed a slot, which ValidatorBlockService asks on every block.
+                "validator" to
+                    listOf(
+                        "state_pkey",
+                        "state_current_missed_idx",
+                        "state_block_idx",
+                        "state_prune_idx",
+                    ),
+                // The four sampled partials latestSampled reads, one per resolution.
+                "validator_block" to
+                    listOf(
+                        "slot_pkey",
+                        "slot_hourly_idx",
+                        "slot_daily_idx",
+                        "slot_weekly_idx",
+                        "slot_monthly_idx",
+                    ),
+                // The due, zero-cycle, by-token and by-validator scans the indexer makes.
+                "delegation" to
+                    listOf(
+                        "state_pkey",
+                        "state_current_validator_idx",
+                        "state_current_token_idx",
+                        "state_current_transition_idx",
+                        "state_block_idx",
+                        "state_prune_idx",
+                    ),
             )
     }
 }
