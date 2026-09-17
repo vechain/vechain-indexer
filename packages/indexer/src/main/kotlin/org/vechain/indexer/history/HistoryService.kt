@@ -108,24 +108,18 @@ open class HistoryService(
 
     // Only the processor thread reaches these, so they need no lock.
     private var snapshotWatermark: BlockIdentifier? = null
-    private var snapshots: Map<String, ValidatorSnapshot> = emptyMap()
+    private val snapshots = mutableMapOf<String, ValidatorSnapshot>()
 
-    /** The set only changes when the validator indexer writes, so cache it on that watermark. */
+    /** Rows written since the watermark, or the whole set once that block no longer stands. */
     private fun loadValidatorSnapshots(): Map<String, ValidatorSnapshot> {
-        val watermark = validatorRepository.latestWrittenBlock()
-        if (watermark == snapshotWatermark) return snapshots
-
-        snapshots =
-            validatorRepository.findAll().associate { v ->
-                v.id to
-                    ValidatorSnapshot(
-                        validatorId = v.id,
-                        stakingPeriodLength = v.cyclePeriodLength ?: 0L,
-                        startBlock = v.startBlock ?: 0L,
-                        exitBlock = v.exitBlock ?: 0L,
-                    )
-            }
-        snapshotWatermark = watermark
+        val watermark = snapshotWatermark
+        var rows = validatorRepository.snapshotsSince(watermark?.number)
+        if (watermark != null && rows.none { it.block == watermark }) {
+            snapshots.clear()
+            rows = validatorRepository.snapshotsSince(null)
+        }
+        rows.filter { it.current }.forEach { snapshots[it.snapshot.validatorId] = it.snapshot }
+        snapshotWatermark = rows.maxByOrNull { it.block.number }?.block ?: watermark
         return snapshots
     }
 

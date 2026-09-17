@@ -19,24 +19,31 @@ open class ValidatorReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTempla
 
     open fun findAll(): List<Validator> = query("$CURRENT ORDER BY id", MapSqlParameterSource())
 
-    /**
-     * The newest block any validator row was written at, superseded rows included, or null while
-     * the table is empty. Carries the block id because a same-height reorg replaces the rows at an
-     * unchanged number, so a per-block reader caching [findAll] needs the chain identity too.
-     */
-    open fun latestWrittenBlock(): BlockIdentifier? =
-        jdbc
-            .query(
-                "SELECT block_number, block_id FROM validator.state " +
-                    "ORDER BY block_number DESC LIMIT 1",
-                MapSqlParameterSource(),
-            ) { rs, _ ->
-                BlockIdentifier(
-                    rs.getLong("block_number"),
-                    PostgresHex.hex(rs.getBytes("block_id")),
-                )
-            }
-            .firstOrNull()
+    /** Current rows after [since], plus those at [since], whose block id proves it stands. */
+    open fun snapshotsSince(since: Long?): List<ValidatorSnapshotRow> =
+        jdbc.query(
+            "SELECT id, block_number, block_id, superseded_at IS NULL AS current, " +
+                "cycle_period_length, start_block, exit_block FROM validator.state WHERE " +
+                if (since == null) "superseded_at IS NULL"
+                else "(block_number > :since AND superseded_at IS NULL) OR block_number = :since",
+            MapSqlParameterSource("since", since),
+        ) { rs, _ ->
+            ValidatorSnapshotRow(
+                block =
+                    BlockIdentifier(
+                        rs.getLong("block_number"),
+                        PostgresHex.hex(rs.getBytes("block_id")),
+                    ),
+                current = rs.getBoolean("current"),
+                snapshot =
+                    ValidatorSnapshot(
+                        validatorId = PostgresHex.hex(rs.getBytes("id")),
+                        stakingPeriodLength = rs.getLong("cycle_period_length"),
+                        startBlock = rs.getLong("start_block"),
+                        exitBlock = rs.getLong("exit_block"),
+                    ),
+            )
+        }
 
     open fun findById(id: String): Validator? =
         query("$CURRENT AND id = :id", MapSqlParameterSource("id", PostgresHex.bytes(id)))

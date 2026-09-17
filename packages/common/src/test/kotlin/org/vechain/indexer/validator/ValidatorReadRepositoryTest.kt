@@ -3,7 +3,9 @@ package org.vechain.indexer.validator
 import java.math.BigDecimal
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
@@ -62,7 +64,8 @@ class ValidatorReadRepositoryTest {
         writer.save(
             listOf(
                 validator(active, Status.ACTIVE, BigDecimal("250"), endorser = endorser),
-                validator(queued, Status.QUEUED, BigDecimal("200"), endorser = endorser),
+                validator(queued, Status.QUEUED, BigDecimal("200"), endorser = endorser)
+                    .copy(cyclePeriodLength = 7),
                 validator(exiting, Status.EXITING, BigDecimal("100")),
                 validator(exited, Status.EXITED, BigDecimal("400"), lastMissed = 50),
                 validator(unknown, null, null),
@@ -85,10 +88,32 @@ class ValidatorReadRepositoryTest {
     }
 
     @Test
-    fun `the watermark counts superseded rows and carries the block id`() {
-        val watermark = repository.latestWrittenBlock()
-        assertEquals(20L, watermark?.number)
-        assertEquals("0x" + "0".repeat(62) + "14", watermark?.id)
+    fun `snapshotsSince with no watermark is the current set`() {
+        val rows = repository.snapshotsSince(null)
+        assertEquals(
+            setOf(active, queued, exiting, exited, unknown),
+            rows.map { it.snapshot.validatorId }.toSet(),
+        )
+        assertTrue(rows.all { it.current })
+        assertEquals(20L, rows.single { it.snapshot.validatorId == active }.block.number)
+        assertEquals(
+            7L,
+            rows.single { it.snapshot.validatorId == queued }.snapshot.stakingPeriodLength,
+        )
+    }
+
+    @Test
+    fun `snapshotsSince returns the rows since the watermark and the watermark rows themselves`() {
+        val rows = repository.snapshotsSince(10)
+        val atWatermark = rows.filter { it.block.number == 10L }
+        assertEquals(5, atWatermark.size)
+        assertEquals("0x" + "0".repeat(62) + "0a", atWatermark.first().block.id)
+        assertFalse(atWatermark.single { it.snapshot.validatorId == active }.current)
+        assertEquals(
+            listOf(active),
+            rows.filter { it.block.number > 10L }.map { it.snapshot.validatorId },
+        )
+        assertEquals(listOf(active), repository.snapshotsSince(20).map { it.snapshot.validatorId })
     }
 
     @Test
