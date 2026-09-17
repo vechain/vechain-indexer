@@ -8,7 +8,8 @@
 locals {
   pg_backup_namespace = "VeWorld/RDSBackups"
   pg_backup_tag_key   = "Backup"
-  pg_backup_tag_value = "${var.project}-pg"
+  # Set by terraform/api/postgres.tf from its own var.project ("veworld"), not this stack's.
+  pg_backup_tag_value = "veworld-pg"
   pg_backup_schedule  = "rate(5 minutes)"
 }
 

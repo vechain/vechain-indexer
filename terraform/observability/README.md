@@ -45,7 +45,7 @@ the newest available snapshot, so without this the first sign that backups had s
 dead colour restored onto week-old data.
 
 `lambda/pg_backup_inventory.py` runs every 5 minutes, finds every RDS instance tagged
-`Backup = <project>-pg`, and publishes under the `VeWorld/RDSBackups` namespace, dimensioned by
+`Backup = veworld-pg`, and publishes under the `VeWorld/RDSBackups` namespace, dimensioned by
 `DBInstanceIdentifier`. Every metric covers **automated snapshots only**, because that is what
 `restore_dead_prod_pg_snapshots.sh` selects (`--snapshot-type automated`); a manual snapshot taken
 by hand would otherwise read as a healthy backup while the one a restore picks went stale. Manual
@@ -68,6 +68,11 @@ Grafana table reads back through a Logs Insights `parse`. Pipes rather than JSON
 wraps stdout in its own envelope, so JSON auto-discovery does not fire on the payload.
 
 Things worth knowing before reading a number off it:
+
+- **The tag value is a hand-maintained literal.** `terraform/api/postgres.tf` builds it from that
+  stack's `var.project` (`veworld`), while this stack's `var.project` is `veworld-indexer`.
+  Deriving it from the wrong one matched nothing and published `InstancesInventoried = 0` for
+  every run. A run that matches no instance now logs the tag values it did see.
 
 - **There is no backup size available, from any API.** RDS exposes no per-snapshot size, and the
   question is not well posed anyway: the first snapshot of an instance is a full copy and every
