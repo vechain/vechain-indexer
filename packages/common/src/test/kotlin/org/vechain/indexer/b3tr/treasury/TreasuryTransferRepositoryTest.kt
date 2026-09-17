@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.data.domain.Sort.Direction
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -75,6 +76,21 @@ class TreasuryTransferRepositoryTest {
         assertEquals(listOf(30L, 20L), find(category = TreasuryTransferCategory.OUT))
         assertEquals(listOf(20L), find(after = 200, before = 200))
         assertEquals(listOf(20L), find(offset = 1, limit = 1))
+    }
+
+    @Test
+    fun `the write path holds up with the time pages dropped`() {
+        val builder = IndexBuilder(database.properties)
+        builder.drop(TreasuryTransferIndexes.SET)
+        try {
+            writer.save(listOf(transfer("04", 40, TreasuryTransferCategory.GRANT)))
+            assertEquals(4, database.count("b3tr_treasury.transfer"))
+
+            writer.rollbackFrom(40)
+            assertEquals(3, database.count("b3tr_treasury.transfer"))
+        } finally {
+            builder.build(TreasuryTransferIndexes.SET)
+        }
     }
 
     @Test

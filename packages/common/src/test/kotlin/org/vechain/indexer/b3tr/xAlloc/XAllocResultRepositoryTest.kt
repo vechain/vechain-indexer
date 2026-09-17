@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -87,6 +88,28 @@ class XAllocResultRepositoryTest {
                 .sortedWith(compareBy({ it.first }, { it.second })),
         )
         assertEquals(emptyList<XAllocResult>(), writer.findCurrent(emptySet(), setOf(app1)))
+    }
+
+    @Test
+    fun `the indexer's own read still works with the page indexes dropped`() {
+        val builder = IndexBuilder(database.properties)
+        builder.drop(XAllocResultIndexes.SET)
+        try {
+            writer.save(listOf(result(2, app1, 40, votes = 7, total = "2.0")))
+
+            assertEquals(
+                listOf(40L),
+                writer.findCurrent(setOf(2), setOf(app1)).map { it.blockNumber },
+            )
+
+            writer.rollbackFrom(40)
+            assertEquals(
+                listOf(30L),
+                writer.findCurrent(setOf(2), setOf(app1)).map { it.blockNumber },
+            )
+        } finally {
+            builder.build(XAllocResultIndexes.SET)
+        }
     }
 
     @Test

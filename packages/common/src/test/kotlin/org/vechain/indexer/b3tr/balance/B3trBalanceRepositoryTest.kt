@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.data.domain.Sort.Direction
 import org.vechain.indexer.b3tr.balance.B3trBalanceRowMapping.TABLE as TABLE_REF
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -103,6 +104,25 @@ class B3trBalanceRepositoryTest {
         assertEquals(3L, reader.countGreaterThan(B3trBalanceColumn.TOTAL, BigDecimal.ZERO))
         assertEquals(1L, reader.countGreaterThan(B3trBalanceColumn.TOTAL, BigDecimal.valueOf(100)))
         assertEquals(2L, reader.countGreaterThan(B3trBalanceColumn.VOT3, BigDecimal.ZERO))
+    }
+
+    @Test
+    fun `the write path holds up with the richlist indexes dropped`() {
+        val builder = IndexBuilder(database.properties)
+        builder.drop(B3trBalanceIndexes.SET)
+        try {
+            writer.save(listOf(balance(alice, 40, vot3 = 500, b3tr = 500)))
+
+            assertEquals(
+                40L,
+                writer.findCurrentByAddresses(setOf(alice), 41).single().blockNumber,
+            )
+
+            writer.rollbackFrom(40)
+            assertEquals(10L, writer.findCurrentByAddresses(setOf(alice), 41).single().blockNumber)
+        } finally {
+            builder.build(B3trBalanceIndexes.SET)
+        }
     }
 
     @Test

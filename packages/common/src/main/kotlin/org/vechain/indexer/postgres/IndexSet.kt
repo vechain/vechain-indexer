@@ -1,6 +1,10 @@
 package org.vechain.indexer.postgres
 
 import org.vechain.indexer.b3tr.action.ActionIndexes
+import org.vechain.indexer.b3tr.balance.B3trBalanceIndexes
+import org.vechain.indexer.b3tr.gm.GmNftIndexes
+import org.vechain.indexer.b3tr.treasury.TreasuryTransferIndexes
+import org.vechain.indexer.b3tr.xAlloc.XAllocResultIndexes
 import org.vechain.indexer.blocks.BlocksIndexes
 import org.vechain.indexer.history.HistoryIndexes
 import org.vechain.indexer.stargate.staking.StargateStakingIndexes
@@ -43,5 +47,9 @@ object IndexSets {
             ValidatorIndexes.SET,
             ValidatorBlockIndexes.SET,
             DelegationIndexes.SET,
+            B3trBalanceIndexes.SET,
+            GmNftIndexes.SET,
+            TreasuryTransferIndexes.SET,
+            XAllocResultIndexes.SET,
         )
 }

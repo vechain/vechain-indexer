@@ -141,6 +141,11 @@ class IndexSetCoverageTest {
                         "state_block_idx",
                         "state_prune_idx",
                     ),
+                // Nothing but rollback, prune and the key: every read is by the key itself.
+                "b3tr_balance" to listOf("state_pkey", "state_block_idx", "state_prune_idx"),
+                "b3tr_gm" to listOf("state_pkey", "state_block_idx", "state_prune_idx"),
+                "b3tr_treasury" to listOf("transfer_pkey", "transfer_block_idx"),
+                "b3tr_x_alloc" to listOf("result_pkey", "result_block_idx", "result_prune_idx"),
             )
     }
 }
