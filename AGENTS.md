@@ -56,7 +56,32 @@ More detailed templates and copy/paste snippets live in `notes/indexer-api-playb
 
 ## Postgres Migrations Are Metadata-Only
 
-Flyway runs on the indexer's startup path, before the web server answers the container's liveness check, and the task is killed if that takes more than a few minutes. A migration must therefore finish in milliseconds regardless of table size: drop and re-add a column, add a nullable column, create an empty table. Never rewrite a populated table with `ALTER COLUMN ... TYPE`. When a column's contents must change shape, drop and re-add it and bump `indexer.version.<key>` on both colours and both nets so the resync repopulates it. An index a populated table cannot build in that time is built after start by `ConcurrentIndexBuilder`, with `CREATE INDEX CONCURRENTLY` on its own connection while the indexer runs; the migration keeps the instant path for a small table. `V32__history_action_indexes.sql` with `HistoryIndexMaintenance` is the pattern.
+Flyway runs on the indexer's startup path, before the web server answers the container's liveness check, and the task is killed if that takes more than a few minutes. A migration must therefore finish in milliseconds regardless of table size: drop and re-add a column, add a nullable column, create an empty table. Never rewrite a populated table with `ALTER COLUMN ... TYPE`. When a column's contents must change shape, drop and re-add it and bump `indexer.version.<key>` on both colours and both nets so the resync repopulates it. An index a populated table cannot build in that time is built after start by `IndexBuilder`, with `CREATE INDEX CONCURRENTLY` on its own connection while the indexer runs; the migration keeps the instant path for a small table. See "A Backfill Drops the Indexes Only the API Reads" for where those definitions live.
+
+## A Backfill Drops the Indexes Only the API Reads
+
+A Postgres indexer's block time during a backfill is index maintenance. Every index the API reads
+and the indexer never does costs a random read per row for nothing until the colour serves traffic,
+so an indexer far enough behind runs without them.
+
+Each schema declares that split as an `IndexSet` in `packages/common` beside its write repository
+(`HistoryIndexes` is the shape): *deferrable* is anything only `packages/api` reads, and everything
+else — rollback by block, a temporal table's current-row lookup, a rebuild the indexer does at
+start — stays in every phase. `BackfillCoordinator` derives the phase from the catalogue and the
+runner on every entry, with nothing stored:
+
+- **Serving** — every deferrable index stands. An index a release has just declared, or one a
+  restored snapshot is missing, grows `CONCURRENTLY` underneath the running indexer.
+- **Backfill** — entered more than `indexer.backfill.enter-behind-blocks` behind the head (500,000,
+  which a version-bump resync crosses and a snapshot restore does not). The deferrable indexes are
+  dropped, which takes milliseconds.
+- **Building** — entered when the entry reports `FULLY_SYNCED` with indexes missing. The processor
+  stops taking blocks at the top of `process`, outside any transaction, while several plain
+  `CREATE INDEX`es run at once; the liveness check is told, because that stall is the work.
+
+A rebuild costs the size of the table whatever the gap, so the threshold is where the write saving
+overtakes it. Adding a deferrable index means adding it to the schema's `IndexSet`, not only to a
+migration; `BackfillCoordinatorTest` fails on an index in neither half of the split.
 
 ## Indexer Performance Guidelines
 

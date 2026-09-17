@@ -9,12 +9,14 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.Status
+import org.vechain.indexer.backfill.BackfillState
 
 /** Whole-process liveness: DOWN only once every running indexer has gone quiet. */
 @Component
 class IndexerLivenessHealthIndicator(
     private val indexers: List<Indexer>,
     private val indexBootstrapState: IndexBootstrapState,
+    private val backfillState: BackfillState,
     @param:Value("\${indexer.healthcheck.stall-threshold-seconds}")
     private val stallThresholdSeconds: Long,
 ) : HealthIndicator {
@@ -24,6 +26,11 @@ class IndexerLivenessHealthIndicator(
         if (bootstrap != IndexBootstrapState.Status.READY) {
             return up("Bootstrap is $bootstrap; indexers have not started")
         }
+
+        // A rebuild deliberately holds every indexer at one block for hours. It is the one stall
+        // that is progress, so it is excused rather than killed.
+        val building = backfillState.building()
+        if (building.isNotEmpty()) return up("Rebuilding the deferred indexes of $building")
 
         // An indexer parked before or after its sync loop has no progress to measure. Reporting UP
         // when none is running keeps startup and shutdown out of the kill path.

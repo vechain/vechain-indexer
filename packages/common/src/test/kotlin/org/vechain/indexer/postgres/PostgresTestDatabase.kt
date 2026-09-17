@@ -32,6 +32,8 @@ class PostgresTestDatabase(private val apiPassword: String = "") : AutoCloseable
         (config.postgresDataSource(properties) as HikariDataSource).use {
             config.postgresFlyway(it).migrate()
         }
+        // So a test plans against the shape a serving colour has, not the migrations' half of it.
+        IndexSets.ALL.forEach { IndexBuilder(properties).build(it) }
         dataSource =
             HikariDataSource(
                 HikariConfig().apply {

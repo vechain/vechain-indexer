@@ -2,6 +2,7 @@ package org.vechain.indexer
 
 import jakarta.annotation.PostConstruct
 import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.backfill.BackfillCoordinator
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.thor.model.BlockIdentifier
@@ -14,7 +15,14 @@ abstract class PostgresProcessor(
     indexerName: String,
     private val version: Int,
     processorMetrics: ProcessorMetrics,
+    private val backfill: BackfillCoordinator? = null,
 ) : BaseProcessor(store, indexerName, processorMetrics) {
+
+    /** Ahead of the entry and outside its transaction, so a rebuild can hold the block here. */
+    override suspend fun process(entry: IndexingResult) {
+        backfill?.beforeEntry(entry)
+        super.process(entry)
+    }
 
     @PostConstruct
     open fun bootstrap() {

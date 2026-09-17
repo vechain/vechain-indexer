@@ -1,18 +1,16 @@
 package org.vechain.indexer.config.metrics
 
 import java.util.concurrent.ConcurrentHashMap
-import kotlinx.coroutines.runBlocking
-import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.Status
+import org.vechain.indexer.backfill.BackfillState
+import org.vechain.indexer.chain.ChainHead
 import org.vechain.indexer.config.HealthStatus
 import org.vechain.indexer.config.IndexerHealthService
-import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.thor.model.BlockRevision
 
 @Component
 @ConditionalOnProperty(
@@ -24,16 +22,18 @@ import org.vechain.indexer.thor.model.BlockRevision
 class IndexerMetricsReporter(
     private val indexers: List<Indexer>,
     private val metrics: IndexerHealthMetrics,
-    private val thorClient: ThorClient,
+    private val chainHead: ChainHead,
     private val indexerHealthService: IndexerHealthService,
+    private val backfillState: BackfillState,
 ) {
 
-    private val logger = LoggerFactory.getLogger(this::class.java)
     private val previousBlockNumbers = ConcurrentHashMap<String, Long>()
 
     @Scheduled(fixedDelayString = "\${indexer.healthcheck.report-interval-ms:10000}")
     fun reportMetrics() {
-        val bestBlockNumber = fetchBestBlockNumber()
+        val bestBlockNumber = chainHead.bestBlockNumber()
+        bestBlockNumber?.let(metrics::setBestBlockNumber)
+        backfillState.phases().forEach(metrics::setBackfillPhase)
 
         indexers.forEach { indexer ->
             reportIndexerHealth(indexer)
@@ -42,26 +42,6 @@ class IndexerMetricsReporter(
                 reportBlockIndexerMetrics(indexer, bestBlockNumber)
             }
         }
-    }
-
-    private fun fetchBestBlockNumber(): Long? {
-        val bestBlockNumber =
-            try {
-                runBlocking { thorClient.getBlockUnexpanded(BlockRevision.Keyword.BEST).number }
-            } catch (e: Exception) {
-                logger.warn(
-                    "Failed to fetch best block for metrics for revision {}",
-                    BlockRevision.Keyword.BEST,
-                    e,
-                )
-                null
-            }
-
-        if (bestBlockNumber != null) {
-            metrics.setBestBlockNumber(bestBlockNumber)
-        }
-
-        return bestBlockNumber
     }
 
     private fun reportIndexerHealth(indexer: Indexer) {

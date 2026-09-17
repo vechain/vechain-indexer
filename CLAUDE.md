@@ -40,6 +40,18 @@ own age) or `cachedFor(policy, body)` (a policy picked per request) — the anno
 as the floor. See `AGENTS.md` "Endpoints Own Their Cache TTL" and
 `terraform/cloudfront/README.md`.
 
+## A Backfill Drops the Indexes Only the API Reads
+
+Each Postgres schema declares an `IndexSet` in `common` beside its write repository
+(`HistoryIndexes`): *deferrable* is every index only `packages/api` reads, and everything
+the indexer reads itself stays. `BackfillCoordinator` drops the deferrable half once an
+indexer is `indexer.backfill.enter-behind-blocks` behind the head, and rebuilds it — with
+the processor paused, which the liveness check is told about — when the entry reports
+`FULLY_SYNCED`. Nothing is stored; the phase is derived every entry.
+
+A new index the API alone reads belongs in the schema's `IndexSet`, not only in a
+migration. See `AGENTS.md` "A Backfill Drops the Indexes Only the API Reads".
+
 ## Dependencies
 
 - The `indexer-core` library (`org.vechain:indexer-core`) source code is at https://github.com/vechain/indexer-core. Refer to it for interfaces like `Indexer`, `BlockIndexer`, the `Status` enum, and other core types.
