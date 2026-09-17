@@ -27,6 +27,7 @@ const val WALLET_CHALLENGES_PATH = "$B3TR_PATH/users/{wallet}/challenges"
 const val EXPLORER_PATH = "$API_PATH/explorer"
 const val ACCOUNTS_PATH = "$API_PATH/accounts"
 const val CONTRACTS_PATH = "$API_PATH/contracts"
+const val STATUS_PATH = "$API_PATH/status"
 
 // PAGINATION DEFAULTS
 const val DEFAULT_PAGE_NUMBER = 0
