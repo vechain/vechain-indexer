@@ -7,10 +7,12 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.PostgresIndexerStore
 import org.vechain.indexer.PostgresProcessor
+import org.vechain.indexer.backfill.BackfillCoordinatorFactory
 import org.vechain.indexer.config.CheckpointProperties
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.postgres.IndexerStateRepository
+import org.vechain.indexer.stargate.tokenReward.TokenRewardIndexes
 import org.vechain.indexer.stargate.tokenReward.TokenRewardWriteRepository
 
 @Profile("token-reward")
@@ -22,6 +24,7 @@ open class TokenRewardProcessor(
     checkpointProperties: CheckpointProperties,
     horizon: InlineVersioningProperties,
     processorMetrics: ProcessorMetrics,
+    backfill: BackfillCoordinatorFactory? = null,
     @Value("\${indexer.version.token-rewards:1}") version: Int = 1,
 ) :
     PostgresProcessor(
@@ -35,6 +38,7 @@ open class TokenRewardProcessor(
         IndexerNames.TOKEN_REWARD.NAME,
         version,
         processorMetrics,
+        backfill?.create(TokenRewardIndexes.SET),
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.BlockResult) {

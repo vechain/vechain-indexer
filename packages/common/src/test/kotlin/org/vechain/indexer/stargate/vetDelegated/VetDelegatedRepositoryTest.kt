@@ -13,6 +13,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.data.domain.Sort.Direction.ASC
 import org.springframework.data.domain.Sort.Direction.DESC
 import org.vechain.indexer.accounts.TimeFrame
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.timeseries.TimeFramePeriod
@@ -173,6 +174,22 @@ class VetDelegatedRepositoryTest {
         assertEquals(20L, writer.latest()?.blockNumber)
 
         writer.save(listOf(record(30, 300, listOf(TimeFrame.HOUR, TimeFrame.DAY)), record(40, 400)))
+    }
+
+    @Test
+    fun `the series is written and rolled back with the deferrable indexes dropped`() {
+        val builder = IndexBuilder(database.properties)
+        val before = writer.latest()?.blockNumber
+        builder.drop(VetDelegatedIndexes.SET)
+        try {
+            writer.save(listOf(record(50, 500, listOf(TimeFrame.DAY))))
+            assertEquals(50L, writer.latest()?.blockNumber)
+
+            writer.rollbackFrom(50)
+            assertEquals(before, writer.latest()?.blockNumber)
+        } finally {
+            builder.build(VetDelegatedIndexes.SET)
+        }
     }
 
     @Test

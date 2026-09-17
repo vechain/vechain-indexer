@@ -7,6 +7,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.PostgresIndexerStore
 import org.vechain.indexer.PostgresProcessor
+import org.vechain.indexer.backfill.BackfillCoordinatorFactory
 import org.vechain.indexer.config.CheckpointProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.postgres.IndexerStateRepository
@@ -19,6 +20,7 @@ open class VthoGeneratedByBlockProcessor(
     state: IndexerStateRepository,
     checkpointProperties: CheckpointProperties,
     processorMetrics: ProcessorMetrics,
+    backfill: BackfillCoordinatorFactory? = null,
     @Value("\${indexer.version.stargate-vtho-generated-by-block:1}") version: Int = 1,
 ) :
     PostgresProcessor(
@@ -31,6 +33,7 @@ open class VthoGeneratedByBlockProcessor(
         IndexerNames.VTHO_GENERATED_BY_BLOCK.NAME,
         version,
         processorMetrics,
+        backfill?.create(VthoGeneratedIndexes.SET),
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.BlockResult) {

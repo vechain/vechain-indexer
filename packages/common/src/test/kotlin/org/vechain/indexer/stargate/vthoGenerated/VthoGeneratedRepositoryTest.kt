@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.data.domain.Sort.Direction.DESC
 import org.vechain.indexer.accounts.TimeFrame
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 import org.vechain.indexer.timeseries.TimeFramePeriod
 
@@ -85,6 +86,22 @@ class VthoGeneratedRepositoryTest {
                     .content
             ),
         )
+    }
+
+    @Test
+    fun `the series is written and rolled back with the deferrable indexes dropped`() {
+        val builder = IndexBuilder(database.properties)
+        val before = writer.latest()?.blockNumber
+        builder.drop(VthoGeneratedIndexes.SET)
+        try {
+            writer.save(listOf(record(50, 500, listOf(TimeFrame.DAY))))
+            assertEquals(50L, writer.latest()?.blockNumber)
+
+            writer.rollbackFrom(50)
+            assertEquals(before, writer.latest()?.blockNumber)
+        } finally {
+            builder.build(VthoGeneratedIndexes.SET)
+        }
     }
 
     @Test

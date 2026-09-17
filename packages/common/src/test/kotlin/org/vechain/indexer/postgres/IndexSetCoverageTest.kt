@@ -80,6 +80,40 @@ class IndexSetCoverageTest {
                         "token_interaction_pkey",
                         "token_interaction_block_idx",
                     ),
+                // The validator-scoped and due-transition lookups the indexer makes every block.
+                "stargate_token" to
+                    listOf(
+                        "state_pkey",
+                        "state_current_validator_idx",
+                        "state_current_due_idx",
+                        "state_block_idx",
+                        "state_prune_idx",
+                    ),
+                // The reload of a validator's cycle trackers after a restart.
+                "token_reward" to
+                    listOf(
+                        "state_pkey",
+                        "state_current_validator_idx",
+                        "state_block_idx",
+                        "state_prune_idx",
+                    ),
+                // A series table is read by block alone, so only its key stands.
+                "vet_delegated" to listOf("total_by_block_pkey"),
+                "stargate_vtho_generated" to listOf("total_by_block_pkey"),
+                "stargate_vtho_claimed" to
+                    listOf(
+                        "total_by_block_pkey",
+                        "claimed_by_token_pkey",
+                        "claimed_by_token_block_idx",
+                        "claimed_by_token_prune_idx",
+                    ),
+                "stargate_staking" to
+                    listOf(
+                        "vet_staked_by_block_pkey",
+                        "nft_holders_by_block_pkey",
+                        "owner_balance_pkey",
+                        "owner_balance_block_idx",
+                    ),
             )
     }
 }

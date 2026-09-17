@@ -102,7 +102,8 @@ delete on the referencing side reads an index of its own. What is left over is t
 `ActionIndexes` defers b3tr_action's twelve leaderboards and three wallet lookups and keeps the
 other twenty-four; `BlocksIndexes` defers three address b-trees and keeps six;
 `TransferIndexes` defers five of eight, keeping rollback's block index and the key that holds
-a wallet's first touch of a token.
+a wallet's first touch of a token. A series table's pair — its timestamp index and the GIN
+index a frame's page scans — is always the API's, so `SeriesIndexes.of(table)` names it once.
 
 ## Indexer Performance Guidelines
 

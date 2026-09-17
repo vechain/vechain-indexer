@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -123,6 +124,27 @@ class TokenRewardWriteRepositoryTest {
             writer.findAllByValidatorAndRewardPeriodAndCycle(validator, RewardPeriod.ALL, 3),
         )
         assertEquals(emptyList<TokenReward>(), writer.findAllById(emptyList()))
+    }
+
+    @Test
+    fun `the indexer's own reads still work with the deferrable indexes dropped`() {
+        val builder = IndexBuilder(database.properties)
+        builder.drop(TokenRewardIndexes.SET)
+        try {
+            writer.save(listOf(tracker("7", 10, 100)))
+            writer.save(listOf(tracker("7", 11, 110)))
+
+            assertEquals(
+                listOf(tracker("7", 11, 110)),
+                writer.findAllByValidatorAndRewardPeriodAndCycle(validator, RewardPeriod.ALL, 3),
+            )
+            assertEquals(listOf(tracker("7", 11, 110)), writer.findAllById(listOf("$validator-7")))
+
+            writer.rollbackFrom(11)
+            assertEquals(listOf("$validator-7:10:-"), rows())
+        } finally {
+            builder.build(TokenRewardIndexes.SET)
+        }
     }
 
     @Test
