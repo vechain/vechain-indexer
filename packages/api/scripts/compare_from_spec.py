@@ -44,6 +44,7 @@ import itertools
 import json
 import os
 import re
+import time
 import ssl
 import sys
 import urllib.error
@@ -128,6 +129,7 @@ class TestCase:
     # same [*] wildcard as global --ignore-path. Populated from
     # ``path_overrides[path].ignore_paths`` in test_values.json.
     extra_ignore_paths: List[str] = field(default_factory=list)
+    expected_failure: Optional[str] = None
 
     @property
     def resolved_path(self) -> str:
@@ -162,6 +164,19 @@ class ComparisonResult:
     baseline_shape: str = "data"
     attempts: int = 1
     cache_headers: Dict[str, Dict[str, str]] = field(default_factory=dict)
+    expected_failure: Optional[str] = None
+
+    @property
+    def error_match(self) -> bool:
+        """Both sides failed the same way, so the case compared two failures."""
+        codes = set(self.status_codes.values())
+        return bool(self.errors) or (len(codes) == 1 and next(iter(codes)) >= 400)
+
+    @property
+    def transient_error_match(self) -> bool:
+        return self.error_match and (
+            bool(self.errors) or not TRANSIENT_STATUSES.isdisjoint(self.status_codes.values())
+        )
 
     @property
     def cache_control(self) -> Dict[str, str]:
@@ -194,10 +209,12 @@ class ComparisonResult:
 
     @property
     def ignored_due_to_deprecation(self) -> bool:
-        return self.test_case.operation.deprecated and self.has_mismatch
+        return bool(self.expected_failure) and self.has_mismatch
 
     @property
     def effective_pass(self) -> bool:
+        if self.transient_error_match:
+            return False
         return not self.has_mismatch or self.ignored_due_to_deprecation
 
 
@@ -370,6 +387,24 @@ def parse_request_body(body_dict: Dict, spec: Dict) -> Optional[RequestBody]:
     return None
 
 
+def merge_operations(
+    baseline: List[Operation], candidate: List[Operation]
+) -> Tuple[List[Operation], List[str]]:
+    """Every operation either side declares, plus the ones only one side has."""
+    by_key = {(op.method, op.path): op for op in baseline}
+    only_candidate = [
+        f"{op.method} {op.path}" for op in candidate if (op.method, op.path) not in by_key
+    ]
+    only_baseline = [
+        f"{op.method} {op.path}"
+        for op in baseline
+        if (op.method, op.path) not in {(o.method, o.path) for o in candidate}
+    ]
+    for op in candidate:
+        by_key.setdefault((op.method, op.path), op)
+    return [by_key[key] for key in sorted(by_key)], sorted(only_baseline + only_candidate)
+
+
 def parse_operations(spec: Dict) -> List[Operation]:
     """Extract all operations from an OpenAPI spec."""
     operations: List[Operation] = []
@@ -421,7 +456,7 @@ _PLACEHOLDER_EXAMPLE_PARAMS = frozenset(
 )
 
 # path_overrides keys that configure the comparison rather than name a parameter.
-RESERVED_OVERRIDE_KEYS = frozenset({"ignore_paths"})
+RESERVED_OVERRIDE_KEYS = frozenset({"ignore_paths", "expect_fail"})
 
 
 def generate_value(param: Parameter, test_values: Dict) -> Any:
@@ -644,6 +679,7 @@ def _with_param(tc: TestCase, param: Parameter, value: Any, label: str) -> TestC
         body=tc.body,
         label=label,
         extra_ignore_paths=list(tc.extra_ignore_paths),
+        expected_failure=tc.expected_failure,
     )
     if param.location == "path":
         extra.path_params[param.name] = value
@@ -665,6 +701,7 @@ def generate_test_cases(
         body=generate_body(op.request_body, test_values, spec),
         label=f"{op.method} {op.path}" + (f" ({op.summary})" if op.summary else ""),
         extra_ignore_paths=list(extra_ignore_paths),
+        expected_failure=path_overrides.get("expect_fail"),
     )
     extra_values: List[Tuple[Parameter, List[Any]]] = []
     variants: List[Parameter] = []
@@ -775,6 +812,14 @@ class Fetched:
     headers: Dict[str, str] = field(default_factory=dict)
 
 
+# Statuses that say "ask again", not "the two colours disagree".
+TRANSIENT_STATUSES = frozenset({408, 425, 429, 500, 502, 503, 504})
+
+
+def is_transient(fetched: "Fetched") -> bool:
+    return fetched.error is not None or fetched.status_code in TRANSIENT_STATUSES
+
+
 def fetch_case(
     tc: TestCase,
     base_url: str,
@@ -869,6 +914,7 @@ def execute_test_case(
     attempts: int = 1,
     cache_bust: bool = False,
     nonce_for: Callable[[int], str] = fresh_nonce,
+    backoff_seconds: float = 0.0,
 ) -> ComparisonResult:
     """Compare one case, re-fetching while the baseline is still moving.
 
@@ -909,7 +955,11 @@ def execute_test_case(
             ),
             attempts=attempt,
             cache_headers={name: f.headers for name, f in fetched.items() if f.headers},
+            expected_failure=tc.expected_failure,
         )
+        if any(is_transient(f) for f in fetched.values()) and attempt < attempts:
+            time.sleep(backoff_seconds * attempt)
+            continue
         if recheck.error is not None or recheck.body != fetched[baseline_name].body:
             continue  # the baseline moved mid-comparison, so the diff proves nothing
         if not result.has_mismatch:
@@ -934,8 +984,12 @@ def cache_hits(result: ComparisonResult) -> Dict[str, str]:
 
 
 def status_of(result: ComparisonResult) -> str:
+    if result.transient_error_match:
+        return "unavailable"
     if result.has_mismatch:
-        return "deprecated" if result.ignored_due_to_deprecation else "fail"
+        return "expected-fail" if result.ignored_due_to_deprecation else "fail"
+    if result.error_match:
+        return "error-match"
     if result.vacuous:
         return "vacuous"
     if result.has_tolerated:
@@ -943,20 +997,26 @@ def status_of(result: ComparisonResult) -> str:
     return "pass"
 
 
+STATUSES = ("pass", "vacuous", "error-match", "unavailable", "tolerated", "expected-fail", "fail")
+
+
 def summarize(results: List[ComparisonResult]) -> Dict[str, Any]:
-    counts = {"pass": 0, "vacuous": 0, "tolerated": 0, "deprecated": 0, "fail": 0}
+    counts = {status: 0 for status in STATUSES}
     with_data: Dict[str, bool] = {}
     for r in results:
         status = status_of(r)
         counts[status] += 1
         key = f"{r.test_case.operation.method} {r.test_case.operation.path}"
-        with_data[key] = with_data.get(key, False) or status not in ("vacuous", "fail")
+        covered = status in ("pass", "tolerated") or bool(r.expected_failure)
+        with_data[key] = with_data.get(key, False) or covered
     return {
         "total": len(results),
         "passed": counts["pass"],
         "vacuous": counts["vacuous"],
+        "error_match": counts["error-match"],
+        "unavailable": counts["unavailable"],
         "tolerated": counts["tolerated"],
-        "deprecated": counts["deprecated"],
+        "deprecated": counts["expected-fail"],
         "failed": counts["fail"],
         "retried": sum(1 for r in results if r.attempts > 1),
         "cache_hits": sum(1 for r in results if cache_hits(r)),
@@ -972,8 +1032,10 @@ def print_summary(results: List[ComparisonResult]) -> None:
     print(f"  Total test cases : {s['total']}")
     print(f"  Matching         : {s['passed']}")
     print(f"  Vacuous          : {s['vacuous']}")
+    print(f"  Matching errors  : {s['error_match']}")
+    print(f"  Unavailable      : {s['unavailable']}")
     print(f"  Tolerated drift  : {s['tolerated']}")
-    print(f"  Deprecated       : {s['deprecated']}")
+    print(f"  Expected failures: {s['deprecated']}")
     print(f"  Differing        : {s['failed']}")
     print(f"  Ops without data : {len(s['operations_without_data'])}")
     print(f"  Retried          : {s['retried']}")
@@ -981,8 +1043,9 @@ def print_summary(results: List[ComparisonResult]) -> None:
     print(f"{'=' * 70}\n")
 
     for result in results:
-        icon = {"pass": "PASS", "vacuous": "VACUOUS", "tolerated": "WARN",
-                "deprecated": "DEPRECATED", "fail": "FAIL"}[status_of(result)]
+        icon = {"pass": "PASS", "vacuous": "VACUOUS", "error-match": "ERROR-MATCH",
+                "unavailable": "UNAVAILABLE", "tolerated": "WARN",
+                "expected-fail": "EXPECTED-FAIL", "fail": "FAIL"}[status_of(result)]
         print(f"[{icon}] {result.test_case.label}")
         print(f"   Request: {result.test_case.operation.method} {result.test_case.full_path}")
 
@@ -1008,6 +1071,12 @@ def print_summary(results: List[ComparisonResult]) -> None:
                         print(f"      ... and {len(tdiffs) - 5} more")
         print()
 
+    if s.get("operations_on_one_side_only"):
+        print("Operations declared by one endpoint only:")
+        for op in s["operations_on_one_side_only"]:
+            print(f"  - {op}")
+        print()
+
     if s["operations_without_data"]:
         print("Operations whose every case was vacuous (empty or error on the baseline):")
         for op in s["operations_without_data"]:
@@ -1015,10 +1084,14 @@ def print_summary(results: List[ComparisonResult]) -> None:
         print()
 
 
-def save_report(results: List[ComparisonResult], output_file: str) -> None:
+def save_report(
+    results: List[ComparisonResult], output_file: str, spec_only: Optional[List[str]] = None
+) -> None:
+    summary = summarize(results)
+    summary["operations_on_one_side_only"] = list(spec_only or [])
     report: Dict[str, Any] = {
         "timestamp": datetime.now().isoformat(),
-        "summary": summarize(results),
+        "summary": summary,
         "results": [],
     }
     for r in results:
@@ -1031,6 +1104,7 @@ def save_report(results: List[ComparisonResult], output_file: str) -> None:
                 "status": status_of(r),
                 "baseline_shape": r.baseline_shape,
                 "attempts": r.attempts,
+                "expected_failure": r.expected_failure,
                 "cache_hits": cache_hits(r),
                 "cache_control": r.cache_control,
                 "deprecated": r.test_case.operation.deprecated,
@@ -1114,6 +1188,16 @@ def main() -> None:
     tls.add_argument("--insecure", action="store_true", help="Skip TLS certificate verification")
     tls.add_argument("--cafile", default=None, help="Path to CA bundle file")
 
+    comp.add_argument(
+        "--candidate-spec-url",
+        help="Also read operations from the candidate's spec, so an endpoint on one side only is a finding",
+    )
+    comp.add_argument(
+        "--backoff-seconds",
+        type=float,
+        default=2.0,
+        help="Base delay before re-fetching after an unreachable or rate-limited response (default: 2)",
+    )
     comp.add_argument(
         "--attempts",
         type=int,
@@ -1215,6 +1299,22 @@ def main() -> None:
             sys.exit(2)
 
     operations = parse_operations(spec_data)
+    spec_only: List[str] = []
+    if args.candidate_spec_url:
+        try:
+            candidate_spec = fetch_spec(args.candidate_spec_url, args.timeout, args.insecure)
+        except Exception as e:
+            print(f"Error fetching the candidate spec: {e}", file=sys.stderr)
+            sys.exit(2)
+        operations, one_sided = merge_operations(operations, parse_operations(candidate_spec))
+        declared = {
+            path
+            for path, config in test_values.get("path_overrides", {}).items()
+            if config.get("expect_fail")
+        }
+        for entry in one_sided:
+            print(f"  Warning: {entry} is declared by one endpoint only", file=sys.stderr)
+        spec_only = [e for e in one_sided if e.split(" ", 1)[1] not in declared]
     print(f"\nFound {len(operations)} operations in spec")
 
     if args.path_filter:
@@ -1262,6 +1362,7 @@ def main() -> None:
             num_rel_tolerance=args.num_rel_tolerance,
             attempts=args.attempts,
             cache_bust=not args.no_cache_bust,
+            backoff_seconds=args.backoff_seconds,
         )
         results.append(result)
         print(
@@ -1269,8 +1370,10 @@ def main() -> None:
             + {
                 "pass": "All endpoints match",
                 "vacuous": "Match, but the baseline returned nothing to compare",
+                "error-match": "Both endpoints returned the same error",
+                "unavailable": "An endpoint could not be reached",
                 "tolerated": "Tolerated drift only",
-                "deprecated": "Differences found (deprecated)",
+                "expected-fail": "Differences found (declared expected)",
                 "fail": "Differences found",
             }[status_of(result)]
         )
@@ -1278,9 +1381,9 @@ def main() -> None:
     print_summary(results)
 
     if args.output:
-        save_report(results, args.output)
+        save_report(results, args.output, spec_only)
 
-    ok = all(r.effective_pass for r in results)
+    ok = all(r.effective_pass for r in results) and not spec_only
     if summarize(results)["operations_without_data"] and not args.allow_vacuous_operations:
         ok = False
     sys.exit(0 if ok else 1)

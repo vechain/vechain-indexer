@@ -60,7 +60,9 @@ def render(report: Dict[str, Any], seed: Dict[str, Any] | None, candidate: str, 
         f"| **Passed with data** | {s['passed']} |",
         f"| **Vacuous** | {s.get('vacuous', 0)} |",
         f"| **Tolerated drift** | {s.get('tolerated', 0)} |",
-        f"| **Deprecated Reported** | {s.get('deprecated', 0)} |",
+        f"| **Expected failures** | {s.get('deprecated', 0)} |",
+        f"| **Matching errors** | {s.get('error_match', 0)} |",
+        f"| **Unavailable** | {s.get('unavailable', 0)} |",
         f"| **Failed** | {s['failed']} |",
         f"| **Retried while the head moved** | {s.get('retried', 0)} |",
         f"| **Served from a CDN cache** | {s.get('cache_hits', 0)} |",
@@ -100,6 +102,33 @@ def render(report: Dict[str, Any], seed: Dict[str, Any] | None, candidate: str, 
             lines += [f"- `{esc(str(v))}`" for v in seed["sampledValidatorIds"]]
             lines.append("")
 
+    one_sided = s.get("operations_on_one_side_only", [])
+    if one_sided:
+        lines += [
+            "### Operations declared by one endpoint only",
+            "",
+            "These appear in one colour's OpenAPI spec and not the other. Declare the "
+            "difference with `expect_fail` if it is intended.",
+            "",
+        ]
+        lines += [f"- <code>{esc(op)}</code>" for op in one_sided]
+        lines.append("")
+
+    unavailable = by_status.get("unavailable", [])
+    if unavailable:
+        lines += [
+            "### Unavailable",
+            "",
+            "Both endpoints failed to answer (rate limit, timeout or server error), so these "
+            "cases proved nothing and the run is not green.",
+            "",
+        ]
+        lines += [
+            f"- <code>{esc(r['method'].upper())} {esc(r['path'])}</code> ({_codes(r)})"
+            for r in unavailable
+        ]
+        lines.append("")
+
     no_data = s.get("operations_without_data", [])
     if no_data:
         lines += [
@@ -122,7 +151,7 @@ def render(report: Dict[str, Any], seed: Dict[str, Any] | None, candidate: str, 
                 body.append("")
             body += _diff_block("Diffs", r.get("diffs", {}), "")
             lines += _details(r, body)
-    elif not by_status.get("deprecated") and not by_status.get("tolerated"):
+    elif not by_status.get("expected-fail") and not by_status.get("tolerated"):
         lines.append("All endpoints matched.")
     else:
         lines.append("No non-deprecated endpoints failed.")
@@ -140,11 +169,12 @@ def render(report: Dict[str, Any], seed: Dict[str, Any] | None, candidate: str, 
         for r in by_status["tolerated"]:
             lines += _details(r, _diff_block("Tolerated diffs", r.get("tolerated_diffs", {}), "~ "))
 
-    if by_status.get("deprecated"):
-        lines += ["", "### Deprecated Endpoints Reported", ""]
+    if by_status.get("expected-fail"):
+        lines += ["", "### Declared expected failures", ""]
         lines += [
-            f"- <code>{esc(r['method'].upper())} {esc(r['path'])}</code> — {esc(r.get('label', ''))}"
-            for r in by_status["deprecated"]
+            f"- <code>{esc(r['method'].upper())} {esc(r['path'])}</code> — "
+            f"{esc(r.get('expected_failure') or r.get('label', ''))}"
+            for r in by_status["expected-fail"]
         ]
 
     return "\n".join(lines) + "\n"

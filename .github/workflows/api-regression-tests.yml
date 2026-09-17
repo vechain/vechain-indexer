@@ -50,6 +50,7 @@ jobs:
           CANDIDATE_URL: ${{ inputs.candidate_url || 'https://mainnet.dead.veworld.vechain.org' }}
           BASELINE_URL: ${{ inputs.baseline_url || 'https://indexer.mainnet.vechain.org' }}
           REGRESSION_SEED_METADATA_FILE: regression-output/seed-metadata.json
+          RATE_LIMIT_BYPASS_TOKEN: ${{ secrets.RATE_LIMIT_BYPASS_TOKEN }}
         run: |
           mkdir -p regression-output
           packages/api/scripts/run_regression_tests.sh \

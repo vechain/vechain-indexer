@@ -36,6 +36,24 @@ def _result(status, path="/api/v1/nfts?address=0xabc", **extra):
 
 
 class RenderTest(unittest.TestCase):
+    def test_unavailable_and_one_sided_operations_are_called_out(self) -> None:
+        report = {
+            "summary": {
+                "total": 2, "passed": 1, "failed": 0, "unavailable": 1,
+                "operations_on_one_side_only": ["GET /api/v1/vevote/proposals/comments"],
+            },
+            "results": [
+                _result("pass"),
+                _result("unavailable", "/api/v1/blocks", status_codes={"baseline": 429, "candidate": 429}),
+            ],
+        }
+        text = MODULE.render(report, None, "c", "b")
+        self.assertIn("| **Unavailable** | 1 |", text)
+        self.assertIn("### Operations declared by one endpoint only", text)
+        self.assertIn("### Unavailable", text)
+        self.assertIn("baseline: 429", text)
+
+
     def test_counts_and_no_data_operations_are_rendered(self) -> None:
         report = {
             "summary": {

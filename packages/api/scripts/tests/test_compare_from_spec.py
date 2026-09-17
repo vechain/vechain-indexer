@@ -499,13 +499,14 @@ class VacuousClassificationTest(unittest.TestCase):
         self.assertEqual(MODULE.status_of(result), "vacuous")
         self.assertTrue(result.effective_pass)
 
-    def test_matching_errors_are_vacuous(self) -> None:
+    def test_matching_errors_are_reported_as_such(self) -> None:
         err = MODULE.HttpResponseError(404, "Not Found", {"id": "x", "status": 404}, "u")
         op = MODULE.Operation(path="/api/v1/accounts/overview/{address}", method="GET")
         tc = MODULE.TestCase(operation=op, label="x")
         result = run_case(tc, err, err)
         self.assertEqual(result.baseline_shape, "error")
-        self.assertEqual(MODULE.status_of(result), "vacuous")
+        self.assertEqual(MODULE.status_of(result), "error-match")
+        self.assertTrue(result.effective_pass)
 
     def test_an_empty_baseline_against_data_is_still_a_failure(self) -> None:
         result = self._run({"data": []}, {"data": [{"tokenId": "1"}]})
@@ -611,3 +612,106 @@ class CacheBustingTest(unittest.TestCase):
             )
         self.assertEqual(MODULE.cache_hits(result), {"candidate": "Hit from cloudfront"})
         self.assertEqual(result.cache_control["baseline"], "public, max-age=600")
+
+
+class FailureSemanticsTest(unittest.TestCase):
+    """A run can only be green when the endpoints actually answered."""
+
+    def _case(self, path="/api/v1/nfts", deprecated=False, expect_fail=None):
+        op = MODULE.Operation(path=path, method="GET", deprecated=deprecated)
+        return MODULE.TestCase(operation=op, label=f"GET {path}", expected_failure=expect_fail)
+
+    def _error(self, status):
+        return MODULE.HttpResponseError(status, "err", {"status": status}, "u")
+
+    def test_a_deprecated_endpoint_no_longer_excuses_a_difference(self) -> None:
+        result = run_case(self._case(deprecated=True), {"a": 1}, {"a": 2}, attempts=1)
+        self.assertEqual(MODULE.status_of(result), "fail")
+        self.assertFalse(result.effective_pass)
+
+    def test_a_declared_expectation_downgrades_a_difference(self) -> None:
+        case = self._case(expect_fail="v1 drops the field v2 added")
+        result = run_case(case, {"a": 1}, {"a": 2}, attempts=1)
+        self.assertEqual(MODULE.status_of(result), "expected-fail")
+        self.assertTrue(result.effective_pass)
+
+    def test_expect_fail_is_read_from_path_overrides_and_not_sent_as_a_parameter(self) -> None:
+        op = MODULE.Operation(
+            path="/api/v1/nfts",
+            method="GET",
+            parameters=[MODULE.Parameter(name="address", location="query", required=True)],
+        )
+        values = {
+            "parameters": {"address": ["0xabc"]},
+            "path_overrides": {"/api/v1/nfts": {"expect_fail": "known"}},
+        }
+        cases = MODULE.generate_test_cases(op, values, {})
+        self.assertEqual(cases[0].expected_failure, "known")
+        self.assertEqual(cases[0].query_params, {"address": "0xabc"})
+
+    def test_matching_rate_limits_fail_the_run(self) -> None:
+        result = run_case(self._case(), self._error(429), self._error(429), attempts=1)
+        self.assertEqual(MODULE.status_of(result), "unavailable")
+        self.assertFalse(result.effective_pass)
+
+    def test_matching_server_errors_fail_the_run(self) -> None:
+        result = run_case(self._case(), self._error(503), self._error(503), attempts=1)
+        self.assertFalse(result.effective_pass)
+
+    def test_a_matching_404_is_still_an_acceptable_answer(self) -> None:
+        result = run_case(self._case(), self._error(404), self._error(404), attempts=1)
+        self.assertEqual(MODULE.status_of(result), "error-match")
+        self.assertTrue(result.effective_pass)
+
+    def test_a_rate_limit_is_retried_before_it_counts(self) -> None:
+        bodies = iter([self._error(429), self._error(429), self._error(429),
+                       {"data": [{"a": 1}]}, {"data": [{"a": 1}]}, {"data": [{"a": 1}]}])
+
+        def stub(url, headers, timeout, context):
+            body = next(bodies)
+            if isinstance(body, Exception):
+                raise body
+            return body, {}
+
+        with patch.object(MODULE, "fetch_json_with_headers", side_effect=stub):
+            result = MODULE.execute_test_case(
+                self._case(), endpoints=ENDPOINTS, common_headers={}, timeout=5, insecure=False,
+                cafile=None, ignored_paths=set(), unordered_lists=False, attempts=2,
+            )
+        self.assertEqual(MODULE.status_of(result), "pass")
+        self.assertEqual(result.attempts, 2)
+
+    def test_a_declared_expectation_also_covers_its_operation(self) -> None:
+        case = self._case(expect_fail="only the candidate serves it")
+        summary = MODULE.summarize([run_case(case, {"a": 1}, {"a": 2}, attempts=1)])
+        self.assertEqual(summary["operations_without_data"], [])
+
+    def test_an_operation_is_only_covered_by_a_case_that_compared_data(self) -> None:
+        summary = MODULE.summarize([
+            run_case(self._case(), self._error(404), self._error(404), attempts=1),
+            run_case(self._case("/api/v1/blocks"), {"data": [{"a": 1}]}, {"data": [{"a": 1}]}),
+        ])
+        self.assertEqual(summary["error_match"], 1)
+        self.assertEqual(summary["operations_without_data"], ["GET /api/v1/nfts"])
+
+
+class SpecUnionTest(unittest.TestCase):
+    def test_operations_on_one_side_only_are_reported_and_still_exercised(self) -> None:
+        shared = MODULE.Operation(path="/api/v1/blocks", method="GET")
+        baseline_only = MODULE.Operation(path="/api/v1/history/{account}", method="GET")
+        candidate_only = MODULE.Operation(path="/api/v1/vevote/proposals/comments", method="GET")
+        merged, only = MODULE.merge_operations([shared, baseline_only], [shared, candidate_only])
+        self.assertEqual(
+            [f"{op.method} {op.path}" for op in merged],
+            ["GET /api/v1/blocks", "GET /api/v1/history/{account}",
+             "GET /api/v1/vevote/proposals/comments"],
+        )
+        self.assertEqual(
+            only, ["GET /api/v1/history/{account}", "GET /api/v1/vevote/proposals/comments"]
+        )
+
+    def test_identical_specs_report_nothing(self) -> None:
+        ops = [MODULE.Operation(path="/api/v1/blocks", method="GET")]
+        merged, only = MODULE.merge_operations(ops, list(ops))
+        self.assertEqual(len(merged), 1)
+        self.assertEqual(only, [])
