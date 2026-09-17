@@ -195,7 +195,7 @@ enabled_nets:
       engine_version: "16"
       instance_class: db.r6g.2xlarge
       allocated_storage_gb: 400
-      max_allocated_storage_gb: 2000
+      max_allocated_storage_gb: 3000
       multi_az: true
   test:
     image_version: latest

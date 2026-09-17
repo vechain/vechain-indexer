@@ -79,6 +79,19 @@ resource "aws_db_parameter_group" "postgres" {
     value = "1.1"
   }
 
+  # Mainnet writes ~32 MB/s of WAL, so the 2 GB default checkpoints every ~90s and every page
+  # write after one emits a full-page image — the WAL that triggers the next checkpoint. 16 GB
+  # spaces them ~8x further apart; testnet, at 0.2 MB/s, checkpoints on the timeout regardless.
+  parameter {
+    name  = "max_wal_size"
+    value = "16384"
+  }
+
+  parameter {
+    name  = "checkpoint_timeout"
+    value = "900"
+  }
+
   # Append-only tables: vacuum (and so freeze) every 2% of inserts rather than the default 20%.
   parameter {
     name  = "autovacuum_vacuum_insert_scale_factor"
