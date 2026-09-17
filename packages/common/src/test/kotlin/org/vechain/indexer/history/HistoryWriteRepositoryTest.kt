@@ -10,6 +10,7 @@ import org.junit.jupiter.api.TestInstance
 import org.vechain.indexer.history.HistoryFixtures.FULL
 import org.vechain.indexer.history.HistoryFixtures.address
 import org.vechain.indexer.history.HistoryFixtures.event
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 import org.vechain.indexer.validator.Status
 
@@ -41,6 +42,20 @@ class HistoryWriteRepositoryTest {
         writer.save(listOf(FULL))
 
         assertEquals(listOf(FULL), stored())
+    }
+
+    @Test
+    fun `a block that repeats an id writes it once, with no key left to catch it`() {
+        val builder = IndexBuilder(database.properties)
+        builder.drop(HistoryIndexes.SET)
+        try {
+            writer.save(listOf(event(1, 10), event(1, 10, to = address(2))))
+
+            assertEquals(1, database.count("history.event"))
+            assertEquals(1, database.count("history.event_address"))
+        } finally {
+            builder.build(HistoryIndexes.SET)
+        }
     }
 
     @Test

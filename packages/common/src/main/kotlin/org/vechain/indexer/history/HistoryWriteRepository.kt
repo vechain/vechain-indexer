@@ -25,7 +25,8 @@ open class HistoryWriteRepository(
         rollbackFor = [Exception::class],
     )
     open fun save(events: List<IndexedHistoryEvent>) {
-        val rows = events.map(HistoryRowMapping::flatten)
+        // What `ON CONFLICT` absorbed: one block's rows can repeat a synthetic id.
+        val rows = events.distinctBy(IndexedHistoryEvent::id).map(HistoryRowMapping::flatten)
         insertEvents(rows.map { it.event })
         insertAddresses(rows.flatMap { it.addresses })
     }
@@ -67,7 +68,7 @@ open class HistoryWriteRepository(
             VALUES (?, ?, ?, ?, ?, CAST(? AS history.event_name), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
               ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS jsonb), CAST(? AS jsonb),
               ?, ?, ?, ?, ?, ?)
-            ON CONFLICT (id) DO NOTHING
+            ON CONFLICT DO NOTHING
             """
                 .trimIndent(),
             rows,
