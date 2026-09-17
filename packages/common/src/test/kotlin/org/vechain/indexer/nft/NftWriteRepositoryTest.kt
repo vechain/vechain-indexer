@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -117,6 +118,24 @@ class NftWriteRepositoryTest {
 
         assertEquals(listOf("1:20:${"b".repeat(40)}:30", "1:30:${"d".repeat(40)}:-"), rows())
         assertEquals(listOf(nft("1", carol, 30)), current())
+    }
+
+    @Test
+    fun `the write path holds up with both owner pages dropped`() {
+        val builder = IndexBuilder(database.properties)
+        builder.drop(NftIndexes.SET)
+        try {
+            writer.save(listOf(nft("1", alice, 10)))
+            writer.save(listOf(nft("1", bob, 20)))
+
+            assertEquals(listOf(bob), current().map { it.owner })
+
+            writer.rollbackFrom(20)
+            assertEquals(listOf(alice), current().map { it.owner })
+            writer.prune(30)
+        } finally {
+            builder.build(NftIndexes.SET)
+        }
     }
 
     @Test

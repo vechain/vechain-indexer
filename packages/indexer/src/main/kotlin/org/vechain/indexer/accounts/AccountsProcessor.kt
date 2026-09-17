@@ -9,6 +9,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.PostgresIndexerStore
 import org.vechain.indexer.PostgresProcessor
+import org.vechain.indexer.backfill.BackfillCoordinatorFactory
 import org.vechain.indexer.config.CheckpointProperties
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.genesis.GenesisVetBalanceLoader
@@ -26,6 +27,7 @@ open class AccountsProcessor(
     checkpointProperties: CheckpointProperties,
     horizon: InlineVersioningProperties,
     processorMetrics: ProcessorMetrics,
+    backfill: BackfillCoordinatorFactory? = null,
     @Value("\${indexer.version.accounts:1}") version: Int = 1,
 ) :
     PostgresProcessor(
@@ -39,6 +41,7 @@ open class AccountsProcessor(
         IndexerNames.ACCOUNTS.NAME,
         version,
         processorMetrics,
+        backfill?.create(AccountsIndexes.SET),
     ) {
 
     /** After the version check, an empty schema starts from the genesis VET allocations. */

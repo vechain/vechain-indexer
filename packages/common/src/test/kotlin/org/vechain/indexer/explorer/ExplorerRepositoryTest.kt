@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.vechain.indexer.accounts.TimeFrame
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -117,6 +118,28 @@ class ExplorerRepositoryTest {
         assertEquals(setOf(alice, bob), writer.findKnownOrigins(day, setOf(alice, bob)))
         assertEquals(setOf(alice), writer.findKnownOrigins(day + 86400, setOf(alice, bob)))
         assertEquals(emptySet<String>(), writer.findKnownOrigins(day, emptySet()))
+    }
+
+    @Test
+    fun `the write path holds up with the block-usage series indexes dropped`() {
+        val builder = IndexBuilder(database.properties)
+        builder.drop(ExplorerIndexes.SET)
+        try {
+            writer.save(
+                blockUsage(40, day + 90000, listOf(TimeFrame.HOUR)),
+                summary(40, day + 86400, "9", 2),
+                origins(40, day + 86400, bob),
+            )
+
+            assertEquals(40L, writer.findUsageAt(40)?.blockNumber)
+            assertEquals(40L, writer.findCurrentFees(day + 86400)?.blockNumber)
+            assertEquals(setOf(alice, bob), writer.findKnownOrigins(day + 86400, setOf(alice, bob)))
+
+            writer.rollbackFrom(40)
+            assertEquals(30L, writer.findCurrentFees(day + 86400)?.blockNumber)
+        } finally {
+            builder.build(ExplorerIndexes.SET)
+        }
     }
 
     @Test

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.data.domain.Sort.Direction
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -82,6 +83,22 @@ class ContractRepositoryTest {
             reader.findByMaster(bob, 0, 10, Direction.ASC).map { it.address },
         )
         assertEquals(emptyList<Contract>(), reader.findByMaster(alice, 1, 10, Direction.DESC))
+    }
+
+    @Test
+    fun `the write path holds up with the by-master page dropped`() {
+        val builder = IndexBuilder(database.properties)
+        builder.drop(ContractIndexes.SET)
+        try {
+            writer.save(listOf(contract(token, 40, alice, erc20 = true)))
+
+            assertEquals(40L, writer.findCurrentByAddresses(setOf(token)).single().blockNumber)
+
+            writer.rollbackFrom(40)
+            assertEquals(30L, writer.findCurrentByAddresses(setOf(token)).single().blockNumber)
+        } finally {
+            builder.build(ContractIndexes.SET)
+        }
     }
 
     @Test
