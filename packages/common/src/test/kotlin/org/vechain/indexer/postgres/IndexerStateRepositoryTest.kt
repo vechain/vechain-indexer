@@ -37,8 +37,30 @@ class IndexerStateRepositoryTest {
 
     @BeforeEach
     fun reset() {
-        database.jdbc.update("DELETE FROM public.indexer_state WHERE name = ?", SCHEMA)
+        database.jdbc.update(
+            "DELETE FROM public.indexer_state WHERE name IN (?, ?)",
+            SCHEMA,
+            OTHER_SCHEMA,
+        )
         truncated.clear()
+    }
+
+    @Test
+    fun `checkpoints report every indexer, including one that has written no block yet`() {
+        repository.recordVersion(SCHEMA, 2)
+        repository.recordVersion(OTHER_SCHEMA, 1)
+        repository.saveCheckpoint(SCHEMA, BlockIdentifier(25_909_780, "0x018b5a14"))
+
+        val checkpoints =
+            repository.checkpoints().filter { it.schema in setOf(SCHEMA, OTHER_SCHEMA) }
+
+        assertEquals(
+            listOf(
+                IndexerCheckpoint(SCHEMA, 2, 25_909_780, "0x018b5a14"),
+                IndexerCheckpoint(OTHER_SCHEMA, 1, null, null),
+            ),
+            checkpoints,
+        )
     }
 
     @Test
@@ -100,5 +122,6 @@ class IndexerStateRepositoryTest {
 
     companion object {
         private const val SCHEMA = "state_test"
+        private const val OTHER_SCHEMA = "state_test_other"
     }
 }

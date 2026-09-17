@@ -11,6 +11,8 @@ set -euo pipefail
 #   CANDIDATE_URL      - Candidate endpoint being validated (default: https://mainnet.dead.veworld.vechain.org)
 #   SPEC_URL           - OpenAPI spec URL (default: derived from BASELINE_URL)
 #   TIMEOUT            - Request timeout in seconds (default: 30)
+#   ATTEMPTS           - Re-fetch a case while the baseline is still moving (default: 3)
+#   RATE_LIMIT_BYPASS_TOKEN  - Sent as x-rate-limit-bypass so the WAF does not throttle the run
 #   NUM_ABS_TOLERANCE  - Absolute numeric tolerance for leaf diffs (default: 1)
 #   NUM_REL_TOLERANCE  - Relative numeric tolerance for leaf diffs (default: 0)
 #                        Diffs within max(abs, rel*max(|a|,|b|)) are reported but
@@ -29,6 +31,8 @@ BASELINE_URL="${BASELINE_URL:-https://indexer.mainnet.vechain.org}"
 CANDIDATE_URL="${CANDIDATE_URL:-https://mainnet.dead.veworld.vechain.org}"
 SPEC_URL="${SPEC_URL:-${BASELINE_URL}/api-docs}"
 TIMEOUT="${TIMEOUT:-30}"
+ATTEMPTS="${ATTEMPTS:-3}"
+RATE_LIMIT_BYPASS_HEADER="${RATE_LIMIT_BYPASS_HEADER:-x-rate-limit-bypass}"
 NUM_ABS_TOLERANCE="${NUM_ABS_TOLERANCE:-1}"
 NUM_REL_TOLERANCE="${NUM_REL_TOLERANCE:-0}"
 
@@ -73,13 +77,21 @@ echo "Running regression comparison" >&2
 echo "  baseline:  ${BASELINE_URL}" >&2
 echo "  candidate: ${CANDIDATE_URL}" >&2
 echo "  spec: ${SPEC_URL}" >&2
+echo "  attempts: ${ATTEMPTS}" >&2
 echo "  numeric tolerance: abs=${NUM_ABS_TOLERANCE}, rel=${NUM_REL_TOLERANCE}" >&2
+
+extra_args=(--candidate-spec-url "${CANDIDATE_SPEC_URL:-${CANDIDATE_URL}/api-docs}")
+if [[ -n "${RATE_LIMIT_BYPASS_TOKEN:-}" ]]; then
+  extra_args+=(--headers "$(printf '{"%s": "%s"}' "$RATE_LIMIT_BYPASS_HEADER" "$RATE_LIMIT_BYPASS_TOKEN")")
+fi
 
 python3 "${SCRIPT_DIR}/compare_from_spec.py" \
   --config-file "$CONFIG_FILE" \
+  "${extra_args[@]}" \
   --test-values "$TEST_VALUES_FILE" \
   --spec-url "$SPEC_URL" \
   --timeout "$TIMEOUT" \
+  --attempts "$ATTEMPTS" \
   --num-abs-tolerance "$NUM_ABS_TOLERANCE" \
   --num-rel-tolerance "$NUM_REL_TOLERANCE" \
   "$@"

@@ -48,11 +48,13 @@ class HttpResponseError(RuntimeError):
         reason: str,
         body: Any = None,
         url: str = "",
+        headers: Dict[str, str] | None = None,
     ) -> None:
         self.status_code = status_code
         self.reason = reason
         self.body = body
         self.url = url
+        self.headers = headers or {}
         super().__init__(f"HTTP error fetching {url}: {status_code} {reason}")
 
     def __str__(self) -> str:
@@ -75,17 +77,27 @@ def decode_json_response(data: bytes, url: str) -> Any:
         raise ValueError(f"Response from {url} is not valid JSON: {e}")
 
 
-def fetch_json(url: str, headers: Dict[str, str], timeout: int, context: ssl.SSLContext | None) -> Any:
+CACHE_HEADER_NAMES = ("x-cache", "age", "cache-control")
+
+
+def cache_headers_of(message: Any) -> Dict[str, str]:
+    return {name: message.get(name) for name in CACHE_HEADER_NAMES if message.get(name) is not None}
+
+
+def fetch_json_with_headers(
+    url: str, headers: Dict[str, str], timeout: int, context: ssl.SSLContext | None
+) -> Tuple[Any, Dict[str, str]]:
+    """Fetch *url*, returning the decoded body and the response's cache headers."""
     req = urllib.request.Request(url, headers=headers or {})
     try:
         if url.lower().startswith("https"):
             opener = urllib.request.build_opener(urllib.request.HTTPSHandler(context=context))
             with opener.open(req, timeout=timeout) as resp:
-                data = resp.read()
+                data, response_headers = resp.read(), cache_headers_of(resp.headers)
         else:
             with urllib.request.urlopen(req, timeout=timeout) as resp:
-                data = resp.read()
-        return decode_json_response(data, url)
+                data, response_headers = resp.read(), cache_headers_of(resp.headers)
+        return decode_json_response(data, url), response_headers
     except urllib.error.HTTPError as e:
         try:
             body = decode_json_response(e.read(), url)
@@ -96,9 +108,14 @@ def fetch_json(url: str, headers: Dict[str, str], timeout: int, context: ssl.SSL
             reason=e.reason,
             body=body,
             url=url,
+            headers=cache_headers_of(e.headers),
         ) from e
     except urllib.error.URLError as e:
         raise RuntimeError(f"Network error fetching {url}: {e.reason}") from e
+
+
+def fetch_json(url: str, headers: Dict[str, str], timeout: int, context: ssl.SSLContext | None) -> Any:
+    return fetch_json_with_headers(url, headers, timeout, context)[0]
 
 def parse_headers(s: str) -> Dict[str, str]:
     if not s:

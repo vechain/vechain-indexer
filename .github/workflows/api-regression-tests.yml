@@ -13,6 +13,21 @@ on:
         default: "https://indexer.mainnet.vechain.org"
         required: false
         type: string
+      max_block_gap:
+        description: "Blocks an indexer on the candidate may trail the chain head by"
+        default: 100
+        required: false
+        type: number
+      thor_url:
+        description: "Thor node the sync gate reads the chain head from"
+        default: "https://mainnet.vechain.org"
+        required: false
+        type: string
+      sweep_windows:
+        description: "Block windows to compare row by row (0 skips the sweep)"
+        default: 6
+        required: false
+        type: number
   workflow_call:
     inputs:
       candidate_url:
@@ -25,6 +40,21 @@ on:
         required: false
         type: string
         default: "https://indexer.mainnet.vechain.org"
+      max_block_gap:
+        description: "Blocks an indexer on the candidate may trail the chain head by"
+        required: false
+        type: number
+        default: 100
+      thor_url:
+        description: "Thor node the sync gate reads the chain head from"
+        required: false
+        type: string
+        default: "https://mainnet.vechain.org"
+      sweep_windows:
+        description: "Block windows to compare row by row (0 skips the sweep)"
+        required: false
+        type: number
+        default: 6
 
 permissions:
   contents: read
@@ -45,11 +75,25 @@ jobs:
         with:
           python-version: '3.14'
 
+      - name: Check the candidate has caught up with the chain
+        id: sync
+        continue-on-error: true
+        env:
+          CANDIDATE_URL: ${{ inputs.candidate_url || 'https://mainnet.dead.veworld.vechain.org' }}
+          THOR_URL: ${{ inputs.thor_url || 'https://mainnet.vechain.org' }}
+          MAX_BLOCK_GAP: ${{ inputs.max_block_gap || 100 }}
+        run: |
+          packages/api/scripts/check_sync_gate.py \
+            --candidate-url "$CANDIDATE_URL" \
+            --thor-url "$THOR_URL" \
+            --max-gap "$MAX_BLOCK_GAP"
+
       - name: Run regression comparison (candidate vs baseline)
         env:
           CANDIDATE_URL: ${{ inputs.candidate_url || 'https://mainnet.dead.veworld.vechain.org' }}
           BASELINE_URL: ${{ inputs.baseline_url || 'https://indexer.mainnet.vechain.org' }}
           REGRESSION_SEED_METADATA_FILE: regression-output/seed-metadata.json
+          RATE_LIMIT_BYPASS_TOKEN: ${{ secrets.RATE_LIMIT_BYPASS_TOKEN }}
         run: |
           mkdir -p regression-output
           packages/api/scripts/run_regression_tests.sh \
@@ -60,170 +104,20 @@ jobs:
         env:
           CANDIDATE: ${{ inputs.candidate_url || 'https://mainnet.dead.veworld.vechain.org' }}
           BASELINE: ${{ inputs.baseline_url || 'https://indexer.mainnet.vechain.org' }}
+          SYNC_OUTCOME: ${{ steps.sync.outcome }}
+        shell: bash
         run: |
-          python3 - <<'PYEOF'
-          import html, json, os, pathlib
+          python3 packages/api/scripts/regression_summary.py \
+            --report regression-output/report.json \
+            --seed-metadata regression-output/seed-metadata.json \
+            --candidate "$CANDIDATE" \
+            --baseline "$BASELINE" \
+            --output "$GITHUB_STEP_SUMMARY"
 
-          report_path = pathlib.Path("regression-output/report.json")
-          seed_path = pathlib.Path("regression-output/seed-metadata.json")
-          summary_path = os.environ["GITHUB_STEP_SUMMARY"]
-
-          if not report_path.exists():
-              with open(summary_path, "a") as f:
-                  f.write("### Regression Comparison\n")
-                  f.write("> **No report generated** — the regression script may have failed before writing output.\n")
-              exit(0)
-
-          report = json.loads(report_path.read_text())
-          s = report["summary"]
-          results = report["results"]
-
-          candidate = os.environ["CANDIDATE"]
-          baseline = os.environ["BASELINE"]
-
-          lines = [
-              "### Regression Comparison (candidate vs baseline)",
-              "",
-              "| | |",
-              "|---|---|",
-              f"| **Candidate** | `{candidate}` |",
-              f"| **Baseline** | `{baseline}` |",
-              f"| **Total** | {s['total']} |",
-              f"| **Passed** | {s['passed']} |",
-              f"| **Tolerated drift** | {s.get('tolerated', 0)} |",
-              f"| **Deprecated Reported** | {s.get('deprecated', 0)} |",
-              f"| **Failed** | {s['failed']} |",
-              "",
-          ]
-
-          if seed_path.exists():
-              seed = json.loads(seed_path.read_text())
-              sampled = seed.get("sampledValidatorIds", [])
-              lines.extend([
-                  "### Validator Sampling",
-                  "",
-                  "| | |",
-                  "|---|---|",
-                  f"| **Seed** | {seed.get('validatorSeed')} |",
-                  f"| **Candidate pool** | {seed.get('candidatePoolSize')} |",
-                  f"| **Preferred pool** | {seed.get('preferredPoolSize')} |",
-                  f"| **Sample size** | {seed.get('actualSampleSize')} / {seed.get('requestedSampleSize')} |",
-                  f"| **Pages per sort** | {seed.get('validatorQueryPageCount')} |",
-                  f"| **Page size** | {seed.get('validatorQueryPageSize')} |",
-                  f"| **Sort fields** | `{', '.join(seed.get('validatorQuerySortFields', []))}` |",
-                  "",
-              ])
-              if sampled:
-                  lines.append("Sampled validator IDs:")
-                  lines.append("")
-                  for validator_id in sampled:
-                      lines.append(f"- `{html.escape(str(validator_id))}`")
-                  lines.append("")
-
-          failures = [r for r in results if r["status"] == "fail"]
-          tolerated = [r for r in results if r["status"] == "tolerated"]
-          deprecated = [r for r in results if r["status"] == "deprecated"]
-
-          if failures:
-              lines.append("### Failed endpoints")
-              lines.append("")
-              esc = html.escape
-              for r in failures:
-                  method = esc(r["method"].upper())
-                  path = esc(r["path"])
-                  label = esc(r.get("label", ""))
-                  codes = r.get("status_codes", {})
-                  errors = r.get("errors", {})
-                  diffs = r.get("diffs", {})
-
-                  code_parts = [f"{esc(str(name))}: {code}" for name, code in codes.items()]
-                  code_str = ", ".join(code_parts)
-
-                  lines.append("<details>")
-                  lines.append(f"<summary><code>{method} {path}</code> — {label} (status: {code_str})</summary>")
-                  lines.append("")
-
-                  if errors:
-                      lines.append("**Errors:**")
-                      for ep, msg in errors.items():
-                          lines.append(f"- `{esc(str(ep))}`: {esc(str(msg))}")
-                      lines.append("")
-
-                  if diffs:
-                      for pair, diff_list in diffs.items():
-                          if not diff_list:
-                              continue
-                          lines.append(f"**Diffs** (`{esc(pair)}`): {len(diff_list)} difference(s)")
-                          lines.append("")
-                          lines.append("```")
-                          for json_path, description in diff_list[:20]:
-                              lines.append(f"  {json_path}: {description}")
-                          if len(diff_list) > 20:
-                              lines.append(f"  ... and {len(diff_list) - 20} more")
-                          lines.append("```")
-                          lines.append("")
-
-                  lines.append("</details>")
-                  lines.append("")
-          elif not deprecated and not tolerated:
-              lines.append("All endpoints matched.")
-          else:
-              lines.append("No non-deprecated endpoints failed.")
-
-          if tolerated:
-              lines.append("")
-              lines.append("### Tolerated drift")
-              lines.append("")
-              lines.append(
-                  "These endpoints differed by amounts within the configured numeric "
-                  "tolerance and did not fail the run. Typically caused by chain-tip "
-                  "drift between the two indexers (e.g. `endBlock` ±1, holder counts ±1)."
-              )
-              lines.append("")
-              esc = html.escape
-              for r in tolerated:
-                  method = esc(r["method"].upper())
-                  path = esc(r["path"])
-                  label = esc(r.get("label", ""))
-                  codes = r.get("status_codes", {})
-                  tdiffs = r.get("tolerated_diffs", {})
-
-                  code_parts = [f"{esc(str(name))}: {code}" for name, code in codes.items()]
-                  code_str = ", ".join(code_parts)
-
-                  lines.append("<details>")
-                  lines.append(f"<summary><code>{method} {path}</code> — {label} (status: {code_str})</summary>")
-                  lines.append("")
-
-                  for pair, diff_list in tdiffs.items():
-                      if not diff_list:
-                          continue
-                      lines.append(f"**Tolerated diffs** (`{esc(pair)}`): {len(diff_list)} drift(s)")
-                      lines.append("")
-                      lines.append("```")
-                      for json_path, description in diff_list[:20]:
-                          lines.append(f"  ~ {json_path}: {description}")
-                      if len(diff_list) > 20:
-                          lines.append(f"  ... and {len(diff_list) - 20} more")
-                      lines.append("```")
-                      lines.append("")
-
-                  lines.append("</details>")
-                  lines.append("")
-
-          if deprecated:
-              lines.append("")
-              lines.append("### Deprecated Endpoints Reported")
-              lines.append("")
-              for r in deprecated:
-                  method = html.escape(r["method"].upper())
-                  path = html.escape(r["path"])
-                  label = html.escape(r.get("label", ""))
-                  lines.append(f"- <code>{method} {path}</code> — {label}")
-
-          with open(summary_path, "a") as f:
-              f.write("\n".join(lines) + "\n")
-          PYEOF
+          if [[ "$SYNC_OUTCOME" != "success" ]]; then
+            echo "> **The candidate had not caught up when this ran**, so differences below may" \
+              "be lag rather than regressions. See the sync gate step." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Upload regression report
         if: always()
@@ -231,4 +125,73 @@ jobs:
         with:
           name: regression-report
           path: ./regression-output
+          if-no-files-found: ignore
+
+  sweep:
+    name: Block window sweep
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    if: ${{ (inputs.sweep_windows == null && 6 || inputs.sweep_windows) != 0 }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.14'
+
+      - name: Compare whole block windows
+        env:
+          CANDIDATE_URL: ${{ inputs.candidate_url || 'https://mainnet.dead.veworld.vechain.org' }}
+          BASELINE_URL: ${{ inputs.baseline_url || 'https://indexer.mainnet.vechain.org' }}
+          SWEEP_WINDOWS: ${{ inputs.sweep_windows || 6 }}
+        run: |
+          mkdir -p sweep-output
+          printf '{"endpoints":{"baseline":"%s","candidate":"%s"}}' "$BASELINE_URL" "$CANDIDATE_URL" \
+            > sweep-output/endpoints.json
+          packages/api/scripts/sweep_blocks.py \
+            --config-file sweep-output/endpoints.json \
+            --windows "$SWEEP_WINDOWS" \
+            --output sweep-output/sweep.json
+
+      - name: Summarise the sweep
+        if: always()
+        run: |
+          python3 - <<'PYEOF' >> "$GITHUB_STEP_SUMMARY"
+          import json, pathlib
+          path = pathlib.Path("sweep-output/sweep.json")
+          if not path.exists():
+              print("### Block window sweep\n\n> No report generated.")
+              raise SystemExit(0)
+          report = json.loads(path.read_text())
+          s = report["summary"]
+          print("### Block window sweep\n")
+          print("| | |\n|---|---|")
+          print(f"| **Candidate head** | {s['candidate_head']} |")
+          print(f"| **Windows** | {s['windows']} |")
+          print(f"| **Blocks compared** | {s['blocks_compared']} |")
+          print(f"| **Transactions compared** | {s['transactions_compared']} |")
+          print(f"| **Findings** | {s['findings']} |\n")
+          for window in report["windows"]:
+              if not window["findings"]:
+                  continue
+              start = window["window"]["start"]
+              print(f"<details><summary>Blocks {start}-{start + window['window']['count'] - 1}</summary>\n")
+              print("```")
+              for finding in window["findings"][:20]:
+                  subject = finding.get("block") or finding.get("transaction")
+                  for path_, description in finding["diffs"][:5]:
+                      print(f"  {subject} {path_}: {description}")
+              print("```\n</details>\n")
+          PYEOF
+
+      - name: Upload sweep report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sweep-report
+          path: ./sweep-output
           if-no-files-found: ignore

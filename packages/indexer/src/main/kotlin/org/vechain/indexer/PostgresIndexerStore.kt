@@ -26,9 +26,6 @@ open class PostgresIndexerStore(
     private var lastSavedNanos: Long? = null
     private var lastPrunedBucket: Long = -1
 
-    /** False for a schema whose newest row is the resume point, such as `blocks`. */
-    protected open val usesCheckpoint: Boolean = true
-
     override fun lastSynced(): BlockIdentifier? = state.checkpoint(schema)
 
     /** Runs inside the processor's Postgres transaction, so the data and the marker agree. */
@@ -40,14 +37,13 @@ open class PostgresIndexerStore(
         }
         tables.rollbackFrom(blockNumber)
         lastObserved = null
-        if (usesCheckpoint) state.saveCheckpoint(schema, BlockIdentifier(blockNumber - 1, null))
+        state.saveCheckpoint(schema, BlockIdentifier(blockNumber - 1, null))
     }
 
     /** Throttled by `indexer.checkpoint.save-interval-seconds`; failures only log. */
     open fun onProcessed(latest: BlockIdentifier) {
         lastObserved = latest
         pruneIfDue(latest.number)
-        if (!usesCheckpoint) return
         val now = System.nanoTime()
         val interval = checkpointProperties.saveIntervalSeconds * 1_000_000_000L
         if (lastSavedNanos?.let { now - it < interval } == true) return
@@ -75,7 +71,6 @@ open class PostgresIndexerStore(
     /** Unthrottled; called on shutdown so a clean restart resumes from the last processed block. */
     open fun flushCheckpoint() {
         val block = lastObserved ?: return
-        if (!usesCheckpoint) return
         try {
             state.saveCheckpoint(schema, block)
             logger.info("{}: flushed checkpoint at block {} on shutdown", schema, block.number)

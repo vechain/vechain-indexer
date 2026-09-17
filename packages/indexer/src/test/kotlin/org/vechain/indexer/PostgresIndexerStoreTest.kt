@@ -139,17 +139,16 @@ class PostgresIndexerStoreTest {
     }
 
     @Test
-    fun `a store without a checkpoint never writes one`() {
+    fun `a store that resumes from its own rows still records the checkpoint`() {
         val store =
             object : PostgresIndexerStore("test", tables, state, properties) {
-                override val usesCheckpoint = false
+                override fun lastSynced() = BlockIdentifier(9, "0x09")
             }
 
-        store.onProcessed(BlockIdentifier(1, null))
-        store.rollbackFrom(1)
+        store.onProcessed(BlockIdentifier(1, "0x01"))
         store.flushCheckpoint()
 
-        verify(exactly = 0) { state.saveCheckpoint(any(), any()) }
-        verify { tables.rollbackFrom(1) }
+        assertEquals(BlockIdentifier(9, "0x09"), store.lastSynced())
+        verify(atLeast = 1) { state.saveCheckpoint("test", BlockIdentifier(1, "0x01")) }
     }
 }
