@@ -248,3 +248,25 @@ resource "aws_cloudwatch_metric_alarm" "pg_connections" {
   alarm_actions = local.alerts_topic_arns
   ok_actions    = local.alerts_topic_arns
 }
+
+# A daily backup inside a one-hour window peaks just past 25 hours old, and missing data holds the
+# state because a restore replaces the instance whole. See terraform/observability/README.md.
+resource "aws_cloudwatch_metric_alarm" "pg_backup_stale" {
+  for_each = local.alarm_pg
+
+  alarm_name        = "${local.alarm_name_prefix}-${each.key}-pg-backup-stale"
+  alarm_description = "${local.alarm_pg_headers[each.key]}: No recent backup — the newest snapshot is over 26 hours old, so a dead-colour restore would start from stale data."
+
+  namespace           = "VeWorld/RDSBackups"
+  metric_name         = "NewestSnapshotAge"
+  dimensions          = { DBInstanceIdentifier = each.value }
+  statistic           = "Maximum"
+  period              = 3600
+  evaluation_periods  = 1
+  comparison_operator = "GreaterThanThreshold"
+  threshold           = 26 * 3600
+  treat_missing_data  = "missing"
+
+  alarm_actions = local.alerts_topic_arns
+  ok_actions    = local.alerts_topic_arns
+}
