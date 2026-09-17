@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -146,6 +147,23 @@ class ValidatorWriteRepositoryTest {
             listOf("${"a".repeat(40)}:20:ACTIVE:30", "${"a".repeat(40)}:30:ACTIVE:-"),
             rows(),
         )
+    }
+
+    @Test
+    fun `the write path holds up with the deferrable index dropped`() {
+        val builder = IndexBuilder(database.properties)
+        builder.drop(ValidatorIndexes.SET)
+        try {
+            writer.save(listOf(validator(alice, 10)))
+            writer.save(listOf(validator(alice, 20, Status.EXITING)))
+
+            assertEquals(2, rows().size)
+            writer.rollbackFrom(20)
+            assertEquals(listOf("${alice.removePrefix("0x")}:10:ACTIVE:-"), rows())
+            writer.prune(30)
+        } finally {
+            builder.build(ValidatorIndexes.SET)
+        }
     }
 
     @Test

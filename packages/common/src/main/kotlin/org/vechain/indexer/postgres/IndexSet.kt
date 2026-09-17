@@ -10,6 +10,9 @@ import org.vechain.indexer.stargate.vetDelegated.VetDelegatedIndexes
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedIndexes
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedIndexes
 import org.vechain.indexer.transfer.TransferIndexes
+import org.vechain.indexer.validator.DelegationIndexes
+import org.vechain.indexer.validator.ValidatorBlockIndexes
+import org.vechain.indexer.validator.ValidatorIndexes
 
 /** An index only `packages/api` reads, so a backfill can do without it until the head. */
 data class DeferrableIndex(
@@ -37,5 +40,8 @@ object IndexSets {
             VthoGeneratedIndexes.SET,
             VthoClaimedIndexes.SET,
             StargateStakingIndexes.SET,
+            ValidatorIndexes.SET,
+            ValidatorBlockIndexes.SET,
+            DelegationIndexes.SET,
         )
 }
