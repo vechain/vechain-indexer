@@ -344,8 +344,9 @@ jobs:
   refresh-dead-dns:
     name: Refresh dead Route53 records
     needs: [recheck-live-color, plan-release, deploy-env]
+    # !cancelled() opts out of the implicit success(), which a skipped ancestor fails.
     if: >-
-      ${{ needs.deploy-env.result == 'success'
+      ${{ !cancelled() && needs.deploy-env.result == 'success'
       && needs.plan-release.outputs.TARGET_KIND == 'dead' }}
     uses: ./.github/workflows/deploy-colour-agnostic-infra.yml
     with:
@@ -361,7 +362,7 @@ jobs:
     name: Refresh draft or publish release
     runs-on: ubuntu-latest
     needs: [plan-release, deploy-env]
-    if: ${{ needs.deploy-env.result == 'success' }}
+    if: ${{ !cancelled() && needs.deploy-env.result == 'success' }}
     permissions:
       contents: write
     env:
