@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.chain.ChainHead
 import org.vechain.indexer.config.postgres.ConditionalOnPostgres
 import org.vechain.indexer.config.postgres.PostgresProperties
+import org.vechain.indexer.postgres.IndexBuildBudget
 import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.IndexSet
 
@@ -17,6 +18,9 @@ class BackfillCoordinatorFactory(
     private val state: BackfillState,
 ) {
 
+    // One budget for every schema the factory hands out, not one each.
+    private val budget = IndexBuildBudget(properties.buildWorkers)
+
     fun create(indexSet: IndexSet): BackfillCoordinator =
         BackfillCoordinator(
             indexSet,
@@ -27,6 +31,7 @@ class BackfillCoordinatorFactory(
                     maintenanceWorkMem = properties.maintenanceWorkMem,
                     parallelMaintenanceWorkers = properties.parallelMaintenanceWorkers,
                 ),
+                budget,
             ),
             chainHead,
             properties,

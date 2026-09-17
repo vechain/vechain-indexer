@@ -78,6 +78,9 @@ runner on every entry, with nothing stored:
 - **Building** — entered when the entry reports `FULLY_SYNCED` with indexes missing. The processor
   stops taking blocks at the top of `process`, outside any transaction, while several plain
   `CREATE INDEX`es run at once; the liveness check is told, because that stall is the work.
+  Group members reach the head on the same block, so their rebuilds overlap: `IndexBuildBudget` is
+  one process-wide cap on how many run at once, and `build-workers` times `maintenance-work-mem`
+  is the ceiling on build memory for the task, not for each schema.
 
 A primary key can be deferrable too, where it exists for the API's join rather than for a write:
 `history.event(id)` is a sha1, so it is a cold random b-tree on every insert. What replaces it is

@@ -12,9 +12,12 @@ import org.vechain.indexer.config.CheckpointProperties
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.config.postgres.PostgresProperties
+import org.vechain.indexer.history.HistoryIndexes
 import org.vechain.indexer.history.HistoryProcessor
 import org.vechain.indexer.history.HistoryService
 import org.vechain.indexer.history.HistoryWriteRepository
+import org.vechain.indexer.postgres.IndexBuilder
+import org.vechain.indexer.postgres.IndexSet
 import org.vechain.indexer.postgres.IndexerStateRepository
 import org.vechain.indexer.thor.client.ThorClient
 
@@ -51,14 +54,31 @@ class BackfillWiringTest {
             .withBean(ProcessorMetrics::class.java, { ProcessorMetrics(SimpleMeterRegistry()) })
             .withBean(HistoryProcessor::class.java)
 
+    @Test
+    fun `every schema the factory hands out draws on one budget`() {
+        runner.run { context ->
+            val factory = context.getBean(BackfillCoordinatorFactory::class.java)
+            val first = factory.create(HistoryIndexes.SET)
+            val second = factory.create(IndexSet("other", emptyList()))
+
+            assertThat(budgetOf(first)).isSameAs(budgetOf(second))
+        }
+    }
+
+    private fun budgetOf(coordinator: BackfillCoordinator) =
+        field(
+            IndexBuilder::class.java,
+            "budget",
+            field(BackfillCoordinator::class.java, "builder", coordinator),
+        )
+
     // The field is private and optional: unresolved, Spring leaves it null and nothing else says
     // so.
     private fun coordinatorOf(processor: HistoryProcessor) =
-        PostgresProcessor::class
-            .java
-            .getDeclaredField("backfill")
-            .apply { isAccessible = true }
-            .get(processor)
+        field(PostgresProcessor::class.java, "backfill", processor)
+
+    private fun field(owner: Class<*>, name: String, target: Any) =
+        owner.getDeclaredField(name).apply { isAccessible = true }.get(target)
 
     @Test
     fun `the history processor is built with a coordinator and the bound threshold`() {

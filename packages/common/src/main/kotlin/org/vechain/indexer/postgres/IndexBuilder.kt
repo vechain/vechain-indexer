@@ -14,9 +14,10 @@ import org.vechain.indexer.config.postgres.PostgresProperties
 class IndexBuilder(
     private val properties: PostgresProperties,
     private val settings: Settings = Settings(),
+    private val budget: IndexBuildBudget = IndexBuildBudget(settings.workers),
 ) {
 
-    /** Per-session build memory, and how many indexes are grown at once by [build]. */
+    /** Per-session build memory, and this builder's share of a budget it is not given one of. */
     data class Settings(
         val workers: Int = 4,
         val maintenanceWorkMem: String = "1GB",
@@ -52,7 +53,7 @@ class IndexBuilder(
     fun buildConcurrently(set: IndexSet, indexes: List<DeferrableIndex> = missing(set)) {
         if (indexes.isEmpty()) return
         connect().use { c ->
-            indexes.forEach { create(c, set.schema, it, concurrently = true) }
+            indexes.forEach { budget.withPermit { create(c, set.schema, it, concurrently = true) } }
             label(c, set.schema, indexes)
         }
     }
@@ -61,14 +62,16 @@ class IndexBuilder(
     fun build(set: IndexSet, indexes: List<DeferrableIndex> = missing(set)) {
         if (indexes.isEmpty()) return
         val started = System.nanoTime()
-        val pool = Executors.newFixedThreadPool(minOf(settings.workers, indexes.size))
+        val pool = Executors.newFixedThreadPool(minOf(budget.permits, indexes.size))
         try {
             pool
                 .invokeAll(
                     indexes.map { index ->
                         Callable {
-                            connect().use { c ->
-                                create(c, set.schema, index, concurrently = false)
+                            budget.withPermit {
+                                connect().use {
+                                    create(it, set.schema, index, concurrently = false)
+                                }
                             }
                         }
                     }
