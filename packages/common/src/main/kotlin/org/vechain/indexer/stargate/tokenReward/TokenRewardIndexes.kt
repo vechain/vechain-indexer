@@ -17,5 +17,14 @@ object TokenRewardIndexes {
                     "(token_id, reward_period, block_timestamp) WHERE superseded_at IS NULL",
                 )
             ),
+            needed =
+                listOf(
+                    // A block's supersede by id; the key would read every retained version first.
+                    DeferrableIndex(
+                        "state_current_id_idx",
+                        "state",
+                        "(id) WHERE superseded_at IS NULL",
+                    )
+                ),
         )
 }

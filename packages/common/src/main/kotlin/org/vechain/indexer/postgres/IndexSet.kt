@@ -29,7 +29,7 @@ import org.vechain.indexer.validator.ValidatorIndexes
 import org.vechain.indexer.vevote.HistoricProposalsIndexes
 import org.vechain.indexer.vevote.VeVoteIndexes
 
-/** An index only `packages/api` reads, so a backfill can do without it until the head. */
+/** An index by name; in [IndexSet.indexes] one only `packages/api` reads, dropped in a backfill. */
 data class DeferrableIndex(
     val name: String,
     val table: String,
@@ -39,7 +39,12 @@ data class DeferrableIndex(
 )
 
 /** One schema's deferrable indexes: the truth for what a schema carries when it is serving. */
-data class IndexSet(val schema: String, val indexes: List<DeferrableIndex>)
+data class IndexSet(
+    val schema: String,
+    val indexes: List<DeferrableIndex>,
+    /** The indexer's own, never dropped; too slow for a migration, they grow after start. */
+    val needed: List<DeferrableIndex> = emptyList(),
+)
 
 /** Every declared set, so a test database can stand a schema up the way a served one stands. */
 object IndexSets {

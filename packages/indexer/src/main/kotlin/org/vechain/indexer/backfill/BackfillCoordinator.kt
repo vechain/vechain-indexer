@@ -33,6 +33,7 @@ class BackfillCoordinator(
     private val declared = indexSet.indexes.size
 
     private var phase: Phase? = null
+    private var neededChecked = false
     private var retryAfterNanos: Long? = null
 
     /** The processor names itself once built: a schema is not what a dashboard is read by. */
@@ -40,6 +41,7 @@ class BackfillCoordinator(
 
     /** Runs before the entry is processed, outside its transaction; may block for a rebuild. */
     suspend fun beforeEntry(entry: IndexingResult) {
+        if (!neededChecked) buildNeeded()
         if (!properties.enabled) return
         val behind = (chainHead.bestBlockNumber() ?: return) - entry.latestBlockNumber()
         when (phase) {
@@ -66,6 +68,20 @@ class BackfillCoordinator(
             missing.size,
         )
         buildInBackground { builder.buildConcurrently(indexSet, missing, ::built) }
+    }
+
+    // Outside the phase and the enabled flag: these are the indexer's own, which a migration could
+    // not build in time, and a backfill is when their absence costs the write path most.
+    private fun buildNeeded() {
+        neededChecked = true
+        val missing = builder.missing(indexSet, indexSet.needed)
+        if (missing.isEmpty()) return
+        logger.info(
+            "{}: building {} of the indexer's own indexes concurrently",
+            schema,
+            missing.size,
+        )
+        buildInBackground { builder.buildConcurrently(indexSet, missing) }
     }
 
     private fun enterBackfill(behind: Long) {

@@ -93,6 +93,7 @@ class IndexSetCoverageTest {
                 "token_reward" to
                     listOf(
                         "state_pkey",
+                        "state_current_id_idx",
                         "state_current_validator_idx",
                         "state_block_idx",
                         "state_prune_idx",
