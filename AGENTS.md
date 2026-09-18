@@ -113,10 +113,13 @@ b3tr_challenges carries fifteen secondary indexes and defers three, because its 
 per-challenge lookups are all reads the indexer makes.
 
 `BackfillState` carries the phase and, per schema, how many of the declared indexes stand;
-`IndexerMetricsReporter` publishes both as `indexer_backfill_phase{schema,phase}` and
-`indexer_deferrable_indexes_standing` / `_declared`. The "Backfill · Deferrable indexes" row on the
-Grafana overview draws them — see `terraform/observability-grafana/README.md`. The standing count
-moves because `IndexBuilder` reports each index as it finishes, so nothing polls `pg_index`.
+`IndexerMetricsReporter` publishes both as `indexer_backfill_phase` and
+`indexer_deferrable_indexes_standing` / `_declared`, each tagged with the `schema` and the `indexer`
+that owns it — `PostgresProcessor` names the coordinator on construction, because a schema name is
+not what anyone reads a dashboard by. The "API indexes" row on the Grafana overview draws them in an
+operator's words rather than these ones; see `terraform/observability-grafana/README.md` before
+adding a panel. The standing count moves because `IndexBuilder` reports each index as it finishes,
+so nothing polls `pg_index`.
 
 ## Indexer Performance Guidelines
 

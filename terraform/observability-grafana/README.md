@@ -6,7 +6,7 @@ Terraform stack that provisions AMG data sources and (eventually) dashboards, on
 
 - **AMP data source** — Prometheus with SigV4 auth against the workspace in `terraform/observability/`. UID `amp`.
 - **CloudWatch data source** — for log-based diagnostics and any CW-native metrics we keep. UID `cloudwatch`.
-- **Dashboards** — JSON files under `dashboards/`, iterated by `dashboards.tf` via `for_each`. `overview` covers indexer sync, the deferrable-index backfill, API, errors, ECS resources, MongoDB, the CloudFront/WAF edge rows and the per-network WAF request detail rows; `logs` is a single Logs Insights view over every ECS service log group.
+- **Dashboards** — JSON files under `dashboards/`, iterated by `dashboards.tf` via `for_each`. `overview` covers indexer sync, the API indexes a backfill drops, API, errors, ECS resources, MongoDB, the CloudFront/WAF edge rows and the per-network WAF request detail rows; `logs` is a single Logs Insights view over every ECS service log group.
 
 ## Adding a dashboard
 
@@ -90,31 +90,40 @@ The `indexer_name` variable reads `indexer_sync_status`, not `indexer_current_bl
 only emitted once an indexer is past `NOT_INITIALISED`, so sourcing the picker from it hid exactly
 the indexers you open this row to find.
 
-### Backfill · Deferrable indexes row
+### API indexes row
 
 Collapsed, after Sync, and the whole row is AMP. It shows the feature in `AGENTS.md` "A Backfill
-Drops the Indexes Only the API Reads": each schema drops the indexes only `packages/api` reads once
-its indexer falls `indexer.backfill.enter-behind-blocks` behind the head, and rebuilds them at the
-head with the processor paused.
+Drops the Indexes Only the API Reads": an indexer far enough behind the chain drops the indexes only
+`packages/api` reads, and rebuilds them at the head with its processor paused.
 
-- **Two metrics feed it.** `indexer_backfill_phase{schema,phase}` is a one-hot per schema, and
-  `indexer_deferrable_indexes_standing{schema}` / `_declared{schema}` are the counts. Both come from
-  `BackfillState` via `IndexerMetricsReporter`, on the same 10s tick as the sync gauges.
-- **"Index phase by schema" encodes the one-hot as 0/1/2** — `(… phase="SERVING") * 0 or
+- **The row is written for someone who does not know the mechanism.** Titles and value mappings say
+  "indexes waiting to be created" and "rebuilding indexes — indexer paused", never *deferrable*,
+  *standing*, *declared* or *phase*. Those words stay in the code and in this file. Keep it that way
+  when adding a panel: the headline number is the one a person acts on, and it has to read without a
+  glossary.
+- **Everything is keyed by indexer, not by schema.** `PostgresProcessor` names the coordinator that
+  owns its schema, so `indexer_backfill_phase` and `indexer_deferrable_indexes_standing` /
+  `_declared` all carry an `indexer` label beside `schema`. The panels strip the trailing `Indexer`
+  the way the Sync row does. A schema name is what the database calls it; nobody reading a dashboard
+  thinks in those terms.
+- **"Indexes still to create" filters with `> 0`, so an empty panel is the healthy state.** That
+  reads as broken unless the panel says so, which is why it sets `noValue` to "Every index is in
+  place" rather than leaving Grafana's "No data".
+- **The state timeline encodes the one-hot as 0/1/2** — `(… phase="SERVING") * 0 or
   (… phase="BACKFILL") * 1 or (… phase="BUILDING") * 2` — because a state timeline needs one series
-  per schema whose value is the state. The arithmetic drops `__name__`, which is what leaves the
+  per indexer whose value is the state. The arithmetic drops `__name__`, which is what leaves the
   three operands differing only by `phase` so the `or` unions them instead of shadowing.
-- **The standing count is not a catalogue read.** `IndexBuilder` reports each index as it finishes
-  and the coordinator re-reads `pg_index` only at a phase boundary, so a bar climbing through a
-  rebuild costs nothing. A deferrable primary key is reported once `label` has relabelled it rather
-  than at create, because that is the point `missing` counts it as standing. The consequence is that
-  a rebuild which fails part-way leaves the count at what it reached; the next attempt recounts from
-  the catalogue.
-- **A schema with no series has never been past `BackfillCoordinator.begin`** — it reports nothing
-  until its first entry, so a freshly started colour fills the row in over a few minutes rather than
-  arriving complete.
-- Both label-bearing panels shorten `deployment` and `network` the way the Sync row does, for the
-  same reason: 28 schemas x colour x network does not fit a bar or a timeline row.
+- **The pie runs three separate queries rather than renaming a label.** Each carries its wording in
+  its own `legendFormat`, which is far easier to read than a three-deep `label_replace` chain and
+  cannot silently stop matching.
+- **The counts are not a catalogue read.** `IndexBuilder` reports each index as it finishes and the
+  coordinator re-reads `pg_index` only at a phase boundary, so the bar falls through a rebuild for
+  free. A deferrable primary key is reported once `label` has relabelled it rather than at create,
+  because that is the point `missing` counts it as standing. A rebuild that fails part-way leaves
+  the count where it reached; the next attempt recounts from the catalogue.
+- **An indexer appears only once it has processed an entry.** `IndexerMetricsReporter` skips a
+  schema until its first `beforeEntry` has counted the catalogue, so a freshly started colour fills
+  the row in over a few minutes rather than arriving complete with zeroes.
 
 ### Edge rows (CloudFront + WAF)
 

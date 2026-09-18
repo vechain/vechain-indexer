@@ -6,6 +6,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration
 import org.springframework.boot.test.context.runner.ApplicationContextRunner
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.PostgresProcessor
 import org.vechain.indexer.chain.ChainHead
 import org.vechain.indexer.config.CheckpointProperties
@@ -79,6 +80,17 @@ class BackfillWiringTest {
 
     private fun field(owner: Class<*>, name: String, target: Any) =
         owner.getDeclaredField(name).apply { isAccessible = true }.get(target)
+
+    @Test
+    fun `the processor names the indexer that owns its schema`() {
+        runner.withPropertyValues("spring.profiles.active=history").run { context ->
+            context.getBean(HistoryProcessor::class.java)
+
+            val progress = context.getBean(BackfillState::class.java).progress()
+            assertThat(progress[HistoryIndexes.SET.schema]?.indexer)
+                .isEqualTo(IndexerNames.HISTORY.NAME)
+        }
+    }
 
     @Test
     fun `the history processor is built with a coordinator and the bound threshold`() {

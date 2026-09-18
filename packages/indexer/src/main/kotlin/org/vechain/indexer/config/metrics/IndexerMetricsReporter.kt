@@ -33,10 +33,15 @@ class IndexerMetricsReporter(
     fun reportMetrics() {
         val bestBlockNumber = chainHead.bestBlockNumber()
         bestBlockNumber?.let(metrics::setBestBlockNumber)
-        backfillState.progress().forEach { (schema, progress) ->
-            metrics.setBackfillPhase(schema, progress.phase)
-            metrics.setDeferrableIndexes(schema, progress.standing, progress.declared)
-        }
+        // Silent until the first entry has counted the catalogue: a schema reporting 0 of 0
+        // indexes reads as a schema with nothing left to rebuild.
+        backfillState
+            .progress()
+            .filterValues { it.declared > 0 }
+            .forEach { (schema, it) ->
+                metrics.setBackfillPhase(schema, it.indexer, it.phase)
+                metrics.setDeferrableIndexes(schema, it.indexer, it.standing, it.declared)
+            }
 
         indexers.forEach { indexer ->
             reportIndexerHealth(indexer)
