@@ -62,7 +62,7 @@ class TransactionServiceTest {
 
     @Test
     fun `findLatest returns canonical page and cursor`() {
-        every { repository.findLatest(null, 3) } returns
+        every { repository.findLatest(null, 3, false) } returns
             listOf(
                 transaction(id = "0x1", blockNumber = 101L, transactionIndex = 0L),
                 transaction(id = "0x2", blockNumber = 101L, transactionIndex = 1L),
@@ -78,7 +78,7 @@ class TransactionServiceTest {
 
     @Test
     fun `findLatest continues after the cursor's block and transaction index`() {
-        every { repository.findLatest(LatestCursor(101L, 1), 21) } returns
+        every { repository.findLatest(LatestCursor(101L, 1), 21, false) } returns
             listOf(transaction("0x3", 100L, 0L))
 
         val response = service.findLatest(size = 20, cursor = "101|1")
@@ -86,6 +86,17 @@ class TransactionServiceTest {
         assertEquals(listOf("0x3"), response.data.map { it.id })
         assertFalse(response.pagination.hasNext)
         assertNull(response.pagination.cursor)
+    }
+
+    @Test
+    fun `findLatest passes expansion down to the repository`() {
+        every { repository.findLatest(null, 21, true) } returns
+            listOf(transaction(id = "0x1", blockNumber = 101L, transactionIndex = 0L))
+
+        assertEquals(
+            listOf("0x1"),
+            service.findLatest(size = null, cursor = null, expanded = true).data.map { it.id },
+        )
     }
 
     private fun transaction(

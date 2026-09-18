@@ -56,13 +56,17 @@ open class TransactionService(private val repository: BlocksReadRepository) {
         }
 
     /** Cursor is `blockNumber|transactionIndex` of the last row served, as before. */
-    open fun findLatest(size: Int?, cursor: String? = null): PaginatedResponse<IndexedTransaction> {
+    open fun findLatest(
+        size: Int?,
+        cursor: String? = null,
+        expanded: Boolean = false,
+    ): PaginatedResponse<IndexedTransaction> {
         val pageSize = size ?: DEFAULT_PAGE_SIZE
         val after =
             CursorPaginationUtils.parseCursor(cursor)?.let {
                 LatestCursor(it.sortValue.toLong(), it.cursorValue.toInt())
             }
-        val results = repository.findLatest(after, pageSize + 1)
+        val results = repository.findLatest(after, pageSize + 1, expanded)
 
         return paginatedResponse(
             data = results.take(pageSize),

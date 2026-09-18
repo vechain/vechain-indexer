@@ -58,7 +58,7 @@ open class TransactionController(private val transactionService: TransactionServ
         @RequestParam(required = false) expanded: Boolean = false,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @ValidCursor @RequestParam(required = false) cursor: String?,
-    ): PaginatedResponse<IndexedTransaction> = transactionService.findLatest(size, cursor)
+    ): PaginatedResponse<IndexedTransaction> = transactionService.findLatest(size, cursor, expanded)
 
     @GetMapping("{txId}")
     @Operation(

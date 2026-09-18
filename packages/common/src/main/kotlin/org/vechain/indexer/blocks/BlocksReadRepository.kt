@@ -50,7 +50,11 @@ open class BlocksReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTemplate:
     }
 
     /** Block number descending, canonical order within a block, continuing after [after]. */
-    open fun findLatest(after: LatestCursor?, limit: Int): List<IndexedTransaction> {
+    open fun findLatest(
+        after: LatestCursor?,
+        limit: Int,
+        expanded: Boolean,
+    ): List<IndexedTransaction> {
         val where =
             if (after == null) ""
             else "WHERE t.block_number < :b OR (t.block_number = :b AND t.tx_index > :i)"
@@ -61,7 +65,7 @@ open class BlocksReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTemplate:
         return transactions(
             "$SELECT_TX $where ORDER BY t.block_number DESC, t.tx_index ASC LIMIT :limit",
             params,
-            expanded = false,
+            expanded,
         )
     }
 

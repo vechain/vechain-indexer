@@ -105,19 +105,27 @@ class BlocksReadRepositoryTest {
 
     @Test
     fun `latest walks block number down and transaction index up, continuing after a cursor`() {
-        val first = repository.findLatest(null, 3)
+        val first = repository.findLatest(null, 3, expanded = false)
         assertEquals(
             listOf(4L to 0L, 4L to 1L, 3L to 0L),
             first.map { it.blockNumber to it.transactionIndex },
         )
 
-        val next = repository.findLatest(LatestCursor(3, 0), 10)
+        val next = repository.findLatest(LatestCursor(3, 0), 10, expanded = false)
         assertEquals(
             listOf(3L to 1L, 3L to 2L, 2L to 0L, 1L to 0L),
             next.map { it.blockNumber to it.transactionIndex },
         )
-        assertEquals(0, next.first().clauses.size, "latest is a collapsed read")
+        assertEquals(0, next.first().clauses.size, "collapsed unless expansion is asked for")
         assertEquals(1, next.first().clauseCount, "but still reports the clause count")
+    }
+
+    @Test
+    fun `latest expands the page when asked`() {
+        val page = repository.findLatest(null, 3, expanded = true)
+
+        assertEquals(seeded[4]!![0], page.first())
+        assertTrue(page.all { it.clauses.size == it.clauseCount })
     }
 
     @Test
