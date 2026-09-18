@@ -3,26 +3,19 @@ name: API Regression Tests
 on:
   workflow_dispatch:
     inputs:
-      candidate_url:
-        description: "Candidate API URL (the version being validated)"
-        default: "https://mainnet.dead.veworld.vechain.org"
+      network:
+        description: "Network to compare: live (baseline) against dead (candidate)"
+        default: "mainnet"
         required: false
-        type: string
-      baseline_url:
-        description: "Baseline API URL (the known-good reference)"
-        default: "https://indexer.mainnet.vechain.org"
-        required: false
-        type: string
+        type: choice
+        options:
+          - mainnet
+          - testnet
       max_block_gap:
         description: "Blocks an indexer on the candidate may trail the chain head by"
         default: 100
         required: false
         type: number
-      thor_url:
-        description: "Thor node the sync gate reads the chain head from"
-        default: "https://mainnet.vechain.org"
-        required: false
-        type: string
       sweep_windows:
         description: "Block windows to compare row by row (0 skips the sweep)"
         default: 6
@@ -30,26 +23,16 @@ on:
         type: number
   workflow_call:
     inputs:
-      candidate_url:
-        description: "Candidate API URL (the version being validated)"
+      network:
+        description: "Network to compare: mainnet or testnet"
         required: false
         type: string
-        default: "https://mainnet.dead.veworld.vechain.org"
-      baseline_url:
-        description: "Baseline API URL (the known-good reference)"
-        required: false
-        type: string
-        default: "https://indexer.mainnet.vechain.org"
+        default: "mainnet"
       max_block_gap:
         description: "Blocks an indexer on the candidate may trail the chain head by"
         required: false
         type: number
         default: 100
-      thor_url:
-        description: "Thor node the sync gate reads the chain head from"
-        required: false
-        type: string
-        default: "https://mainnet.vechain.org"
       sweep_windows:
         description: "Block windows to compare row by row (0 skips the sweep)"
         required: false
@@ -75,23 +58,29 @@ jobs:
         with:
           python-version: '3.14'
 
+      - name: Resolve the network's endpoints
+        id: net
+        env:
+          NETWORK: ${{ inputs.network || 'mainnet' }}
+        run: |
+          for field in baseline candidate; do
+            echo "$field=$(python3 packages/api/scripts/networks.py "$NETWORK" "$field")" >> "$GITHUB_OUTPUT"
+          done
+
       - name: Check the candidate has caught up with the chain
         id: sync
         continue-on-error: true
         env:
-          CANDIDATE_URL: ${{ inputs.candidate_url || 'https://mainnet.dead.veworld.vechain.org' }}
-          THOR_URL: ${{ inputs.thor_url || 'https://mainnet.vechain.org' }}
+          NETWORK: ${{ inputs.network || 'mainnet' }}
           MAX_BLOCK_GAP: ${{ inputs.max_block_gap || 100 }}
         run: |
           packages/api/scripts/check_sync_gate.py \
-            --candidate-url "$CANDIDATE_URL" \
-            --thor-url "$THOR_URL" \
+            --network "$NETWORK" \
             --max-gap "$MAX_BLOCK_GAP"
 
       - name: Run regression comparison (candidate vs baseline)
         env:
-          CANDIDATE_URL: ${{ inputs.candidate_url || 'https://mainnet.dead.veworld.vechain.org' }}
-          BASELINE_URL: ${{ inputs.baseline_url || 'https://indexer.mainnet.vechain.org' }}
+          NETWORK: ${{ inputs.network || 'mainnet' }}
           REGRESSION_SEED_METADATA_FILE: regression-output/seed-metadata.json
           RATE_LIMIT_BYPASS_TOKEN: ${{ secrets.RATE_LIMIT_BYPASS_TOKEN }}
         run: |
@@ -102,8 +91,9 @@ jobs:
       - name: Generate summary
         if: always()
         env:
-          CANDIDATE: ${{ inputs.candidate_url || 'https://mainnet.dead.veworld.vechain.org' }}
-          BASELINE: ${{ inputs.baseline_url || 'https://indexer.mainnet.vechain.org' }}
+          NETWORK: ${{ inputs.network || 'mainnet' }}
+          CANDIDATE: ${{ steps.net.outputs.candidate }}
+          BASELINE: ${{ steps.net.outputs.baseline }}
           SYNC_OUTCOME: ${{ steps.sync.outcome }}
         shell: bash
         run: |
@@ -113,6 +103,8 @@ jobs:
             --candidate "$CANDIDATE" \
             --baseline "$BASELINE" \
             --output "$GITHUB_STEP_SUMMARY"
+
+          echo "> Network \`$NETWORK\`." >> "$GITHUB_STEP_SUMMARY"
 
           if [[ "$SYNC_OUTCOME" != "success" ]]; then
             echo "> **The candidate had not caught up when this ran**, so differences below may" \
@@ -145,12 +137,13 @@ jobs:
 
       - name: Compare whole block windows
         env:
-          CANDIDATE_URL: ${{ inputs.candidate_url || 'https://mainnet.dead.veworld.vechain.org' }}
-          BASELINE_URL: ${{ inputs.baseline_url || 'https://indexer.mainnet.vechain.org' }}
+          NETWORK: ${{ inputs.network || 'mainnet' }}
           SWEEP_WINDOWS: ${{ inputs.sweep_windows || 6 }}
         run: |
           mkdir -p sweep-output
-          printf '{"endpoints":{"baseline":"%s","candidate":"%s"}}' "$BASELINE_URL" "$CANDIDATE_URL" \
+          printf '{"endpoints":{"baseline":"%s","candidate":"%s"}}' \
+            "$(python3 packages/api/scripts/networks.py "$NETWORK" baseline)" \
+            "$(python3 packages/api/scripts/networks.py "$NETWORK" candidate)" \
             > sweep-output/endpoints.json
           packages/api/scripts/sweep_blocks.py \
             --config-file sweep-output/endpoints.json \

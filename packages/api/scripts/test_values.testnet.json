@@ -1,0 +1,307 @@
+{
+  "parameters": {
+    "address": [
+      "0x4f6fc409e152d33843cf4982d414c1dd0879277e",
+      "0xef50e01686ac20c2e4605256ca1d72c42e9d3907",
+      "0x3ce00a590874bbb769d7fc9ac0c95f66989c235a"
+    ],
+    "contractAddress": [
+      "0x0000000000000000000000000000456e65726779",
+      "0x95761346d18244bb91664181bf91193376197088",
+      "0xbf64cf86894ee0877c4e7d03936e35ee8d8b864f",
+      "0x7452ad34f726d74421eb0bfa1c16545d1de3bd9d"
+    ],
+    "user": [
+      "0x119761865b79bea9e7924edaa630942322ca09d1"
+    ],
+    "appId": [
+      "0x90178ff5f95f31644b5e21b11ba6e173ea0d9b9595e675cb84593c0d2df730c1"
+    ],
+    "proposalId": [
+      "61359347468339917102112404369037431285297092975922828628599720402083231210463"
+    ],
+    "validatorId": [
+      "0x44270ac1f5cf7e6f02ed6a37f2b491750c617328"
+    ],
+    "validator": [
+      "0x44270ac1f5cf7e6f02ed6a37f2b491750c617328"
+    ],
+    "origin": [
+      "0x4f6fc409e152d33843cf4982d414c1dd0879277e"
+    ],
+    "owner": [
+      "0x83c7e5c272ec38ac609f6651346fddabd3405934"
+    ],
+    "wallet": [
+      "0x119761865b79bea9e7924edaa630942322ca09d1"
+    ],
+    "delegator": [
+      "0x119761865b79bea9e7924edaa630942322ca09d1"
+    ],
+    "txId": [
+      "0x761d0170aac1943b602e0470411d9924be82adcdc6cfa980d1715eb25c83e471"
+    ],
+    "txHash": [
+      "0x94d9713c01ef4aaacea8bbfce3ff6582a3ede47f9181ddb7ab865349b8b3ba27"
+    ],
+    "roundId": [
+      770
+    ],
+    "challengeId": [
+      14
+    ],
+    "navigatorId": [
+      "0x7f80b1b67405af6d7917b9a13403061de03c8655"
+    ],
+    "navigator": [
+      "0x7f80b1b67405af6d7917b9a13403061de03c8655"
+    ],
+    "citizen": [
+      "0x751f1e2accf0fca0a5fae7b7bb7cf31c12ed363d"
+    ],
+    "endorser": [
+      "0x1ecbec178d9af1fd53bdb04bcd0b829b0584c81c"
+    ],
+    "startTimestamp": [
+      1787000000
+    ],
+    "endTimestamp": [
+      1787604800
+    ]
+  },
+  "path_overrides": {
+    "/api/v1/contracts/{address}": {
+      "address": [
+        "0x95761346d18244bb91664181bf91193376197088",
+        "0xbf64cf86894ee0877c4e7d03936e35ee8d8b864f",
+        "0x7452ad34f726d74421eb0bfa1c16545d1de3bd9d"
+      ]
+    },
+    "/api/v1/contracts/by-master/{address}": {
+      "address": [
+        "0x66e9709bc01b8c0afc99a7dc513f501821306e85"
+      ]
+    },
+    "/api/v1/blocks": {
+      "from": [
+        24000000,
+        25000000
+      ]
+    },
+    "/api/v1/accounts/balance/vet/{address}": {
+      "address": [
+        "0x4f6fc409e152d33843cf4982d414c1dd0879277e"
+      ]
+    },
+    "/api/v1/b3tr/richlist/{address}": {
+      "address": [
+        "0x6f7b4bc19b4dc99005b473b9c45ce2815bbe7533"
+      ]
+    },
+    "/api/v1/stargate/total-vtho-claimed/{account}": {
+      "account": [
+        "0x3f90bf8b314c42005103b3c94505634fa680dcee"
+      ]
+    },
+    "/api/v1/stargate/total-vtho-claimed/{account}/{tokenId}": {
+      "account": [
+        "0x3f90bf8b314c42005103b3c94505634fa680dcee"
+      ],
+      "tokenId": [
+        "19"
+      ]
+    },
+    "/api/v1/stargate/total-vtho-generated": {
+      "blockNumber": [
+        25113941,
+        25500000,
+        25900000
+      ]
+    },
+    "/api/v1/stargate/total-vtho-claimed/historic/{range}": {
+      "range": [
+        "1-year"
+      ]
+    },
+    "/api/v1/stargate/total-vet-staked/historic/{range}": {
+      "range": [
+        "1-year"
+      ]
+    },
+    "/api/v1/stargate/total-vtho-generated/historic/{range}": {
+      "range": [
+        "1-year"
+      ]
+    },
+    "/api/v1/stargate/nft-holders/historic/{range}": {
+      "range": [
+        "1-year"
+      ]
+    },
+    "/api/v1/stargate/total-vet-staked": {
+      "blockNumber": [
+        25113941,
+        25500000,
+        25900000
+      ]
+    },
+    "/api/v1/stargate/nft-holders": {
+      "blockNumber": [
+        25113941,
+        25500000,
+        25900000
+      ]
+    },
+    "/api/v1/stargate/total-vet-delegated": {
+      "blockNumber": [
+        25500000
+      ]
+    },
+    "/api/v1/stargate/total-vtho-claimed": {
+      "blockNumber": [
+        25500000
+      ]
+    },
+    "/api/v1/stargate/vtho-generated/{period}": {
+      "from": [
+        1787000000
+      ],
+      "to": [
+        1787604800
+      ]
+    },
+    "/api/v1/stargate/vtho-claimed/{period}": {
+      "from": [
+        1787000000
+      ],
+      "to": [
+        1787604800
+      ]
+    },
+    "/api/v1/stargate/vet-delegated/{period}": {
+      "from": [
+        1787000000
+      ],
+      "to": [
+        1787604800
+      ]
+    },
+    "/api/v1/stargate/vet-staked/{period}": {
+      "from": [
+        1787000000
+      ],
+      "to": [
+        1787604800
+      ]
+    },
+    "/api/v1/stargate/nft-holders/{period}": {
+      "from": [
+        1787000000
+      ],
+      "to": [
+        1787604800
+      ]
+    },
+    "/api/v1/history/{account}": {
+      "account": [
+        "0x4f6fc409e152d33843cf4982d414c1dd0879277e"
+      ],
+      "contractAddress": [
+        "0x95761346d18244bb91664181bf91193376197088"
+      ]
+    },
+    "/api/v2/history/{account}": {
+      "account": [
+        "0x4f6fc409e152d33843cf4982d414c1dd0879277e"
+      ],
+      "contractAddress": [
+        "0x95761346d18244bb91664181bf91193376197088"
+      ]
+    },
+    "/api/v1/stargate/tokens/{tokenId}/history": {
+      "tokenId": [
+        "8"
+      ]
+    },
+    "/api/v1/stargate/token-rewards/{tokenId}": {
+      "tokenId": [
+        "8"
+      ]
+    },
+    "/api/v1/nfts": {
+      "address": [
+        "0x83c7e5c272ec38ac609f6651346fddabd3405934"
+      ],
+      "contractAddress": [
+        "0x7452ad34f726d74421eb0bfa1c16545d1de3bd9d"
+      ],
+      "tokenId": [
+        "153"
+      ]
+    },
+    "/api/v1/nfts/contracts": {
+      "owner": [
+        "0x83c7e5c272ec38ac609f6651346fddabd3405934"
+      ]
+    },
+    "/api/v1/nfts/history": {
+      "contractAddress": [
+        "0x7452ad34f726d74421eb0bfa1c16545d1de3bd9d"
+      ],
+      "tokenId": [
+        "153"
+      ]
+    },
+    "/api/v1/b3tr/actions/leaderboards/apps": {
+      "roundId": [
+        770
+      ]
+    },
+    "/api/v1/b3tr/actions/leaderboards/apps/{appId}": {
+      "roundId": [
+        770
+      ]
+    },
+    "/api/v1/b3tr/actions/leaderboards/users": {
+      "roundId": [
+        770
+      ]
+    },
+    "/api/v1/transfers/forBlock": {
+      "addresses": [
+        "0x0d55d15c8773cc7dbac1030de141bea5bcf5616f"
+      ],
+      "blockNumber": [
+        25967725
+      ]
+    },
+    "/api/v1/validators/block-rewards": {
+      "blockNumber": [
+        25900000
+      ]
+    },
+    "/api/v1/validators/block-rewards/{blockNumber}": {
+      "blockNumber": [
+        25900000
+      ]
+    },
+    "/api/v1/safes/owner/{address}": {
+      "address": [
+        "0xc5213085d3fc19b6a883a92a5703f7733360f063"
+      ]
+    },
+    "/api/v1/safes/{safe}/transactions": {
+      "safe": [
+        "0x4dcb1d298db102b874545ef3eb22dd5ab020de3d"
+      ]
+    },
+    "/api/v1/safes/{safe}/transactions/{txHash}/state": {
+      "safe": [
+        "0x4dcb1d298db102b874545ef3eb22dd5ab020de3d"
+      ],
+      "txHash": [
+        "0x94d9713c01ef4aaacea8bbfce3ff6582a3ede47f9181ddb7ab865349b8b3ba27"
+      ]
+    }
+  }
+}

@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Run regression comparison between baseline and candidate endpoints.
+# Run regression comparison between a network's live (baseline) and dead (candidate) colours.
 #
 # Fetches the OpenAPI spec, generates test cases for every operation,
 # and compares responses from both endpoints.
 #
 # Environment variables:
+#   NETWORK            - mainnet (default) or testnet; picks both URLs and the test values
 #   BASELINE_URL       - Known-good reference endpoint (default: https://indexer.mainnet.vechain.org)
 #   CANDIDATE_URL      - Candidate endpoint being validated (default: https://mainnet.dead.veworld.vechain.org)
 #   SPEC_URL           - OpenAPI spec URL (default: derived from BASELINE_URL)
@@ -22,13 +23,17 @@ set -euo pipefail
 #   packages/api/scripts/run_regression_tests.sh
 #   packages/api/scripts/run_regression_tests.sh --output report.json
 #   packages/api/scripts/run_regression_tests.sh --dry-run
-#   packages/api/scripts/run_regression_tests.sh --path-filter "/api/v1/stargate.*"
+#   NETWORK=testnet packages/api/scripts/run_regression_tests.sh --path-filter "/api/v1/stargate.*"
 #   BASELINE_URL=https://custom.example.com packages/api/scripts/run_regression_tests.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-BASELINE_URL="${BASELINE_URL:-https://indexer.mainnet.vechain.org}"
-CANDIDATE_URL="${CANDIDATE_URL:-https://mainnet.dead.veworld.vechain.org}"
+NETWORK="${NETWORK:-mainnet}"
+network_field() { python3 "${SCRIPT_DIR}/networks.py" "$NETWORK" "$1"; }
+
+BASELINE_URL="${BASELINE_URL:-$(network_field baseline)}"
+CANDIDATE_URL="${CANDIDATE_URL:-$(network_field candidate)}"
+NETWORK_VALUES="${SCRIPT_DIR}/$(network_field test_values)"
 SPEC_URL="${SPEC_URL:-${BASELINE_URL}/api-docs}"
 TIMEOUT="${TIMEOUT:-30}"
 ATTEMPTS="${ATTEMPTS:-3}"
@@ -58,6 +63,7 @@ TEST_VALUES_FILE=$(mktemp /tmp/regression-test-values.XXXXXX.json)
 seed_args=(
   --baseline-url "${BASELINE_URL}"
   --input "${SCRIPT_DIR}/test_values.json"
+  --overlay "${NETWORK_VALUES}"
   --output "${TEST_VALUES_FILE}"
   --timeout 15
   --validator-sample-size "${VALIDATOR_SAMPLE_SIZE:-20}"
@@ -70,10 +76,12 @@ if [[ -n "${REGRESSION_SEED_METADATA_FILE:-}" ]]; then
   seed_args+=(--metadata-output "${REGRESSION_SEED_METADATA_FILE}")
 fi
 
+# A baseline that cannot be reached leaves the network's static values to stand alone.
 python3 "${SCRIPT_DIR}/regression_seed.py" "${seed_args[@]}" \
-  || cp "${SCRIPT_DIR}/test_values.json" "$TEST_VALUES_FILE"
+  || python3 "${SCRIPT_DIR}/regression_seed.py" "${seed_args[@]}" --merge-only
 
 echo "Running regression comparison" >&2
+echo "  network:   ${NETWORK}" >&2
 echo "  baseline:  ${BASELINE_URL}" >&2
 echo "  candidate: ${CANDIDATE_URL}" >&2
 echo "  spec: ${SPEC_URL}" >&2

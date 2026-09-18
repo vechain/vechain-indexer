@@ -120,6 +120,14 @@ Use the schema-driven harness when you need to validate the public API in a depl
 - Both colours are reached through CloudFront; the ALB hostnames themselves accept nothing but distribution traffic. Dead is `https://mainnet.dead.veworld.vechain.org` and `https://testnet.dead.veworld.vechain.org`, which follow the colour swap automatically.
 - GitHub Action: trigger **API Tests** from the Actions tab and choose the target environment, or provide a full base URL override. The workflow uses the same script and publishes Schemathesis logs and JUnit XML as artifacts.
 
+### API Regression Tests
+
+Compares every documented operation between a network's live colour (baseline) and its dead colour (candidate), so a release is checked against the API it replaces.
+
+- Pick the network, not the URLs: **API Regression Tests** takes `network` (`mainnet` or `testnet`), and `packages/api/scripts/networks.py` resolves both colours and the Thor node from it.
+- Each network brings its own chain data. `test_values.json` holds what is network-independent — ignored paths, page sizes, enum filters — and `test_values.<network>.json` holds that chain's addresses and ids, laid over it at run time. Most values are re-seeded from the live colour before each run; the files are the fallback.
+- Local run: `NETWORK=testnet packages/api/scripts/run_regression_tests.sh`. Set `RATE_LIMIT_BYPASS_TOKEN` so the WAF does not throttle a full run.
+
 ## Disaster Recovery
 
 RDS keeps 7 days of automated snapshots of every Postgres instance. Recovery of a colour is a restore from the other colour's newest snapshot, which the workflow below drives.
