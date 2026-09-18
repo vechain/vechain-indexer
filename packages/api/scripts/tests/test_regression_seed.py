@@ -173,6 +173,26 @@ class FamilySeedersTest(unittest.TestCase):
         self.assertTrue(all(o.startswith("skipped:") for o in outcomes.values()))
         self.assertEqual(set(outcomes), {s.__name__ for s in MODULE.SEEDERS})
 
+    def test_an_empty_historic_list_leaves_the_vevote_results_seed_standing(self) -> None:
+        # The two endpoints are unrelated, and a seeder that raises rolls back every
+        # override it made, so testnet's empty historic-proposals took results with it.
+        responses = {
+            f"{self.BASE}/api/v1/vevote/historic-proposals?size=5": {"data": []},
+            f"{self.BASE}/api/v1/vevote/proposal/results?support=FOR&size=5": {
+                "data": [{"proposalId": "107"}]
+            },
+        }
+        api = self._api(responses)
+        with self.assertRaises(LookupError):
+            MODULE.seed_vevote_historic({}, api)
+
+        values: dict = {}
+        MODULE.seed_vevote_results(values, api)
+        self.assertEqual(
+            values["path_overrides"]["/api/v1/vevote/proposal/results"]["proposalId"],
+            ["107"],
+        )
+
     def test_proposals_seed_stops_at_the_first_proposal_with_comments(self) -> None:
         responses = {
             f"{self.BASE}/api/v2/b3tr/proposals/results?size=20": {

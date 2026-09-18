@@ -270,3 +270,41 @@ class WildcardIgnorePathTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class UnorderedByTest(unittest.TestCase):
+    """A list the API never promised to sort must diff on content, not on position."""
+
+    def _compare(self, a, b, unordered_by):
+        diffs = []
+        MODULE.compare_json(a, b, diffs=diffs, unordered_by=unordered_by)
+        return diffs
+
+    def test_a_reordered_list_of_objects_is_no_difference(self):
+        baseline = [{"validator": "0xa", "active": 7}, {"validator": "0xb", "active": 3}]
+        candidate = [{"validator": "0xb", "active": 3}, {"validator": "0xa", "active": 7}]
+        self.assertEqual(self._compare(baseline, candidate, {"root": "validator"}), [])
+        self.assertNotEqual(self._compare(baseline, candidate, {}), [])
+
+    def test_a_value_that_moved_with_its_key_is_still_reported(self):
+        baseline = [{"validator": "0xa", "active": 7}, {"validator": "0xb", "active": 3}]
+        candidate = [{"validator": "0xb", "active": 3}, {"validator": "0xa", "active": 8}]
+        diffs = self._compare(baseline, candidate, {"root": "validator"})
+        self.assertEqual([p for p, _ in diffs], ["root[0].active"])
+
+    def test_a_key_on_one_side_only_is_still_reported(self):
+        baseline = [{"validator": "0xa"}, {"validator": "0xb"}]
+        candidate = [{"validator": "0xb"}]
+        diffs = self._compare(baseline, candidate, {"root": "validator"})
+        self.assertIn("root", [p for p, _ in diffs])
+
+    def test_a_nested_list_is_addressed_by_its_path(self):
+        baseline = {"data": [{"appId": "0x1", "votes": 2}, {"appId": "0x2", "votes": 4}]}
+        candidate = {"data": [{"appId": "0x2", "votes": 4}, {"appId": "0x1", "votes": 2}]}
+        self.assertEqual(self._compare(baseline, candidate, {"root.data": "appId"}), [])
+        self.assertNotEqual(self._compare(baseline, candidate, {"root.other": "appId"}), [])
+
+    def test_elements_without_the_key_fall_back_to_position(self):
+        baseline = [{"active": 7}, {"active": 3}]
+        candidate = [{"active": 3}, {"active": 7}]
+        self.assertNotEqual(self._compare(baseline, candidate, {"root": "validator"}), [])
