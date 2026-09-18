@@ -18,6 +18,10 @@ abstract class PostgresProcessor(
     private val backfill: BackfillCoordinator? = null,
 ) : BaseProcessor(store, indexerName, processorMetrics) {
 
+    init {
+        backfill?.ownedBy(indexerName)
+    }
+
     /** Ahead of the entry and outside its transaction, so a rebuild can hold the block here. */
     override suspend fun process(entry: IndexingResult) {
         backfill?.beforeEntry(entry)

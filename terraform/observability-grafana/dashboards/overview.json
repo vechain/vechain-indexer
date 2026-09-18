@@ -1067,7 +1067,7 @@
     {
       "id": 160,
       "type": "row",
-      "title": "Backfill · Deferrable indexes",
+      "title": "API indexes · dropped while an indexer catches up",
       "collapsed": true,
       "gridPos": {
         "h": 1,
@@ -1078,9 +1078,9 @@
       "panels": [
         {
           "id": 161,
-          "type": "piechart",
-          "title": "Schemas by index phase",
-          "description": "count by (phase) of schemas where indexer_backfill_phase == 1. Constrained to the last 45s for the same reason the sync pie is: remote write carries no staleness markers, so a replaced task's final phase would otherwise win the default 5m lookback.",
+          "type": "stat",
+          "title": "Indexes waiting to be created",
+          "description": "How many indexes the API needs are not in the database right now. An indexer that is far behind the chain drops the indexes only the API reads, because maintaining them slows its catch-up down; it rebuilds them when it reaches the head. A number above zero is normal during a resync and should fall back to zero on its own. Until it does, API queries that would use those indexes are slow.",
           "gridPos": {
             "h": 8,
             "w": 6,
@@ -1094,8 +1094,84 @@
           "targets": [
             {
               "refId": "A",
-              "expr": "count by (phase) (max by (schema, deployment, network, phase) (last_over_time(indexer_backfill_phase{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) == 1)",
-              "legendFormat": "{{phase}}",
+              "expr": "sum by (deployment, network) (max by (schema, deployment, network) (last_over_time(indexer_deferrable_indexes_declared{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s]))) - sum by (deployment, network) (max by (schema, deployment, network) (last_over_time(indexer_deferrable_indexes_standing{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])))",
+              "legendFormat": "{{deployment}}/{{network}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 0,
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 1
+                  }
+                ]
+              },
+              "noValue": "No indexer reporting",
+              "mappings": []
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "orientation": "auto",
+            "textMode": "value_and_name",
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto"
+          }
+        },
+        {
+          "id": 162,
+          "type": "piechart",
+          "title": "Indexers by index state",
+          "description": "Where each indexer stands on the indexes only the API reads. Most of the time every indexer is in the first slice. The second means an indexer is far enough behind the chain that it has dropped them to catch up faster; the third means it has reached the head and is putting them back, which stops it taking new blocks until it finishes.",
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 6,
+            "y": 22
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "amp"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "count(max by (schema, deployment, network) (last_over_time(indexer_backfill_phase{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\", phase=\"SERVING\"}[45s])) == 1)",
+              "legendFormat": "All indexes in place",
+              "instant": true,
+              "range": false
+            },
+            {
+              "refId": "B",
+              "expr": "count(max by (schema, deployment, network) (last_over_time(indexer_backfill_phase{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\", phase=\"BACKFILL\"}[45s])) == 1)",
+              "legendFormat": "Indexes dropped — indexer catching up",
+              "instant": true,
+              "range": false
+            },
+            {
+              "refId": "C",
+              "expr": "count(max by (schema, deployment, network) (last_over_time(indexer_backfill_phase{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\", phase=\"BUILDING\"}[45s])) == 1)",
+              "legendFormat": "Rebuilding indexes — indexer paused",
               "instant": true,
               "range": false
             }
@@ -1109,7 +1185,7 @@
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "SERVING"
+                  "options": "All indexes in place"
                 },
                 "properties": [
                   {
@@ -1124,7 +1200,7 @@
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "BACKFILL"
+                  "options": "Indexes dropped — indexer catching up"
                 },
                 "properties": [
                   {
@@ -1139,7 +1215,7 @@
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "BUILDING"
+                  "options": "Rebuilding indexes — indexer paused"
                 },
                 "properties": [
                   {
@@ -1166,23 +1242,24 @@
               "mode": "single"
             },
             "legend": {
-              "showLegend": false
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
             },
             "displayLabels": [
-              "name",
               "value"
             ]
           }
         },
         {
-          "id": 162,
+          "id": 163,
           "type": "bargauge",
-          "title": "Indexes standing — share of what the schema declares",
-          "description": "indexer_deferrable_indexes_standing / _declared. Full while serving, empty through a backfill, and climbing one index at a time through a rebuild — the builder reports each index as it finishes, so the bar moves without anything re-reading pg_index. Labels are shortened the way the Sync row's are: colour to its initial, network without the -net.",
+          "title": "Indexes still to create, by indexer",
+          "description": "Only indexers with indexes outstanding appear here, so an empty panel is the healthy state. The bar is the count still to be created; it falls one index at a time as the rebuild works through them, and reaching zero is what lets that indexer start taking blocks again.",
           "gridPos": {
             "h": 8,
-            "w": 9,
-            "x": 6,
+            "w": 12,
+            "x": 12,
             "y": 22
           },
           "datasource": {
@@ -1192,37 +1269,22 @@
           "targets": [
             {
               "refId": "A",
-              "expr": "label_replace(label_replace(max by (schema, deployment, network) (last_over_time(indexer_deferrable_indexes_standing{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) / max by (schema, deployment, network) (last_over_time(indexer_deferrable_indexes_declared{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])), \"deployment\", \"$1\", \"deployment\", \"(.).*\"), \"network\", \"$1\", \"network\", \"(.*)net\")",
-              "legendFormat": "{{schema}} {{deployment}}/{{network}}",
+              "expr": "label_replace(label_replace(label_replace((max by (indexer, deployment, network) (last_over_time(indexer_deferrable_indexes_declared{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) - max by (indexer, deployment, network) (last_over_time(indexer_deferrable_indexes_standing{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s]))) > 0, \"indexer\", \"$1\", \"indexer\", \"(.*)Indexer\"), \"deployment\", \"$1\", \"deployment\", \"(.).*\"), \"network\", \"$1\", \"network\", \"(.*)net\")",
+              "legendFormat": "{{indexer}} {{deployment}}/{{network}}",
               "instant": true,
               "range": false
             }
           ],
           "fieldConfig": {
             "defaults": {
-              "unit": "percentunit",
+              "unit": "short",
+              "decimals": 0,
               "min": 0,
-              "max": 1,
               "color": {
-                "mode": "thresholds"
+                "mode": "fixed",
+                "fixedColor": "orange"
               },
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "blue",
-                    "value": null
-                  },
-                  {
-                    "color": "yellow",
-                    "value": 0.01
-                  },
-                  {
-                    "color": "green",
-                    "value": 1
-                  }
-                ]
-              },
+              "noValue": "Every index is in place",
               "mappings": []
             },
             "overrides": []
@@ -1245,84 +1307,10 @@
           }
         },
         {
-          "id": 163,
-          "type": "timeseries",
-          "title": "Indexes standing against declared — every schema",
-          "description": "The feature in one line: the total falls away as schemas drop the indexes only the API reads, and climbs back to the declared count as they rebuild. Declared is a constant per release, so a step in it is an index a release added.",
-          "gridPos": {
-            "h": 8,
-            "w": 9,
-            "x": 15,
-            "y": 22
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "amp"
-          },
-          "targets": [
-            {
-              "refId": "A",
-              "expr": "sum by (deployment, network) (max by (schema, deployment, network) (last_over_time(indexer_deferrable_indexes_standing{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])))",
-              "legendFormat": "standing · {{deployment}}/{{network}}"
-            },
-            {
-              "refId": "B",
-              "expr": "sum by (deployment, network) (max by (schema, deployment, network) (last_over_time(indexer_deferrable_indexes_declared{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])))",
-              "legendFormat": "declared · {{deployment}}/{{network}}"
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "short",
-              "min": 0,
-              "custom": {
-                "lineWidth": 1,
-                "fillOpacity": 10,
-                "showPoints": "never"
-              }
-            },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byRegexp",
-                  "options": "declared.*"
-                },
-                "properties": [
-                  {
-                    "id": "custom.lineStyle",
-                    "value": {
-                      "fill": "dash",
-                      "dash": [
-                        8,
-                        4
-                      ]
-                    }
-                  },
-                  {
-                    "id": "custom.fillOpacity",
-                    "value": 0
-                  }
-                ]
-              }
-            ]
-          },
-          "options": {
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          }
-        },
-        {
           "id": 164,
           "type": "state-timeline",
-          "title": "Index phase by schema",
-          "description": "The indexer_backfill_phase one-hot encoded as 0 serving / 1 backfill / 2 building, so every schema draws one band. Read it beside the Sync row: a schema stays in backfill for as long as its indexer is more than indexer.backfill.enter-behind-blocks behind the head, then spends one building band — during which its processor takes no blocks — before it serves again.",
+          "title": "Index state over time, by indexer",
+          "description": "One band per indexer. Read it against the Sync row above: an indexer drops these indexes while it is a long way behind the chain, and the band turns yellow once it reaches the head and starts putting them back. A yellow band is the only one that costs anything — the indexer takes no new blocks for as long as it lasts, so its width is the delay a resync adds.",
           "gridPos": {
             "h": 14,
             "w": 24,
@@ -1336,8 +1324,8 @@
           "targets": [
             {
               "refId": "A",
-              "expr": "label_replace(label_replace(max by (schema, deployment, network) ((last_over_time(indexer_backfill_phase{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\", phase=\"SERVING\"}[45s]) == 1) * 0 or (last_over_time(indexer_backfill_phase{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\", phase=\"BACKFILL\"}[45s]) == 1) * 1 or (last_over_time(indexer_backfill_phase{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\", phase=\"BUILDING\"}[45s]) == 1) * 2), \"deployment\", \"$1\", \"deployment\", \"(.).*\"), \"network\", \"$1\", \"network\", \"(.*)net\")",
-              "legendFormat": "{{schema}} {{deployment}}/{{network}}"
+              "expr": "label_replace(label_replace(label_replace(max by (indexer, deployment, network) ((last_over_time(indexer_backfill_phase{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\", phase=\"SERVING\"}[45s]) == 1) * 0 or (last_over_time(indexer_backfill_phase{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\", phase=\"BACKFILL\"}[45s]) == 1) * 1 or (last_over_time(indexer_backfill_phase{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\", phase=\"BUILDING\"}[45s]) == 1) * 2), \"indexer\", \"$1\", \"indexer\", \"(.*)Indexer\"), \"deployment\", \"$1\", \"deployment\", \"(.).*\"), \"network\", \"$1\", \"network\", \"(.*)net\")",
+              "legendFormat": "{{indexer}} {{deployment}}/{{network}}"
             }
           ],
           "fieldConfig": {
@@ -1359,17 +1347,17 @@
                   "type": "value",
                   "options": {
                     "0": {
-                      "text": "serving",
+                      "text": "All indexes in place",
                       "color": "green",
                       "index": 0
                     },
                     "1": {
-                      "text": "backfill",
+                      "text": "Indexes dropped — indexer catching up",
                       "color": "blue",
                       "index": 1
                     },
                     "2": {
-                      "text": "building",
+                      "text": "Rebuilding indexes — indexer paused",
                       "color": "yellow",
                       "index": 2
                     }

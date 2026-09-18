@@ -35,6 +35,9 @@ class BackfillCoordinator(
     private var phase: Phase? = null
     private var retryAfterNanos: Long? = null
 
+    /** The processor names itself once built: a schema is not what a dashboard is read by. */
+    fun ownedBy(indexer: String) = state.owned(schema, indexer)
+
     /** Runs before the entry is processed, outside its transaction; may block for a rebuild. */
     suspend fun beforeEntry(entry: IndexingResult) {
         if (!properties.enabled) return

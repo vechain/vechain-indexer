@@ -21,11 +21,15 @@ class BackfillState {
         val phase: Phase = Phase.SERVING,
         val standing: Int = 0,
         val declared: Int = 0,
+        val indexer: String = "",
     )
 
     private val progress = ConcurrentHashMap<String, Progress>()
 
     fun record(schema: String, phase: Phase) = update(schema) { it.copy(phase = phase) }
+
+    /** The indexer that owns the schema, which is the name anyone reading a dashboard knows. */
+    fun owned(schema: String, indexer: String) = update(schema) { it.copy(indexer = indexer) }
 
     /** Only where the catalogue has just been read, so the count is the catalogue's. */
     fun count(schema: String, standing: Int, declared: Int) =

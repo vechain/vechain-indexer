@@ -57,22 +57,23 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
     }
 
     /** One-hot per schema, as [setIndexerSyncStatus] is per indexer; only this thread writes it. */
-    fun setBackfillPhase(schema: String, phase: BackfillState.Phase) {
+    fun setBackfillPhase(schema: String, indexer: String, phase: BackfillState.Phase) {
         if (currentBackfillPhase.put(schema, phase) == phase) return
         BackfillState.Phase.entries.forEach {
-            backfillPhaseGauge(schema, it).set(if (it == phase) 1.0 else 0.0)
+            backfillPhaseGauge(schema, indexer, it).set(if (it == phase) 1.0 else 0.0)
         }
     }
 
     private fun backfillPhaseGauge(
         schema: String,
+        indexer: String,
         phase: BackfillState.Phase,
     ): AtomicReference<Double> =
         backfillPhaseGauges.computeIfAbsent("$schema:${phase.name}") {
             val ref = AtomicReference(0.0)
             registry.gauge(
                 "indexer_backfill_phase",
-                listOf(Tag.of("schema", schema), Tag.of("phase", phase.name)),
+                tags(schema, indexer) + Tag.of("phase", phase.name),
                 ref,
             ) {
                 it.get()
@@ -81,17 +82,24 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
         }
 
     /** Standing against declared: how far a rebuild has got, and what a backfill is skipping. */
-    fun setDeferrableIndexes(schema: String, standing: Int, declared: Int) {
-        deferrableIndexGauge("indexer_deferrable_indexes_standing", schema).set(standing.toDouble())
-        deferrableIndexGauge("indexer_deferrable_indexes_declared", schema).set(declared.toDouble())
+    fun setDeferrableIndexes(schema: String, indexer: String, standing: Int, declared: Int) {
+        indexGauge("indexer_deferrable_indexes_standing", schema, indexer).set(standing.toDouble())
+        indexGauge("indexer_deferrable_indexes_declared", schema, indexer).set(declared.toDouble())
     }
 
-    private fun deferrableIndexGauge(name: String, schema: String): AtomicReference<Double> =
+    private fun indexGauge(
+        name: String,
+        schema: String,
+        indexer: String,
+    ): AtomicReference<Double> =
         deferrableIndexGauges.computeIfAbsent("$name:$schema") {
             val ref = AtomicReference(0.0)
-            registry.gauge(name, listOf(Tag.of("schema", schema)), ref) { it.get() }
+            registry.gauge(name, tags(schema, indexer), ref) { it.get() }
             ref
         }
+
+    private fun tags(schema: String, indexer: String) =
+        listOf(Tag.of("schema", schema), Tag.of("indexer", indexer))
 
     fun setIndexerCurrentBlock(indexerName: String, blockNumber: Long) {
         getOrCreateCurrentBlockGauge(indexerName).set(blockNumber.toDouble())
