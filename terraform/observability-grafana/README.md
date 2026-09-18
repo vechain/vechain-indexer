@@ -106,9 +106,10 @@ Drops the Indexes Only the API Reads": an indexer far enough behind the chain dr
   `_declared` all carry an `indexer` label beside `schema`. The panels strip the trailing `Indexer`
   the way the Sync row does. A schema name is what the database calls it; nobody reading a dashboard
   thinks in those terms.
-- **"Indexes still to create" filters with `> 0`, so an empty panel is the healthy state.** That
-  reads as broken unless the panel says so, which is why it sets `noValue` to "Every index is in
-  place" rather than leaving Grafana's "No data".
+- **"Indexes still to create" lists every indexer, including the ones sitting at zero.** It was
+  filtered to `> 0` at first, on the reasoning that an empty panel is the healthy state; in practice
+  that reads as indexers going missing, and the tail of zeros is what says the rest are fine. The
+  sort is what keeps it useful, so do not drop the transformations below.
 - **The pie runs three separate queries rather than renaming a label.** Each carries its wording in
   its own `legendFormat` — `Present`, `Dropped`, `Rebuilding` — which is far easier to read than a
   three-deep `label_replace` chain and cannot silently stop matching. The panel title carries the
