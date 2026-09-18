@@ -112,6 +112,12 @@ while a dozen schemas give up one or two page orderings each. Index count predic
 b3tr_challenges carries fifteen secondary indexes and defers three, because its round, member and
 per-challenge lookups are all reads the indexer makes.
 
+`BackfillState` carries the phase and, per schema, how many of the declared indexes stand;
+`IndexerMetricsReporter` publishes both as `indexer_backfill_phase{schema,phase}` and
+`indexer_deferrable_indexes_standing` / `_declared`. The "Backfill · Deferrable indexes" row on the
+Grafana overview draws them — see `terraform/observability-grafana/README.md`. The standing count
+moves because `IndexBuilder` reports each index as it finishes, so nothing polls `pg_index`.
+
 ## Indexer Performance Guidelines
 
 ### CRITICAL: 1 Indexer = 1 Schema

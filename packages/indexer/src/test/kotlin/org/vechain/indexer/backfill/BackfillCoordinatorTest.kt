@@ -12,6 +12,7 @@ import org.junit.jupiter.api.TestInstance
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
 import org.vechain.indexer.backfill.BackfillState.Phase
+import org.vechain.indexer.backfill.BackfillState.Progress
 import org.vechain.indexer.chain.ChainHead
 import org.vechain.indexer.history.HistoryIndexes
 import org.vechain.indexer.postgres.DeferrableIndex
@@ -52,6 +53,9 @@ class BackfillCoordinatorTest {
         every { chainHead.bestBlockNumber() } returns block
     }
 
+    private fun progress(phase: Phase, standing: Int) =
+        mapOf(set.schema to Progress(phase, standing, set.indexes.size))
+
     @Test
     fun `an indexer near the head keeps every index`() {
         head(400_000)
@@ -59,7 +63,7 @@ class BackfillCoordinatorTest {
 
         runBlocking { coordinator.beforeEntry(entry(1)) }
 
-        assertEquals(mapOf(set.schema to Phase.SERVING), state.phases())
+        assertEquals(progress(Phase.SERVING, set.indexes.size), state.progress())
         assertEquals(emptyList<DeferrableIndex>(), builder.missing(set))
     }
 
@@ -70,7 +74,7 @@ class BackfillCoordinatorTest {
 
         runBlocking { coordinator.beforeEntry(entry(1)) }
 
-        assertEquals(mapOf(set.schema to Phase.BACKFILL), state.phases())
+        assertEquals(progress(Phase.BACKFILL, 0), state.progress())
         assertEquals(set.indexes, builder.missing(set))
     }
 
@@ -83,7 +87,7 @@ class BackfillCoordinatorTest {
         head(25_000_000)
         runBlocking { coordinator.beforeEntry(entry(25_000_000, Status.FULLY_SYNCED)) }
 
-        assertEquals(mapOf(set.schema to Phase.SERVING), state.phases())
+        assertEquals(progress(Phase.SERVING, set.indexes.size), state.progress())
         assertEquals(emptyList<DeferrableIndex>(), builder.missing(set))
     }
 
@@ -94,7 +98,7 @@ class BackfillCoordinatorTest {
 
         runBlocking { coordinator().beforeEntry(entry(3_000_000)) }
 
-        assertEquals(mapOf(set.schema to Phase.BACKFILL), state.phases())
+        assertEquals(progress(Phase.BACKFILL, 0), state.progress())
         assertEquals(set.indexes, builder.missing(set))
     }
 
@@ -106,12 +110,14 @@ class BackfillCoordinatorTest {
         runBlocking { coordinator().beforeEntry(entry(3_000_000)) }
 
         // Serving from the first block: the build runs underneath, CONCURRENTLY, off this thread.
-        assertEquals(mapOf(set.schema to Phase.SERVING), state.phases())
+        assertEquals(Phase.SERVING, state.progress()[set.schema]?.phase)
         val deadline = System.currentTimeMillis() + 60_000
         while (builder.missing(set).isNotEmpty() && System.currentTimeMillis() < deadline) {
             Thread.sleep(100)
         }
         assertEquals(emptyList<DeferrableIndex>(), builder.missing(set))
+        // Every index is labelled by now, so every build reported itself before the loop ended.
+        assertEquals(progress(Phase.SERVING, set.indexes.size), state.progress())
     }
 
     @Test
@@ -120,7 +126,7 @@ class BackfillCoordinatorTest {
 
         runBlocking { coordinator().beforeEntry(entry(1)) }
 
-        assertEquals(emptyMap<String, Phase>(), state.phases())
+        assertEquals(emptyMap<String, Progress>(), state.progress())
         assertEquals(emptyList<DeferrableIndex>(), builder.missing(set))
     }
 }

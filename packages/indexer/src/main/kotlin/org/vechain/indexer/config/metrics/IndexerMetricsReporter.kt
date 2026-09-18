@@ -33,7 +33,10 @@ class IndexerMetricsReporter(
     fun reportMetrics() {
         val bestBlockNumber = chainHead.bestBlockNumber()
         bestBlockNumber?.let(metrics::setBestBlockNumber)
-        backfillState.phases().forEach(metrics::setBackfillPhase)
+        backfillState.progress().forEach { (schema, progress) ->
+            metrics.setBackfillPhase(schema, progress.phase)
+            metrics.setDeferrableIndexes(schema, progress.standing, progress.declared)
+        }
 
         indexers.forEach { indexer ->
             reportIndexerHealth(indexer)

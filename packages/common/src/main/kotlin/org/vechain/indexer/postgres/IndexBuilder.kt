@@ -50,16 +50,27 @@ class IndexBuilder(
     }
 
     /** Serial and online: the caller keeps processing blocks while these grow. */
-    fun buildConcurrently(set: IndexSet, indexes: List<DeferrableIndex> = missing(set)) {
+    fun buildConcurrently(
+        set: IndexSet,
+        indexes: List<DeferrableIndex> = missing(set),
+        onBuilt: () -> Unit = {},
+    ) {
         if (indexes.isEmpty()) return
         connect().use { c ->
-            indexes.forEach { budget.withPermit { create(c, set.schema, it, concurrently = true) } }
+            indexes.forEach {
+                budget.withPermit { create(c, set.schema, it, concurrently = true) }
+                onBuilt()
+            }
             label(c, set.schema, indexes)
         }
     }
 
     /** Several at a time, their SHARE locks not conflicting; only for a paused processor. */
-    fun build(set: IndexSet, indexes: List<DeferrableIndex> = missing(set)) {
+    fun build(
+        set: IndexSet,
+        indexes: List<DeferrableIndex> = missing(set),
+        onBuilt: () -> Unit = {},
+    ) {
         if (indexes.isEmpty()) return
         val started = System.nanoTime()
         val pool = Executors.newFixedThreadPool(minOf(budget.permits, indexes.size))
@@ -73,6 +84,7 @@ class IndexBuilder(
                                     create(it, set.schema, index, concurrently = false)
                                 }
                             }
+                            onBuilt()
                         }
                     }
                 )
