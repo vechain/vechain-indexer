@@ -110,8 +110,13 @@ Drops the Indexes Only the API Reads": an indexer far enough behind the chain dr
   reads as broken unless the panel says so, which is why it sets `noValue` to "Every index is in
   place" rather than leaving Grafana's "No data".
 - **The pie runs three separate queries rather than renaming a label.** Each carries its wording in
-  its own `legendFormat`, which is far easier to read than a three-deep `label_replace` chain and
-  cannot silently stop matching.
+  its own `legendFormat` — `Present`, `Dropped`, `Rebuilding` — which is far easier to read than a
+  three-deep `label_replace` chain and cannot silently stop matching. The panel title carries the
+  noun, so the slices do not repeat it.
+- **A bar gauge does not sort itself.** "Indexes still to create" orders by value through the same
+  `reduce` (`seriesToRows`) plus `sortBy` on `Last *` pair the Sync row's two bar gauges use, with
+  `reduceOptions.values` true so each row draws its own bar. Leave that pair off and Grafana renders
+  the series in whatever order Prometheus returned them.
 - **There is no timeline of the states, deliberately.** One was tried and removed: 28 indexers are
   in the normal state almost always, so it drew a full-width wall of identical green, and a
   state-timeline whose colour comes from `thresholds` puts the threshold range in its legend rather
