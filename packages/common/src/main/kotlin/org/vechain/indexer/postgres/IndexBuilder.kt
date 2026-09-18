@@ -59,9 +59,10 @@ class IndexBuilder(
         connect().use { c ->
             indexes.forEach {
                 budget.withPermit { create(c, set.schema, it, concurrently = true) }
-                onBuilt()
+                if (!it.primaryKey) onBuilt()
             }
             label(c, set.schema, indexes)
+            reportKeys(indexes, onBuilt)
         }
     }
 
@@ -84,7 +85,7 @@ class IndexBuilder(
                                     create(it, set.schema, index, concurrently = false)
                                 }
                             }
-                            onBuilt()
+                            if (!index.primaryKey) onBuilt()
                         }
                     }
                 )
@@ -96,6 +97,7 @@ class IndexBuilder(
         }
         // Not inside the parallel phase: the ALTER wants the table exclusively.
         connect().use { label(it, set.schema, indexes) }
+        reportKeys(indexes, onBuilt)
         logger.info(
             "{}: built {} deferrable indexes in {}",
             set.schema,
@@ -103,6 +105,10 @@ class IndexBuilder(
             (System.nanoTime() - started).nanoseconds,
         )
     }
+
+    // A key does not stand until [label] relabels it, so it is reported there, not at create.
+    private fun reportKeys(indexes: List<DeferrableIndex>, onBuilt: () -> Unit) =
+        repeat(indexes.count { it.primaryKey }) { onBuilt() }
 
     private fun create(
         c: Connection,

@@ -106,8 +106,10 @@ head with the processor paused.
   three operands differing only by `phase` so the `or` unions them instead of shadowing.
 - **The standing count is not a catalogue read.** `IndexBuilder` reports each index as it finishes
   and the coordinator re-reads `pg_index` only at a phase boundary, so a bar climbing through a
-  rebuild costs nothing. The consequence is that a rebuild which fails part-way leaves the count at
-  what it reached; the next attempt recounts from the catalogue.
+  rebuild costs nothing. A deferrable primary key is reported once `label` has relabelled it rather
+  than at create, because that is the point `missing` counts it as standing. The consequence is that
+  a rebuild which fails part-way leaves the count at what it reached; the next attempt recounts from
+  the catalogue.
 - **A schema with no series has never been past `BackfillCoordinator.begin`** — it reports nothing
   until its first entry, so a freshly started colour fills the row in over a few minutes rather than
   arriving complete.
