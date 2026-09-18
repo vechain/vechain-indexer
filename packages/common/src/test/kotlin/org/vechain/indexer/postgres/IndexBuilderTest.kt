@@ -73,6 +73,20 @@ class IndexBuilderTest {
         assertNotEquals(before, oid(invalid.name))
     }
 
+    @Test
+    fun `a build never reports more indexes than actually stand`() {
+        builder.drop(set)
+        var reported = 0
+
+        builder.buildConcurrently(set, onBuilt = { assert(++reported <= stood()) })
+
+        assertEquals(set.indexes.size, reported)
+        assertEquals(set.indexes.size, stood())
+    }
+
+    /** What [IndexBuilder.missing] would call standing: a key not yet relabelled does not. */
+    private fun stood(): Int = set.indexes.size - builder.missing(set).size
+
     private fun standing(): Set<String> =
         database.jdbc
             .query(
