@@ -72,6 +72,33 @@ class TokenRewardWriteRepositoryTest {
         )
 
     @Test
+    fun `a supersede is planned on the current-row index, not the key`() {
+        // A version per tracker per block, as in production: no one id skews the estimate.
+        (10L..14L).forEach { block ->
+            writer.save((1L..300L).map { tracker(it.toString(), block, it) })
+        }
+        database.jdbc.execute("ANALYZE token_reward.state")
+
+        val plan =
+            database.dataSource.connection.use { c ->
+                c.createStatement().execute("SET enable_seqscan = off")
+                c.createStatement()
+                    .executeQuery(
+                        "EXPLAIN UPDATE token_reward.state SET superseded_at = 15 " +
+                            "WHERE id = ANY(ARRAY['$validator-7']) AND superseded_at IS NULL " +
+                            "AND block_number < 15"
+                    )
+                    .use { rs ->
+                        generateSequence { if (rs.next()) rs.getString(1) else null }
+                            .joinToString("\n")
+                    }
+            }
+
+        assertTrue(plan.contains("state_current_id_idx"), plan)
+        assertTrue(!plan.contains("state_pkey"), plan)
+    }
+
+    @Test
     fun `every field survives the round trip`() {
         val all = tracker("7", 10, 100)
         val day = period(all, RewardPeriod.DAY, 10)

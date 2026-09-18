@@ -17,6 +17,7 @@ import org.vechain.indexer.chain.ChainHead
 import org.vechain.indexer.history.HistoryIndexes
 import org.vechain.indexer.postgres.DeferrableIndex
 import org.vechain.indexer.postgres.IndexBuilder
+import org.vechain.indexer.postgres.IndexSet
 import org.vechain.indexer.postgres.PostgresTestDatabase
 
 /** The phases against a real catalogue: what a drop leaves, and what a rebuild puts back. */
@@ -111,11 +112,7 @@ class BackfillCoordinatorTest {
 
         // Serving from the first block: the build runs underneath, CONCURRENTLY, off this thread.
         assertEquals(Phase.SERVING, state.progress()[set.schema]?.phase)
-        val deadline = System.currentTimeMillis() + 60_000
-        while (builder.missing(set).isNotEmpty() && System.currentTimeMillis() < deadline) {
-            Thread.sleep(100)
-        }
-        assertEquals(emptyList<DeferrableIndex>(), builder.missing(set))
+        awaitBuilt(set, set.indexes)
         // Every index is labelled by now, so every build reported itself before the loop ended.
         assertEquals(progress(Phase.SERVING, set.indexes.size), state.progress())
     }
@@ -128,5 +125,60 @@ class BackfillCoordinatorTest {
 
         assertEquals(emptyMap<String, Progress>(), state.progress())
         assertEquals(emptyList<DeferrableIndex>(), builder.missing(set))
+    }
+
+    @Test
+    fun `an index the indexer itself needs grows under a backfill and outlives the drop`() {
+        val set = needing()
+        builder.drop(set)
+        head(25_000_000)
+        try {
+            runBlocking { coordinator(set).beforeEntry(entry(1)) }
+
+            assertEquals(progress(Phase.BACKFILL, 0), state.progress())
+            assertEquals(set.indexes, builder.missing(set))
+            awaitBuilt(set, set.needed)
+
+            builder.drop(set)
+
+            assertEquals(emptyList<DeferrableIndex>(), builder.missing(set, set.needed))
+        } finally {
+            database.jdbc.execute("DROP INDEX IF EXISTS history.$NEEDED_TEST_INDEX")
+        }
+    }
+
+    @Test
+    fun `backfill switched off still grows what the indexer itself needs`() {
+        val set = needing()
+        head(25_000_000)
+        try {
+            val off = BackfillProperties().apply { enabled = false }
+            runBlocking { coordinator(set, off).beforeEntry(entry(1)) }
+
+            assertEquals(emptyMap<String, Progress>(), state.progress())
+            awaitBuilt(set, set.needed)
+        } finally {
+            database.jdbc.execute("DROP INDEX IF EXISTS history.$NEEDED_TEST_INDEX")
+        }
+    }
+
+    private fun needing() =
+        set.copy(needed = listOf(DeferrableIndex(NEEDED_TEST_INDEX, "event", "(origin, id)")))
+
+    private fun coordinator(set: IndexSet, properties: BackfillProperties = this.properties) =
+        BackfillCoordinator(set, builder, chainHead, properties, state)
+
+    private fun awaitBuilt(set: IndexSet, indexes: List<DeferrableIndex>) {
+        val deadline = System.currentTimeMillis() + 60_000
+        while (
+            builder.missing(set, indexes).isNotEmpty() && System.currentTimeMillis() < deadline
+        ) {
+            Thread.sleep(100)
+        }
+        assertEquals(emptyList<DeferrableIndex>(), builder.missing(set, indexes))
+    }
+
+    private companion object {
+        const val NEEDED_TEST_INDEX = "event_needed_test_idx"
     }
 }

@@ -26,9 +26,11 @@ class IndexBuilder(
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    /** The indexes of [set] that are absent, or left invalid or unlabelled by a build. */
-    fun missing(set: IndexSet): List<DeferrableIndex> =
-        connect().use { c -> set.indexes.filter { !stands(c, set.schema, it) } }
+    /** The [indexes] of [set] that are absent, or left invalid or unlabelled by a build. */
+    fun missing(
+        set: IndexSet,
+        indexes: List<DeferrableIndex> = set.indexes,
+    ): List<DeferrableIndex> = connect().use { c -> indexes.filter { !stands(c, set.schema, it) } }
 
     private fun stands(c: Connection, schema: String, index: DeferrableIndex): Boolean =
         validity(c, schema, index.name) == true &&
