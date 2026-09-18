@@ -147,6 +147,8 @@ class TestCase:
     # same [*] wildcard as global --ignore-path. Populated from
     # ``path_overrides[path].ignore_paths`` in test_values.json.
     extra_ignore_paths: List[str] = field(default_factory=list)
+    # Unordered list path -> its element's identifying field, from path_overrides.
+    unordered_by: Dict[str, str] = field(default_factory=dict)
     expected_failure: Optional[str] = None
 
     @property
@@ -477,7 +479,7 @@ _PLACEHOLDER_EXAMPLE_PARAMS = frozenset(
 VARIANT_VALUE_LIMIT = 2
 
 # path_overrides keys that configure the comparison rather than name a parameter.
-RESERVED_OVERRIDE_KEYS = frozenset({"ignore_paths", "expect_fail"})
+RESERVED_OVERRIDE_KEYS = frozenset({"ignore_paths", "expect_fail", "unordered_by"})
 
 
 def generate_value(param: Parameter, test_values: Dict) -> Any:
@@ -700,6 +702,7 @@ def _with_param(tc: TestCase, param: Parameter, value: Any, label: str) -> TestC
         body=tc.body,
         label=label,
         extra_ignore_paths=list(tc.extra_ignore_paths),
+        unordered_by=dict(tc.unordered_by),
         expected_failure=tc.expected_failure,
     )
     if param.location == "path":
@@ -722,6 +725,7 @@ def generate_test_cases(
         body=generate_body(op.request_body, test_values, spec),
         label=f"{op.method} {op.path}" + (f" ({op.summary})" if op.summary else ""),
         extra_ignore_paths=list(extra_ignore_paths),
+        unordered_by=dict(path_overrides.get("unordered_by") or {}),
         expected_failure=path_overrides.get("expect_fail"),
     )
     extra_values: List[Tuple[Parameter, List[Any]]] = []
@@ -956,6 +960,7 @@ def _pairwise_diffs(
                     tolerated_diffs=pair_tolerated,
                     ignored_paths=effective_ignored_paths,
                     unordered_lists=unordered_lists,
+                    unordered_by=tc.unordered_by,
                     num_abs_tolerance=num_abs_tolerance,
                     num_rel_tolerance=num_rel_tolerance,
                 )

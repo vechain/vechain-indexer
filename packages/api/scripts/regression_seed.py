@@ -418,16 +418,23 @@ def seed_proposals(values: Dict[str, Any], api: Baseline) -> None:
     raise LookupError("no proposal with comments among the latest 10")
 
 
-def seed_vevote(values: Dict[str, Any], api: Baseline) -> None:
-    historic = api.rows("/api/v1/vevote/historic-proposals", size=5)[0]
+def seed_vevote_historic(values: Dict[str, Any], api: Baseline) -> None:
+    historic = api.rows("/api/v1/vevote/historic-proposals", size=5)
+    if not historic:
+        raise LookupError("no historic vevote proposals")
     override(
         values,
         "/api/v1/vevote/historic-proposals",
-        proposalId=historic["proposalId"],
-        contractAddress=historic["contractAddress"],
+        proposalId=historic[0]["proposalId"],
+        contractAddress=historic[0]["contractAddress"],
     )
-    result = api.rows("/api/v1/vevote/proposal/results", support="FOR", size=5)[0]
-    override(values, "/api/v1/vevote/proposal/results", proposalId=result["proposalId"])
+
+
+def seed_vevote_results(values: Dict[str, Any], api: Baseline) -> None:
+    results = api.rows("/api/v1/vevote/proposal/results", support="FOR", size=5)
+    if not results:
+        raise LookupError("no vevote proposal results")
+    override(values, "/api/v1/vevote/proposal/results", proposalId=results[0]["proposalId"])
 
 
 def seed_treasury(values: Dict[str, Any], api: Baseline) -> None:
@@ -507,7 +514,8 @@ SEEDERS: List[Callable[[Dict[str, Any], Baseline], None]] = [
     seed_challenges,
     seed_navigators,
     seed_proposals,
-    seed_vevote,
+    seed_vevote_historic,
+    seed_vevote_results,
     seed_treasury,
     seed_contracts,
     seed_safes,

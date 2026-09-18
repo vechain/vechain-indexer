@@ -310,6 +310,34 @@ class PerEndpointIgnorePathsTest(unittest.TestCase):
         self.assertEqual(cases[0].query_params, {})
         self.assertEqual(cases[0].extra_ignore_paths, ["root.foo"])
 
+    def test_generate_test_cases_carries_unordered_by(self) -> None:
+        op = MODULE.Operation(path="/api/v2/validators/slots", method="GET")
+        test_values = {
+            "path_overrides": {
+                "/api/v2/validators/slots": {"unordered_by": {"root": "validator"}}
+            }
+        }
+        cases = MODULE.generate_test_cases(op, test_values, {})
+        self.assertEqual(cases[0].unordered_by, {"root": "validator"})
+        self.assertEqual(cases[0].query_params, {})
+
+    def test_execute_test_case_applies_unordered_by(self) -> None:
+        op = MODULE.Operation(path="/api/v2/validators/slots", method="GET")
+        tc = MODULE.TestCase(
+            operation=op,
+            label="GET /api/v2/validators/slots",
+            unordered_by={"root": "validator"},
+        )
+        baseline = [
+            {"validator": "0xb", "proposedBlocks": 9974},
+            {"validator": "0xa", "proposedBlocks": 3147},
+        ]
+        candidate = [
+            {"validator": "0xa", "proposedBlocks": 3147},
+            {"validator": "0xb", "proposedBlocks": 9974},
+        ]
+        self.assertTrue(run_case(tc, baseline, candidate).all_match)
+
     def test_execute_test_case_applies_extra_ignore_paths(self) -> None:
         # End-to-end: known-drift fields on transactions/count must be silenced
         # by the per-endpoint override.

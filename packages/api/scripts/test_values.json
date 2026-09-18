@@ -217,6 +217,26 @@
     },
     "/api/v1/status": {
       "expect_fail": "Only the candidate serves this; it reads a Postgres table"
+    },
+    "/api/v1/validators/delegations/count": {
+      "unordered_by": {
+        "root": "validator"
+      }
+    },
+    "/api/v2/validators/slots": {
+      "unordered_by": {
+        "root": "validator"
+      }
+    },
+    "/api/v1/b3tr/xallocations/earnings": {
+      "unordered_by": {
+        "root": "appId"
+      }
+    },
+    "/api/v1/b3tr/xallocations/{roundId}/results": {
+      "unordered_by": {
+        "root": "appId"
+      }
     }
   }
 }

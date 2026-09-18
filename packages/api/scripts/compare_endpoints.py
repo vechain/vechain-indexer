@@ -173,6 +173,26 @@ def path_matches_ignored(path: Path, pattern: Path) -> bool:
     return _compile_wildcard_pattern(pattern).match(path) is not None
 
 
+def _path_is(path: Path, pattern: Path) -> bool:
+    """Exact match, where ``[*]`` still stands for any list index."""
+    if "[*]" not in pattern:
+        return path == pattern
+    return re.fullmatch(re.escape(pattern).replace(re.escape("[*]"), r"\[\d+\]"), path) is not None
+
+
+def align_by_key(a: List[Any], b: List[Any], key: str) -> List[Any]:
+    """*b* in *a*'s order, so a list the API never promised to sort diffs on content only."""
+    if not all(isinstance(x, dict) and key in x for x in a) or not all(
+        isinstance(x, dict) and key in x for x in b
+    ):
+        return b
+    remaining: Dict[Any, List[Any]] = {}
+    for item in b:
+        remaining.setdefault(item[key], []).append(item)
+    aligned = [remaining[x[key]].pop(0) for x in a if remaining.get(x[key])]
+    return aligned + [item for bucket in remaining.values() for item in bucket]
+
+
 def ignored_paths_for_matching_error_statuses(
     status1: int,
     status2: int,
@@ -240,6 +260,7 @@ def compare_json(
     tolerated_diffs: List[Tuple[Path, str]] | None = None,
     ignored_paths: Set[Path] | None = None,
     unordered_lists: bool = False,
+    unordered_by: Dict[Path, str] | None = None,
     num_abs_tolerance: float = 0.0,
     num_rel_tolerance: float = 0.0,
 ) -> List[Tuple[Path, str]]:
@@ -283,6 +304,7 @@ def compare_json(
                 tolerated_diffs=tolerated_diffs,
                 ignored_paths=ignored_paths,
                 unordered_lists=unordered_lists,
+                unordered_by=unordered_by,
                 num_abs_tolerance=num_abs_tolerance,
                 num_rel_tolerance=num_rel_tolerance,
             )
@@ -309,6 +331,10 @@ def compare_json(
                 diffs.append((path, "; ".join(msg_parts)))
             return diffs
 
+        for pattern, key in (unordered_by or {}).items():
+            if _path_is(path, pattern):
+                b = align_by_key(a, b, key)
+                break
         if len(a) != len(b):
             diffs.append((path, f"list length mismatch: {len(a)} != {len(b)}"))
         n = min(len(a), len(b))
@@ -324,6 +350,7 @@ def compare_json(
                 tolerated_diffs=tolerated_diffs,
                 ignored_paths=ignored_paths,
                 unordered_lists=unordered_lists,
+                unordered_by=unordered_by,
                 num_abs_tolerance=num_abs_tolerance,
                 num_rel_tolerance=num_rel_tolerance,
             )
