@@ -23,10 +23,17 @@ set -euo pipefail
 #   packages/api/scripts/run_regression_tests.sh
 #   packages/api/scripts/run_regression_tests.sh --output report.json
 #   packages/api/scripts/run_regression_tests.sh --dry-run
-#   NETWORK=testnet packages/api/scripts/run_regression_tests.sh --path-filter "/api/v1/stargate.*"
+#   NETWORK=testnet packages/api/scripts/run_regression_tests.sh --path-filter stargate
 #   BASELINE_URL=https://custom.example.com packages/api/scripts/run_regression_tests.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Listing the suites needs neither a network nor a baseline.
+for arg in "$@"; do
+  if [[ "$arg" == "--list-suites" ]]; then
+    exec python3 "${SCRIPT_DIR}/compare_from_spec.py" --list-suites
+  fi
+done
 
 NETWORK="${NETWORK:-mainnet}"
 network_field() { python3 "${SCRIPT_DIR}/networks.py" "$NETWORK" "$1"; }
