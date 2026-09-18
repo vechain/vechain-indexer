@@ -452,4 +452,33 @@ class HistoryReadRepositoryTest {
             }
         }
     }
+
+    @Test
+    fun `every searchBy field is planned on an index of its own`() {
+        val indexes =
+            mapOf(
+                SearchField.TO to "event_to_idx",
+                SearchField.FROM to "event_from_idx",
+                SearchField.ORIGIN to "event_origin_idx",
+                SearchField.GAS_PAYER to "event_gas_payer_idx",
+            )
+        database.dataSource.connection.use { c ->
+            c.createStatement().execute("SET enable_seqscan = off")
+            indexes.forEach { (field, index) ->
+                val plan =
+                    c.createStatement()
+                        .executeQuery(
+                            "EXPLAIN SELECT e.id, e.block_timestamp FROM history.event e " +
+                                "WHERE e.${field.column} = decode('01', 'hex') " +
+                                "ORDER BY e.block_timestamp DESC, e.id DESC LIMIT 20"
+                        )
+                        .use { rs ->
+                            generateSequence { if (rs.next()) rs.getString(1) else null }
+                                .joinToString("\n")
+                        }
+                assertTrue(plan.contains(index), "${field.name}:\n$plan")
+                assertTrue(!plan.contains("Sort"), "${field.name} sorts:\n$plan")
+            }
+        }
+    }
 }
