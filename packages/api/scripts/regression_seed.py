@@ -227,8 +227,6 @@ def seed_head_windows(values: Dict[str, Any], api: Baseline) -> None:
     param(values, "before", ts)
     param(values, "blockNumber", number - 1000)
     override(values, "/api/v1/blocks", **{"from": [number - 1000, 22343000]})
-    for series in ("vtho-generated", "vtho-claimed", "vet-delegated", "vet-staked", "nft-holders"):
-        override(values, f"/api/v1/stargate/{series}/{{period}}", **{"from": ts - 8 * DAY, "to": ts - DAY})
     for path in ("/api/v1/validators/block-rewards", "/api/v1/validators/block-rewards/{blockNumber}"):
         override(values, path, blockNumber=number - 1000)
     day = dt.datetime.fromtimestamp(ts, dt.timezone.utc).date()
@@ -294,6 +292,23 @@ def seed_nfts(values: Dict[str, Any], api: Baseline) -> None:
     override(values, "/api/v1/nfts", address=owner, contractAddress=nft["contractAddress"], tokenId=nft["tokenId"])
     override(values, "/api/v1/nfts/contracts", owner=owner)
     override(values, "/api/v1/nfts/history", contractAddress=nft["contractAddress"], tokenId=nft["tokenId"])
+
+
+STARGATE_SERIES = ("vtho-generated", "vtho-claimed", "vet-delegated", "vet-staked", "nft-holders")
+
+
+def seed_stargate_series(values: Dict[str, Any], api: Baseline) -> None:
+    """Window each series on its own newest point: a stalled series has none near the head.
+
+    The window is wide because the aggregated periods carry one tagged row per bucket, and a
+    sparse series on testnet can leave a narrow window holding nothing to compare.
+    """
+    for series in STARGATE_SERIES:
+        newest = api.rows(f"/api/v1/stargate/{series}/BLOCK", size=1, direction="DESC")[0]
+        end = int(newest["blockTimestamp"])
+        override(
+            values, f"/api/v1/stargate/{series}/{{period}}", **{"from": end - 90 * DAY, "to": end}
+        )
 
 
 def seed_stargate(values: Dict[str, Any], api: Baseline) -> None:
@@ -474,6 +489,7 @@ SEEDERS: List[Callable[[Dict[str, Any], Baseline], None]] = [
     seed_transactions,
     seed_nfts,
     seed_stargate,
+    seed_stargate_series,
     seed_b3tr_actions,
     seed_challenges,
     seed_navigators,
