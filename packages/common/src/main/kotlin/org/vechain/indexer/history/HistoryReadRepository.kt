@@ -68,7 +68,7 @@ open class HistoryReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTemplate
         )
     }
 
-    /** `/history/{account}?searchBy=`: one address-table scan per named field. */
+    /** `/history/{account}?searchBy=`: the union of one indexed scan per named field. */
     open fun findBySearchFields(
         account: String,
         fields: List<SearchField>,
@@ -85,22 +85,18 @@ open class HistoryReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTemplate
         if (fields.isEmpty()) return emptyList()
         val filters =
             listOfNotNull(
-                "a.address = :account",
-                names?.let { "a.event_name = ANY(CAST(:names AS history.event_name[]))" },
-                after?.let { "a.block_timestamp >= :after" },
-                before?.let { "a.block_timestamp <= :before" },
+                names?.let { "e.event_name = ANY(CAST(:names AS history.event_name[]))" },
+                after?.let { "e.block_timestamp >= :after" },
+                before?.let { "e.block_timestamp <= :before" },
                 contractAddress?.let { "e.contract_address = :contract" },
                 NOT_BLACKLISTED_TRANSFER,
             )
         val order = "block_timestamp ${direction.name}, id ${direction.name}"
-        // The address row repeats the event's timestamp and id, so its index orders the branch.
-        val branchOrder = "a.block_timestamp ${direction.name}, a.event_id ${direction.name}"
         val branches =
             fields.distinct().joinToString(" UNION ") { field ->
-                "(SELECT a.event_id AS id, a.block_timestamp FROM history.event_address a " +
-                    "JOIN history.event e ON e.id = a.event_id " +
+                "(SELECT e.id, e.block_timestamp FROM history.event e " +
                     "WHERE e.${field.column} = :account AND ${filters.joinToString(" AND ")} " +
-                    "ORDER BY $branchOrder LIMIT :reach)"
+                    "ORDER BY e.$order LIMIT :reach)"
             }
         return events(
             """

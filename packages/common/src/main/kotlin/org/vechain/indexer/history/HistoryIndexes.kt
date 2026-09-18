@@ -3,7 +3,7 @@ package org.vechain.indexer.history
 import org.vechain.indexer.postgres.DeferrableIndex
 import org.vechain.indexer.postgres.IndexSet
 
-/** The history indexes no indexer reads; V6 and V32 still make them on a fresh schema. */
+/** The history indexes no indexer reads; V6, V32 and V33 still make them on a fresh schema. */
 object HistoryIndexes {
     private const val ACTIONS = "WHERE event_name = 'B3TR_ACTION'"
 
@@ -40,6 +40,11 @@ object HistoryIndexes {
                     "event",
                     "(app_id, block_timestamp, id) $ACTIONS",
                 ),
+                // /history/{account}?searchBy=, one index per field
+                DeferrableIndex("event_to_idx", "event", "(to_address, block_timestamp, id)"),
+                DeferrableIndex("event_from_idx", "event", "(from_address, block_timestamp, id)"),
+                DeferrableIndex("event_origin_idx", "event", "(origin, block_timestamp, id)"),
+                DeferrableIndex("event_gas_payer_idx", "event", "(gas_payer, block_timestamp, id)"),
                 // /history/{account}?eventName=
                 DeferrableIndex(
                     "event_address_name_idx",
