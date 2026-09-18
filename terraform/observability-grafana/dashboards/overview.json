@@ -1279,9 +1279,9 @@
           ],
           "type": "bargauge",
           "title": "Indexes still to create, by indexer",
-          "description": "Only indexers with indexes outstanding appear here, so an empty panel is the healthy state. The bar is the count still to be created; it falls one index at a time as the rebuild works through them, and reaching zero is what lets that indexer start taking blocks again.",
+          "description": "Every indexer, ordered by how many indexes it still has to create, so the ones with work sit at the top and the rest read as a tail of zeros. A bar falls one index at a time as a rebuild works through them, and reaching zero is what lets that indexer start taking blocks again.",
           "gridPos": {
-            "h": 8,
+            "h": 16,
             "w": 12,
             "x": 12,
             "y": 22
@@ -1293,7 +1293,7 @@
           "targets": [
             {
               "refId": "A",
-              "expr": "label_replace(label_replace(label_replace((max by (indexer, deployment, network) (last_over_time(indexer_deferrable_indexes_declared{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) - max by (indexer, deployment, network) (last_over_time(indexer_deferrable_indexes_standing{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s]))) > 0, \"indexer\", \"$1\", \"indexer\", \"(.*)Indexer\"), \"deployment\", \"$1\", \"deployment\", \"(.).*\"), \"network\", \"$1\", \"network\", \"(.*)net\")",
+              "expr": "label_replace(label_replace(label_replace((max by (indexer, deployment, network) (last_over_time(indexer_deferrable_indexes_declared{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) - max by (indexer, deployment, network) (last_over_time(indexer_deferrable_indexes_standing{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s]))), \"indexer\", \"$1\", \"indexer\", \"(.*)Indexer\"), \"deployment\", \"$1\", \"deployment\", \"(.).*\"), \"network\", \"$1\", \"network\", \"(.*)net\")",
               "legendFormat": "{{indexer}} {{deployment}}/{{network}}",
               "instant": true,
               "range": false
@@ -1308,7 +1308,7 @@
                 "mode": "fixed",
                 "fixedColor": "orange"
               },
-              "noValue": "Every index is in place",
+              "noValue": "No indexer reporting",
               "mappings": []
             },
             "overrides": []
