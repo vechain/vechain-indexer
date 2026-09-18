@@ -109,13 +109,15 @@ Drops the Indexes Only the API Reads": an indexer far enough behind the chain dr
 - **"Indexes still to create" filters with `> 0`, so an empty panel is the healthy state.** That
   reads as broken unless the panel says so, which is why it sets `noValue` to "Every index is in
   place" rather than leaving Grafana's "No data".
-- **The state timeline encodes the one-hot as 0/1/2** — `(… phase="SERVING") * 0 or
-  (… phase="BACKFILL") * 1 or (… phase="BUILDING") * 2` — because a state timeline needs one series
-  per indexer whose value is the state. The arithmetic drops `__name__`, which is what leaves the
-  three operands differing only by `phase` so the `or` unions them instead of shadowing.
 - **The pie runs three separate queries rather than renaming a label.** Each carries its wording in
   its own `legendFormat`, which is far easier to read than a three-deep `label_replace` chain and
   cannot silently stop matching.
+- **There is no timeline of the states, deliberately.** One was tried and removed: 28 indexers are
+  in the normal state almost always, so it drew a full-width wall of identical green, and a
+  state-timeline whose colour comes from `thresholds` puts the threshold range in its legend rather
+  than the mapped state names — it rendered a key reading `-∞ +`. The stat's sparkline carries the
+  aggregate history. Per-indexer history would want a timeseries of the outstanding count, not a
+  timeline.
 - **The counts are not a catalogue read.** `IndexBuilder` reports each index as it finishes and the
   coordinator re-reads `pg_index` only at a phase boundary, so the bar falls through a rebuild for
   free. A deferrable primary key is reported once `label` has relabelled it rather than at create,
