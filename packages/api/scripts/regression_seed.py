@@ -196,6 +196,19 @@ class Baseline:
         raise LookupError("no candidate returned data from the baseline")
 
 
+def merge_values(base: Dict[str, Any], overlay: Dict[str, Any]) -> Dict[str, Any]:
+    """Lay a network's chain-specific values over the shared ones, path override by path override."""
+    merged = json.loads(json.dumps(base))
+    merged.setdefault("parameters", {}).update(overlay.get("parameters", {}))
+    paths = merged.setdefault("path_overrides", {})
+    for path, params in overlay.get("path_overrides", {}).items():
+        if isinstance(params, dict) and isinstance(paths.get(path), dict):
+            paths[path] = {**paths[path], **params}
+        else:
+            paths[path] = params
+    return merged
+
+
 def override(values: Dict[str, Any], path: str, **params: Any) -> None:
     target = values.setdefault("path_overrides", {}).setdefault(path, {})
     for name, value in params.items():
@@ -548,7 +561,13 @@ def build_seed_metadata(
 def main() -> int:
     parser = argparse.ArgumentParser(description="Seed regression test values from a baseline API.")
     parser.add_argument("--baseline-url", required=True)
-    parser.add_argument("--input", required=True, help="Base test_values.json input")
+    parser.add_argument("--input", required=True, help="Shared test_values.json input")
+    parser.add_argument("--overlay", help="Network test values laid over the shared ones")
+    parser.add_argument(
+        "--merge-only",
+        action="store_true",
+        help="Write the merged static values without reading the baseline",
+    )
     parser.add_argument("--output", required=True, help="Output path for seeded test values")
     parser.add_argument("--metadata-output", help="Optional output path for sampling metadata")
     parser.add_argument("--timeout", type=int, default=15)
@@ -560,6 +579,16 @@ def main() -> int:
 
     with open(args.input) as f:
         test_values = json.load(f)
+
+    if args.overlay:
+        with open(args.overlay) as f:
+            test_values = merge_values(test_values, json.load(f))
+
+    if args.merge_only:
+        with open(args.output, "w") as f:
+            json.dump(test_values, f, indent=2)
+        print("  seeding skipped; the network's static values stand alone", file=sys.stderr)
+        return 0
 
     outcomes = seed_families(test_values, Baseline(args.baseline_url, fetch_json, args.timeout))
     for name, outcome in outcomes.items():

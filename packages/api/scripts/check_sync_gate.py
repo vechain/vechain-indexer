@@ -12,9 +12,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import urllib.request
 from typing import Any, Dict, List
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from networks import DEFAULT_NETWORK, NETWORKS, profile
 
 STATUS_PATH = "/api/v1/status"
 BEST_BLOCK_PATH = "/blocks/best"
@@ -51,15 +56,20 @@ def compare(checkpoints: List[Dict[str, Any]], best_block: int, max_gap: int) ->
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--candidate-url", required=True)
-    parser.add_argument("--thor-url", required=True, help="A Thor node on the same network")
+    parser.add_argument("--network", choices=sorted(NETWORKS), default=DEFAULT_NETWORK)
+    parser.add_argument("--candidate-url", help="Overrides the network's candidate")
+    parser.add_argument("--thor-url", help="Overrides the network's Thor node")
     parser.add_argument("--max-gap", type=int, default=100, help="Blocks an indexer may trail by")
     parser.add_argument("--timeout", type=int, default=30)
     args = parser.parse_args()
 
+    network = profile(args.network)
+    candidate_url = args.candidate_url or network["candidate"]
+    thor_url = args.thor_url or network["thor"]
+
     try:
-        checkpoints = fetch_checkpoints(args.candidate_url, args.timeout)
-        best_block = fetch_best_block(args.thor_url, args.timeout)
+        checkpoints = fetch_checkpoints(candidate_url, args.timeout)
+        best_block = fetch_best_block(thor_url, args.timeout)
     except Exception as exc:
         print(f"Could not read the candidate's status or the chain head: {exc}", file=sys.stderr)
         return 2
