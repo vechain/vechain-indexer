@@ -20,6 +20,7 @@ _NAMESPACE = os.environ["METRIC_NAMESPACE"]
 _TAG_KEY = os.environ["BACKUP_TAG_KEY"]
 _TAG_VALUE = os.environ["BACKUP_TAG_VALUE"]
 _EVENT_WINDOW_MINUTES = 20160  # 14 days, all DescribeEvents retains
+_JUST_FINISHED_SECONDS = 900  # three polls, so a late or retried run still lands the 100
 
 
 def _tagged_instances() -> list[str]:
@@ -49,12 +50,12 @@ def _snapshots(identifier: str) -> list[dict]:
     return found
 
 
-def _last_backup_duration_seconds(identifier: str) -> float | None:
-    """Seconds between the most recent paired backup start and finish, or None if unpaired.
+def _backup_events(identifier: str) -> list[dict]:
+    """The instance's `backup` events oldest first.
 
-    RDS exposes no completion time on a snapshot, so the pair of `backup` events either side of
-    it is the only source. A multi-hour backup can put its start and finish in different days,
-    so the window is the full 14 days DescribeEvents retains.
+    RDS exposes no completion time on a snapshot, so these events are the only source for both
+    how long a run took and when it ended. A multi-hour backup can put its start and finish in
+    different days, so the window is the full 14 days DescribeEvents retains.
     """
     events = _rds.describe_events(
         SourceIdentifier=identifier,
@@ -63,16 +64,31 @@ def _last_backup_duration_seconds(identifier: str) -> float | None:
         Duration=_EVENT_WINDOW_MINUTES,
         MaxRecords=100,
     )["Events"]
+    return sorted(events, key=lambda e: e["Date"])
 
+
+def _last_backup_duration_seconds(events: list[dict]) -> float | None:
+    """Seconds between the most recent paired backup start and finish, or None if unpaired."""
     started, duration = None, None
-    for event in sorted(events, key=lambda e: e["Date"]):
-        message = event.get("Message", "").lower()
-        if message.startswith("backing up"):
+    for event in events:
+        if _is_start(event):
             started = event["Date"]
-        elif "finished" in message and started is not None:
+        elif _is_finish(event) and started is not None:
             duration = (event["Date"] - started).total_seconds()
             started = None
     return duration
+
+
+def _last_backup_finished(events: list[dict]) -> dt.datetime | None:
+    return next((event["Date"] for event in reversed(events) if _is_finish(event)), None)
+
+
+def _is_start(event: dict) -> bool:
+    return event.get("Message", "").lower().startswith("backing up")
+
+
+def _is_finish(event: dict) -> bool:
+    return "finished" in event.get("Message", "").lower()
 
 
 def _datum(name: str, value: float, unit: str, identifier: str | None = None) -> dict:
@@ -102,6 +118,7 @@ def _log_snapshot(identifier: str, snapshot: dict, age_seconds: float | None) ->
 
 def _instance_metrics(identifier: str, now: dt.datetime) -> list[dict]:
     snapshots = _snapshots(identifier)
+    events = _backup_events(identifier)
     data = []
 
     # Metrics cover automated snapshots only: restore_dead_prod_pg_snapshots.sh passes
@@ -126,6 +143,13 @@ def _instance_metrics(identifier: str, now: dt.datetime) -> list[dict]:
     if in_progress:
         progress = min(s.get("PercentProgress", 0) for s in in_progress)
         data.append(_datum("SnapshotProgress", progress, "Percent", identifier))
+    else:
+        # RDS flips a snapshot from `creating` to `available` without ever publishing 100, so the
+        # series would otherwise end on whichever mid-run sample the last poll caught. The finish
+        # event is what closes it off.
+        finished = _last_backup_finished(events)
+        if finished is not None and (now - finished).total_seconds() <= _JUST_FINISHED_SECONDS:
+            data.append(_datum("SnapshotProgress", 100, "Percent", identifier))
 
     # Counts a snapshot still being taken, so this tracks "a backup started" independently of how
     # long one runs — which is what the staleness alarm needs.
@@ -142,7 +166,7 @@ def _instance_metrics(identifier: str, now: dt.datetime) -> list[dict]:
             _datum("NewestSnapshotAllocatedStorage", newest.get("AllocatedStorage", 0), "Gigabytes", identifier)
         )
 
-    duration = _last_backup_duration_seconds(identifier)
+    duration = _last_backup_duration_seconds(events)
     if duration is not None:
         data.append(_datum("LastBackupDuration", duration, "Seconds", identifier))
     return data

@@ -58,7 +58,7 @@ snapshots are still logged, so they appear in the dashboard table:
 | `OldestSnapshotAge` | Seconds | Age of the oldest, i.e. the far edge of the restore window |
 | `SnapshotsAvailable` | Count | Automated and manual snapshots that are restorable now |
 | `SnapshotsInProgress` | Count | Snapshots in `creating` |
-| `SnapshotProgress` | Percent | Lowest `PercentProgress` among those, published only while one is running |
+| `SnapshotProgress` | Percent | Lowest `PercentProgress` among those while one runs, then a closing 100 from the finish event |
 | `NewestSnapshotAllocatedStorage` | Gigabytes | Volume size the newest snapshot covers |
 | `LastBackupDuration` | Seconds | Most recent completed backup's wall time |
 | `InstancesInventoried` | Count | Instances the run found; undimensioned |
