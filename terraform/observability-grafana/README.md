@@ -6,7 +6,7 @@ Terraform stack that provisions AMG data sources and (eventually) dashboards, on
 
 - **AMP data source** — Prometheus with SigV4 auth against the workspace in `terraform/observability/`. UID `amp`.
 - **CloudWatch data source** — for log-based diagnostics and any CW-native metrics we keep. UID `cloudwatch`.
-- **Dashboards** — JSON files under `dashboards/`, iterated by `dashboards.tf` via `for_each`. `overview` covers indexer sync, API, errors, ECS resources, MongoDB, the CloudFront/WAF edge rows and the per-network WAF request detail rows; `logs` is a single Logs Insights view over every ECS service log group.
+- **Dashboards** — JSON files under `dashboards/`, iterated by `dashboards.tf` via `for_each`. `overview` covers indexer sync, the deferrable-index backfill, API, errors, ECS resources, MongoDB, the CloudFront/WAF edge rows and the per-network WAF request detail rows; `logs` is a single Logs Insights view over every ECS service log group.
 
 ## Adding a dashboard
 
@@ -89,6 +89,30 @@ which is what makes the chain order-independent.
 The `indexer_name` variable reads `indexer_sync_status`, not `indexer_current_block`: the latter is
 only emitted once an indexer is past `NOT_INITIALISED`, so sourcing the picker from it hid exactly
 the indexers you open this row to find.
+
+### Backfill · Deferrable indexes row
+
+Collapsed, after Sync, and the whole row is AMP. It shows the feature in `AGENTS.md` "A Backfill
+Drops the Indexes Only the API Reads": each schema drops the indexes only `packages/api` reads once
+its indexer falls `indexer.backfill.enter-behind-blocks` behind the head, and rebuilds them at the
+head with the processor paused.
+
+- **Two metrics feed it.** `indexer_backfill_phase{schema,phase}` is a one-hot per schema, and
+  `indexer_deferrable_indexes_standing{schema}` / `_declared{schema}` are the counts. Both come from
+  `BackfillState` via `IndexerMetricsReporter`, on the same 10s tick as the sync gauges.
+- **"Index phase by schema" encodes the one-hot as 0/1/2** — `(… phase="SERVING") * 0 or
+  (… phase="BACKFILL") * 1 or (… phase="BUILDING") * 2` — because a state timeline needs one series
+  per schema whose value is the state. The arithmetic drops `__name__`, which is what leaves the
+  three operands differing only by `phase` so the `or` unions them instead of shadowing.
+- **The standing count is not a catalogue read.** `IndexBuilder` reports each index as it finishes
+  and the coordinator re-reads `pg_index` only at a phase boundary, so a bar climbing through a
+  rebuild costs nothing. The consequence is that a rebuild which fails part-way leaves the count at
+  what it reached; the next attempt recounts from the catalogue.
+- **A schema with no series has never been past `BackfillCoordinator.begin`** — it reports nothing
+  until its first entry, so a freshly started colour fills the row in over a few minutes rather than
+  arriving complete.
+- Both label-bearing panels shorten `deployment` and `network` the way the Sync row does, for the
+  same reason: 28 schemas x colour x network does not fit a bar or a timeline row.
 
 ### Edge rows (CloudFront + WAF)
 

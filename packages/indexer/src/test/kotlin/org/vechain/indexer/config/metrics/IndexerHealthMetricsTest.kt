@@ -260,4 +260,20 @@ class IndexerHealthMetricsTest {
         assertThat(gauge).isNotNull
         assertThat(gauge!!.value()).isEqualTo(1.0)
     }
+
+    @Test
+    fun `setDeferrableIndexes gauges standing against declared per schema`() {
+        metrics.setDeferrableIndexes("history", standing = 3, declared = 14)
+        metrics.setDeferrableIndexes("history", standing = 4, declared = 14)
+
+        assertThat(gauge("indexer_deferrable_indexes_standing", "history")).isEqualTo(4.0)
+        assertThat(gauge("indexer_deferrable_indexes_declared", "history")).isEqualTo(14.0)
+        assertThat(
+                registry.find("indexer_deferrable_indexes_standing").tag("schema", "nft").gauge()
+            )
+            .isNull()
+    }
+
+    private fun gauge(name: String, schema: String) =
+        registry.find(name).tag("schema", schema).gauge()?.value()
 }

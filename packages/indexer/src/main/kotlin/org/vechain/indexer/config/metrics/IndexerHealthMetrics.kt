@@ -18,6 +18,7 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
     private val currentBlockGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
     private val backfillPhaseGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
     private val currentBackfillPhase = ConcurrentHashMap<String, BackfillState.Phase>()
+    private val deferrableIndexGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
     private val bestBlockGauge = AtomicReference(0.0)
     private var bestBlockGaugeInitialized = false
     private val blocksProcessedCounters = ConcurrentHashMap<String, Counter>()
@@ -76,6 +77,19 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
             ) {
                 it.get()
             }
+            ref
+        }
+
+    /** Standing against declared: how far a rebuild has got, and what a backfill is skipping. */
+    fun setDeferrableIndexes(schema: String, standing: Int, declared: Int) {
+        deferrableIndexGauge("indexer_deferrable_indexes_standing", schema).set(standing.toDouble())
+        deferrableIndexGauge("indexer_deferrable_indexes_declared", schema).set(declared.toDouble())
+    }
+
+    private fun deferrableIndexGauge(name: String, schema: String): AtomicReference<Double> =
+        deferrableIndexGauges.computeIfAbsent("$name:$schema") {
+            val ref = AtomicReference(0.0)
+            registry.gauge(name, listOf(Tag.of("schema", schema)), ref) { it.get() }
             ref
         }
 

@@ -30,6 +30,8 @@ class BackfillCoordinator(
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val schema = indexSet.schema
 
+    private val declared = indexSet.indexes.size
+
     private var phase: Phase? = null
     private var retryAfterNanos: Long? = null
 
@@ -49,8 +51,9 @@ class BackfillCoordinator(
     /** The first entry is the first point at which both the gap and the catalogue are known. */
     private fun begin(behind: Long) {
         if (behind > properties.enterBehindBlocks) return enterBackfill(behind)
-        enter(Phase.SERVING)
         val missing = builder.missing(indexSet)
+        count(declared - missing.size)
+        enter(Phase.SERVING)
         if (missing.isEmpty()) return
         // Either a release declared an index, or a snapshot was taken mid-backfill and restored.
         // Neither can pause a colour that may be serving reads, so these grow underneath it.
@@ -59,19 +62,20 @@ class BackfillCoordinator(
             schema,
             missing.size,
         )
-        buildInBackground { builder.buildConcurrently(indexSet, missing) }
+        buildInBackground { builder.buildConcurrently(indexSet, missing, ::built) }
     }
 
     private fun enterBackfill(behind: Long) {
-        val standing = indexSet.indexes.size - builder.missing(indexSet).size
+        val standing = declared - builder.missing(indexSet).size
         logger.info(
             "{}: {} blocks behind the head; dropping {} of the API's {} indexes",
             schema,
             behind,
             standing,
-            indexSet.indexes.size,
+            declared,
         )
         if (standing > 0) builder.drop(indexSet)
+        count(0)
         enter(Phase.BACKFILL)
     }
 
@@ -79,13 +83,15 @@ class BackfillCoordinator(
         // Subtracted rather than compared, because nanoTime's origin can be negative.
         if (retryAfterNanos?.let { System.nanoTime() - it < 0 } == true) return
         val missing = builder.missing(indexSet)
+        count(declared - missing.size)
         if (missing.isEmpty()) return enter(Phase.SERVING)
         logger.info("{}: at the head; pausing to rebuild {} indexes", schema, missing.size)
         enter(Phase.BUILDING)
         val done = CompletableDeferred<Unit>()
-        buildInBackground(done) { builder.build(indexSet, missing) }
+        buildInBackground(done) { builder.build(indexSet, missing, ::built) }
         try {
             done.await()
+            count(declared)
             enter(Phase.SERVING)
         } catch (e: CancellationException) {
             throw e
@@ -115,6 +121,10 @@ class BackfillCoordinator(
         this.phase = phase
         state.record(schema, phase)
     }
+
+    private fun count(standing: Int) = state.count(schema, standing, declared)
+
+    private fun built() = state.built(schema)
 
     private companion object {
         val RETRY = 10.minutes
