@@ -1142,7 +1142,7 @@
           "id": 162,
           "type": "piechart",
           "title": "Indexers by index state",
-          "description": "Where each indexer stands on the indexes only the API reads. Most of the time every indexer is in the first slice. The second means an indexer is far enough behind the chain that it has dropped them to catch up faster; the third means it has reached the head and is putting them back, which stops it taking new blocks until it finishes.",
+          "description": "Where each indexer stands on the indexes only the API reads. Present: every one of them exists, which is the normal state. Dropped: the indexer is far enough behind the chain that it has dropped them to catch up faster. Rebuilding: it has reached the head and is putting them back, which stops it taking new blocks until it finishes.",
           "gridPos": {
             "h": 8,
             "w": 6,
@@ -1157,21 +1157,21 @@
             {
               "refId": "A",
               "expr": "count(max by (schema, deployment, network) (last_over_time(indexer_backfill_phase{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\", phase=\"SERVING\"}[45s])) == 1)",
-              "legendFormat": "All indexes in place",
+              "legendFormat": "Present",
               "instant": true,
               "range": false
             },
             {
               "refId": "B",
               "expr": "count(max by (schema, deployment, network) (last_over_time(indexer_backfill_phase{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\", phase=\"BACKFILL\"}[45s])) == 1)",
-              "legendFormat": "Indexes dropped — indexer catching up",
+              "legendFormat": "Dropped",
               "instant": true,
               "range": false
             },
             {
               "refId": "C",
               "expr": "count(max by (schema, deployment, network) (last_over_time(indexer_backfill_phase{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\", phase=\"BUILDING\"}[45s])) == 1)",
-              "legendFormat": "Rebuilding indexes — indexer paused",
+              "legendFormat": "Rebuilding",
               "instant": true,
               "range": false
             }
@@ -1185,7 +1185,7 @@
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "All indexes in place"
+                  "options": "Present"
                 },
                 "properties": [
                   {
@@ -1200,7 +1200,7 @@
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "Indexes dropped — indexer catching up"
+                  "options": "Dropped"
                 },
                 "properties": [
                   {
@@ -1215,7 +1215,7 @@
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "Rebuilding indexes — indexer paused"
+                  "options": "Rebuilding"
                 },
                 "properties": [
                   {
@@ -1253,6 +1253,30 @@
         },
         {
           "id": 163,
+          "transformations": [
+            {
+              "id": "reduce",
+              "options": {
+                "reducers": [
+                  "lastNotNull"
+                ],
+                "mode": "seriesToRows",
+                "includeTimeField": false
+              }
+            },
+            {
+              "id": "sortBy",
+              "options": {
+                "fields": {},
+                "sort": [
+                  {
+                    "field": "Last *",
+                    "desc": true
+                  }
+                ]
+              }
+            }
+          ],
           "type": "bargauge",
           "title": "Indexes still to create, by indexer",
           "description": "Only indexers with indexes outstanding appear here, so an empty panel is the healthy state. The bar is the count still to be created; it falls one index at a time as the rebuild works through them, and reaching zero is what lets that indexer start taking blocks again.",
@@ -1291,10 +1315,8 @@
           },
           "options": {
             "reduceOptions": {
-              "values": false,
-              "calcs": [
-                "lastNotNull"
-              ],
+              "values": true,
+              "calcs": [],
               "fields": ""
             },
             "orientation": "horizontal",
