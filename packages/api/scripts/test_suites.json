@@ -1,0 +1,16 @@
+{
+  "accounts": "^/api/v[12]/accounts(/|$)",
+  "b3tr": "^/api/v[12]/b3tr/",
+  "b3tr-actions": "^/api/v1/b3tr/actions/",
+  "blocks": "^/api/v1/blocks$",
+  "contracts": "^/api/v1/contracts/",
+  "explorer": "^/api/v1/explorer/",
+  "history": "^/api/v[12]/history/",
+  "nfts": "^/api/v1/nfts(/|$)",
+  "safes": "^/api/v1/safes/",
+  "stargate": "^/api/v1/stargate/",
+  "transactions": "^/api/v1/transactions(/|$)",
+  "transfers": "^/api/v1/transfers(/|$)",
+  "validators": "^/api/v[12]/validators(/|$)",
+  "vevote": "^/api/v1/vevote/"
+}

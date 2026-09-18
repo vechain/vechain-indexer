@@ -126,7 +126,8 @@ Compares every documented operation between a network's live colour (baseline) a
 
 - Pick the network, not the URLs: **API Regression Tests** takes `network` (`mainnet` or `testnet`), and `packages/api/scripts/networks.py` resolves both colours and the Thor node from it.
 - Each network brings its own chain data. `test_values.json` holds what is network-independent — ignored paths, page sizes, enum filters — and `test_values.<network>.json` holds that chain's addresses and ids, laid over it at run time. Most values are re-seeded from the live colour before each run; the files are the fallback.
-- Local run: `NETWORK=testnet packages/api/scripts/run_regression_tests.sh`. Set `RATE_LIMIT_BYPASS_TOKEN` so the WAF does not throttle a full run.
+- Run a subset with `tests`: a suite name (`stargate`, `b3tr`, `transfers`, …) or a path regex. `packages/api/scripts/run_regression_tests.sh --list-suites` prints the names; empty runs all 92 operations.
+- Local run: `NETWORK=testnet packages/api/scripts/run_regression_tests.sh --path-filter stargate`. Set `RATE_LIMIT_BYPASS_TOKEN` so the WAF does not throttle a full run.
 
 ## Disaster Recovery
 

@@ -11,6 +11,11 @@ on:
         options:
           - mainnet
           - testnet
+      tests:
+        description: "Subset to run: a suite name (stargate, b3tr, transfers, …) or a path regex. Empty runs every operation."
+        default: ""
+        required: false
+        type: string
       max_block_gap:
         description: "Blocks an indexer on the candidate may trail the chain head by"
         default: 100
@@ -28,6 +33,11 @@ on:
         required: false
         type: string
         default: "mainnet"
+      tests:
+        description: "Subset to run: a suite name or a path regex; empty runs every operation"
+        required: false
+        type: string
+        default: ""
       max_block_gap:
         description: "Blocks an indexer on the candidate may trail the chain head by"
         required: false
@@ -81,17 +91,24 @@ jobs:
       - name: Run regression comparison (candidate vs baseline)
         env:
           NETWORK: ${{ inputs.network || 'mainnet' }}
+          TESTS: ${{ inputs.tests }}
           REGRESSION_SEED_METADATA_FILE: regression-output/seed-metadata.json
           RATE_LIMIT_BYPASS_TOKEN: ${{ secrets.RATE_LIMIT_BYPASS_TOKEN }}
         run: |
           mkdir -p regression-output
+          filter=()
+          if [[ -n "$TESTS" ]]; then
+            filter=(--path-filter "$TESTS")
+          fi
           packages/api/scripts/run_regression_tests.sh \
+            "${filter[@]}" \
             --output regression-output/report.json
 
       - name: Generate summary
         if: always()
         env:
           NETWORK: ${{ inputs.network || 'mainnet' }}
+          TESTS: ${{ inputs.tests }}
           CANDIDATE: ${{ steps.net.outputs.candidate }}
           BASELINE: ${{ steps.net.outputs.baseline }}
           SYNC_OUTCOME: ${{ steps.sync.outcome }}
@@ -104,7 +121,7 @@ jobs:
             --baseline "$BASELINE" \
             --output "$GITHUB_STEP_SUMMARY"
 
-          echo "> Network \`$NETWORK\`." >> "$GITHUB_STEP_SUMMARY"
+          echo "> Network \`$NETWORK\`, subset \`${TESTS:-all operations}\`." >> "$GITHUB_STEP_SUMMARY"
 
           if [[ "$SYNC_OUTCOME" != "success" ]]; then
             echo "> **The candidate had not caught up when this ran**, so differences below may" \

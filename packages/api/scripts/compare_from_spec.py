@@ -71,6 +71,22 @@ from compare_endpoints import (
 
 Path = str
 
+SUITES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_suites.json")
+
+
+def load_suites() -> Dict[str, str]:
+    try:
+        with open(SUITES_FILE) as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+
+
+def resolve_path_filter(value: str, suites: Dict[str, str]) -> str:
+    """A suite name stands for that suite's paths; anything else is taken as a regex."""
+    return suites.get(value, value)
+
+
 # CloudFront keys on the whole query string, so an unknown parameter forces a miss.
 CACHE_BUST_PARAM = "_rt"
 _RUN_ID = f"{os.getpid()}-{int(datetime.now().timestamp())}"
@@ -1211,7 +1227,13 @@ def main() -> None:
     parser.add_argument("--test-values", help="JSON file with test parameter values")
 
     filt = parser.add_argument_group("filtering")
-    filt.add_argument("--path-filter", help="Regex to filter API paths (e.g. '/api/v1/stargate.*')")
+    filt.add_argument(
+        "--path-filter",
+        help="A suite name from test_suites.json, or a regex over API paths",
+    )
+    filt.add_argument(
+        "--list-suites", action="store_true", help="Print the named suites and exit"
+    )
     filt.add_argument("--method-filter", help="HTTP method filter (e.g. GET)")
     filt.add_argument("--tag-filter", help="OpenAPI tag filter")
 
@@ -1275,6 +1297,12 @@ def main() -> None:
     out.add_argument("--dry-run", action="store_true", help="Show generated test cases without executing")
 
     args = parser.parse_args()
+
+    suites = load_suites()
+    if args.list_suites:
+        for name, pattern in sorted(suites.items()):
+            print(f"{name:16s} {pattern}")
+        sys.exit(0)
 
     # ---- Load endpoints ----
     try:
@@ -1373,7 +1401,8 @@ def main() -> None:
     print(f"\nFound {len(operations)} operations in spec")
 
     if args.path_filter:
-        operations = [o for o in operations if re.search(args.path_filter, o.path)]
+        pattern = resolve_path_filter(args.path_filter, suites)
+        operations = [o for o in operations if re.search(pattern, o.path)]
     if args.method_filter:
         operations = [o for o in operations if o.method == args.method_filter.upper()]
     if args.tag_filter:
