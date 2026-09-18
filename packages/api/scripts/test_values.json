@@ -504,6 +504,9 @@
     },
     "/api/v1/vevote/proposals/comments": {
       "expect_fail": "Only the candidate serves this endpoint; v1 predates it"
+    },
+    "/api/v1/status": {
+      "expect_fail": "Only the candidate serves this; it reads a Postgres table"
     }
   }
 }
