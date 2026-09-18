@@ -885,7 +885,7 @@
         "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" },
         "pieType": "donut",
         "tooltip": { "mode": "single" },
-        "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] },
+        "legend": { "showLegend": false },
         "displayLabels": ["name", "value"]
       }
     },
@@ -2180,7 +2180,7 @@
           "id": 151,
           "type": "timeseries",
           "title": "Backup in progress",
-          "description": "PercentProgress of any automated snapshot in `creating`, sampled every 5 minutes. Empty is the normal state between runs. Because mainnet backups run for hours this is the panel that shows one actually moving — a bar that stops climbing is a stuck run, which no alarm catches until 'Newest restorable backup' crosses 48h.",
+          "description": "PercentProgress of any automated snapshot in `creating`, sampled every 5 minutes, with a closing 100 published from the backup finish event — RDS flips a snapshot to `available` without ever reporting 100 itself. Empty is the normal state between runs. Because mainnet backups run for hours this is the panel that shows one actually moving — a line that stops climbing and never reaches 100 is a stuck run, which no alarm catches until 'Newest restorable backup' crosses 48h.",
           "gridPos": { "h": 8, "w": 12, "x": 12, "y": 58 },
           "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
           "targets": [
