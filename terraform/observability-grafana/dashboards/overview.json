@@ -1065,6 +1065,176 @@
       "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] } }
     },
     {
+      "id": 164,
+      "type": "row",
+      "title": "Block prefetch · does fetching from Thor ever hold an indexer up",
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 21
+      },
+      "panels": [
+        {
+          "id": 165,
+          "type": "timeseries",
+          "title": "Waiting for the next block — per block, while catching up",
+          "description": "Cycle time minus processing time: how long the processor sat idle before its next block arrived, per block. indexer-core's BlockFetcher fetches ahead of processing so this should hug zero; a value near the Thor round trip on the Sync row's \"Thor client\" panel means fetching is holding the indexer up. Only indexers more than 100 blocks behind are shown — at the head every indexer waits ~10 s for the chain itself.",
+          "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 0,
+            "y": 22
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "amp"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "((sum by (indexer_name) (rate(processor_cycle_time_seconds_sum{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\"}[5m])) / sum by (indexer_name) (rate(processor_cycle_time_seconds_count{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\"}[5m]))) - (sum by (indexer_name) (rate(processor_duration_seconds_sum{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\"}[5m])) / sum by (indexer_name) (rate(processor_duration_seconds_count{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\"}[5m])))) and on (indexer_name) (max by (indexer_name) (max by (deployment, network) (thor_best_block_number{deployment=~\"$deployment\", network=~\"$network\"}) - on (deployment, network) group_right () indexer_current_block{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\"}) > 100)",
+              "legendFormat": "{{indexer_name}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "min": 0
+            }
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "last",
+                "mean",
+                "max"
+              ]
+            }
+          }
+        },
+        {
+          "id": 166,
+          "type": "timeseries",
+          "title": "Block fetches in flight — against the window cap",
+          "description": "Concurrent GET /blocks requests, by Little's law (request rate × mean duration). The prefetcher opens up to channel-batch-size fetches at once — dashed line, 5 in terraform/api/environments. An average well under it means processing, not fetching, is the bottleneck.",
+          "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 8,
+            "y": 22
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "amp"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (deployment, network) (rate(thor_client_request_duration_seconds_sum{deployment=~\"$deployment\", network=~\"$network\", endpoint=\"GET /blocks/{revision}\"}[5m]))",
+              "legendFormat": "{{deployment}} · {{network}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 5
+                  }
+                ]
+              },
+              "custom": {
+                "thresholdsStyle": {
+                  "mode": "dashed"
+                }
+              }
+            }
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "last",
+                "mean",
+                "max"
+              ]
+            }
+          }
+        },
+        {
+          "id": 167,
+          "type": "timeseries",
+          "title": "Window needed to hide the fetch — fetch time ÷ processing time",
+          "description": "Mean GET /blocks round trip divided by the indexer's processing time per block: how many fetches must be in flight for a block to always be ready. Under the dashed line (channel-batch-size, 5) the window covers it; above it, raising channel-batch-size would speed the indexer up. Clause-inspecting indexers add one POST /accounts/* round trip on top. Same catching-up filter as the left panel.",
+          "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 16,
+            "y": 22
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "amp"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "((sum(rate(thor_client_request_duration_seconds_sum{deployment=~\"$deployment\", network=~\"$network\", endpoint=\"GET /blocks/{revision}\"}[5m])) / sum(rate(thor_client_request_duration_seconds_count{deployment=~\"$deployment\", network=~\"$network\", endpoint=\"GET /blocks/{revision}\"}[5m]))) / on () group_right () (sum by (indexer_name) (rate(processor_duration_seconds_sum{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\"}[5m])) / sum by (indexer_name) (rate(processor_duration_seconds_count{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\"}[5m])))) and on (indexer_name) (max by (indexer_name) (max by (deployment, network) (thor_best_block_number{deployment=~\"$deployment\", network=~\"$network\"}) - on (deployment, network) group_right () indexer_current_block{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\"}) > 100)",
+              "legendFormat": "{{indexer_name}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 5
+                  }
+                ]
+              },
+              "custom": {
+                "thresholdsStyle": {
+                  "mode": "dashed"
+                }
+              }
+            }
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "last",
+                "mean",
+                "max"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
       "id": 160,
       "type": "row",
       "title": "API indexes · dropped while an indexer catches up",
@@ -1073,7 +1243,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 21
+        "y": 22
       },
       "panels": [
         {
@@ -1085,7 +1255,7 @@
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 22
+            "y": 23
           },
           "datasource": {
             "type": "prometheus",
@@ -1147,7 +1317,7 @@
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 22
+            "y": 23
           },
           "datasource": {
             "type": "prometheus",
@@ -1284,7 +1454,7 @@
             "h": 16,
             "w": 12,
             "x": 12,
-            "y": 22
+            "y": 23
           },
           "datasource": {
             "type": "prometheus",
@@ -1335,7 +1505,7 @@
       "type": "row",
       "title": "API",
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
       "panels": []
     },
     {
@@ -1343,7 +1513,7 @@
       "type": "stat",
       "title": "Total requests",
       "description": "Every request the API served over the dashboard time range — the denominator the two topk panels beside it hide. `increase()` is summed per step rather than taken over `$__range` in one shot so the sparkline has a shape; the step is floored at 1m because the sidecar scrapes at 15s and a shorter window can hold too few samples for `increase()` to return anything. Counts what reached the API, so it sits below the Edge row's 'CloudFront requests': cache hits and WAF blocks never arrive here.",
-      "gridPos": { "h": 8, "w": 4, "x": 0, "y": 23 },
+      "gridPos": { "h": 8, "w": 4, "x": 0, "y": 24 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "interval": "1m",
       "targets": [
@@ -1366,7 +1536,7 @@
       "type": "bargauge",
       "title": "Top URIs by total origin time",
       "description": "topk(15) of sum by (uri) (increase(http_server_requests_seconds_sum[$__range])) — total seconds of server time each endpoint consumed over the dashboard time range, i.e. request count × mean latency. This is the panel to act on: an endpoint can be the busiest by count and cost almost nothing here (the usual shape for cheap per-user lookups), while a low-volume endpoint with a slow query can dominate. Pair with 'API — avg latency by URI' to see which of the two factors drives a bar.",
-      "gridPos": { "h": 8, "w": 10, "x": 4, "y": 23 },
+      "gridPos": { "h": 8, "w": 10, "x": 4, "y": 24 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -1403,7 +1573,7 @@
       "type": "bargauge",
       "title": "Top URIs by total requests",
       "description": "topk(15) of sum by (uri) (increase(http_server_requests_seconds_count[$__range])) — absolute request counts over the dashboard time range, not a rate, so bursty and steady traffic are comparable. Ranks by count, not by cost: a path can top this panel and still be near-free, so check 'Top URIs by total origin time' before acting on a bar here. `/**` is Spring's catch-all pattern: every request whose path matched no controller mapping, i.e. all unmatched-path 404s aggregated into one bar. The `uri` label is the matched Spring pattern with the query string stripped, so every parameter shape of one endpoint shares a bar. Full paths and query strings come from the ALB access logs in S3 (prod-{blue,green}-veworld-{main,test}-api-ecs-lb-bucket, prefix veworld-lb/). The mainnet WAF log group logs BLOCKed requests only (logging_filter_block_only), so it is not a traffic census; testnet's logs everything.",
-      "gridPos": { "h": 8, "w": 10, "x": 14, "y": 23 },
+      "gridPos": { "h": 8, "w": 10, "x": 14, "y": 24 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -1440,7 +1610,7 @@
       "type": "timeseries",
       "title": "API — avg latency by URI",
       "description": "rate(sum) / rate(count). Real p95 needs percentile histograms enabled server-side (management.metrics.distribution.percentiles-histogram.http.server.requests=true).",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 31 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -1457,7 +1627,7 @@
       "type": "piechart",
       "title": "Requests by X-Project-Id",
       "description": "sum by (project) of api_requests_by_project_total increases over the dashboard time range. `unknown` = header missing; `other` = header set but not on the KNOWN_PROJECT_IDS whitelist (raw value logged); the rest are known callers.",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 31 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -1488,7 +1658,7 @@
       "type": "timeseries",
       "title": "Top URIs by rate",
       "description": "topk(10) of request rate by uri, ranked per timestamp — a URI that goes quiet drops out of the top 10, so its line breaks into a gap rather than sitting at zero. Legend shows Max/Last only: Mean would average the bursts and ignore the gaps, which reads ~20x too high on spiky series like `/**`. For volume use 'Top URIs by total requests'. Narrow to a single endpoint with the Filters bar at the top (uri = …).",
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 39 },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 40 },
       "datasource": { "type": "prometheus", "uid": "amp" },
       "targets": [
         {
@@ -1505,13 +1675,13 @@
       "type": "row",
       "title": "Errors",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 47 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 48 },
       "panels": [
         {
           "id": 50,
           "type": "timeseries",
           "title": "API 5xx rate by URI",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 38 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 39 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -1527,7 +1697,7 @@
           "id": 51,
           "type": "timeseries",
           "title": "API 4xx rate by URI",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 38 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 39 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -1543,7 +1713,7 @@
           "id": 52,
           "type": "timeseries",
           "title": "Thor client 5xx rate",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 46 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 47 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -1559,7 +1729,7 @@
           "id": 53,
           "type": "timeseries",
           "title": "Thor client 4xx rate",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 46 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 47 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -1578,14 +1748,14 @@
       "type": "row",
       "title": "Resources",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 48 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 49 },
       "panels": [
         {
           "id": 60,
           "type": "timeseries",
           "title": "CPU utilised — per task",
           "description": "ecs_task_cpu_utilized / ecs_task_cpu_reserved × 100 for indexer + api. Dashed line = 80%.",
-          "gridPos": { "h": 10, "w": 9, "x": 0, "y": 49 },
+          "gridPos": { "h": 10, "w": 9, "x": 0, "y": 50 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -1616,7 +1786,7 @@
           "type": "timeseries",
           "title": "Memory utilised — per task",
           "description": "ecs_task_memory_utilized / ecs_task_memory_reserved × 100 for indexer + api. Dashed line = 80%.",
-          "gridPos": { "h": 10, "w": 9, "x": 9, "y": 49 },
+          "gridPos": { "h": 10, "w": 9, "x": 9, "y": 50 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -1647,7 +1817,7 @@
           "type": "timeseries",
           "title": "API tasks running against desired",
           "description": "A gap that outlasts a rolling deploy is a stuck deploy or a placement failure; the `*-api-tasks-below-desired` alarm fires on the same two metrics. API services only: the indexers deploy at deployment_minimum_healthy_percent = 0, so a rolling replacement legitimately sits at zero running tasks for minutes and a gap there says nothing. Service-level counts come from ECS itself, so a dead task reads as a drop to zero — the ADOT per-task series behind the two panels beside it just go absent instead. CloudWatch dimensions cannot be templated, so both colours and both networks are hardcoded here and neither picker applies.",
-          "gridPos": { "h": 10, "w": 6, "x": 18, "y": 49 },
+          "gridPos": { "h": 10, "w": 6, "x": 18, "y": 50 },
           "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
           "targets": [
             {
@@ -1729,14 +1899,14 @@
       "type": "row",
       "title": "MongoDB · Indexer",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 49 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 50 },
       "panels": [
         {
           "id": 70,
           "type": "timeseries",
           "title": "Pool size vs checked-out",
           "description": "mongodb_driver_pool_size vs mongodb_driver_pool_checkedout. Sustained checkedout ≈ size means the pool is saturated — either bump the pool or fix a slow query.",
-          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 40 },
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 41 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -1758,7 +1928,7 @@
           "type": "timeseries",
           "title": "Wait-queue depth",
           "description": "mongodb_driver_pool_waitqueuesize — connections waiting for a pool slot. Anything > 0 sustained means the pool is under-sized for the workload.",
-          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 40 },
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 41 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -1789,7 +1959,7 @@
           "type": "timeseries",
           "title": "Command rate by status",
           "description": "rate(mongodb_driver_commands_seconds_count[5m]) by status. FAILED > 0 means Mongo is rejecting commands (auth, write conflict, timeout, …).",
-          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 40 },
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 41 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -1806,7 +1976,7 @@
           "type": "timeseries",
           "title": "Command rate — top 10 by command",
           "description": "topk(10, rate by command) — expect insert/update/find to dominate on the indexer.",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 48 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 49 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -1823,7 +1993,7 @@
           "type": "timeseries",
           "title": "Avg command latency by command",
           "description": "rate(sum)/rate(count) by command — proxy for average latency per command type. Real p95 needs management.metrics.distribution.percentiles-histogram.mongodb.driver.commands=true.",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 48 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 49 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -1840,7 +2010,7 @@
           "type": "timeseries",
           "title": "Command rate — top 10 by collection",
           "description": "topk(10, rate by collection) — which collections are being hit hardest.",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 56 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 57 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -1857,7 +2027,7 @@
           "type": "timeseries",
           "title": "Slowest commands — max latency",
           "description": "max over 5m of mongodb_driver_commands_seconds_max by (command, collection). Spike hunter — surfaces single slow calls the avg smooths away.",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 56 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 57 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -1876,14 +2046,14 @@
       "type": "row",
       "title": "MongoDB · API",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 50 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 51 },
       "panels": [
         {
           "id": 80,
           "type": "timeseries",
           "title": "Pool size vs checked-out",
           "description": "mongodb_driver_pool_size vs mongodb_driver_pool_checkedout. Sustained checkedout ≈ size means the pool is saturated — either bump the pool or fix a slow query.",
-          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 41 },
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 42 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -1905,7 +2075,7 @@
           "type": "timeseries",
           "title": "Wait-queue depth",
           "description": "mongodb_driver_pool_waitqueuesize — API requests waiting for a pool slot. Anything > 0 sustained will surface as user-visible latency.",
-          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 41 },
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 42 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -1936,7 +2106,7 @@
           "type": "timeseries",
           "title": "Command rate by status",
           "description": "rate(mongodb_driver_commands_seconds_count[5m]) by status. FAILED > 0 means Mongo is rejecting API requests before they reach the response path.",
-          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 41 },
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 42 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -1953,7 +2123,7 @@
           "type": "timeseries",
           "title": "Command rate — top 10 by command",
           "description": "topk(10, rate by command) — expect find/aggregate to dominate on the API.",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 49 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 50 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -1970,7 +2140,7 @@
           "type": "timeseries",
           "title": "Avg command latency by command",
           "description": "rate(sum)/rate(count) by command — proxy for average latency per command type. Real p95 needs management.metrics.distribution.percentiles-histogram.mongodb.driver.commands=true.",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 49 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 50 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -1987,7 +2157,7 @@
           "type": "timeseries",
           "title": "Command rate — top 10 by collection",
           "description": "topk(10, rate by collection) — which collections API traffic hits hardest; cross-reference with the Top URIs panel above.",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 57 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 58 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -2004,7 +2174,7 @@
           "type": "timeseries",
           "title": "Slowest commands — max latency",
           "description": "max over 5m of mongodb_driver_commands_seconds_max by (command, collection). Spike hunter — surfaces single slow queries the avg smooths away.",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 57 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 58 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -2023,14 +2193,14 @@
       "type": "row",
       "title": "Postgres · Indexer",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 51 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 52 },
       "panels": [
         {
           "id": 135,
           "type": "timeseries",
           "title": "Pool size vs active",
           "description": "hikaricp_connections vs hikaricp_connections_active for the Postgres pool. Sustained active ≈ size means the pool is saturated — bump postgres.pool.maximum-size or fix a slow query.",
-          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 42 },
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 43 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -2052,7 +2222,7 @@
           "type": "timeseries",
           "title": "Threads waiting for a connection",
           "description": "hikaricp_connections_pending — callers blocked on the pool. Anything > 0 sustained surfaces as latency.",
-          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 42 },
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 43 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -2083,7 +2253,7 @@
           "type": "timeseries",
           "title": "Connection timeouts",
           "description": "rate(hikaricp_connections_timeout_total[5m]) — callers that gave up waiting for a connection. Should be zero.",
-          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 42 },
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 43 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -2100,7 +2270,7 @@
           "type": "timeseries",
           "title": "Connection acquire — avg and max",
           "description": "hikaricp_connections_acquire_seconds: time to get a connection from the pool. Grows before pending does.",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 50 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 51 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -2122,7 +2292,7 @@
           "type": "timeseries",
           "title": "Connection usage — avg and max",
           "description": "hikaricp_connections_usage_seconds: how long a connection is held, i.e. statement plus commit time.",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 50 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 51 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -2146,14 +2316,14 @@
       "type": "row",
       "title": "Postgres · API",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 52 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 53 },
       "panels": [
         {
           "id": 141,
           "type": "timeseries",
           "title": "Pool size vs active",
           "description": "hikaricp_connections vs hikaricp_connections_active for the Postgres pool. Sustained active ≈ size means the pool is saturated — bump postgres.pool.maximum-size or fix a slow query.",
-          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 43 },
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 44 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -2175,7 +2345,7 @@
           "type": "timeseries",
           "title": "Threads waiting for a connection",
           "description": "hikaricp_connections_pending — callers blocked on the pool. Anything > 0 sustained surfaces as latency.",
-          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 43 },
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 44 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -2206,7 +2376,7 @@
           "type": "timeseries",
           "title": "Connection timeouts",
           "description": "rate(hikaricp_connections_timeout_total[5m]) — callers that gave up waiting for a connection. Should be zero.",
-          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 43 },
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 44 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -2223,7 +2393,7 @@
           "type": "timeseries",
           "title": "Connection acquire — avg and max",
           "description": "hikaricp_connections_acquire_seconds: time to get a connection from the pool. Grows before pending does.",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 51 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 52 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -2245,7 +2415,7 @@
           "type": "timeseries",
           "title": "Connection usage — avg and max",
           "description": "hikaricp_connections_usage_seconds: how long a connection is held, i.e. statement plus commit time.",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 51 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 52 },
           "datasource": { "type": "prometheus", "uid": "amp" },
           "targets": [
             {
@@ -2269,14 +2439,14 @@
       "type": "row",
       "title": "Postgres · Backups",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 53 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 54 },
       "panels": [
         {
           "id": 147,
           "type": "stat",
           "title": "Newest restorable backup",
           "description": "Age of the newest automated snapshot in `available` state, per instance — what restore_dead_prod_pg_snapshots.sh would pick for a dead colour. This is NOT how long ago a backup started: a snapshot is not restorable until it finishes, and mainnet's take hours, so this peaks at roughly 25h plus the run time and drops when the run completes. 'Backup age' below separates the two. Red at 48h is the pg-backup-stale alarm in terraform/api/alarms.tf.",
-          "gridPos": { "h": 5, "w": 8, "x": 0, "y": 54 },
+          "gridPos": { "h": 5, "w": 8, "x": 0, "y": 55 },
           "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
           "targets": [
             {
@@ -2316,7 +2486,7 @@
           "type": "stat",
           "title": "Backups retained",
           "description": "Available automated snapshots per instance. backup_retention_period is 7 days, so a steady state is 7 or 8. A number that falls and stays down means backups stopped before the retention window emptied. Manual snapshots are deliberately excluded — they are not what a restore selects — but they do appear in the table below.",
-          "gridPos": { "h": 5, "w": 8, "x": 8, "y": 54 },
+          "gridPos": { "h": 5, "w": 8, "x": 8, "y": 55 },
           "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
           "targets": [
             {
@@ -2347,7 +2517,7 @@
           "type": "stat",
           "title": "Last backup duration",
           "description": "Wall time between the `Backing up DB instance` and `Finished DB Instance backup` events, which is the only completion signal RDS gives — a snapshot carries a start time and no end time. Mainnet currently runs for hours, which is why neither backup alarm is threshold-ed on completion. Sourced from DescribeEvents, which retains 14 days; an instance quiet longer than that reports nothing here even while its snapshots are fine.",
-          "gridPos": { "h": 5, "w": 8, "x": 16, "y": 54 },
+          "gridPos": { "h": 5, "w": 8, "x": 16, "y": 55 },
           "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
           "targets": [
             {
@@ -2378,7 +2548,7 @@
           "type": "timeseries",
           "title": "Backup age — started, restorable, oldest",
           "description": "Three lines per instance, and the gap between the first two is the point of the panel. `started` is how long ago RDS last began a snapshot, counting one still running — it drops to zero daily no matter how slow the backup is, and is what the pg-backup-not-starting alarm reads. `restorable` only moves when a run finishes, so it trails `started` by the run time. `oldest` is the far edge of the restore window, normally flat at ~7 days. All three climbing together means backups have stopped and the window is ageing out.",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 59 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 60 },
           "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
           "targets": [
             {
@@ -2447,7 +2617,7 @@
           "type": "timeseries",
           "title": "Backup in progress",
           "description": "PercentProgress of any automated snapshot in `creating`, sampled every 5 minutes, with a closing 100 published from the backup finish event — RDS flips a snapshot to `available` without ever reporting 100 itself. Empty is the normal state between runs. Because mainnet backups run for hours this is the panel that shows one actually moving — a line that stops climbing and never reaches 100 is a stuck run, which no alarm catches until 'Newest restorable backup' crosses 48h.",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 59 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 60 },
           "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
           "targets": [
             {
@@ -2483,7 +2653,7 @@
           "type": "timeseries",
           "title": "Backup duration",
           "description": "How long each daily backup took, from the paired RDS backup events. The value is republished on every 5-minute poll until the next backup finishes, so the line is a step, not a sample per backup — read the step changes. Backup time tracks changed blocks since the last snapshot, so a jump usually follows a resync or a bulk rewrite.",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 67 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 68 },
           "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
           "targets": [
             {
@@ -2518,7 +2688,7 @@
           "type": "timeseries",
           "title": "Volume covered by the newest backup",
           "description": "AllocatedStorage of the newest automated snapshot — the size of the volume it covers, which is as close to a backup size as RDS will give. It is NOT the bytes the snapshot consumes: the API exposes no per-snapshot size, the first snapshot of an instance is a full copy and the rest are incremental, and the three AWS/RDS backup-storage metrics (TotalBackupStorageBilled, BackupRetentionPeriodStorageUsed, SnapshotStorageUsed) publish no datapoints for non-Aurora instances — verified against this account, dimensioned and not. Actual backup bytes are a billing-only figure, via Cost Explorer. The step up when the volume autoscales is the growth signal to watch.",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 67 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 68 },
           "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
           "targets": [
             {
@@ -2553,7 +2723,7 @@
           "type": "table",
           "title": "Snapshots that exist",
           "description": "Every snapshot the inventory Lambda saw over the dashboard's time range, one row each — automated and manual, unlike the metrics above, which track automated only. The Lambda logs the whole list every 5 minutes, so rows are collapsed to the newest sighting per snapshot with `stats latest(...) by instance, snapshot`; without that the table repeats each snapshot once per poll. At the default now-1h that is exactly the current inventory; widen the range to see snapshots that have since aged out of retention. `volume_gib` is the instance's allocated storage at snapshot time, not the snapshot's own size. The aggregated columns are parsed into `r_*` names and renamed by `stats`, because aliasing `latest(type) as type` over a field `parse` already defined is rejected with `Ephemeral field is already defined`; `instance` and `snapshot` keep their names only because the `by` clause never re-defines them.",
-          "gridPos": { "h": 12, "w": 24, "x": 0, "y": 75 },
+          "gridPos": { "h": 12, "w": 24, "x": 0, "y": 76 },
           "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
           "targets": [
             {
@@ -2592,14 +2762,14 @@
       "type": "row",
       "title": "WAF request detail · Mainnet — Logs Insights, runs only while expanded",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 54 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 55 },
       "panels": [
         {
           "id": 120,
           "type": "stat",
           "title": "Flagged traffic over the range",
           "description": "The denominator for the two tables below, from the WAF log group in us-east-1 (CLOUDFRONT-scope ACLs log there, not eu-west-1). This group carries BLOCKed requests only — logging_filter_block_only is on for mainnet — so it is a rejection census, not a traffic one; total edge volume is 'CloudFront requests' in the Edge · Mainnet row. Where clients and paths run to thousands, the top 20 rows below are the head of a long tail rather than its bulk.",
-          "gridPos": { "h": 4, "w": 24, "x": 0, "y": 50 },
+          "gridPos": { "h": 4, "w": 24, "x": 0, "y": 51 },
           "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
           "targets": [
             {
@@ -2625,7 +2795,7 @@
           "type": "table",
           "title": "Flagged clients",
           "description": "Who tripped a rule, by source IP. `flagged` counts that client's matched requests, never its whole traffic. `rule` is the WebACL rule name, the same vocabulary as the Rule dimension in 'WAF — blocked requests by rule'. `action` reads BLOCK throughout while no rule runs in Count mode (the managed groups use override_action none); ALLOW would mean a count-mode dry run that was still served. A cloud scraper spreads itself over a range, so one actor arrives here as many small rows — the totals above are its real size.",
-          "gridPos": { "h": 11, "w": 12, "x": 0, "y": 54 },
+          "gridPos": { "h": 11, "w": 12, "x": 0, "y": 55 },
           "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
           "targets": [
             {
@@ -2675,7 +2845,7 @@
           "type": "table",
           "title": "Flagged paths",
           "description": "What those requests asked for. Indexer API routes mean real callers behind a flagged IP range; probe paths — wp-login, .env, phpmyadmin — mean the rule is earning its place. `clients` is how many distinct sources asked for that path. Paths are full request URIs, so one endpoint spreads across many rows here where 'Top URIs by total requests' collapses it into one Spring pattern.",
-          "gridPos": { "h": 11, "w": 12, "x": 12, "y": 54 },
+          "gridPos": { "h": 11, "w": 12, "x": 12, "y": 55 },
           "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
           "targets": [
             {
@@ -2709,14 +2879,14 @@
       "type": "row",
       "title": "WAF request detail · Testnet — Logs Insights, runs only while expanded",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 55 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 56 },
       "panels": [
         {
           "id": 130,
           "type": "stat",
           "title": "Flagged traffic over the range",
           "description": "The denominator for the two tables below, from the WAF log group in us-east-1 (CLOUDFRONT-scope ACLs log there, not eu-west-1). Testnet has no logging filter, so this group carries every inspected request; the query keeps only those a rule matched, which is what makes these panels read the same as their mainnet twins. Total edge volume is 'CloudFront requests' in the Edge · Testnet row.",
-          "gridPos": { "h": 4, "w": 24, "x": 0, "y": 51 },
+          "gridPos": { "h": 4, "w": 24, "x": 0, "y": 52 },
           "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
           "targets": [
             {
@@ -2742,7 +2912,7 @@
           "type": "table",
           "title": "Flagged clients",
           "description": "Who tripped a rule, by source IP. `flagged` counts that client's matched requests, never its whole traffic. `rule` is the WebACL rule name, the same vocabulary as the Rule dimension in 'WAF — blocked requests by rule'. `action` reads BLOCK throughout while no rule runs in Count mode (the managed groups use override_action none); ALLOW would mean a count-mode dry run that was still served. Testnet traffic is a fraction of mainnet's, so expect single-digit rows.",
-          "gridPos": { "h": 11, "w": 12, "x": 0, "y": 55 },
+          "gridPos": { "h": 11, "w": 12, "x": 0, "y": 56 },
           "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
           "targets": [
             {
@@ -2792,7 +2962,7 @@
           "type": "table",
           "title": "Flagged paths",
           "description": "What those requests asked for. Indexer API routes mean real callers behind a flagged IP range; probe paths — wp-login, .env, phpmyadmin — mean the rule is earning its place. `clients` is how many distinct sources asked for that path. Paths are full request URIs, so one endpoint spreads across many rows here where 'Top URIs by total requests' collapses it into one Spring pattern.",
-          "gridPos": { "h": 11, "w": 12, "x": 12, "y": 55 },
+          "gridPos": { "h": 11, "w": 12, "x": 12, "y": 56 },
           "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
           "targets": [
             {
