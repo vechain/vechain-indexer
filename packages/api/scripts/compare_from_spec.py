@@ -1077,7 +1077,8 @@ def summarize(results: List[ComparisonResult]) -> Dict[str, Any]:
         status = status_of(r)
         counts[status] += 1
         key = f"{r.test_case.operation.method} {r.test_case.operation.path}"
-        covered = status in ("pass", "tolerated") or bool(r.expected_failure)
+        # A differing case compared real data; it is reported as a failure, not as no data.
+        covered = status in ("pass", "tolerated", "fail") or bool(r.expected_failure)
         with_data[key] = with_data.get(key, False) or covered
     return {
         "total": len(results),

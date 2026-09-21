@@ -744,6 +744,11 @@ class FailureSemanticsTest(unittest.TestCase):
         summary = MODULE.summarize([run_case(case, {"a": 1}, {"a": 2}, attempts=1)])
         self.assertEqual(summary["operations_without_data"], [])
 
+    def test_an_operation_whose_every_case_differed_is_not_reported_as_dataless(self) -> None:
+        summary = MODULE.summarize([run_case(self._case(), {"a": 1}, {"a": 2}, attempts=1)])
+        self.assertEqual(summary["failed"], 1)
+        self.assertEqual(summary["operations_without_data"], [])
+
     def test_an_operation_is_only_covered_by_a_case_that_compared_data(self) -> None:
         summary = MODULE.summarize([
             run_case(self._case(), self._error(404), self._error(404), attempts=1),
