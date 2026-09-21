@@ -6,7 +6,6 @@ import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.tokenReward.TokenRewardWriteRepository
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
-import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.DelegationReadRepository
 import org.vechain.indexer.validator.ValidatorReadRepository
 
@@ -21,6 +20,7 @@ class ProfiledTokenRewardService(
     validatorV2Repository: ValidatorReadRepository,
     delegationV2Repository: DelegationReadRepository,
     thorClient: ThorClient,
+    stakerAddress: String,
     validatorStartBlock: Long,
     private val profiler: DetailedProfiler,
 ) :
@@ -29,16 +29,12 @@ class ProfiledTokenRewardService(
         validatorV2Repository,
         delegationV2Repository,
         thorClient,
+        stakerAddress,
         validatorStartBlock,
     ) {
 
-    override suspend fun processBlock(
-        block: Block,
-        callResponses: List<InspectionResult>,
-    ): List<TokenReward> =
-        profiler.time("      TokenRewardService.processBlock") {
-            super.processBlock(block, callResponses)
-        }
+    override suspend fun processBlock(block: Block): List<TokenReward> =
+        profiler.time("      TokenRewardService.processBlock") { super.processBlock(block) }
 
     override fun save(rewards: List<TokenReward>) {
         profiler.time("      TokenRewardService.save (Postgres)") { super.save(rewards) }

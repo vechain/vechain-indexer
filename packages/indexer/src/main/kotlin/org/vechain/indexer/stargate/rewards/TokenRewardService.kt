@@ -14,11 +14,14 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.contracts.abi.FunctionDefinition
 import org.vechain.indexer.contracts.abi.FunctionParameter
+import org.vechain.indexer.event.AbiLoader
+import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.abi.InputOutput
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.tokenReward.TokenRewardWriteRepository
+import org.vechain.indexer.thor.AddressUtils
 import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
@@ -38,6 +41,8 @@ open class TokenRewardService(
     private val validatorV2Repository: ValidatorReadRepository,
     private val delegationV2Repository: DelegationReadRepository,
     private val thorClient: ThorClient,
+    @param:Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
+    private val stakerAddress: String,
     @param:Value("\${indexer.start-block.validator}") private val validatorStartBlock: Long,
 ) {
     /**
@@ -55,26 +60,22 @@ open class TokenRewardService(
      */
     private val rewardTrackerCache: MutableMap<String, List<TokenReward>> = ConcurrentHashMap()
 
-    /**
-     * @notice Cached VTHO total supply from the previous block.
-     * @dev Used to calculate deltas in block rewards between consecutive blocks.
-     */
-    private var vthoTotalSupply: BigInteger = BigInteger.ZERO
+    /** Each validator's last-read delegator pool by cycle key: its next block's baseline. */
+    private val poolCache: MutableMap<String, Map<Long, BigInteger>> = ConcurrentHashMap()
+
+    private val delegatorsRewardsAbi: AbiElement by lazy {
+        AbiLoader.loadFunctions(STAKER_ABI_PATH, listOf(DELEGATORS_REWARDS_FN)).first {
+            it.name == DELEGATORS_REWARDS_FN
+        }
+    }
 
     /**
      * @param block Thor block containing validator and transaction info.
-     * @param callResponses ABI-decoded inspection results — expected to carry a single
-     *   `Energy.totalSupply()` result (see [energyTotalSupplyClause]).
      * @return A list of updated TokenReward documents for this block.
      * @notice Process a block and update validator reward state.
-     * @dev Reads validator state from [ValidatorReadRepository] (no aggregator decode), uses the
-     *   decoded VTHO total supply to derive the per-block reward, then distributes that reward
-     *   proportionally across active delegations.
+     * @dev The reward is the signer's delegator-pool growth, see [delegatorBlockReward].
      */
-    open suspend fun processBlock(
-        block: Block,
-        callResponses: List<InspectionResult>,
-    ): List<TokenReward> {
+    open suspend fun processBlock(block: Block): List<TokenReward> {
         if (block.number < validatorStartBlock) return emptyList()
 
         val validatorId = block.signer
@@ -84,15 +85,17 @@ open class TokenRewardService(
         // that Validator has applied this block's state by the time we read it here.
         val validator = validatorV2Repository.findById(validatorId) ?: return emptyList()
 
-        val blockTotalSupply = decodeTotalSupply(callResponses) ?: return emptyList()
-
         val latestRewards = getLatestRewards(block, validator)
         if (latestRewards.isEmpty()) {
             return emptyList()
         }
 
         val delegatorBlockReward =
-            getDelegatorsBlockReward(block, blockTotalSupply) ?: return emptyList()
+            delegatorBlockReward(
+                block,
+                validatorId,
+                validatorCycleCache[validatorId]!!.currentCycle,
+            )
 
         val result =
             updateRewardInfo(
@@ -126,25 +129,52 @@ open class TokenRewardService(
     open fun invalidateCache() {
         rewardTrackerCache.clear()
         validatorCycleCache.clear()
-        vthoTotalSupply = BigInteger.ZERO
+        poolCache.clear()
     }
 
-    /**
-     * @param block Current Thor block.
-     * @param blockTotalSupply VTHO total supply at [block].
-     * @return Total delegators' reward share for the block (70% of the VTHO supply delta), or null
-     *   if unavailable.
-     */
-    suspend fun getDelegatorsBlockReward(block: Block, blockTotalSupply: BigInteger): BigInteger? {
-        // Initialize cache on restart using the previous block's reward
-        if (vthoTotalSupply == BigInteger.ZERO) {
-            vthoTotalSupply = getTotalVTHOIssuedAtBlock(block.parentID)
+    /** The chain's delegator-pool growth for [validatorId] in [block], read at keys [cycle]±1. */
+    suspend fun delegatorBlockReward(block: Block, validatorId: String, cycle: Long): BigInteger {
+        val keys = listOf(cycle - 1, cycle, cycle + 1).filter { it > 0 }
+        val current = readPools(block.id, validatorId, keys)
+        val previous =
+            poolCache[validatorId]?.takeIf { it.keys.containsAll(keys) }
+                ?: readPools(block.parentID, validatorId, keys)
+        poolCache[validatorId] = current
+        val delta =
+            keys.fold(BigInteger.ZERO) { acc, key ->
+                acc.add(current.getValue(key).subtract(previous.getValue(key)))
+            }
+        check(delta.signum() >= 0) {
+            "Delegator pool of $validatorId shrank at block ${block.number} (${block.id}): " +
+                "$previous -> $current"
         }
+        return delta
+    }
 
-        val blockReward = blockTotalSupply.subtract(vthoTotalSupply)
-        vthoTotalSupply = blockTotalSupply
-
-        return (blockReward * BigInteger.valueOf(7)).divide(BigInteger.TEN)
+    private suspend fun readPools(
+        blockId: String,
+        validatorId: String,
+        keys: List<Long>,
+    ): Map<Long, BigInteger> {
+        val clauses = keys.map { key ->
+            ContractUtils.createClause(
+                stakerAddress,
+                delegatorsRewardsAbi,
+                AddressUtils.toBigInt(validatorId),
+                key,
+            )
+        }
+        val responses = thorClient.inspectClauses(clauses, BlockRevision.Id(blockId))
+        check(responses.size == keys.size) {
+            "$DELEGATORS_REWARDS_FN returned ${responses.size} of ${keys.size} responses at $blockId"
+        }
+        return keys.zip(responses).associate { (key, response) ->
+            check(!response.reverted && response.vmError.isNullOrBlank()) {
+                "$DELEGATORS_REWARDS_FN($validatorId, $key) failed at $blockId: $response"
+            }
+            val decoded = FunctionReturnDecoder.decode(response.data, delegatorsRewardsAbi.outputs)
+            key to decoded["rewards"] as BigInteger
+        }
     }
 
     /**
@@ -454,21 +484,6 @@ open class TokenRewardService(
             year = mainTracker.year,
         )
 
-    /**
-     * Read total VTHO issued at a specific block by calling `Energy.totalSupply()` directly. Used
-     * as a fallback when [vthoTotalSupply] hasn't been seeded yet (cold start / post-restart).
-     */
-    suspend fun getTotalVTHOIssuedAtBlock(blockId: String): BigInteger {
-        val response =
-            thorClient.inspectClauses(listOf(energyTotalSupplyClause()), BlockRevision.Id(blockId))
-        // Fail fast — a silent zero baseline would make the very next block's reward equal the
-        // entire VTHO supply, corrupting the cumulative delta forever.
-        return decodeTotalSupply(response)
-            ?: throw IllegalStateException(
-                "Energy.totalSupply() decode failed at block $blockId (response=$response)"
-            )
-    }
-
     private fun getTimeInfo(blockTimestamp: Long): LocalDate {
         val blockDateTime = Instant.ofEpochSecond(blockTimestamp).atZone(ZoneOffset.UTC)
         return blockDateTime.toLocalDate()
@@ -500,10 +515,10 @@ open class TokenRewardService(
 
         private val DECODE_OUTPUTS = listOf(InputOutput("uint256", "vthoTotalSupply", "uint256"))
 
-        /**
-         * The single `callDataClause` this indexer registers — a `view` call to the builtin Energy
-         * contract's `totalSupply()`. Exposed for [TokenRewardConfig] to wire into the indexer.
-         */
+        private const val STAKER_ABI_PATH = "abis/stargate"
+        private const val DELEGATORS_REWARDS_FN = "getDelegatorsRewards"
+
+        /** The Energy builtin's totalSupply() clause, used by the validator-block indexer. */
         fun energyTotalSupplyClause(): Clause =
             ContractUtils.createClause(VTHO_CONTRACT_ADDRESS, ENERGY_TOTAL_SUPPLY_ABI)
 

@@ -35,6 +35,8 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var processorMetrics: ProcessorMetrics
 
     @Value("\${indexer.start-block.validator}") var validatorStartBlock: Long = 0L
+    @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
+    var stakerAddress: String = ""
 
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
@@ -85,6 +87,7 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
                     validatorV2Repository = validatorV2Repository,
                     delegationV2Repository = delegationV2Repository,
                     thorClient = thorClient,
+                    stakerAddress = stakerAddress,
                     validatorStartBlock = validatorStartBlock,
                     profiler = profiler,
                 )
@@ -120,7 +123,6 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(100L)
-            .callDataClauses(listOf(TokenRewardService.energyTotalSupplyClause()))
             .includeFullBlock()
             .build()
     }

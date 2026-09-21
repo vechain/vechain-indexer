@@ -15,9 +15,7 @@ import org.vechain.indexer.thor.client.ThorClient
  * Wires the token-reward indexer.
  *
  * Reads validator cycle state from `Validator` and the active-delegation set from `Delegation` — no
- * V1 aggregator dependency. The single `callDataClause` here fetches the builtin Energy contract's
- * `totalSupply()`, which is the only chain read this indexer needs (the per-block reward is the
- * delta between consecutive totals).
+ * V1 aggregator dependency. The service reads the signer's delegator pool from the chain itself.
  *
  * The `dependsOn(delegationIndexer)` chain transitively pulls `validatorIndexer` in too: `validator
  * → delegation-v2 → token-reward`. So activating the `token-reward` profile requires both upstream
@@ -41,7 +39,6 @@ open class TokenRewardConfig {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .callDataClauses(listOf(TokenRewardService.energyTotalSupplyClause()))
             .includeFullBlock()
             .dependsOn(delegationIndexer)
             .build()
