@@ -49,7 +49,7 @@ open class TokenRewardProcessor(
                     "full block is required for token reward processing"
             )
         }
-        val updated = service.processBlock(entry.block, entry.callResults())
+        val updated = service.processBlock(entry.block)
         if (updated.isNotEmpty()) service.save(updated)
     }
 

@@ -84,7 +84,7 @@ class TokenRewardProcessorIntegrationTest {
         )
 
     private fun process(block: Block, updates: List<TokenReward>) = runBlocking {
-        coEvery { service.processBlock(block, emptyList()) } returns updates
+        coEvery { service.processBlock(block) } returns updates
         processor.process(
             IndexingResult.BlockResult(block, emptyList(), emptyList(), Status.SYNCING)
         )
