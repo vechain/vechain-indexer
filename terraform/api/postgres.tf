@@ -20,6 +20,9 @@ locals {
   pg_nets    = { for net, cfg in local.env.enabled_nets : net => cfg.postgres if try(cfg.postgres.enabled, false) }
   pg_enabled = length(local.pg_nets) > 0
 
+  # The yaml size, or the restore snapshot's where that is larger.
+  pg_allocated_storage_gb = { for net, cfg in local.pg_nets : net => max(cfg.allocated_storage_gb, lookup(var.pg_allocated_storage_override, net, 0)) }
+
   # jdbc:postgresql://host:port/vechain per net; empty where Postgres is off, which the apps refuse.
   pg_url = {
     for net in keys(local.env.enabled_nets) :
@@ -160,7 +163,7 @@ resource "aws_db_instance" "postgres" {
   engine_version = each.value.engine_version
   instance_class = each.value.instance_class
 
-  allocated_storage     = max(each.value.allocated_storage_gb, lookup(var.pg_allocated_storage_override, each.key, 0))
+  allocated_storage     = local.pg_allocated_storage_gb[each.key]
   max_allocated_storage = each.value.max_allocated_storage_gb
   storage_type          = "gp3"
   storage_encrypted     = true
@@ -201,6 +204,12 @@ resource "aws_db_instance" "postgres" {
   # snapshot_identifier is ForceNew: a later empty override must not replace the restored instance.
   lifecycle {
     ignore_changes = [allocated_storage, snapshot_identifier]
+
+    # RDS rejects a ceiling under 110% of the size; caught here, at plan, not after a 35-minute restore.
+    precondition {
+      condition     = each.value.max_allocated_storage_gb >= ceil(local.pg_allocated_storage_gb[each.key] * 1.1)
+      error_message = "Raise ${each.key}.postgres.max_allocated_storage_gb in ${local.env.environment}.yml to at least ${ceil(local.pg_allocated_storage_gb[each.key] * 1.1)} GiB: RDS needs it 10% above the ${local.pg_allocated_storage_gb[each.key]} GiB this restore needs."
+    }
   }
 }
 
