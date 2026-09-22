@@ -8,17 +8,21 @@ ecs_cluster="${ECS_CLUSTER:?ECS_CLUSTER is required}"
 
 env_file_dir="${ENV_FILE_DIR:-terraform/api/environments}"
 
-services=(
-  "${dead_color}-veworld-main-api-service"
-  "${dead_color}-veworld-main-indexer-service"
-  "${dead_color}-veworld-test-api-service"
-  "${dead_color}-veworld-test-indexer-service"
-)
+case "${NETWORKS:-both}" in
+  both) nets=(main test) ;;
+  main|test) nets=("${NETWORKS}") ;;
+  *)
+    echo "Unsupported network selection ${NETWORKS}"
+    exit 1
+    ;;
+esac
 
-autoscaled_services=(
-  "${dead_color}-veworld-main-api-service"
-  "${dead_color}-veworld-test-api-service"
-)
+services=()
+autoscaled_services=()
+for net in "${nets[@]}"; do
+  services+=("${dead_color}-veworld-${net}-api-service" "${dead_color}-veworld-${net}-indexer-service")
+  autoscaled_services+=("${dead_color}-veworld-${net}-api-service")
+done
 
 is_autoscaled() {
   local candidate="${1:?service is required}"
@@ -337,7 +341,24 @@ update_services() {
   } >> "${GITHUB_STEP_SUMMARY:?GITHUB_STEP_SUMMARY is required}"
 }
 
+# Stops the services around a Postgres restart; was_running tells the caller whether to start them.
+pause_services() {
+  local was_running=false
+
+  if cluster_exists && [[ "$(count_missing_services "$(describe_services)")" == "0" ]] &&
+    [[ "$(count_active_services "$(describe_services)")" != "0" ]]; then
+    was_running=true
+    update_services 0
+  else
+    echo "Dead-prod services for ${nets[*]} are not running; nothing to pause."
+  fi
+  echo "was_running=${was_running}" >> "${GITHUB_OUTPUT:?GITHUB_OUTPUT is required}"
+}
+
 case "${action}" in
+  pause)
+    pause_services
+    ;;
   assert-stopped)
     assert_stopped
     ;;

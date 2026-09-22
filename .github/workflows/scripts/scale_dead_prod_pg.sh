@@ -130,6 +130,7 @@ wait_for_class() {
 [[ "${action}" == "assert-declared" ]] && assert_declared
 
 declare -A targets=()
+restarts=()
 declare -A previous=()
 
 for net in "${nets[@]}"; do
@@ -137,6 +138,7 @@ for net in "${nets[@]}"; do
   class="$(target_class "${net}")"
 
   if ! state="$(describe_instance "${instance_id}" 2>/dev/null)"; then
+    [[ "${PLAN_ONLY:-false}" == "true" ]] && continue
     record_override "${net}" "${class}"
     echo "${instance_id} does not exist; its next create uses ${class}."
     continue
@@ -148,6 +150,10 @@ for net in "${nets[@]}"; do
   if [[ "${current}" != "${class}" && "${status}" != "available" ]]; then
     echo "${instance_id} is ${status}, not available; refusing to modify it."
     exit 1
+  fi
+  if [[ "${PLAN_ONLY:-false}" == "true" ]]; then
+    [[ "${current}" != "${class}" ]] && restarts+=("${net}")
+    continue
   fi
   record_override "${net}" "${class}"
 
@@ -164,6 +170,17 @@ for net in "${nets[@]}"; do
     >/dev/null
   targets["${instance_id}"]="${class}"
 done
+
+# The networks whose instance restarts, so the caller stops only their services.
+if [[ "${PLAN_ONLY:-false}" == "true" ]]; then
+  case "${#restarts[@]}" in
+    0) restart_networks="" ;;
+    1) restart_networks="${restarts[0]}" ;;
+    *) restart_networks="both" ;;
+  esac
+  echo "restart_networks=${restart_networks}" >> "${GITHUB_OUTPUT:?GITHUB_OUTPUT is required}"
+  exit 0
+fi
 
 for instance_id in "${!targets[@]}"; do
   wait_for_class "${instance_id}" "${targets[${instance_id}]}"
