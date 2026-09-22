@@ -90,10 +90,11 @@ snapshot_allocated_storage() {
 # Where the indexer tasks run: the one network configuration that reaches Postgres.
 indexer_network_configuration() {
   local service="${target_color}-veworld-${1}-indexer-service"
+  # A destroyed service is still described, INACTIVE, with the subnets and security group it had.
   aws ecs describe-services \
     --cluster "${ecs_cluster}" \
     --services "${service}" \
-    --query 'services[0].networkConfiguration.awsvpcConfiguration' \
+    --query "services[?status=='ACTIVE'] | [0].networkConfiguration.awsvpcConfiguration" \
     --output json 2>"${err_file}" && return 0
   aws_said ClusterNotFound && { echo null; return 0; }
   aws_failed "Could not look up ${service}."
@@ -191,7 +192,7 @@ declare -A prewarm_tasks=()
 for net in "${restore_nets[@]}"; do
   network="$(indexer_network_configuration "${net}")"
   if [[ "${network}" == "null" ]]; then
-    echo "::warning::No ${net} indexer service on ${ecs_cluster}; prewarm not started for ${net}."
+    echo "::warning::No active ${net} indexer service on ${ecs_cluster}; prewarm not started for ${net}. Run ${target_color}-${net}-pg-prewarm once the colour is deployed."
     continue
   fi
 
