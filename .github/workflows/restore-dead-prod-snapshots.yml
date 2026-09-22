@@ -39,6 +39,10 @@ on:
         required: false
         type: string
         default: ""
+    outputs:
+      restored_nets:
+        description: "Space-separated networks whose Postgres instance this run restored"
+        value: ${{ jobs.restore-postgres.outputs.restored_nets }}
 
 concurrency:
   group: dead-prod-recovery-operations
@@ -119,6 +123,8 @@ jobs:
     timeout-minutes: 180
     needs: [resolve-context, assert-services-stopped]
     environment: prod
+    outputs:
+      restored_nets: ${{ steps.restore.outputs.restored_nets }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -143,6 +149,7 @@ jobs:
           terraform_wrapper: false
 
       - name: Restore dead-prod Postgres instances
+        id: restore
         env:
           SOURCE_COLOR: ${{ needs.resolve-context.outputs.source_color }}
           TARGET_COLOR: ${{ needs.resolve-context.outputs.target_color }}
@@ -179,7 +186,10 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
 
       - name: Start the prewarm task per restored instance
+        # deploy.yml refuses to apply after a failed restore; a failed prewarm must not read as one.
+        continue-on-error: true
         env:
           TARGET_COLOR: ${{ needs.resolve-context.outputs.target_color }}
           ECS_CLUSTER: ${{ needs.resolve-context.outputs.ecs_cluster }}
+          PG_NETS: ${{ needs.restore-postgres.outputs.restored_nets }}
         run: bash .github/workflows/scripts/prewarm_dead_prod_pg.sh
