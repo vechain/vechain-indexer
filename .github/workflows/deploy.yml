@@ -341,6 +341,30 @@ jobs:
       AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
       VECHAINCI_SSH_PRIVATE_KEYS: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
 
+  # The prewarm needs the colour's own network, which the application apply has only just built.
+  prewarm-dead:
+    name: Prewarm restored Postgres - ${{ needs.plan-release.outputs.TARGET_COLOR }}
+    needs: [plan-release, deploy-env]
+    if: ${{ !cancelled() && needs.deploy-env.result == 'success' && needs.plan-release.outputs.RESTORE == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+
+      - name: Start the prewarm task per restored instance
+        env:
+          TARGET_COLOR: ${{ needs.plan-release.outputs.TARGET_COLOR }}
+          ECS_CLUSTER: ${{ needs.plan-release.outputs.TARGET_COLOR }}-veworld-cluster
+        run: bash .github/workflows/scripts/prewarm_dead_prod_pg.sh
+
   refresh-dead-dns:
     name: Refresh dead Route53 records
     needs: [recheck-live-color, plan-release, deploy-env]
@@ -478,7 +502,7 @@ jobs:
               echo "${VERSION} runs on ${TARGET_COLOR}. Traffic stays on ${LIVE_COLOR} until you run [Switch Live Environment](${SWITCH_URL}) with network \`all\`, which also publishes the draft release."
               if [ "$RESTORED" = true ]; then
                 echo
-                echo "The restore run's summary says what each ${TARGET_COLOR} Postgres instance did — rebuilt from the latest ${LIVE_COLOR} snapshot so its indexers resume from that point, or left alone while ${LIVE_COLOR} has none — and names the prewarm task that keeps a rebuilt one slow until it stops."
+                echo "The restore run's summary says what each ${TARGET_COLOR} Postgres instance did — rebuilt from the latest ${LIVE_COLOR} snapshot so its indexers resume from that point, or left alone while ${LIVE_COLOR} has none — and the prewarm job's summary names the task warming each rebuilt one."
               fi
               echo
               echo "Switch when every indexer on both networks reports fully synced:"

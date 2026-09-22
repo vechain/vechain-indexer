@@ -8,7 +8,6 @@ set -euo pipefail
 
 source_color="${SOURCE_COLOR:?SOURCE_COLOR is required}"
 target_color="${TARGET_COLOR:?TARGET_COLOR is required}"
-ecs_cluster="${ECS_CLUSTER:?ECS_CLUSTER is required}"
 terraform_dir="${TERRAFORM_DIR:-terraform/api}"
 env_file_dir="${ENV_FILE_DIR:-terraform/api/environments}"
 output_dir="${PG_RESTORE_OUTPUT_DIR:-restore-output}"
@@ -85,19 +84,6 @@ snapshot_allocated_storage() {
     --query 'DBSnapshots[0].AllocatedStorage' \
     --output text 2>"${err_file}" && return 0
   aws_failed "Could not read the size of snapshot ${1}."
-}
-
-# Where the indexer tasks run: the one network configuration that reaches Postgres.
-indexer_network_configuration() {
-  local service="${target_color}-veworld-${1}-indexer-service"
-  # A destroyed service is still described, INACTIVE, with the subnets and security group it had.
-  aws ecs describe-services \
-    --cluster "${ecs_cluster}" \
-    --services "${service}" \
-    --query "services[?status=='ACTIVE'] | [0].networkConfiguration.awsvpcConfiguration" \
-    --output json 2>"${err_file}" && return 0
-  aws_said ClusterNotFound && { echo null; return 0; }
-  aws_failed "Could not look up ${service}."
 }
 
 net_map() {
@@ -186,71 +172,22 @@ for net in "${restore_nets[@]}"; do
     --type String --overwrite --value "${snapshots[${net}]}" >/dev/null
 done
 
-# A restored instance lazy-loads its pages from S3 and runs on degraded I/O until each
-# one has been read. The task pulls them all; the indexer may catch up while it does.
-declare -A prewarm_tasks=()
-for net in "${restore_nets[@]}"; do
-  network="$(indexer_network_configuration "${net}")"
-  if [[ "${network}" == "null" ]]; then
-    echo "::warning::No active ${net} indexer service on ${ecs_cluster}; prewarm not started for ${net}. Run ${target_color}-${net}-pg-prewarm once the colour is deployed."
-    continue
-  fi
-
-  # run-task answers 200 with an empty task list when placement fails.
-  started="$(aws ecs run-task \
-    --cluster "${ecs_cluster}" \
-    --task-definition "${target_color}-${net}-pg-prewarm" \
-    --launch-type FARGATE \
-    --started-by "pg-restore-${target_color}" \
-    --network-configuration "awsvpcConfiguration=$(
-      jq -r '"{subnets=[\(.subnets | join(","))],securityGroups=[\(.securityGroups | join(","))],assignPublicIp=\(.assignPublicIp // "DISABLED")}"' <<<"${network}"
-    )" \
-    --output json)"
-  prewarm_tasks["${net}"]="$(jq -r '.tasks[0].taskArn // empty' <<<"${started}")"
-  if [[ -z "${prewarm_tasks[${net}]}" ]]; then
-    echo "Prewarm task for ${net} did not start: $(jq -c '.failures // []' <<<"${started}")"
-    exit 1
-  fi
-  echo "Prewarming ${net}: ${prewarm_tasks[${net}]}"
-done
-
-# Only the launch is waited on: a full pull takes hours, and the pages it has not
-# reached yet cost the indexer nothing but a slower first read.
-for net in "${!prewarm_tasks[@]}"; do
-  deadline=$((SECONDS + 600))
-  while ((SECONDS < deadline)); do
-    task="$(aws ecs describe-tasks --cluster "${ecs_cluster}" --tasks "${prewarm_tasks[${net}]}" --query 'tasks[0]' --output json)"
-    status="$(jq -r '.lastStatus // "PENDING"' <<<"${task}")"
-    if [[ "${status}" == "RUNNING" ]]; then break; fi
-    if [[ "${status}" == "STOPPED" ]]; then
-      if [[ "$(jq -r '.containers[0].exitCode // 1' <<<"${task}")" != "0" ]]; then
-        echo "Prewarm task for ${net} failed: $(jq -r '.stoppedReason // "unknown"' <<<"${task}")"
-        exit 1
-      fi
-      break
-    fi
-    sleep 10
-  done
-done
-
 jq -n \
   --arg source_color "${source_color}" \
   --arg target_color "${target_color}" \
   --argjson snapshots "$(net_map snapshots)" \
-  --argjson prewarm "$(net_map prewarm_tasks)" \
   '{
     sourceColor: $source_color,
     targetColor: $target_color,
     generatedAt: now | todate,
-    snapshots: $snapshots,
-    prewarmTasks: $prewarm
+    snapshots: $snapshots
   }' > "${output_dir}/pg-restore.json"
 
 summary "### Dead Prod Postgres Restore" \
   "- Source color: \`${source_color}\`" \
   "- Target color: \`${target_color}\`"
 for net in "${restore_nets[@]}"; do
-  summary "- \`${target_color}-${net}-pg\` restored from \`${snapshots[${net}]}\` at ${storage_gb[${net}]} GiB, prewarm task \`${prewarm_tasks[${net}]:-not started}\`"
+  summary "- \`${target_color}-${net}-pg\` restored from \`${snapshots[${net}]}\` at ${storage_gb[${net}]} GiB"
 done
 for net in "${skipped[@]+"${skipped[@]}"}"; do
   summary "- \`${net}\`: skipped, \`${source_color}\` has no instance to restore from"

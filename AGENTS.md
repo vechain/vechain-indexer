@@ -233,7 +233,8 @@ Write reviewer-facing prose at final length — don't draft long and trim. The b
 3. `terraform/cloudfront` — `shared`, `staging`, `prod`, `dead`, which is a dependency chain
 4. the live RDS snapshots into the dead colour, when the plan says so ([restore-dead-prod-snapshots.yml](.github/workflows/restore-dead-prod-snapshots.yml), called)
 5. `terraform/api` for the target colour, image tags resolved per service
-6. `terraform/vpc`, scope `dead-records` — after the application, so the dead records name the ALB it just moved
+6. the `pg_prewarm` task against each restored instance, now that the colour's network exists ([prewarm_dead_prod_pg.sh](.github/workflows/scripts/prewarm_dead_prod_pg.sh))
+7. `terraform/vpc`, scope `dead-records` — after the application, so the dead records name the ALB it just moved
 
 Every stack plans and applies on every run, so one with no change is a no-op. This replaced the separate shared-infra and observability dispatches: no stack is left for an operator to remember.
 

@@ -146,7 +146,6 @@ jobs:
         env:
           SOURCE_COLOR: ${{ needs.resolve-context.outputs.source_color }}
           TARGET_COLOR: ${{ needs.resolve-context.outputs.target_color }}
-          ECS_CLUSTER: ${{ needs.resolve-context.outputs.ecs_cluster }}
           PG_SNAPSHOT_MAIN: ${{ inputs.pg_snapshot_main }}
           PG_SNAPSHOT_TEST: ${{ inputs.pg_snapshot_test }}
         run: bash .github/workflows/scripts/restore_dead_prod_pg_snapshots.sh
@@ -158,3 +157,29 @@ jobs:
           name: dead-prod-pg-restore-output
           path: restore-output
           if-no-files-found: ignore
+
+  # Warms a stopped colour straight away; a destroyed one has no network yet and is skipped, and
+  # deploy.yml runs the same script again once the application apply has built it.
+  prewarm-postgres:
+    name: Prewarm Restored Postgres Instances
+    runs-on: ubuntu-latest
+    needs: [resolve-context, restore-postgres]
+    if: ${{ !cancelled() && needs.restore-postgres.result == 'success' }}
+    environment: prod
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+
+      - name: Start the prewarm task per restored instance
+        env:
+          TARGET_COLOR: ${{ needs.resolve-context.outputs.target_color }}
+          ECS_CLUSTER: ${{ needs.resolve-context.outputs.ecs_cluster }}
+        run: bash .github/workflows/scripts/prewarm_dead_prod_pg.sh
