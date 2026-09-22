@@ -1,0 +1,106 @@
+name: Scale Dead Prod Postgres
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "up: resize to the classes below; down: back to the class in the colour's env file"
+        required: true
+        type: choice
+        options:
+          - up
+          - down
+      networks:
+        description: "Which dead-colour instances to resize"
+        required: true
+        type: choice
+        default: both
+        options:
+          - both
+          - main
+          - test
+      main_instance_class:
+        description: "Mainnet class for up"
+        required: false
+        type: string
+        default: db.r6g.2xlarge
+      test_instance_class:
+        description: "Testnet class for up"
+        required: false
+        type: string
+        default: db.r6g.large
+
+# Shares deploy's group: its terraform/api apply also sets the instance class.
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  identify-live-color:
+    name: Identify live and dead colors
+    uses: ./.github/workflows/identify-live-color.yml
+    with:
+      dns_record_mainnet_name: mainnet.live.prod.veworld.vechain.org.
+      dns_record_testnet_name: testnet.live.prod.veworld.vechain.org.
+      hosted_zone_id: Z08093993BM56HB3DD4U4
+    permissions:
+      contents: read
+      id-token: write
+    secrets:
+      AWS_ACC_ROLE: ${{ secrets.AWS_ACC_ROLE }}
+
+  resolve-context:
+    name: Resolve Dead Prod Context
+    runs-on: ubuntu-latest
+    needs: [identify-live-color]
+    environment: prod
+    outputs:
+      dead_color: ${{ steps.context.outputs.target_color }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Resolve dead-prod color
+        id: context
+        env:
+          REQUIRE_CONFIRMATION: "false"
+          MAINNET_LIVE_COLOR: ${{ needs.identify-live-color.outputs.mainnet_live_color }}
+          MAINNET_DEAD_COLOR: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}
+          TESTNET_LIVE_COLOR: ${{ needs.identify-live-color.outputs.testnet_live_color }}
+          TESTNET_DEAD_COLOR: ${{ needs.identify-live-color.outputs.testnet_dead_color }}
+        run: bash .github/workflows/scripts/resolve_dead_prod_context.sh
+
+  scale:
+    name: Resize Dead Prod Postgres
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    needs: [resolve-context]
+    environment: prod
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+
+      - name: Resize instances
+        env:
+          ACTION: ${{ inputs.action }}
+          NETWORKS: ${{ inputs.networks }}
+          MAIN_INSTANCE_CLASS: ${{ inputs.main_instance_class }}
+          TEST_INSTANCE_CLASS: ${{ inputs.test_instance_class }}
+          DEAD_COLOR: ${{ needs.resolve-context.outputs.dead_color }}
+        run: bash .github/workflows/scripts/scale_dead_prod_pg.sh
