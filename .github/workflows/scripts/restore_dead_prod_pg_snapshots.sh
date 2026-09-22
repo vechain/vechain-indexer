@@ -78,6 +78,15 @@ newest_available_snapshot() {
     '
 }
 
+# RDS restores at the snapshot's size and cannot shrink, so the instance is sized to match.
+snapshot_allocated_storage() {
+  aws rds describe-db-snapshots \
+    --db-snapshot-identifier "${1}" \
+    --query 'DBSnapshots[0].AllocatedStorage' \
+    --output text 2>"${err_file}" && return 0
+  aws_failed "Could not read the size of snapshot ${1}."
+}
+
 # Where the indexer tasks run: the one network configuration that reaches Postgres.
 indexer_network_configuration() {
   local service="${target_color}-veworld-${1}-indexer-service"
@@ -107,6 +116,7 @@ if [[ "${#pg_nets[@]}" -eq 0 ]]; then
 fi
 
 declare -A snapshots=()
+declare -A storage_gb=()
 skipped=()
 
 for net in "${pg_nets[@]}"; do
@@ -132,6 +142,7 @@ for net in "${pg_nets[@]}"; do
   fi
 
   snapshots["${net}"]="${snapshot}"
+  storage_gb["${net}"]="$(snapshot_allocated_storage "${snapshot}")"
 done
 
 if [[ "${#snapshots[@]}" -eq 0 ]]; then
@@ -142,7 +153,8 @@ if [[ "${#snapshots[@]}" -eq 0 ]]; then
 fi
 
 restore_nets=("${!snapshots[@]}")
-jq -n --argjson overrides "$(net_map snapshots)" '{pg_snapshot_override: $overrides}' \
+jq -n --argjson overrides "$(net_map snapshots)" --argjson storage "$(net_map storage_gb)" \
+  '{pg_snapshot_override: $overrides, pg_allocated_storage_override: ($storage | map_values(tonumber))}' \
   > "${terraform_dir}/pg-snapshot.tfvars.json"
 cat "${terraform_dir}/pg-snapshot.tfvars.json"
 
@@ -235,7 +247,7 @@ summary "### Dead Prod Postgres Restore" \
   "- Source color: \`${source_color}\`" \
   "- Target color: \`${target_color}\`"
 for net in "${restore_nets[@]}"; do
-  summary "- \`${target_color}-${net}-pg\` restored from \`${snapshots[${net}]}\`, prewarm task \`${prewarm_tasks[${net}]:-not started}\`"
+  summary "- \`${target_color}-${net}-pg\` restored from \`${snapshots[${net}]}\` at ${storage_gb[${net}]} GiB, prewarm task \`${prewarm_tasks[${net}]:-not started}\`"
 done
 for net in "${skipped[@]+"${skipped[@]}"}"; do
   summary "- \`${net}\`: skipped, \`${source_color}\` has no instance to restore from"
