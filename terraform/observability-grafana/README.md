@@ -6,7 +6,7 @@ Terraform stack that provisions AMG data sources and (eventually) dashboards, on
 
 - **AMP data source** — Prometheus with SigV4 auth against the workspace in `terraform/observability/`. UID `amp`.
 - **CloudWatch data source** — for log-based diagnostics and any CW-native metrics we keep. UID `cloudwatch`.
-- **Dashboards** — JSON files under `dashboards/`, iterated by `dashboards.tf` via `for_each`. `overview` covers indexer sync, the API indexes a backfill drops, the block prefetch, API, errors, ECS resources, Postgres, the CloudFront/WAF edge rows and the per-network WAF request detail rows; `logs` is a single Logs Insights view over every ECS service log group.
+- **Dashboards** — JSON files under `dashboards/`, iterated by `dashboards.tf` via `for_each`. `overview` covers indexer sync, the API indexes a backfill drops, API, errors, ECS resources, Postgres, the CloudFront/WAF edge rows and the per-network WAF request detail rows; `logs` is a single Logs Insights view over every ECS service log group.
 
 ## Adding a dashboard
 
@@ -139,34 +139,6 @@ Drops the Indexes Only the API Reads": an indexer far enough behind the chain dr
 - **An indexer appears only once it has processed an entry.** `IndexerMetricsReporter` skips a
   schema until its first `beforeEntry` has counted the catalogue, so a freshly started colour fills
   the row in over a few minutes rather than arriving complete with zeroes.
-
-### Block prefetch row
-
-Collapsed, after API indexes, all AMP. indexer-core's `BlockFetcher` opens up to
-`channel-batch-size` (`indexer.channel-batch-size`, 5 in `terraform/api/environments`) fetches at
-once and hands blocks to the processors in order, so that the next block is ready the moment the
-previous one is done. The row answers one question — is fetching ever what an indexer is waiting
-on — from series the Sync row already has; nothing new is emitted.
-
-- **Idle per block is `processor_cycle_time − processor_duration`.** `ProcessorMetricsRecorder`
-  measures cycle time from the end of one iteration to the end of the next and processing time
-  inside it, both per block, so the difference is the wait for the next block and nothing else. It
-  excludes indexers within 100 blocks of the head: there the window clamps to one and the ~10 s wait
-  is the chain's, not the fetcher's.
-- **In-flight fetches come from Little's law, not a gauge.** `rate(thor_client_request_duration_seconds_sum)`
-  for `GET /blocks/{revision}` *is* request rate × mean duration — seconds of fetch open per second.
-  It is per colour and network because the Thor client metrics carry no `indexer_name`; the fetcher
-  is the only caller of consequence on that endpoint while an indexer is behind.
-- **"Window needed" is round trip ÷ processing time.** That is how many fetches must be open for one
-  to always have landed, so it is the value to hold against `channel-batch-size`. It uses the block
-  fetch alone; an indexer with `callDataClauses` adds one serial `POST /accounts/*`, pinned to the
-  block id it just fetched so a reorg between the two cannot pair them.
-- **Measured 2026-09-21 on the green colour's AccountsIndexer backfill:** idle 0.2–1.8 ms against
-  15–110 ms of processing, 0.25 fetches in flight, window needed 0.2. The dashed line at 5 has room;
-  raising `channel-batch-size` would change nothing until processing drops under a millisecond a
-  block. The batched shape of `prefetchBlocksInOrder` — fan out, drain, fan out — is
-  throughput-equivalent to a sliding window given ordered delivery and a channel of the same
-  capacity, so it is not a candidate either.
 
 ### Edge rows (CloudFront + WAF)
 
