@@ -68,10 +68,11 @@ configured_min_capacity() {
 cluster_exists() {
   local cluster_arn
 
+  # A missing cluster is a MISSING failure, not an error, so an error here is real.
   cluster_arn="$(aws ecs describe-clusters \
     --clusters "${ecs_cluster}" \
     --query 'clusters[0].clusterArn' \
-    --output text 2>/dev/null || true)"
+    --output text)" || exit 1
 
   [[ -n "${cluster_arn}" && "${cluster_arn}" != "None" ]]
 }
@@ -344,14 +345,22 @@ update_services() {
 # Stops the services around a Postgres restart; was_running tells the caller whether to start them.
 pause_services() {
   local was_running=false
+  local describe_json missing_count
 
-  if cluster_exists && [[ "$(count_missing_services "$(describe_services)")" == "0" ]] &&
-    [[ "$(count_active_services "$(describe_services)")" != "0" ]]; then
-    was_running=true
-    update_services 0
-  else
-    echo "Dead-prod services for ${nets[*]} are not running; nothing to pause."
+  if cluster_exists; then
+    describe_json="$(describe_services)"
+    missing_count="$(count_missing_services "${describe_json}")"
+    if [[ "${missing_count}" != "0" && "${missing_count}" != "${#services[@]}" ]]; then
+      echo "Some ${nets[*]} services are missing from ${ecs_cluster}; refusing to restart Postgres under the rest."
+      printf '%s\n' "${describe_json}"
+      exit 1
+    fi
+    if [[ "${missing_count}" == "0" && "$(count_active_services "${describe_json}")" != "0" ]]; then
+      was_running=true
+      update_services 0
+    fi
   fi
+  [[ "${was_running}" == "true" ]] || echo "Dead-prod services for ${nets[*]} are not running; nothing to pause."
   echo "was_running=${was_running}" >> "${GITHUB_OUTPUT:?GITHUB_OUTPUT is required}"
 }
 

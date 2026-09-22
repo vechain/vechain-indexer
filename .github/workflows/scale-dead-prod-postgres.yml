@@ -81,6 +81,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     needs: [resolve-context]
+    # Holds switch-live-dns's lock, so the colour cannot be promoted between the recheck and the resize.
+    concurrency:
+      group: switch-live-dns
+      cancel-in-progress: false
     environment: prod
     permissions:
       contents: read
@@ -96,6 +100,19 @@ jobs:
         with:
           aws-region: eu-west-1
           role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+
+      - name: Confirm the colour is still dead
+        env:
+          DEAD_COLOR: ${{ needs.resolve-context.outputs.dead_color }}
+        run: |
+          for name in mainnet.live.prod.veworld.vechain.org. testnet.live.prod.veworld.vechain.org.; do
+            value="$(aws route53 list-resource-record-sets --hosted-zone-id Z08093993BM56HB3DD4U4 \
+              --query "ResourceRecordSets[?Name == '${name}'].ResourceRecords[].Value" --output text)"
+            if [[ -z "${value}" || "${value}" == "${DEAD_COLOR}"* ]]; then
+              echo "::error::${name} points at '${value}'; ${DEAD_COLOR} is no longer dead."
+              exit 1
+            fi
+          done
 
       - name: Check which instances restart
         id: plan

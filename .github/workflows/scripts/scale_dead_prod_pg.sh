@@ -59,10 +59,33 @@ target_class() {
   echo "${requested}"
 }
 
+# Runs an aws call, printing nothing when it fails with only the not-found code given; any
+# other failure (credentials, access, throttling) must abort rather than read as "absent".
+aws_or_missing() {
+  local not_found="${1:?not_found is required}"
+  local out err
+
+  shift
+  err="$(mktemp)"
+  if out="$("$@" 2>"${err}")"; then
+    rm -f "${err}"
+    [[ -z "${out}" ]] || printf '%s\n' "${out}"
+    return 0
+  fi
+  if grep -q "(${not_found})" "${err}"; then
+    rm -f "${err}"
+    return 0
+  fi
+  cat "${err}" >&2
+  rm -f "${err}"
+  return 1
+}
+
+# Empty when the instance does not exist.
 describe_instance() {
   local instance_id="${1:?instance_id is required}"
 
-  aws rds describe-db-instances \
+  aws_or_missing DBInstanceNotFound aws rds describe-db-instances \
     --db-instance-identifier "${instance_id}" \
     --query 'DBInstances[0].{status:DBInstanceStatus,class:DBInstanceClass,pending:PendingModifiedValues.DBInstanceClass}' \
     --output json
@@ -73,8 +96,8 @@ override_name() {
 }
 
 override_value() {
-  aws ssm get-parameter --name "$(override_name "${1:?net is required}")" \
-    --query 'Parameter.Value' --output text 2>/dev/null || true
+  aws_or_missing ParameterNotFound aws ssm get-parameter --name "$(override_name "${1:?net is required}")" \
+    --query 'Parameter.Value' --output text
 }
 
 # Terraform reads this path, so a deploy keeps an `up` size until `down` deletes it.
@@ -86,18 +109,19 @@ record_override() {
     aws ssm put-parameter --name "$(override_name "${net}")" --type String \
       --value "${class}" --overwrite >/dev/null
   else
-    aws ssm delete-parameter --name "$(override_name "${net}")" 2>/dev/null || true
+    aws_or_missing ParameterNotFound aws ssm delete-parameter --name "$(override_name "${net}")" || exit 1
   fi
 }
 
 # The switch-live-dns guard: a colour still sized for a sync must not take traffic.
 assert_declared() {
-  local net instance_id class override failed=0
+  local net instance_id state class override failed=0
 
   for net in "${nets[@]}"; do
     instance_id="${dead_color}-${net}-pg"
-    override="$(override_value "${net}")"
-    class="$(describe_instance "${instance_id}" 2>/dev/null | jq -r '.class' || true)"
+    override="$(override_value "${net}")" || exit 1
+    state="$(describe_instance "${instance_id}")" || exit 1
+    class="$(jq -r '.class // empty' <<<"${state:-null}")"
     if [[ -n "${override}" || ( -n "${class}" && "${class}" != "$(declared_class "${net}")" ) ]]; then
       echo "::error::${instance_id} is ${class:-missing} with override '${override}'; run Scale Dead Prod Postgres with down first."
       failed=1
@@ -114,7 +138,7 @@ wait_for_class() {
   local state
 
   while ((SECONDS < deadline)); do
-    state="$(describe_instance "${instance_id}")"
+    state="$(describe_instance "${instance_id}")" || exit 1
     if [[ "$(jq -r --arg c "${class}" '.status == "available" and .class == $c and .pending == null' <<<"${state}")" == "true" ]]; then
       echo "${instance_id} is available as ${class}."
       return 0
@@ -137,7 +161,8 @@ for net in "${nets[@]}"; do
   instance_id="${dead_color}-${net}-pg"
   class="$(target_class "${net}")"
 
-  if ! state="$(describe_instance "${instance_id}" 2>/dev/null)"; then
+  state="$(describe_instance "${instance_id}")" || exit 1
+  if [[ -z "${state}" ]]; then
     [[ "${PLAN_ONLY:-false}" == "true" ]] && continue
     record_override "${net}" "${class}"
     echo "${instance_id} does not exist; its next create uses ${class}."
