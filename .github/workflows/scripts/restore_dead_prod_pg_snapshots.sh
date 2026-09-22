@@ -153,6 +153,8 @@ plan_args=(-var-file=pg-snapshot.tfvars.json)
 for net in "${restore_nets[@]}"; do
   address="aws_db_instance.postgres[\"${net}\"]"
   plan_args+=("-target=${address}")
+  # The run-task below needs it, and a colour never applied has neither.
+  plan_args+=("-target=aws_ecs_task_definition.pg_prewarm[\"${net}\"]")
   # An instance already in state is replaced; one that is absent is simply created.
   if [[ -n "$(terraform -chdir="${terraform_dir}" state list "${address}" || true)" ]]; then
     plan_args+=("-replace=${address}")
