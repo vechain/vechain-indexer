@@ -71,13 +71,20 @@ the network, and each status maps to a short form. The status rules all target l
 can re-match a value an earlier one already rewrote — `label_replace` regexes are fully anchored,
 which is what makes the chain order-independent.
 
-"Time to fully synced" divides the sync gap by the rate the gap is closing —
-`rate(indexer_blocks_processed_total[30m])` less the chain's own growth,
+"Time to fully synced" divides the sync gap by the rate the gap is closing — the fastest 5-minute
+rate of `indexer_blocks_processed_total` in the last 30 minutes, less the chain's own growth,
 `deriv(thor_best_block_number[30m])`. Things worth knowing before trusting a number on it:
 
-- **It is a rate extrapolation, not a schedule.** `IndexerRunner` batches indexers into proximity
-  groups and alternates them against catch-up slices, so an indexer idling behind its group records
-  no throughput and reads as `> 7d` until its turn comes round.
+- **It is a rate extrapolation, not a schedule.** `IndexerRunner` fetches one block stream per
+  proximity group from its lowest member, so every member ahead of that one sits idle until the
+  stream reaches it. After a restart that member never leaves `ready`: it has no rate of its own,
+  and dividing by one would show `> 7d` or drop it off the panel altogether.
+- **A `ready` indexer takes the slowest active estimate on its network.** The largest estimate among
+  that deployment/network's `syncing` and `fast` indexers is when its group reaches the head, and
+  the idle member arrives with it. That value is taken before the `indexer_name` filter, so picking
+  a single `ready` indexer still shows it. With several groups running it is an upper bound. It is
+  keyed on status, not on a zero rate, so a `syncing` indexer that stalls still falls through to
+  `> 7d`.
 - **Fast sync and the live loop are different regimes.** A `fast` indexer runs an order of magnitude
   faster, so its estimate jumps the moment it reaches `ready`. The mode in the bar label is what
   tells you a jump was a phase change rather than a stall clearing.
