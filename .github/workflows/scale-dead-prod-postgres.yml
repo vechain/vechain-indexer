@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: "up: resize to the classes below; down: back to the class in the colour's env file"
+        description: "up: resize and keep through deploys; down: back to the env file class"
         required: true
         type: choice
         options:
@@ -30,7 +30,7 @@ on:
         type: string
         default: db.r6g.large
 
-# Shares deploy's group: its terraform/api apply also sets the instance class.
+# Shares deploy's group: its terraform/api apply reads the override this writes.
 concurrency:
   group: deploy-prod
   cancel-in-progress: false

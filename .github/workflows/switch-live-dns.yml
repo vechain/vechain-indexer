@@ -180,6 +180,20 @@ jobs:
               exit 1
           fi
 
+      - name: Check Dead ENV Postgres is scaled back down
+        env:
+          NETWORK: ${{ github.event.inputs.network }}
+          MAINNET_DEAD: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}
+          TESTNET_DEAD: ${{ needs.identify-live-color.outputs.testnet_dead_color }}
+          ACTION: assert-declared
+        run: |
+          if [ "$NETWORK" != "testnet" ]; then
+            DEAD_COLOR="$MAINNET_DEAD" NETWORKS=main bash .github/workflows/scripts/scale_dead_prod_pg.sh
+          fi
+          if [ "$NETWORK" != "mainnet" ]; then
+            DEAD_COLOR="$TESTNET_DEAD" NETWORKS=test bash .github/workflows/scripts/scale_dead_prod_pg.sh
+          fi
+
   apply-vpc-stack:
     name: Deploy VPC stack & switch DNS
     needs: [deploy-vpc-stack]

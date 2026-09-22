@@ -16,12 +16,22 @@ variable "pg_allocated_storage_override" {
   default     = {}
 }
 
+# Written by the Scale Dead Prod Postgres workflow for a sync; every apply keeps it until `down`.
+data "aws_ssm_parameters_by_path" "pg_instance_class" {
+  path = "/veworld/${local.env.environment}/pg-instance-class"
+}
+
 locals {
   pg_nets    = { for net, cfg in local.env.enabled_nets : net => cfg.postgres if try(cfg.postgres.enabled, false) }
   pg_enabled = length(local.pg_nets) > 0
 
   # The yaml size, or the restore snapshot's where that is larger.
   pg_allocated_storage_gb = { for net, cfg in local.pg_nets : net => max(cfg.allocated_storage_gb, lookup(var.pg_allocated_storage_override, net, 0)) }
+
+  pg_instance_class_override = {
+    for i, name in data.aws_ssm_parameters_by_path.pg_instance_class.names :
+    basename(name) => nonsensitive(data.aws_ssm_parameters_by_path.pg_instance_class.values[i])
+  }
 
   # jdbc:postgresql://host:port/vechain per net; empty where Postgres is off, which the apps refuse.
   pg_url = {
@@ -161,7 +171,7 @@ resource "aws_db_instance" "postgres" {
   identifier     = "${local.env.environment}-${each.key}-pg"
   engine         = "postgres"
   engine_version = each.value.engine_version
-  instance_class = each.value.instance_class
+  instance_class = lookup(local.pg_instance_class_override, each.key, each.value.instance_class)
 
   allocated_storage     = local.pg_allocated_storage_gb[each.key]
   max_allocated_storage = each.value.max_allocated_storage_gb
