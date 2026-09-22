@@ -162,6 +162,8 @@ terraform -chdir="${terraform_dir}" init -backend-config="environments/${target_
 terraform -chdir="${terraform_dir}" workspace select "${target_color}"
 
 plan_args=(-var-file=pg-snapshot.tfvars.json)
+# -target takes a resource's dependencies, not its dependents: this hangs off the role, not the task.
+plan_args+=(-target='aws_iam_role_policy_attachment.pg_prewarm_execution[0]')
 for net in "${restore_nets[@]}"; do
   address="aws_db_instance.postgres[\"${net}\"]"
   plan_args+=("-target=${address}")
