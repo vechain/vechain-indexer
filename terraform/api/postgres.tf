@@ -168,7 +168,7 @@ resource "aws_db_instance" "postgres" {
   multi_az               = each.value.multi_az
 
   # Daily snapshot, so a dead colour's restore starts from the previous day's chain head.
-  backup_retention_period = 7
+  backup_retention_period = 3
   backup_window           = "06:00-07:00"
   maintenance_window      = "sun:03:00-sun:04:00"
   copy_tags_to_snapshot   = true
