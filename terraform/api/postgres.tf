@@ -8,6 +8,14 @@ variable "pg_snapshot_override" {
   default     = {}
 }
 
+# ignore_changes does not cover a create: the provider restores at the snapshot's size, then
+# tries to shrink to allocated_storage_gb and RDS refuses. The restore passes the size in.
+variable "pg_allocated_storage_override" {
+  description = "Per-net storage in GiB the restore snapshot needs, e.g. {main = 2164}"
+  type        = map(number)
+  default     = {}
+}
+
 locals {
   pg_nets    = { for net, cfg in local.env.enabled_nets : net => cfg.postgres if try(cfg.postgres.enabled, false) }
   pg_enabled = length(local.pg_nets) > 0
@@ -152,7 +160,7 @@ resource "aws_db_instance" "postgres" {
   engine_version = each.value.engine_version
   instance_class = each.value.instance_class
 
-  allocated_storage     = each.value.allocated_storage_gb
+  allocated_storage     = max(each.value.allocated_storage_gb, lookup(var.pg_allocated_storage_override, each.key, 0))
   max_allocated_storage = each.value.max_allocated_storage_gb
   storage_type          = "gp3"
   storage_encrypted     = true
