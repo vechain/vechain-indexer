@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.springframework.data.domain.Sort.Direction
 import org.springframework.data.domain.Sort.Direction.ASC
 import org.springframework.data.domain.Sort.Direction.DESC
 import org.vechain.indexer.b3tr.action.SustainabilityProofV2
@@ -450,6 +451,44 @@ class HistoryReadRepositoryTest {
                         }
                 assertTrue(plan.contains(index), "$where:\n$plan")
             }
+        }
+    }
+
+    private fun page(names: List<String>, offset: Long, limit: Int, direction: Direction) =
+        keys(repository.findByAccount(alice, names, null, null, null, offset, limit, direction))
+
+    @Test
+    fun `a page spans every name asked for, in one order, counting an event once`() {
+        val both = listOf("TRANSFER_VET", "TRANSFER_NFT")
+        assertEquals(listOf("e12", "e10", "e9", "e2", "e1"), page(both, 0, 20, DESC))
+        assertEquals(listOf("e10", "e9"), page(both, 1, 2, DESC))
+        assertEquals(listOf("e2", "e1"), page(both, 3, 2, DESC))
+        assertEquals(listOf("e1", "e2", "e9"), page(both, 0, 3, ASC))
+        assertEquals(listOf("e12", "e1"), page(listOf("TRANSFER_VET", "TRANSFER_VET"), 0, 20, DESC))
+    }
+
+    @Test
+    fun `an event name is a branch the address index orders, so a page stops early`() {
+        database.dataSource.connection.use { c ->
+            c.createStatement().execute("SET enable_seqscan = off")
+            fun plan(match: String) =
+                c.createStatement()
+                    .executeQuery(
+                        "EXPLAIN SELECT a.event_id, a.block_timestamp FROM history.event_address a " +
+                            "JOIN history.event e ON e.id = a.event_id " +
+                            "WHERE a.address = decode('01', 'hex') AND a.event_name $match " +
+                            "ORDER BY a.block_timestamp DESC, a.event_id DESC LIMIT 20"
+                    )
+                    .use { rs ->
+                        generateSequence { if (rs.next()) rs.getString(1) else null }
+                            .joinToString("\n")
+                    }
+            val branch = plan("= 'TRANSFER_NFT'")
+            assertTrue(branch.contains("event_address_name_idx"), branch)
+            assertTrue(!branch.contains("Sort"), "the branch sorts:\n$branch")
+            // Why there is a branch at all: a list of names cannot come back in index order.
+            val list = plan("= ANY (ARRAY['TRANSFER_NFT', 'TRANSFER_VET']::history.event_name[])")
+            assertTrue(list.contains("Sort"), "a list no longer sorts, so branches can go:\n$list")
         }
     }
 

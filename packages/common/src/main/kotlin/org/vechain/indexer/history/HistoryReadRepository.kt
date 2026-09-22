@@ -33,7 +33,7 @@ open class HistoryReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTemplate
         }
     }
 
-    /** `/history/{account}`: every event the account took part in, through the address table. */
+    /** `/history/{account}`: the account's events, one indexed scan per name it asked for. */
     open fun findByAccount(
         account: String,
         eventNames: List<String>?,
@@ -44,27 +44,47 @@ open class HistoryReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTemplate
         limit: Int,
         direction: Direction,
     ): List<IndexedHistoryEvent> {
-        val names = known(eventNames)
+        val names = known(eventNames)?.distinct()
         if (names != null && names.isEmpty()) return emptyList()
-        val where =
+        val filters =
             listOfNotNull(
-                "a.address = :account",
-                names?.let { "a.event_name = ANY(CAST(:names AS history.event_name[]))" },
                 after?.let { "a.block_timestamp >= :after" },
                 before?.let { "a.block_timestamp <= :before" },
                 contractAddress?.let { "e.contract_address = :contract" },
                 NOT_BLACKLISTED_TRANSFER,
             )
+        val order = "block_timestamp ${direction.name}, event_id ${direction.name}"
+        val params =
+            params(null, after, before, offset, limit)
+                .addValue("account", PostgresHex.bytes(account))
+                .addValue("contract", contractAddress?.let(PostgresHex::bytes))
+        if (names == null) {
+            return events(
+                """
+                SELECT e.* FROM history.event_address a JOIN history.event e ON e.id = a.event_id
+                WHERE a.address = :account AND ${filters.joinToString(" AND ")}
+                ORDER BY a.$order OFFSET :offset LIMIT :limit
+                """
+                    .trimIndent(),
+                params,
+            )
+        }
+        val branches =
+            names.indices.joinToString(" UNION ALL ") { i ->
+                "(SELECT a.event_id, a.block_timestamp FROM history.event_address a " +
+                    "JOIN history.event e ON e.id = a.event_id " +
+                    "WHERE a.address = :account AND a.event_name = CAST(:name$i AS history.event_name) " +
+                    "AND ${filters.joinToString(" AND ")} ORDER BY a.$order LIMIT :reach)"
+            }
+        names.forEachIndexed { i, name -> params.addValue("name$i", name) }
         return events(
             """
-            SELECT e.* FROM history.event_address a JOIN history.event e ON e.id = a.event_id
-            WHERE ${where.joinToString(" AND ")}
-            ORDER BY a.block_timestamp ${direction.name}, a.event_id ${direction.name} OFFSET :offset LIMIT :limit
+            WITH page AS (SELECT event_id, block_timestamp FROM ($branches) u
+                          ORDER BY $order OFFSET :offset LIMIT :limit)
+            SELECT e.* FROM page p JOIN history.event e ON e.id = p.event_id ORDER BY p.$order
             """
                 .trimIndent(),
-            params(names, after, before, offset, limit)
-                .addValue("account", PostgresHex.bytes(account))
-                .addValue("contract", contractAddress?.let(PostgresHex::bytes)),
+            params.addValue("reach", offset + limit),
         )
     }
 
