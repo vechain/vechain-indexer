@@ -9,6 +9,14 @@ networks="${NETWORKS:?NETWORKS is required}"
 env_file="${ENV_FILE_DIR:-terraform/api/environments}/${dead_color}.yml"
 timeout_seconds="${TIMEOUT_SECONDS:-3600}"
 
+case "${action}" in
+  up|down|assert-declared) ;;
+  *)
+    echo "Unsupported action ${action}"
+    exit 1
+    ;;
+esac
+
 case "${networks}" in
   both) nets=(main test) ;;
   main|test) nets=("${networks}") ;;
@@ -60,6 +68,44 @@ describe_instance() {
     --output json
 }
 
+override_name() {
+  echo "/veworld/${dead_color}/pg-instance-class/${1:?net is required}"
+}
+
+override_value() {
+  aws ssm get-parameter --name "$(override_name "${1:?net is required}")" \
+    --query 'Parameter.Value' --output text 2>/dev/null || true
+}
+
+# Terraform reads this path, so a deploy keeps an `up` size until `down` deletes it.
+record_override() {
+  local net="${1:?net is required}"
+  local class="${2:?class is required}"
+
+  if [[ "${action}" == "up" ]]; then
+    aws ssm put-parameter --name "$(override_name "${net}")" --type String \
+      --value "${class}" --overwrite >/dev/null
+  else
+    aws ssm delete-parameter --name "$(override_name "${net}")" 2>/dev/null || true
+  fi
+}
+
+# The switch-live-dns guard: a colour still sized for a sync must not take traffic.
+assert_declared() {
+  local net instance_id class override failed=0
+
+  for net in "${nets[@]}"; do
+    instance_id="${dead_color}-${net}-pg"
+    override="$(override_value "${net}")"
+    class="$(describe_instance "${instance_id}" 2>/dev/null | jq -r '.class' || true)"
+    if [[ -n "${override}" || ( -n "${class}" && "${class}" != "$(declared_class "${net}")" ) ]]; then
+      echo "::error::${instance_id} is ${class:-missing} with override '${override}'; run Scale Dead Prod Postgres with down first."
+      failed=1
+    fi
+  done
+  exit "${failed}"
+}
+
 # `aws rds wait db-instance-available` can return before the status leaves `available`.
 wait_for_class() {
   local instance_id="${1:?instance_id is required}"
@@ -81,6 +127,8 @@ wait_for_class() {
   exit 1
 }
 
+[[ "${action}" == "assert-declared" ]] && assert_declared
+
 declare -A targets=()
 declare -A previous=()
 
@@ -89,20 +137,23 @@ for net in "${nets[@]}"; do
   class="$(target_class "${net}")"
 
   if ! state="$(describe_instance "${instance_id}" 2>/dev/null)"; then
-    echo "${instance_id} does not exist; restore the dead colour first."
-    exit 1
+    record_override "${net}" "${class}"
+    echo "${instance_id} does not exist; its next create uses ${class}."
+    continue
   fi
   current="$(jq -r '.class' <<<"${state}")"
   status="$(jq -r '.status' <<<"${state}")"
   previous["${instance_id}"]="${current}"
 
+  if [[ "${current}" != "${class}" && "${status}" != "available" ]]; then
+    echo "${instance_id} is ${status}, not available; refusing to modify it."
+    exit 1
+  fi
+  record_override "${net}" "${class}"
+
   if [[ "${current}" == "${class}" ]]; then
     echo "${instance_id} is already ${class}; skipping."
     continue
-  fi
-  if [[ "${status}" != "available" ]]; then
-    echo "${instance_id} is ${status}, not available; refusing to modify it."
-    exit 1
   fi
 
   echo "Modifying ${instance_id}: ${current} -> ${class}"
@@ -124,9 +175,9 @@ done
   echo "- Action: \`${action}\`"
   for net in "${nets[@]}"; do
     instance_id="${dead_color}-${net}-pg"
-    echo "- \`${instance_id}\`: \`${previous[${instance_id}]}\` -> \`$(target_class "${net}")\`"
+    echo "- \`${instance_id}\`: \`${previous[${instance_id}]:-missing}\` -> \`$(target_class "${net}")\`"
   done
   if [[ "${action}" == "up" ]]; then
-    echo "- Note: the next deploy applies the class in \`${env_file}\`, which scales it back down."
+    echo "- Note: deploys keep this size until \`down\`, and switch-live-dns refuses this colour until then."
   fi
 } >> "${GITHUB_STEP_SUMMARY:?GITHUB_STEP_SUMMARY is required}"
