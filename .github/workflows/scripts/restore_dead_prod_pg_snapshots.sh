@@ -132,6 +132,9 @@ for net in "${pg_nets[@]}"; do
   storage_gb["${net}"]="$(snapshot_allocated_storage "${snapshot}")"
 done
 
+# The prewarm that follows reads this and leaves an instance the restore did not touch alone.
+echo "restored_nets=${!snapshots[*]}" >> "${GITHUB_OUTPUT:?GITHUB_OUTPUT is required}"
+
 if [[ "${#snapshots[@]}" -eq 0 ]]; then
   summary "### Dead Prod Postgres Restore" \
     "- Status: skipped, \`${source_color}\` has no Postgres instance to restore from" \

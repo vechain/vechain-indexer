@@ -7,11 +7,8 @@ set -euo pipefail
 
 target_color="${TARGET_COLOR:?TARGET_COLOR is required}"
 ecs_cluster="${ECS_CLUSTER:?ECS_CLUSTER is required}"
-env_file_dir="${ENV_FILE_DIR:-terraform/api/environments}"
-
-env_file="${env_file_dir}/${target_color}.yml"
-[[ -f "${env_file}" ]] || { echo "Environment file ${env_file} not found."; exit 1; }
-command -v yq >/dev/null 2>&1 || { echo "yq is required."; exit 1; }
+# The restore reports which instances it replaced; one it left alone is already warm.
+read -r -a pg_nets <<<"${PG_NETS:-}"
 
 err_file="$(mktemp)"
 trap 'rm -f "${err_file}"' EXIT
@@ -61,7 +58,11 @@ indexer_network_configuration() {
   aws_failed "Could not look up ${service}."
 }
 
-mapfile -t pg_nets < <(yq eval '.enabled_nets | to_entries | map(select(.value.postgres.enabled == true)) | .[].key' "${env_file}")
+if [[ "${#pg_nets[@]}" -eq 0 ]]; then
+  echo "No instance was restored; nothing to prewarm."
+  summary "### Dead Prod Postgres Prewarm" "- Colour: \`${target_color}\`" "- Status: nothing restored, nothing to prewarm"
+  exit 0
+fi
 
 declare -A started_tasks=()
 declare -A outcomes=()

@@ -344,7 +344,7 @@ jobs:
   # The prewarm needs the colour's own network, which the application apply has only just built.
   prewarm-dead:
     name: Prewarm restored Postgres - ${{ needs.plan-release.outputs.TARGET_COLOR }}
-    needs: [plan-release, deploy-env]
+    needs: [plan-release, restore-dead, deploy-env]
     if: ${{ !cancelled() && needs.deploy-env.result == 'success' && needs.plan-release.outputs.RESTORE == 'true' }}
     runs-on: ubuntu-latest
     steps:
@@ -363,6 +363,7 @@ jobs:
         env:
           TARGET_COLOR: ${{ needs.plan-release.outputs.TARGET_COLOR }}
           ECS_CLUSTER: ${{ needs.plan-release.outputs.TARGET_COLOR }}-veworld-cluster
+          PG_NETS: ${{ needs.restore-dead.outputs.restored_nets }}
         run: bash .github/workflows/scripts/prewarm_dead_prod_pg.sh
 
   refresh-dead-dns:
