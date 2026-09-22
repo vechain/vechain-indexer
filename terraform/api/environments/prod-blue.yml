@@ -193,10 +193,10 @@ enabled_nets:
     postgres:
       enabled: true
       engine_version: "16"
-      instance_class: db.r6g.2xlarge
+      instance_class: db.r6g.xlarge
       allocated_storage_gb: 400
       max_allocated_storage_gb: 3000
-      multi_az: true
+      multi_az: false
   test:
     image_version: latest
     thor_url: https://testnet.vechain.org
