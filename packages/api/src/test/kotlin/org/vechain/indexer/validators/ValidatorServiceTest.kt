@@ -239,7 +239,7 @@ class ValidatorServiceTest {
 
     @Test
     fun `getSlotStatsForValidator returns the single row or null`() {
-        val stats = ValidatorSlotStats("0xabc", 10, 2, 2.0 / 12)
+        val stats = ValidatorSlotStats("0xabc", 10, 2, 2.0 / 12, 0.9)
         every { validatorBlockRepository.slotStats(1_000L, 2_000L, "0xabc") } returns listOf(stats)
         every { validatorBlockRepository.slotStats(1_000L, 2_000L, "0xdef") } returns emptyList()
 
