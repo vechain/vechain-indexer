@@ -92,11 +92,6 @@ object IndexerNames {
         const val COLLECTION = "stargate_vtho_generated"
     }
 
-    object VALIDATOR_BLOCK {
-        const val NAME = "ValidatorBlockIndexer"
-        const val COLLECTION = "validator_block"
-    }
-
     object STARGATE_TOKEN {
         const val NAME = "StargateTokenIndexer"
         const val COLLECTION = "stargate_token"

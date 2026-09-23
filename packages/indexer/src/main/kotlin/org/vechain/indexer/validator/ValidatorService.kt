@@ -33,6 +33,7 @@ open class ValidatorService(
     private val readRepository: ValidatorReadRepository,
     private val thorClient: ThorClient,
     private val networkDetectionService: NetworkDetectionService,
+    private val blockService: ValidatorBlockService,
     @param:Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
     private val stakerAddress: String,
     @param:Value("\${indexer.start-block.validator}") private val validatorStartBlock: Long,
@@ -79,9 +80,9 @@ open class ValidatorService(
         transactionManager = PostgresConfig.TRANSACTION_MANAGER,
         rollbackFor = [Exception::class],
     )
-    open fun save(updates: List<Validator>) {
-        if (updates.isEmpty()) return
-        repository.save(updates)
+    open fun save(updates: List<Validator>, slots: List<ValidatorBlock> = emptyList()) {
+        if (updates.isNotEmpty()) repository.save(updates)
+        blockService.save(slots)
         updateCache(updates)
     }
 

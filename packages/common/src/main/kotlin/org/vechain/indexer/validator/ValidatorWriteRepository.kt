@@ -44,6 +44,7 @@ open class ValidatorWriteRepository(
     }
 
     override fun rollbackFrom(blockNumber: Long) {
+        jdbc.update("DELETE FROM validator.slot WHERE block_number >= ?", blockNumber)
         jdbc.update("DELETE FROM validator.state WHERE block_number >= ?", blockNumber)
         jdbc.update(
             "UPDATE validator.state SET superseded_at = NULL WHERE superseded_at >= ?",
@@ -52,7 +53,7 @@ open class ValidatorWriteRepository(
     }
 
     override fun truncate() {
-        jdbc.execute("TRUNCATE validator.state")
+        jdbc.execute("TRUNCATE validator.state, validator.slot")
     }
 
     /** The store records [before] once rows are gone and refuses any rollback below it. */

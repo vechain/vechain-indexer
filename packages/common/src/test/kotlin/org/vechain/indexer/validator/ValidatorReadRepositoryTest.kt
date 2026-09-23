@@ -139,12 +139,6 @@ class ValidatorReadRepositoryTest {
         )
     }
 
-    @Test
-    fun `findByLastMissedBlockNumber is a point lookup`() {
-        assertEquals(listOf(exited), ids(repository.findByLastMissedBlockNumber(50)))
-        assertEquals(emptyList<Validator>(), repository.findByLastMissedBlockNumber(51))
-    }
-
     private fun page(
         id: String? = null,
         endorser: String? = null,

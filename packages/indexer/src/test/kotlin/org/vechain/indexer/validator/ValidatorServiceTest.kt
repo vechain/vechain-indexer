@@ -53,6 +53,7 @@ class ValidatorServiceTest {
                 repository,
                 thorClient,
                 networkDetectionService,
+                mockk(relaxed = true),
                 STAKER_ADDRESS,
                 validatorStartBlock = 0L,
             )
@@ -468,6 +469,7 @@ class ValidatorServiceTest {
             repository,
             thorClient,
             net,
+            mockk(relaxed = true),
             STAKER_ADDRESS,
             validatorStartBlock = 0L,
         )

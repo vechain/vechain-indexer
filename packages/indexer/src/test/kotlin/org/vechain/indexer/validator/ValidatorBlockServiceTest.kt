@@ -11,17 +11,18 @@ import java.math.BigInteger
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.thor.model.Transaction
 
 @ExtendWith(MockKExtension::class)
 class ValidatorBlockServiceTest {
     private lateinit var repository: ValidatorBlockWriteRepository
-    private lateinit var validatorRepository: ValidatorReadRepository
     private lateinit var thorClient: ThorClient
     private lateinit var service: ValidatorBlockService
 
@@ -29,13 +30,11 @@ class ValidatorBlockServiceTest {
     fun setup() {
         repository = mockk(relaxed = true)
         every { repository.latestSampled(any()) } returns emptyMap()
-        validatorRepository = mockk(relaxed = true)
         thorClient = mockk(relaxed = true)
         service =
             spyk(
                 ValidatorBlockService(
                     repository,
-                    validatorRepository,
                     thorClient,
                     validatorStartBlock = 0L,
                 )
@@ -144,13 +143,15 @@ class ValidatorBlockServiceTest {
                     ),
             )
 
-        every { validatorRepository.findById("0xVAL1") } returns
-            validatorV2("0xVAL1", delegatorStake = BigDecimal("0.5"))
-
         // Cold-start fallback: parent block totalSupply = 900
         coEvery { service.getTotalVTHOIssuedAtBlock("block-99") } returns BigInteger.valueOf(900)
 
-        val result = service.getValidationInfo(block, BigInteger.valueOf(1000))!!
+        val result =
+            service.getValidationInfo(
+                block,
+                BigInteger.valueOf(1000),
+                validatorV2("0xVAL1", delegatorStake = BigDecimal("0.5")),
+            )!!
 
         assertEquals("100-0xVAL1", result.id)
         assertEquals(BigInteger.valueOf(100), result.blockReward) // 1000 - 900
@@ -162,16 +163,16 @@ class ValidatorBlockServiceTest {
 
     @Test
     fun `getValidationInfo computes delta correctly across multiple blocks`() = runBlocking {
-        every { validatorRepository.findById(any()) } answers { validatorV2(firstArg()) }
-
         val block1 = createBlock(num = 101, signer = "0xVAL1")
         coEvery { service.getTotalVTHOIssuedAtBlock("block-100") } returns BigInteger.valueOf(900)
-        val res1 = service.getValidationInfo(block1, BigInteger.valueOf(1000))!!
+        val res1 =
+            service.getValidationInfo(block1, BigInteger.valueOf(1000), validatorV2("0xVAL1"))!!
         assertEquals(BigInteger.valueOf(100), res1.blockReward)
 
         // Second block: cache now holds 1000 from the prior call.
         val block2 = createBlock(num = 102, signer = "0xVAL2")
-        val res2 = service.getValidationInfo(block2, BigInteger.valueOf(1200))!!
+        val res2 =
+            service.getValidationInfo(block2, BigInteger.valueOf(1200), validatorV2("0xVAL2"))!!
         assertEquals(BigInteger.valueOf(200), res2.blockReward) // 1200 - 1000
     }
 
@@ -179,10 +180,10 @@ class ValidatorBlockServiceTest {
     fun `getValidatorsWithMissedSlots returns just-missed validators`() {
         val block = createBlock(num = 50, signer = "0xvalidator")
 
-        every { validatorRepository.findByLastMissedBlockNumber(50) } returns
-            listOf(validatorV2("0xA", lastMissed = 50))
+        val changed =
+            listOf(validatorV2("0xA", lastMissed = 50), validatorV2("0xB", lastMissed = 49))
 
-        val result = service.getValidatorsWithMissedSlots(block)
+        val result = service.getValidatorsWithMissedSlots(block, changed)
         assertEquals(1, result.size)
         assertEquals("0xA", result[0].validator)
         assertEquals(BlockStatus.MISSED, result[0].status)
@@ -192,14 +193,19 @@ class ValidatorBlockServiceTest {
     fun `getValidatorsWithMissedSlots emits one MISSED row per missed slot, no gating`() {
         // Same validator misses at two consecutive blocks — both should be recorded.
         val block1 = createBlock(num = 50, signer = "0xX")
-        every { validatorRepository.findByLastMissedBlockNumber(50) } returns
-            listOf(validatorV2("0xA", lastMissed = 50))
-        assertEquals(1, service.getValidatorsWithMissedSlots(block1).size)
+        assertEquals(
+            1,
+            service
+                .getValidatorsWithMissedSlots(block1, listOf(validatorV2("0xA", lastMissed = 50)))
+                .size,
+        )
 
         val block2 = createBlock(num = 51, signer = "0xX")
-        every { validatorRepository.findByLastMissedBlockNumber(51) } returns
-            listOf(validatorV2("0xA", lastMissed = 51))
-        val second = service.getValidatorsWithMissedSlots(block2)
+        val second =
+            service.getValidatorsWithMissedSlots(
+                block2,
+                listOf(validatorV2("0xA", lastMissed = 51)),
+            )
         assertEquals(1, second.size)
         assertEquals(51L, second[0].blockNumber)
         assertEquals(BlockStatus.MISSED, second[0].status)
@@ -208,10 +214,10 @@ class ValidatorBlockServiceTest {
     @Test
     fun `getValidatorsWithMissedSlots emits one row per validator missing at the same block`() {
         val block = createBlock(num = 200, signer = "0xX")
-        every { validatorRepository.findByLastMissedBlockNumber(200) } returns
+        val changed =
             listOf(validatorV2("0xA", lastMissed = 200), validatorV2("0xB", lastMissed = 200))
 
-        val result = service.getValidatorsWithMissedSlots(block)
+        val result = service.getValidatorsWithMissedSlots(block, changed)
         assertEquals(2, result.size)
         assertEquals(setOf("0xA", "0xB"), result.map { it.validator }.toSet())
         assertEquals(setOf("200-0xA-MISSED", "200-0xB-MISSED"), result.map { it.id }.toSet())
@@ -223,12 +229,47 @@ class ValidatorBlockServiceTest {
         // elapsed slot at the same block (lastMissedBlockNumber == 300). The MISSED row must not
         // share an id with the VALIDATED row or saveAll would overwrite the reward record.
         val block = createBlock(num = 300, signer = "0xV")
-        every { validatorRepository.findByLastMissedBlockNumber(300) } returns
-            listOf(validatorV2("0xV", lastMissed = 300))
+        val changed = listOf(validatorV2("0xV", lastMissed = 300))
 
-        val missed = service.getValidatorsWithMissedSlots(block).single()
+        val missed = service.getValidatorsWithMissedSlots(block, changed).single()
         assertEquals("300-0xV-MISSED", missed.id)
     }
+
+    @Test
+    fun `processBlock takes the signer and the just-missed from the block's changed validators`() {
+        runBlocking {
+            val block = createBlock(num = 400, signer = "0xABC")
+            coEvery { service.getTotalVTHOIssuedAtBlock("block-399") } returns BigInteger.ONE
+            val changed =
+                listOf(
+                    validatorV2("0xabc", delegatorStake = BigDecimal.ONE),
+                    validatorV2("0xdef", lastMissed = 400),
+                )
+
+            val rows = service.processBlock(block, supplyResponse(BigInteger.TEN), changed)
+
+            assertEquals(
+                listOf(BlockStatus.VALIDATED to "0xABC", BlockStatus.MISSED to "0xdef"),
+                rows.map { it.status to it.validator },
+            )
+            assertEquals(BigInteger.valueOf(6), rows.first().delegatorRewards)
+            assertTrue(
+                service.processBlock(block, supplyResponse(BigInteger.TEN), emptyList()).isEmpty()
+            )
+        }
+    }
+
+    private fun supplyResponse(supply: BigInteger) =
+        listOf(
+            InspectionResult(
+                data = "0x" + supply.toString(16).padStart(64, '0'),
+                events = emptyList(),
+                transfers = emptyList(),
+                gasUsed = 0,
+                reverted = false,
+                vmError = null,
+            )
+        )
 
     @Test
     fun `save persists records and updates caches`() {

@@ -11,7 +11,6 @@ spring:
     group:
       validator: [delegation]
       delegation: [validator]
-      validator-reward: [validator]
       token-reward: [delegation]
       vet-delegated-by-block: [delegation]
       stargate: [delegation]
@@ -202,7 +201,6 @@ indexer:
     b3tr-gm-nft-level-overview: ${VERSION_B3TR_GM_NFT_LEVEL_OVERVIEW:1}
     explorer: ${VERSION_EXPLORER:1}
     validator: ${VERSION_VALIDATOR:1}
-    validator-rewards: ${VERSION_VALIDATOR_BLOCKS:1}
     delegation: ${VERSION_DELEGATION:1}
     token-rewards: ${VERSION_TOKEN_REWARDS:1}
     stargate-token: ${VERSION_STARGATE_TOKEN:1}

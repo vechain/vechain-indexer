@@ -24,7 +24,7 @@ import org.vechain.indexer.postgres.PostgresTestDatabase
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.BlockIdentifier
 
-/** The processor on a real schema, chain walk mocked: states in, rows and resume point out. */
+/** The processor on a real schema, both services mocked: states and slots in, rows out. */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ValidatorProcessorIntegrationTest {
 
@@ -32,6 +32,8 @@ class ValidatorProcessorIntegrationTest {
     private lateinit var writer: ValidatorWriteRepository
     private lateinit var reader: ValidatorReadRepository
     private val service = mockk<ValidatorService>()
+    private val blockService = mockk<ValidatorBlockService>()
+    private lateinit var slots: ValidatorBlockWriteRepository
     private lateinit var processor: ValidatorProcessor
 
     private val alice = "0x" + "a".repeat(40)
@@ -41,11 +43,18 @@ class ValidatorProcessorIntegrationTest {
         database.start()
         writer = ValidatorWriteRepository(database.jdbc)
         reader = ValidatorReadRepository(database.jdbc)
-        every { service.save(any()) } answers { writer.save(firstArg()) }
+        slots = ValidatorBlockWriteRepository(database.jdbc)
+        every { service.save(any(), any()) } answers
+            {
+                writer.save(firstArg())
+                slots.save(secondArg())
+            }
         every { service.invalidateCache() } returns Unit
+        every { blockService.invalidateCache() } returns Unit
         processor =
             ValidatorProcessor(
                 service,
+                blockService,
                 writer,
                 IndexerStateRepository(database.jdbc),
                 CheckpointProperties().apply { saveIntervalSeconds = 0 },
@@ -75,8 +84,20 @@ class ValidatorProcessorIntegrationTest {
             validatorVetStaked = BigDecimal(stake),
         )
 
+    private fun slot(block: Block) =
+        ValidatorBlock(
+            id = "${block.number}-$alice",
+            blockId = block.id,
+            blockNumber = block.number,
+            blockTimestamp = block.timestamp,
+            validator = alice,
+            status = BlockStatus.VALIDATED,
+        )
+
     private fun process(block: Block, updates: List<Validator>) = runBlocking {
         coEvery { service.processBlock(block, emptyList()) } returns updates
+        coEvery { blockService.processBlock(block, emptyList(), updates) } returns
+            updates.map { slot(block) }
         processor.process(
             IndexingResult.BlockResult(block, emptyList(), emptyList(), Status.SYNCING)
         )
@@ -93,13 +114,16 @@ class ValidatorProcessorIntegrationTest {
 
         assertEquals(listOf(state(b12, "120")), reader.findAll())
         assertEquals(2, database.count("validator.state"))
+        assertEquals(2, database.count("validator.slot"))
         assertEquals(BlockIdentifier(12, b12.id), processor.getLastSyncedBlock())
-        verify(exactly = 2) { service.save(any()) }
+        verify(exactly = 2) { service.save(any(), any()) }
 
         processor.rollback(11)
 
         assertEquals(listOf(state(b10, "100")), reader.findAll())
+        assertEquals(1, database.count("validator.slot"))
         assertEquals(BlockIdentifier(10, null), processor.getLastSyncedBlock())
         verify(exactly = 1) { service.invalidateCache() }
+        verify(exactly = 1) { blockService.invalidateCache() }
     }
 }

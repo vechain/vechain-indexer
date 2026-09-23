@@ -18,6 +18,7 @@ class ValidatorBlockWriteRepositoryTest {
     private val database = PostgresTestDatabase()
     private lateinit var writer: ValidatorBlockWriteRepository
     private lateinit var reader: ValidatorBlockReadRepository
+    private lateinit var validators: ValidatorWriteRepository
 
     private val alice = "0x" + "a".repeat(40)
     private val bob = "0x" + "b".repeat(40)
@@ -27,11 +28,12 @@ class ValidatorBlockWriteRepositoryTest {
         database.start()
         writer = ValidatorBlockWriteRepository(database.jdbc)
         reader = ValidatorBlockReadRepository(database.jdbc)
+        validators = ValidatorWriteRepository(database.jdbc)
     }
 
     @AfterAll fun stop() = database.close()
 
-    @BeforeEach fun reset() = writer.truncate()
+    @BeforeEach fun reset() = validators.truncate()
 
     private fun validated(validator: String, block: Long, hourly: Boolean? = null) =
         ValidatorBlock(
@@ -64,7 +66,7 @@ class ValidatorBlockWriteRepositoryTest {
 
     private fun all(): List<ValidatorBlock> =
         database.jdbc.query(
-            "SELECT * FROM validator_block.slot ORDER BY block_number, validator, status"
+            "SELECT * FROM validator.slot ORDER BY block_number, validator, status"
         ) { rs, _ ->
             ValidatorBlockRowMapping.read(rs)
         }
@@ -87,10 +89,10 @@ class ValidatorBlockWriteRepositoryTest {
     }
 
     @Test
-    fun `rollback removes the block and everything after it`() {
+    fun `validator's rollback removes the block and everything after it`() {
         writer.save(listOf(validated(alice, 10), validated(alice, 11), missed(bob, 12)))
 
-        writer.rollbackFrom(11)
+        validators.rollbackFrom(11)
 
         assertEquals(listOf(validated(alice, 10)), all())
     }
@@ -117,24 +119,25 @@ class ValidatorBlockWriteRepositoryTest {
     @Test
     fun `the sampled lookup survives the deferrable indexes being dropped`() {
         val builder = IndexBuilder(database.properties)
-        builder.drop(ValidatorBlockIndexes.SET)
+        builder.drop(ValidatorIndexes.SET)
         try {
             writer.save(listOf(validated(alice, 10, hourly = true), missed(bob, 20)))
 
             assertEquals(mapOf(alice to 100L), writer.latestSampled(TimeSeriesResolution.HOURLY))
 
-            writer.rollbackFrom(20)
+            validators.rollbackFrom(20)
             assertEquals(listOf(10L), all().map { it.blockNumber })
         } finally {
-            builder.build(ValidatorBlockIndexes.SET)
+            builder.build(ValidatorIndexes.SET)
         }
     }
 
     @Test
-    fun `truncate empties the table and prune is a no-op`() {
+    fun `validator's truncate empties the table and its prune leaves the slots`() {
         writer.save(listOf(validated(alice, 10)))
-        assertEquals(0, writer.prune(before = 100))
-        writer.truncate()
+        assertEquals(0, validators.prune(before = 100))
+        assertEquals(1, all().size)
+        validators.truncate()
         assertTrue(all().isEmpty())
     }
 }

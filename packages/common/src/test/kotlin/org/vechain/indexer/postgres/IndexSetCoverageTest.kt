@@ -107,17 +107,12 @@ class IndexSetCoverageTest {
                         "owner_balance_pkey",
                         "owner_balance_block_idx",
                     ),
-                // Who just missed a slot, which ValidatorBlockService asks on every block.
+                // The four sampled slot partials latestSampled reads, one per resolution.
                 "validator" to
                     listOf(
                         "state_pkey",
-                        "state_current_missed_idx",
                         "state_block_idx",
                         "state_prune_idx",
-                    ),
-                // The four sampled partials latestSampled reads, one per resolution.
-                "validator_block" to
-                    listOf(
                         "slot_pkey",
                         "slot_hourly_idx",
                         "slot_daily_idx",

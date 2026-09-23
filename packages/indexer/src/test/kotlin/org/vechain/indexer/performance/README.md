@@ -27,7 +27,6 @@ All 11 indexers with 1000 mainnet blocks (23430500-23431499):
 - ✅ TokenReward (Stargate Rewards)
 - ✅ Transaction
 - ✅ Validator
-- ✅ ValidatorBlock
 - ✅ VthoGeneratedByBlock
 
 ## Output

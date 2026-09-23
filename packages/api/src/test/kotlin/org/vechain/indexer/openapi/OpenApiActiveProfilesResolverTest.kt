@@ -26,7 +26,6 @@ class OpenApiActiveProfilesResolverTest {
                     "stargate",
                     "transfers",
                     "validator",
-                    "validator-reward",
                     "vevote",
                 )
         } finally {

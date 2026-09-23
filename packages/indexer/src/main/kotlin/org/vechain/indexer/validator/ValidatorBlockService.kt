@@ -7,8 +7,6 @@ import kotlin.collections.set
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.explorer.TimestampUtils.calculateTimeBoundary
 import org.vechain.indexer.explorer.TimestampUtils.isDailyChange
 import org.vechain.indexer.explorer.TimestampUtils.isHourlyChange
@@ -37,11 +35,10 @@ import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
  * possible when `slotsElapsed > schedule.size`, i.e. >~17 min outage with <100 active validators —
  * collapses to one MISSED row; the cumulative counters on `Validator` still reflect both misses.
  */
-@Profile("validator & validator-reward")
+@Profile("validator", "history")
 @Service
 open class ValidatorBlockService(
     private val repository: ValidatorBlockWriteRepository,
-    private val validatorRepository: ValidatorReadRepository,
     private val thorClient: ThorClient,
     @param:Value("\${indexer.start-block.validator}") private val validatorStartBlock: Long,
 ) {
@@ -57,26 +54,27 @@ open class ValidatorBlockService(
         preloadLatestAggregates()
     }
 
+    /** [changed] is what [ValidatorService.processBlock] returned for [block]. */
     open suspend fun processBlock(
         block: Block,
         callResponses: List<InspectionResult>,
+        changed: List<Validator>,
     ): List<ValidatorBlock> {
         if (block.number < validatorStartBlock) return emptyList()
 
         val blockTotalSupply =
             TokenRewardService.decodeTotalSupply(callResponses) ?: return emptyList()
 
-        val validationInfo = getValidationInfo(block, blockTotalSupply)
-        val missedSlots = getValidatorsWithMissedSlots(block)
+        val signer = changed.find { it.id.equals(block.signer, ignoreCase = true) }
+        val validationInfo = getValidationInfo(block, blockTotalSupply, signer)
+        val missedSlots = getValidatorsWithMissedSlots(block, changed)
 
         return listOfNotNull(validationInfo) + missedSlots
     }
 
-    @Transactional(
-        transactionManager = PostgresConfig.TRANSACTION_MANAGER,
-        rollbackFor = [Exception::class],
-    )
+    /** Runs inside [ValidatorService.save]'s transaction. */
     open fun save(records: List<ValidatorBlock>) {
+        if (records.isEmpty()) return
         repository.save(records)
         records.forEach {
             if (it.isHourly == true) hourlyCache[it.validator] = it.blockTimestamp
@@ -90,13 +88,14 @@ open class ValidatorBlockService(
     // Reward attribution for block.signer
     // ---------------------------------------------------------------------------------------------
 
-    /**
-     * Builds the VALIDATED record for `block.signer`. Returns `null` when the signer isn't a
-     * tracked validator yet (e.g. cold start before `Validator` has caught up).
-     */
-    suspend fun getValidationInfo(block: Block, blockTotalSupply: BigInteger): ValidatorBlock? {
+    /** Builds the VALIDATED record for `block.signer`; `null` when the block left it untracked. */
+    suspend fun getValidationInfo(
+        block: Block,
+        blockTotalSupply: BigInteger,
+        validator: Validator?,
+    ): ValidatorBlock? {
         val signer = block.signer
-        val validator = validatorRepository.findById(signer) ?: return null
+        if (validator == null) return null
         val hasDelegations = (validator.delegatorVetStaked ?: BigDecimal.ZERO) > BigDecimal.ZERO
 
         // Cold-start: seed prev-supply from the parent block.
@@ -154,11 +153,10 @@ open class ValidatorBlockService(
     /**
      * One MISSED row per validator whose `lastMissedBlockNumber == block.number`. Each row is a
      * single missed PoS slot — `V2's ValidatorService.updateLiveness` updates
-     * `lastMissedBlockNumber` for every missed slot, so this query returns the just-missed
-     * validators directly.
+     * `lastMissedBlockNumber` for every missed slot, so the block's [changed] holds them all.
      */
-    fun getValidatorsWithMissedSlots(block: Block): List<ValidatorBlock> {
-        val justMissed = validatorRepository.findByLastMissedBlockNumber(block.number)
+    fun getValidatorsWithMissedSlots(block: Block, changed: List<Validator>): List<ValidatorBlock> {
+        val justMissed = changed.filter { it.lastMissedBlockNumber == block.number }
         return justMissed.map { v ->
             ValidatorBlock(
                 // Suffix the status so a signer who also missed an elapsed slot at the same
@@ -206,7 +204,7 @@ open class ValidatorBlockService(
 
     /**
      * Drop every in-memory cache and rebuild from durable state. Invoked from
-     * [ValidatorBlockProcessor.resetProcessingState] on rollback so a reorg can't leave
+     * [ValidatorProcessor.resetProcessingState] on rollback so a reorg can't leave
      * `vthoTotalSupply` ahead of the rewound database.
      */
     open fun invalidateCache() {

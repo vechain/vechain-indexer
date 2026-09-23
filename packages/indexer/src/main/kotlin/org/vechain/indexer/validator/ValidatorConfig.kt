@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Profile
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
+import org.vechain.indexer.stargate.rewards.TokenRewardService
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
@@ -29,6 +30,7 @@ open class ValidatorConfig {
             .startBlock(startBlock)
             .syncLoggerInterval(syncLogInterval)
             .includeFullBlock()
+            .callDataClauses(listOf(TokenRewardService.energyTotalSupplyClause()))
             .abis("abis/stargate")
             .abiContracts(listOf(builtinStakerAddress))
             .abiEventNames(
