@@ -40,6 +40,7 @@ open class TokenRewardConfig {
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
             .includeFullBlock()
-            .dependsOn(delegationIndexer)
+            // Its validator and delegation reads are as of its own block, so it resyncs alone.
+            .dependsOn(delegationIndexer, align = false)
             .build()
 }

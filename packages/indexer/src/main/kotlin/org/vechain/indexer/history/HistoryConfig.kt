@@ -36,7 +36,8 @@ open class HistoryConfig() {
             .businessEvents("business-events", "abis")
             .businessEventSubstitutionParams(bEProperties.substitutions)
             .startBlock(startBlock)
-            .dependsOn(validatorIndexer)
+            // Its validator reads are as of its own block, so it resyncs alone.
+            .dependsOn(validatorIndexer, align = false)
             .includeFullBlock()
             .includeVetTransfers()
             .build()
