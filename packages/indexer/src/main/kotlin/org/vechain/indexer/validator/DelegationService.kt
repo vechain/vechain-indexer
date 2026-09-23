@@ -2,10 +2,13 @@ package org.vechain.indexer.validator
 
 import java.math.BigInteger
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.Indexer
+import org.vechain.indexer.ParentProgress
 import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.stargate.token.TokenLevel
@@ -18,7 +21,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 /**
  * V2 delegation indexer.
  *
- * Pure event-driven. Reads `Validator` from Postgres (via the read repository) for cycle math — no
+ * Pure event-driven. Reads `validator.cycle` from Postgres, as of the block, for cycle math — no
  * chain calls, no aggregator dependency, no `callDataClauses`. Ordering with the V2 validator
  * indexer is handled by `dependsOn(validatorIndexer)` in [DelegationConfig].
  *
@@ -36,11 +39,13 @@ open class DelegationService(
     private val repository: DelegationWriteRepository,
     private val validatorRepository: ValidatorReadRepository,
     private val vetDelegatedService: VetDelegatedByBlockService,
+    @Qualifier("validatorIndexer") validatorIndexer: Indexer,
     @param:Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
     private val stakerSC: String,
     @param:Value("\${indexer.start-block.validator}") private val validatorStartBlock: Long,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
+    private val validatorProgress = ParentProgress(validatorIndexer)
 
     open suspend fun processBlock(block: Block, events: List<IndexedEvent>): List<Delegation> {
         if (block.number < validatorStartBlock) return emptyList()
@@ -79,7 +84,7 @@ open class DelegationService(
                 .mapValues { (_, dels) -> dels.map { it.id }.toMutableList() }
                 .toMutableMap()
 
-        val validators = preloadValidators(working.values, events)
+        val validators = preloadValidators(block, working.values, events)
 
         applyScheduledTransitions(block, working)
         refreshZeroCycle(block, working, validators)
@@ -183,7 +188,7 @@ open class DelegationService(
     private fun refreshZeroCycle(
         block: Block,
         working: MutableMap<String, Delegation>,
-        validators: Map<String, Validator>,
+        validators: Map<String, ValidatorCycle>,
     ) {
         working.values.toList().forEach { d ->
             if (d.status != DelegationStatus.QUEUED) return@forEach
@@ -202,7 +207,7 @@ open class DelegationService(
     // ------------------------------ validator preload ------------------------------
 
     /**
-     * One batched read of every [Validator] this block might need to inspect: the validator of
+     * One batched read of every [ValidatorCycle] this block might need to inspect: the validator of
      * every delegation we've loaded into `working`, plus any validator referenced by a
      * `DelegationInitiated` event (which can name a validator we don't yet have a delegation for).
      *
@@ -211,9 +216,10 @@ open class DelegationService(
      * delegation per block.
      */
     private fun preloadValidators(
+        block: Block,
         inWorking: Collection<Delegation>,
         events: List<IndexedEvent>,
-    ): Map<String, Validator> {
+    ): Map<String, ValidatorCycle> {
         val ids: Set<String> = buildSet {
             inWorking.forEach { add(it.validator) }
             events.forEach { ev ->
@@ -223,7 +229,8 @@ open class DelegationService(
             }
         }
         if (ids.isEmpty()) return emptyMap()
-        return validatorRepository.findAllById(ids).associateBy { it.id }
+        validatorProgress.requireCommitted(block.number)
+        return validatorRepository.cyclesAsOf(block.number, ids).associateBy { it.id }
     }
 
     // ------------------------------ event mutations ------------------------------
@@ -234,7 +241,7 @@ open class DelegationService(
         working: MutableMap<String, Delegation>,
         tokenIdToId: MutableMap<String, String>,
         validatorToIds: MutableMap<String, MutableList<String>>,
-        validators: Map<String, Validator>,
+        validators: Map<String, ValidatorCycle>,
     ) {
         if (!isRelevantEvent(ev)) return
         when (ev.eventType) {
@@ -271,7 +278,7 @@ open class DelegationService(
         working: MutableMap<String, Delegation>,
         tokenIdToId: MutableMap<String, String>,
         validatorToIds: MutableMap<String, MutableList<String>>,
-        validators: Map<String, Validator>,
+        validators: Map<String, ValidatorCycle>,
     ) {
         val delegationId = ev.params.getAsString("delegationId") ?: return
         val tokenId = ev.params.getAsString("tokenId") ?: return
@@ -308,7 +315,7 @@ open class DelegationService(
         ev: IndexedEvent,
         block: Block,
         working: MutableMap<String, Delegation>,
-        validators: Map<String, Validator>,
+        validators: Map<String, ValidatorCycle>,
     ) {
         val delegationId = ev.params.getAsString("delegationId") ?: return
         val current = working[delegationId] ?: return
@@ -364,7 +371,7 @@ open class DelegationService(
         block: Block,
         working: MutableMap<String, Delegation>,
         validatorToIds: Map<String, List<String>>,
-        validators: Map<String, Validator>,
+        validators: Map<String, ValidatorCycle>,
     ) {
         val validatorId = ev.params.getAsString("validator")?.lowercase() ?: return
         val ids = validatorToIds[validatorId] ?: return
@@ -401,7 +408,7 @@ open class DelegationService(
     private fun nextCycleStart(
         validatorId: String,
         blockNumber: Long,
-        validators: Map<String, Validator>,
+        validators: Map<String, ValidatorCycle>,
     ): Long? {
         val v = validators[validatorId] ?: return null
         if (v.status != Status.ACTIVE && v.status != Status.EXITING) return null
@@ -419,6 +426,8 @@ open class DelegationService(
         return currentCycleStart + period
     }
 
-    private fun validatorExitBlock(validatorId: String, validators: Map<String, Validator>): Long? =
-        validators[validatorId]?.exitBlock
+    private fun validatorExitBlock(
+        validatorId: String,
+        validators: Map<String, ValidatorCycle>,
+    ): Long? = validators[validatorId]?.exitBlock
 }

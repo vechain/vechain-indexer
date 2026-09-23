@@ -17,5 +17,14 @@ object DelegationIndexes {
                     "(block_number, id) WHERE superseded_at IS NULL",
                 )
             ) + SeriesIndexes.of("total_by_block"),
+            needed =
+                listOf(
+                    // token_reward's as-of read of a validator's delegations.
+                    DeferrableIndex(
+                        "state_validator_block_idx",
+                        "state",
+                        "(validator, block_number)",
+                    )
+                ),
         )
 }

@@ -126,7 +126,7 @@ class DelegationWriteRepositoryTest {
     }
 
     @Test
-    fun `replaying a block changes nothing and prune drops old superseded rows`() {
+    fun `replaying a block changes nothing and prune keeps every version`() {
         writer.save(listOf(delegation("1", 10)))
         writer.save(listOf(delegation("1", 20, DelegationStatus.ACTIVE)))
         writer.save(listOf(delegation("1", 30, DelegationStatus.EXITING)))
@@ -135,8 +135,8 @@ class DelegationWriteRepositoryTest {
         writer.save(listOf(delegation("1", 20, DelegationStatus.ACTIVE)))
         assertEquals(before, rows())
 
-        assertEquals(1, writer.prune(before = 25))
-        assertEquals(listOf("1:20:ACTIVE:30", "1:30:EXITING:-"), rows())
+        assertEquals(0, writer.prune(before = 25))
+        assertEquals(before, rows())
     }
 
     @Test

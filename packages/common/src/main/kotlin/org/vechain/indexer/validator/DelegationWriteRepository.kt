@@ -10,7 +10,7 @@ import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.postgres.PostgresHex
 import org.vechain.indexer.postgres.PostgresIndexerTables
 
-/** `delegation.state` as a temporal table, plus the indexer's own reads of the current rows. */
+/** `delegation.state` as a temporal table kept whole, plus the indexer's own reads of it. */
 @Repository
 @ConditionalOnPostgres
 open class DelegationWriteRepository(
@@ -97,10 +97,6 @@ open class DelegationWriteRepository(
     override fun truncate() {
         jdbc.execute("TRUNCATE delegation.state, delegation.total_by_block")
     }
-
-    /** The store records [before] once rows are gone and refuses any rollback below it. */
-    override fun prune(before: Long): Int =
-        jdbc.update("DELETE FROM delegation.state WHERE superseded_at < ?", before)
 
     private fun query(sql: String, vararg args: Any): List<Delegation> =
         jdbc.query(sql, { rs, _ -> DelegationRowMapping.read(rs) }, *args)

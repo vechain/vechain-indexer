@@ -1,5 +1,7 @@
 package org.vechain.indexer.performance.stargateRewards
 
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -86,6 +88,8 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
                     repository = tokenRewardRepository,
                     validatorV2Repository = validatorV2Repository,
                     delegationV2Repository = delegationV2Repository,
+                    committedParent =
+                        mockk { every { getCurrentBlockNumber() } returns Long.MAX_VALUE },
                     thorClient = thorClient,
                     stakerAddress = stakerAddress,
                     validatorStartBlock = validatorStartBlock,

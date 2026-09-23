@@ -5,6 +5,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.vechain.indexer.Indexer
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
@@ -19,16 +20,19 @@ class DelegationServiceTest {
     private lateinit var repository: DelegationWriteRepository
     private lateinit var validatorRepository: ValidatorReadRepository
     private lateinit var service: DelegationService
+    private val validatorIndexer = mockk<Indexer>()
 
     @BeforeEach
     fun setup() {
         repository = mockk()
         validatorRepository = mockk()
+        every { validatorIndexer.getCurrentBlockNumber() } returns Long.MAX_VALUE
         service =
             DelegationService(
                 repository = repository,
                 validatorRepository = validatorRepository,
                 vetDelegatedService = mockk(relaxed = true),
+                validatorIndexer = validatorIndexer,
                 stakerSC = STAKER_ADDRESS,
                 validatorStartBlock = 0L,
             )
@@ -47,7 +51,7 @@ class DelegationServiceTest {
         every { repository.findByTransitionAtBlockIsNullAndStatusIn(any()) } returns emptyList()
         every { repository.findByTokenIdIn(any()) } returns emptyList()
         every { repository.findByValidatorIn(any()) } returns emptyList()
-        every { validatorRepository.findAllById(any()) } returns
+        every { validatorRepository.cyclesAsOf(any(), any()) } returns
             listOf(soloGenesisValidator(VALIDATOR_ID))
 
         val updates = runBlocking {
@@ -107,7 +111,7 @@ class DelegationServiceTest {
         } returns listOf(existing)
         every { repository.findByTokenIdIn(any()) } returns emptyList()
         every { repository.findByValidatorIn(any()) } returns emptyList()
-        every { validatorRepository.findAllById(any()) } returns
+        every { validatorRepository.cyclesAsOf(any(), any()) } returns
             listOf(soloGenesisValidator(VALIDATOR_ID))
 
         // processing block 500 — long past `start(0) + period(90) = 90`, the chain housekeep
@@ -154,7 +158,7 @@ class DelegationServiceTest {
         } returns listOf(existing)
         every { repository.findByTokenIdIn(any()) } returns emptyList()
         every { repository.findByValidatorIn(any()) } returns emptyList()
-        every { validatorRepository.findAllById(any()) } returns
+        every { validatorRepository.cyclesAsOf(any(), any()) } returns
             listOf(soloGenesisValidator(VALIDATOR_ID))
 
         // processing block 150 — past the chain housekeep (90) anchored on initiatedAtBlock, but
@@ -198,7 +202,7 @@ class DelegationServiceTest {
         } returns listOf(existing)
         every { repository.findByTokenIdIn(any()) } returns emptyList()
         every { repository.findByValidatorIn(any()) } returns emptyList()
-        every { validatorRepository.findAllById(any()) } returns
+        every { validatorRepository.cyclesAsOf(any(), any()) } returns
             listOf(soloGenesisValidator(VALIDATOR_ID))
 
         // processing block 40 — between blockNumber(30) and the first housekeep (90) computed via
@@ -239,7 +243,7 @@ class DelegationServiceTest {
         every { repository.findByTransitionAtBlockIsNullAndStatusIn(any()) } returns emptyList()
         every { repository.findByTokenIdIn(any()) } returns emptyList()
         every { repository.findByValidatorIn(any()) } returns emptyList()
-        every { validatorRepository.findAllById(any()) } returns
+        every { validatorRepository.cyclesAsOf(any(), any()) } returns
             listOf(soloGenesisValidator(VALIDATOR_ID))
 
         val updates = runBlocking { service.processBlock(block(number = 90), emptyList()) }
@@ -274,16 +278,17 @@ class DelegationServiceTest {
                 ),
         )
 
-    private fun soloGenesisValidator(id: String): Validator =
-        Validator(
+    private fun soloGenesisValidator(id: String): ValidatorCycle =
+        ValidatorCycle(
             id = id,
-            blockId = "0xvblock",
             blockNumber = 607,
-            blockTimestamp = 6070,
+            blockId = "0xvblock",
             status = Status.ACTIVE,
-            cyclePeriodLength = 90L,
             startBlock = 0L,
+            cyclePeriodLength = 90L,
+            exitBlock = null,
             completedPeriods = 6L,
+            delegatorVetStaked = null,
         )
 
     private fun block(number: Long): Block =

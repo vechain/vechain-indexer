@@ -52,6 +52,45 @@ class ValidatorWriteRepositoryTest {
             String::class.java,
         )
 
+    /** Every cycle row as "id:block:status:supersededAt", ordered. */
+    private fun cycles(): List<String> =
+        database.jdbc.queryForList(
+            "SELECT encode(id, 'hex') || ':' || block_number || ':' || status || ':' || " +
+                "coalesce(superseded_at::text, '-') FROM validator.cycle ORDER BY id, block_number",
+            String::class.java,
+        )
+
+    @Test
+    fun `a cycle row lands only when a field other indexers read changes, and prune keeps it`() {
+        writer.save(listOf(validator(alice, 10)))
+        writer.save(listOf(validator(alice, 20)))
+        writer.save(listOf(validator(alice, 30, Status.EXITING)))
+        writer.save(listOf(validator(alice, 40, Status.EXITING)))
+
+        writer.prune(before = 100)
+
+        assertEquals(
+            listOf("${"a".repeat(40)}:10:ACTIVE:30", "${"a".repeat(40)}:30:EXITING:-"),
+            cycles(),
+        )
+    }
+
+    @Test
+    fun `rollback reopens the cycle row it closed and a replay rewrites its own`() {
+        writer.save(listOf(validator(alice, 10)))
+        writer.save(listOf(validator(alice, 20, Status.EXITING)))
+
+        writer.rollbackFrom(20)
+        assertEquals(listOf("${"a".repeat(40)}:10:ACTIVE:-"), cycles())
+
+        writer.save(listOf(validator(alice, 20, Status.QUEUED)))
+        writer.save(listOf(validator(alice, 20, Status.EXITING)))
+        assertEquals(
+            listOf("${"a".repeat(40)}:10:ACTIVE:20", "${"a".repeat(40)}:20:EXITING:-"),
+            cycles(),
+        )
+    }
+
     @Test
     fun `every field survives the round trip, scale included`() {
         val full =

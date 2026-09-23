@@ -3,9 +3,7 @@ package org.vechain.indexer.validator
 import java.math.BigDecimal
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
@@ -57,7 +55,7 @@ class ValidatorReadRepositoryTest {
 
     /**
      * active (stake 300, endorsed), queued (200, endorsed), exiting (100), exited (400, missed at
-     * 50), and an unknown row with no status or stake; the active row was re-stated at block 20.
+     * 50), and an unknown row with no status or stake; active was re-stated at 20, start block 15.
      */
     private fun seed() {
         val writer = ValidatorWriteRepository(database.jdbc)
@@ -74,6 +72,7 @@ class ValidatorReadRepositoryTest {
         writer.save(
             listOf(
                 validator(active, Status.ACTIVE, BigDecimal("300"), block = 20, endorser = endorser)
+                    .copy(startBlock = 15)
             )
         )
     }
@@ -88,47 +87,30 @@ class ValidatorReadRepositoryTest {
     }
 
     @Test
-    fun `snapshotsSince with no watermark is the current set`() {
-        val rows = repository.snapshotsSince(null)
+    fun `cyclesAsOf is each validator's cycle as it stood at the block`() {
         assertEquals(
-            setOf(active, queued, exiting, exited, unknown),
-            rows.map { it.snapshot.validatorId }.toSet(),
+            listOf(active, queued, exiting, exited, unknown),
+            repository.cyclesAsOf(10).map { it.id },
         )
-        assertTrue(rows.all { it.current })
-        assertEquals(20L, rows.single { it.snapshot.validatorId == active }.block.number)
-        assertEquals(
-            7L,
-            rows.single { it.snapshot.validatorId == queued }.snapshot.stakingPeriodLength,
-        )
+        assertNull(repository.cyclesAsOf(19, listOf(active)).single().startBlock)
+        assertEquals(15L, repository.cyclesAsOf(20, listOf(active)).single().startBlock)
+        assertEquals(7L, repository.cyclesAsOf(20, listOf(queued)).single().cyclePeriodLength)
+        assertEquals(emptyList<ValidatorCycle>(), repository.cyclesAsOf(9))
     }
 
     @Test
-    fun `snapshotsSince returns the rows since the watermark and the watermark rows themselves`() {
-        val rows = repository.snapshotsSince(10)
-        val atWatermark = rows.filter { it.block.number == 10L }
-        assertEquals(5, atWatermark.size)
-        assertEquals("0x" + "0".repeat(62) + "0a", atWatermark.first().block.id)
-        assertFalse(atWatermark.single { it.snapshot.validatorId == active }.current)
+    fun `cyclesAsOf by id skips the ids it does not hold`() {
         assertEquals(
-            listOf(active),
-            rows.filter { it.block.number > 10L }.map { it.snapshot.validatorId },
+            listOf(active, exited),
+            repository.cyclesAsOf(20, listOf(exited, active, "0x" + "9".repeat(40))).map { it.id },
         )
-        assertEquals(listOf(active), repository.snapshotsSince(20).map { it.snapshot.validatorId })
+        assertEquals(emptyList<ValidatorCycle>(), repository.cyclesAsOf(20, emptyList()))
     }
 
     @Test
     fun `findById is case-insensitive and null for an unknown address`() {
         assertEquals(20L, repository.findById(active.uppercase().replace("0X", "0x"))?.blockNumber)
         assertNull(repository.findById("0x" + "9".repeat(40)))
-    }
-
-    @Test
-    fun `findAllById skips the ids it does not hold`() {
-        assertEquals(
-            listOf(active, exited),
-            ids(repository.findAllById(listOf(exited, active, "0x" + "9".repeat(40)))),
-        )
-        assertEquals(emptyList<Validator>(), repository.findAllById(emptyList()))
     }
 
     @Test

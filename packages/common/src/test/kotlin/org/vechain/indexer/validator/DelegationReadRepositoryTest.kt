@@ -102,16 +102,10 @@ class DelegationReadRepositoryTest {
     }
 
     @Test
-    fun `findByValidatorAndStatusIn is the token-reward read`() {
-        assertEquals(
-            listOf("1", "3"),
-            ids(
-                repository.findByValidatorAndStatusIn(
-                    alice,
-                    listOf(DelegationStatus.ACTIVE, DelegationStatus.EXITING),
-                )
-            ),
-        )
+    fun `activeAsOf is the token-reward read, as the delegations stood at the block`() {
+        assertEquals(listOf("3"), ids(repository.activeAsOf(alice, 19)))
+        assertEquals(listOf("1", "3"), ids(repository.activeAsOf(alice, 20)))
+        assertEquals(emptyList<String>(), ids(repository.activeAsOf(alice, 9)))
     }
 
     @Test

@@ -41,10 +41,17 @@ open class ValidatorWriteRepository(
             blockNumber,
         )
         jdbc.batchUpdate(INSERT, rows, rows.size) { ps, v -> ValidatorRowMapping.bind(ps, v) }
+        jdbc.update(CLOSE_CYCLES, blockNumber, ids.toTypedArray())
+        jdbc.update(OPEN_CYCLES, blockNumber, ids.toTypedArray())
     }
 
     override fun rollbackFrom(blockNumber: Long) {
         jdbc.update("DELETE FROM validator.slot WHERE block_number >= ?", blockNumber)
+        jdbc.update("DELETE FROM validator.cycle WHERE block_number >= ?", blockNumber)
+        jdbc.update(
+            "UPDATE validator.cycle SET superseded_at = NULL WHERE superseded_at >= ?",
+            blockNumber,
+        )
         jdbc.update("DELETE FROM validator.state WHERE block_number >= ?", blockNumber)
         jdbc.update(
             "UPDATE validator.state SET superseded_at = NULL WHERE superseded_at >= ?",
@@ -53,7 +60,7 @@ open class ValidatorWriteRepository(
     }
 
     override fun truncate() {
-        jdbc.execute("TRUNCATE validator.state, validator.slot")
+        jdbc.execute("TRUNCATE validator.state, validator.slot, validator.cycle")
     }
 
     /** The store records [before] once rows are gone and refuses any rollback below it. */
@@ -61,6 +68,31 @@ open class ValidatorWriteRepository(
         jdbc.update("DELETE FROM validator.state WHERE superseded_at < ?", before)
 
     companion object {
+        private const val CYCLE_FIELDS =
+            "status, start_block, cycle_period_length, exit_block, completed_periods, " +
+                "delegator_vet_staked"
+
+        // A block's states close the cycle rows whose fields they change; never pruned.
+        private val CLOSE_CYCLES =
+            "UPDATE validator.cycle c SET superseded_at = s.block_number FROM validator.state s " +
+                "WHERE s.block_number = ? AND s.id = ANY(?) AND c.id = s.id " +
+                "AND c.superseded_at IS NULL AND c.block_number < s.block_number " +
+                "AND (${prefixed("c")}) IS DISTINCT FROM (${prefixed("s")})"
+
+        // ...and open one where none stands below the block; a replayed block rewrites its own.
+        private val OPEN_CYCLES =
+            "INSERT INTO validator.cycle (id, block_number, block_id, block_timestamp, " +
+                "$CYCLE_FIELDS) SELECT s.id, s.block_number, s.block_id, s.block_timestamp, " +
+                "${prefixed("s")} FROM validator.state s WHERE s.block_number = ? " +
+                "AND s.id = ANY(?) AND NOT EXISTS (SELECT 1 FROM validator.cycle c " +
+                "WHERE c.id = s.id AND c.superseded_at IS NULL AND c.block_number < s.block_number) " +
+                "ON CONFLICT (id, block_number) DO UPDATE SET " +
+                ("block_id, block_timestamp, $CYCLE_FIELDS").split(", ").joinToString {
+                    "$it = EXCLUDED.$it"
+                }
+
+        private fun prefixed(alias: String) = CYCLE_FIELDS.split(", ").joinToString { "$alias.$it" }
+
         private val INSERT =
             "INSERT INTO validator.state (id, block_number, " +
                 ValidatorRowMapping.COLUMNS.joinToString() +

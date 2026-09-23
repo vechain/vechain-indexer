@@ -67,9 +67,9 @@ class HistoryRowsRoundTripTest {
                             BUSINESS_EVENT_PARAMS.getValue("STARGATE_NFT_CONTRACT"),
                     ),
                 validatorRepository =
-                    mockk {
-                        every { snapshotsSince(any()) } returns emptyList()
-                    },
+                    mockk { every { cyclesAsOf(any(), null) } returns emptyList() },
+                validatorIndexer =
+                    mockk { every { getCurrentBlockNumber() } returns Long.MAX_VALUE },
                 validatorStartBlock = 0L,
             )
     }

@@ -8,9 +8,8 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.config.postgres.ConditionalOnPostgres
 import org.vechain.indexer.postgres.PostgresHex
-import org.vechain.indexer.thor.model.BlockIdentifier
 
-/** Reads of the current validator set, for the API and the indexers under `.dependsOn(...)`. */
+/** The API's reads of the current validator set, and the indexers' as-of reads of its cycles. */
 @Repository
 @ConditionalOnPostgres
 open class ValidatorReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTemplate: JdbcTemplate) {
@@ -19,43 +18,37 @@ open class ValidatorReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTempla
 
     open fun findAll(): List<Validator> = query("$CURRENT ORDER BY id", MapSqlParameterSource())
 
-    /** Current rows after [since], plus those at [since], whose block id proves it stands. */
-    open fun snapshotsSince(since: Long?): List<ValidatorSnapshotRow> =
-        jdbc.query(
-            "SELECT id, block_number, block_id, superseded_at IS NULL AS current, " +
-                "cycle_period_length, start_block, exit_block FROM validator.state WHERE " +
-                if (since == null) "superseded_at IS NULL"
-                else "(block_number > :since AND superseded_at IS NULL) OR block_number = :since",
-            MapSqlParameterSource("since", since),
-        ) { rs, _ ->
-            ValidatorSnapshotRow(
-                block =
-                    BlockIdentifier(
-                        rs.getLong("block_number"),
-                        PostgresHex.hex(rs.getBytes("block_id")),
-                    ),
-                current = rs.getBoolean("current"),
-                snapshot =
-                    ValidatorSnapshot(
-                        validatorId = PostgresHex.hex(rs.getBytes("id")),
-                        stakingPeriodLength = rs.getLong("cycle_period_length"),
-                        startBlock = rs.getLong("start_block"),
-                        exitBlock = rs.getLong("exit_block"),
-                    ),
-            )
-        }
+    /** Every validator's cycle fields as they stood at [blockNumber], or those of [ids] alone. */
+    open fun cyclesAsOf(blockNumber: Long, ids: Collection<String>? = null): List<ValidatorCycle> =
+        if (ids?.isEmpty() == true) emptyList()
+        else
+            jdbc.query(
+                "SELECT c.* FROM validator.cycle v CROSS JOIN LATERAL (SELECT * FROM " +
+                    "validator.cycle c WHERE c.id = v.id AND c.block_number <= :block " +
+                    "ORDER BY c.block_number DESC LIMIT 1) c WHERE v.superseded_at IS NULL" +
+                    (if (ids == null) "" else " AND v.id = ANY(:ids)") +
+                    " ORDER BY c.id",
+                MapSqlParameterSource("block", blockNumber)
+                    .addValue("ids", ids?.map(PostgresHex::bytes)?.toTypedArray()),
+            ) { rs, _ ->
+                ValidatorCycle(
+                    id = PostgresHex.hex(rs.getBytes("id")),
+                    blockNumber = rs.getLong("block_number"),
+                    blockId = PostgresHex.hex(rs.getBytes("block_id")),
+                    status = rs.getString("status")?.let(Status::valueOf),
+                    startBlock = rs.getObject("start_block", Long::class.javaObjectType),
+                    cyclePeriodLength =
+                        rs.getObject("cycle_period_length", Long::class.javaObjectType),
+                    exitBlock = rs.getObject("exit_block", Long::class.javaObjectType),
+                    completedPeriods =
+                        rs.getObject("completed_periods", Long::class.javaObjectType),
+                    delegatorVetStaked = rs.getBigDecimal("delegator_vet_staked"),
+                )
+            }
 
     open fun findById(id: String): Validator? =
         query("$CURRENT AND id = :id", MapSqlParameterSource("id", PostgresHex.bytes(id)))
             .firstOrNull()
-
-    open fun findAllById(ids: Collection<String>): List<Validator> =
-        if (ids.isEmpty()) emptyList()
-        else
-            query(
-                "$CURRENT AND id = ANY(:ids) ORDER BY id",
-                MapSqlParameterSource("ids", ids.map(PostgresHex::bytes).toTypedArray()),
-            )
 
     open fun findByStatusIn(statuses: Collection<Status>): List<Validator> =
         query(
