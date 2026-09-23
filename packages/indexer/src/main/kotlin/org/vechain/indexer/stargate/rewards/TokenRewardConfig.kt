@@ -17,7 +17,7 @@ import org.vechain.indexer.thor.client.ThorClient
  * Reads validator cycle state from `validator.cycle`, and active delegations as of the block — no
  * V1 aggregator dependency. The service reads the signer's delegator pool from the chain itself.
  *
- * The `dependsOn(delegationIndexer)` chain transitively pulls `validatorIndexer` in too: `validator
+ * `dependsOn(delegationIndexer, align = false)` chain pulls `validatorIndexer` in, too: `validator
  * → delegation-v2 → token-reward`. So activating the `token-reward` profile requires both upstream
  * profiles to be active as well.
  */

@@ -23,7 +23,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
  *
  * Pure event-driven. Reads `validator.cycle` from Postgres, as of the block, for cycle math — no
  * chain calls, no aggregator dependency, no `callDataClauses`. Ordering with the V2 validator
- * indexer is handled by `dependsOn(validatorIndexer)` in [DelegationConfig].
+ * indexer is handled by `dependsOn(validatorIndexer, align = false)` in [DelegationConfig].
  *
  * Each block:
  * 1. Load three sets of candidates: (a) due-this-block, (b) zero-cycle (validator hasn't started
