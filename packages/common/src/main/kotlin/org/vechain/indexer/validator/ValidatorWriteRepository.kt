@@ -9,7 +9,7 @@ import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.postgres.PostgresHex
 import org.vechain.indexer.postgres.PostgresIndexerTables
 
-/** `validator.state` as a temporal table; see [NftBlacklistWriteRepository] for the pattern. */
+/** `validator.state` as a temporal table, plus the slot ledger and the never-pruned cycle table. */
 @Repository
 @ConditionalOnPostgres
 open class ValidatorWriteRepository(

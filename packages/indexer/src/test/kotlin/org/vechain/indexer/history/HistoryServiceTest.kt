@@ -201,8 +201,6 @@ class HistoryServiceTest {
     private fun cycle(period: Long) =
         ValidatorCycle(
             id = VALIDATOR,
-            blockNumber = 1,
-            blockId = "0x" + "a".repeat(64),
             status = Status.ACTIVE,
             startBlock = 1,
             cyclePeriodLength = period,

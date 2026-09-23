@@ -5,6 +5,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
@@ -67,6 +68,25 @@ class DelegationServiceTest {
             get { status }.isEqualTo(DelegationStatus.QUEUED)
             // start=0, period=90, blockNumber=55 → currentCycleStart=0 → next boundary=90
             get { transitionAtBlock }.isEqualTo(90L)
+        }
+    }
+
+    @Test
+    fun `a block the validator indexer has not committed is refused`() {
+        every { repository.findByTransitionAtBlockAndStatusIn(any(), any()) } returns emptyList()
+        every { repository.findByTransitionAtBlockIsNullAndStatusIn(any()) } returns emptyList()
+        every { repository.findByTokenIdIn(any()) } returns emptyList()
+        every { repository.findByValidatorIn(any()) } returns emptyList()
+        every { validatorIndexer.getCurrentBlockNumber() } returns 55
+        every { validatorIndexer.name } returns "ValidatorIndexer"
+
+        assertThrows<IllegalStateException> {
+            runBlocking {
+                service.processBlock(
+                    block(number = 55),
+                    listOf(delegationInitiatedEvent(blockNumber = 55)),
+                )
+            }
         }
     }
 
@@ -281,8 +301,6 @@ class DelegationServiceTest {
     private fun soloGenesisValidator(id: String): ValidatorCycle =
         ValidatorCycle(
             id = id,
-            blockNumber = 607,
-            blockId = "0xvblock",
             status = Status.ACTIVE,
             startBlock = 0L,
             cyclePeriodLength = 90L,

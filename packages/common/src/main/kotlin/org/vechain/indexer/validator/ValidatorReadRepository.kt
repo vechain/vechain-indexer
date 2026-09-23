@@ -33,8 +33,6 @@ open class ValidatorReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTempla
             ) { rs, _ ->
                 ValidatorCycle(
                     id = PostgresHex.hex(rs.getBytes("id")),
-                    blockNumber = rs.getLong("block_number"),
-                    blockId = PostgresHex.hex(rs.getBytes("block_id")),
                     status = rs.getString("status")?.let(Status::valueOf),
                     startBlock = rs.getObject("start_block", Long::class.javaObjectType),
                     cyclePeriodLength =

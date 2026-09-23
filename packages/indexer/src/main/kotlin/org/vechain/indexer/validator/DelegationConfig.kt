@@ -17,7 +17,7 @@ import org.vechain.indexer.thor.client.ThorClient
  * - **No `callDataClauses`** — drops the dependency on the deployed `GetValidators` aggregator,
  *   which unblocks solo / custom networks.
  * - **`dependsOn(validatorIndexer)`** — flips the V1 ordering so the V2 delegation indexer reads
- *   already-persisted `Validator` state for cycle math. The cycle is gone: validator no longer
+ *   `validator.cycle` as of the block for cycle math. The cycle is gone: validator no longer
  *   depends on delegation, delegation now depends on validator, and neither calls the chain for the
  *   other's data.
  */

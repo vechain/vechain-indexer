@@ -20,10 +20,11 @@ CREATE INDEX cycle_block_idx ON validator.cycle (block_number);
 CREATE INDEX cycle_superseded_idx ON validator.cycle (superseded_at) WHERE superseded_at IS NOT NULL;
 
 -- delegation keeps every version now: token_reward reads a validator's delegations as of a block.
-DROP INDEX IF EXISTS delegation.state_prune_idx;
+-- state_prune_idx stays: rollbackFrom reopens rows by superseded_at.
 DO $$
 BEGIN
-  -- As V34: inline while small, else DelegationIndexes grows it after start.
+  -- As V34: inline while small, else DelegationIndexes grows it after start. reltuples is -1
+  -- before the first ANALYZE, so a fresh database defers it too.
   IF (SELECT reltuples FROM pg_class WHERE oid = 'delegation.state'::regclass) BETWEEN 0 AND 5000000 THEN
     CREATE INDEX IF NOT EXISTS state_validator_block_idx ON delegation.state (validator, block_number);
   END IF;

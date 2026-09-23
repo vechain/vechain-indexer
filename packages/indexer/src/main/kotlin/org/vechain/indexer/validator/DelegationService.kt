@@ -400,7 +400,7 @@ open class DelegationService(
 
     /**
      * Next cycle-boundary block for [validatorId] after [blockNumber], computed from the persisted
-     * `Validator` row in the supplied [validators] map (preloaded once per block by
+     * `validator.cycle` row in the supplied [validators] map (preloaded once per block by
      * [preloadValidators]). Returns `null` if the validator isn't known or isn't yet active —
      * gating on [Status.ACTIVE]/[Status.EXITING] rather than `startBlock > 0`, since genesis
      * validators on Thor solo (Hayabusa from block 0) legitimately have `startBlock = 0`.

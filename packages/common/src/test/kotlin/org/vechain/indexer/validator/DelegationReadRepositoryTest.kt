@@ -19,6 +19,7 @@ class DelegationReadRepositoryTest {
 
     private val alice = "0x" + "1".repeat(40)
     private val bob = "0x" + "2".repeat(40)
+    private val carol = "0x" + "3".repeat(40)
     private val owner = "0x" + "a".repeat(40)
 
     @BeforeAll
@@ -57,7 +58,7 @@ class DelegationReadRepositoryTest {
 
     /**
      * alice: 1 ACTIVE Dawn, 2 QUEUED Dawn due at 500, 3 EXITING Flash due at 600, 4 EXITED; bob: 5
-     * ACTIVE Flash. Delegation 1 was re-stated at block 20, everything else is at block 10.
+     * ACTIVE Flash; carol: 6 ACTIVE at 10, EXITED at 20. Delegation 1 was re-stated at block 20.
      */
     private fun seed() {
         val writer = DelegationWriteRepository(database.jdbc)
@@ -68,9 +69,15 @@ class DelegationReadRepositoryTest {
                 delegation("3", 10, alice, DelegationStatus.EXITING, TokenLevel.Flash, 600),
                 delegation("4", 10, alice, DelegationStatus.EXITED),
                 delegation("5", 10, bob, DelegationStatus.ACTIVE, TokenLevel.Flash),
+                delegation("6", 10, carol, DelegationStatus.ACTIVE),
             )
         )
-        writer.save(listOf(delegation("1", 20, alice, DelegationStatus.ACTIVE)))
+        writer.save(
+            listOf(
+                delegation("1", 20, alice, DelegationStatus.ACTIVE),
+                delegation("6", 20, carol, DelegationStatus.EXITED),
+            )
+        )
     }
 
     private fun ids(rows: List<Delegation>) = rows.map { it.id }
@@ -78,7 +85,7 @@ class DelegationReadRepositoryTest {
     @Test
     fun `the unfiltered page is newest block first with the id as tiebreak`() {
         assertEquals(
-            listOf("1", "5", "4"),
+            listOf("6", "1", "5"),
             ids(repository.find(null, null, null, Direction.DESC, 0, 3)),
         )
         assertEquals(
@@ -106,6 +113,9 @@ class DelegationReadRepositoryTest {
         assertEquals(listOf("3"), ids(repository.activeAsOf(alice, 19)))
         assertEquals(listOf("1", "3"), ids(repository.activeAsOf(alice, 20)))
         assertEquals(emptyList<String>(), ids(repository.activeAsOf(alice, 9)))
+        // The row superseded at 20 stands at 19 and not at 20.
+        assertEquals(listOf("6"), ids(repository.activeAsOf(carol, 19)))
+        assertEquals(emptyList<String>(), ids(repository.activeAsOf(carol, 20)))
     }
 
     @Test
