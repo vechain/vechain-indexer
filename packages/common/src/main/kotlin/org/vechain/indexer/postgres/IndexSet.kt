@@ -24,7 +24,6 @@ import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedIndexes
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedIndexes
 import org.vechain.indexer.transfer.TransferIndexes
 import org.vechain.indexer.validator.DelegationIndexes
-import org.vechain.indexer.validator.ValidatorBlockIndexes
 import org.vechain.indexer.validator.ValidatorIndexes
 import org.vechain.indexer.vevote.HistoricProposalsIndexes
 import org.vechain.indexer.vevote.VeVoteIndexes
@@ -61,7 +60,6 @@ object IndexSets {
             VthoClaimedIndexes.SET,
             StargateStakingIndexes.SET,
             ValidatorIndexes.SET,
-            ValidatorBlockIndexes.SET,
             DelegationIndexes.SET,
             B3trBalanceIndexes.SET,
             GmNftIndexes.SET,

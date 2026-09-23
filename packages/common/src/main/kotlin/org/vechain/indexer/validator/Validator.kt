@@ -22,8 +22,7 @@ import org.vechain.indexer.IndexedDocument
  * yields. Requires VET/VTHO USD prices from `PriceFeedOracle` (network-specific contract). Keeping
  * these out of the indexer lets it run unchanged on mainnet, testnet, solo, and custom networks.
  *
- * **Not yet wired up:** `totalRewards` (the reward ledger lives in the separate `validator-reward`
- * profile).
+ * **Not yet wired up:** `totalRewards` (the reward ledger lives in `validator.slot`).
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Validator(

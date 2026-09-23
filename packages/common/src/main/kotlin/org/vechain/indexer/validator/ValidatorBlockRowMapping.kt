@@ -7,7 +7,7 @@ import org.vechain.indexer.postgres.PostgresHex.bytes
 import org.vechain.indexer.postgres.PostgresHex.hex
 import org.vechain.indexer.timeseries.TimeSeriesResolution
 
-/** A `validator_block.slot` row to a [ValidatorBlock] and back; the id is rebuilt from the key. */
+/** A `validator.slot` row to a [ValidatorBlock] and back; the id is rebuilt from the key. */
 object ValidatorBlockRowMapping {
 
     /** The columns after `(block_number, validator, status)`, in the order [bind] sets them. */

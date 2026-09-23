@@ -24,7 +24,6 @@ class OpenApiActiveProfilesResolver : ActiveProfilesResolver {
                     "stargate",
                     "transfers",
                     "validator",
-                    "validator-reward",
                     "vevote",
                 )
                 .sorted()

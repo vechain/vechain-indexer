@@ -73,7 +73,7 @@ enabled_nets:
       cpu: 2048
       memory: 4096
       enabled: true
-      spring_profile: indexer,nfts,blocks,transfers,history,vevote,stargate,b3tr,explorer,validator,validator-reward,token-reward,accounts,vevote-historic,contracts,safe
+      spring_profile: indexer,nfts,blocks,transfers,history,vevote,stargate,b3tr,explorer,validator,token-reward,accounts,vevote-historic,contracts,safe
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       logging:
         app-log-level: "INFO"
@@ -143,7 +143,6 @@ enabled_nets:
         explorer: "1"
         vevote-historic: "1"
         validator: "18"
-        validator-rewards: "11"
         stargate-token: "15"
         token-rewards: "13"
         delegation: "19"
@@ -236,7 +235,7 @@ enabled_nets:
       cpu: 2048
       memory: 4096
       enabled: true
-      spring_profile: indexer,nfts,blocks,transfers,history,vevote,stargate,b3tr,explorer,token-reward,validator,validator-reward,accounts,contracts,safe
+      spring_profile: indexer,nfts,blocks,transfers,history,vevote,stargate,b3tr,explorer,token-reward,validator,accounts,contracts,safe
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       logging:
         app-log-level: "INFO"
@@ -306,7 +305,6 @@ enabled_nets:
         explorer: "1"
         vevote-historic: "1"
         validator: "18"
-        validator-rewards: "11"
         stargate-token: "16"
         token-rewards: "12"
         delegation: "18"

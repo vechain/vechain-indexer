@@ -17,6 +17,7 @@ import org.vechain.indexer.postgres.IndexerStateRepository
 @Component
 open class ValidatorProcessor(
     private val service: ValidatorService,
+    private val blockService: ValidatorBlockService,
     repository: ValidatorWriteRepository,
     state: IndexerStateRepository,
     checkpointProperties: CheckpointProperties,
@@ -44,12 +45,14 @@ open class ValidatorProcessor(
             "Expected IndexingResult.BlockResult (full block result) but got ${entry::class.simpleName}"
         }
         val updated = service.processBlock(entry.block, entry.events())
-        if (updated.isNotEmpty()) service.save(updated)
+        val slots = blockService.processBlock(entry.block, entry.callResults(), updated)
+        if (updated.isNotEmpty() || slots.isNotEmpty()) service.save(updated, slots)
     }
 
-    /** Drops the service's in-memory mirror so the next block reloads the rolled-back rows. */
+    /** Drops the services' in-memory state so the next block reloads the rolled-back rows. */
     override fun resetProcessingState() {
         super.resetProcessingState()
         service.invalidateCache()
+        blockService.invalidateCache()
     }
 }

@@ -31,11 +31,11 @@ open class ValidatorBlockReadRepository(
         val bound = if (direction == Direction.ASC) ">=" else "<="
         val dir = direction.name
         return rows(
-            "SELECT * FROM validator_block.slot WHERE TRUE" +
+            "SELECT * FROM validator.slot WHERE TRUE" +
                 (if (validator == null) "" else " AND validator = :validator") +
                 (if (blockNumber == null) "" else " AND block_number $bound :block") +
                 (if (status == null) ""
-                else " AND status = CAST(:status AS validator_block.status)") +
+                else " AND status = CAST(:status AS validator.slot_status)") +
                 " ORDER BY block_number $dir, validator, status OFFSET :offset LIMIT :limit",
             MapSqlParameterSource("validator", PostgresHex.bytesOrNull(validator))
                 .addValue("block", blockNumber)
@@ -47,7 +47,7 @@ open class ValidatorBlockReadRepository(
 
     open fun findByBlockNumber(blockNumber: Long, validator: String?): List<ValidatorBlock> =
         rows(
-            "SELECT * FROM validator_block.slot WHERE block_number = :block" +
+            "SELECT * FROM validator.slot WHERE block_number = :block" +
                 (if (validator == null) "" else " AND validator = :validator") +
                 " ORDER BY validator, status",
             MapSqlParameterSource("block", blockNumber)
@@ -63,7 +63,7 @@ open class ValidatorBlockReadRepository(
     ): List<ValidatorBlock> {
         val flag = ValidatorBlockRowMapping.sampleColumn(resolution)
         return rows(
-            "SELECT * FROM validator_block.slot WHERE validator = :validator AND status = 'VALIDATED'" +
+            "SELECT * FROM validator.slot WHERE validator = :validator AND status = 'VALIDATED'" +
                 (if (flag == null) "" else " AND $flag") +
                 " AND block_timestamp BETWEEN :from AND :to ORDER BY block_timestamp",
             MapSqlParameterSource("validator", PostgresHex.bytes(validator))
@@ -74,7 +74,7 @@ open class ValidatorBlockReadRepository(
 
     open fun findLatestValidatedAtOrBefore(validator: String, timestamp: Long): ValidatorBlock? =
         rows(
-                "SELECT * FROM validator_block.slot WHERE validator = :validator AND status = 'VALIDATED'" +
+                "SELECT * FROM validator.slot WHERE validator = :validator AND status = 'VALIDATED'" +
                     " AND block_timestamp <= :at ORDER BY block_timestamp DESC LIMIT 1",
                 MapSqlParameterSource("validator", PostgresHex.bytes(validator))
                     .addValue("at", timestamp),
@@ -88,7 +88,7 @@ open class ValidatorBlockReadRepository(
         return jdbc.query(
             """
             WITH win AS MATERIALIZED (
-              SELECT validator, status, block_timestamp FROM validator_block.slot
+              SELECT validator, status, block_timestamp FROM validator.slot
               WHERE block_timestamp BETWEEN :from AND :to$inWindow
             ), counts AS (
               SELECT validator, count(*) FILTER (WHERE status = 'VALIDATED') AS proposed,
@@ -99,7 +99,7 @@ open class ValidatorBlockReadRepository(
               UNION ALL
               SELECT s.id, m.block_timestamp FROM validator.state s
               CROSS JOIN LATERAL (
-                SELECT block_timestamp FROM validator_block.slot
+                SELECT block_timestamp FROM validator.slot
                 WHERE validator = s.id AND status = 'MISSED' AND block_timestamp < :from
                 ORDER BY block_timestamp DESC LIMIT 1
               ) m
@@ -111,19 +111,19 @@ open class ValidatorBlockReadRepository(
               FROM misses m
               LEFT JOIN validator.state s ON s.id = m.validator AND s.superseded_at IS NULL
               LEFT JOIN LATERAL (
-                SELECT block_timestamp FROM validator_block.slot
+                SELECT block_timestamp FROM validator.slot
                 WHERE validator = m.validator AND status = 'VALIDATED'
                   AND block_timestamp > m.block_timestamp
                 ORDER BY block_timestamp LIMIT 1
               ) nv ON TRUE
               LEFT JOIN LATERAL (
-                SELECT block_timestamp FROM validator_block.slot
+                SELECT block_timestamp FROM validator.slot
                 WHERE validator = m.validator AND status = 'MISSED'
                   AND block_timestamp > m.block_timestamp
                 ORDER BY block_timestamp LIMIT 1
               ) nm ON TRUE
               LEFT JOIN LATERAL (
-                SELECT block_timestamp FROM validator_block.slot
+                SELECT block_timestamp FROM validator.slot
                 WHERE block_number >= s.exit_block ORDER BY block_number LIMIT 1
               ) ex ON TRUE
               GROUP BY m.validator

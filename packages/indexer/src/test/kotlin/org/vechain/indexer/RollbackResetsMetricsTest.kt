@@ -19,9 +19,7 @@ import org.vechain.indexer.stargate.tokenReward.TokenRewardWriteRepository
 import org.vechain.indexer.validator.DelegationProcessor
 import org.vechain.indexer.validator.DelegationService
 import org.vechain.indexer.validator.DelegationWriteRepository
-import org.vechain.indexer.validator.ValidatorBlockProcessor
 import org.vechain.indexer.validator.ValidatorBlockService
-import org.vechain.indexer.validator.ValidatorBlockWriteRepository
 import org.vechain.indexer.validator.ValidatorProcessor
 import org.vechain.indexer.validator.ValidatorService
 import org.vechain.indexer.validator.ValidatorWriteRepository
@@ -41,23 +39,11 @@ class RollbackResetsMetricsTest {
             IndexerNames.VALIDATOR.NAME,
             ValidatorProcessor(
                 mockk<ValidatorService>(relaxed = true),
+                mockk<ValidatorBlockService>(relaxed = true),
                 mockk<ValidatorWriteRepository>(relaxed = true),
                 state,
                 checkpoints,
                 horizon,
-                metrics,
-            ),
-        )
-
-    @Test
-    fun `ValidatorBlockProcessor rollback lets replayed blocks record again`() =
-        assertReplayRecords(
-            IndexerNames.VALIDATOR_BLOCK.NAME,
-            ValidatorBlockProcessor(
-                mockk<ValidatorBlockService>(relaxed = true),
-                mockk<ValidatorBlockWriteRepository>(relaxed = true),
-                state,
-                checkpoints,
                 metrics,
             ),
         )

@@ -38,7 +38,6 @@ spring:
     group:
       validator: [delegation, prices]
       delegation: [validator]
-      validator-reward: [validator]
       token-reward: [delegation]
       vet-delegated-by-block: [delegation]
       stargate: [delegation]

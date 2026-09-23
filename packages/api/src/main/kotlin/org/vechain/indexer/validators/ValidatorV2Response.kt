@@ -22,7 +22,7 @@ import org.vechain.indexer.validator.logic.ValidatorCalculator
  *   validator has no `blocksPerYear` yet.
  *
  * Still deferred (separate workstreams):
- * - `totalRewards` — depends on the validator-reward ledger (V1's `validator-reward` profile).
+ * - `totalRewards` — depends on the reward ledger in `validator.slot`.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ValidatorV2Response(

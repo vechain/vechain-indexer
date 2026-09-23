@@ -60,8 +60,6 @@ import org.vechain.indexer.transfer.TransferProcessor
 import org.vechain.indexer.transfer.TransferService
 import org.vechain.indexer.validator.DelegationProcessor
 import org.vechain.indexer.validator.DelegationService
-import org.vechain.indexer.validator.ValidatorBlockProcessor
-import org.vechain.indexer.validator.ValidatorBlockService
 import org.vechain.indexer.validator.ValidatorProcessor
 import org.vechain.indexer.validator.ValidatorService
 import org.vechain.indexer.vevote.HistoricProposalsProcessor
@@ -136,8 +134,9 @@ class ProcessorTransactionalAnnotationsTest {
                     .getDeclaredMethod("save", List::class.java, List::class.java),
                 XAllocResultService::class.java.getDeclaredMethod("save", List::class.java),
                 HistoryService::class.java.getDeclaredMethod("save", List::class.java),
-                ValidatorService::class.java.getDeclaredMethod("save", List::class.java),
-                ValidatorBlockService::class.java.getDeclaredMethod("save", List::class.java),
+                ValidatorService::class
+                    .java
+                    .getDeclaredMethod("save", List::class.java, List::class.java),
                 DelegationService::class.java.getDeclaredMethod("save", List::class.java),
                 StargateTokenService::class.java.getDeclaredMethod("save", List::class.java),
                 TokenRewardService::class.java.getDeclaredMethod("save", List::class.java),
@@ -184,7 +183,6 @@ class ProcessorTransactionalAnnotationsTest {
                 XAllocResultProcessor::class.java,
                 HistoryProcessor::class.java,
                 ValidatorProcessor::class.java,
-                ValidatorBlockProcessor::class.java,
                 DelegationProcessor::class.java,
                 StargateTokenProcessor::class.java,
                 TokenRewardProcessor::class.java,

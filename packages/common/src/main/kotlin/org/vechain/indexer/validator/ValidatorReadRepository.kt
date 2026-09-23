@@ -63,12 +63,6 @@ open class ValidatorReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTempla
             MapSqlParameterSource("statuses", statuses.map { it.name }.toTypedArray()),
         )
 
-    open fun findByLastMissedBlockNumber(blockNumber: Long): List<Validator> =
-        query(
-            "$CURRENT AND last_missed_block_number = :block ORDER BY id",
-            MapSqlParameterSource("block", blockNumber),
-        )
-
     /**
      * The `/validators` page: optional id, endorser and status filters, ordered by one of
      * [SORT_COLUMNS] with nulls where Mongo put them (lowest) and the id as tiebreak.
