@@ -1,5 +1,6 @@
 package org.vechain.indexer.validator
 
+import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
@@ -47,6 +48,13 @@ open class ValidatorProcessor(
         val updated = service.processBlock(entry.block, entry.events())
         val slots = blockService.processBlock(entry.block, entry.callResults(), updated)
         if (updated.isNotEmpty() || slots.isNotEmpty()) service.save(updated, slots)
+    }
+
+    /** The boundary caches preload in the constructor, before the trim; reload them after it. */
+    @PostConstruct
+    override fun bootstrap() {
+        super.bootstrap()
+        blockService.invalidateCache()
     }
 
     /** Drops the services' in-memory state so the next block reloads the rolled-back rows. */

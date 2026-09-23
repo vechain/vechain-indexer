@@ -107,7 +107,7 @@ class IndexSetCoverageTest {
                         "owner_balance_pkey",
                         "owner_balance_block_idx",
                     ),
-                // The four sampled slot partials latestSampled reads, one per resolution.
+                // validator.state's keys plus the four sampled slot partials latestSampled reads.
                 "validator" to
                     listOf(
                         "state_pkey",

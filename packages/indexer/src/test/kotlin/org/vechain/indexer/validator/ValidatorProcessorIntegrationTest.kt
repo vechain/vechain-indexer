@@ -84,20 +84,20 @@ class ValidatorProcessorIntegrationTest {
             validatorVetStaked = BigDecimal(stake),
         )
 
-    private fun slot(block: Block) =
+    private fun slot(block: Block, validator: String) =
         ValidatorBlock(
-            id = "${block.number}-$alice",
+            id = "${block.number}-$validator",
             blockId = block.id,
             blockNumber = block.number,
             blockTimestamp = block.timestamp,
-            validator = alice,
+            validator = validator,
             status = BlockStatus.VALIDATED,
         )
 
     private fun process(block: Block, updates: List<Validator>) = runBlocking {
         coEvery { service.processBlock(block, emptyList()) } returns updates
         coEvery { blockService.processBlock(block, emptyList(), updates) } returns
-            updates.map { slot(block) }
+            updates.map { slot(block, it.id) }
         processor.process(
             IndexingResult.BlockResult(block, emptyList(), emptyList(), Status.SYNCING)
         )
@@ -124,6 +124,7 @@ class ValidatorProcessorIntegrationTest {
         assertEquals(1, database.count("validator.slot"))
         assertEquals(BlockIdentifier(10, null), processor.getLastSyncedBlock())
         verify(exactly = 1) { service.invalidateCache() }
-        verify(exactly = 1) { blockService.invalidateCache() }
+        // Once from bootstrap, once from the rollback.
+        verify(exactly = 2) { blockService.invalidateCache() }
     }
 }
