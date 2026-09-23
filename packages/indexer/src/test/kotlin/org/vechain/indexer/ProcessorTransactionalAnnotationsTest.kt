@@ -50,6 +50,7 @@ import org.vechain.indexer.stargate.staking.StargateStakingProcessor
 import org.vechain.indexer.stargate.staking.StargateStakingService
 import org.vechain.indexer.stargate.token.StargateTokenProcessor
 import org.vechain.indexer.stargate.token.StargateTokenService
+import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlockService
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedProcessor
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedService
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockProcessor
@@ -138,6 +139,9 @@ class ProcessorTransactionalAnnotationsTest {
                     .getDeclaredMethod("save", List::class.java, List::class.java),
                 ValidatorBlockService::class.java.getDeclaredMethod("save", List::class.java),
                 DelegationService::class
+                    .java
+                    .getDeclaredMethod("save", List::class.java, List::class.java),
+                VetDelegatedByBlockService::class
                     .java
                     .getDeclaredMethod("save", List::class.java, List::class.java),
                 StargateTokenService::class.java.getDeclaredMethod("save", List::class.java),
