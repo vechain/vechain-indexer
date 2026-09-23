@@ -126,6 +126,7 @@ class IndexSetCoverageTest {
                 "delegation" to
                     listOf(
                         "state_pkey",
+                        "state_prune_idx",
                         "state_current_validator_idx",
                         "state_current_token_idx",
                         "state_current_transition_idx",

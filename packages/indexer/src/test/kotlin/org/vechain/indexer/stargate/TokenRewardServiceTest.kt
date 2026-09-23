@@ -44,6 +44,7 @@ class TokenRewardServiceTest {
     private val delegationV2Repository = mockk<DelegationReadRepository>(relaxed = true)
     private val thorClient = mockk<ThorClient>(relaxed = true)
     private val committedParent = mockk<Indexer>()
+    private val committedDelegation = mockk<Indexer>()
 
     private lateinit var service: TokenRewardService
 
@@ -54,6 +55,8 @@ class TokenRewardServiceTest {
         clearAllMocks()
         every { committedParent.getCurrentBlockNumber() } returns Long.MAX_VALUE
         every { committedParent.name } returns "parent"
+        every { committedDelegation.getCurrentBlockNumber() } returns Long.MAX_VALUE
+        every { committedDelegation.name } returns "delegation"
         service =
             spyk(
                 TokenRewardService(
@@ -61,7 +64,7 @@ class TokenRewardServiceTest {
                     validatorV2Repository,
                     delegationV2Repository,
                     committedParent,
-                    committedParent,
+                    committedDelegation,
                     thorClient,
                     stakerAddress = STAKER,
                     validatorStartBlock = 0L,
@@ -124,8 +127,6 @@ class TokenRewardServiceTest {
     ): ValidatorCycle =
         ValidatorCycle(
             id = address,
-            blockNumber = 100,
-            blockId = "0xBLOCK",
             status = Status.ACTIVE,
             exitBlock = null,
             cyclePeriodLength = cycleLength,
@@ -238,6 +239,17 @@ class TokenRewardServiceTest {
 
         assertThatThrownBy { runBlocking { service.processBlock(block(10)) } }
             .isInstanceOf(IllegalStateException::class.java)
+    }
+
+    @Test
+    fun `a cycle boundary the delegation indexer has not committed is refused`() {
+        every { validatorV2Repository.cyclesAsOf(any(), any()) } returns
+            listOf(validatorV2(VALIDATOR))
+        every { committedDelegation.getCurrentBlockNumber() } returns 10
+
+        assertThatThrownBy { runBlocking { service.processBlock(block(10)) } }
+            .isInstanceOf(IllegalStateException::class.java)
+            .hasMessageContaining("delegation")
     }
 
     private fun delegation(validator: String, tokenId: String) =

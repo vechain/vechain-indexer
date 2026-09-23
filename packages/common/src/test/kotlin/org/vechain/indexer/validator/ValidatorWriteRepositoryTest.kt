@@ -64,13 +64,18 @@ class ValidatorWriteRepositoryTest {
     fun `a cycle row lands only when a field other indexers read changes, and prune keeps it`() {
         writer.save(listOf(validator(alice, 10)))
         writer.save(listOf(validator(alice, 20)))
-        writer.save(listOf(validator(alice, 30, Status.EXITING)))
-        writer.save(listOf(validator(alice, 40, Status.EXITING)))
+        writer.save(listOf(validator(alice, 25).copy(completedPeriods = 3)))
+        writer.save(listOf(validator(alice, 30, Status.EXITING).copy(completedPeriods = 3)))
+        writer.save(listOf(validator(alice, 40, Status.EXITING).copy(completedPeriods = 3)))
 
         writer.prune(before = 100)
 
         assertEquals(
-            listOf("${"a".repeat(40)}:10:ACTIVE:30", "${"a".repeat(40)}:30:EXITING:-"),
+            listOf(
+                "${"a".repeat(40)}:10:ACTIVE:25",
+                "${"a".repeat(40)}:25:ACTIVE:30",
+                "${"a".repeat(40)}:30:EXITING:-",
+            ),
             cycles(),
         )
     }
