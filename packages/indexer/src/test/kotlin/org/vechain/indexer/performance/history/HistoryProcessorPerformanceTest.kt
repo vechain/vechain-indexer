@@ -1,5 +1,7 @@
 package org.vechain.indexer.performance.history
 
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -91,6 +93,7 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
                         historyRepository,
                         delegationLifecycleHistoryService,
                         validatorRepository,
+                        mockk { every { getCurrentBlockNumber() } returns Long.MAX_VALUE },
                         0L,
                         profiler,
                     )

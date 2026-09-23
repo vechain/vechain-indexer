@@ -7,10 +7,13 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.temporal.WeekFields
 import java.util.concurrent.ConcurrentHashMap
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.Indexer
+import org.vechain.indexer.ParentProgress
 import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.contracts.abi.FunctionDefinition
 import org.vechain.indexer.contracts.abi.FunctionParameter
@@ -30,8 +33,7 @@ import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.validator.DelegationReadRepository
-import org.vechain.indexer.validator.DelegationStatus
-import org.vechain.indexer.validator.Validator
+import org.vechain.indexer.validator.ValidatorCycle
 import org.vechain.indexer.validator.ValidatorReadRepository
 
 @Profile("token-reward")
@@ -40,6 +42,8 @@ open class TokenRewardService(
     private val repository: TokenRewardWriteRepository,
     private val validatorV2Repository: ValidatorReadRepository,
     private val delegationV2Repository: DelegationReadRepository,
+    @Qualifier("validatorIndexer") validatorIndexer: Indexer,
+    @Qualifier("delegationIndexer") delegationIndexer: Indexer,
     private val thorClient: ThorClient,
     @param:Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
     private val stakerAddress: String,
@@ -51,6 +55,9 @@ open class TokenRewardService(
      *   delegation status, and effective stake totals. Keyed by validator address or ID.
      */
     val validatorCycleCache: MutableMap<String, CycleCache> = ConcurrentHashMap()
+
+    private val validatorProgress = ParentProgress(validatorIndexer)
+    private val delegationProgress = ParentProgress(delegationIndexer)
 
     /**
      * @notice In-memory cache of ALL-period reward trackers per validator.
@@ -80,10 +87,10 @@ open class TokenRewardService(
 
         val validatorId = block.signer
 
-        // Cycle info now comes from the V2 validator collection (was: aggregator decode).
-        // dependsOn(delegationIndexer) → transitively dependsOn(validatorIndexer) guarantees
-        // that Validator has applied this block's state by the time we read it here.
-        val validator = validatorV2Repository.findById(validatorId) ?: return emptyList()
+        validatorProgress.requireCommitted(block.number)
+        val validator =
+            validatorV2Repository.cyclesAsOf(block.number, listOf(validatorId)).firstOrNull()
+                ?: return emptyList()
 
         val latestRewards = getLatestRewards(block, validator)
         if (latestRewards.isEmpty()) {
@@ -181,9 +188,9 @@ open class TokenRewardService(
      * Get current validator reward trackers, populating new ones on cycle transitions.
      *
      * @param block Current Thor block.
-     * @param validator Up-to-date [Validator] state for [block.signer].
+     * @param validator [block.signer]'s cycle fields as of [block].
      */
-    fun getLatestRewards(block: Block, validator: Validator): List<TokenReward> {
+    fun getLatestRewards(block: Block, validator: ValidatorCycle): List<TokenReward> {
         val validatorId = validator.id
 
         var cached = validatorCycleCache[validatorId]
@@ -235,7 +242,7 @@ open class TokenRewardService(
     /**
      * Fetch or create reward trackers for a validator at the start of a new cycle.
      *
-     * Reads currently-active delegations from [DelegationReadRepository] (was V1
+     * Reads the delegations active as of [block] from [DelegationReadRepository] (was V1
      * `delegationRepository`). The `dependsOn(delegationIndexer)` ordering guarantees that
      * delegations transitioning at this block's cycle boundary have already been applied.
      */
@@ -244,11 +251,8 @@ open class TokenRewardService(
         block: Block,
         time: LocalDate,
     ): List<TokenReward> {
-        val delegations =
-            delegationV2Repository.findByValidatorAndStatusIn(
-                validatorId,
-                listOf(DelegationStatus.ACTIVE, DelegationStatus.EXITING),
-            )
+        delegationProgress.requireCommitted(block.number)
+        val delegations = delegationV2Repository.activeAsOf(validatorId, block.number)
 
         if (delegations.isEmpty()) return emptyList()
 
@@ -306,7 +310,7 @@ open class TokenRewardService(
      * Update cached cycle info for [validator]. Reads cycle parameters straight off the V2 row — no
      * chain decode needed.
      */
-    fun updateValidatorCycleCache(validator: Validator) {
+    fun updateValidatorCycleCache(validator: ValidatorCycle) {
         val cycleLength = validator.cyclePeriodLength ?: return
         val startBlock = validator.startBlock ?: return
         val completed = validator.completedPeriods ?: 0L

@@ -58,7 +58,8 @@ class HistoryProcessorIntegrationTest {
             HistoryService(
                 repository = repository,
                 delegationLifecycleHistoryService = lifecycle,
-                validatorRepository = mockk { every { findAll() } returns emptyList() },
+                validatorRepository = mockk(),
+                validatorIndexer = mockk(),
                 validatorStartBlock = Long.MAX_VALUE,
             )
         processor =

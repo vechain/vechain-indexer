@@ -5,13 +5,14 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import io.mockk.mockk
 import io.mockk.slot
-import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexingResult
@@ -22,13 +23,12 @@ import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.BusinessEventParamFixtures.BUSINESS_EVENT_PARAMS
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.thor.model.BlockIdentifier
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.Status
+import org.vechain.indexer.validator.ValidatorCycle
 import org.vechain.indexer.validator.ValidatorDelegationService
 import org.vechain.indexer.validator.ValidatorReadRepository
 import org.vechain.indexer.validator.ValidatorSnapshot
-import org.vechain.indexer.validator.ValidatorSnapshotRow
 
 @ExtendWith(MockKExtension::class)
 class HistoryServiceTest {
@@ -69,7 +69,8 @@ class HistoryServiceTest {
             {
                 thirdArg<Long>() + 5L
             }
-        every { validatorRepository.snapshotsSince(any()) } returns emptyList()
+        every { validatorIndexer.getCurrentBlockNumber() } returns Long.MAX_VALUE
+        every { validatorRepository.cyclesAsOf(any(), null) } returns emptyList()
 
         val delegationLifecycleHistoryService =
             DelegationLifecycleHistoryService(
@@ -84,6 +85,7 @@ class HistoryServiceTest {
                 repository = repository,
                 delegationLifecycleHistoryService = delegationLifecycleHistoryService,
                 validatorRepository = validatorRepository,
+                validatorIndexer = validatorIndexer,
                 validatorStartBlock = 0L,
             )
     }
@@ -168,67 +170,46 @@ class HistoryServiceTest {
     }
 
     @Test
-    fun `each block reads only the validator rows written since the watermark`(): Unit =
-        runBlocking {
-            every { validatorRepository.snapshotsSince(null) } returns
-                listOf(row(7, "a", period = 5))
-            every { validatorRepository.snapshotsSince(7) } returns
-                listOf(row(7, "a", period = 5, current = false), row(9, "a", period = 8))
-            every { validatorRepository.snapshotsSince(9) } returns listOf(row(9, "a", period = 8))
-            val seen = slot<Map<String, ValidatorSnapshot>>()
-            coEvery {
-                validatorDelegationService.resolveCycleInfo(any(), any(), capture(seen))
-            } answers
-                {
-                    5L to (secondArg<Long>() + 5L)
-                }
-            val request =
-                captureIndexerResults(listOf(BlockFixtures.BLOCK_STARGATE_STAKER_DELEGATION))
+    fun `each block reads the validator cycles as of itself`(): Unit = runBlocking {
+        val block = BlockFixtures.BLOCK_TRANSFERS
+        every { validatorRepository.cyclesAsOf(block.number, null) } returns
+            listOf(cycle(period = 8))
+        val seen = slot<Map<String, ValidatorSnapshot>>()
+        val lifecycle = mockk<DelegationLifecycleHistoryService>(relaxed = true)
+        coEvery { lifecycle.onBlockStart(any(), capture(seen)) } returns emptyList()
+        val service =
+            HistoryService(repository, lifecycle, validatorRepository, validatorIndexer, 0L)
 
-            repeat(2) { historyService.processBlock(emptyList(), BlockFixtures.BLOCK_TRANSFERS) }
-            historyService.processBlock(request.single().events(), request.single().block)
+        service.processBlock(emptyList(), block)
 
-            verify(exactly = 1) { validatorRepository.snapshotsSince(null) }
-            verify(exactly = 1) { validatorRepository.snapshotsSince(7) }
-            verify(exactly = 1) { validatorRepository.snapshotsSince(9) }
-            assertThat(seen.captured.getValue(VALIDATOR).stakingPeriodLength).isEqualTo(8L)
+        assertThat(seen.captured)
+            .isEqualTo(
+                mapOf(VALIDATOR to ValidatorSnapshot(VALIDATOR, 8, startBlock = 1, exitBlock = 0))
+            )
+    }
+
+    @Test
+    fun `a block validator has not committed is refused`() {
+        val block = BlockFixtures.BLOCK_TRANSFERS
+        every { validatorIndexer.getCurrentBlockNumber() } returns block.number
+
+        assertThrows<IllegalStateException> {
+            runBlocking { historyService.processBlock(emptyList(), block) }
         }
-
-    @Test
-    fun `a same-height reorg of the validator set reloads it`() {
-        every { validatorRepository.snapshotsSince(null) } returnsMany
-            listOf(listOf(row(7, "a")), listOf(row(7, "b")))
-        every { validatorRepository.snapshotsSince(7) } returns listOf(row(7, "b"))
-
-        processThreeBlocks()
-
-        verify(exactly = 2) { validatorRepository.snapshotsSince(null) }
-        verify(exactly = 2) { validatorRepository.snapshotsSince(7) }
     }
 
-    @Test
-    fun `a rollback that removed the watermark block reloads the validator set`() {
-        every { validatorRepository.snapshotsSince(null) } returnsMany
-            listOf(listOf(row(7, "a")), listOf(row(5, "a")))
-        every { validatorRepository.snapshotsSince(7) } returns emptyList()
-        every { validatorRepository.snapshotsSince(5) } returns listOf(row(5, "a"))
-
-        processThreeBlocks()
-
-        verify(exactly = 2) { validatorRepository.snapshotsSince(null) }
-        verify(exactly = 1) { validatorRepository.snapshotsSince(5) }
-    }
-
-    private fun row(number: Long, id: String, period: Long = 0, current: Boolean = true) =
-        ValidatorSnapshotRow(
-            block = BlockIdentifier(number, "0x" + id.repeat(64)),
-            current = current,
-            snapshot = ValidatorSnapshot(VALIDATOR, period, startBlock = 1, exitBlock = 0),
+    private fun cycle(period: Long) =
+        ValidatorCycle(
+            id = VALIDATOR,
+            blockNumber = 1,
+            blockId = "0x" + "a".repeat(64),
+            status = Status.ACTIVE,
+            startBlock = 1,
+            cyclePeriodLength = period,
+            exitBlock = null,
+            completedPeriods = 0,
+            delegatorVetStaked = null,
         )
-
-    private fun processThreeBlocks() = runBlocking {
-        repeat(3) { historyService.processBlock(emptyList(), BlockFixtures.BLOCK_TRANSFERS) }
-    }
 
     private suspend fun captureIndexerResults(
         blocks: List<org.vechain.indexer.thor.model.Block>

@@ -1,5 +1,6 @@
 package org.vechain.indexer.performance.stargateRewards
 
+import org.vechain.indexer.Indexer
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.stargate.rewards.TokenRewardService
 import org.vechain.indexer.stargate.tokenReward.TokenReward
@@ -19,6 +20,7 @@ class ProfiledTokenRewardService(
     repository: TokenRewardWriteRepository,
     validatorV2Repository: ValidatorReadRepository,
     delegationV2Repository: DelegationReadRepository,
+    committedParent: Indexer,
     thorClient: ThorClient,
     stakerAddress: String,
     validatorStartBlock: Long,
@@ -28,6 +30,8 @@ class ProfiledTokenRewardService(
         repository,
         validatorV2Repository,
         delegationV2Repository,
+        committedParent,
+        committedParent,
         thorClient,
         stakerAddress,
         validatorStartBlock,

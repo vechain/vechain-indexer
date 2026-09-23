@@ -106,7 +106,7 @@ class IndexSetCoverageTest {
                         "owner_balance_pkey",
                         "owner_balance_block_idx",
                     ),
-                // validator.state's keys plus the four sampled slot partials latestSampled reads.
+                // validator.state's keys, the sampled slot partials and the as-of cycle probes.
                 "validator" to
                     listOf(
                         "state_pkey",
@@ -117,8 +117,12 @@ class IndexSetCoverageTest {
                         "slot_daily_idx",
                         "slot_weekly_idx",
                         "slot_monthly_idx",
+                        "cycle_pkey",
+                        "cycle_current_idx",
+                        "cycle_block_idx",
+                        "cycle_superseded_idx",
                     ),
-                // The due, zero-cycle, by-token and by-validator scans the indexer makes.
+                // The due, zero-cycle, by-token and by-validator scans, and token_reward's as-of.
                 "delegation" to
                     listOf(
                         "state_pkey",
@@ -126,7 +130,7 @@ class IndexSetCoverageTest {
                         "state_current_token_idx",
                         "state_current_transition_idx",
                         "state_block_idx",
-                        "state_prune_idx",
+                        "state_validator_block_idx",
                         "total_by_block_pkey",
                     ),
                 // Nothing but rollback, prune and the key: every read is by the key itself.

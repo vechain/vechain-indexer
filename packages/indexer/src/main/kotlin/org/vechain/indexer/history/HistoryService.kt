@@ -1,16 +1,18 @@
 package org.vechain.indexer.history
 
 import org.apache.commons.codec.digest.DigestUtils
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.Indexer
+import org.vechain.indexer.ParentProgress
 import org.vechain.indexer.b3tr.ProofUtils
 import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
-import org.vechain.indexer.thor.model.BlockIdentifier
 import org.vechain.indexer.utils.EventUtils
 import org.vechain.indexer.utils.ParamUtils.getAsBoolean
 import org.vechain.indexer.utils.ParamUtils.getAsInt
@@ -25,6 +27,7 @@ open class HistoryService(
     private val repository: HistoryWriteRepository,
     private val delegationLifecycleHistoryService: DelegationLifecycleHistoryService,
     private val validatorRepository: ValidatorReadRepository,
+    @Qualifier("validatorIndexer") validatorIndexer: Indexer,
     @param:Value("\${indexer.start-block.validator}") private val validatorStartBlock: Long,
 ) {
     /**
@@ -44,7 +47,7 @@ open class HistoryService(
         val transactionIdsWithHistoryEvents = mutableSetOf<String>()
         val processDelegationLifecycle = block.number >= validatorStartBlock
         val validatorSnapshots: Map<String, ValidatorSnapshot> =
-            if (processDelegationLifecycle) loadValidatorSnapshots() else emptyMap()
+            if (processDelegationLifecycle) loadValidatorSnapshots(block) else emptyMap()
 
         if (processDelegationLifecycle) {
             indexedHistoryEvents.addAll(
@@ -106,21 +109,19 @@ open class HistoryService(
         return indexedHistoryEvents
     }
 
-    // Only the processor thread reaches these, so they need no lock.
-    private var snapshotWatermark: BlockIdentifier? = null
-    private val snapshots = mutableMapOf<String, ValidatorSnapshot>()
+    private val validatorProgress = ParentProgress(validatorIndexer)
 
-    /** Rows written since the watermark, or the whole set once that block no longer stands. */
-    private fun loadValidatorSnapshots(): Map<String, ValidatorSnapshot> {
-        val watermark = snapshotWatermark
-        var rows = validatorRepository.snapshotsSince(watermark?.number)
-        if (watermark != null && rows.none { it.block == watermark }) {
-            snapshots.clear()
-            rows = validatorRepository.snapshotsSince(null)
+    private fun loadValidatorSnapshots(block: Block): Map<String, ValidatorSnapshot> {
+        validatorProgress.requireCommitted(block.number)
+        return validatorRepository.cyclesAsOf(block.number).associate {
+            it.id to
+                ValidatorSnapshot(
+                    validatorId = it.id,
+                    stakingPeriodLength = it.cyclePeriodLength ?: 0L,
+                    startBlock = it.startBlock ?: 0L,
+                    exitBlock = it.exitBlock ?: 0L,
+                )
         }
-        rows.filter { it.current }.forEach { snapshots[it.snapshot.validatorId] = it.snapshot }
-        snapshotWatermark = rows.maxByOrNull { it.block.number }?.block ?: watermark
-        return snapshots
     }
 
     @Transactional(

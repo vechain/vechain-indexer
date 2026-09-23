@@ -6,6 +6,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
+import io.mockk.verify
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.time.Instant
@@ -15,6 +16,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.vechain.indexer.Indexer
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
@@ -28,7 +30,7 @@ import org.vechain.indexer.validator.Delegation
 import org.vechain.indexer.validator.DelegationReadRepository
 import org.vechain.indexer.validator.DelegationStatus
 import org.vechain.indexer.validator.Status
-import org.vechain.indexer.validator.Validator
+import org.vechain.indexer.validator.ValidatorCycle
 import org.vechain.indexer.validator.ValidatorReadRepository
 
 class TokenRewardServiceTest {
@@ -41,6 +43,7 @@ class TokenRewardServiceTest {
     private val validatorV2Repository = mockk<ValidatorReadRepository>(relaxed = true)
     private val delegationV2Repository = mockk<DelegationReadRepository>(relaxed = true)
     private val thorClient = mockk<ThorClient>(relaxed = true)
+    private val committedParent = mockk<Indexer>()
 
     private lateinit var service: TokenRewardService
 
@@ -49,12 +52,16 @@ class TokenRewardServiceTest {
     @BeforeEach
     fun setup() {
         clearAllMocks()
+        every { committedParent.getCurrentBlockNumber() } returns Long.MAX_VALUE
+        every { committedParent.name } returns "parent"
         service =
             spyk(
                 TokenRewardService(
                     repository,
                     validatorV2Repository,
                     delegationV2Repository,
+                    committedParent,
+                    committedParent,
                     thorClient,
                     stakerAddress = STAKER,
                     validatorStartBlock = 0L,
@@ -114,13 +121,13 @@ class TokenRewardServiceTest {
         startBlock: Long = 0,
         completed: Long = 0,
         delegatorStake: BigDecimal = BigDecimal.ONE,
-    ): Validator =
-        Validator(
+    ): ValidatorCycle =
+        ValidatorCycle(
             id = address,
-            blockId = "0xBLOCK",
             blockNumber = 100,
-            blockTimestamp = 0,
+            blockId = "0xBLOCK",
             status = Status.ACTIVE,
+            exitBlock = null,
             cyclePeriodLength = cycleLength,
             startBlock = startBlock,
             completedPeriods = completed,
@@ -204,15 +211,12 @@ class TokenRewardServiceTest {
     @Test
     fun `a signer without delegations writes nothing and the next signer gets only its own growth`() {
         val idle = "0x00000000000000000000000000000000000000b2"
-        every { validatorV2Repository.findById(idle) } returns
-            validatorV2(idle, completed = 1, delegatorStake = BigDecimal.ZERO)
-        every { validatorV2Repository.findById(VALIDATOR) } returns
-            validatorV2(VALIDATOR, completed = 1)
+        every { validatorV2Repository.cyclesAsOf(9, listOf(idle)) } returns
+            listOf(validatorV2(idle, completed = 1, delegatorStake = BigDecimal.ZERO))
+        every { validatorV2Repository.cyclesAsOf(10, listOf(VALIDATOR)) } returns
+            listOf(validatorV2(VALIDATOR, completed = 1))
         every {
-            delegationV2Repository.findByValidatorAndStatusIn(
-                VALIDATOR,
-                listOf(DelegationStatus.ACTIVE, DelegationStatus.EXITING),
-            )
+            delegationV2Repository.activeAsOf(VALIDATOR, any())
         } returns listOf(delegation(VALIDATOR, "10001"))
         every { repository.findAllById(any<List<String>>()) } returns emptyList()
         poolsAt(blockId(9), 0, 600, 0)
@@ -222,9 +226,18 @@ class TokenRewardServiceTest {
         val result = runBlocking { service.processBlock(block(10)) }
 
         assertThat(idleResult).isEmpty()
+        verify { delegationV2Repository.activeAsOf(VALIDATOR, 10) }
         coVerify(exactly = 0) { thorClient.inspectClauses(any(), BlockRevision.Id(blockId(8))) }
         assertThat(result.single { it.rewardPeriod == RewardPeriod.ALL }.rewards)
             .isEqualTo(BigInteger.valueOf(400))
+    }
+
+    @Test
+    fun `a block the parents have not committed is refused`() {
+        every { committedParent.getCurrentBlockNumber() } returns 10
+
+        assertThatThrownBy { runBlocking { service.processBlock(block(10)) } }
+            .isInstanceOf(IllegalStateException::class.java)
     }
 
     private fun delegation(validator: String, tokenId: String) =
@@ -309,10 +322,7 @@ class TokenRewardServiceTest {
         val delegation = delegation(validator, "10001")
 
         every {
-            delegationV2Repository.findByValidatorAndStatusIn(
-                validator,
-                listOf(DelegationStatus.ACTIVE, DelegationStatus.EXITING),
-            )
+            delegationV2Repository.activeAsOf(validator, any())
         } returns listOf(delegation)
 
         every { repository.findAllById(any<List<String>>()) } returns emptyList()

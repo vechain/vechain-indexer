@@ -40,15 +40,14 @@ open class DelegationReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTempl
                 .addValue("limit", limit),
         )
 
-    open fun findByValidatorAndStatusIn(
-        validator: String,
-        statuses: Collection<DelegationStatus>,
-    ): List<Delegation> =
+    /** [validator]'s ACTIVE and EXITING delegations as they stood at [blockNumber]. */
+    open fun activeAsOf(validator: String, blockNumber: Long): List<Delegation> =
         query(
-            "$CURRENT AND validator = :validator " +
-                "AND status = ANY(CAST(:statuses AS delegation.status[])) ORDER BY id",
+            "SELECT * FROM delegation.state WHERE validator = :validator " +
+                "AND block_number <= :block AND (superseded_at IS NULL OR superseded_at > :block) " +
+                "AND status IN ('ACTIVE', 'EXITING') ORDER BY id",
             MapSqlParameterSource("validator", PostgresHex.bytes(validator))
-                .addValue("statuses", statuses.map { it.name }.toTypedArray()),
+                .addValue("block", blockNumber),
         )
 
     /** Queued, active and exiting counts per validator, or for [validator] alone. */

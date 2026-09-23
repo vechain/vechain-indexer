@@ -1,5 +1,6 @@
 package org.vechain.indexer.performance.history
 
+import org.vechain.indexer.Indexer
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.history.HistoryService
 import org.vechain.indexer.history.HistoryWriteRepository
@@ -17,6 +18,7 @@ class ProfiledHistoryService(
     delegationLifecycleHistoryService:
         org.vechain.indexer.history.DelegationLifecycleHistoryService,
     validatorRepository: ValidatorReadRepository,
+    validatorIndexer: Indexer,
     validatorStartBlock: Long,
     private val profiler: DetailedProfiler,
 ) :
@@ -24,6 +26,7 @@ class ProfiledHistoryService(
         repository,
         delegationLifecycleHistoryService,
         validatorRepository,
+        validatorIndexer,
         validatorStartBlock,
     ) {
 
