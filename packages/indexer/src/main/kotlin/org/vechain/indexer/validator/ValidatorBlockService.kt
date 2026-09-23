@@ -7,6 +7,8 @@ import kotlin.collections.set
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.explorer.TimestampUtils.calculateTimeBoundary
 import org.vechain.indexer.explorer.TimestampUtils.isDailyChange
 import org.vechain.indexer.explorer.TimestampUtils.isHourlyChange
@@ -73,6 +75,10 @@ open class ValidatorBlockService(
     }
 
     /** Runs inside [ValidatorService.save]'s transaction. */
+    @Transactional(
+        transactionManager = PostgresConfig.TRANSACTION_MANAGER,
+        rollbackFor = [Exception::class],
+    )
     open fun save(records: List<ValidatorBlock>) {
         if (records.isEmpty()) return
         repository.save(records)
