@@ -57,7 +57,8 @@ open class DelegationConfig {
                     "Transfer",
                 )
             )
-            .dependsOn(validatorIndexer)
+            // Its validator reads are as of its own block, so it resyncs alone.
+            .dependsOn(validatorIndexer, align = false)
             .excludeVetTransfers()
             .build()
 }

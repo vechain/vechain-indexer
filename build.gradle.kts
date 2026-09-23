@@ -281,7 +281,7 @@ allprojects {
         implementation("net.logstash.logback:logstash-logback-encoder:8.1")
 
         // Core indexer dependency
-        implementation("org.vechain:indexer-core:11.1.0")
+        implementation("org.vechain:indexer-core:11.2.0")
 
         // Test dependencies
         testImplementation("org.springframework.boot:spring-boot-starter-test")
