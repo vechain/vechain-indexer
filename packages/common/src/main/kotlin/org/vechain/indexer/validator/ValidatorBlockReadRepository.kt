@@ -83,32 +83,83 @@ open class ValidatorBlockReadRepository(
 
     /**
      * Slot accounting per validator over `[from, to]`, worst ratio first; validators with no row in
-     * the window are absent.
+     * the window are absent unless they were offline during it.
      */
-    open fun slotStats(from: Long, to: Long, validator: String? = null): List<ValidatorSlotStats> =
-        jdbc.query(
+    open fun slotStats(from: Long, to: Long, validator: String? = null): List<ValidatorSlotStats> {
+        val inWindow = if (validator == null) "" else " AND validator = :validator"
+        val inState = if (validator == null) "" else " AND s.id = :validator"
+        return jdbc.query(
             """
-            SELECT validator, count(*) FILTER (WHERE status = 'VALIDATED') AS proposed,
-                   count(*) FILTER (WHERE status = 'MISSED') AS missed
-            FROM validator_block.slot WHERE block_timestamp BETWEEN :from AND :to
+            WITH win AS MATERIALIZED (
+              SELECT validator, status, block_timestamp FROM validator_block.slot
+              WHERE block_timestamp BETWEEN :from AND :to$inWindow
+            ), counts AS (
+              SELECT validator, count(*) FILTER (WHERE status = 'VALIDATED') AS proposed,
+                     count(*) FILTER (WHERE status = 'MISSED') AS missed
+              FROM win GROUP BY validator
+            ), misses AS (
+              SELECT validator, block_timestamp FROM win WHERE status = 'MISSED'
+              UNION ALL
+              SELECT s.id, m.block_timestamp FROM validator.state s
+              CROSS JOIN LATERAL (
+                SELECT block_timestamp FROM validator_block.slot
+                WHERE validator = s.id AND status = 'MISSED' AND block_timestamp < :from
+                ORDER BY block_timestamp DESC LIMIT 1
+              ) m
+              WHERE s.superseded_at IS NULL$inState
+            ), offline AS (
+              SELECT m.validator, sum(greatest(0,
+                       least(nv.block_timestamp, nm.block_timestamp, ex.block_timestamp, :to)
+                       - greatest(m.block_timestamp, :from))) AS seconds
+              FROM misses m
+              LEFT JOIN validator.state s ON s.id = m.validator AND s.superseded_at IS NULL
+              LEFT JOIN LATERAL (
+                SELECT block_timestamp FROM validator_block.slot
+                WHERE validator = m.validator AND status = 'VALIDATED'
+                  AND block_timestamp > m.block_timestamp
+                ORDER BY block_timestamp LIMIT 1
+              ) nv ON TRUE
+              LEFT JOIN LATERAL (
+                SELECT block_timestamp FROM validator_block.slot
+                WHERE validator = m.validator AND status = 'MISSED'
+                  AND block_timestamp > m.block_timestamp
+                ORDER BY block_timestamp LIMIT 1
+              ) nm ON TRUE
+              LEFT JOIN LATERAL (
+                SELECT block_timestamp FROM validator_block.slot
+                WHERE block_number >= s.exit_block ORDER BY block_number LIMIT 1
+              ) ex ON TRUE
+              GROUP BY m.validator
+            )
+            SELECT validator, coalesce(c.proposed, 0) AS proposed, coalesce(c.missed, 0) AS missed,
+                   coalesce(o.seconds, 0) AS offline_seconds
+            FROM counts c FULL JOIN offline o USING (validator)
+            WHERE c.validator IS NOT NULL OR o.seconds > 0
+            ORDER BY offline_seconds DESC,
+                     coalesce(c.missed, 0)::float / nullif(coalesce(c.proposed, 0) + coalesce(c.missed, 0), 0)
+                       DESC NULLS LAST,
+                     validator
             """
-                .trimIndent() +
-                (if (validator == null) "" else " AND validator = :validator") +
-                " GROUP BY validator " +
-                "ORDER BY (count(*) FILTER (WHERE status = 'MISSED'))::float / count(*) DESC, validator",
+                .trimIndent(),
             MapSqlParameterSource("from", from)
                 .addValue("to", to)
                 .addValue("validator", PostgresHex.bytesOrNull(validator)),
         ) { rs, _ ->
             val proposed = rs.getLong("proposed")
             val missed = rs.getLong("missed")
+            val offline = rs.getLong("offline_seconds")
             ValidatorSlotStats(
                 validator = PostgresHex.hex(rs.getBytes("validator")),
                 proposedBlocks = proposed,
                 missedSlots = missed,
-                missedSlotRatio = missed.toDouble() / (proposed + missed),
+                missedSlotRatio =
+                    if (proposed + missed == 0L) 0.0 else missed.toDouble() / (proposed + missed),
+                uptimeRatio =
+                    if (to > from) (1.0 - offline.toDouble() / (to - from)).coerceIn(0.0, 1.0)
+                    else 1.0,
             )
         }
+    }
 
     private fun rows(sql: String, params: MapSqlParameterSource): List<ValidatorBlock> =
         jdbc.query(sql, params) { rs, _ -> ValidatorBlockRowMapping.read(rs) }

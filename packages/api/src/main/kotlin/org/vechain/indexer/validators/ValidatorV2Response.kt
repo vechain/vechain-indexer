@@ -22,7 +22,6 @@ import org.vechain.indexer.validator.logic.ValidatorCalculator
  *   validator has no `blocksPerYear` yet.
  *
  * Still deferred (separate workstreams):
- * - `online` — needs an "is recently proposed" recency threshold + current best block.
  * - `totalRewards` — depends on the validator-reward ledger (V1's `validator-reward` profile).
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -67,6 +66,8 @@ data class ValidatorV2Response(
     val missedSlotsPercentage: BigDecimal?,
     val lastProposedBlockNumber: Long?,
     val lastMissedBlockNumber: Long?,
+    val online: Boolean?,
+    val offlineBlock: Long?,
 
     // ---- Price-dependent: TVL (non-null — controller guarantees prices or 503s) ----
     val validatorTvl: BigDecimal,
@@ -280,6 +281,12 @@ data class ValidatorV2Response(
                 missedSlotsPercentage = missedSlotsPercentage,
                 lastProposedBlockNumber = v.lastProposedBlockNumber,
                 lastMissedBlockNumber = v.lastMissedBlockNumber,
+                // Only the leader group is scheduled, so only it can be online or offline.
+                online =
+                    (v.offlineBlock == null).takeIf {
+                        v.status == Status.ACTIVE || v.status == Status.EXITING
+                    },
+                offlineBlock = v.offlineBlock,
                 validatorTvl = validatorTvl,
                 delegatorTvl = delegatorTvl,
                 totalTvl = totalTvl,

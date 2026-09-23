@@ -111,9 +111,11 @@ open class ValidatorV2Controller(
         summary = "Get per-validator slot accounting over a time range",
         description =
             "Returns each validator's slot accounting across the requested timestamp window " +
-                "(inclusive, Unix seconds). `missedSlotRatio = missedSlots / (proposedBlocks + " +
-                "missedSlots)`. Validators with no scheduled slots in the window are absent from " +
-                "the response.",
+                "(inclusive, Unix seconds), least uptime first. `missedSlotRatio = missedSlots / " +
+                "(proposedBlocks + missedSlots)`. `uptimeRatio` is the share of the window the " +
+                "validator was not offline: thor stops scheduling a validator after one missed " +
+                "slot, so it is offline from that miss until it next signs or exits. Validators " +
+                "with no scheduled slots in the window appear only if they were offline during it.",
     )
     @AfterParameter(
         name = "startTimestamp",
@@ -138,8 +140,9 @@ open class ValidatorV2Controller(
         summary = "Get a single validator's slot accounting over a time range",
         description =
             "Returns one validator's slot accounting across the requested timestamp window " +
-                "(inclusive, Unix seconds). Returns zeroed counts when the validator had no " +
-                "scheduled slots in the window.",
+                "(inclusive, Unix seconds); `uptimeRatio` is defined as on `/slots`. Returns " +
+                "zeroed counts and full uptime when the validator had no scheduled slots in the " +
+                "window and was not offline during it.",
     )
     @AddressParameter(
         name = "validatorId",
@@ -172,6 +175,7 @@ open class ValidatorV2Controller(
                     proposedBlocks = 0L,
                     missedSlots = 0L,
                     missedSlotRatio = 0.0,
+                    uptimeRatio = 1.0,
                 )
         return cachedByAge(endTimestamp, stats)
     }

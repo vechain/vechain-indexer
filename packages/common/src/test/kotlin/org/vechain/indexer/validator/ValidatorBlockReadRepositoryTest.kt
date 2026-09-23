@@ -20,6 +20,10 @@ class ValidatorBlockReadRepositoryTest {
 
     private val alice = "0x" + "a".repeat(40)
     private val bob = "0x" + "b".repeat(40)
+    private val carol = "0x" + "c".repeat(40)
+    private val dave = "0x" + "d".repeat(40)
+    private val erin = "0x" + "e".repeat(40)
+    private val frank = "0x" + "f".repeat(40)
 
     @BeforeAll
     fun start() {
@@ -51,7 +55,7 @@ class ValidatorBlockReadRepositoryTest {
 
     /**
      * alice signs 10, 20 (hourly), 30 (hourly, daily) and 40, missing at 25 and 35; bob signs 25
-     * and misses at 30. Timestamps are ten times the block number.
+     * and misses at 30. Timestamps are ten times the block number; later rows serve slot stats.
      */
     private fun seed() {
         ValidatorBlockWriteRepository(database.jdbc)
@@ -65,7 +69,30 @@ class ValidatorBlockReadRepositoryTest {
                     row(bob, 30, BlockStatus.MISSED),
                     row(alice, 35, BlockStatus.MISSED),
                     row(alice, 40),
+                    row(carol, 1000),
+                    row(dave, 1005),
+                    row(carol, 1010, BlockStatus.MISSED),
+                    row(dave, 1020, BlockStatus.MISSED),
+                    row(erin, 1050),
+                    row(erin, 1060),
+                    row(frank, 2000),
+                    row(frank, 2010, BlockStatus.MISSED),
+                    row(frank, 2500),
+                    row(frank, 2600),
                 )
+            )
+        ValidatorWriteRepository(database.jdbc)
+            .save(
+                listOf(alice, bob, carol, dave, erin, frank).map {
+                    Validator(
+                        id = it,
+                        blockId = "0x" + "0".repeat(64),
+                        blockNumber = 1,
+                        blockTimestamp = 10,
+                        status = if (it == dave) Status.EXITED else Status.ACTIVE,
+                        exitBlock = if (it == dave) 1050 else null,
+                    )
+                }
             )
     }
 
@@ -74,9 +101,9 @@ class ValidatorBlockReadRepositoryTest {
     @Test
     fun `the unfiltered page is newest first and pages by offset`() {
         val page = repository.findRewards(null, null, null, Direction.DESC, 0, 3)
-        assertEquals(listOf("40-$alice", "35-$alice-MISSED", "30-$alice"), keys(page))
+        assertEquals(listOf("2600-$frank", "2500-$frank", "2010-$frank-MISSED"), keys(page))
         assertEquals(
-            listOf("30-$bob-MISSED", "25-$alice-MISSED"),
+            listOf("2000-$frank", "1060-$erin"),
             keys(repository.findRewards(null, null, null, Direction.DESC, 3, 2)),
         )
     }
@@ -89,7 +116,7 @@ class ValidatorBlockReadRepositoryTest {
         )
         assertEquals(
             listOf("35-$alice-MISSED", "40-$alice"),
-            keys(repository.findRewards(null, 35, null, Direction.ASC, 0, 10)),
+            keys(repository.findRewards(null, 35, null, Direction.ASC, 0, 2)),
         )
     }
 
@@ -139,15 +166,22 @@ class ValidatorBlockReadRepositoryTest {
     }
 
     @Test
-    fun `slot stats count proposed and missed per validator, worst ratio first`() {
+    fun `slot stats count slots and time offline per validator, least uptime first`() {
         assertEquals(
             listOf(
-                ValidatorSlotStats(bob, proposedBlocks = 1, missedSlots = 1, missedSlotRatio = 0.5),
+                ValidatorSlotStats(
+                    bob,
+                    1,
+                    1,
+                    missedSlotRatio = 0.5,
+                    uptimeRatio = 1.0 - 700.0 / 1_000,
+                ),
                 ValidatorSlotStats(
                     alice,
-                    proposedBlocks = 4,
-                    missedSlots = 2,
+                    4,
+                    2,
                     missedSlotRatio = 2.0 / 6,
+                    uptimeRatio = 1.0 - 100.0 / 1_000,
                 ),
             ),
             repository.slotStats(0, 1_000),
@@ -156,16 +190,60 @@ class ValidatorBlockReadRepositoryTest {
             listOf(
                 ValidatorSlotStats(
                     alice,
-                    proposedBlocks = 2,
-                    missedSlots = 1,
+                    2,
+                    1,
                     missedSlotRatio = 1.0 / 3,
+                    uptimeRatio = 1.0 - 50.0 / 100,
                 )
             ),
             repository.slotStats(200, 300, alice),
         )
         assertEquals(
             emptyList<ValidatorSlotStats>(),
-            repository.slotStats(200, 300, "0x" + "c".repeat(40)),
+            repository.slotStats(200, 300, "0x" + "9".repeat(40)),
+        )
+    }
+
+    @Test
+    fun `an outage costs its whole duration however few slots it missed`() {
+        assertEquals(
+            listOf(
+                ValidatorSlotStats(
+                    frank,
+                    3,
+                    1,
+                    missedSlotRatio = 0.25,
+                    uptimeRatio = 1.0 - 4_900.0 / 6_000,
+                )
+            ),
+            repository.slotStats(20_000, 26_000, frank),
+        )
+        assertEquals(
+            listOf(ValidatorSlotStats(frank, 1, 0, missedSlotRatio = 0.0, uptimeRatio = 1.0)),
+            repository.slotStats(25_500, 26_000, frank),
+        )
+    }
+
+    @Test
+    fun `an outage open at the window start counts until the validator returns or exits`() {
+        assertEquals(
+            listOf(
+                ValidatorSlotStats(bob, 0, 0, missedSlotRatio = 0.0, uptimeRatio = 0.0),
+                ValidatorSlotStats(carol, 0, 0, missedSlotRatio = 0.0, uptimeRatio = 0.0),
+                ValidatorSlotStats(
+                    dave,
+                    0,
+                    0,
+                    missedSlotRatio = 0.0,
+                    uptimeRatio = 1.0 - 200.0 / 300,
+                ),
+                ValidatorSlotStats(erin, 2, 0, missedSlotRatio = 0.0, uptimeRatio = 1.0),
+            ),
+            repository.slotStats(10_300, 10_600),
+        )
+        assertEquals(
+            listOf(ValidatorSlotStats(carol, 0, 0, missedSlotRatio = 0.0, uptimeRatio = 0.0)),
+            repository.slotStats(10_300, 10_600, carol),
         )
     }
 }
