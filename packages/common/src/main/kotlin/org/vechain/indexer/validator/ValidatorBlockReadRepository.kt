@@ -81,10 +81,7 @@ open class ValidatorBlockReadRepository(
             )
             .firstOrNull()
 
-    /**
-     * Slot accounting per validator over `[from, to]`, worst ratio first; validators with no row in
-     * the window are absent unless they were offline during it.
-     */
+    /** Slot accounting per validator over `[from, to]`, least uptime first. */
     open fun slotStats(from: Long, to: Long, validator: String? = null): List<ValidatorSlotStats> {
         val inWindow = if (validator == null) "" else " AND validator = :validator"
         val inState = if (validator == null) "" else " AND s.id = :validator"
