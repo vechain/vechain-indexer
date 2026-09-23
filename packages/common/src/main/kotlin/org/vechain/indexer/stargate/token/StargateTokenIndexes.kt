@@ -3,7 +3,7 @@ package org.vechain.indexer.stargate.token
 import org.vechain.indexer.postgres.DeferrableIndex
 import org.vechain.indexer.postgres.IndexSet
 
-/** The owner and manager pages; the indexer finds a token by validator or due period. */
+/** The owner and manager pages; the indexer reads a token only by id. */
 object StargateTokenIndexes {
 
     val SET =

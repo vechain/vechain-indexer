@@ -10,7 +10,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("validator", "stargate-token", "history")
+@Profile("validator", "history")
 open class ValidatorConfig {
 
     @Bean

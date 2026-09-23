@@ -26,7 +26,7 @@ import org.vechain.indexer.utils.NumberUtils
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
-@Profile("validator", "stargate-token", "history")
+@Profile("validator", "history")
 @Service
 open class ValidatorService(
     private val repository: ValidatorWriteRepository,

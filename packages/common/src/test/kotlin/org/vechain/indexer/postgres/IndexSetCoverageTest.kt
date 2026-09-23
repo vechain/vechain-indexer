@@ -80,15 +80,7 @@ class IndexSetCoverageTest {
                         "token_interaction_pkey",
                         "token_interaction_block_idx",
                     ),
-                // The validator-scoped and due-transition lookups the indexer makes every block.
-                "stargate_token" to
-                    listOf(
-                        "state_pkey",
-                        "state_current_validator_idx",
-                        "state_current_due_idx",
-                        "state_block_idx",
-                        "state_prune_idx",
-                    ),
+                "stargate_token" to listOf("state_pkey", "state_block_idx", "state_prune_idx"),
                 // The reload of a validator's cycle trackers after a restart.
                 "token_reward" to
                     listOf(

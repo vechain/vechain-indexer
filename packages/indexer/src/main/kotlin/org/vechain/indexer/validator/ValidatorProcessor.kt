@@ -13,7 +13,7 @@ import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.postgres.IndexerStateRepository
 
-@Profile("validator", "stargate-token", "history")
+@Profile("validator", "history")
 @Component
 open class ValidatorProcessor(
     private val service: ValidatorService,

@@ -10,9 +10,12 @@ import org.junit.jupiter.api.TestInstance
 import org.springframework.data.domain.Sort.Direction
 import org.vechain.indexer.postgres.PostgresTestDatabase
 import org.vechain.indexer.thor.Address
+import org.vechain.indexer.validator.Delegation
+import org.vechain.indexer.validator.DelegationStatus
+import org.vechain.indexer.validator.DelegationWriteRepository
 import org.vechain.indexer.validator.Status
 
-/** One test per API read on a seeded set; see [seed] for who holds and manages what. */
+/** One test per API read on a seeded set; see [seed] for who holds, manages and delegates what. */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class StargateTokenReadRepositoryTest {
 
@@ -22,6 +25,8 @@ class StargateTokenReadRepositoryTest {
     private val alice = "0x" + "a".repeat(40)
     private val bob = "0x" + "b".repeat(40)
     private val carol = "0x" + "c".repeat(40)
+    private val v1 = "0x" + "1".repeat(40)
+    private val v2 = "0x" + "2".repeat(40)
 
     @BeforeAll
     fun start() {
@@ -38,7 +43,6 @@ class StargateTokenReadRepositoryTest {
             level = TokenLevel.Dawn,
             owner = owner,
             manager = manager,
-            delegationStatus = Status.NONE,
             totalRewardsClaimed = BigInteger.ZERO,
             totalBootstrapRewardsClaimed = BigInteger.ZERO,
             vetStaked = BigInteger.TEN,
@@ -64,7 +68,45 @@ class StargateTokenReadRepositoryTest {
             )
         )
         writer.save(listOf(token("1", 40, alice), token("4", 40, Address.ZERO_ADDRESS)))
+        // 1 is live on v2 via 8, its older 5 exited at a later block; 2 exited; 3 queued on v1.
+        val delegations = DelegationWriteRepository(database.jdbc)
+        delegations.save(
+            listOf(
+                delegation("5", "1", v1, DelegationStatus.ACTIVE, 50),
+                delegation("6", "2", v1, DelegationStatus.EXITED, 50),
+                delegation("7", "3", v1, DelegationStatus.QUEUED, 50),
+            )
+        )
+        delegations.save(
+            listOf(
+                delegation("8", "1", v2, DelegationStatus.ACTIVE, 60),
+                delegation("7", "3", v1, DelegationStatus.QUEUED, 60),
+                delegation("5", "1", v1, DelegationStatus.EXITED, 70),
+            )
+        )
     }
+
+    private fun delegation(
+        id: String,
+        tokenId: String,
+        validator: String,
+        status: DelegationStatus,
+        block: Long,
+    ) =
+        Delegation(
+            id = id,
+            validator = validator,
+            tokenId = tokenId,
+            owner = alice,
+            status = status,
+            tokenLevel = TokenLevel.Dawn,
+            stakedAmount = "10",
+            totalRewardsClaimed = BigInteger.ZERO,
+            txId = "0x" + "f".repeat(64),
+            blockId = "0x" + block.toString(16).padStart(64, '0'),
+            blockNumber = block,
+            blockTimestamp = block * 10,
+        )
 
     private fun ids(rows: List<StargateToken>) = rows.map { it.tokenId }
 
@@ -97,5 +139,26 @@ class StargateTokenReadRepositoryTest {
             emptyList<String>(),
             ids(repository.findActive(carol, null, Direction.DESC, 0, 10)),
         )
+    }
+
+    @Test
+    fun `each token carries its latest live delegation, an exited one reading as NONE`() {
+        val page =
+            repository.findActive(null, null, Direction.DESC, 0, 10).associateBy { it.tokenId }
+
+        assertEquals(
+            Status.ACTIVE to v2,
+            page.getValue("1").let { it.delegationStatus to it.validatorId },
+        )
+        assertEquals(
+            Status.NONE to null,
+            page.getValue("2").let { it.delegationStatus to it.validatorId },
+        )
+        assertEquals(
+            Status.QUEUED to v1,
+            page.getValue("3").let { it.delegationStatus to it.validatorId },
+        )
+        assertEquals(Status.NONE, repository.findById("4")?.delegationStatus)
+        assertEquals(v2, repository.findById("1")?.validatorId)
     }
 }

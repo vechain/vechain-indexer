@@ -19,7 +19,6 @@ import org.vechain.indexer.stargate.token.StargateEventService
 import org.vechain.indexer.stargate.token.StargateTokenProcessor
 import org.vechain.indexer.stargate.token.StargateTokenService
 import org.vechain.indexer.stargate.token.StargateTokenWriteRepository
-import org.vechain.indexer.validator.ValidatorReadRepository
 
 @Disabled("Performance test - run explicitly with --tests when needed")
 @ActiveProfiles("stargate-token")
@@ -28,9 +27,7 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var stargateTokenRepository: StargateTokenWriteRepository
     @Autowired lateinit var stargateTokenService: StargateTokenService
     @Autowired lateinit var stargateEventService: StargateEventService
-    @Autowired lateinit var validatorRepository: ValidatorReadRepository
 
-    @Value("\${indexer.start-block.validator}") var validatorStartBlock: Long = 0L
     @Autowired lateinit var inlineVersioningProperties: InlineVersioningProperties
     @Autowired lateinit var indexerState: IndexerStateRepository
     @Autowired lateinit var checkpointProperties: CheckpointProperties
@@ -44,9 +41,6 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
 
     @Value("\${business-event.substitutions.STARGATE_CONTRACT}")
     lateinit var stargateContract: String
-
-    @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
-    lateinit var builtinStakerContract: String
 
     @Value("\${business-event.substitutions.NODE_MANAGEMENT_CONTRACT}")
     lateinit var nodeManagementContract: String
@@ -98,8 +92,6 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
                 ProfiledStargateTokenService(
                     repository = stargateTokenRepository,
                     eventService = stargateEventService,
-                    validatorRepository = validatorRepository,
-                    validatorStartBlock = validatorStartBlock,
                     profiler = profiler,
                 )
             } else {
@@ -141,7 +133,6 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
                     stargateNftContract,
                     stargateDelegationContract,
                     stargateContract,
-                    builtinStakerContract,
                     nodeManagementContract,
                 )
             )
@@ -149,13 +140,10 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
                 listOf(
                     "TokenMinted",
                     "TokenBurned",
-                    "DelegationInitiated",
-                    "DelegationExitRequested",
                     "Transfer",
                     "TokenManagerAdded",
                     "TokenManagerRemoved",
                     "MaturityPeriodBoosted",
-                    "ValidationSignaledExit",
                     "DelegationRewardsClaimed",
                     "BaseVTHORewardsClaimed",
                     "NodeDelegated",

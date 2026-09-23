@@ -42,12 +42,7 @@ open class StargateTokenProcessor(
         require(entry is IndexingResult.BlockResult) {
             "Expected entry of type IndexingResult.BlockResult (full block entry required)"
         }
-        val updated = service.processBlock(entry.block, entry.events())
+        val updated = service.processEvents(entry.events())
         if (updated.isNotEmpty()) service.save(updated)
-    }
-
-    override fun resetProcessingState() {
-        super.resetProcessingState()
-        service.invalidateCache()
     }
 }

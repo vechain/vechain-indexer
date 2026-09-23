@@ -1,6 +1,5 @@
 package org.vechain.indexer.stargate.token
 
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -18,7 +17,6 @@ open class StargateTokenConfig {
     open fun stargateIndexer(
         thorClient: ThorClient,
         processor: StargateTokenProcessor,
-        @Qualifier("validatorIndexer") validatorIndexer: Indexer,
         @Value("\${indexer.start-block.stargate}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLogInterval: Long,
         @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
@@ -26,8 +24,6 @@ open class StargateTokenConfig {
         @Value("\${business-event.substitutions.STARGATE_DELEGATION_CONTRACT}")
         stargateDelegationContract: String,
         @Value("\${business-event.substitutions.STARGATE_CONTRACT}") stargateContract: String,
-        @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
-        builtinStakerAddress: String,
         @Value("\${business-event.substitutions.NODE_MANAGEMENT_CONTRACT}")
         nodeManagementContract: String,
     ): Indexer =
@@ -44,7 +40,6 @@ open class StargateTokenConfig {
                     stargateNftContract,
                     stargateDelegationContract,
                     stargateContract,
-                    builtinStakerAddress,
                     nodeManagementContract,
                 )
             )
@@ -52,19 +47,15 @@ open class StargateTokenConfig {
                 listOf(
                     "TokenMinted",
                     "TokenBurned",
-                    "DelegationInitiated",
-                    "DelegationExitRequested",
                     "Transfer",
                     "TokenManagerAdded",
                     "TokenManagerRemoved",
                     "MaturityPeriodBoosted",
-                    "ValidationSignaledExit",
                     "DelegationRewardsClaimed",
                     "BaseVTHORewardsClaimed",
                     "NodeDelegated",
                 )
             )
-            .dependsOn(validatorIndexer)
             .excludeVetTransfers()
             .build()
 }
