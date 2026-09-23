@@ -102,10 +102,7 @@ open class DelegationService(
         transactionManager = PostgresConfig.TRANSACTION_MANAGER,
         rollbackFor = [Exception::class],
     )
-    open fun save(
-        updates: List<Delegation>,
-        vetDelegated: List<VetDelegatedByBlock> = emptyList(),
-    ) {
+    open fun save(updates: List<Delegation>, vetDelegated: List<VetDelegatedByBlock>) {
         if (updates.isNotEmpty()) repository.save(updates)
         vetDelegatedService.save(vetDelegated, updates)
         updateZeroCycleCache(updates)

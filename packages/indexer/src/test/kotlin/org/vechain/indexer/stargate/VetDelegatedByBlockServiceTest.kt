@@ -419,4 +419,22 @@ class VetDelegatedByBlockServiceTest {
         service.processBlock(mockBlock(103, 1735560030), emptyList())
         verify(exactly = 2) { delegationRepository.findActive() }
     }
+
+    @Test
+    fun `a delegation the committed set lacks joins it through the block's changes`() {
+        every { repository.latest() } returns null
+        every { repository.save(any()) } returns Unit
+        mockActiveAggregation(TokenLevel.Strength to "10")
+        val activated = listOf(delegation("7", TokenLevel.Thunder, "5"))
+        val exited = listOf(delegation("7", TokenLevel.Thunder, "5", DelegationStatus.EXITED))
+
+        val first = service.processBlock(mockBlock(101, 1735560010), activated)
+        service.save(first, activated)
+        val second = service.processBlock(mockBlock(102, 1735560020), exited)
+
+        expectThat(first.single().total).isEqualTo(BigInteger("15"))
+        expectThat(first.single().nftCountByLevel)
+            .isEqualTo(mapOf(TokenLevel.Strength to 1L, TokenLevel.Thunder to 1L))
+        expectThat(second.single().total).isEqualTo(BigInteger("10"))
+    }
 }
