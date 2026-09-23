@@ -25,6 +25,7 @@ class StargateTokenReadRepositoryTest {
     private val alice = "0x" + "a".repeat(40)
     private val bob = "0x" + "b".repeat(40)
     private val carol = "0x" + "c".repeat(40)
+    private val dave = "0x" + "d".repeat(40)
     private val v1 = "0x" + "1".repeat(40)
     private val v2 = "0x" + "2".repeat(40)
 
@@ -55,7 +56,7 @@ class StargateTokenReadRepositoryTest {
 
     /**
      * alice owns 1 (block 10) and 2 (block 30, managed by bob); bob owns 3 (block 20, managed by
-     * carol); token 4 was alice's and is burned; token 1 was re-stated at block 40.
+     * carol); dave owns 5 (block 5); 4 is burned; token 1 was re-stated at block 40.
      */
     private fun seed() {
         val writer = StargateTokenWriteRepository(database.jdbc)
@@ -65,10 +66,12 @@ class StargateTokenReadRepositoryTest {
                 token("4", 10, alice),
                 token("3", 20, bob, manager = carol),
                 token("2", 30, alice, manager = bob),
+                token("5", 5, dave),
             )
         )
         writer.save(listOf(token("1", 40, alice), token("4", 40, Address.ZERO_ADDRESS)))
-        // 1 is live on v2 via 8, its older 5 exited at a later block; 2 exited; 3 queued on v1.
+        // 1 is live on v2 via 8, its older 5 exited at a later block; 2 exited; 3 queued on v1;
+        // 5 exiting v2.
         val delegations = DelegationWriteRepository(database.jdbc)
         delegations.save(
             listOf(
@@ -82,6 +85,7 @@ class StargateTokenReadRepositoryTest {
                 delegation("8", "1", v2, DelegationStatus.ACTIVE, 60),
                 delegation("7", "3", v1, DelegationStatus.QUEUED, 60),
                 delegation("5", "1", v1, DelegationStatus.EXITED, 70),
+                delegation("9", "5", v2, DelegationStatus.EXITING, 65),
             )
         )
     }
@@ -120,11 +124,11 @@ class StargateTokenReadRepositoryTest {
     @Test
     fun `the unfiltered page skips burned tokens, newest first, and pages by offset`() {
         assertEquals(
-            listOf("1", "2", "3"),
+            listOf("1", "2", "3", "5"),
             ids(repository.findActive(null, null, Direction.DESC, 0, 10)),
         )
-        assertEquals(listOf("3", "2"), ids(repository.findActive(null, null, Direction.ASC, 0, 2)))
-        assertEquals(listOf("1"), ids(repository.findActive(null, null, Direction.ASC, 2, 2)))
+        assertEquals(listOf("5", "3"), ids(repository.findActive(null, null, Direction.ASC, 0, 2)))
+        assertEquals(listOf("2", "1"), ids(repository.findActive(null, null, Direction.ASC, 2, 2)))
     }
 
     @Test
@@ -157,6 +161,10 @@ class StargateTokenReadRepositoryTest {
         assertEquals(
             Status.QUEUED to v1,
             page.getValue("3").let { it.delegationStatus to it.validatorId },
+        )
+        assertEquals(
+            Status.EXITING to v2,
+            page.getValue("5").let { it.delegationStatus to it.validatorId },
         )
         assertEquals(Status.NONE, repository.findById("4")?.delegationStatus)
         assertEquals(v2, repository.findById("1")?.validatorId)

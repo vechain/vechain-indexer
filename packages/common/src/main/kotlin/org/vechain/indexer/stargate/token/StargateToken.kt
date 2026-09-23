@@ -14,7 +14,7 @@ data class StargateToken(
     val level: TokenLevel,
     val owner: String,
     @JsonInclude(JsonInclude.Include.ALWAYS) val manager: String? = null,
-    // Read from the token's delegation in delegation.state; the indexer never sets them.
+    // Read from delegation.state by the API join; the indexer never sets them.
     val delegationStatus: Status = Status.NONE,
     @JsonInclude(JsonInclude.Include.ALWAYS) val validatorId: String? = null,
     val totalRewardsClaimed: BigInteger,

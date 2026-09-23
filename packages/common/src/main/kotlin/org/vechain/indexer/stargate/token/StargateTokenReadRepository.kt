@@ -24,11 +24,7 @@ open class StargateTokenReadRepository(
     private val jdbc = NamedParameterJdbcTemplate(jdbcTemplate)
 
     open fun findById(tokenId: String): StargateToken? =
-        query(
-                "$CURRENT AND token_id = :token",
-                "",
-                MapSqlParameterSource("token", BigDecimal(tokenId)),
-            )
+        query("$CURRENT AND token_id = :token", MapSqlParameterSource("token", BigDecimal(tokenId)))
             .firstOrNull()
 
     /**
@@ -52,26 +48,26 @@ open class StargateTokenReadRepository(
         val order = "ORDER BY block_number ${direction.name}, token_id ${direction.name}"
         return query(
             "$CURRENT AND owner <> :zero$scope $order OFFSET :offset LIMIT :limit",
-            order,
             MapSqlParameterSource("zero", PostgresHex.bytes(Address.ZERO_ADDRESS))
                 .addValue("owner", PostgresHex.bytesOrNull(owner))
                 .addValue("manager", PostgresHex.bytesOrNull(manager))
                 .addValue("offset", offset)
                 .addValue("limit", limit),
+            order,
         )
     }
 
     // The join runs on the page alone, so [order] is applied again outside it.
     private fun query(
         page: String,
-        order: String,
         params: MapSqlParameterSource,
+        order: String = "",
     ): List<StargateToken> =
         jdbc.query("$WITH_DELEGATION ($page) t $LATEST_DELEGATION $order", params) { rs, _ ->
             read(rs)
         }
 
-    // An exited delegation reads as NONE, as the token's own rows did before.
+    // An exited or absent delegation reads as NONE with a null validator.
     private fun read(rs: ResultSet): StargateToken {
         val token = StargateTokenRowMapping.read(rs)
         val status = rs.getString("delegation_status")?.let(DelegationStatus::valueOf)
