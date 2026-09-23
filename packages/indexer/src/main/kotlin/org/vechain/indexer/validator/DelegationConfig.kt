@@ -16,7 +16,7 @@ import org.vechain.indexer.thor.client.ThorClient
  * Differences from V1 [DelegationConfig]:
  * - **No `callDataClauses`** — drops the dependency on the deployed `GetValidators` aggregator,
  *   which unblocks solo / custom networks.
- * - **`dependsOn(validatorIndexer)`** — flips the V1 ordering so the V2 delegation indexer reads
+ * - **`dependsOn(validatorIndexer, align = false)`** — flips the V1 ordering so delegation reads
  *   `validator.cycle` as of the block for cycle math. The cycle is gone: validator no longer
  *   depends on delegation, delegation now depends on validator, and neither calls the chain for the
  *   other's data.

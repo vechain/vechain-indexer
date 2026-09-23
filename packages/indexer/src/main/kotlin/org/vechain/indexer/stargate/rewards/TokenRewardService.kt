@@ -243,7 +243,7 @@ open class TokenRewardService(
      * Fetch or create reward trackers for a validator at the start of a new cycle.
      *
      * Reads the delegations active as of [block] from [DelegationReadRepository] (was V1
-     * `delegationRepository`). The `dependsOn(delegationIndexer)` ordering guarantees that
+     * `delegationRepository`). The `dependsOn(delegationIndexer, align = false)` edge guarantees
      * delegations transitioning at this block's cycle boundary have already been applied.
      */
     fun getOrFetchRewardsNewCycle(

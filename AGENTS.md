@@ -45,7 +45,7 @@ When adding a new feature indexer and endpoint, prefer copying an existing imple
 To force an indexer to truncate its schema and re-index from the start block, increment its deployed version number only in:
 - **Deployed (prod)**: `terraform/api/environments/prod-blue.yml` and `terraform/api/environments/prod-green.yml` under `indexer.version.<key>` for both `main` and `test` net sections.
 
-A child on an `align = false` edge resyncs alone: bump only its key, and the parents skip while it replays. A change to a parent's logic still needs every reader of the parent bumped with it, because their stored rows were derived from the parent's old values.
+A child on an `align = false` edge resyncs alone: bump only its key. The run restarts at its start block for every indexer in its proximity group, which skip block by block until they meet it, so do this on the dead colour only. A change to a parent's logic still needs every reader of the parent bumped with it, because their stored rows were derived from the parent's old values.
 
 Keep local defaults at `1`: do not bump `indexer.version.<key>` fallback values in `packages/indexer/src/main/resources/application.yaml`, and do not bump `VERSION_*` values in `packages/indexer/.env.example`. Each prod environment file has separate version entries for mainnet and testnet — bump both. The version value must be higher than the currently deployed value; the indexer compares its stored version against the configured one and resyncs when they differ.
 
