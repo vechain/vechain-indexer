@@ -73,6 +73,21 @@ class DelegationWriteRepositoryTest {
         }
 
     @Test
+    fun `the active set is the current ACTIVE and EXITING rows`() {
+        writer.save(
+            listOf(
+                delegation("1", 10, DelegationStatus.ACTIVE),
+                delegation("2", 10),
+                delegation("3", 10, DelegationStatus.EXITING),
+                delegation("4", 10, DelegationStatus.ACTIVE),
+            )
+        )
+        writer.save(listOf(delegation("4", 20, DelegationStatus.EXITED)))
+
+        assertEquals(listOf("1", "3"), writer.findActive().map { it.id })
+    }
+
+    @Test
     fun `every field survives the round trip, uint256 ids and wei included`() {
         val big = "115792089237316195423570985008687907853269984665640564039457584007913129639935"
         val rows =

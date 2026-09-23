@@ -127,14 +127,6 @@ class DelegationReadRepositoryTest {
     }
 
     @Test
-    fun `the indexer's active set is the current ACTIVE and EXITING rows`() {
-        assertEquals(
-            listOf("1", "3", "5"),
-            ids(DelegationWriteRepository(database.jdbc).findActive()),
-        )
-    }
-
-    @Test
     fun `facets bucket a validator's live delegations by status, level and transition`() {
         assertEquals(
             listOf(

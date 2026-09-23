@@ -21,7 +21,7 @@ open class VetDelegatedByBlockService(
 ) {
     private val cursor = SeriesCursor(repository::latest)
 
-    // The committed active set by id; [save] applies each block's changes once they are written.
+    // The active set by id, mirrored inside the save transaction and dropped on rollback.
     private var active: MutableMap<String, Delegation>? = null
 
     /** A row for [block] when the total moved or a frame closed, and the re-tagged previous row. */
