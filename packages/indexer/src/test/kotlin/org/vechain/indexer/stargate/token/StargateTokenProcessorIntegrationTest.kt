@@ -1,7 +1,6 @@
 package org.vechain.indexer.stargate.token
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
-import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -38,7 +37,6 @@ class StargateTokenProcessorIntegrationTest {
         database.start()
         writer = StargateTokenWriteRepository(database.jdbc)
         every { service.save(any()) } answers { writer.save(firstArg()) }
-        every { service.invalidateCache() } returns Unit
         processor =
             StargateTokenProcessor(
                 service,
@@ -66,7 +64,6 @@ class StargateTokenProcessorIntegrationTest {
             tokenId = "7",
             level = TokenLevel.Strength,
             owner = owner,
-            delegationStatus = org.vechain.indexer.validator.Status.NONE,
             totalRewardsClaimed = BigInteger.ZERO,
             totalBootstrapRewardsClaimed = BigInteger.ZERO,
             vetStaked = BigInteger.TEN,
@@ -78,7 +75,7 @@ class StargateTokenProcessorIntegrationTest {
         )
 
     private fun process(block: Block, updates: List<StargateToken>) = runBlocking {
-        coEvery { service.processBlock(block, emptyList()) } returns updates
+        every { service.processEvents(emptyList()) } returns updates
         processor.process(
             IndexingResult.BlockResult(block, emptyList(), emptyList(), Status.SYNCING)
         )
@@ -104,6 +101,5 @@ class StargateTokenProcessorIntegrationTest {
 
         assertEquals(listOf(snapshot(b10, alice)), writer.findAllById(setOf("7")))
         assertEquals(BlockIdentifier(10, null), processor.getLastSyncedBlock())
-        verify(exactly = 1) { service.invalidateCache() }
     }
 }

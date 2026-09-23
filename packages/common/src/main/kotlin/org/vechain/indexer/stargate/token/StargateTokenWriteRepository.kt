@@ -7,7 +7,6 @@ import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.config.postgres.ConditionalOnPostgres
 import org.vechain.indexer.config.postgres.PostgresConfig
-import org.vechain.indexer.postgres.PostgresHex
 import org.vechain.indexer.postgres.PostgresIndexerTables
 
 /** `stargate_token.state` as a temporal table, plus the indexer's own reads of the current rows. */
@@ -52,32 +51,6 @@ open class StargateTokenWriteRepository(
             tokenIds.map(::BigDecimal).toTypedArray(),
         )
 
-    open fun findByValidatorIdIn(validatorIds: Set<String>): List<StargateToken> =
-        query(
-            "$CURRENT AND validator_id = ANY(?) ORDER BY token_id",
-            validatorIds.map(PostgresHex::bytes).toTypedArray(),
-        )
-
-    open fun findByDelegationNextPeriodAndDelegationStatusIn(
-        blockNumbers: List<Long>,
-        statuses: List<String>,
-    ): List<StargateToken> =
-        query(
-            "$CURRENT AND delegation_next_period = ANY(?) " +
-                "AND delegation_status = ANY(CAST(? AS stargate_token.delegation_status[])) " +
-                "ORDER BY token_id",
-            blockNumbers.toTypedArray(),
-            statuses.toTypedArray(),
-        )
-
-    /** Every validator some current token points at; null for tokens never delegated. */
-    open fun findAllDistinctValidatorIds(): List<String?> =
-        jdbc.query(
-            "SELECT DISTINCT validator_id FROM stargate_token.state WHERE superseded_at IS NULL"
-        ) { rs, _ ->
-            PostgresHex.hexOrNull(rs.getBytes(1))
-        }
-
     override fun rollbackFrom(blockNumber: Long) {
         jdbc.update("DELETE FROM stargate_token.state WHERE block_number >= ?", blockNumber)
         jdbc.update(
@@ -103,10 +76,7 @@ open class StargateTokenWriteRepository(
             "INSERT INTO stargate_token.state (token_id, block_number, " +
                 StargateTokenRowMapping.COLUMNS.joinToString() +
                 ") VALUES (?, ?, " +
-                StargateTokenRowMapping.COLUMNS.joinToString {
-                    if (it == "delegation_status") "CAST(? AS stargate_token.delegation_status)"
-                    else "?"
-                } +
+                StargateTokenRowMapping.COLUMNS.joinToString { "?" } +
                 ") ON CONFLICT (token_id, block_number) DO UPDATE SET " +
                 StargateTokenRowMapping.COLUMNS.joinToString { "$it = EXCLUDED.$it" }
     }

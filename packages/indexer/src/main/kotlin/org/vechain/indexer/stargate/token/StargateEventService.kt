@@ -9,59 +9,24 @@ import org.vechain.indexer.thor.Address
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsBoolean
 import org.vechain.indexer.utils.ParamUtils.getAsString
-import org.vechain.indexer.validator.Status
-import org.vechain.indexer.validator.Validator
-import org.vechain.indexer.validator.ValidatorDelegationService
-import org.vechain.indexer.validator.ValidatorReadRepository
 
 /**
- * StargateEventApplier
- *
- * Applies Stargate events to token snapshots:
- * - Delegations
- * - Transfers
- * - Minting / burning
- * - Manager changes
- * - Boosts
- * - Rewards claims
- * - Exit requests and withdrawals
+ * Applies Stargate NFT events to token snapshots: mint, burn, transfer, manager, boost, rewards.
  */
 @Profile("stargate", "stargate-token")
 @Service
 class StargateEventService(
-    private val validatorDelegationService: ValidatorDelegationService,
-    private val validatorRepository: ValidatorReadRepository,
     @Value("\${business-event.substitutions.STARGATE_DELEGATION_CONTRACT}")
-    private val stargateDelegationContract: String,
+    private val stargateDelegationContract: String
 ) {
     /** Apply event-driven mutations to token snapshots. */
-    suspend fun handleStargateEvents(
+    fun handleStargateEvents(
         events: List<IndexedEvent>,
         latestTokenSnapshots: MutableMap<String, StargateToken>,
-        validators: Map<String, Validator>,
-        existingTokens: MutableList<StargateToken>,
     ) {
-        events
-            .filter { it.eventType == "ValidationSignaledExit" }
-            .forEach { event ->
-                handleValidationSignaledExit(
-                    event,
-                    latestTokenSnapshots,
-                    validators,
-                    existingTokens,
-                )
-            }
-
-        // Group remaining events by tokenId (fallback to nodeId)
         val groupedEvents =
             events
-                .filter { it.eventType !in VALIDATOR_LIFECYCLE_EVENTS }
-                .groupBy {
-                    it.params.getAsString("tokenId")?.takeIf { id -> id.isNotBlank() }
-                        ?: it.params.getAsString(
-                            "nodeId"
-                        ) // TODO: Remove once Hayabusa live on Mainnet
-                }
+                .groupBy(::tokenIdOf)
                 .filterKeys { it != null } // skip events without either ID
                 .mapValues { (_, tokenEvents) ->
                     tokenEvents.sortedWith(
@@ -74,10 +39,8 @@ class StargateEventService(
             val id = tokenId ?: return@forEach // safety check
             var current: StargateToken? = latestTokenSnapshots[id]
 
-            tokenEvents.forEach { event ->
-                current = processEvent(event, tokenId, current, validators, existingTokens)
-            }
-            if (current != null) latestTokenSnapshots[tokenId] = current
+            tokenEvents.forEach { event -> current = processEvent(event, id, current) }
+            current?.let { latestTokenSnapshots[id] = it }
         }
     }
 
@@ -86,24 +49,18 @@ class StargateEventService(
         event: IndexedEvent,
         tokenId: String,
         base: StargateToken?,
-        validators: Map<String, Validator>,
-        existingTokens: MutableList<StargateToken>,
     ): StargateToken? {
         fun required(): StargateToken = requireBaseToken(base, event, tokenId)
         return when (event.eventType) {
             "TokenMinted" -> handleTokenMinted(event, tokenId)
-            "TokenBurned" -> handleTokenUnstaked(event, required(), existingTokens)
-            "Transfer" -> handleTokenTransfer(event, required(), existingTokens)
-            "DelegationInitiated" -> handleDelegate(event, required(), validators, existingTokens)
-            "DelegationExitRequested" ->
-                handleDelegateExitRequest(event, required(), existingTokens)
-            "DelegationWithdrawn" -> handleExitDelegate(event, required(), existingTokens)
-            "TokenManagerAdded" -> handleManagerAdded(event, required(), existingTokens)
-            "TokenManagerRemoved" -> handleManagerRemoved(event, required(), existingTokens)
-            "MaturityPeriodBoosted" -> handleTokenBoosted(event, required(), existingTokens)
-            "NodeDelegated" -> handleNodeManagementEvent(event, base, existingTokens)
+            "TokenBurned" -> handleTokenUnstaked(event, required())
+            "Transfer" -> handleTokenTransfer(event, required())
+            "TokenManagerAdded" -> handleManagerAdded(event, required())
+            "TokenManagerRemoved" -> handleManagerRemoved(event, required())
+            "MaturityPeriodBoosted" -> handleTokenBoosted(event, required())
+            "NodeDelegated" -> handleNodeManagementEvent(event, base)
             "BaseVTHORewardsClaimed",
-            "DelegationRewardsClaimed" -> handleRewardsClaimed(event, required(), existingTokens)
+            "DelegationRewardsClaimed" -> handleRewardsClaimed(event, required())
             else -> base
         }
     }
@@ -125,40 +82,6 @@ class StargateEventService(
                     "deleted out-of-band."
             )
 
-    private fun handleValidationSignaledExit(
-        event: IndexedEvent,
-        latestTokenSnapshots: MutableMap<String, StargateToken>,
-        validators: Map<String, Validator>,
-        existingTokens: MutableList<StargateToken>,
-    ) {
-        val validatorId = event.params.getAsString("validator")?.lowercase() ?: return
-        val exitAt = resolveValidatorExitBlock(validatorId, event.blockNumber, validators)
-        val affectedTokens =
-            latestTokenSnapshots.values.filter { it.validatorId?.lowercase() == validatorId }
-
-        affectedTokens
-            .filter {
-                when (it.delegationStatus) {
-                    Status.NONE -> false
-                    Status.EXITING ->
-                        exitAt == null || (it.delegationNextPeriod ?: Long.MAX_VALUE) >= exitAt
-                    else -> true
-                }
-            }
-            .forEach { token ->
-                existingTokens.add(token)
-                latestTokenSnapshots[token.tokenId] =
-                    token.copy(
-                        blockId = event.blockId,
-                        blockNumber = event.blockNumber,
-                        blockTimestamp = event.blockTimestamp,
-                        delegationStatus = Status.EXITING,
-                        delegationNextPeriod = exitAt ?: token.delegationNextPeriod,
-                        validatorExiting = true,
-                    )
-            }
-    }
-
     // ------------------------------------------------------------------------
     // Event Handlers
     // ------------------------------------------------------------------------
@@ -167,23 +90,20 @@ class StargateEventService(
     private fun handleNodeManagementEvent(
         event: IndexedEvent,
         base: StargateToken?,
-        existingTokens: MutableList<StargateToken>,
     ): StargateToken? =
         if (base == null) {
             null
         } else if (event.params.getAsBoolean("delegated") == true) {
-            handleManagerAdded(event, base, existingTokens)
+            handleManagerAdded(event, base)
         } else {
-            handleManagerRemoved(event, base, existingTokens)
+            handleManagerRemoved(event, base)
         }
 
     // Rewards claimed event
     private fun handleManagerAdded(
         event: IndexedEvent,
         base: StargateToken,
-        existingTokens: MutableList<StargateToken>,
     ): StargateToken {
-        existingTokens.add(base)
         return base.copy(
             blockId = event.blockId,
             blockNumber = event.blockNumber,
@@ -200,9 +120,7 @@ class StargateEventService(
     fun handleManagerRemoved(
         event: IndexedEvent,
         base: StargateToken,
-        existingTokens: MutableList<StargateToken>,
     ): StargateToken {
-        existingTokens.add(base)
         return base.copy(
             blockId = event.blockId,
             blockNumber = event.blockNumber,
@@ -215,7 +133,6 @@ class StargateEventService(
     fun handleRewardsClaimed(
         event: IndexedEvent,
         base: StargateToken,
-        existingTokens: MutableList<StargateToken>,
     ): StargateToken {
         if (event.address == stargateDelegationContract) {
             val rewards =
@@ -224,7 +141,6 @@ class StargateEventService(
                 } else {
                     event.params.getAsBigInteger("rewards")!!
                 }
-            existingTokens.add(base)
             return base.copy(
                 totalBootstrapRewardsClaimed = base.totalBootstrapRewardsClaimed + rewards,
                 blockId = event.blockId,
@@ -232,7 +148,6 @@ class StargateEventService(
                 blockTimestamp = event.blockTimestamp,
             )
         } else {
-            existingTokens.add(base)
             return base.copy(
                 totalRewardsClaimed =
                     base.totalRewardsClaimed + event.params.getAsBigInteger("amount")!!,
@@ -243,59 +158,11 @@ class StargateEventService(
         }
     }
 
-    // Delegation withdrawn event
-    private fun handleExitDelegate(
-        event: IndexedEvent,
-        base: StargateToken,
-        existingTokens: MutableList<StargateToken>,
-    ): StargateToken {
-        if (base.delegationStatus == Status.NONE) {
-            return base
-        }
-
-        existingTokens.add(base)
-        return base.copy(
-            blockId = event.blockId,
-            blockNumber = event.blockNumber,
-            blockTimestamp = event.blockTimestamp,
-            delegationStatus = Status.NONE,
-            validatorId = null,
-        )
-    }
-
-    // Token delegation event
-    private fun handleDelegate(
-        event: IndexedEvent,
-        base: StargateToken,
-        validators: Map<String, Validator>,
-        existingTokens: MutableList<StargateToken>,
-    ): StargateToken {
-        val validator =
-            event.params.getAsString("validator")?.lowercase()
-                ?: throw IllegalStateException("Validator not found")
-
-        val (periodLength, nextCycleStart) =
-            resolveCycleInfo(validator, event.blockNumber, validators)
-
-        existingTokens.add(base)
-        return base.copy(
-            validatorId = validator,
-            delegationStatus = Status.QUEUED,
-            delegationNextPeriod = nextCycleStart,
-            delegationPeriodLength = periodLength,
-            blockId = event.blockId,
-            blockNumber = event.blockNumber,
-            blockTimestamp = event.blockTimestamp,
-        )
-    }
-
     // Token was boosted to skip maturity period
     private fun handleTokenBoosted(
         event: IndexedEvent,
         base: StargateToken,
-        existingTokens: MutableList<StargateToken>,
     ): StargateToken {
-        existingTokens.add(base)
         return base.copy(
             blockId = event.blockId,
             blockNumber = event.blockNumber,
@@ -304,53 +171,11 @@ class StargateEventService(
         )
     }
 
-    // Delegation exit request event
-    private fun handleDelegateExitRequest(
-        event: IndexedEvent,
-        base: StargateToken,
-        existingTokens: MutableList<StargateToken>,
-    ): StargateToken {
-        // Legacy delegation contract - no state changes
-        if (event.address == stargateDelegationContract) return base
-
-        return when (base.delegationStatus) {
-            Status.NONE -> base
-
-            Status.QUEUED -> {
-                existingTokens.add(base)
-                base.copy(
-                    blockId = event.blockId,
-                    blockNumber = event.blockNumber,
-                    blockTimestamp = event.blockTimestamp,
-                    delegationStatus = Status.NONE,
-                )
-            }
-
-            else -> {
-                existingTokens.add(base)
-                base.copy(
-                    blockId = event.blockId,
-                    blockNumber = event.blockNumber,
-                    blockTimestamp = event.blockTimestamp,
-                    delegationStatus = Status.EXITING,
-                    delegationNextPeriod =
-                        validatorDelegationService.resolveNextCycleBlock(
-                            base.delegationNextPeriod,
-                            base.delegationPeriodLength!!,
-                            event.blockNumber,
-                        ),
-                )
-            }
-        }
-    }
-
     // Token transfer event
     private fun handleTokenTransfer(
         event: IndexedEvent,
         base: StargateToken,
-        existingTokens: MutableList<StargateToken>,
     ): StargateToken {
-        existingTokens.add(base)
         return base.copy(
             blockId = event.blockId,
             blockNumber = event.blockNumber,
@@ -363,9 +188,7 @@ class StargateEventService(
     private fun handleTokenUnstaked(
         event: IndexedEvent,
         base: StargateToken,
-        existingTokens: MutableList<StargateToken>,
     ): StargateToken {
-        existingTokens.add(base)
         return base.copy(
             blockId = event.blockId,
             blockNumber = event.blockNumber,
@@ -373,8 +196,6 @@ class StargateEventService(
             owner = Address.ZERO_ADDRESS,
             manager = null,
             vetStaked = BigInteger.ZERO,
-            delegationStatus = Status.NONE,
-            validatorId = null,
         )
     }
 
@@ -391,57 +212,12 @@ class StargateEventService(
             migrated = event.params.getAsBoolean("migrated")!!,
             totalRewardsClaimed = BigInteger.ZERO,
             totalBootstrapRewardsClaimed = BigInteger.ZERO,
-            delegationStatus = Status.NONE,
             boosted = false,
         )
 
-    // ------------------------------------------------------------------------
-    // Helpers
-    // ------------------------------------------------------------------------
-
-    private fun resolveCycleInfo(
-        validatorId: String,
-        blockNumber: Long,
-        validators: Map<String, Validator>,
-    ): Pair<Long?, Long> {
-        val validator = resolveValidator(validatorId, validators) ?: return null to 0L
-        val period = validator.cyclePeriodLength?.takeIf { it > 0L } ?: return null to 0L
-        return period to nextCycleStart(validator, blockNumber)
-    }
-
-    private fun resolveValidatorExitBlock(
-        validatorId: String,
-        blockNumber: Long,
-        validators: Map<String, Validator>,
-    ): Long? {
-        val validator = resolveValidator(validatorId, validators) ?: return null
-        validator.exitBlock
-            ?.takeIf { it > 0L }
-            ?.let {
-                return it
-            }
-        return nextCycleStart(validator, blockNumber).takeIf { it > 0L }
-    }
-
-    private fun resolveValidator(
-        validatorId: String,
-        validators: Map<String, Validator>,
-    ): Validator? {
-        val normalized = validatorId.lowercase()
-        return validators[normalized] ?: validatorRepository.findById(normalized)
-    }
-
-    private fun nextCycleStart(validator: Validator, blockNumber: Long): Long {
-        val startBlock = validator.startBlock ?: 0L
-        val period = validator.cyclePeriodLength ?: 0L
-        if (startBlock == 0L || period <= 0L) return 0L
-        val offset = blockNumber - startBlock
-        val positionInCycle = offset % period
-        val currentCycleStart = blockNumber - positionInCycle
-        return currentCycleStart + period
-    }
-
     companion object {
-        private val VALIDATOR_LIFECYCLE_EVENTS = setOf("ValidationSignaledExit")
+        fun tokenIdOf(event: IndexedEvent): String? =
+            event.params.getAsString("tokenId")?.takeIf { it.isNotBlank() }
+                ?: event.params.getAsString("nodeId") // TODO: Remove once Hayabusa live on Mainnet
     }
 }

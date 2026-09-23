@@ -1,261 +1,94 @@
 package org.vechain.indexer.stargate.token
 
-import io.mockk.MockKAnnotations
-import io.mockk.coJustRun
 import io.mockk.every
-import io.mockk.impl.annotations.MockK
-import io.mockk.junit5.MockKExtension
+import io.mockk.mockk
+import io.mockk.verify
 import java.math.BigInteger
-import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.thor.model.Block
-import org.vechain.indexer.validator.Status
-import org.vechain.indexer.validator.Validator
-import org.vechain.indexer.validator.ValidatorDelegationService
-import org.vechain.indexer.validator.ValidatorReadRepository
 
-@ExtendWith(MockKExtension::class)
 internal class StargateTokenServiceTest {
-    @MockK lateinit var repository: StargateTokenWriteRepository
-    @MockK lateinit var eventService: StargateEventService
-    @MockK lateinit var validatorDelegationService: ValidatorDelegationService
-    @MockK lateinit var validatorRepository: ValidatorReadRepository
-
-    private lateinit var service: StargateTokenService
-
-    @BeforeEach
-    fun setUp() {
-        MockKAnnotations.init(this)
-        service =
-            StargateTokenService(
-                repository,
-                eventService,
-                validatorRepository,
-                validatorStartBlock = 0L,
-            )
-
-        every { repository.findAllById(any()) } returns emptyList()
-        every { repository.findByValidatorIdIn(any()) } returns emptyList()
-        every { repository.findAllDistinctValidatorIds() } returns emptyList()
-        every { validatorRepository.findAll() } returns emptyList()
-        coJustRun { eventService.handleStargateEvents(any(), any(), any(), any()) }
-    }
+    private val repository = mockk<StargateTokenWriteRepository>()
+    private val service =
+        StargateTokenService(
+            repository,
+            StargateEventService(stargateDelegationContract = "0xdelegation"),
+        )
 
     @Test
-    fun `processBlock archives original snapshot when resolving unknown delegation start block`() =
-        runBlocking {
-            val existingToken =
-                stargateToken(
-                    tokenId = "15613",
-                    blockNumber = 22083557,
-                    delegationNextPeriod = 0L,
-                    validatorId = "0xvalidator",
-                    delegationStatus = Status.QUEUED,
-                )
-            val block = block(number = 22083558)
+    fun `processEvents keeps only the tokens an event changed`() {
+        val managed = stargateToken("34132", manager = "0xc5213085d3fc19b6a883a92a5703f7733360f063")
+        val untouched = stargateToken("34133")
+        every { repository.findAllById(setOf("34132", "34133")) } returns listOf(managed, untouched)
 
-            every {
-                repository.findByDelegationNextPeriodAndDelegationStatusIn(any(), any())
-            } returns listOf(existingToken)
-            every { validatorRepository.findAll() } returns
-                listOf(
-                    validator(id = "0xvalidator", cyclePeriodLength = 720L, startBlock = 22090000L)
-                )
+        val updated =
+            service.processEvents(listOf(managerRemovedEvent, delegationInitiated("34133")))
 
-            val updated = service.processBlock(block, emptyList())
-
-            assertEquals(1, updated.size)
-            assertEquals("15613", updated.single().tokenId)
-            assertEquals(22090000L, updated.single().delegationNextPeriod)
-        }
-
-    @Test
-    fun `processBlock excludes unmodified tokens loaded from DB`() = runBlocking {
-        // Token loaded via exitingValidators path but no mutation applies:
-        // - Validator is NOT in removedValidators (still in current snapshots)
-        // - Token status is ACTIVE with nextPeriod far in the future (no transition)
-        // - eventService.handleStargateEvents is mocked to no-op
-        val unchangedToken =
-            stargateToken(
-                tokenId = "88888",
-                blockNumber = 22083400,
-                delegationNextPeriod = 99999999L,
-                validatorId = "0xexitingval",
-                delegationStatus = Status.ACTIVE,
-            )
-        val block = block(number = 22083558)
-
-        every {
-            repository.findByDelegationNextPeriodAndDelegationStatusIn(any(), any())
-        } returns emptyList()
-        // 0xexitingval is still present -> not in removedValidators
-        every { validatorRepository.findAll() } returns
-            listOf(validator(id = "0xexitingval", cyclePeriodLength = 720L, startBlock = 22000000L))
-        every { repository.findAllDistinctValidatorIds() } returns listOf("0xexitingval")
-
-        // ValidationSignaledExit event triggers validator lifecycle lookup
-        val exitEvent =
-            IndexedEvent(
-                id = "evt1",
-                blockId = block.id,
-                blockNumber = block.number,
-                blockTimestamp = block.timestamp,
-                txId = "0xtx",
-                origin = "0xorigin",
-                paid = null,
-                gasUsed = null,
-                gasPayer = null,
-                raw = null,
-                params = AbiEventParameters(returnValues = mapOf("validator" to "0xexitingval")),
-                address = "0xcontract",
-                eventType = "ValidationSignaledExit",
-                clauseIndex = 0,
-                signature = null,
-            )
-
-        // Token loaded via findByValidatorIdIn(lifecycleValidators) but not mutated
-        every { repository.findByValidatorIdIn(setOf("0xexitingval")) } returns
-            listOf(unchangedToken)
-
-        val updated = service.processBlock(block, listOf(exitEvent))
-
-        // Token should be EXCLUDED: loaded but not modified
-        assertEquals(0, updated.size)
-    }
-
-    @Test
-    fun `processBlock clears manager for TokenManagerRemoved events`() = runBlocking {
-        val realEventService =
-            StargateEventService(
-                validatorDelegationService = validatorDelegationService,
-                validatorRepository = validatorRepository,
-                stargateDelegationContract = "0xdelegation",
-            )
-        val realService =
-            StargateTokenService(
-                repository,
-                realEventService,
-                validatorRepository,
-                validatorStartBlock = 0L,
-            )
-        val existingToken =
-            stargateToken(
-                tokenId = "34132",
-                blockNumber = 24407826,
-                delegationNextPeriod = null,
-                validatorId = null,
-                delegationStatus = Status.NONE,
-                manager = "0xc5213085d3fc19b6a883a92a5703f7733360f063",
-            )
-        val block = block(number = 24407827)
-        val managerRemovedEvent =
-            IndexedEvent(
-                id = "0x32a27b5c414da4e4c405d79da4ad97f2b745fae332cd535bf8dedb59c706da26-0",
-                blockId = block.id,
-                blockNumber = block.number,
-                blockTimestamp = block.timestamp,
-                txId = "0x32a27b5c414da4e4c405d79da4ad97f2b745fae332cd535bf8dedb59c706da26",
-                origin = "0xc5213085d3fc19b6a883a92a5703f7733360f063",
-                paid = "0x52b2b2ddccb489c",
-                gasUsed = 35668,
-                gasPayer = "0xc5213085d3fc19b6a883a92a5703f7733360f063",
-                raw = null,
-                params =
-                    AbiEventParameters(
-                        returnValues =
-                            mapOf(
-                                "tokenId" to "34132",
-                                "manager" to "0xc5213085d3fc19b6a883a92a5703f7733360f063",
-                            ),
-                        eventType = "TokenManagerRemoved",
-                    ),
-                address = "0x1856c533ac2d94340aaa8544d35a5c1d4a21dee7",
-                eventType = "TokenManagerRemoved",
-                clauseIndex = 0,
-                signature = "0x2dea8fdc0115667de4800362c74206112df0a3a139fa2c217218b27a5da20259",
-            )
-
-        every { repository.findAllById(setOf("34132")) } returns listOf(existingToken)
-        every { repository.findByDelegationNextPeriodAndDelegationStatusIn(any(), any()) } returns
-            emptyList()
-        every { validatorRepository.findAll() } returns emptyList()
-
-        val updated = realService.processBlock(block, listOf(managerRemovedEvent))
-
-        assertEquals(1, updated.size)
+        assertEquals(listOf("34132"), updated.map { it.tokenId })
         assertNull(updated.single().manager)
+        assertEquals(24407827L, updated.single().blockNumber)
     }
 
-    private fun stargateToken(
-        tokenId: String,
-        blockNumber: Long,
-        delegationNextPeriod: Long?,
-        validatorId: String?,
-        delegationStatus: Status,
-        manager: String? = null,
-    ) =
+    @Test
+    fun `processEvents skips the read when no event names a token`() {
+        assertEquals(emptyList<StargateToken>(), service.processEvents(emptyList()))
+        verify(exactly = 0) { repository.findAllById(any()) }
+    }
+
+    private fun stargateToken(tokenId: String, manager: String? = null) =
         StargateToken(
             tokenId = tokenId,
             level = TokenLevel.Dawn,
             owner = "0xowner",
             manager = manager,
-            delegationStatus = delegationStatus,
-            validatorId = validatorId,
             totalRewardsClaimed = BigInteger.ZERO,
             totalBootstrapRewardsClaimed = BigInteger.ZERO,
             vetStaked = BigInteger("10000"),
             migrated = false,
             boosted = false,
-            blockNumber = blockNumber,
+            blockNumber = 24407826,
             blockId = "0xprev",
             blockTimestamp = 1767463000,
-            delegationNextPeriod = delegationNextPeriod,
-            delegationPeriodLength = 720L,
         )
 
-    private fun validator(
-        id: String,
-        cyclePeriodLength: Long? = null,
-        startBlock: Long? = null,
-        exitBlock: Long? = null,
-    ) =
-        Validator(
-            id = id,
-            blockId = "0xblock",
-            blockNumber = startBlock ?: 0L,
-            blockTimestamp = 1000L,
-            status = Status.ACTIVE,
-            cyclePeriodLength = cyclePeriodLength,
-            startBlock = startBlock,
-            exitBlock = exitBlock,
+    private fun delegationInitiated(tokenId: String) =
+        managerRemovedEvent.copy(
+            id = "0xdelegation-0",
+            eventType = "DelegationInitiated",
+            params =
+                AbiEventParameters(
+                    returnValues = mapOf("tokenId" to tokenId, "validator" to "0xvalidator"),
+                    eventType = "DelegationInitiated",
+                ),
         )
 
-    private fun block(number: Long) =
-        Block(
-            id = "0x" + "0".repeat(63) + "1",
-            number = number,
-            timestamp = 1767463010,
-            parentID = "0x" + "0".repeat(63) + "0",
-            size = 0,
-            gasLimit = 0,
-            baseFeePerGas = null,
-            beneficiary = "0xbeneficiary",
-            gasUsed = 0,
-            totalScore = 0,
-            txsRoot = "0xTXROOT",
-            txsFeatures = 0,
-            stateRoot = "0xSTATEROOT",
-            receiptsRoot = "0xRECEIPTSROOT",
-            signer = "0xSIGNER",
-            isTrunk = true,
-            isFinalized = true,
-            transactions = emptyList(),
-            com = false,
+    private val managerRemovedEvent =
+        IndexedEvent(
+            id = "0x32a27b5c414da4e4c405d79da4ad97f2b745fae332cd535bf8dedb59c706da26-0",
+            blockId = "0x" + "0".repeat(63) + "1",
+            blockNumber = 24407827,
+            blockTimestamp = 1767463010,
+            txId = "0x32a27b5c414da4e4c405d79da4ad97f2b745fae332cd535bf8dedb59c706da26",
+            origin = "0xc5213085d3fc19b6a883a92a5703f7733360f063",
+            paid = "0x52b2b2ddccb489c",
+            gasUsed = 35668,
+            gasPayer = "0xc5213085d3fc19b6a883a92a5703f7733360f063",
+            raw = null,
+            params =
+                AbiEventParameters(
+                    returnValues =
+                        mapOf(
+                            "tokenId" to "34132",
+                            "manager" to "0xc5213085d3fc19b6a883a92a5703f7733360f063",
+                        ),
+                    eventType = "TokenManagerRemoved",
+                ),
+            address = "0x1856c533ac2d94340aaa8544d35a5c1d4a21dee7",
+            eventType = "TokenManagerRemoved",
+            clauseIndex = 0,
+            signature = "0x2dea8fdc0115667de4800362c74206112df0a3a139fa2c217218b27a5da20259",
         )
 }

@@ -1,30 +1,18 @@
 package org.vechain.indexer.stargate.token
 
-import io.mockk.mockk
 import java.math.BigInteger
-import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures
-import org.vechain.indexer.validator.Status
-import org.vechain.indexer.validator.Validator
-import org.vechain.indexer.validator.ValidatorDelegationService
-import org.vechain.indexer.validator.ValidatorReadRepository
+import org.vechain.indexer.thor.Address
 
 class StargateEventServiceTest {
-    private val validatorRepository = mockk<ValidatorReadRepository>(relaxed = true)
-    private val service =
-        StargateEventService(
-            validatorDelegationService = mockk<ValidatorDelegationService>(relaxed = true),
-            validatorRepository = validatorRepository,
-            stargateDelegationContract = "0xdelegation",
-        )
+    private val service = StargateEventService(stargateDelegationContract = "0xdelegation")
 
     @Test
-    fun `handleStargateEvents clears manager for NodeDelegated removal`() = runBlocking {
+    fun `handleStargateEvents clears manager for NodeDelegated removal`() {
         val token = token(manager = "0x3f90bf8b314c42005103b3c94505634fa680dcee")
-        val existingTokens = mutableListOf<StargateToken>()
         val latestTokenSnapshots = mutableMapOf(token.tokenId to token)
 
         service.handleStargateEvents(
@@ -36,47 +24,36 @@ class StargateEventServiceTest {
                     )
                 ),
             latestTokenSnapshots = latestTokenSnapshots,
-            validators = emptyMap(),
-            existingTokens = existingTokens,
         )
 
         assertThat(latestTokenSnapshots[token.tokenId]!!.manager).isNull()
-        assertThat(existingTokens).containsExactly(token)
     }
 
     @Test
-    fun `handleStargateEvents clears manager when NodeDelegated omits delegated flag`() =
-        runBlocking {
-            val token = token(manager = "0x3f90bf8b314c42005103b3c94505634fa680dcee")
-            val existingTokens = mutableListOf<StargateToken>()
-            val latestTokenSnapshots = mutableMapOf(token.tokenId to token)
+    fun `handleStargateEvents clears manager when NodeDelegated omits delegated flag`() {
+        val token = token(manager = "0x3f90bf8b314c42005103b3c94505634fa680dcee")
+        val latestTokenSnapshots = mutableMapOf(token.tokenId to token)
 
-            service.handleStargateEvents(
-                events =
-                    listOf(
-                        nodeDelegatedEvent(delegatee = "0x3f90bf8b314c42005103b3c94505634fa680dcee")
-                    ),
-                latestTokenSnapshots = latestTokenSnapshots,
-                validators = emptyMap(),
-                existingTokens = existingTokens,
-            )
+        service.handleStargateEvents(
+            events =
+                listOf(
+                    nodeDelegatedEvent(delegatee = "0x3f90bf8b314c42005103b3c94505634fa680dcee")
+                ),
+            latestTokenSnapshots = latestTokenSnapshots,
+        )
 
-            assertThat(latestTokenSnapshots[token.tokenId]!!.manager).isNull()
-            assertThat(existingTokens).containsExactly(token)
-        }
+        assertThat(latestTokenSnapshots[token.tokenId]!!.manager).isNull()
+    }
 
     @Test
-    fun `handleStargateEvents stamps block metadata for rewards claimed`() = runBlocking {
+    fun `handleStargateEvents stamps block metadata for rewards claimed`() {
         val token = token()
-        val existingTokens = mutableListOf<StargateToken>()
         val latestTokenSnapshots = mutableMapOf(token.tokenId to token)
         val event = rewardsClaimedEvent()
 
         service.handleStargateEvents(
             events = listOf(event),
             latestTokenSnapshots = latestTokenSnapshots,
-            validators = emptyMap(),
-            existingTokens = existingTokens,
         )
 
         val updated = latestTokenSnapshots[token.tokenId]!!
@@ -87,165 +64,35 @@ class StargateEventServiceTest {
     }
 
     @Test
-    fun `handleStargateEvents stamps block metadata for delegation initiated`() = runBlocking {
+    fun `handleStargateEvents burns a token without touching its rewards`() {
+        val token = token(manager = "0xmanager").copy(totalRewardsClaimed = BigInteger.TWO)
+        val latestTokenSnapshots = mutableMapOf(token.tokenId to token)
+
+        service.handleStargateEvents(listOf(tokenBurnedEvent()), latestTokenSnapshots)
+
+        val burned = latestTokenSnapshots.getValue(token.tokenId)
+        assertThat(burned.owner).isEqualTo(Address.ZERO_ADDRESS)
+        assertThat(burned.manager).isNull()
+        assertThat(burned.vetStaked).isEqualTo(BigInteger.ZERO)
+        assertThat(burned.totalRewardsClaimed).isEqualTo(BigInteger.TWO)
+    }
+
+    @Test
+    fun `handleStargateEvents ignores the delegation events it no longer tracks`() {
         val token = token()
-        val existingTokens = mutableListOf<StargateToken>()
-        val latestTokenSnapshots = mutableMapOf(token.tokenId to token)
-        val event = delegationInitiatedEvent()
-        val validators =
-            mapOf(
-                "0xvalidator" to
-                    validator(
-                        id = "0xvalidator",
-                        cyclePeriodLength = 180L,
-                        startBlock = 100L,
-                        exitBlock = Long.MAX_VALUE,
-                    )
-            )
-
-        service.handleStargateEvents(
-            events = listOf(event),
-            latestTokenSnapshots = latestTokenSnapshots,
-            validators = validators,
-            existingTokens = existingTokens,
-        )
-
-        val updated = latestTokenSnapshots[token.tokenId]!!
-        assertThat(updated.delegationStatus).isEqualTo(Status.QUEUED)
-        assertThat(updated.blockId).isEqualTo(event.blockId)
-        assertThat(updated.blockNumber).isEqualTo(event.blockNumber)
-        assertThat(updated.blockTimestamp).isEqualTo(event.blockTimestamp)
-    }
-
-    @Test
-    fun `handleStargateEvents marks validator tokens exiting on validation signaled exit`() =
-        runBlocking {
-            val token =
-                token(
-                    delegationStatus = Status.ACTIVE,
-                    validatorId = "0xvalidator",
-                    delegationNextPeriod = 280L,
-                    delegationPeriodLength = 180L,
-                )
-            val existingTokens = mutableListOf<StargateToken>()
-            val latestTokenSnapshots = mutableMapOf(token.tokenId to token)
-            val event = validationSignaledExitEvent()
-            val validators =
-                mapOf(
-                    "0xvalidator" to
-                        validator(
-                            id = "0xvalidator",
-                            cyclePeriodLength = 180L,
-                            startBlock = 100L,
-                            exitBlock = 460L,
-                        )
-                )
-
-            service.handleStargateEvents(
-                events = listOf(event),
-                latestTokenSnapshots = latestTokenSnapshots,
-                validators = validators,
-                existingTokens = existingTokens,
-            )
-
-            val updated = latestTokenSnapshots[token.tokenId]!!
-            assertThat(updated.delegationStatus).isEqualTo(Status.EXITING)
-            assertThat(updated.delegationNextPeriod).isEqualTo(460L)
-            assertThat(updated.validatorExiting).isEqualTo(true)
-            assertThat(existingTokens).containsExactly(token)
-        }
-
-    @Test
-    fun `handleStargateEvents ignores validation withdrawn`() = runBlocking {
-        // ValidationWithdrawn fires whenever an endorser pulls previously-cooled-down stake
-        // (post-`decreaseStake` / `signalExit`); the validator can stay ACTIVE through it.
-        // True terminal withdrawal is detected by the periodic on-chain set diff
-        // (StargateTokenService.checkMissingValidators + handleValidatorsDisappearedSnapshots),
-        // not by this event.
-        val token =
-            token(
-                delegationStatus = Status.EXITING,
-                validatorId = "0xvalidator",
-                delegationNextPeriod = 460L,
-                delegationPeriodLength = 180L,
-            )
-        val existingTokens = mutableListOf<StargateToken>()
         val latestTokenSnapshots = mutableMapOf(token.tokenId to token)
 
-        service.handleStargateEvents(
-            events = listOf(validationWithdrawnEvent()),
-            latestTokenSnapshots = latestTokenSnapshots,
-            validators = emptyMap(),
-            existingTokens = existingTokens,
-        )
+        service.handleStargateEvents(listOf(delegationInitiatedEvent()), latestTokenSnapshots)
 
-        assertThat(latestTokenSnapshots[token.tokenId]).isEqualTo(token)
-        assertThat(existingTokens).isEmpty()
+        assertThat(latestTokenSnapshots).containsExactlyEntriesOf(mapOf(token.tokenId to token))
     }
 
-    @Test
-    fun `handleStargateEvents stamps block metadata for delegation withdrawn`() = runBlocking {
-        val token = token(delegationStatus = Status.ACTIVE, validatorId = "0xvalidator")
-        val existingTokens = mutableListOf<StargateToken>()
-        val latestTokenSnapshots = mutableMapOf(token.tokenId to token)
-        val event = delegationWithdrawnEvent()
-
-        service.handleStargateEvents(
-            events = listOf(event),
-            latestTokenSnapshots = latestTokenSnapshots,
-            validators = emptyMap(),
-            existingTokens = existingTokens,
-        )
-
-        val updated = latestTokenSnapshots[token.tokenId]!!
-        assertThat(updated.delegationStatus).isEqualTo(Status.NONE)
-        assertThat(updated.validatorId).isNull()
-        assertThat(updated.blockId).isEqualTo(event.blockId)
-        assertThat(updated.blockNumber).isEqualTo(event.blockNumber)
-        assertThat(updated.blockTimestamp).isEqualTo(event.blockTimestamp)
-    }
-
-    @Test
-    fun `handleStargateEvents stamps block metadata for delegation exit requested`() = runBlocking {
-        val token =
-            token(
-                delegationStatus = Status.ACTIVE,
-                validatorId = "0xvalidator",
-                delegationNextPeriod = 200L,
-                delegationPeriodLength = 180L,
-            )
-        val existingTokens = mutableListOf<StargateToken>()
-        val latestTokenSnapshots = mutableMapOf(token.tokenId to token)
-        val event = delegationExitRequestedEvent()
-
-        service.handleStargateEvents(
-            events = listOf(event),
-            latestTokenSnapshots = latestTokenSnapshots,
-            validators = emptyMap(),
-            existingTokens = existingTokens,
-        )
-
-        val updated = latestTokenSnapshots[token.tokenId]!!
-        assertThat(updated.delegationStatus).isEqualTo(Status.EXITING)
-        assertThat(updated.blockId).isEqualTo(event.blockId)
-        assertThat(updated.blockNumber).isEqualTo(event.blockNumber)
-        assertThat(updated.blockTimestamp).isEqualTo(event.blockTimestamp)
-    }
-
-    private fun token(
-        manager: String? = null,
-        delegationStatus: Status = Status.NONE,
-        validatorId: String? = null,
-        delegationNextPeriod: Long? = null,
-        delegationPeriodLength: Long? = null,
-    ) =
+    private fun token(manager: String? = null) =
         StargateToken(
             tokenId = "35112",
             level = TokenLevel.Dawn,
             owner = "0xowner",
             manager = manager,
-            delegationStatus = delegationStatus,
-            validatorId = validatorId,
             totalRewardsClaimed = BigInteger.ZERO,
             totalBootstrapRewardsClaimed = BigInteger.ZERO,
             vetStaked = BigInteger("10000"),
@@ -254,25 +101,6 @@ class StargateEventServiceTest {
             blockNumber = 23693226,
             blockId = "0xprev",
             blockTimestamp = 1767463000,
-            delegationNextPeriod = delegationNextPeriod,
-            delegationPeriodLength = delegationPeriodLength,
-        )
-
-    private fun validator(
-        id: String,
-        cyclePeriodLength: Long? = null,
-        startBlock: Long? = null,
-        exitBlock: Long? = null,
-    ) =
-        Validator(
-            id = id,
-            blockId = "0xblock",
-            blockNumber = startBlock ?: 0L,
-            blockTimestamp = 1000L,
-            status = Status.ACTIVE,
-            cyclePeriodLength = cyclePeriodLength,
-            startBlock = startBlock,
-            exitBlock = exitBlock,
         )
 
     private fun nodeDelegatedEvent(delegated: Boolean? = null, delegatee: String) =
@@ -324,40 +152,12 @@ class StargateEventServiceTest {
                 ),
         )
 
-    private fun delegationWithdrawnEvent() =
+    private fun tokenBurnedEvent() =
         IndexedEventsFixtures.buildIndexedEvent(
-            blockId = "0xwithdraw",
+            blockId = "0xburn",
             blockNumber = 23693230,
             blockTimestamp = 1767463040,
-            eventType = "DelegationWithdrawn",
+            eventType = "TokenBurned",
             params = AbiEventParameters(returnValues = mapOf("tokenId" to "35112")),
-        )
-
-    private fun delegationExitRequestedEvent() =
-        IndexedEventsFixtures.buildIndexedEvent(
-            blockId = "0xexit",
-            blockNumber = 23693231,
-            blockTimestamp = 1767463050,
-            eventType = "DelegationExitRequested",
-            address = "0xstargate",
-            params = AbiEventParameters(returnValues = mapOf("tokenId" to "35112")),
-        )
-
-    private fun validationSignaledExitEvent() =
-        IndexedEventsFixtures.buildIndexedEvent(
-            blockId = "0xvalidationexit",
-            blockNumber = 23693232,
-            blockTimestamp = 1767463060,
-            eventType = "ValidationSignaledExit",
-            params = AbiEventParameters(returnValues = mapOf("validator" to "0xvalidator")),
-        )
-
-    private fun validationWithdrawnEvent() =
-        IndexedEventsFixtures.buildIndexedEvent(
-            blockId = "0xvalidationwithdrawn",
-            blockNumber = 23693233,
-            blockTimestamp = 1767463070,
-            eventType = "ValidationWithdrawn",
-            params = AbiEventParameters(returnValues = mapOf("validator" to "0xvalidator")),
         )
 }

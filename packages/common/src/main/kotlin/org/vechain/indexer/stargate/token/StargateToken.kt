@@ -14,7 +14,8 @@ data class StargateToken(
     val level: TokenLevel,
     val owner: String,
     @JsonInclude(JsonInclude.Include.ALWAYS) val manager: String? = null,
-    val delegationStatus: Status,
+    // Read from the token's delegation in delegation.state; the indexer never sets them.
+    val delegationStatus: Status = Status.NONE,
     @JsonInclude(JsonInclude.Include.ALWAYS) val validatorId: String? = null,
     val totalRewardsClaimed: BigInteger,
     val totalBootstrapRewardsClaimed: BigInteger,
@@ -24,7 +25,4 @@ data class StargateToken(
     @JsonIgnore override val blockNumber: Long,
     @JsonIgnore override val blockId: String,
     @JsonIgnore override val blockTimestamp: Long,
-    @JsonIgnore val delegationNextPeriod: Long? = null,
-    @JsonIgnore val delegationPeriodLength: Long? = null,
-    @JsonIgnore val validatorExiting: Boolean? = null,
 ) : IndexedDocument
