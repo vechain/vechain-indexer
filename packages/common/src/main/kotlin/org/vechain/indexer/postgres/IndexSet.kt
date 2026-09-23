@@ -19,7 +19,6 @@ import org.vechain.indexer.safe.SafeIndexes
 import org.vechain.indexer.stargate.staking.StargateStakingIndexes
 import org.vechain.indexer.stargate.token.StargateTokenIndexes
 import org.vechain.indexer.stargate.tokenReward.TokenRewardIndexes
-import org.vechain.indexer.stargate.vetDelegated.VetDelegatedIndexes
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedIndexes
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedIndexes
 import org.vechain.indexer.transfer.TransferIndexes
@@ -55,7 +54,6 @@ object IndexSets {
             TransferIndexes.SET,
             StargateTokenIndexes.SET,
             TokenRewardIndexes.SET,
-            VetDelegatedIndexes.SET,
             VthoGeneratedIndexes.SET,
             VthoClaimedIndexes.SET,
             StargateStakingIndexes.SET,

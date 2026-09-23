@@ -17,6 +17,8 @@ import org.vechain.indexer.postgres.IndexBuilder
 import org.vechain.indexer.postgres.PostgresTestDatabase
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.timeseries.TimeFramePeriod
+import org.vechain.indexer.validator.DelegationIndexes
+import org.vechain.indexer.validator.DelegationWriteRepository
 
 /** The series' write and read sides on a seeded set; see [seed] for which blocks rolled what. */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -25,12 +27,14 @@ class VetDelegatedRepositoryTest {
     private val database = PostgresTestDatabase()
     private lateinit var writer: VetDelegatedWriteRepository
     private lateinit var reader: VetDelegatedReadRepository
+    private lateinit var delegations: DelegationWriteRepository
 
     @BeforeAll
     fun start() {
         database.start()
         writer = VetDelegatedWriteRepository(database.jdbc)
         reader = VetDelegatedReadRepository(database.jdbc)
+        delegations = DelegationWriteRepository(database.jdbc)
         seed()
     }
 
@@ -164,13 +168,13 @@ class VetDelegatedRepositoryTest {
     }
 
     @Test
-    fun `the writer resumes from the newest row, replays in place and rolls back by block`() {
+    fun `the writer resumes from the newest row, replays in place and delegation rolls it back`() {
         assertEquals(40L, writer.latest()?.blockNumber)
 
         writer.save(listOf(record(40, 444)))
         assertEquals(BigInteger.valueOf(444), writer.latest()?.total)
 
-        writer.rollbackFrom(30)
+        delegations.rollbackFrom(30)
         assertEquals(20L, writer.latest()?.blockNumber)
 
         writer.save(listOf(record(30, 300, listOf(TimeFrame.HOUR, TimeFrame.DAY)), record(40, 400)))
@@ -180,24 +184,23 @@ class VetDelegatedRepositoryTest {
     fun `the series is written and rolled back with the deferrable indexes dropped`() {
         val builder = IndexBuilder(database.properties)
         val before = writer.latest()?.blockNumber
-        builder.drop(VetDelegatedIndexes.SET)
+        builder.drop(DelegationIndexes.SET)
         try {
             writer.save(listOf(record(50, 500, listOf(TimeFrame.DAY))))
             assertEquals(50L, writer.latest()?.blockNumber)
 
-            writer.rollbackFrom(50)
+            delegations.rollbackFrom(50)
             assertEquals(before, writer.latest()?.blockNumber)
         } finally {
-            builder.build(VetDelegatedIndexes.SET)
+            builder.build(DelegationIndexes.SET)
         }
     }
 
     @Test
-    fun `truncate empties the table`() {
-        val scratch = VetDelegatedWriteRepository(database.jdbc)
-        scratch.save(listOf(record(50, 500)))
-        scratch.truncate()
-        assertNull(scratch.latest())
+    fun `delegation's truncate empties the table`() {
+        writer.save(listOf(record(50, 500)))
+        delegations.truncate()
+        assertNull(writer.latest())
         seed()
     }
 }

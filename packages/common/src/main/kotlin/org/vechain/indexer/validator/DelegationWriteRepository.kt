@@ -78,7 +78,15 @@ open class DelegationWriteRepository(
             validators.map(PostgresHex::bytes).toTypedArray(),
         )
 
+    /** The ACTIVE and EXITING delegations, which the VET-delegated series totals. */
+    open fun findActive(): List<Delegation> =
+        query(
+            "$CURRENT AND status = ANY(CAST(? AS delegation.status[])) ORDER BY id",
+            arrayOf(DelegationStatus.ACTIVE.name, DelegationStatus.EXITING.name),
+        )
+
     override fun rollbackFrom(blockNumber: Long) {
+        jdbc.update("DELETE FROM delegation.total_by_block WHERE block_number >= ?", blockNumber)
         jdbc.update("DELETE FROM delegation.state WHERE block_number >= ?", blockNumber)
         jdbc.update(
             "UPDATE delegation.state SET superseded_at = NULL WHERE superseded_at >= ?",
@@ -87,7 +95,7 @@ open class DelegationWriteRepository(
     }
 
     override fun truncate() {
-        jdbc.execute("TRUNCATE delegation.state")
+        jdbc.execute("TRUNCATE delegation.state, delegation.total_by_block")
     }
 
     /** The store records [before] once rows are gone and refuses any rollback below it. */

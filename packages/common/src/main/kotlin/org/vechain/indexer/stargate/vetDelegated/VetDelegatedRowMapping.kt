@@ -9,9 +9,9 @@ import org.vechain.indexer.stargate.token.TokenLevelJson
 import org.vechain.indexer.timeseries.TimeFrameColumns
 import org.vechain.indexer.timeseries.TimeFrameRowMapping
 
-/** A `vet_delegated.total_by_block` row to a [VetDelegatedByBlock] and back. */
+/** A `delegation.total_by_block` row to a [VetDelegatedByBlock] and back. */
 object VetDelegatedRowMapping : TimeFrameRowMapping<VetDelegatedByBlock> {
-    override val table = "vet_delegated.total_by_block"
+    override val table = "delegation.total_by_block"
     override val columns = listOf("total", "total_nft_count", "by_level", "nft_count_by_level")
 
     override fun bind(ps: PreparedStatement, from: Int, d: VetDelegatedByBlock) {

@@ -57,11 +57,6 @@ object IndexerNames {
         const val COLLECTION = "stargate_staking"
     }
 
-    object VET_DELEGATED_BY_BLOCK {
-        const val NAME = "VetDelegatedByBlockIndexer"
-        const val COLLECTION = "vet_delegated"
-    }
-
     object VTHO_CLAIMED {
         const val NAME = "VthoClaimedIndexer"
         const val COLLECTION = "stargate_vtho_claimed"

@@ -73,21 +73,6 @@ open class DelegationReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTempl
             )
         }
 
-    /** Active (ACTIVE + EXITING) delegations grouped by level; the VET-delegated series' input. */
-    open fun aggregateActiveDelegationsByLevel(): List<DelegationLevelAggregateResult> =
-        jdbc.query(
-            "SELECT token_level, sum(staked_amount) AS total_wei, count(*) AS nft_count " +
-                "FROM delegation.state WHERE superseded_at IS NULL " +
-                "AND status IN ('ACTIVE', 'EXITING') GROUP BY token_level ORDER BY token_level",
-            MapSqlParameterSource(),
-        ) { rs, _ ->
-            DelegationLevelAggregateResult(
-                level = rs.getString("token_level"),
-                totalWei = rs.getBigDecimal("total_wei").toPlainString(),
-                nftCount = rs.getLong("nft_count"),
-            )
-        }
-
     /**
      * The non-exited delegations of [validators] as counted `(status, tokenLevel,
      * transitionAtBlock)` buckets, from which the API derives the current- and next-cycle stakes.

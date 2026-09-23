@@ -9,6 +9,8 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.stargate.token.TokenLevel
+import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlock
+import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlockService
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
@@ -33,6 +35,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 open class DelegationService(
     private val repository: DelegationWriteRepository,
     private val validatorRepository: ValidatorReadRepository,
+    private val vetDelegatedService: VetDelegatedByBlockService,
     @param:Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
     private val stakerSC: String,
     @param:Value("\${indexer.start-block.validator}") private val validatorStartBlock: Long,
@@ -99,9 +102,12 @@ open class DelegationService(
         transactionManager = PostgresConfig.TRANSACTION_MANAGER,
         rollbackFor = [Exception::class],
     )
-    open fun save(updates: List<Delegation>) {
-        if (updates.isEmpty()) return
-        repository.save(updates)
+    open fun save(
+        updates: List<Delegation>,
+        vetDelegated: List<VetDelegatedByBlock> = emptyList(),
+    ) {
+        if (updates.isNotEmpty()) repository.save(updates)
+        vetDelegatedService.save(vetDelegated, updates)
         updateZeroCycleCache(updates)
     }
 

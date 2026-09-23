@@ -492,10 +492,6 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.stargate-staking
     },
     {
-      name  = "INDEXER_START_BLOCK_VET_DELEGATED_BY_BLOCK"
-      value = each.value.indexer.start-block.vet-delegated-by-block
-    },
-    {
       name  = "INDEXER_START_BLOCK_SAFE"
       value = each.value.indexer.start-block.safe
     },
@@ -590,10 +586,6 @@ module "ecs-backend-service" {
     {
       name  = "VERSION_STARGATE_STAKING"
       value = each.value.indexer.version.stargate-staking
-    },
-    {
-      name  = "VERSION_STARGATE_VET_DELEGATED_BY_BLOCK"
-      value = each.value.indexer.version.stargate-vet-delegated-by-block
     },
     {
       name  = "VERSION_VEVOTE_HISTORIC"

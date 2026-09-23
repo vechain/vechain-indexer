@@ -10,13 +10,6 @@ data class DelegationStatusCounts(
     val exiting: Long,
 )
 
-/** Active (ACTIVE + EXITING) delegations of one [level]: their wei total and how many NFTs. */
-data class DelegationLevelAggregateResult(
-    val level: String,
-    val totalWei: String,
-    val nftCount: Long,
-)
-
 /**
  * One bucket of [DelegationReadRepository.aggregateDelegationFacetsByValidators]: the delegations
  * of one validator sharing a `(status, tokenLevel, transitionAtBlock)`, as a count. Enum fields

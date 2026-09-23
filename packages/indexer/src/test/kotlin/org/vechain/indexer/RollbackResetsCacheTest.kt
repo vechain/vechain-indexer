@@ -13,15 +13,16 @@ import org.vechain.indexer.explorer.ExplorerWriteRepository
 import org.vechain.indexer.stargate.staking.StargateStakingProcessor
 import org.vechain.indexer.stargate.staking.StargateStakingService
 import org.vechain.indexer.stargate.staking.StargateStakingWriteRepository
-import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlockProcessor
 import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlockService
-import org.vechain.indexer.stargate.vetDelegated.VetDelegatedWriteRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedProcessor
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedService
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedWriteRepository
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockProcessor
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockService
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedWriteRepository
+import org.vechain.indexer.validator.DelegationProcessor
+import org.vechain.indexer.validator.DelegationService
+import org.vechain.indexer.validator.DelegationWriteRepository
 
 /**
  * Each cache-bearing processor must invalidate its service's in-memory cache when rollback is
@@ -69,15 +70,16 @@ class RollbackResetsCacheTest {
     }
 
     @Test
-    fun `VetDelegatedByBlockProcessor rollback resets service cache`() {
+    fun `DelegationProcessor rollback resets the VET-delegated series cache`() {
         val service = mockk<VetDelegatedByBlockService>(relaxed = true)
-        val repository = mockk<VetDelegatedWriteRepository>(relaxed = true)
         val processor =
-            VetDelegatedByBlockProcessor(
+            DelegationProcessor(
+                mockk<DelegationService>(relaxed = true),
                 service,
-                repository,
+                mockk<DelegationWriteRepository>(relaxed = true),
                 mockk(relaxed = true),
                 CheckpointProperties(),
+                InlineVersioningProperties(),
                 processorMetrics,
             )
 

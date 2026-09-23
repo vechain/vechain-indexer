@@ -22,8 +22,12 @@ import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.postgres.IndexerStateRepository
 import org.vechain.indexer.postgres.PostgresTestDatabase
 import org.vechain.indexer.stargate.token.TokenLevel
+import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlock
+import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlockService
+import org.vechain.indexer.stargate.vetDelegated.VetDelegatedWriteRepository
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.BlockIdentifier
+import org.vechain.indexer.timeseries.TimeFramePeriod
 
 /** The processor on a real schema, the service mocked: states in, current rows and resume out. */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -32,17 +36,25 @@ class DelegationProcessorIntegrationTest {
     private val database = PostgresTestDatabase()
     private lateinit var writer: DelegationWriteRepository
     private val service = mockk<DelegationService>()
+    private val vetDelegated = mockk<VetDelegatedByBlockService>()
     private lateinit var processor: DelegationProcessor
 
     @BeforeAll
     fun start() {
         database.start()
         writer = DelegationWriteRepository(database.jdbc)
-        every { service.save(any()) } answers { writer.save(firstArg()) }
+        val series = VetDelegatedWriteRepository(database.jdbc)
+        every { service.save(any(), any()) } answers
+            {
+                writer.save(firstArg())
+                series.save(secondArg())
+            }
         every { service.invalidateCache() } returns Unit
+        every { vetDelegated.resetCache() } returns Unit
         processor =
             DelegationProcessor(
                 service,
+                vetDelegated,
                 writer,
                 IndexerStateRepository(database.jdbc),
                 CheckpointProperties().apply { saveIntervalSeconds = 0 },
@@ -78,8 +90,19 @@ class DelegationProcessorIntegrationTest {
             blockTimestamp = block.timestamp,
         )
 
+    private fun total(block: Block) =
+        VetDelegatedByBlock(
+            block.id,
+            block.number,
+            block.timestamp,
+            total = BigInteger.ZERO,
+            byLevel = emptyMap(),
+            period = TimeFramePeriod.roll(null, block.timestamp, BigInteger.ZERO).next,
+        )
+
     private fun process(block: Block, updates: List<Delegation>) = runBlocking {
         coEvery { service.processBlock(block, emptyList()) } returns updates
+        every { vetDelegated.processBlock(block, updates) } returns updates.map { total(block) }
         processor.process(
             IndexingResult.BlockResult(block, emptyList(), emptyList(), Status.SYNCING)
         )
@@ -99,8 +122,9 @@ class DelegationProcessorIntegrationTest {
             writer.findByTokenIdIn(listOf("9")),
         )
         assertEquals(2, database.count("delegation.state"))
+        assertEquals(2, database.count("delegation.total_by_block"))
         assertEquals(BlockIdentifier(12, b12.id), processor.getLastSyncedBlock())
-        verify(exactly = 2) { service.save(any()) }
+        verify(exactly = 2) { service.save(any(), any()) }
 
         processor.rollback(11)
 
@@ -108,7 +132,9 @@ class DelegationProcessorIntegrationTest {
             listOf(state(b10, DelegationStatus.QUEUED)),
             writer.findByTokenIdIn(listOf("9")),
         )
+        assertEquals(1, database.count("delegation.total_by_block"))
         assertEquals(BlockIdentifier(10, null), processor.getLastSyncedBlock())
         verify(exactly = 1) { service.invalidateCache() }
+        verify(exactly = 1) { vetDelegated.resetCache() }
     }
 }
