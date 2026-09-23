@@ -3,6 +3,8 @@ package org.vechain.indexer.stargate.vetDelegated
 import java.math.BigInteger
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.config.postgres.PostgresConfig
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.timeseries.SeriesCursor
@@ -73,6 +75,10 @@ open class VetDelegatedByBlockService(
     }
 
     /** Runs inside [DelegationService.save]'s transaction, with the same [changed]. */
+    @Transactional(
+        transactionManager = PostgresConfig.TRANSACTION_MANAGER,
+        rollbackFor = [Exception::class],
+    )
     open fun save(records: List<VetDelegatedByBlock>, changed: List<Delegation>) {
         if (records.isNotEmpty()) repository.save(records)
         cursor.commit(records)
