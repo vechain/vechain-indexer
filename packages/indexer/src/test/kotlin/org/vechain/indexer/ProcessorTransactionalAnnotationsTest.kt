@@ -60,6 +60,7 @@ import org.vechain.indexer.transfer.TransferProcessor
 import org.vechain.indexer.transfer.TransferService
 import org.vechain.indexer.validator.DelegationProcessor
 import org.vechain.indexer.validator.DelegationService
+import org.vechain.indexer.validator.ValidatorBlockService
 import org.vechain.indexer.validator.ValidatorProcessor
 import org.vechain.indexer.validator.ValidatorService
 import org.vechain.indexer.vevote.HistoricProposalsProcessor
@@ -137,6 +138,7 @@ class ProcessorTransactionalAnnotationsTest {
                 ValidatorService::class
                     .java
                     .getDeclaredMethod("save", List::class.java, List::class.java),
+                ValidatorBlockService::class.java.getDeclaredMethod("save", List::class.java),
                 DelegationService::class.java.getDeclaredMethod("save", List::class.java),
                 StargateTokenService::class.java.getDeclaredMethod("save", List::class.java),
                 TokenRewardService::class.java.getDeclaredMethod("save", List::class.java),
