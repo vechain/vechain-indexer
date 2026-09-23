@@ -127,15 +127,10 @@ class DelegationReadRepositoryTest {
     }
 
     @Test
-    fun `active delegations are summed by level in wei`() {
-        val dawnWei = TokenLevel.Dawn.staked.toBigInteger() * BigInteger.TEN.pow(18)
-        val flashWei = TokenLevel.Flash.staked.toBigInteger() * BigInteger.TEN.pow(18)
+    fun `the indexer's active set is the current ACTIVE and EXITING rows`() {
         assertEquals(
-            listOf(
-                DelegationLevelAggregateResult("Dawn", dawnWei.toString(), 1),
-                DelegationLevelAggregateResult("Flash", (flashWei * BigInteger.TWO).toString(), 2),
-            ),
-            repository.aggregateActiveDelegationsByLevel(),
+            listOf("1", "3", "5"),
+            ids(DelegationWriteRepository(database.jdbc).findActive()),
         )
     }
 

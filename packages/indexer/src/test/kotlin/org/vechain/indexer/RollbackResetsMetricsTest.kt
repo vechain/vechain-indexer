@@ -16,6 +16,7 @@ import org.vechain.indexer.stargate.token.StargateTokenProcessor
 import org.vechain.indexer.stargate.token.StargateTokenService
 import org.vechain.indexer.stargate.token.StargateTokenWriteRepository
 import org.vechain.indexer.stargate.tokenReward.TokenRewardWriteRepository
+import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlockService
 import org.vechain.indexer.validator.DelegationProcessor
 import org.vechain.indexer.validator.DelegationService
 import org.vechain.indexer.validator.DelegationWriteRepository
@@ -54,6 +55,7 @@ class RollbackResetsMetricsTest {
             IndexerNames.DELEGATION.NAME,
             DelegationProcessor(
                 mockk<DelegationService>(relaxed = true),
+                mockk<VetDelegatedByBlockService>(relaxed = true),
                 mockk<DelegationWriteRepository>(relaxed = true),
                 state,
                 checkpoints,

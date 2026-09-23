@@ -28,6 +28,7 @@ class DelegationServiceTest {
             DelegationService(
                 repository = repository,
                 validatorRepository = validatorRepository,
+                vetDelegatedService = mockk(relaxed = true),
                 stakerSC = STAKER_ADDRESS,
                 validatorStartBlock = 0L,
             )

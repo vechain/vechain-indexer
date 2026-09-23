@@ -12,11 +12,13 @@ import org.vechain.indexer.config.CheckpointProperties
 import org.vechain.indexer.config.InlineVersioningProperties
 import org.vechain.indexer.config.metrics.ProcessorMetrics
 import org.vechain.indexer.postgres.IndexerStateRepository
+import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlockService
 
 @Profile("delegation")
 @Component
 open class DelegationProcessor(
     private val service: DelegationService,
+    private val vetDelegatedService: VetDelegatedByBlockService,
     repository: DelegationWriteRepository,
     state: IndexerStateRepository,
     checkpointProperties: CheckpointProperties,
@@ -44,12 +46,14 @@ open class DelegationProcessor(
             "Expected IndexingResult.BlockResult but got ${entry::class.simpleName}"
         }
         val updated = service.processBlock(entry.block, entry.events())
-        if (updated.isNotEmpty()) service.save(updated)
+        val totals = vetDelegatedService.processBlock(entry.block, updated)
+        if (updated.isNotEmpty() || totals.isNotEmpty()) service.save(updated, totals)
     }
 
-    /** Drops the service's zero-cycle mirror so the next block reloads the rolled-back rows. */
+    /** Drops the services' mirrors so the next block reloads the rolled-back rows. */
     override fun resetProcessingState() {
         super.resetProcessingState()
         service.invalidateCache()
+        vetDelegatedService.resetCache()
     }
 }

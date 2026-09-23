@@ -2,8 +2,9 @@ package org.vechain.indexer.validator
 
 import org.vechain.indexer.postgres.DeferrableIndex
 import org.vechain.indexer.postgres.IndexSet
+import org.vechain.indexer.timeseries.SeriesIndexes
 
-/** Only the unfiltered page; the validator, token and transition lookups are all read here. */
+/** The unfiltered page and the VET-delegated series; the delegation lookups are read here. */
 object DelegationIndexes {
 
     val SET =
@@ -15,6 +16,6 @@ object DelegationIndexes {
                     "state",
                     "(block_number, id) WHERE superseded_at IS NULL",
                 )
-            ),
+            ) + SeriesIndexes.of("total_by_block"),
         )
 }

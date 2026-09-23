@@ -12,7 +12,6 @@ spring:
       validator: [delegation]
       delegation: [validator]
       token-reward: [delegation]
-      vet-delegated-by-block: [delegation]
       stargate: [delegation]
   output:
     ansi:
@@ -156,7 +155,6 @@ indexer:
     vtho-generated-by-block: ${INDEXER_START_BLOCK_VTHO_GENERATED_BY_BLOCK:0}
     vtho-claimed: ${INDEXER_START_BLOCK_VTHO_CLAIMED:0}
     stargate-staking: ${INDEXER_START_BLOCK_STARGATE_STAKING:0}
-    vet-delegated-by-block: ${INDEXER_START_BLOCK_VET_DELEGATED_BY_BLOCK:0}
     safe: ${INDEXER_START_BLOCK_SAFE:0}
   sync-log-interval: ${INDEXER_SYNC_LOG_INTERVAL:10}
   checkpoint:
@@ -189,7 +187,6 @@ indexer:
     stargate-vtho-claimed: ${VERSION_STARGATE_VTHO_CLAIMED:1}
     stargate-vtho-generated-by-block: ${VERSION_STARGATE_VTHO_GENERATED_BY_BLOCK:1}
     stargate-staking: ${VERSION_STARGATE_STAKING:1}
-    stargate-vet-delegated-by-block: ${VERSION_STARGATE_VET_DELEGATED_BY_BLOCK:1}
     vevote-historic: ${VERSION_VEVOTE_HISTORIC:1}
     b3tr-proposal: ${VERSION_B3TR_PROPOSAL:1}
     b3tr-challenges: ${VERSION_B3TR_CHALLENGES:1}

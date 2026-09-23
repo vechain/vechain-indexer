@@ -6,14 +6,12 @@ import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.config.postgres.ConditionalOnPostgres
 import org.vechain.indexer.config.postgres.PostgresConfig
-import org.vechain.indexer.postgres.PostgresIndexerTables
 import org.vechain.indexer.timeseries.TimeFrameTable
 
-/** `vet_delegated.total_by_block`: one row per changed block, rollback by block. */
+/** `delegation.total_by_block`: one row per changed block; delegation rolls it back. */
 @Repository
 @ConditionalOnPostgres
-open class VetDelegatedWriteRepository(@Qualifier("postgresJdbcTemplate") jdbc: JdbcTemplate) :
-    PostgresIndexerTables {
+open class VetDelegatedWriteRepository(@Qualifier("postgresJdbcTemplate") jdbc: JdbcTemplate) {
 
     private val series = TimeFrameTable(jdbc, VetDelegatedRowMapping)
 
@@ -25,8 +23,4 @@ open class VetDelegatedWriteRepository(@Qualifier("postgresJdbcTemplate") jdbc: 
 
     /** The newest row, from which the service resumes its rollover totals. */
     open fun latest(): VetDelegatedByBlock? = series.latest()
-
-    override fun rollbackFrom(blockNumber: Long) = series.rollbackFrom(blockNumber)
-
-    override fun truncate() = series.truncate()
 }

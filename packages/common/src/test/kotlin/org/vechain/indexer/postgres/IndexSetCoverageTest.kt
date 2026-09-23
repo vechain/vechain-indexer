@@ -91,7 +91,6 @@ class IndexSetCoverageTest {
                         "state_prune_idx",
                     ),
                 // A series table is read by block alone, so only its key stands.
-                "vet_delegated" to listOf("total_by_block_pkey"),
                 "stargate_vtho_generated" to listOf("total_by_block_pkey"),
                 "stargate_vtho_claimed" to
                     listOf(
@@ -128,6 +127,7 @@ class IndexSetCoverageTest {
                         "state_current_transition_idx",
                         "state_block_idx",
                         "state_prune_idx",
+                        "total_by_block_pkey",
                     ),
                 // Nothing but rollback, prune and the key: every read is by the key itself.
                 "b3tr_balance" to listOf("state_pkey", "state_block_idx", "state_prune_idx"),

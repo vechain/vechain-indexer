@@ -15,15 +15,16 @@ import org.vechain.indexer.accounts.TimeFrame
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.timeseries.TimeFramePeriod
-import org.vechain.indexer.validator.DelegationLevelAggregateResult
-import org.vechain.indexer.validator.DelegationReadRepository
+import org.vechain.indexer.validator.Delegation
+import org.vechain.indexer.validator.DelegationStatus
+import org.vechain.indexer.validator.DelegationWriteRepository
 import strikt.api.expectThat
 import strikt.assertions.*
 
 @ExtendWith(MockKExtension::class)
 class VetDelegatedByBlockServiceTest {
     @MockK lateinit var repository: VetDelegatedWriteRepository
-    @MockK lateinit var delegationRepository: DelegationReadRepository
+    @MockK lateinit var delegationRepository: DelegationWriteRepository
     private lateinit var service: VetDelegatedByBlockService
 
     @BeforeEach
@@ -67,9 +68,30 @@ class VetDelegatedByBlockServiceTest {
             total,
         )
 
+    private fun delegation(
+        id: String,
+        level: TokenLevel,
+        amount: String,
+        status: DelegationStatus = DelegationStatus.ACTIVE,
+    ) =
+        Delegation(
+            id = id,
+            validator = "0xvalidator",
+            tokenId = id,
+            owner = "0xowner",
+            status = status,
+            tokenLevel = level,
+            stakedAmount = amount,
+            totalRewardsClaimed = BigInteger.ZERO,
+            txId = "0xtx",
+            blockId = "block-1",
+            blockNumber = 1,
+            blockTimestamp = 1,
+        )
+
     private fun mockActiveAggregation(vararg levels: Pair<TokenLevel, String>) {
-        every { delegationRepository.aggregateActiveDelegationsByLevel() } returns
-            levels.map { (level, amount) -> DelegationLevelAggregateResult(level.name, amount, 1) }
+        every { delegationRepository.findActive() } returns
+            levels.mapIndexed { i, (level, amount) -> delegation("$i", level, amount) }
     }
 
     @Test
@@ -86,7 +108,7 @@ class VetDelegatedByBlockServiceTest {
 
         val block = mockBlock(10, 1100) // EXACT SAME BLOCK → FAIL
 
-        val ex = assertThrows<IllegalStateException> { service.processBlock(block) }
+        val ex = assertThrows<IllegalStateException> { service.processBlock(block, emptyList()) }
         expectThat(ex.message).isEqualTo("Block 10 is at or before last persisted block 10")
     }
 
@@ -104,7 +126,7 @@ class VetDelegatedByBlockServiceTest {
 
         val block = mockBlock(5, 900) // EARLIER BLOCK → FAIL
 
-        val ex = assertThrows<IllegalStateException> { service.processBlock(block) }
+        val ex = assertThrows<IllegalStateException> { service.processBlock(block, emptyList()) }
         expectThat(ex.message).isEqualTo("Block 5 is at or before last persisted block 10")
     }
 
@@ -123,7 +145,7 @@ class VetDelegatedByBlockServiceTest {
 
         // Block 15 with a gap of 5, same hour → should NOT throw
         val block = mockBlock(15, 1735560050)
-        val result = service.processBlock(block)
+        val result = service.processBlock(block, emptyList())
 
         // No change in total, no rollover → empty result, but no exception
         expectThat(result).isEmpty()
@@ -138,7 +160,7 @@ class VetDelegatedByBlockServiceTest {
         )
 
         val block = mockBlock(100, 1767043140)
-        val result = service.processBlock(block)
+        val result = service.processBlock(block, emptyList())
 
         expectThat(result).hasSize(1)
         expectThat(result[0].total).isEqualTo(BigInteger("6000000000000000000"))
@@ -167,7 +189,7 @@ class VetDelegatedByBlockServiceTest {
 
         // New block on Dec 31 2025 @ 00:00 UTC (day 31)
         val block = mockBlock(101, 1735689600)
-        val r = service.processBlock(block)
+        val r = service.processBlock(block, emptyList())
 
         expectThat(r).hasSize(2)
 
@@ -200,7 +222,7 @@ class VetDelegatedByBlockServiceTest {
 
         // New block in same hour (10 seconds later, still 12:00)
         val block = mockBlock(101, 1735560010)
-        val result = service.processBlock(block)
+        val result = service.processBlock(block, emptyList())
 
         // Should return empty list - no doc to save
         expectThat(result).isEmpty()
@@ -223,7 +245,7 @@ class VetDelegatedByBlockServiceTest {
 
         // New block in same hour (10 seconds later, still 12:00)
         val block = mockBlock(101, 1735560010)
-        val result = service.processBlock(block)
+        val result = service.processBlock(block, emptyList())
 
         // Should return 1 doc because there's a change
         expectThat(result).hasSize(1)
@@ -251,12 +273,12 @@ class VetDelegatedByBlockServiceTest {
         // Block 101: no change → skipped, cache advanced
         mockActiveAggregation(TokenLevel.Strength to "10")
         val block101 = mockBlock(101, 1735560010)
-        val result101 = service.processBlock(block101)
+        val result101 = service.processBlock(block101, emptyList())
         expectThat(result101).isEmpty()
 
         // Block 102: no change → skipped, should use cache (not DB)
         val block102 = mockBlock(102, 1735560020)
-        val result102 = service.processBlock(block102)
+        val result102 = service.processBlock(block102, emptyList())
         expectThat(result102).isEmpty()
 
         // DB should only have been called once (for block 101)
@@ -278,13 +300,16 @@ class VetDelegatedByBlockServiceTest {
 
         // Blocks 101-103: no change → skipped
         mockActiveAggregation(TokenLevel.Strength to "10")
-        service.processBlock(mockBlock(101, 1735560010))
-        service.processBlock(mockBlock(102, 1735560020))
-        service.processBlock(mockBlock(103, 1735560030))
+        service.processBlock(mockBlock(101, 1735560010), emptyList())
+        service.processBlock(mockBlock(102, 1735560020), emptyList())
+        service.processBlock(mockBlock(103, 1735560030), emptyList())
 
         // Block 104: delegation changes → should produce a record using cached state
-        mockActiveAggregation(TokenLevel.Strength to "20")
-        val result = service.processBlock(mockBlock(104, 1735560040))
+        val result =
+            service.processBlock(
+                mockBlock(104, 1735560040),
+                listOf(delegation("0", TokenLevel.Strength, "20")),
+            )
 
         expectThat(result).hasSize(1)
         expectThat(result[0].total).isEqualTo(BigInteger("20"))
@@ -312,14 +337,14 @@ class VetDelegatedByBlockServiceTest {
         mockActiveAggregation(TokenLevel.Strength to "10")
 
         // Five skipped blocks within the same hour → cache advances each time.
-        service.processBlock(mockBlock(101, 1735560010))
-        service.processBlock(mockBlock(102, 1735560020))
-        service.processBlock(mockBlock(103, 1735560030))
-        service.processBlock(mockBlock(104, 1735560040))
-        service.processBlock(mockBlock(105, 1735560050))
+        service.processBlock(mockBlock(101, 1735560010), emptyList())
+        service.processBlock(mockBlock(102, 1735560020), emptyList())
+        service.processBlock(mockBlock(103, 1735560030), emptyList())
+        service.processBlock(mockBlock(104, 1735560040), emptyList())
+        service.processBlock(mockBlock(105, 1735560050), emptyList())
 
         // Block 106 crosses into hour 13 → HOUR rollover.
-        val result = service.processBlock(mockBlock(106, 1735563600))
+        val result = service.processBlock(mockBlock(106, 1735563600), emptyList())
 
         expectThat(result).hasSize(2)
         expectThat(result[0].timeFrames).contains(TimeFrame.HOUR)
@@ -343,7 +368,7 @@ class VetDelegatedByBlockServiceTest {
 
         // Block 101 with mismatched parentID
         val block = mockBlock(101, 1735560010, parentID = "wrong-parent-id")
-        service.processBlock(block)
+        service.processBlock(block, emptyList())
 
         // Should have fallen back to DB
         verify(exactly = 1) { repository.latest() }
@@ -369,8 +394,29 @@ class VetDelegatedByBlockServiceTest {
 
         every { repository.save(dummy) } returns Unit
 
-        service.saveRecords(dummy)
+        service.save(dummy, emptyList())
 
         verify(exactly = 1) { repository.save(dummy) }
+    }
+
+    @Test
+    fun `the block's changes override the committed set and save applies them`() {
+        every { repository.latest() } returns null
+        every { repository.save(any()) } returns Unit
+        mockActiveAggregation(TokenLevel.Strength to "10", TokenLevel.Thunder to "5")
+        val exited = listOf(delegation("0", TokenLevel.Strength, "10", DelegationStatus.EXITED))
+
+        val first = service.processBlock(mockBlock(101, 1735560010), exited)
+        service.save(first, exited)
+        val second = service.processBlock(mockBlock(102, 1735560020), emptyList())
+
+        expectThat(first.single().total).isEqualTo(BigInteger("5"))
+        expectThat(first.single().nftCountByLevel).isEqualTo(mapOf(TokenLevel.Thunder to 1L))
+        expectThat(second).isEmpty()
+        verify(exactly = 1) { delegationRepository.findActive() }
+
+        service.resetCache()
+        service.processBlock(mockBlock(103, 1735560030), emptyList())
+        verify(exactly = 2) { delegationRepository.findActive() }
     }
 }
