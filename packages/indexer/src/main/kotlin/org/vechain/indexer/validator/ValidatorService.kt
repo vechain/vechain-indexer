@@ -80,7 +80,7 @@ open class ValidatorService(
         transactionManager = PostgresConfig.TRANSACTION_MANAGER,
         rollbackFor = [Exception::class],
     )
-    open fun save(updates: List<Validator>, slots: List<ValidatorBlock> = emptyList()) {
+    open fun save(updates: List<Validator>, slots: List<ValidatorBlock>) {
         if (updates.isNotEmpty()) repository.save(updates)
         blockService.save(slots)
         updateCache(updates)

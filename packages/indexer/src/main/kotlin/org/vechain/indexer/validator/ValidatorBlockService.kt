@@ -24,12 +24,12 @@ import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
  * Per-block validator slot ledger.
  *
  * Writes one VALIDATED row per block (the signer's reward record) plus one MISSED row per missed
- * PoS slot. Reads everything it needs from `Validator` (signer's delegation flag, missed-slot
+ * PoS slot. Takes the block's changed validators (signer's delegation flag, missed-slot
  * attribution) plus a single builtin `Energy.totalSupply()` chain call.
  *
  * Document id scheme: `"$blockNumber-$validatorId"` for VALIDATED and
  * `"$blockNumber-$validatorId-MISSED"` for MISSED. The MISSED suffix prevents a collision when the
- * signer also missed an elapsed slot in the same block transition (otherwise the second `saveAll`
+ * signer also missed an elapsed slot in the same block transition (otherwise the second written
  * entry would upsert over the VALIDATED reward row). Two distinct validators missing slots within
  * the same block produce two rows. A single validator missing two slots at the same block — only
  * possible when `slotsElapsed > schedule.size`, i.e. >~17 min outage with <100 active validators —

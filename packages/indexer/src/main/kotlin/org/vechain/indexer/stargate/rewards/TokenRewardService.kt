@@ -518,7 +518,7 @@ open class TokenRewardService(
         private const val STAKER_ABI_PATH = "abis/stargate"
         private const val DELEGATORS_REWARDS_FN = "getDelegatorsRewards"
 
-        /** The Energy builtin's totalSupply() clause, used by the validator-block indexer. */
+        /** The Energy builtin's totalSupply() clause, the validator indexer's slot reward input. */
         fun energyTotalSupplyClause(): Clause =
             ContractUtils.createClause(VTHO_CONTRACT_ADDRESS, ENERGY_TOTAL_SUPPLY_ABI)
 
