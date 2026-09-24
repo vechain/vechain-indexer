@@ -82,37 +82,48 @@ open class TokenRewardService(
      * @notice Process a block and update validator reward state.
      * @dev The reward is the signer's delegator-pool growth, see [delegatorBlockReward].
      */
-    open suspend fun processBlock(block: Block): List<TokenReward> {
+    open suspend fun processBlock(block: Block): List<TokenReward> =
+        SectionTimer.time(" processBlock") { processBlockTimed(block) }
+
+    private suspend fun processBlockTimed(block: Block): List<TokenReward> {
         if (block.number < validatorStartBlock) return emptyList()
 
         val validatorId = block.signer
 
-        validatorProgress.requireCommitted(block.number)
+        SectionTimer.time("  validatorProgress.requireCommitted") {
+            validatorProgress.requireCommitted(block.number)
+        }
         val validator =
-            validatorV2Repository.cyclesAsOf(block.number, listOf(validatorId)).firstOrNull()
-                ?: return emptyList()
+            SectionTimer.time("  cyclesAsOf (pg)") {
+                validatorV2Repository.cyclesAsOf(block.number, listOf(validatorId)).firstOrNull()
+            } ?: return emptyList()
 
-        val latestRewards = getLatestRewards(block, validator)
+        val latestRewards =
+            SectionTimer.time("  getLatestRewards") { getLatestRewards(block, validator) }
         if (latestRewards.isEmpty()) {
             return emptyList()
         }
 
         val delegatorBlockReward =
-            delegatorBlockReward(
-                block,
-                validatorId,
-                validatorCycleCache[validatorId]!!.currentCycle,
-            )
+            SectionTimer.time("  delegatorBlockReward") {
+                delegatorBlockReward(
+                    block,
+                    validatorId,
+                    validatorCycleCache[validatorId]!!.currentCycle,
+                )
+            }
 
         val result =
-            updateRewardInfo(
-                currentTokenRewards = latestRewards,
-                totalBlockReward = delegatorBlockReward,
-                validator = validatorId,
-                blockNumber = block.number,
-                blockTimestamp = block.timestamp,
-                blockId = block.id,
-            )
+            SectionTimer.time("  updateRewardInfo") {
+                updateRewardInfo(
+                    currentTokenRewards = latestRewards,
+                    totalBlockReward = delegatorBlockReward,
+                    validator = validatorId,
+                    blockNumber = block.number,
+                    blockTimestamp = block.timestamp,
+                    blockId = block.id,
+                )
+            }
 
         val allPeriodTrackers = result.filter { it.rewardPeriod == RewardPeriod.ALL }
         if (allPeriodTrackers.isNotEmpty()) {
@@ -129,7 +140,7 @@ open class TokenRewardService(
     )
     open fun save(rewards: List<TokenReward>) {
         if (rewards.isEmpty()) return
-        repository.save(rewards)
+        SectionTimer.time(" save (pg)") { repository.save(rewards) }
     }
 
     /** @notice Clear all in-memory caches. Called on rollback to ensure consistency. */
@@ -142,10 +153,15 @@ open class TokenRewardService(
     /** The chain's delegator-pool growth for [validatorId] in [block], read at keys [cycle]±1. */
     suspend fun delegatorBlockReward(block: Block, validatorId: String, cycle: Long): BigInteger {
         val keys = listOf(cycle - 1, cycle, cycle + 1).filter { it > 0 }
-        val current = readPools(block.id, validatorId, keys)
+        val current =
+            SectionTimer.time("    readPools current (thor)") {
+                readPools(block.id, validatorId, keys)
+            }
         val previous =
             poolCache[validatorId]?.takeIf { it.keys.containsAll(keys) }
-                ?: readPools(block.parentID, validatorId, keys)
+                ?: SectionTimer.time("    readPools parent/cache-miss (thor)") {
+                    readPools(block.parentID, validatorId, keys)
+                }
         poolCache[validatorId] = current
         val delta =
             keys.fold(BigInteger.ZERO) { acc, key ->
@@ -224,11 +240,13 @@ open class TokenRewardService(
 
         // Cache miss — fall through to DB (happens once after restart)
         val rewards =
-            repository.findAllByValidatorAndRewardPeriodAndCycle(
-                validatorId,
-                RewardPeriod.ALL,
-                cached.currentCycle,
-            )
+            SectionTimer.time("    findAllByValidatorAndRewardPeriodAndCycle (pg)") {
+                repository.findAllByValidatorAndRewardPeriodAndCycle(
+                    validatorId,
+                    RewardPeriod.ALL,
+                    cached.currentCycle,
+                )
+            }
 
         // If we have delegations but no rewards in DB, or totalEffectiveDelegations not set,
         // fall back to fetching (handles restarts and race conditions)
@@ -251,13 +269,19 @@ open class TokenRewardService(
         block: Block,
         time: LocalDate,
     ): List<TokenReward> {
-        delegationProgress.requireCommitted(block.number)
-        val delegations = delegationV2Repository.activeAsOf(validatorId, block.number)
+        SectionTimer.time("    delegationProgress.requireCommitted") {
+            delegationProgress.requireCommitted(block.number)
+        }
+        val delegations =
+            SectionTimer.time("    activeAsOf (pg)") {
+                delegationV2Repository.activeAsOf(validatorId, block.number)
+            }
 
         if (delegations.isEmpty()) return emptyList()
 
         val rewardIds = delegations.map { "$validatorId-${it.tokenId}" }
-        val rewardsFromDb = repository.findAllById(rewardIds)
+        val rewardsFromDb =
+            SectionTimer.time("    findAllById (pg)") { repository.findAllById(rewardIds) }
         val existingIds = rewardsFromDb.map { it.id }.toSet()
         val missingDelegations = delegations.filter { "$validatorId-${it.tokenId}" !in existingIds }
 

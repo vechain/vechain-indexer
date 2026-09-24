@@ -49,8 +49,14 @@ open class TokenRewardProcessor(
                     "full block is required for token reward processing"
             )
         }
-        val updated = service.processBlock(entry.block)
-        if (updated.isNotEmpty()) service.save(updated)
+        try {
+            SectionTimer.time("processEntry") {
+                val updated = service.processBlock(entry.block)
+                if (updated.isNotEmpty()) service.save(updated)
+            }
+        } finally {
+            SectionTimer.maybeReport()
+        }
     }
 
     /** Drops the service's cycle and tracker caches so the next block reloads rolled-back rows. */
