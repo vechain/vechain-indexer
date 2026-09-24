@@ -33,8 +33,7 @@ open class TokenRewardWriteRepository(
         // The driver rewrites the batch into one INSERT, which no primary key may hit twice.
         val rows = rewards.associateBy { it.id }.values.toList()
         jdbc.update(
-            "UPDATE token_reward.state SET superseded_at = ? " +
-                "WHERE id = ANY(?) AND superseded_at IS NULL AND block_number < ?",
+            SUPERSEDE,
             blockNumber,
             rows.map { it.id }.toTypedArray(),
             blockNumber,
@@ -80,6 +79,10 @@ open class TokenRewardWriteRepository(
 
     companion object {
         private const val CURRENT = "SELECT * FROM token_reward.state WHERE superseded_at IS NULL"
+        // `+ 0` keeps the generic plan off the key, which would visit every version of each id.
+        internal const val SUPERSEDE =
+            "UPDATE token_reward.state SET superseded_at = ? " +
+                "WHERE id = ANY(?) AND superseded_at IS NULL AND block_number + 0 < ?"
         private val INSERT =
             "INSERT INTO token_reward.state (id, block_number, " +
                 TokenRewardRowMapping.COLUMNS.joinToString() +

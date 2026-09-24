@@ -73,25 +73,32 @@ class TokenRewardWriteRepositoryTest {
 
     @Test
     fun `a supersede is planned on the current-row index, not the key`() {
-        // A version per tracker per block, as in production: no one id skews the estimate.
+        // Versions per tracker, and closed periods whose unique ids make each id look rare.
         (10L..14L).forEach { block ->
             writer.save((1L..300L).map { tracker(it.toString(), block, it) })
         }
+        (1L..30L).forEach { day ->
+            writer.save(
+                (1L..300L).map {
+                    period(tracker(it.toString(), day, it), RewardPeriod.DAY, day)
+                        .copy(id = "$validator-$it-day-$day")
+                }
+            )
+        }
         database.jdbc.execute("ANALYZE token_reward.state")
 
+        // pgjdbc goes generic after prepareThreshold; a literal EXPLAIN never sees that plan.
+        val prepared = TokenRewardWriteRepository.SUPERSEDE.split("?")
+        val sql = prepared.dropLast(1).mapIndexed { i, part -> "$part\$${i + 1}" }.joinToString("")
+        val ids = (1..300).joinToString(",", "ARRAY[", "]::varchar[]") { "'$validator-$it'" }
         val plan =
             database.dataSource.connection.use { c ->
-                c.createStatement().execute("SET enable_seqscan = off")
+                c.createStatement().execute("SET plan_cache_mode = force_generic_plan")
                 c.createStatement()
-                    .executeQuery(
-                        "EXPLAIN UPDATE token_reward.state SET superseded_at = 15 " +
-                            "WHERE id = ANY(ARRAY['$validator-7']) AND superseded_at IS NULL " +
-                            "AND block_number < 15"
-                    )
-                    .use { rs ->
-                        generateSequence { if (rs.next()) rs.getString(1) else null }
-                            .joinToString("\n")
-                    }
+                    .execute("PREPARE s(bigint, varchar[], bigint) AS $sql${prepared.last()}")
+                c.createStatement().executeQuery("EXPLAIN EXECUTE s(15, $ids, 15)").use { rs ->
+                    generateSequence { if (rs.next()) rs.getString(1) else null }.joinToString("\n")
+                }
             }
 
         assertTrue(plan.contains("state_current_id_idx"), plan)
