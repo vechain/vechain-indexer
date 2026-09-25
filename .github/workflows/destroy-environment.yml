@@ -138,6 +138,12 @@ jobs:
       - name: Show resources to be destroyed
         run: terraform state list
 
+      - name: Snapshot dead Postgres instances
+        working-directory: .
+        env:
+          DEAD_COLOR: ${{ env.dead_color }}
+        run: bash .github/workflows/scripts/snapshot_dead_prod_pg.sh
+
       - name: Plan terraform destroy
         id: plan
         run: terraform plan -out "destroy.plan" -destroy
