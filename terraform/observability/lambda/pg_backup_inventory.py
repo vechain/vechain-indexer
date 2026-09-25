@@ -10,6 +10,7 @@ section of terraform/observability/README.md.
 import datetime as dt
 import json
 import os
+import xml.etree.ElementTree as ET
 
 import boto3
 
@@ -22,6 +23,25 @@ _TAG_VALUE = os.environ["BACKUP_TAG_VALUE"]
 _EVENT_WINDOW_MINUTES = 20160  # 14 days, all DescribeEvents retains
 _JUST_FINISHED_SECONDS = 900  # three polls, so a late or retried run still lands the 100
 _RUN_MATCH_SECONDS = 300  # an automated snapshot's create time trails its run's start by ~1s
+
+# Filled from each DescribeDBInstances response: identifier -> (status, percent).
+_storage_operations: dict[str, tuple[str, float]] = {}
+
+
+def _record_storage_operations(http_response, **_kwargs) -> None:
+    """Reads StorageOperation* from the raw XML, which botocore before 1.43.62 parses away."""
+    for instance in ET.fromstring(http_response.content).iter():
+        if not instance.tag.endswith("}DBInstance"):
+            continue
+        fields = {child.tag.split("}")[-1]: child.text for child in instance}
+        if fields.get("StorageOperationStatus"):
+            _storage_operations[fields["DBInstanceIdentifier"]] = (
+                fields["StorageOperationStatus"],
+                float(fields.get("StorageOperationPercentProgress") or 0),
+            )
+
+
+_rds.meta.events.register("after-call.rds.DescribeDBInstances", _record_storage_operations)
 
 
 def _tagged_instances() -> list[str]:
@@ -126,7 +146,9 @@ def _log_snapshot(identifier: str, snapshot: dict, age_seconds: float | None) ->
 def _instance_metrics(identifier: str, now: dt.datetime) -> list[dict]:
     snapshots = _snapshots(identifier)
     runs = _automated_runs(_backup_events(identifier), snapshots)
-    data = []
+    # A restored volume lazy-loads from S3 until initialized; RDS drops both fields once it is.
+    status, percent = _storage_operations.get(identifier, ("", 100.0))
+    data = [_datum("StorageInitialized", percent if status == "Initializing" else 100.0, "Percent", identifier)]
 
     # Metrics cover automated snapshots only: restore_dead_prod_pg_snapshots.sh passes
     # --snapshot-type automated, so a manual snapshot taken by hand would otherwise read as a
@@ -199,6 +221,7 @@ def handler(_event: dict, _context) -> dict:
     # Failures propagate: a half-published run would otherwise read as a healthy one, and the
     # InstancesInventoried alarm treats the resulting gap as breaching.
     now = dt.datetime.now(dt.timezone.utc)
+    _storage_operations.clear()
     identifiers = _tagged_instances()
 
     data = [_datum("InstancesInventoried", len(identifiers), "Count")]

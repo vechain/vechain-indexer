@@ -73,6 +73,9 @@ so until the sweep covers a page, every indexer read of that page waits on the f
   a run that started before the range would otherwise show a partial count.
 - **One query per colour.** Logs Insights rejects a query naming a log group that does not exist,
   and a destroyed colour has none, so each colour gets its own target and only that one errors.
+- **"Volume initialized" is RDS's own figure** (`StorageInitialized`, from the backup inventory
+  Lambda). It is the one to trust for "done"; the prewarm table only counts what the task read.
+  RDS moves it in steps of several percent, about every 10 minutes.
 - **Read latency is the effect.** It drops as the sweep reaches the pages the indexers use, well
   before the table reaches 100%.
 

@@ -66,6 +66,7 @@ destroy workflow keeps for DR shows up once its colour is gone:
 | `NewestSnapshotAllocatedStorage` | Gigabytes | Volume size the newest snapshot covers |
 | `LastBackupDuration` | Seconds | Most recent completed backup's wall time |
 | `InstancesInventoried` | Count | Instances the run found; undimensioned |
+| `StorageInitialized` | Percent | RDS's `StorageOperationPercentProgress` while a restored volume is `Initializing`, else 100 |
 
 It also logs one pipe-delimited `rds_snapshot|…` line per snapshot per run, which is what the
 Grafana table reads back through a Logs Insights `parse`. Pipes rather than JSON because Lambda
@@ -73,6 +74,9 @@ wraps stdout in its own envelope, so JSON auto-discovery does not fire on the pa
 
 Things worth knowing before reading a number off it:
 
+- **`StorageInitialized` is read from the raw XML.** botocore added the `StorageOperation*` fields
+  in 1.43.62, and its RDS parser drops members its model lacks, so an older Lambda runtime would
+  report every volume as initialized. An `after-call` hook reads them from the response instead.
 - **The tag value is a hand-maintained literal.** `terraform/api/postgres.tf` builds it from that
   stack's `var.project` (`veworld`), while this stack's `var.project` is `veworld-indexer`.
   Deriving it from the wrong one matched nothing and published `InstancesInventoried = 0` for
