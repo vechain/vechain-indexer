@@ -21,6 +21,7 @@ _TAG_KEY = os.environ["BACKUP_TAG_KEY"]
 _TAG_VALUE = os.environ["BACKUP_TAG_VALUE"]
 _EVENT_WINDOW_MINUTES = 20160  # 14 days, all DescribeEvents retains
 _JUST_FINISHED_SECONDS = 900  # three polls, so a late or retried run still lands the 100
+_RUN_MATCH_SECONDS = 300  # an automated snapshot's create time trails its run's start by ~1s
 
 
 def _tagged_instances() -> list[str]:
@@ -67,20 +68,26 @@ def _backup_events(identifier: str) -> list[dict]:
     return sorted(events, key=lambda e: e["Date"])
 
 
-def _last_backup_duration_seconds(events: list[dict]) -> float | None:
-    """Seconds between the most recent paired backup start and finish, or None if unpaired."""
-    started, duration = None, None
+def _automated_runs(events: list[dict], snapshots: list[dict]) -> list[tuple[dt.datetime, dt.datetime]]:
+    """(started, finished) of each completed run that produced an automated snapshot, oldest first.
+
+    The events do not say which kind of snapshot a run took, so a manual one, such as the destroy
+    workflow's final snapshot, is told apart by having no automated snapshot created as it began.
+    """
+    created = [
+        s["SnapshotCreateTime"]
+        for s in snapshots
+        if s.get("SnapshotType") == "automated" and s.get("SnapshotCreateTime")
+    ]
+    runs, started = [], None
     for event in events:
         if _is_start(event):
             started = event["Date"]
         elif _is_finish(event) and started is not None:
-            duration = (event["Date"] - started).total_seconds()
+            if any(0 <= (c - started).total_seconds() <= _RUN_MATCH_SECONDS for c in created):
+                runs.append((started, event["Date"]))
             started = None
-    return duration
-
-
-def _last_backup_finished(events: list[dict]) -> dt.datetime | None:
-    return next((event["Date"] for event in reversed(events) if _is_finish(event)), None)
+    return runs
 
 
 def _is_start(event: dict) -> bool:
@@ -118,7 +125,7 @@ def _log_snapshot(identifier: str, snapshot: dict, age_seconds: float | None) ->
 
 def _instance_metrics(identifier: str, now: dt.datetime) -> list[dict]:
     snapshots = _snapshots(identifier)
-    events = _backup_events(identifier)
+    runs = _automated_runs(_backup_events(identifier), snapshots)
     data = []
 
     # Metrics cover automated snapshots only: restore_dead_prod_pg_snapshots.sh passes
@@ -147,7 +154,7 @@ def _instance_metrics(identifier: str, now: dt.datetime) -> list[dict]:
         # RDS flips a snapshot from `creating` to `available` without ever publishing 100, so the
         # series would otherwise end on whichever mid-run sample the last poll caught. The finish
         # event is what closes it off.
-        finished = _last_backup_finished(events)
+        finished = runs[-1][1] if runs else None
         if finished is not None and (now - finished).total_seconds() <= _JUST_FINISHED_SECONDS:
             data.append(_datum("SnapshotProgress", 100, "Percent", identifier))
 
@@ -166,10 +173,26 @@ def _instance_metrics(identifier: str, now: dt.datetime) -> list[dict]:
             _datum("NewestSnapshotAllocatedStorage", newest.get("AllocatedStorage", 0), "Gigabytes", identifier)
         )
 
-    duration = _last_backup_duration_seconds(events)
-    if duration is not None:
-        data.append(_datum("LastBackupDuration", duration, "Seconds", identifier))
+    if runs:
+        started, finished = runs[-1]
+        data.append(_datum("LastBackupDuration", (finished - started).total_seconds(), "Seconds", identifier))
     return data
+
+
+def _log_detached_snapshots(identifiers: list[str], now: dt.datetime) -> None:
+    """Logs the tagged snapshots whose instance is gone, such as a destroyed colour's final one.
+
+    The per-instance listing cannot reach them, so without this the table loses the only
+    remaining copy of a colour at the moment that colour is destroyed.
+    """
+    for page in _rds.get_paginator("describe_db_snapshots").paginate(SnapshotType="manual"):
+        for snapshot in page["DBSnapshots"]:
+            tags = {tag["Key"]: tag["Value"] for tag in snapshot.get("TagList", [])}
+            if tags.get(_TAG_KEY) != _TAG_VALUE or snapshot["DBInstanceIdentifier"] in identifiers:
+                continue
+            created = snapshot.get("SnapshotCreateTime")
+            age = (now - created).total_seconds() if created else None
+            _log_snapshot(snapshot["DBInstanceIdentifier"], snapshot, age)
 
 
 def handler(_event: dict, _context) -> dict:
@@ -181,6 +204,7 @@ def handler(_event: dict, _context) -> dict:
     data = [_datum("InstancesInventoried", len(identifiers), "Count")]
     for identifier in identifiers:
         data.extend(_instance_metrics(identifier, now))
+    _log_detached_snapshots(identifiers, now)
 
     for batch in (data[i : i + 1000] for i in range(0, len(data), 1000)):
         _cloudwatch.put_metric_data(Namespace=_NAMESPACE, MetricData=batch)
