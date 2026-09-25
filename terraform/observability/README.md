@@ -37,7 +37,7 @@ Two consequences: a suppressed alert is re-evaluated on every Alertmanager repea
 
 ## Backup inventory
 
-The Postgres backups are RDS automated snapshots — `backup_retention_period = 7` and a
+The Postgres backups are RDS automated snapshots — `backup_retention_period = 3` and a
 `06:00-07:00` window, set in `terraform/api/postgres.tf`. RDS publishes how much backup storage it
 bills for and nothing at all about the snapshots themselves: no age, no count, no duration, no
 progress. `.github/workflows/scripts/restore_dead_prod_pg_snapshots.sh` rebuilds a dead colour from
@@ -49,14 +49,16 @@ dead colour restored onto week-old data.
 `DBInstanceIdentifier`. Every metric covers **automated snapshots only**, because that is what
 `restore_dead_prod_pg_snapshots.sh` selects (`--snapshot-type automated`); a manual snapshot taken
 by hand would otherwise read as a healthy backup while the one a restore picks went stale. Manual
-snapshots are still logged, so they appear in the dashboard table:
+snapshots are still logged, so they appear in the dashboard table. So is every manual snapshot
+tagged `Backup = veworld-pg` whose instance no longer exists, which is where the final snapshot the
+destroy workflow keeps for DR shows up once its colour is gone:
 
 | Metric | Unit | What it is |
 | --- | --- | --- |
 | `LastBackupStartedAge` | Seconds | Age of the newest snapshot of any status — how long ago a backup last *began* |
 | `NewestSnapshotAge` | Seconds | Age of the newest `available` snapshot — what a restore would start from |
 | `OldestSnapshotAge` | Seconds | Age of the oldest, i.e. the far edge of the restore window |
-| `SnapshotsAvailable` | Count | Automated and manual snapshots that are restorable now |
+| `SnapshotsAvailable` | Count | Automated snapshots that are restorable now |
 | `SnapshotsInProgress` | Count | Snapshots in `creating` |
 | `SnapshotProgress` | Percent | Lowest `PercentProgress` among those while one runs, then a closing 100 from the finish event |
 | `NewestSnapshotAllocatedStorage` | Gigabytes | Volume size the newest snapshot covers |
@@ -87,9 +89,11 @@ Things worth knowing before reading a number off it:
   and would need its own daily schedule rather than the 5-minute poll.
 - **Duration comes from events, not from the snapshot.** A snapshot carries a start time and no
   end time, so the `Backing up DB instance` / `Finished DB Instance backup` event pair is the only
-  completion signal. `DescribeEvents` retains 14 days; an instance with no backup in that window
-  publishes no duration even though its snapshots are fine. The events are matched on message
-  text, which is what will break first if AWS rewords them.
+  completion signal. The events do not say which kind of snapshot a run took, so a run counts only
+  when an automated snapshot was created within 5 minutes of its start (observed: about a second);
+  a manual snapshot's run, such as the destroy workflow's, would otherwise publish its duration
+  and close the progress series. A run whose snapshot has aged out of retention publishes nothing.
+  The events are matched on message text, which is what will break first if AWS rewords them.
 - **Started and restorable are different clocks, and the gap is the backup's run time.** A snapshot
   is not restorable until it finishes; mainnet's backups currently run for hours. So
   `NewestSnapshotAge` climbs past 25 hours every morning while that day's backup is still running,

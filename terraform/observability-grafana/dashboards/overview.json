@@ -2021,7 +2021,7 @@
           "id": 148,
           "type": "stat",
           "title": "Backups retained",
-          "description": "Available automated snapshots per instance. backup_retention_period is 7 days, so a steady state is 7 or 8. A number that falls and stays down means backups stopped before the retention window emptied. Manual snapshots are deliberately excluded — they are not what a restore selects — but they do appear in the table below.",
+          "description": "Available automated snapshots per instance. backup_retention_period is 3 days, so a steady state is 3 or 4. A number that falls and stays down means backups stopped before the retention window emptied. Manual snapshots are deliberately excluded — they are not what a restore selects — but they do appear in the table below.",
           "gridPos": { "h": 5, "w": 8, "x": 8, "y": 54 },
           "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
           "targets": [
@@ -2052,7 +2052,7 @@
           "id": 149,
           "type": "stat",
           "title": "Last backup duration",
-          "description": "Wall time between the `Backing up DB instance` and `Finished DB Instance backup` events, which is the only completion signal RDS gives — a snapshot carries a start time and no end time. Mainnet currently runs for hours, which is why neither backup alarm is threshold-ed on completion. Sourced from DescribeEvents, which retains 14 days; an instance quiet longer than that reports nothing here even while its snapshots are fine.",
+          "description": "Wall time between the `Backing up DB instance` and `Finished DB Instance backup` events, which is the only completion signal RDS gives — a snapshot carries a start time and no end time. Mainnet currently runs for hours, which is why neither backup alarm is threshold-ed on completion. Only a run that produced an automated snapshot counts, so a manual one such as the destroy workflow's final snapshot is left out; once that snapshot ages out of retention the run reports nothing here.",
           "gridPos": { "h": 5, "w": 8, "x": 16, "y": 54 },
           "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
           "targets": [
@@ -2083,7 +2083,7 @@
           "id": 150,
           "type": "timeseries",
           "title": "Backup age — started, restorable, oldest",
-          "description": "Three lines per instance, and the gap between the first two is the point of the panel. `started` is how long ago RDS last began a snapshot, counting one still running — it drops to zero daily no matter how slow the backup is, and is what the pg-backup-not-starting alarm reads. `restorable` only moves when a run finishes, so it trails `started` by the run time. `oldest` is the far edge of the restore window, normally flat at ~7 days. All three climbing together means backups have stopped and the window is ageing out.",
+          "description": "Three lines per instance, and the gap between the first two is the point of the panel. `started` is how long ago RDS last began a snapshot, counting one still running — it drops to zero daily no matter how slow the backup is, and is what the pg-backup-not-starting alarm reads. `restorable` only moves when a run finishes, so it trails `started` by the run time. `oldest` is the far edge of the restore window, normally flat at ~3 days. All three climbing together means backups have stopped and the window is ageing out.",
           "gridPos": { "h": 8, "w": 12, "x": 0, "y": 59 },
           "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
           "targets": [
@@ -2258,7 +2258,7 @@
           "id": 154,
           "type": "table",
           "title": "Snapshots that exist",
-          "description": "Every snapshot the inventory Lambda saw over the dashboard's time range, one row each — automated and manual, unlike the metrics above, which track automated only. The Lambda logs the whole list every 5 minutes, so rows are collapsed to the newest sighting per snapshot with `stats latest(...) by instance, snapshot`; without that the table repeats each snapshot once per poll. At the default now-1h that is exactly the current inventory; widen the range to see snapshots that have since aged out of retention. `volume_gib` is the instance's allocated storage at snapshot time, not the snapshot's own size. The aggregated columns are parsed into `r_*` names and renamed by `stats`, because aliasing `latest(type) as type` over a field `parse` already defined is rejected with `Ephemeral field is already defined`; `instance` and `snapshot` keep their names only because the `by` clause never re-defines them.",
+          "description": "Every snapshot the inventory Lambda saw over the dashboard's time range, one row each — automated and manual, unlike the metrics above, which track automated only. A destroyed colour's final snapshot, the one kept for DR, stays listed under its instance after the instance is gone. The Lambda logs the whole list every 5 minutes, so rows are collapsed to the newest sighting per snapshot with `stats latest(...) by instance, snapshot`; without that the table repeats each snapshot once per poll. At the default now-1h that is exactly the current inventory; widen the range to see snapshots that have since aged out of retention. `volume_gib` is the instance's allocated storage at snapshot time, not the snapshot's own size. The aggregated columns are parsed into `r_*` names and renamed by `stats`, because aliasing `latest(type) as type` over a field `parse` already defined is rejected with `Ephemeral field is already defined`; `instance` and `snapshot` keep their names only because the `by` clause never re-defines them.",
           "gridPos": { "h": 12, "w": 24, "x": 0, "y": 75 },
           "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
           "targets": [
