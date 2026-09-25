@@ -64,20 +64,18 @@ Collapsed, after Backups. It shows how far the post-restore `pg_prewarm` task ha
 instance fetches each block from its snapshot the first time it is read (~45 ms against ~1 ms),
 so until the sweep covers a page, every indexer read of that page waits on the fetch.
 
-- **Progress comes from the task's own output.** `terraform/api/scripts/pg_prewarm.sh` prints
-  `prewarm_total|<ranges>|<pages>` once, `prewarm_range|<relation>|<first block>|<pages>` per
-  1 GiB range and `prewarm_done` at the end. The table and the rate panel parse those lines from
+- **"Volume initialized" is progress.** It is RDS's own figure (`StorageInitialized`, from the
+  backup inventory Lambda), counting the prewarm's reads and RDS's background loading together.
+  RDS moves it in steps of several percent, about every 10 minutes.
+- **The read rate comes from the task's output.** `terraform/api/scripts/pg_prewarm.sh` prints a
+  `prewarm_range|<relation>|<first block>|<pages>` line per 1 GiB range to
   `/ecs/prod-<colour>-pg-prewarm`; the log stream prefix is the network. Change the format there
-  and here together.
-- **The table ignores the dashboard range** (`timeFrom: 7d`): a mainnet sweep runs for hours, so
-  a run that started before the range would otherwise show a partial count.
+  and here together. The query has no `filter ispresent(...)`: over a prewarm stream, filtering
+  on a parsed field silently dropped the first ~30 s of events, which `stats` alone does not.
 - **One query per colour.** Logs Insights rejects a query naming a log group that does not exist,
   and a destroyed colour has none, so each colour gets its own target and only that one errors.
-- **"Volume initialized" is RDS's own figure** (`StorageInitialized`, from the backup inventory
-  Lambda). It is the one to trust for "done"; the prewarm table only counts what the task read.
-  RDS moves it in steps of several percent, about every 10 minutes.
 - **Read latency is the effect.** It drops as the sweep reaches the pages the indexers use, well
-  before the table reaches 100%.
+  before the volume reaches 100%.
 
 
 ### Sync row
