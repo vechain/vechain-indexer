@@ -34,13 +34,13 @@ What remains are the paths no annotated controller serves, from #1556 plus liven
 
 | Path | Policy | Why |
 |---|---|---|
-| `/api-docs`, `/api-docs/*` | `10-minutes` | springdoc sends no `Cache-Control` |
 | `/swagger-ui/*` | `hourly` | static webjars, versioned with springdoc |
 | `/actuator/*` | `default` | liveness must never be answered from a cache |
 
 Anything else with no `Cache-Control` — an unannotated endpoint, an error the exception
 handlers miss — falls to the policy's `default_ttl` of 10 seconds. `CacheControlCoverageTest`
-is what stops an endpoint landing in that state.
+is what stops an endpoint landing in that state. `/api-docs` is left there on purpose: the API
+builds it at startup, so a miss is cheap, and a new deploy's spec shows within seconds.
 
 ## The dead workspace
 
