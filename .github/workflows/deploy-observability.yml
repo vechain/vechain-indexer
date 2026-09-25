@@ -1,6 +1,6 @@
 name: Plan or Apply Observability Terraform
 
-# Applies only when deploy.yml calls it; the pull_request trigger plans for review.
+# deploy.yml applies it every release; a dispatch from main can apply it alone once approved.
 on:
   pull_request:
     branches:
@@ -9,6 +9,14 @@ on:
       - 'terraform/observability/**'
       - 'terraform/observability-grafana/**'
       - '.github/workflows/deploy-observability.yml'
+  # Its own input name: a call from deploy.yml also runs with event_name workflow_dispatch.
+  workflow_dispatch:
+    inputs:
+      dispatch_apply:
+        description: Apply after prod-release-approval (main only). Unticked, it only plans.
+        required: false
+        type: boolean
+        default: false
   workflow_call:
     inputs:
       environment:
@@ -48,8 +56,35 @@ env:
   TERRAFORM_ENV: ${{ inputs.environment || 'prod' }}
 
 jobs:
+  refuse-branch:
+    name: Refuse an apply from a branch
+    if: inputs.dispatch_apply && github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Refuse
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          echo "::error::Only main applies to prod; ${REF} has not been reviewed into it."
+          exit 1
+
+  confirm:
+    name: Confirm observability apply
+    if: inputs.dispatch_apply && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: prod-release-approval
+    permissions: {}
+    steps:
+      - name: Record the confirmation
+        env:
+          ACTOR: ${{ github.actor }}
+        run: echo "Observability apply confirmed; dispatched by ${ACTOR}." >> "$GITHUB_STEP_SUMMARY"
+
   deploy-observability:
     name: Plan/deploy observability - ${{ inputs.environment || 'prod' }}
+    needs: [confirm]
+    if: ${{ !cancelled() && (!inputs.dispatch_apply || needs.confirm.result == 'success') }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -105,8 +140,19 @@ jobs:
           TF_VAR_slack_webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: terraform plan -out "apply.plan"
 
+      # terraform/api reads this stack's outputs, and only deploy.yml re-applies it afterwards.
+      - name: Refuse output changes on a dispatched apply
+        if: inputs.dispatch_apply
+        run: |
+          changed="$(terraform-bin show -json apply.plan |
+            jq -r '(.output_changes // {}) | to_entries[] | select(.value.actions != ["no-op"]) | .key')"
+          if [[ -n "${changed}" ]]; then
+            echo "::error::This plan changes outputs terraform/api reads: ${changed//$'\n'/, }. Deploy it with deploy.yml."
+            exit 1
+          fi
+
       - name: Terraform Apply
-        if: inputs.apply
+        if: inputs.apply || inputs.dispatch_apply
         id: apply
         env:
           TF_VAR_slack_webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -119,6 +165,7 @@ jobs:
     # if observability apply fails, skip the datasource stack so we don't
     # apply against stale parent outputs.
     needs: deploy-observability
+    if: ${{ !cancelled() && needs.deploy-observability.result == 'success' }}
     defaults:
       run:
         working-directory: terraform/observability-grafana
@@ -168,6 +215,6 @@ jobs:
         run: terraform plan -out "apply.plan"
 
       - name: Terraform Apply
-        if: inputs.apply
+        if: inputs.apply || inputs.dispatch_apply
         id: apply
         run: terraform apply "apply.plan"

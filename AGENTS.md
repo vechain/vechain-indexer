@@ -240,6 +240,8 @@ Write reviewer-facing prose at final length — don't draft long and trim. The b
 
 Every stack plans and applies on every run, so one with no change is a no-op. This replaced the separate shared-infra and observability dispatches: no stack is left for an operator to remember.
 
+**The observability stacks can also go out alone.** A dashboard or Lambda change shouldn't need a release, so [deploy-observability.yml](.github/workflows/deploy-observability.yml) is dispatchable. Unticked, it only plans. With `dispatch_apply` it pauses on `prod-release-approval` and applies `terraform/observability` then `terraform/observability-grafana`, from `main` only. It refuses a plan that changes any `terraform/observability` output, because `terraform/api` reads them (`amp_endpoint`, `amp_workspace_arn`, `alerts_topic_arn`) and only `deploy.yml` re-applies the application after them. A dispatch that overlaps a deploy fails on the S3 state lock rather than racing it. The next deploy still applies both stacks, so nothing depends on the dispatch having been run.
+
 **The plan picks the colour.** [plan_release.sh](.github/workflows/scripts/plan_release.sh) reads what both colours run ([read_deployed_state.sh](.github/workflows/scripts/read_deployed_state.sh)) and decides:
 
 | dead colour | indexer changed vs live | plan |
