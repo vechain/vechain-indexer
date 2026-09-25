@@ -55,6 +55,24 @@ inventory" section documents the metrics and their caveats.
   aggregated fields are parsed as `r_*` then renamed by `stats` — Logs Insights rejects
   `latest(x) as x` over a field `parse` defined, with `Ephemeral field is already defined`.
 
+### Postgres · Prewarm row
+
+Collapsed, after Backups. It shows how far the post-restore `pg_prewarm` task has got. A restored
+instance fetches each block from its snapshot the first time it is read (~45 ms against ~1 ms),
+so until the sweep covers a page, every indexer read of that page waits on the fetch.
+
+- **Progress comes from the task's own output.** `terraform/api/scripts/pg_prewarm.sh` prints
+  `prewarm_total|<ranges>|<pages>` once, `prewarm_range|<relation>|<first block>|<pages>` per
+  1 GiB range and `prewarm_done` at the end. The table and the rate panel parse those lines from
+  `/ecs/prod-<colour>-pg-prewarm`; the log stream prefix is the network. Change the format there
+  and here together.
+- **The table ignores the dashboard range** (`timeFrom: 7d`): a mainnet sweep runs for hours, so
+  a run that started before the range would otherwise show a partial count.
+- **One query per colour.** Logs Insights rejects a query naming a log group that does not exist,
+  and a destroyed colour has none, so each colour gets its own target and only that one errors.
+- **Read latency is the effect.** It drops as the sweep reaches the pages the indexers use, well
+  before the table reaches 100%.
+
 
 ### Sync row
 

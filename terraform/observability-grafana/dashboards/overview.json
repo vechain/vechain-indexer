@@ -2294,11 +2294,254 @@
       ]
     },
     {
+      "id": 164,
+      "type": "row",
+      "title": "Postgres · Prewarm",
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 52
+      },
+      "panels": [
+        {
+          "id": 165,
+          "type": "table",
+          "title": "Prewarm runs — last 7 days",
+          "description": "One row per pg_prewarm task, parsed from the prewarm_total / prewarm_range / prewarm_done lines terraform/api/scripts/pg_prewarm.sh prints. A restored instance fetches every block from its snapshot on first read, so until Percent reaches 100 the indexers pay that fetch on any page the sweep has not reached. Done is 1 once the sweep finished; a run with Done 0 and a stale Last line stopped early — its exit code is in the task's ECS events. Runs from before the chunked script print none of these lines and do not appear. One query per colour, so a destroyed colour's missing log group errors its half only.",
+          "gridPos": {
+            "h": 7,
+            "w": 24,
+            "x": 0,
+            "y": 53
+          },
+          "timeFrom": "7d",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "cloudwatch"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "cloudwatch",
+                "uid": "cloudwatch"
+              },
+              "queryMode": "Logs",
+              "region": "default",
+              "logGroupNames": [
+                "/ecs/prod-blue-pg-prewarm"
+              ],
+              "expression": "fields @timestamp\n| parse @log /prod-(?<colour>[a-z]+)-pg-prewarm/\n| parse @logStream /^(?<net>[^\\/]+)\\/psql\\/(?<task>.+)$/\n| parse @message /^prewarm_total\\|(?<r_ranges>\\d+)\\|(?<r_pages>\\d+)$/\n| parse @message /^prewarm_range\\|[^|]*\\|\\d+\\|(?<r_warmed>\\d+)$/\n| parse @message /^(?<r_done>prewarm_done)$/\n| filter ispresent(r_ranges) or ispresent(r_warmed) or ispresent(r_done)\n| stats min(@timestamp) as started, max(@timestamp) as last_line, max(r_pages) * 8 / 1048576 as total_gib, sum(r_warmed) * 8 / 1048576 as warmed_gib, 100 * sum(r_warmed) / max(r_pages) as percent, count(r_warmed) as ranges_done, max(r_ranges) as ranges, count(r_done) as finished by colour, net, task\n| sort started desc"
+            },
+            {
+              "refId": "B",
+              "datasource": {
+                "type": "cloudwatch",
+                "uid": "cloudwatch"
+              },
+              "queryMode": "Logs",
+              "region": "default",
+              "logGroupNames": [
+                "/ecs/prod-green-pg-prewarm"
+              ],
+              "expression": "fields @timestamp\n| parse @log /prod-(?<colour>[a-z]+)-pg-prewarm/\n| parse @logStream /^(?<net>[^\\/]+)\\/psql\\/(?<task>.+)$/\n| parse @message /^prewarm_total\\|(?<r_ranges>\\d+)\\|(?<r_pages>\\d+)$/\n| parse @message /^prewarm_range\\|[^|]*\\|\\d+\\|(?<r_warmed>\\d+)$/\n| parse @message /^(?<r_done>prewarm_done)$/\n| filter ispresent(r_ranges) or ispresent(r_warmed) or ispresent(r_done)\n| stats min(@timestamp) as started, max(@timestamp) as last_line, max(r_pages) * 8 / 1048576 as total_gib, sum(r_warmed) * 8 / 1048576 as warmed_gib, 100 * sum(r_warmed) / max(r_pages) as percent, count(r_warmed) as ranges_done, max(r_ranges) as ranges, count(r_done) as finished by colour, net, task\n| sort started desc"
+            }
+          ],
+          "transformations": [
+            {
+              "id": "merge",
+              "options": {}
+            },
+            {
+              "id": "organize",
+              "options": {
+                "renameByName": {
+                  "colour": "Colour",
+                  "net": "Network",
+                  "task": "Task",
+                  "started": "Started (UTC)",
+                  "last_line": "Last line (UTC)",
+                  "total_gib": "Total (GiB)",
+                  "warmed_gib": "Warmed (GiB)",
+                  "percent": "Percent",
+                  "ranges_done": "Ranges done",
+                  "ranges": "Ranges",
+                  "finished": "Done"
+                }
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "left",
+                "filterable": true
+              },
+              "decimals": 1
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Percent"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "percent"
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "gauge",
+                      "mode": "basic"
+                    }
+                  },
+                  {
+                    "id": "min",
+                    "value": 0
+                  },
+                  {
+                    "id": "max",
+                    "value": 100
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false
+            }
+          }
+        },
+        {
+          "id": 166,
+          "type": "timeseries",
+          "title": "Prewarm read rate",
+          "description": "MiB/s the prewarm read, per colour and network, from the pages each 1 GiB range reports in 5-minute bins. postgres.prewarm_parallelism in terraform/api/environments/*.yml sets how many ranges run at once; each session reads at roughly 8 MiB/s against a cold volume, so this scales with it until the instance class's EBS bandwidth does not.",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 60
+          },
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "cloudwatch"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "cloudwatch",
+                "uid": "cloudwatch"
+              },
+              "queryMode": "Logs",
+              "region": "default",
+              "logGroupNames": [
+                "/ecs/prod-blue-pg-prewarm"
+              ],
+              "expression": "parse @log /prod-(?<colour>[a-z]+)-pg-prewarm/\n| parse @logStream /^(?<net>[^\\/]+)\\//\n| parse @message /^prewarm_range\\|[^|]*\\|\\d+\\|(?<r_warmed>\\d+)$/\n| filter ispresent(r_warmed)\n| stats sum(r_warmed) * 8 / 1024 / 300 as mib_per_s by bin(5m), colour, net"
+            },
+            {
+              "refId": "B",
+              "datasource": {
+                "type": "cloudwatch",
+                "uid": "cloudwatch"
+              },
+              "queryMode": "Logs",
+              "region": "default",
+              "logGroupNames": [
+                "/ecs/prod-green-pg-prewarm"
+              ],
+              "expression": "parse @log /prod-(?<colour>[a-z]+)-pg-prewarm/\n| parse @logStream /^(?<net>[^\\/]+)\\//\n| parse @message /^prewarm_range\\|[^|]*\\|\\d+\\|(?<r_warmed>\\d+)$/\n| filter ispresent(r_warmed)\n| stats sum(r_warmed) * 8 / 1024 / 300 as mib_per_s by bin(5m), colour, net"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "MiBs",
+              "min": 0
+            }
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max"
+              ]
+            }
+          }
+        },
+        {
+          "id": 167,
+          "type": "timeseries",
+          "title": "Read latency",
+          "description": "AWS/RDS ReadLatency per instance: the cold-volume signal the prewarm exists to clear. Around 40-50 ms per read while blocks still come from the snapshot, against ~1 ms once warm. It falls as the sweep covers the pages the indexers read, well before Percent reaches 100.",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 60
+          },
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "cloudwatch"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "cloudwatch",
+                "uid": "cloudwatch"
+              },
+              "namespace": "AWS/RDS",
+              "metricName": "ReadLatency",
+              "statistic": "Average",
+              "dimensions": {
+                "DBInstanceIdentifier": [
+                  "*"
+                ]
+              },
+              "region": "default",
+              "period": "",
+              "matchExact": true,
+              "metricQueryType": 0,
+              "metricEditorMode": 0,
+              "label": "${PROP('Dim.DBInstanceIdentifier')}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "min": 0
+            }
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "last",
+                "max"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
       "id": 12,
       "type": "row",
       "title": "WAF request detail · Mainnet — Logs Insights, runs only while expanded",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 52 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 53 },
       "panels": [
         {
           "id": 120,
@@ -2415,7 +2658,7 @@
       "type": "row",
       "title": "WAF request detail · Testnet — Logs Insights, runs only while expanded",
       "collapsed": true,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 53 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 54 },
       "panels": [
         {
           "id": 130,
