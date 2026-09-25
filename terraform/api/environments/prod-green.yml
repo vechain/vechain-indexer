@@ -353,4 +353,4 @@ enabled_nets:
       allocated_storage_gb: 100
       max_allocated_storage_gb: 500
       multi_az: false
-      prewarm_parallelism: 2
+      prewarm_parallelism: 4
