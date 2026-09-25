@@ -138,6 +138,15 @@ jobs:
       - name: Show resources to be destroyed
         run: terraform state list
 
+      # So no write lands after the snapshot.
+      - name: Stop dead services
+        working-directory: .
+        env:
+          ACTION: pause
+          DEAD_COLOR: ${{ env.dead_color }}
+          ECS_CLUSTER: ${{ env.dead_color }}-veworld-cluster
+        run: bash .github/workflows/scripts/set_dead_prod_service_state.sh
+
       - name: Snapshot dead Postgres instances
         working-directory: .
         env:
