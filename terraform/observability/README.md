@@ -23,6 +23,8 @@ AMP rules cover what the services report about themselves. Those series vanish r
 
 Alertmanager pre-renders its Slack body and the Lambda forwards it verbatim. CloudWatch publishes JSON with no labels, so the alarm's `AlarmDescription` carries the whole thing as `"[env/deployment/network] service: Title — summary."` and `_render_cloudwatch_alarm` splits it on the first `" — "`. Keep that convention when adding alarms or the header renders as one long line.
 
+A CloudWatch `INSUFFICIENT_DATA → OK` is dropped. No alarm here leaves `treat_missing_data` at `missing`, so that transition is only ever a new alarm's first evaluation, which recovers from nothing; restoring a destroyed dead colour creates 24 alarms and would post 24 "resolved" messages.
+
 Slack webhook value comes in via `TF_VAR_slack_webhook_url` (marked sensitive). While unset, the secret holds the literal string `placeholder` and the Lambda no-ops, so the plumbing can apply before the webhook exists. Populate the workflow secret and reapply to switch delivery on.
 
 Alert rules are stamped without an explicit `env`/`deployment`/`network`/`service` label — those come through from the underlying series' external_labels (set by the sidecar). Aggregating alerts (e.g. `sum by (...) rate(...)`) must include those labels in the `by` clause or Alertmanager `.CommonLabels` will drop them.
