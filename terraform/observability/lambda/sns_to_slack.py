@@ -25,24 +25,30 @@ _PLACEHOLDER_SENTINEL = "placeholder"
 _STATE_SUFFIX = {"OK": " — resolved", "INSUFFICIENT_DATA": " — insufficient data"}
 
 
-def _render_cloudwatch_alarm(message: str) -> str | None:
-    """Render a CloudWatch alarm to match the Alertmanager template, or None if not one.
+def _render_cloudwatch_alarm(payload: dict) -> str:
+    """Render a CloudWatch alarm to match the Alertmanager template.
 
     terraform/api/alarms.tf writes descriptions as "<header> — <summary>"; the header
     already carries the "[env/deployment/network] service: Title" prefix Alertmanager
     builds from .CommonLabels, which a CloudWatch payload has no labels to build.
     """
-    try:
-        payload = json.loads(message)
-    except (ValueError, TypeError):
-        return None
-    if not isinstance(payload, dict) or "AlarmName" not in payload:
-        return None
-
     description = (payload.get("AlarmDescription") or payload["AlarmName"]).strip()
     header, _, summary = description.partition(" — ")
     rendered = f"*{header.strip()}*{_STATE_SUFFIX.get(payload.get('NewStateValue', ''), '')}"
     return f"{rendered}\n{summary.strip()}" if summary.strip() else rendered
+
+
+def _cloudwatch_alarm(message: str) -> dict | None:
+    try:
+        payload = json.loads(message)
+    except (ValueError, TypeError):
+        return None
+    return payload if isinstance(payload, dict) and "AlarmName" in payload else None
+
+
+def _is_new_alarm_ok(alarm: dict) -> bool:
+    """A just-created alarm's first evaluation, which recovers from nothing."""
+    return alarm.get("OldStateValue") == "INSUFFICIENT_DATA" and alarm.get("NewStateValue") == "OK"
 
 
 def _resolve_webhook_url() -> str | None:
@@ -151,4 +157,8 @@ def handler(event: dict, _context) -> None:
         if _suppressed_for_dead_colour(sns.get("MessageAttributes") or {}):
             print(f"dropping live-only alert for a dead colour: {text.splitlines()[0]}")
             continue
-        _post_to_slack(webhook_url, _render_cloudwatch_alarm(text) or text)
+        alarm = _cloudwatch_alarm(text)
+        if alarm and _is_new_alarm_ok(alarm):
+            print(f"dropping a new alarm's first OK: {alarm['AlarmName']}")
+            continue
+        _post_to_slack(webhook_url, _render_cloudwatch_alarm(alarm) if alarm else text)
