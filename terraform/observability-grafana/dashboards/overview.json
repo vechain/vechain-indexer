@@ -2359,6 +2359,78 @@
       },
       "panels": [
         {
+          "id": 169,
+          "type": "stat",
+          "title": "Volume initialized",
+          "description": "RDS's own StorageOperationPercentProgress per instance, published as VeWorld/RDSBackups StorageInitialized by the backup inventory Lambda every 5 minutes. A restored volume is 'Initializing' until every block has come down from its snapshot; 100 means RDS has finished, so no read waits on S3 any more. It counts the prewarm's reads and RDS's own background loading together. RDS moves it in steps of several percent, roughly every 10 minutes, so a flat stretch is not a stall.",
+          "gridPos": {
+            "h": 5,
+            "w": 24,
+            "x": 0,
+            "y": 53
+          },
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "cloudwatch"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "cloudwatch",
+                "uid": "cloudwatch"
+              },
+              "namespace": "VeWorld/RDSBackups",
+              "metricName": "StorageInitialized",
+              "statistic": "Minimum",
+              "dimensions": {
+                "DBInstanceIdentifier": [
+                  "*"
+                ]
+              },
+              "region": "default",
+              "period": "",
+              "matchExact": true,
+              "metricQueryType": 0,
+              "metricEditorMode": 0,
+              "label": "${PROP('Dim.DBInstanceIdentifier')}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "decimals": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "orange",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 100
+                  }
+                ]
+              }
+            }
+          },
+          "options": {
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "colorMode": "value",
+            "graphMode": "area",
+            "textMode": "value_and_name"
+          }
+        },
+        {
           "id": 165,
           "type": "table",
           "title": "Prewarm runs — last 7 days",
@@ -2367,7 +2439,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 53
+            "y": 58
           },
           "timeFrom": "7d",
           "datasource": {
@@ -2481,7 +2553,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 60
+            "y": 65
           },
           "datasource": {
             "type": "cloudwatch",
@@ -2541,7 +2613,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 60
+            "y": 65
           },
           "datasource": {
             "type": "cloudwatch",
