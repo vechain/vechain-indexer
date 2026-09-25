@@ -46,6 +46,9 @@ inventory" section documents the metrics and their caveats.
   restorable until it finishes and mainnet's backups run for hours, so the two lines differ by the
   run time. Reading `restorable` as "when the last backup ran" is the mistake the panel exists to
   prevent.
+- **"Manual snapshot in progress" reads the log, not a metric.** The metrics track automated
+  snapshots only, so the destroy workflow's final snapshot would otherwise have no progress line.
+  It covers each snapshot's first 12 hours; after that a retained snapshot would draw 100% forever.
 - **"Snapshots that exist" collapses repeats with `stats … by instance, snapshot`.** The Lambda logs
   the whole list every 5 minutes, so without it the table would show each snapshot once per poll.
   The consequence is that the table is scoped to the dashboard's time range: at the default now-1h

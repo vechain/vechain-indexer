@@ -2255,11 +2255,64 @@
           }
         },
         {
+          "id": 168,
+          "type": "timeseries",
+          "title": "Manual snapshot in progress",
+          "description": "PercentProgress of each manual snapshot over its first 12 hours, such as the final snapshot the destroy workflow takes before deleting a colour. 'Backup in progress' above covers automated snapshots only, because those are what a restore selects. Read from the inventory Lambda's rds_snapshot lines rather than a metric, so it also covers a snapshot whose instance is already gone. The Lambda polls every 5 minutes, so a snapshot that finishes faster shows one bar. The 12-hour cutoff stops a retained snapshot drawing 100% indefinitely.",
+          "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 75
+          },
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "cloudwatch"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "cloudwatch",
+                "uid": "cloudwatch"
+              },
+              "queryMode": "Logs",
+              "region": "default",
+              "logGroupNames": [
+                "/aws/lambda/veworld-indexer-prod-pg-backup-inventory"
+              ],
+              "expression": "parse @message /rds_snapshot\\|(?<instance>[^|]*)\\|(?<snapshot>[^|]*)\\|(?<r_type>[^|]*)\\|(?<r_status>[^|]*)\\|(?<r_created>[^|]*)\\|(?<r_age>[^|]*)\\|(?<r_volume>[^|]*)\\|(?<r_progress>[^|]*)/\n| filter r_type = \"manual\" and r_age <= 12\n| stats max(r_progress) as progress by bin(5m), snapshot"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "custom": {
+                "drawStyle": "bars",
+                "fillOpacity": 60,
+                "showPoints": "never"
+              }
+            }
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          }
+        },
+        {
           "id": 154,
           "type": "table",
           "title": "Snapshots that exist",
           "description": "Every snapshot the inventory Lambda saw over the dashboard's time range, one row each — automated and manual, unlike the metrics above, which track automated only. A destroyed colour's final snapshot, the one kept for DR, stays listed under its instance after the instance is gone. The Lambda logs the whole list every 5 minutes, so rows are collapsed to the newest sighting per snapshot with `stats latest(...) by instance, snapshot`; without that the table repeats each snapshot once per poll. At the default now-1h that is exactly the current inventory; widen the range to see snapshots that have since aged out of retention. `volume_gib` is the instance's allocated storage at snapshot time, not the snapshot's own size. The aggregated columns are parsed into `r_*` names and renamed by `stats`, because aliasing `latest(type) as type` over a field `parse` already defined is rejected with `Ephemeral field is already defined`; `instance` and `snapshot` keep their names only because the `by` clause never re-defines them.",
-          "gridPos": { "h": 12, "w": 24, "x": 0, "y": 75 },
+          "gridPos": { "h": 12, "w": 24, "x": 0, "y": 83 },
           "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
           "targets": [
             {
