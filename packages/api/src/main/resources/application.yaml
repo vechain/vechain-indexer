@@ -10,6 +10,8 @@ server:
     enabled: true
 
 springdoc:
+  # springdoc caches the spec per Accept-Language; one locale means one build, done at startup.
+  allowed-locales: [en]
   api-docs:
     path: /api-docs
   swagger-ui:

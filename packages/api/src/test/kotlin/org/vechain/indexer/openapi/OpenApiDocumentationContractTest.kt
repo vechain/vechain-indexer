@@ -2,7 +2,12 @@ package org.vechain.indexer.openapi
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import java.util.Locale
+import org.junit.jupiter.api.MethodOrderer
+import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestMethodOrder
+import org.springdoc.core.service.OpenAPIService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
@@ -48,12 +53,15 @@ import org.vechain.indexer.vevote.VeVoteResultReadRepository
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 import strikt.assertions.isFalse
+import strikt.assertions.isNotNull
+import strikt.assertions.isNull
 import strikt.assertions.isTrue
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles(resolver = OpenApiActiveProfilesResolver::class)
 @TestPropertySource(properties = ["postgres.enabled=false"])
+@TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class OpenApiDocumentationContractTest {
 
     // The block and transaction controllers need a reader; the spec comes from annotations.
@@ -94,6 +102,20 @@ class OpenApiDocumentationContractTest {
 
     @Autowired private lateinit var mockMvc: MockMvc
     @Autowired private lateinit var objectMapper: ObjectMapper
+    @Autowired private lateinit var openApiService: OpenAPIService
+
+    // First, so no earlier request can have built the spec.
+    @Test
+    @Order(1)
+    fun `the spec is built at startup and every locale is served from it`() {
+        expectThat(openApiService.getCachedOpenAPI(Locale.ENGLISH)).isNotNull()
+
+        mockMvc
+            .perform(get("/api-docs").header("Accept-Language", "fr-FR"))
+            .andExpect(status().isOk)
+
+        expectThat(openApiService.getCachedOpenAPI(Locale.FRANCE)).isNull()
+    }
 
     @Test
     fun `history address parameters are documented with address patterns`() {
