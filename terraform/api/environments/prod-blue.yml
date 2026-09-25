@@ -194,6 +194,7 @@ enabled_nets:
       allocated_storage_gb: 400
       max_allocated_storage_gb: 3000
       multi_az: false
+      prewarm_parallelism: 8
   test:
     image_version: latest
     thor_url: https://testnet.vechain.org
@@ -352,3 +353,4 @@ enabled_nets:
       allocated_storage_gb: 100
       max_allocated_storage_gb: 500
       multi_az: false
+      prewarm_parallelism: 2
