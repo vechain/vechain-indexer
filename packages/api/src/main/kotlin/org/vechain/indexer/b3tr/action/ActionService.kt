@@ -17,6 +17,7 @@ import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.history.HistoryReadRepository
 import org.vechain.indexer.history.IndexedHistoryEvent
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -82,6 +83,8 @@ open class ActionService(
     }
 
     // Overviews
+    fun overviewPolicy(period: ActionPeriod, open: CachePolicy): CachePolicy =
+        repository.cachePolicy(period, open)
 
     open fun getUserOverview(wallet: Address, period: ActionPeriod): UserOverview {
         val entity = HexUtils.normalise(wallet.value)

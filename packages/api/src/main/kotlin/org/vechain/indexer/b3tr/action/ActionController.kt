@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
+import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -30,6 +31,7 @@ import org.vechain.indexer.docs.StartDateParameter
 import org.vechain.indexer.rest.CacheFor
 import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.rest.PaginatedResponse
+import org.vechain.indexer.rest.cachedFor
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidAppId
@@ -134,7 +136,13 @@ open class ActionController(private val service: ActionService) {
         @ValidAddress @PathVariable wallet: Address,
         @RoundIdParameter @RequestParam(required = false) roundId: Int?,
         @ValidISODateString @RequestParam(required = false) date: String?,
-    ): UserOverview = service.getUserOverview(wallet, requestedPeriod(roundId, date))
+    ): ResponseEntity<UserOverview> {
+        val period = requestedPeriod(roundId, date)
+        return cachedFor(
+            service.overviewPolicy(period, CachePolicy.HOURLY),
+            service.getUserOverview(wallet, period),
+        )
+    }
 
     @GetMapping("/actions/users/{wallet}/app/{appId}/overview")
     @Operation(
@@ -161,7 +169,13 @@ open class ActionController(private val service: ActionService) {
         @ValidAppId @PathVariable appId: AppId,
         @RoundIdParameter @RequestParam(required = false) roundId: Int?,
         @ValidISODateString @RequestParam(required = false) date: String?,
-    ): UserAppOverview = service.getUserAppOverview(wallet, appId, requestedPeriod(roundId, date))
+    ): ResponseEntity<UserAppOverview> {
+        val period = requestedPeriod(roundId, date)
+        return cachedFor(
+            service.overviewPolicy(period, CachePolicy.VOLATILE),
+            service.getUserAppOverview(wallet, appId, period),
+        )
+    }
 
     @GetMapping("/actions/users/{wallet}/daily-summaries")
     @Operation(summary = "Get daily action summaries for a specific user within a specified range.")
@@ -212,7 +226,13 @@ open class ActionController(private val service: ActionService) {
         @ValidAppId @PathVariable appId: AppId,
         @RequestParam(required = false) roundId: Int?,
         @ValidISODateString @RequestParam(required = false) date: String?,
-    ): AppOverview = service.getAppOverview(appId, requestedPeriod(roundId, date))
+    ): ResponseEntity<AppOverview> {
+        val period = requestedPeriod(roundId, date)
+        return cachedFor(
+            service.overviewPolicy(period, CachePolicy.HOURLY),
+            service.getAppOverview(appId, period),
+        )
+    }
 
     @GetMapping("/actions/global/overview")
     @Operation(
@@ -234,5 +254,11 @@ open class ActionController(private val service: ActionService) {
     open fun getGlobalOverview(
         @RequestParam(required = false) roundId: Int?,
         @ValidISODateString @RequestParam(required = false) date: String?,
-    ): GlobalOverview = service.getGlobalOverview(requestedPeriod(roundId, date))
+    ): ResponseEntity<GlobalOverview> {
+        val period = requestedPeriod(roundId, date)
+        return cachedFor(
+            service.overviewPolicy(period, CachePolicy.DAILY),
+            service.getGlobalOverview(period),
+        )
+    }
 }

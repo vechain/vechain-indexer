@@ -18,18 +18,9 @@ import org.vechain.indexer.utils.CursorPaginationUtils
 @Service
 open class ActionLeaderboardService(private val repository: ActionReadRepository) {
 
-    /**
-     * A round that has closed can never be awarded another action, so its leaderboard is final. The
-     * newest round on record is the one still open — or, if the indexer is behind a boundary, one
-     * that has only just closed — so only the rounds behind it are settled. Everything else keeps
-     * moving with every rewarded action, so it earns a minute and no more.
-     */
-    fun leaderboardPolicy(period: ActionPeriod): CachePolicy {
-        val roundId = period.roundId ?: return CachePolicy.MINUTE
-        val latestRound = repository.latestRound()
-        return if (latestRound != null && roundId < latestRound) CachePolicy.IMMUTABLE
-        else CachePolicy.MINUTE
-    }
+    /** Everything but a closed round moves with every rewarded action, so it earns a minute. */
+    fun leaderboardPolicy(period: ActionPeriod): CachePolicy =
+        repository.cachePolicy(period, CachePolicy.MINUTE)
 
     fun getUserLeaderboard(
         period: ActionPeriod,
