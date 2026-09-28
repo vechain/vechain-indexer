@@ -19,6 +19,7 @@ import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.history.HistoryEventName
 import org.vechain.indexer.history.HistoryReadRepository
 import org.vechain.indexer.history.IndexedHistoryEvent
+import org.vechain.indexer.rest.CachePolicy
 import org.vechain.indexer.thor.Address
 
 internal class ActionServiceTest {
@@ -261,6 +262,22 @@ internal class ActionServiceTest {
                 null,
             )
         }
+    }
+
+    @Test
+    fun `an overview of a closed round is final, anything else keeps its own TTL`() {
+        every { repository.latestRound() } returns 113
+
+        assertEquals(CachePolicy.IMMUTABLE, service.overviewPolicy(Round(112), CachePolicy.HOURLY))
+        assertEquals(CachePolicy.HOURLY, service.overviewPolicy(Round(113), CachePolicy.HOURLY))
+        assertEquals(CachePolicy.VOLATILE, service.overviewPolicy(AllTime, CachePolicy.VOLATILE))
+        assertEquals(
+            CachePolicy.DAILY,
+            service.overviewPolicy(Day("2026-09-01"), CachePolicy.DAILY),
+        )
+
+        every { repository.latestRound() } returns null
+        assertEquals(CachePolicy.HOURLY, service.overviewPolicy(Round(112), CachePolicy.HOURLY))
     }
 
     @Test
