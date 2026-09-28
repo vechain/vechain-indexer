@@ -173,6 +173,7 @@ open class ActionReadRepository(@Qualifier("postgresJdbcTemplate") private val j
         )
 
     /** The newest round on record: the one still open, or the last one indexed. */
+    @Cacheable("b3tr_action_latest_round")
     open fun latestRound(): Int? =
         jdbc.queryForObject(
             "SELECT max(round_id) FROM ${entityTable(ActionPeriodKind.ROUND)} " +
