@@ -118,6 +118,10 @@ cache:
     b3tr_action_rank_counts:
       max-size: ${CACHE_B3TR_ACTION_RANK_COUNTS_MAX_SIZE:12000}
       ttl-seconds: ${CACHE_B3TR_ACTION_RANK_COUNTS_TTL_SECONDS:300}
+    # A stale round only errs short: a round that has just closed keeps its open TTL a minute longer.
+    b3tr_action_latest_round:
+      max-size: 1
+      ttl-seconds: ${CACHE_B3TR_ACTION_LATEST_ROUND_TTL_SECONDS:60}
     official_token_addresses:
       max-size: ${CACHE_OFFICIAL_TOKEN_ADDRESSES_MAX_SIZE:10}
       ttl-seconds: ${CACHE_OFFICIAL_TOKEN_ADDRESSES_TTL_SECONDS:3600}

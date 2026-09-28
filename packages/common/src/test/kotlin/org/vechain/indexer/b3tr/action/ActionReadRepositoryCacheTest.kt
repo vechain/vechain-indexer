@@ -23,7 +23,7 @@ internal class ActionReadRepositoryCacheTest {
     @Configuration
     @EnableCaching
     open class Caching {
-        @Bean open fun cacheManager(): CacheManager = ConcurrentMapCacheManager(CACHE)
+        @Bean open fun cacheManager(): CacheManager = ConcurrentMapCacheManager(CACHE, LATEST_ROUND)
     }
 
     private val jdbc = mockk<JdbcTemplate>()
@@ -75,7 +75,17 @@ internal class ActionReadRepositoryCacheTest {
         assertNotNull(cache.get("app|Day(date=2026-09-01)|$appId|ACTIONS_REWARDED|3"))
     }
 
+    @Test
+    fun `the newest round is read once and then served from the cache`() {
+        every { jdbc.queryForObject(any<String>(), any<Class<Int>>()) } returns 113
+
+        repeat(2) { assertEquals(113, repository.latestRound()) }
+
+        verify(exactly = 1) { jdbc.queryForObject(any<String>(), any<Class<Int>>()) }
+    }
+
     companion object {
         private const val CACHE = "b3tr_action_rank_counts"
+        private const val LATEST_ROUND = "b3tr_action_latest_round"
     }
 }

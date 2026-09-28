@@ -17,6 +17,7 @@ open class CacheConfig(private val cacheProperties: CacheProperties) {
         private val CACHE_NAMES =
             listOf(
                 "b3tr_action_rank_counts",
+                "b3tr_action_latest_round",
                 "official_token_addresses",
                 "gmNft_countByLevelAndOwnerNot",
                 "b3tr_richlist_total_holders",
