@@ -113,7 +113,7 @@
     "icon": "bbe48eedf5b23a5e268672276ba889eea5d00256.png",
     "name": "HackenAI",
     "symbol": "HAI",
-    "totalSupply": "95813712943713438"
+    "totalSupply": "95812321591542678"
   },
   {
     "address": "0x1b44a9718e12031530604137f854160759677192",
@@ -189,7 +189,7 @@
     },
     "name": "WorldOfV",
     "symbol": "WoV",
-    "totalSupply": "231715443979607022082795608",
+    "totalSupply": "227033746757801466527240139",
     "website": "https://www.worldofv.art/",
     "whitePaper": "https://medium.com/@WorldofV/world-of-v-tokenomics-the-beginning-of-our-journey-together-d428907c22af"
   },
@@ -244,7 +244,7 @@
     },
     "name": "Veiled VET",
     "symbol": "VVET",
-    "totalSupply": "6561726591867051953846245"
+    "totalSupply": "7404871574786395289729932"
   },
   {
     "address": "0x8e57aadf0992afcc41f7843656c6c7129f738f7b",
@@ -374,7 +374,7 @@
     },
     "name": "VFoxToken",
     "symbol": "VFA",
-    "totalSupply": "9125073606326240129579035",
+    "totalSupply": "9125058128588068338077619",
     "website": "https://vfox-alliance.com/",
     "whitePaper": "https://medium.com/@vfox.alphice/tokenomics-vfa-f3ab4c4f0cf7"
   },
@@ -413,7 +413,7 @@
     },
     "name": "MVA Token",
     "symbol": "MVA",
-    "totalSupply": "9918649099724641130917020",
+    "totalSupply": "9913676008609319384172938",
     "website": "https://mvanfts.com/"
   },
   {
@@ -468,7 +468,7 @@
     },
     "name": "Sh*tCoin",
     "symbol": "SHT",
-    "totalSupply": "2000000000000000002000000000"
+    "totalSupply": "1999999100000000002000000000"
   },
   {
     "address": "0x7ae288b7224ad8740b2d4fc2b2c8a2392caea3c6",
@@ -717,7 +717,7 @@
     },
     "name": "B3TR",
     "symbol": "B3TR",
-    "totalSupply": "456011725780803846144000000",
+    "totalSupply": "467092269713995530240000000",
     "website": "https://vebetter.com/",
     "whitePaper": "https://files.vebetter.com/vebetterdaocontainer/VeBetter_Whitepaper_v2-OCR.pdf"
   },
@@ -728,7 +728,7 @@
     "icon": "dcc6e7f09932a389a536fe74107cd73af445dd65.png",
     "name": "VOT3",
     "symbol": "VOT3",
-    "totalSupply": "304809608636433149394119562"
+    "totalSupply": "312940733904723152325166697"
   },
   {
     "address": "0x867bca2f3f187bb7bfb900ebcd3155746537a9a9",
@@ -766,7 +766,7 @@
     },
     "name": "veB3TR",
     "symbol": "veB3TR",
-    "totalSupply": "3559051134988747628061884",
+    "totalSupply": "3959328464923948340728863",
     "website": "https://veDelegate.vet/"
   },
   {
@@ -812,7 +812,7 @@
     },
     "name": "CarbonYears",
     "symbol": "CY",
-    "totalSupply": "211366602110570989093208",
+    "totalSupply": "211470611032492315294914",
     "website": "https://pauseyourcarbon.com/"
   },
   {
@@ -834,7 +834,7 @@
     },
     "name": "Better VET",
     "symbol": "BVET",
-    "totalSupply": "19504608930251054408190338",
+    "totalSupply": "21056014275300176577995004",
     "website": "https://www.betterswap.io/"
   },
   {
@@ -906,7 +906,7 @@
     },
     "name": "ETH@vechain",
     "symbol": "ETH",
-    "totalSupply": "185499002129532987",
+    "totalSupply": "187605686387448112",
     "website": "https://bridge.wanchain.org/AssetBridge"
   },
   {
@@ -924,7 +924,7 @@
     },
     "name": "BTC@vechain",
     "symbol": "BTC",
-    "totalSupply": "1026452",
+    "totalSupply": "1108765",
     "website": "https://bridge.wanchain.org/AssetBridge"
   },
   {
@@ -942,7 +942,7 @@
     },
     "name": "USDT@vechain",
     "symbol": "USDT",
-    "totalSupply": "4182668202",
+    "totalSupply": "4189228366",
     "website": "https://bridge.wanchain.org/AssetBridge"
   },
   {
@@ -960,7 +960,7 @@
     },
     "name": "USDC@vechain",
     "symbol": "USDC",
-    "totalSupply": "11964011084",
+    "totalSupply": "16661690151",
     "website": "https://bridge.wanchain.org/AssetBridge"
   },
   {
@@ -978,7 +978,7 @@
     },
     "name": "WAN@vechain",
     "symbol": "WAN",
-    "totalSupply": "8408513379865472361048",
+    "totalSupply": "8844013379865472361048",
     "website": "https://bridge.wanchain.org/AssetBridge"
   },
   {
@@ -1035,7 +1035,7 @@
     },
     "name": "COMPOST Token",
     "symbol": "COMPOST",
-    "totalSupply": "1117521000000000000000000",
+    "totalSupply": "1134921000000000000000000",
     "website": "https://sproutlyrwa.com/"
   },
   {
@@ -1047,5 +1047,18 @@
     "symbol": "DUNN",
     "totalSupply": "100000000000000000000000",
     "website": "https://maisondunn.com/"
+  },
+  {
+    "address": "0x63985dec1638684262247bed741c45fa5a4a7dca",
+    "decimals": 18,
+    "desc": "ORB is an official ecosystem coin of VaiyansCryptoOracle (VCO), a SocialFi platform on VeChain. Representing community, competition, and on-chain engagement, ORB is part of VCO's growing ecosystem of ",
+    "icon": "b4ed2d2aee59fb9b977138dc1a426cadbc747af5.png",
+    "links": {
+      "twitter": "https://x.com/VCO_VET"
+    },
+    "name": "VCO Orbs",
+    "symbol": "ORB",
+    "totalSupply": "1000000000000000000000000000",
+    "website": "https://www.vaiyanscrypto.org"
   }
 ]
