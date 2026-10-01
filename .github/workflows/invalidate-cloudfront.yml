@@ -1,0 +1,89 @@
+name: Invalidate CloudFront
+
+on:
+  workflow_dispatch:
+    inputs:
+      networks:
+        description: "Which indexer distributions to invalidate"
+        required: true
+        type: choice
+        default: both
+        options:
+          - both
+          - mainnet
+          - testnet
+      paths:
+        description: "Space-separated paths, each starting with / (a trailing * matches a prefix)"
+        required: true
+        type: string
+        default: "/api/*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: invalidate-cloudfront
+  cancel-in-progress: false
+
+jobs:
+  invalidate:
+    name: Invalidate CloudFront paths
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: prod
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+
+      - name: Invalidate and wait
+        env:
+          NETWORKS: ${{ inputs.networks }}
+          PATHS: ${{ inputs.paths }}
+        run: |
+          set -euo pipefail
+          read -ra paths <<< "${PATHS}"
+          if [[ ${#paths[@]} -eq 0 ]]; then
+            echo "::error::No paths given."
+            exit 1
+          fi
+          for path in "${paths[@]}"; do
+            if [[ "${path}" != /* ]]; then
+              echo "::error::'${path}' does not start with /."
+              exit 1
+            fi
+          done
+
+          case "${NETWORKS}" in
+            both) hosts=(indexer.mainnet.vechain.org indexer.testnet.vechain.org) ;;
+            mainnet) hosts=(indexer.mainnet.vechain.org) ;;
+            testnet) hosts=(indexer.testnet.vechain.org) ;;
+            *) echo "::error::Unknown networks '${NETWORKS}'."; exit 1 ;;
+          esac
+
+          # Every invalidation is created first, so the networks clear in parallel.
+          declare -A invalidations
+          for host in "${hosts[@]}"; do
+            ids="$(aws cloudfront list-distributions \
+              --query "DistributionList.Items[?Aliases.Items && contains(Aliases.Items, '${host}')].Id" \
+              --output text)"
+            if [[ -z "${ids}" || "${ids}" == *[[:space:]]* ]]; then
+              echo "::error::Expected one distribution aliased ${host}, found '${ids}'."
+              exit 1
+            fi
+            invalidation="$(aws cloudfront create-invalidation --distribution-id "${ids}" \
+              --paths "${paths[@]}" --query 'Invalidation.Id' --output text)"
+            echo "${host}: distribution ${ids}, invalidation ${invalidation} for ${paths[*]}"
+            invalidations["${ids}"]="${invalidation}"
+          done
+
+          for distribution in "${!invalidations[@]}"; do
+            aws cloudfront wait invalidation-completed \
+              --distribution-id "${distribution}" --id "${invalidations[${distribution}]}"
+            echo "${distribution}: invalidation ${invalidations[${distribution}]} completed"
+          done
