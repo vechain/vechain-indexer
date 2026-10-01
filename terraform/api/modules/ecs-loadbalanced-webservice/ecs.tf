@@ -128,6 +128,8 @@ resource "aws_ecs_service" "service_alb" {
   force_new_deployment               = var.force_new_deployment
   deployment_maximum_percent         = var.deployment_maximum_percent
   deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent
+  # Apply returns only once the old tasks have drained, so the deploy no longer reports success while they still serve.
+  wait_for_steady_state = true
   tags = merge(
     {
       Env         = var.env
