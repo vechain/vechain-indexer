@@ -106,7 +106,7 @@ cache_policies_v1:
     max_ttl_seconds: 31536000
     query_string_behavior: "all"
     header_behavior: "whitelist"
-    # No Origin: the API allows "*" and the edge's CORS policy adds it, so it only split the cache.
+    # No Origin: the API answers "*" with or without one (AnyOriginFilter), so it only split the cache.
     header_items:
       - "Access-Control-Request-Method"
       - "Access-Control-Request-Headers"
