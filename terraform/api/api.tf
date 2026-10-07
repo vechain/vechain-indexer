@@ -500,6 +500,14 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.safe
     },
     {
+      name  = "INDEXER_START_BLOCK_WOV_MARKETPLACE"
+      value = each.value.indexer.start-block.wov-marketplace
+    },
+    {
+      name  = "VERSION_WOV_MARKETPLACE"
+      value = each.value.indexer.version.wov-marketplace
+    },
+    {
       name  = "BLACKLIST_CONTRACT_ADDRESS"
       value = each.value.indexer.blacklist.contract-address
     },
