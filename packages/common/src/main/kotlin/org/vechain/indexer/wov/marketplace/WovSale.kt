@@ -3,7 +3,7 @@ package org.vechain.indexer.wov.marketplace
 import java.math.BigInteger
 import org.vechain.indexer.IndexedDocument
 
-/** How a World of V sale was struck; mirrors the `wov_marketplace.mechanism` enum. */
+/** How a marketplace sale was struck; mirrors the `wov_marketplace.mechanism` enum. */
 enum class WovMechanism {
     CUSTODIAL,
     NON_CUSTODIAL,

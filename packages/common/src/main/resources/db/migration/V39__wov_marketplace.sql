@@ -1,4 +1,4 @@
--- World of V marketplace purchases and, per (buyer, payment token), a running total written once
+-- WoV marketplace purchases and, per (buyer, payment token), a running total written once
 -- per block it changed in. Any window's totals are one running row minus another.
 
 CREATE SCHEMA IF NOT EXISTS wov_marketplace;
