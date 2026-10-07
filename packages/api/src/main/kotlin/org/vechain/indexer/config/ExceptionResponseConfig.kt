@@ -2,6 +2,7 @@ package org.vechain.indexer.config
 
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.ConstraintViolationException
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -11,6 +12,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import org.vechain.indexer.exception.AbstractHttpException
 import org.vechain.indexer.exception.ExceptionResponse
 import org.vechain.indexer.exception.PriceFeedUnavailableException
+import org.vechain.indexer.exception.WindowNotIndexedException
+import org.vechain.indexer.rest.CachePolicy
 
 @RestControllerAdvice
 open class ExceptionResponseConfig : ResponseEntityExceptionHandler() {
@@ -118,6 +121,35 @@ open class ExceptionResponseConfig : ResponseEntityExceptionHandler() {
         )
 
         return ResponseEntity(response, status)
+    }
+
+    /** Too early is routine, so a 4xx that says how far the index is, held at the edge briefly. */
+    @ExceptionHandler(value = [WindowNotIndexedException::class])
+    protected fun handleWindowNotIndexed(
+        req: HttpServletRequest,
+        ex: WindowNotIndexedException,
+    ): ResponseEntity<ExceptionResponse> {
+
+        val path = req.requestURI ?: req.servletPath
+
+        val response =
+            ExceptionResponse(
+                path = path,
+                status = ex.status.value(),
+                error = ex.status.reasonPhrase,
+                message = ex.message,
+            )
+
+        this.logger.warn(
+            "HTTP ${ex.status.value()} ($path) ${ex.status.reasonPhrase}: (id=${response.id}) - ${ex.message}"
+        )
+
+        val headers = HttpHeaders()
+        headers.set(HttpHeaders.CACHE_CONTROL, CachePolicy.VOLATILE.headerValue)
+        ex.indexedThrough?.let {
+            headers.set(WindowNotIndexedException.INDEXED_THROUGH_HEADER, it.toString())
+        }
+        return ResponseEntity(response, headers, ex.status)
     }
 
     /** Handles all other exceptions. */

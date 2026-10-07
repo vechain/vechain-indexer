@@ -25,6 +25,7 @@ class OpenApiActiveProfilesResolver : ActiveProfilesResolver {
                     "transfers",
                     "validator",
                     "vevote",
+                    "wov-marketplace",
                 )
                 .sorted()
 

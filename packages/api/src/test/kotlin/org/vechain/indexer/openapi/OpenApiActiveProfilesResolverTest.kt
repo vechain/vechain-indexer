@@ -27,6 +27,7 @@ class OpenApiActiveProfilesResolverTest {
                     "transfers",
                     "validator",
                     "vevote",
+                    "wov-marketplace",
                 )
         } finally {
             restoreProperty(previous)
