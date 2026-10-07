@@ -11,7 +11,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsBoolean
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
-/** Turns one entry's World of V events into sales, terms and the running totals they move. */
+/** Turns one entry's marketplace events into sales, terms and the running totals they move. */
 @Profile("wov-marketplace")
 @Service
 open class WovMarketplaceService(private val repository: WovMarketplaceWriteRepository) {

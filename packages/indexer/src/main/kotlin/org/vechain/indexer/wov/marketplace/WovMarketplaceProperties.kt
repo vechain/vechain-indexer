@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 
-/** The World of V marketplace contracts, one per sale mechanism; mainnet only. */
+/** The marketplace contracts, one per sale mechanism; mainnet only. */
 @Profile("wov-marketplace")
 @Configuration
 @ConfigurationProperties(prefix = "indexer.wov-marketplace")
