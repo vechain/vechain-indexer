@@ -16,7 +16,10 @@ import org.vechain.indexer.rest.CacheFor
 import org.vechain.indexer.rest.CachePolicy
 
 @Profile("b3tr", "b3tr-x-alloc")
-@Tag(name = "B3TR - X-Allocations", description = "Query XAllocation voting data on VeBetterDAO.")
+@Tag(
+    name = "B3TR - X-Allocations",
+    description = "VeBetterDAO allocation rounds: votes and app earnings.",
+)
 @Validated
 @RestController
 @RequestMapping(X_ALLOC_PATH)
@@ -24,8 +27,8 @@ open class XAllocController(private val xAllocService: XAllocService) {
 
     @GetMapping("{roundId}/results")
     @Operation(
-        summary = "Get XAllocation voting results for a round",
-        description = "Returns voting results for a specific round, optionally filtered by appId.",
+        summary = "Get the votes in an allocation round",
+        description = "Votes for each app in one round. Pass `appId` for a single app.",
     )
     @RoundIdParameter(`in` = ParameterIn.PATH, required = true)
     @AppIdParameter
@@ -47,12 +50,15 @@ open class XAllocController(private val xAllocService: XAllocService) {
 
     @GetMapping("earnings")
     @Operation(
-        summary = "Get XAllocation earnings distribution",
+        summary = "Get app earnings from allocation rounds",
         description =
-            "Returns earnings distribution for a specific app and/or round. At least one parameter " +
-                "(appId or roundId) must be provided. If both are provided, returns earnings for that " +
-                "specific app and round. If only appId is provided, returns earnings for that app across " +
-                "all rounds. If only roundId is provided, returns earnings for all apps in that round.",
+            """
+            App earnings from allocation rounds. Pass `appId`, `roundId` or both:
+
+            - `appId` only: that app's earnings in every round
+            - `roundId` only: every app's earnings in that round
+            - both: that app's earnings in that round
+            """,
     )
     @AppIdParameter
     @RoundIdParameter

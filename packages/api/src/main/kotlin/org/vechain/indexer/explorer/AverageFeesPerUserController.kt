@@ -30,17 +30,11 @@ open class AverageFeesPerUserController(
 
     @GetMapping("/average-fees-per-user")
     @Operation(
-        summary = "Get daily average fees per user for a timestamp range",
+        summary = "Get the average fee per user for each day",
         description =
-            """
-            Returns daily AFPU (Average Fees Per User) points for the requested timestamp range.
-
-            AFPU is computed per UTC day as:
-                total fees paid that day / distinct transaction origins that day
-
-            Values are daily period metrics, not cumulative counters. The source fee amount uses the
-            transaction `paid` value in the native gas token VTHO.
-        """,
+            "Average fee per user for each UTC day in the range: the VTHO paid in fees that " +
+                "day divided by the number of different addresses that sent transactions that " +
+                "day. Each point covers its own day; it isn't a running total.",
     )
     @AfterParameter(name = "startTimestamp", required = true)
     @BeforeParameter(name = "endTimestamp", required = true)

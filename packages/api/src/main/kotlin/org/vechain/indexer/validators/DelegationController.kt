@@ -29,7 +29,7 @@ import org.vechain.indexer.validator.Delegation
 import org.vechain.indexer.validator.DelegationStatus
 
 @Profile("delegation")
-@Tag(name = "Validator", description = "Query delegation documents")
+@Tag(name = "Validator", description = "Stargate delegations to validators.")
 @Validated
 @RestController
 @RequestMapping(VALIDATORS_PATH + "/delegations")
@@ -37,22 +37,18 @@ open class DelegationController(private val service: DelegationService) {
 
     @GetMapping
     @Operation(
-        summary = "Get delegations with optional filters",
+        summary = "List delegations",
         description =
-            """
-            Returns delegations. Filterable by:
-            - `validator`: delegations for a specific validator
-            - `tokenId`: delegations for a specific NFT tokenId
-            - `statuses`: array of statuses of interest (QUEUED / ACTIVE / EXITING / EXITED)
-            """,
+            "Delegations, optionally filtered by `validator`, `tokenId` (the Stargate NFT) or" +
+                " `statuses` (QUEUED, ACTIVE, EXITING, EXITED).",
     )
-    @AddressParameter(name = "validator", description = "Filter by validator address")
+    @AddressParameter(name = "validator", description = "Validator address.")
     @TokenIdParameter
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "statuses",
         schema = Schema(type = "array", implementation = DelegationStatus::class),
-        description = "Filter by one or more statuses",
+        description = "Only these statuses.",
         required = false,
     )
     @PaginationParameters
@@ -74,12 +70,12 @@ open class DelegationController(private val service: DelegationService) {
 
     @GetMapping("/count")
     @Operation(
-        summary = "Get delegation counts by status for all validators",
+        summary = "Count delegations by status",
         description =
-            "Returns the count of delegations grouped by status (QUEUED, ACTIVE, EXITING) " +
-                "for all validators, or optionally filtered to a specific validator.",
+            "Number of delegations in each status (QUEUED, ACTIVE, EXITING), across all " +
+                "validators or for one.",
     )
-    @AddressParameter(name = "validator", description = "Optional validator address to filter by")
+    @AddressParameter(name = "validator", description = "Only this validator.")
     @CommonApiResponses
     @CacheFor(CachePolicy.MINUTE)
     open fun getDelegationCounts(

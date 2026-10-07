@@ -18,7 +18,7 @@ import org.vechain.indexer.b3tr.gm.GmLevelName
 @Parameter(
     `in` = ParameterIn.QUERY,
     name = "level",
-    description = "Optional level to filter by",
+    description = "Galaxy Member level.",
     schema = Schema(implementation = GmLevelName::class),
     required = false,
 )

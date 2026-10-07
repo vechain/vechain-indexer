@@ -18,7 +18,7 @@ import io.swagger.v3.oas.annotations.media.Schema
                     allowableValues = ["VET", "FUNGIBLE_TOKEN", "NFT", "SEMI_FUNGIBLE_TOKEN"],
                 )
         ),
-    description = "Filter by transfer event type(s)",
+    description = "Only these transfer types.",
     required = false,
 )
 annotation class TransferEventTypeParameter

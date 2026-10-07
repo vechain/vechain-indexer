@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema
     `in` = ParameterIn.QUERY,
     name = "size",
     schema = Schema(type = "integer", format = "int32", minimum = "1", maximum = "150"),
-    description = "The results page size",
+    description = "Results per page.",
     required = false,
     example = "20",
 )

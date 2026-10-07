@@ -17,7 +17,7 @@ import org.vechain.indexer.exception.ExceptionResponse
         [
             ApiResponse(
                 responseCode = "503",
-                description = "PriceFeedOracle is unreachable or returned an unusable response",
+                description = "USD prices are unavailable right now; try again shortly",
                 content =
                     [
                         Content(

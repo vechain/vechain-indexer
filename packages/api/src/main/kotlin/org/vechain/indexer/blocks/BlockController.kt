@@ -21,7 +21,7 @@ import org.vechain.indexer.validation.ValidNonNegativeLong
 import org.vechain.indexer.validation.ValidPageSize
 
 @Profile("blocks")
-@Tag(name = "Blocks", description = "VeChainThor block headers")
+@Tag(name = "Blocks", description = "Block headers.")
 @Validated
 @RestController
 @RequestMapping(BLOCKS_PATH)
@@ -29,27 +29,25 @@ open class BlockController(private val blockService: BlockService) {
 
     @GetMapping
     @Operation(
-        summary = "Get a range of collapsed blocks",
+        summary = "List block headers",
         description =
             """
-            Returns collapsed (unexpanded) block headers newest-first, starting at `from` and
-            walking backwards, or starting at the indexed head when `from` is omitted. Pass
-            `pagination.cursor` straight back as `from` to fetch the next page.
+            Block headers, newest first. Starts at block `from`, or the newest indexed block if you
+            leave it out, and works backwards. For the next page, pass `pagination.cursor` as
+            `from`.
 
-            Each block carries `clauseCount` and `totalVthoPaid` (hex wei), the totals over its
-            transactions, which Thor itself only exposes on an expanded block.
+            Each block includes `clauseCount` and `totalVthoPaid` (hex, in wei), added up over its
+            transactions.
 
-            `isTrunk` and `isFinalized` are omitted. Both are node-local, time-varying properties
-            rather than block contents — `isTrunk` is a live comparison against the node's best
-            chain, and finality lags the head by 360–540 blocks and is derived from validator
-            stake weights — so neither can be served correctly from an index. Use a Thor node's
-            `GET /blocks/{revision}` if you need them, for a single block, or to look up a block
-            by ID.
-        """,
+            `isTrunk` and `isFinalized` aren't returned: they change over time and only a node knows
+            them. Ask a Thor node's `GET /blocks/{revision}` for those, or to look up a block by ID.
+            """,
     )
     @BlockNumberParameter(
         name = "from",
-        description = "Block number to start from, inclusive. Defaults to the indexed head.",
+        description =
+            "First block to return, the newest on the page. Defaults to the newest indexed " +
+                "block.",
     )
     @PaginationSize
     @CommonApiResponses

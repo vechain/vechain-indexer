@@ -41,7 +41,10 @@ import org.vechain.indexer.validation.ValidPageNumber
 import org.vechain.indexer.validation.ValidPageSize
 
 @Profile("b3tr", "b3tr-actions")
-@Tag(name = "B3TR - Actions", description = "Endpoints for B3TR Actions.")
+@Tag(
+    name = "B3TR - Actions",
+    description = "Actions users were rewarded B3TR for in VeBetterDAO apps.",
+)
 @Validated
 @RestController
 @RequestMapping(B3TR_PATH)
@@ -116,18 +119,10 @@ open class ActionController(private val service: ActionService) {
 
     @GetMapping("/actions/users/{wallet}/overview")
     @Operation(
-        summary =
-            "Get B3TR action overview for a specific wallet, optionally for a specific round or date.",
+        summary = "Get a wallet's action totals",
         description =
-            """
-            This endpoint retrieves the B3TR action overview for a wallet address.
-            Optionally, a roundId or a date can be provided to retrieve the overview for a specific round or date.
-
-            - If roundId is provided, the overview for the specific round is returned.
-            - If date is provided, the overview for the specific date is returned.
-            - If roundId/date are not provided, the all time sustainability overview for the user is returned.
-            - If both roundId and date are provided, a BadRequest error is returned.
-        """,
+            "A wallet's action totals. Pass `roundId` for one allocation round or `date` for " +
+                "one day; omit both for all time. Passing both is a 400 error.",
     )
     @AddressParameter(name = "wallet", required = true, `in` = ParameterIn.PATH)
     @CommonApiResponses
@@ -146,18 +141,10 @@ open class ActionController(private val service: ActionService) {
 
     @GetMapping("/actions/users/{wallet}/app/{appId}/overview")
     @Operation(
-        summary =
-            "Get B3TR action overview for a user on a specific app, optionally for a specific round or date.",
+        summary = "Get a wallet's action totals in one app",
         description =
-            """
-            This endpoint retrieves the B3TR action overview for a user on a specific app.
-            Optionally, a roundId or a date can be provided to retrieve the overview for a specific round or date.
-
-            - If roundId is provided, the overview for the specific round is returned.
-            - If date is provided, the overview for the specific date is returned.
-            - If roundId/date are not provided, the all time sustainability overview for the user on the app is returned.
-            - If both roundId and date are provided, a BadRequest error is returned.
-        """,
+            "A wallet's action totals in one app. Pass `roundId` for one allocation round or " +
+                "`date` for one day; omit both for all time. Passing both is a 400 error.",
     )
     @AddressParameter(name = "wallet", required = true, `in` = ParameterIn.PATH)
     @AppIdParameter(required = true, `in` = ParameterIn.PATH)
@@ -178,7 +165,7 @@ open class ActionController(private val service: ActionService) {
     }
 
     @GetMapping("/actions/users/{wallet}/daily-summaries")
-    @Operation(summary = "Get daily action summaries for a specific user within a specified range.")
+    @Operation(summary = "Get a wallet's daily action totals over a date range")
     @AddressParameter(name = "wallet", required = true, `in` = ParameterIn.PATH)
     @StartDateParameter
     @EndDateParameter
@@ -205,18 +192,10 @@ open class ActionController(private val service: ActionService) {
 
     @GetMapping("/actions/apps/{appId}/overview")
     @Operation(
-        summary =
-            "Get B3TR action overview for a specific app, optionally for a specific round or date.",
+        summary = "Get an app's action totals",
         description =
-            """
-            This endpoint retrieves the B3TR action overview for an app.
-            Optionally, a roundId or a date can be provided to retrieve the overview for a specific round or date.
-
-            - If roundId is provided, the overview for the specific round is returned.
-            - If date is provided, the overview for the specific date is returned.
-            - If roundId/date are not provided, the all time sustainability overview for the app is returned.
-            - If both roundId and date are provided, a BadRequest error is returned.
-        """,
+            "An app's action totals. Pass `roundId` for one allocation round or `date` for " +
+                "one day; omit both for all time. Passing both is a 400 error.",
     )
     @AppIdParameter(required = true, `in` = ParameterIn.PATH)
     @DateParameter
@@ -236,16 +215,10 @@ open class ActionController(private val service: ActionService) {
 
     @GetMapping("/actions/global/overview")
     @Operation(
-        summary = "Get global B3TR action overview, optionally for a specific round or date.",
+        summary = "Get action totals across all apps",
         description =
-            """
-            This endpoint retrieves the global B3TR action overview.
-            Optionally, a roundId or a date can be provided to retrieve the overview for a specific round or date.
-            - If roundId is provided, the overview for the specific round is returned.
-            - If date is provided, the overview for the specific date is returned.
-            - If roundId/date are not provided, the all time global sustainability overview is returned.
-            - If both roundId and date are provided, a BadRequest error is returned.
-        """,
+            "Action totals across all apps. Pass `roundId` for one allocation round or `date`" +
+                " for one day; omit both for all time. Passing both is a 400 error.",
     )
     @RoundIdParameter
     @DateParameter

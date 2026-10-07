@@ -10,7 +10,7 @@ import org.springframework.core.annotation.AliasFor
 @Parameter(
     name = "support",
     schema = Schema(type = "string", allowableValues = ["FOR", "AGAINST", "ABSTAIN"]),
-    description = "Filter by support.",
+    description = "Only votes with this choice.",
 )
 annotation class SupportParameter(
     @get:AliasFor(annotation = Parameter::class, attribute = "in")

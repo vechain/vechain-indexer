@@ -14,7 +14,7 @@ import org.vechain.indexer.rest.CacheFor
 import org.vechain.indexer.rest.CachePolicy
 
 @ConditionalOnPostgres
-@Tag(name = "Status", description = "How far each indexer has read the chain")
+@Tag(name = "Status", description = "How up to date the data is.")
 @Validated
 @RestController
 @RequestMapping(STATUS_PATH)
@@ -22,17 +22,12 @@ open class StatusController(private val statusService: StatusService) {
 
     @GetMapping
     @Operation(
-        summary = "Get each indexer's latest indexed block",
+        summary = "Get the latest block each indexer has saved",
         description =
-            """
-            Returns one entry per indexer running against this database, newest committed block
-            first seen from its own checkpoint. An indexer that has written nothing yet reports a
-            null `blockNumber`.
-
-            Indexers advance independently, so one lagging entry means that domain's endpoints are
-            behind while the rest are current. Compare against a Thor node's best block for the
-            gap, or against the other colour's entries before a blue/green switch.
-        """,
+            "The latest block each indexer has saved. `blockNumber` is null for an indexer " +
+                "that hasn't saved anything yet. Indexers run independently, so if one is behind," +
+                " only the endpoints that use it are out of date. Compare with a Thor node's best" +
+                " block to see how far behind.",
     )
     @CommonApiResponses
     @CacheFor(CachePolicy.VOLATILE)

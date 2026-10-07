@@ -38,7 +38,7 @@ import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validation.ValidTransferEventType
 
 @Profile("transfers")
-@Tag(name = "TransferEvent", description = "Query blockchain transfer events")
+@Tag(name = "TransferEvent", description = "VET, VTHO, token and NFT transfers.")
 @Validated
 @RestController
 @RequestMapping(TRANSFER_EVENTS_PATH)
@@ -46,13 +46,10 @@ open class TransferEventController(private val transferEventService: TransferEve
 
     @GetMapping("/latest")
     @Operation(
-        summary = "Get latest transfer events",
+        summary = "List the latest transfers",
         description =
-            """
-            Returns latest transfer events by block number descending and canonical transfer order
-            within each block. Defaults to all transfer event types; use the eventType query
-            parameter to filter to one or more types.
-            """,
+            "The latest transfers, newest block first and in on-chain order within a block. " +
+                "Every transfer type is included unless you pass `eventType`.",
     )
     @TransferEventTypeParameter
     @CommonApiResponses
@@ -71,7 +68,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     }
 
     @GetMapping
-    @Operation(summary = "Get transfer events by address or token address")
+    @Operation(summary = "List transfers by address or token")
     @TransferEventTypeParameter
     @AfterParameter
     @BeforeParameter
@@ -81,16 +78,14 @@ open class TransferEventController(private val transferEventService: TransferEve
     open fun getTransferEvents(
         @AddressParameter(
             name = "address",
-            description =
-                "To or from address of the transfer event. Either address or tokenAddress must be provided",
+            description = "Sender or recipient. Give this, `tokenAddress`, or both.",
         )
         @ValidAddress
         @RequestParam(required = false)
         address: Address?,
         @AddressParameter(
             name = "tokenAddress",
-            description =
-                "The token contract address. Either address or tokenAddress must be provided",
+            description = "Token contract. Give this, `address`, or both.",
         )
         @ValidAddress
         @RequestParam(required = false)
@@ -131,7 +126,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     }
 
     @GetMapping("/from")
-    @Operation(summary = "Get transfer events by from address")
+    @Operation(summary = "List transfers sent by an address")
     @TransferEventTypeParameter
     @AfterParameter
     @BeforeParameter
@@ -139,7 +134,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     @PaginationParameters
     @CacheFor(CachePolicy.MINUTE)
     open fun getTransferEventsByFrom(
-        @AddressParameter(description = "From address of the transfer event", required = true)
+        @AddressParameter(description = "Sender address.", required = true)
         @ValidAddress
         @RequestParam
         address: Address,
@@ -177,7 +172,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     }
 
     @GetMapping("/to")
-    @Operation(summary = "Get transfer events by to address")
+    @Operation(summary = "List transfers received by an address")
     @TransferEventTypeParameter
     @AfterParameter
     @BeforeParameter
@@ -185,7 +180,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     @PaginationParameters
     @CacheFor(CachePolicy.MINUTE)
     open fun getTransferEventsByTo(
-        @AddressParameter(description = "To address of the transfer event", required = true)
+        @AddressParameter(description = "Recipient address.", required = true)
         @ValidAddress
         @RequestParam
         address: Address,
@@ -223,11 +218,11 @@ open class TransferEventController(private val transferEventService: TransferEve
     }
 
     @GetMapping("/forBlock")
-    @Operation(summary = "Get transfer events for a specific block")
+    @Operation(summary = "List the transfers in a block")
     @AddressListParameter(required = true)
     @BlockNumberParameter(
         required = true,
-        description = "Block number to query",
+        description = "Block number.",
         example = "1000000",
     )
     @CommonApiResponses
@@ -250,12 +245,12 @@ open class TransferEventController(private val transferEventService: TransferEve
     }
 
     @GetMapping("/fungible-tokens-contracts")
-    @Operation(summary = "Get all fungible tokens transfers contracts for a given account")
+    @Operation(summary = "List the tokens an account has sent or received")
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "officialTokensOnly",
         schema = Schema(type = "boolean"),
-        description = "If set to true, only official tokens will be returned. Defaults to false.",
+        description = "Only tokens in the official token registry. Defaults to false.",
         required = false,
         example = "false",
     )
@@ -264,8 +259,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getFungibleTokensContractsByAddress(
         @AddressParameter(
-            description =
-                "The address of origin or destination of the fungible tokens transfer events",
+            description = "Account address.",
             required = true,
         )
         @ValidAddress

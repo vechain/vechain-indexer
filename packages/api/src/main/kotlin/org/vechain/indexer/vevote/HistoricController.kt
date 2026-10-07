@@ -24,24 +24,27 @@ import org.vechain.indexer.utils.PaginationUtils
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
 
-@Tag(name = "VeVote Historic Proposals", description = "Query VeVote Historic Proposals")
+@Tag(name = "VeVote Historic Proposals", description = "Past VeVote proposals.")
 @Validated
 @RestController
 @Profile("vevote", "vevote-historic")
 @RequestMapping(VEVOTE_PATH)
 open class HistoricController(private val historicApiService: HistoricApiService) {
     @GetMapping("/historic-proposals")
-    @Operation(summary = "Fetch all historic proposals")
+    @Operation(summary = "List past proposals")
     @Parameter(
         name = "proposalId",
-        description = "Proposal ID to filter by.",
+        description = "Proposal ID.",
         schema = Schema(type = "string", pattern = "\\d"),
     )
-    @AddressParameter(name = "contractAddress", description = "Filter by legacy contract address.")
+    @AddressParameter(
+        name = "contractAddress",
+        description = "Only proposals from this legacy contract.",
+    )
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "testProposals",
-        description = "If true, include proposals that were used for testing.",
+        description = "Include test proposals.",
         required = false,
         schema = Schema(type = "boolean"),
     )

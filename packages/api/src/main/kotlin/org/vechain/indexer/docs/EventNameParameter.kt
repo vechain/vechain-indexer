@@ -63,11 +63,10 @@ import org.springframework.core.annotation.AliasFor
                             "STARGATE_MANAGER_REMOVED",
                             "VEVOTE_VOTE_CAST",
                         ],
-                    description =
-                        "Filter by specific transaction names. See HistoryEventName for the full list.",
+                    description = "Only these event types.",
                 )
         ),
-    description = "Filter by specific transaction names.",
+    description = "Only these event types.",
     required = false,
 )
 annotation class EventNameParameter(

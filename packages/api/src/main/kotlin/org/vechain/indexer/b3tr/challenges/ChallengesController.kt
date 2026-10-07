@@ -24,13 +24,14 @@ import org.vechain.indexer.validation.ValidPageSize
 @Profile("b3tr", "b3tr-challenges")
 @Validated
 @RestController
-@Tag(name = "B3TR - Challenges", description = "Query indexed B3TR challenges.")
+@Tag(name = "B3TR - Challenges", description = "B3TR challenges.")
 open class ChallengesController(private val challengesService: ChallengesService) {
     @GetMapping(CHALLENGES_PATH)
     @Operation(
-        summary = "Get public indexed B3TR challenges.",
+        summary = "List public challenges",
         description =
-            "Returns public challenges across the network. Use `/api/v1/b3tr/users/{wallet}/challenges` for wallet-scoped views.",
+            "Public challenges. For one wallet's challenges, use " +
+                "`/api/v1/b3tr/users/{wallet}/challenges`.",
     )
     @CommonApiResponses
     @PaginationParameters
@@ -55,9 +56,11 @@ open class ChallengesController(private val challengesService: ChallengesService
 
     @GetMapping(WALLET_CHALLENGES_PATH)
     @Operation(
-        summary = "Get indexed B3TR challenges bucketed for a wallet.",
+        summary = "List a wallet's challenges",
         description =
-            "Returns challenges bucketed by a semantic `filter` that encodes both a challenge status set and the wallet's relationship to the challenge. See the `filter` parameter for the full list of buckets.",
+            "A wallet's challenges, grouped by `filter`: ones needing its action, its own, " +
+                "ones open to join, others in progress, and past ones. The `filter` parameter " +
+                "lists each group.",
     )
     @CommonApiResponses
     @PaginationParameters
@@ -84,7 +87,7 @@ open class ChallengesController(private val challengesService: ChallengesService
         )
 
     @GetMapping("$CHALLENGES_PATH/{challengeId}")
-    @Operation(summary = "Get a single indexed B3TR challenge.")
+    @Operation(summary = "Get a challenge")
     @CommonApiResponses
     @CacheFor(CachePolicy.MINUTE)
     open fun getChallenge(@PathVariable challengeId: Long): ChallengeDetailResponse =

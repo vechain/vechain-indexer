@@ -38,37 +38,40 @@ open class WovMarketplaceController(private val service: WovBuyerStatsService) {
 
     @GetMapping("marketplace/buyers")
     @Operation(
-        summary = "Buyers' items and spend per payment token over a window",
+        summary = "List buyers and what they spent between two times",
         description =
             """
-            Every address that completed a marketplace purchase in the half-open window
-            `[from, to)`, in address order, with the items bought and the spend per payment token.
-            Spend is the sale price in the token's smallest unit; VET and wrapped VET (VVET) are
-            reported separately. Lifetime totals are `from=0`.
+            Every address that bought on the marketplace between `from` and `to` (Unix seconds, by
+            block time), sorted by address. A purchase at exactly `from` is included and one at
+            exactly `to` is not, so back-to-back ranges never count a purchase twice.
 
-            - A `to` later than the newest indexed block's timestamp is refused with 409 and an
-              `X-Indexed-Through` header, never answered in part.
-            - Pass the same `from` and `to` on every page; the cursor is refused for any other `to`.
-            - Finality is the caller's concern: a window ending near the head can change on a reorg.
-              For a reward cutoff, query once the finalized block is past `to`.
+            Each buyer shows the items bought and the amount spent in each payment token, in the
+            token's smallest unit. VET and wrapped VET (VVET) are listed separately. Use `from=0`
+            for all-time totals.
+
+            - A `to` later than the newest indexed block gets a 409, with the latest time you can
+              ask for in the `X-Indexed-Through` header.
+            - When paging, send the same `from` and `to` with each `cursor`.
+            - Recent purchases can still be undone by a chain reorganisation. For a reward cutoff,
+              query once the chain is finalized past `to`.
             """,
     )
     @AfterParameter(
         name = "from",
         required = true,
-        description = "Start of the window, inclusive (Unix time in seconds).",
+        description = "Start time in Unix seconds. A purchase at exactly this time is included.",
     )
     @BeforeParameter(
         name = "to",
         required = true,
-        description = "End of the window, exclusive (Unix time in seconds).",
+        description = "End time in Unix seconds. A purchase at exactly this time is not included.",
     )
     @PaginationSize
     @Cursor
     @CommonApiResponses
     @ApiResponse(
         responseCode = "409",
-        description = "The window ends after the newest indexed block",
+        description = "`to` is later than the newest indexed block",
         headers =
             [
                 Header(

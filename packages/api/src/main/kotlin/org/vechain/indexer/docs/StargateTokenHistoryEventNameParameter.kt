@@ -40,7 +40,7 @@ import org.springframework.core.annotation.AliasFor
                         ],
                 )
         ),
-    description = "Filter by Stargate token history event names.",
+    description = "Only these event types.",
     required = false,
 )
 annotation class StargateTokenHistoryEventNameParameter(

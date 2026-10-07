@@ -38,35 +38,26 @@ import org.vechain.indexer.validators.ValidatorResponse
 import org.vechain.indexer.validators.ValidatorService
 
 @Profile("validator")
-@Tag(name = "Validator", description = "Query validator documents")
+@Tag(name = "Validator", description = "Validators (deprecated version).")
 @Validated
 @RestController
 @RequestMapping(VALIDATORS_PATH)
 open class ValidatorController(private val service: ValidatorService) {
     @GetMapping
     @Operation(
-        summary = "Get validators with optional filters (deprecated — use /api/v2/validators)",
+        summary = "List validators (deprecated)",
         description =
             """
-            **Deprecated:** Replaced by `GET /api/v2/validators`. This endpoint now reads from the
-            V2 indexer (`validators_v2`) and reshapes the V2 document into the V1 wire format.
-            `online` and `totalRewards` are returned as `null` (not populated on V2). `offlineBlocks`
-            is sourced from V2's PoS-schedule misses and is numerically different from the V1
-            transient `OfflineBlock` pointer. `sortBy=nft:<Level>` has no V2 equivalent and silently
-            falls back to the default sort.
+            **Deprecated:** use `GET /api/v2/validators`.
 
-            This endpoint retrieves validator stats.
+            Kept for existing clients, with these differences:
 
-            You can filter the results by:
-            - `validatorId`: (deprecated - use GET /api/v2/validators/{validatorId} instead)
-            - `status`: validator status
-            - `endorser`: endorser address
+            - `online` and `totalRewards` are always null
+            - `offlineBlocks` counts missed block slots, so its numbers differ from before
+            - `sortBy=nft:<Level>` is ignored and the default sort is used
 
-            You can also sort the results by one of the supported fields and paginate.
-
-            - `sortBy`: Choose between `validatorTvl`, `totalTvl`, `blockProbability`, `delegatorTvl`, or `nft:<Level>` (projected next-cycle yield if that NFT were delegated, e.g. `nft:Strength`)
-            - `page` and `size`: Controls pagination
-            - `direction`: Either `asc` or `desc`
+            Filter by `status` or `endorser` and sort with `sortBy`: `validatorTvl`, `totalTvl`,
+            `blockProbability` or `delegatorTvl`.
             """,
         deprecated = true,
     )
@@ -78,18 +69,18 @@ open class ValidatorController(private val service: ValidatorService) {
         deprecated = true,
         schema = Schema(type = "string", pattern = Address.REGEX),
     )
-    @AddressParameter(name = "endorser", description = "Filter by endorser address")
+    @AddressParameter(name = "endorser", description = "Endorser address.")
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "status",
         schema = Schema(type = "array", implementation = Status::class),
-        description = "Filter by one or more validator statuses",
+        description = "Only these statuses.",
         required = false,
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "sortBy",
-        description = "The sort by field",
+        description = "Field to sort by.",
         required = false,
         schema =
             Schema(
@@ -142,25 +133,24 @@ open class ValidatorController(private val service: ValidatorService) {
 
     @GetMapping("/block-rewards")
     @Operation(
-        summary = "Get paginated validator block reward records",
+        summary = "List validator block rewards",
         description =
-            "Returns a paginated list of validator block reward and performance records. " +
-                "You can filter by validator address and/or block status (VALIDATED or MISSED). " +
-                "Results are sorted by block number (default: descending).",
+            "Block rewards and performance per validator, newest block first by default. " +
+                "Filter by validator, or by status: VALIDATED or MISSED.",
     )
-    @AddressParameter(name = "validator", description = "Optional validator address to filter by")
+    @AddressParameter(name = "validator", description = "Only this validator.")
     @BlockNumberParameter(
         `in` = ParameterIn.QUERY,
         required = false,
         description =
-            "Filter results by block number. When direction is 'desc' (default), returns records at or before this block. " +
-                "When direction is 'asc', returns records at or after this block.",
+            "Start from this block: at or before it when `direction` is desc (default), at or" +
+                " after it when asc.",
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "status",
         schema = Schema(implementation = BlockStatus::class),
-        description = "Filter by block status - either VALIDATED or MISSED.",
+        description = "VALIDATED or MISSED.",
         required = false,
     )
     @PaginationParameters
@@ -180,17 +170,16 @@ open class ValidatorController(private val service: ValidatorService) {
 
     @GetMapping("/block-rewards/{blockNumber}")
     @Operation(
-        summary = "Get validator block records for a specific block number",
+        summary = "Get validator block rewards for one block",
         description =
-            "Returns all validator block reward records for a specific block number. " +
-                "You can optionally filter by validator address to narrow to a single record.",
+            "Every validator's reward record for one block. Pass `validator` for just one.",
     )
     @BlockNumberParameter(
         `in` = ParameterIn.PATH,
         required = true,
-        description = "The block number to look up.",
+        description = "Block number.",
     )
-    @AddressParameter(name = "validator", description = "Optional validator address to filter by")
+    @AddressParameter(name = "validator", description = "Only this validator.")
     @CommonApiResponses
     @CacheFor(CachePolicy.MINUTE)
     open fun getBlockByBlockNumber(
@@ -200,27 +189,26 @@ open class ValidatorController(private val service: ValidatorService) {
 
     @GetMapping("/blocks/historic/{validator}")
     @Operation(
-        summary = "Get historic VTHO rewards in a custom time range",
+        summary = "Get validator VTHO rewards over time",
         description =
-            "Returns a time series of VTHO rewards between the given timestamps. " +
-                "Granularity (hourly/daily/weekly/monthly) is automatically chosen based on the time range. " +
-                "For sampled ranges, the response includes the nearest records at or before the requested boundaries. " +
-                "You can filter by validator address.",
+            "VTHO rewards between two times. Point spacing (hourly, daily, weekly or monthly)" +
+                " depends on the length of the range, and the last point at or before each end is" +
+                " included. Pass a validator address for one validator.",
     )
     @AddressParameter(
         name = "validator",
         `in` = ParameterIn.PATH,
-        description = "Validator address",
+        description = "Validator address.",
         required = true,
     )
     @AfterParameter(
         name = "startTimestamp",
-        description = "Start timestamp in Unix seconds (inclusive)",
+        description = "Start time in Unix seconds, included.",
         required = true,
     )
     @BeforeParameter(
         name = "endTimestamp",
-        description = "End timestamp in Unix seconds (inclusive)",
+        description = "End time in Unix seconds, included.",
         required = true,
     )
     @CommonApiResponses
@@ -245,23 +233,24 @@ open class ValidatorController(private val service: ValidatorService) {
     @Deprecated("Use GET /api/v2/validators/slots")
     @GetMapping("/blocks/missed")
     @Operation(
-        summary = "Get missed blocks percentage for validators (deprecated)",
+        summary = "Get the share of blocks validators missed (deprecated)",
         description =
-            "**Deprecated:** Replaced by `GET /api/v2/validators/slots`. `missedPercentage` is " +
-                "`missedSlots / scheduledSlots * 100` over the window. `startBlock` is derived " +
-                "from `endBlock - days * 8640` (VeChain's ~10s block rate); `endBlock` is the " +
-                "current chain head. Only validators with at least one missed slot in the window " +
-                "appear in `validators`.",
+            """
+            **Deprecated:** use `GET /api/v2/validators/slots`.
+
+            The percentage of their scheduled block slots each validator missed over `timeframe`.
+            Only validators that missed at least one are listed.
+            """,
         deprecated = true,
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "timeframe",
         schema = Schema(implementation = MissedBlocksTimeframe::class),
-        description = "Time period to calculate missed blocks for",
+        description = "How far back to look.",
         required = true,
     )
-    @AddressParameter(name = "validator", description = "Optional validator address to filter by")
+    @AddressParameter(name = "validator", description = "Only this validator.")
     @CommonApiResponses
     @CacheFor(CachePolicy.TEN_MINUTES)
     open fun getMissedBlocksPercentage(
