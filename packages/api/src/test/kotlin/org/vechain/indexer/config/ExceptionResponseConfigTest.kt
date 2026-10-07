@@ -107,7 +107,7 @@ internal class ExceptionResponseConfigTest : ExceptionResponseConfig() {
         }
         expect {
             that(
-                    handleWindowNotIndexed(servlet, WindowNotIndexedException(null, null))
+                    handleWindowNotIndexed(servlet, WindowNotIndexedException(1, null))
                         .headers
                         .getFirst("X-Indexed-Through")
                 )
