@@ -30,7 +30,7 @@ import org.vechain.indexer.validation.ValidNonNegativeLong
 import org.vechain.indexer.validation.ValidPageSize
 
 @Profile("wov-marketplace")
-@Tag(name = "WoV Marketplace", description = "World of V marketplace purchases, per buyer.")
+@Tag(name = "WoV Marketplace", description = "Marketplace purchases, per buyer.")
 @Validated
 @RestController
 @RequestMapping(WOV_PATH)
@@ -41,7 +41,7 @@ open class WovMarketplaceController(private val service: WovBuyerStatsService) {
         summary = "Buyers' items and spend per payment token over a window",
         description =
             """
-            Every address that completed a World of V marketplace purchase in the half-open window
+            Every address that completed a marketplace purchase in the half-open window
             `[from, to)`, in address order, with the items bought and the spend per payment token.
             Spend is the sale price in the token's smallest unit; VET and wrapped VET (VVET) are
             reported separately. Lifetime totals are `from=0`.
