@@ -10,7 +10,7 @@ import org.vechain.indexer.accounts.TimeFrame
 @Parameter(
     name = "timeFrame",
     `in` = ParameterIn.QUERY,
-    description = "Time frame to query totals for (DAY, WEEK, MONTH, YEAR, ALL).",
+    description = "Period to total over: DAY, WEEK, MONTH, YEAR or ALL.",
     required = false,
     schema = Schema(implementation = TimeFrame::class),
 )

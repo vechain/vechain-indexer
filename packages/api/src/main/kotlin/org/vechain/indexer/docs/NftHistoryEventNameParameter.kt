@@ -15,7 +15,7 @@ import org.springframework.core.annotation.AliasFor
         ArraySchema(
             schema = Schema(type = "string", allowableValues = ["TRANSFER_NFT", "NFT_SALE"])
         ),
-    description = "Filter by NFT history event names. Defaults to TRANSFER_NFT and NFT_SALE.",
+    description = "Only these event types. Defaults to TRANSFER_NFT and NFT_SALE.",
     required = false,
 )
 annotation class NftHistoryEventNameParameter(

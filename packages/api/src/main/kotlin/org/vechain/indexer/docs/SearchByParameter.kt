@@ -17,8 +17,7 @@ import org.springframework.core.annotation.AliasFor
                 Schema(
                     type = "string",
                     allowableValues = ["to", "from", "origin", "gasPayer"],
-                    description =
-                        "Fields to search by. Defaults to ['to', 'from', 'origin'] if not provided.",
+                    description = "Address fields to match. Defaults to `to`, `from` and `origin`.",
                 )
         ),
     required = false,

@@ -21,13 +21,13 @@ import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validation.ValidProposalId
 
 @Profile("vevote")
-@Tag(name = "VeVote", description = "Indexer API for VeVote.")
+@Tag(name = "VeVote", description = "VeVote proposals and votes.")
 @Validated
 @RestController
 @RequestMapping(VEVOTE_PATH)
 open class VeVoteResultController(private val resultService: VeVoteResultsService) {
     @GetMapping("proposal/results")
-    @Operation(summary = "Returns a list of results on vote weight per support")
+    @Operation(summary = "Get the vote weight for each choice")
     @ProposalIdParameter
     @SupportParameter
     @CommonApiResponses

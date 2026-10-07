@@ -36,7 +36,7 @@ import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validation.ValidTokenId
 
 @Profile("nfts")
-@Tag(name = "NFT", description = "Query on chain NFTs")
+@Tag(name = "NFT", description = "NFTs.")
 @Validated
 @RestController
 @RequestMapping(NFTS_PATH)
@@ -47,17 +47,17 @@ open class NftController(
 
     @GetMapping
     @JsonView(Views.Public::class)
-    @Operation(summary = "Get all NFTs owned by an address")
+    @Operation(summary = "List the NFTs an address owns")
     @TokenIdParameter
     @AddressListParameter(
         name = "excludeCollections",
-        description = "The addresses of the collections to exclude. Max 20 collections.",
+        description = "Collections to leave out, up to 20.",
     )
     @CommonApiResponses
     @PaginationParameters
     @CacheFor(CachePolicy.MINUTE)
     open fun getOwnedNFTs(
-        @AddressParameter(required = true, description = "Address of the NFT owner")
+        @AddressParameter(required = true, description = "Owner address.")
         @ValidAddress
         @RequestParam
         address: Address,
@@ -85,10 +85,10 @@ open class NftController(
     }
 
     @GetMapping("/contracts")
-    @Operation(summary = "Get all contracts addresses by NFT owner")
+    @Operation(summary = "List the NFT collections an address owns from")
     @AddressListParameter(
         name = "excludeCollections",
-        description = "The addresses of the collections to exclude. Max 20 collections.",
+        description = "Collections to leave out, up to 20.",
     )
     @CommonApiResponses
     @PaginationParameters
@@ -112,10 +112,8 @@ open class NftController(
 
     @GetMapping("/history")
     @Operation(
-        summary = "Get NFT token history",
-        description =
-            "Retrieve NFT transfer and sale history for a specific contract and token ID. " +
-                "If eventName is omitted, the response includes both TRANSFER_NFT and NFT_SALE events.",
+        summary = "Get an NFT's history",
+        description = "Transfers and sales of one NFT. Without `eventName`, both are returned.",
     )
     @AddressParameter(name = "contractAddress", required = true)
     @TokenIdParameter(required = true)

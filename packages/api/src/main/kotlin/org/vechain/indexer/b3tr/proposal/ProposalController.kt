@@ -29,13 +29,16 @@ import org.vechain.indexer.validation.ValidProposalId
 import org.vechain.indexer.validation.ValidProposalStates
 
 @Profile("b3tr", "b3tr-proposal")
-@Tag(name = "B3TR - Governance Proposals", description = "Query voting data on VeBetterDAO.")
+@Tag(
+    name = "B3TR - Governance Proposals",
+    description = "VeBetterDAO proposals: results and comments.",
+)
 @Validated
 @RestController
 open class ProposalController(private val proposalService: ProposalService) {
 
     @GetMapping("$B3TR_PATH_V2/proposals/results")
-    @Operation(summary = "Get all proposal results paginated.")
+    @Operation(summary = "List proposal results")
     @CommonApiResponses
     @PaginationParameters
     @ProposalStatesParameter
@@ -55,7 +58,7 @@ open class ProposalController(private val proposalService: ProposalService) {
     }
 
     @GetMapping("$B3TR_PATH_V2/proposals/{proposalId}/results")
-    @Operation(summary = "Get the results of a proposal.")
+    @Operation(summary = "Get the results of a proposal")
     @ProposalIdParameter(required = true, `in` = ParameterIn.PATH)
     @CommonApiResponses
     @CacheFor(CachePolicy.TEN_MINUTES)
@@ -69,7 +72,7 @@ open class ProposalController(private val proposalService: ProposalService) {
     }
 
     @GetMapping("$B3TR_PATH/proposals/{proposalId}/results")
-    @Operation(summary = "Get the results of a proposal.")
+    @Operation(summary = "Get the results of a proposal (deprecated, use v2)")
     @ProposalIdParameter(required = true, `in` = ParameterIn.PATH)
     @CommonApiResponses
     @Deprecated("This api is deprecated in favour of the v2 endpoint.")
@@ -86,7 +89,7 @@ open class ProposalController(private val proposalService: ProposalService) {
     }
 
     @GetMapping("$B3TR_PATH/proposals/{proposalId}/comments")
-    @Operation(summary = "Get the comments for a proposal.")
+    @Operation(summary = "Get a proposal's comments")
     @ProposalIdParameter(required = true, `in` = ParameterIn.PATH)
     @SupportParameter
     @CommonApiResponses
@@ -105,7 +108,7 @@ open class ProposalController(private val proposalService: ProposalService) {
     }
 
     @GetMapping("$B3TR_PATH/users/{wallet}/proposals/comments")
-    @Operation(summary = "Get the comments made by a user on proposals.")
+    @Operation(summary = "Get a wallet's comments on proposals")
     @AddressParameter(name = "wallet", required = true, `in` = ParameterIn.PATH)
     @ProposalIdParameter
     @SupportParameter

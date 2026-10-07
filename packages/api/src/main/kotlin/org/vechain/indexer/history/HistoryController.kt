@@ -36,7 +36,7 @@ import org.vechain.indexer.validation.ValidSearchBy
 
 @RequestMapping(API_ROOT)
 @Profile("history")
-@Tag(name = "History", description = "Query on-chain event history")
+@Tag(name = "History", description = "Account activity history.")
 @Validated
 @RestController
 open class HistoryController(private val historyService: HistoryService) {
@@ -99,11 +99,7 @@ open class HistoryController(private val historyService: HistoryService) {
     @GetMapping("/v2/history/{account}")
     @Operation(
         summary = "Get account history",
-        description =
-            """
-            An account's history can gain an event at any block, so caches may serve a response
-            up to a minute old.
-            """,
+        description = "Results can be up to a minute old.",
     )
     @SearchByParameter
     @EventNameParameter

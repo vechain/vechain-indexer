@@ -14,7 +14,7 @@ import org.vechain.indexer.rest.CacheFor
 import org.vechain.indexer.rest.CachePolicy
 
 @Profile("blocks")
-@Tag(name = "Transactions", description = "Query on chain transactions")
+@Tag(name = "Transactions", description = "Transactions.")
 @Validated
 @RestController
 @RequestMapping(TRANSACTIONS_PATH)
@@ -24,15 +24,11 @@ open class TransactionCountController(
 
     @GetMapping("/count")
     @Operation(
-        summary = "Get cumulative transaction, clause, and reverted totals on VeChain",
+        summary = "Get total transactions and clauses on VeChain",
         description =
-            """
-            Returns the cumulative number of transactions, clauses, reverted transactions, and
-            reverted clauses observed on VeChain up to the most recently indexed block. Clause
-            totals are included because clauses are a property of transactions, and reverted totals
-            cover reverted transactions plus the clauses contained within those reverted
-            transactions.
-        """,
+            "Running totals of transactions and clauses on VeChain up to the newest indexed " +
+                "block, and how many of each reverted. Every clause in a reverted transaction " +
+                "counts as a reverted clause.",
     )
     @CommonApiResponses
     @CacheFor(CachePolicy.TEN_MINUTES)

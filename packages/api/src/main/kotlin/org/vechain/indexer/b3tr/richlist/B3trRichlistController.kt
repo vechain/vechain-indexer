@@ -27,7 +27,7 @@ import org.vechain.indexer.validation.ValidPageSize
 @Profile("b3tr", "b3tr-balance")
 @Tag(
     name = "B3TR - Richlist",
-    description = "Combined VOT3 and B3TR balance richlist and holder rank.",
+    description = "B3TR and VOT3 holder rankings.",
 )
 @Validated
 @RestController
@@ -36,13 +36,11 @@ open class B3trRichlistController(private val service: B3trRichlistService) {
 
     @GetMapping("richlist")
     @Operation(
-        summary = "Get B3TR richlist",
+        summary = "List the largest B3TR holders",
         description =
-            """
-            Returns the list of holders by balance descending, with cursor pagination.
-            Use scope=ALL (default) for combined VOT3+B3TR, scope=VOT3 or scope=B3TR for a single token.
-            B3TR held by the VOT3 contract is excluded when scope is B3TR or ALL.
-            """,
+            "Holders ranked by balance, largest first. `scope` picks what counts: `ALL` " +
+                "(default) adds VOT3 and B3TR together, `VOT3` or `B3TR` ranks one token. B3TR " +
+                "locked in the VOT3 contract is left out so it isn't counted twice.",
     )
     @CommonApiResponses
     @CursorPaginationParameters
@@ -56,18 +54,16 @@ open class B3trRichlistController(private val service: B3trRichlistService) {
 
     @GetMapping("richlist/{address}")
     @Operation(
-        summary = "Get B3TR rank for an address",
+        summary = "Get an address's B3TR rank",
         description =
-            """
-            Returns the address's rank, total holders, and top percentage for the chosen scope.
-            Use scope=ALL (default), scope=VOT3, or scope=B3TR.
-            """,
+            "An address's rank, the number of holders, and the top percentage it falls in. " +
+                "`scope` works as on the richlist.",
     )
     @AddressParameter(
         name = "address",
         `in` = ParameterIn.PATH,
         required = true,
-        description = "The address to get the rank for.",
+        description = "Holder address.",
     )
     @CommonApiResponses
     @CacheFor(CachePolicy.TEN_MINUTES)

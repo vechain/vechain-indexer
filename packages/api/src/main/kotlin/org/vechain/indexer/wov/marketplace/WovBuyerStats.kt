@@ -5,7 +5,7 @@ import org.vechain.indexer.thor.Address
 
 data class WovBuyerStats(
     @Schema(description = "The buyer's address.") val buyer: String,
-    @Schema(description = "Items bought in the window, over every payment token.")
+    @Schema(description = "Items bought between `from` and `to`, in any token.")
     val itemCount: Long,
     val spend: List<WovSpend>,
 ) {
@@ -39,7 +39,7 @@ data class WovSpend(
     val token: String?,
     @Schema(description = "VET, WoV or VVET; null for any other token.", nullable = true)
     val symbol: String?,
-    @Schema(description = "Items bought with this token in the window.") val items: Long,
-    @Schema(description = "Spend in the token's smallest unit (wei), as a decimal string.")
+    @Schema(description = "Items bought with this token.") val items: Long,
+    @Schema(description = "Amount spent in the token's smallest unit (wei), as a decimal string.")
     val amount: String,
 )

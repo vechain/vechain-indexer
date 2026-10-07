@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema
     `in` = ParameterIn.QUERY,
     name = "direction",
     schema = Schema(type = "string", allowableValues = ["ASC", "DESC"], defaultValue = "DESC"),
-    description = "The sort direction",
+    description = "Sort order.",
     required = false,
 )
 @Target(

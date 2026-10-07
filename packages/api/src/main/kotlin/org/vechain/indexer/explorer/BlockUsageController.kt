@@ -28,34 +28,26 @@ open class BlockUsageController(private val blockUsageService: BlockUsageService
 
     @GetMapping("/block-usage")
     @Operation(
-        summary = "Get block usage statistics for a timestamp range",
+        summary = "Get gas and transaction totals over time",
         description =
             """
-            Returns cumulative block usage statistics (gas usage, transaction counts, etc.) for a given timestamp range.
+            Gas used, transaction counts and other block totals over time, for charting.
 
-            The API automatically determines the appropriate data granularity based on the size of the time range:
-            - Range ≤ 4,000 seconds: Returns all blocks (~360 data points)
-            - Range ≤ 700,000 seconds: Returns hourly values (~168 data points)
-            - Range ≤ 6,000,000 seconds: Returns daily values (~60 data points)
-            - Range ≤ 35,000,000 seconds: Returns weekly values (~52 data points)
-            - Range > 35,000,000 seconds: Returns monthly values
+            Point spacing depends on the length of the range:
 
-            For sampled ranges, the response also includes the nearest records at or before the requested
-            boundaries so cumulative charts remain continuous even when the sampled points are sparse.
+            - up to 4,000 seconds (about an hour): every block
+            - up to 700,000 seconds (about 8 days): hourly
+            - up to 6,000,000 seconds (about 69 days): daily
+            - up to 35,000,000 seconds (about 13 months): weekly
+            - longer: monthly
 
-            Values are represented as a monotonic cumulative counter which means the values increase over time. This is
-            a semantic used by Grafana for example. It requires some processing on the client side to convert to a value
-            for a given block.
-            
-            For example to get the gasUsed at block n you would need to do:
-            
-                gasUsedAtBlockN = gasUsedAtBlockN - gasUsedAtBlock(n-1)
-                
-            In the case where we return hourly/daily/weekly/monthly values only you can calculate an average over the
-            block range. If the first record in the returned data is at block n and the next record is at block n + k:
+            Each value is a running total since the start of the chain, so subtract one point from
+            the next to get the amount in between. Divide that by the number of blocks between the
+            points for a per-block average.
 
-                averageGasUsedPerBlock = (gasUsedAtBlock(n+k) - gasUsedAtBlockN) / k
-        """,
+            The response also includes the last point at or before each end of the range, so a chart
+            line reaches both edges.
+            """,
     )
     @AfterParameter(name = "startTimestamp", required = true)
     @BeforeParameter(name = "endTimestamp", required = true)

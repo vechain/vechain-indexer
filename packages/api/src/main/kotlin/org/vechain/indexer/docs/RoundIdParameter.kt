@@ -10,7 +10,7 @@ import org.springframework.core.annotation.AliasFor
 @Parameter(
     name = "roundId",
     schema = Schema(type = "integer", format = "int32", minimum = "0", maximum = "2147483647"),
-    description = "Round ID to filter by.",
+    description = "Allocation round ID.",
 )
 annotation class RoundIdParameter(
     @get:AliasFor(annotation = Parameter::class, attribute = "in")

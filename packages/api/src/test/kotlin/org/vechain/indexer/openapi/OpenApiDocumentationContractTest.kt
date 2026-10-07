@@ -52,6 +52,7 @@ import org.vechain.indexer.vevote.VeVoteCommentReadRepository
 import org.vechain.indexer.vevote.VeVoteResultReadRepository
 import org.vechain.indexer.wov.marketplace.WovMarketplaceReadRepository
 import strikt.api.expectThat
+import strikt.assertions.isEmpty
 import strikt.assertions.isEqualTo
 import strikt.assertions.isFalse
 import strikt.assertions.isNotNull
@@ -302,6 +303,18 @@ class OpenApiDocumentationContractTest {
         expectThat(findParameter(parameters, "size", "query").isMissingNode).isFalse()
         expectThat(parameters.firstOrNull { it.path("name").asText() == "direction" } == null)
             .isTrue()
+    }
+
+    @Test
+    fun `operation descriptions reach the spec unindented, so Markdown renders them as prose`() {
+        val indented =
+            fetchSpec()
+                .path("paths")
+                .flatMap { path -> path.toList() }
+                .map { it.path("description").asText() }
+                .filter { description -> description.lines().any { it.startsWith("    ") } }
+
+        expectThat(indented).isEmpty()
     }
 
     private fun specParameters(pointer: String): JsonNode = fetchSpec().at(pointer)

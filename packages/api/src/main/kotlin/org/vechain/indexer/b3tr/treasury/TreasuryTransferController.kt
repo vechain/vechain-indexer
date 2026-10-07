@@ -27,7 +27,7 @@ import org.vechain.indexer.validation.ValidNonNegativeLong
 import org.vechain.indexer.validation.ValidPageSize
 
 @Profile("b3tr")
-@Tag(name = "B3TR Treasury", description = "Treasury B3TR transfers with categories")
+@Tag(name = "B3TR Treasury", description = "B3TR moving in and out of the VeBetterDAO treasury.")
 @Validated
 @RestController
 @RequestMapping(TREASURY_PATH)
@@ -38,15 +38,15 @@ open class TreasuryTransferController(
     @GetMapping("/transfers")
     @Operation(
         summary = "Get treasury B3TR transfers",
-        description = "Returns B3TR token transfers to/from the treasury, classified by category.",
+        description = "B3TR transfers to and from the treasury, each labelled with a category.",
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "category",
         schema = Schema(enumAsRef = true, implementation = TreasuryTransferCategory::class),
         description =
-            "Filter by category: emission, surplus, gm_upgrade, grant, out, other. " +
-                "If omitted, returns all.",
+            "Only this category: emission, surplus, gm_upgrade, grant, out or other. Omit for" +
+                " all.",
     )
     @AfterParameter
     @BeforeParameter

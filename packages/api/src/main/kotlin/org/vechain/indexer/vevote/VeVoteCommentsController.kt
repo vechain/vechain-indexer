@@ -23,15 +23,15 @@ import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validation.ValidProposalId
 
 @Profile("vevote")
-@Tag(name = "VeVote", description = "Indexer API for VeVote.")
+@Tag(name = "VeVote", description = "VeVote proposals and votes.")
 @Validated
 @RestController
 @RequestMapping(VEVOTE_PATH)
 open class VeVoteCommentsController(private val vevoteService: VeVoteService) {
     @GetMapping("proposals/comments")
-    @Operation(summary = "Get comments for a proposal.")
+    @Operation(summary = "Get a proposal's comments")
     @ProposalIdParameter
-    @AddressParameter(name = "voter", description = "Voter address to filter by.")
+    @AddressParameter(name = "voter", description = "Voter address.")
     @SupportParameter
     @CommonApiResponses
     @PaginationParameters

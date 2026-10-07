@@ -11,7 +11,7 @@ import org.vechain.indexer.validation.ISODateString
 @Parameter(
     name = "startDate",
     schema = Schema(type = "string", format = "date", pattern = ISODateString.REGEX),
-    description = "A date to filter by. In UTC, format: yyyy-MM-dd.",
+    description = "Start date (UTC, yyyy-MM-dd).",
 )
 annotation class StartDateParameter(
     @get:AliasFor(annotation = Parameter::class, attribute = "in")

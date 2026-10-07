@@ -18,7 +18,8 @@ data class ExceptionResponse(
         example = "The provided address is invalid",
     )
     val message: String?,
-    @Schema(description = "Error type/category", example = "Bad Request") val error: String,
+    @Schema(description = "HTTP status name, such as Bad Request", example = "Bad Request")
+    val error: String,
     @Schema(description = "The API path that was requested", example = "/api/v1/transfers")
     val path: String,
     @Schema(description = "Unix timestamp when the error occurred", example = "1762352201")

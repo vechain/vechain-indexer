@@ -28,10 +28,10 @@ import org.springframework.core.annotation.AliasFor
                             "InDevelopment",
                             "Completed",
                         ],
-                    description = "ProposalState enum values (case-insensitive)",
+                    description = "A proposal state (any case)",
                 )
         ),
-    description = "Filter by proposal states.",
+    description = "Only proposals in these states.",
 )
 annotation class ProposalStatesParameter(
     @get:AliasFor(annotation = Parameter::class, attribute = "in")

@@ -34,7 +34,7 @@ import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validation.ValidSortField
 
 @Profile("b3tr", "b3tr-actions")
-@Tag(name = "B3TR - Action Leaderboards", description = "Leaderboards for B3TR Actions.")
+@Tag(name = "B3TR - Action Leaderboards", description = "Leaderboards for B3TR actions.")
 @Validated
 @RestController
 @RequestMapping(B3TR_PATH)
@@ -42,17 +42,10 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
 
     @GetMapping("actions/leaderboards/users")
     @Operation(
-        summary = "Get leaderboard of user's B3TR actions.",
+        summary = "Get the wallet leaderboard",
         description =
-            """
-            This endpoint retrieves the user leaderboard based on their B3TR actions.
-
-            - If roundId is provided, the leaderboard for the specific round is returned.
-            - If date is provided, the leaderboard for the specific date is returned.
-            - If neither roundId nor date are provided, the all-time leaderboard is returned.
-            - If both roundId and date are provided, a BadRequest error is returned.
-
-            """,
+            "Wallets ranked by their B3TR actions. Pass `roundId` for one allocation round or" +
+                " `date` for one day; omit both for all time. Passing both is a 400 error.",
     )
     @RoundIdParameter
     @SortByParameter(
@@ -80,17 +73,10 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
 
     @GetMapping("actions/leaderboards/apps")
     @Operation(
-        summary = "Get the app B3TR action leaderboard",
+        summary = "Get the app leaderboard",
         description =
-            """
-            This endpoint retrieves the app B3TR action leaderboard.
-            
-            - If roundId is provided, the leaderboard for the specific round is returned.
-            - If date is provided, the leaderboard for the specific date is returned.
-            - If neither roundId nor date are provided, the all-time leaderboard is returned.
-            - If both roundId and date are provided, a BadRequest error is returned.
-            
-            """,
+            "Apps ranked by their B3TR actions. Pass `roundId` for one allocation round or " +
+                "`date` for one day; omit both for all time. Passing both is a 400 error.",
     )
     @RoundIdParameter
     @DateParameter
@@ -119,17 +105,11 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
 
     @GetMapping("actions/leaderboards/apps/{appId}")
     @Operation(
-        summary = "Get the user B3TR action leaderboard for a given app",
+        summary = "Get the wallet leaderboard for one app",
         description =
-            """
-            This endpoint retrieves the user B3TR action leaderboard for a given app.
-            
-            - If roundId is provided, the leaderboard for the specific round is returned.
-            - If date is provided, the leaderboard for the specific date is returned.
-            - If neither roundId nor date are provided, the all-time leaderboard is returned.
-            - If both roundId and date are provided, a BadRequest error is returned.
-            
-            """,
+            "Wallets ranked by their B3TR actions in one app. Pass `roundId` for one " +
+                "allocation round or `date` for one day; omit both for all time. Passing both is " +
+                "a 400 error.",
     )
     @AppIdParameter(required = true, `in` = ParameterIn.PATH)
     @RoundIdParameter

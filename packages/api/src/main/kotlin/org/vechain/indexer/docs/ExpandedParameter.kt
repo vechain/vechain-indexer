@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema
     `in` = ParameterIn.QUERY,
     name = "expanded",
     schema = Schema(type = "boolean"),
-    description = "Whether to return the expanded model",
+    description = "Return full details instead of the summary.",
     required = false,
     example = "true",
 )
