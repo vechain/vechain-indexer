@@ -73,7 +73,7 @@ enabled_nets:
       cpu: 2048
       memory: 4096
       enabled: true
-      spring_profile: indexer,nfts,blocks,transfers,history,vevote,stargate,b3tr,explorer,validator,token-reward,accounts,vevote-historic,contracts,safe
+      spring_profile: indexer,nfts,blocks,transfers,history,vevote,stargate,b3tr,explorer,validator,token-reward,accounts,vevote-historic,contracts,safe,wov-marketplace
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       logging:
         app-log-level: "INFO"
@@ -105,6 +105,7 @@ enabled_nets:
         vtho-claimed: "22044000"
         stargate-staking: "22083535"
         safe: "24713855"
+        wov-marketplace: "11284825"
       sync-log-interval: "10"
       channel-batch-size: "5"
       checkpoint-save-interval-seconds: "5"
@@ -147,6 +148,7 @@ enabled_nets:
         accounts: "2"
         b3tr-balance: "7"
         safe: "1"
+        wov-marketplace: "1"
       business-event:
         substitutions:
           B3TR_CONTRACT: "0x5ef79995fe8a89e0812330e4378eb2660cede699"
@@ -266,6 +268,7 @@ enabled_nets:
         vtho-claimed: "23188260"
         stargate-staking: "23188723"
         safe: "24762886"
+        wov-marketplace: "0"
       sync-log-interval: "10"
       channel-batch-size: "5"
       checkpoint-save-interval-seconds: "5"
@@ -308,6 +311,7 @@ enabled_nets:
         accounts: "2"
         b3tr-balance: "7"
         safe: "1"
+        wov-marketplace: "1"
       business-event:
         substitutions:
           B3TR_CONTRACT: "0x95761346d18244bb91664181bf91193376197088"

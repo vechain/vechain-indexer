@@ -156,6 +156,7 @@ indexer:
     vtho-claimed: ${INDEXER_START_BLOCK_VTHO_CLAIMED:0}
     stargate-staking: ${INDEXER_START_BLOCK_STARGATE_STAKING:0}
     safe: ${INDEXER_START_BLOCK_SAFE:0}
+    wov-marketplace: ${INDEXER_START_BLOCK_WOV_MARKETPLACE:0}
   sync-log-interval: ${INDEXER_SYNC_LOG_INTERVAL:10}
   checkpoint:
     save-interval-seconds: ${INDEXER_CHECKPOINT_SAVE_INTERVAL_SECONDS:5}
@@ -204,12 +205,23 @@ indexer:
     accounts: ${VERSION_ACCOUNTS:1}
     b3tr-balance: ${VERSION_B3TR_BALANCE:1}
     safe: ${VERSION_SAFE:1}
+    wov-marketplace: ${VERSION_WOV_MARKETPLACE:1}
   healthcheck:
     inactive-threshold-syncing: ${HEALTHCHECK_INACTIVE_THRESHOLD_SYNCING:120}
     inactive-threshold-not-syncing: ${HEALTHCHECK_INACTIVE_THRESHOLD_NOT_SYNCING:600}
     report-interval-ms: ${HEALTHCHECK_REPORT_INTERVAL_MS:10000}
     # Liveness, not alerting: the container is killed once no indexer has moved for this long.
     stall-threshold-seconds: ${HEALTHCHECK_STALL_THRESHOLD_SECONDS:1800}
+  wov-marketplace:
+    # Mainnet only, one contract per sale mechanism: custodial, non-custodial, offers (current and
+    # the 2022 beta) and auctions (current and the 2022 beta).
+    contracts:
+      - "0xc3f851f9f78c92573620582bf9002f0c4a114b67"
+      - "0x058d4c951aa24ca012cef3408b259ac1c69d1258"
+      - "0xe56861c0bb8012ec955da4e4122895ed2a46d229"
+      - "0xd46ecaccb0bf0f34c3cee0c250dd48afaa2d2a6d"
+      - "0xe01cb06168f52b40fc60d5ce218346361a75efe7"
+      - "0x601048039c5e7617c890445d9bfe795533ceec4d"
   vevote:
     test-proposals:
       "0xa6416a72f816d3a69f33d0814700545c8e3fe4be": [ 33, 32, 30, 29, 28, 27, 26, 24, 23, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 8, 7, 5, 2 ]
