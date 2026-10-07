@@ -23,8 +23,8 @@ import org.vechain.indexer.exception.ExceptionResponse
 import org.vechain.indexer.exception.WindowNotIndexedException
 import org.vechain.indexer.rest.CacheFor
 import org.vechain.indexer.rest.CachePolicy
+import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.cachedByAge
-import org.vechain.indexer.rest.cachedFor
 import org.vechain.indexer.validation.ValidCursor
 import org.vechain.indexer.validation.ValidNonNegativeLong
 import org.vechain.indexer.validation.ValidPageSize
@@ -46,11 +46,9 @@ open class WovMarketplaceController(private val service: WovBuyerStatsService) {
             Spend is the sale price in the token's smallest unit; VET and wrapped VET (VVET) are
             reported separately. Lifetime totals are `from=0`.
 
-            - `to` omitted resolves to the newest indexed block's timestamp, which the response
-              reports as `to`. A `to` later than that is refused with 409 and an
+            - A `to` later than the newest indexed block's timestamp is refused with 409 and an
               `X-Indexed-Through` header, never answered in part.
-            - The cursor carries the window's `to`; pass the same `from` on every page, and either
-              omit `to` or repeat the cursor's.
+            - Pass the same `from` and `to` on every page; the cursor is refused for any other `to`.
             - Finality is the caller's concern: a window ending near the head can change on a reorg.
               For a reward cutoff, query once the finalized block is past `to`.
             """,
@@ -62,8 +60,8 @@ open class WovMarketplaceController(private val service: WovBuyerStatsService) {
     )
     @BeforeParameter(
         name = "to",
-        description =
-            "End of the window, exclusive (Unix time in seconds). Defaults to the indexed head.",
+        required = true,
+        description = "End of the window, exclusive (Unix time in seconds).",
     )
     @PaginationSize
     @Cursor
@@ -87,16 +85,12 @@ open class WovMarketplaceController(private val service: WovBuyerStatsService) {
                 )
             ],
     )
-    @CacheFor(CachePolicy.MINUTE)
+    @CacheFor(CachePolicy.VOLATILE)
     open fun getBuyers(
         @ValidNonNegativeLong @RequestParam from: Long,
-        @ValidNonNegativeLong @RequestParam(required = false) to: Long?,
+        @ValidNonNegativeLong @RequestParam to: Long,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @ValidCursor @RequestParam(required = false) cursor: String?,
-    ): ResponseEntity<WovBuyerStatsResponse> {
-        val page = service.buyers(from, to, size, cursor)
-        // A window the caller fixed is settled for as long as it has been closed.
-        return if (to != null || cursor != null) cachedByAge(page.to, page)
-        else cachedFor(CachePolicy.MINUTE, page)
-    }
+    ): ResponseEntity<PaginatedResponse<WovBuyerStats>> =
+        cachedByAge(to, service.buyers(from, to, size, cursor))
 }

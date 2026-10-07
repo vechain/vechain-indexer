@@ -5,7 +5,8 @@ import org.springframework.stereotype.Service
 import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.exception.WindowNotIndexedException
-import org.vechain.indexer.rest.PaginationDetail
+import org.vechain.indexer.rest.PaginatedResponse
+import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.utils.CursorPaginationUtils
@@ -15,40 +16,34 @@ import org.vechain.indexer.utils.CursorPaginationUtils
 @Service
 open class WovBuyerStatsService(private val repository: WovMarketplaceReadRepository) {
 
-    /**
-     * [to] falls back to the cursor's window end, then to the indexed-through timestamp; a window
-     * past that is refused rather than answered in part. The cursor carries the end so every page
-     * of a live request sees the same window.
-     */
-    open fun buyers(from: Long, to: Long?, size: Int?, cursor: String?): WovBuyerStatsResponse {
+    /** A window past the indexed head is refused, never answered in part. */
+    open fun buyers(
+        from: Long,
+        to: Long,
+        size: Int?,
+        cursor: String?,
+    ): PaginatedResponse<WovBuyerStats> {
         val position = CursorPaginationUtils.parseCursor(cursor)
         val cursorTo = position?.let { it.sortValue.toLongOrNull() ?: throw invalidCursor() }
         val after = position?.cursorValue?.let(::cursorAddress)
-        if (to != null && cursorTo != null && to != cursorTo) {
+        if (cursorTo != null && to != cursorTo) {
             throw BadRequestException("to=$to disagrees with the cursor's window end $cursorTo")
         }
+        if (from >= to) throw BadRequestException("from=$from must be before to=$to")
         val indexedThrough = repository.indexedThrough()
-        val end = to ?: cursorTo ?: indexedThrough ?: throw WindowNotIndexedException(null, null)
-        if (from >= end) throw BadRequestException("from=$from must be before to=$end")
-        if (indexedThrough == null || end > indexedThrough) {
-            throw WindowNotIndexedException(end, indexedThrough)
+        if (indexedThrough == null || to > indexedThrough) {
+            throw WindowNotIndexedException(to, indexedThrough)
         }
 
         val pageSize = size ?: DEFAULT_PAGE_SIZE
-        val rows = repository.buyers(from, end, after, pageSize + 1)
+        val rows = repository.buyers(from, to, after, pageSize + 1)
         val page = rows.take(pageSize)
         val hasNext = rows.size > pageSize
-        return WovBuyerStatsResponse(
-            from = from,
-            to = end,
+        return paginatedResponse(
             data = page.map(WovBuyerStats::from),
-            pagination =
-                PaginationDetail(
-                    hasNext = hasNext,
-                    cursor =
-                        if (hasNext) CursorPaginationUtils.generateCursor(end, page.last().buyer)
-                        else null,
-                ),
+            hasNext = hasNext,
+            cursor =
+                if (hasNext) CursorPaginationUtils.generateCursor(to, page.last().buyer) else null,
         )
     }
 

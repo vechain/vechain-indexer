@@ -36,9 +36,9 @@ internal class WovBuyerStatsServiceTest {
     }
 
     @Test
-    fun `a window must start before it ends, whether its end is given or resolved`() {
+    fun `a window must start before it ends`() {
         assertThrows(BadRequestException::class.java) { service.buyers(300, 300, null, null) }
-        assertThrows(BadRequestException::class.java) { service.buyers(500, null, null, null) }
+        assertThrows(BadRequestException::class.java) { service.buyers(301, 300, null, null) }
         verify(exactly = 0) { repository.buyers(any(), any(), any(), any()) }
     }
 
@@ -54,36 +54,30 @@ internal class WovBuyerStatsServiceTest {
 
         every { repository.indexedThrough() } returns null
         val empty =
-            assertThrows(WindowNotIndexedException::class.java) {
-                service.buyers(0, null, null, null)
-            }
+            assertThrows(WindowNotIndexedException::class.java) { service.buyers(0, 1, null, null) }
         assertNull(empty.indexedThrough)
         assertEquals("nothing is indexed yet", empty.message)
-        assertThrows(WindowNotIndexedException::class.java) { service.buyers(0, 1, null, null) }
     }
 
     @Test
-    fun `an omitted end resolves to the indexed head, which the response and the cursor carry`() {
+    fun `a window ending at the indexed head is answered, and the cursor carries its end`() {
         every { repository.buyers(0, 500, null, 3) } returns
             listOf(window(1, spend(vet, 1, 10)), window(2, spend(vet, 1, 10)), window(3))
 
-        val page = service.buyers(0, null, 2, null)
+        val page = service.buyers(0, 500, 2, null)
 
-        assertEquals(0L, page.from)
-        assertEquals(500L, page.to)
         assertEquals(listOf(buyer(1), buyer(2)), page.data.map { it.buyer })
         assertTrue(page.pagination.hasNext)
         assertEquals("500|${buyer(2)}", page.pagination.cursor)
     }
 
     @Test
-    fun `a cursor fixes the window's end and resumes after its address`() {
+    fun `a cursor resumes after its address, only for the window end it carries`() {
         every { repository.buyers(0, 400, buyer(2), 21) } returns
             listOf(window(3, spend(wov, 2, 5)))
 
-        val page = service.buyers(0, null, null, "400|${buyer(2).uppercase().replace("0X", "0x")}")
+        val page = service.buyers(0, 400, null, "400|${buyer(2).uppercase().replace("0X", "0x")}")
 
-        assertEquals(400L, page.to)
         assertEquals(listOf(buyer(3)), page.data.map { it.buyer })
         assertFalse(page.pagination.hasNext)
         assertNull(page.pagination.cursor)
@@ -91,11 +85,9 @@ internal class WovBuyerStatsServiceTest {
         assertThrows(BadRequestException::class.java) {
             service.buyers(0, 401, null, "400|${buyer(2)}")
         }
+        assertThrows(BadRequestException::class.java) { service.buyers(0, 400, null, "400|nobody") }
         assertThrows(BadRequestException::class.java) {
-            service.buyers(0, null, null, "400|nobody")
-        }
-        assertThrows(BadRequestException::class.java) {
-            service.buyers(0, null, null, "4.5|${buyer(2)}")
+            service.buyers(0, 400, null, "4.5|${buyer(2)}")
         }
     }
 
