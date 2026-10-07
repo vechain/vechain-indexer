@@ -25,7 +25,7 @@ import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidNonNegativeLong
 
 @Profile("accounts")
-@Tag(name = "Accounts", description = "VeChain Thor Accounts")
+@Tag(name = "Accounts", description = "Account balances.")
 @Validated
 @RestController
 @RequestMapping(ACCOUNTS_PATH)
@@ -36,7 +36,7 @@ open class VetBalanceController(private val vetBalanceService: VetBalanceService
         name = "address",
         `in` = ParameterIn.PATH,
         required = true,
-        description = "The address to retrieve the VET balance history for.",
+        description = "Account address.",
     )
     @AfterParameter(name = "startTimestamp", required = true)
     @BeforeParameter(name = "endTimestamp", required = true)

@@ -7,7 +7,7 @@ import org.springframework.core.annotation.AliasFor
 
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)
-@Parameter(name = "sortBy", description = "The sort by field")
+@Parameter(name = "sortBy", description = "Field to sort by.")
 annotation class SortByParameter(
     @get:AliasFor(annotation = Parameter::class, attribute = "schema")
     val schema: Schema = Schema(type = "string", allowableValues = []),

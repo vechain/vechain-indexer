@@ -11,7 +11,7 @@ import org.vechain.indexer.transaction.TransactionUtils
     `in` = ParameterIn.PATH,
     name = "txId",
     schema = Schema(type = "string", pattern = TransactionUtils.REGEX),
-    description = "A valid transaction ID",
+    description = "Transaction ID.",
     required = true,
     example = "0xacc8566c931235a43a775120d48680278d42fa12111aa3c4d4e3a7e8cfcd360a",
 )

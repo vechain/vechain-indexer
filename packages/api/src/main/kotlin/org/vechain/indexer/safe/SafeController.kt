@@ -26,7 +26,7 @@ import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
 
 @Profile("safe")
-@Tag(name = "Safe", description = "Safe multisig membership, proposals, and transaction state")
+@Tag(name = "Safe", description = "Safe multisig wallets: owners, proposals and approvals.")
 @Validated
 @RestController
 @RequestMapping(API_ROOT)
@@ -36,17 +36,15 @@ open class SafeController(private val safeService: SafeService) {
     @Operation(
         summary = "List Safes for an owner",
         description =
-            """
-            Returns the Safes that the supplied address is — or has been — an owner of.
-            Use `membership=ALL` (default) for both current and past, `CURRENT` for only active
-            ownerships, and `PAST` for ownerships that have been revoked.
-            """,
+            "Safes the address owns or used to own. `membership` narrows this: `ALL` " +
+                "(default) for both, `CURRENT` for Safes it owns now, `PAST` for Safes it was " +
+                "removed from.",
     )
     @AddressParameter(
         name = "address",
         `in` = ParameterIn.PATH,
         required = true,
-        description = "The address whose Safe memberships should be returned.",
+        description = "Owner address.",
     )
     @CommonApiResponses
     @PaginationParameters
@@ -66,17 +64,14 @@ open class SafeController(private val safeService: SafeService) {
     @Operation(
         summary = "List proposed transactions for a Safe",
         description =
-            """
-            Returns Safe transactions proposed via the SafeEmitter contract, paginated and sorted
-            newest-first by default. Per-transaction approval / execution status is available from
-            `/safes/{safe}/transactions/{txHash}/state`.
-            """,
+            "Transactions proposed for this Safe, newest first. For a transaction's approvals" +
+                " and whether it ran, use `/safes/{safe}/transactions/{txHash}/state`.",
     )
     @AddressParameter(
         name = "safe",
         `in` = ParameterIn.PATH,
         required = true,
-        description = "The Safe contract address.",
+        description = "Safe address.",
     )
     @CommonApiResponses
     @PaginationParameters
@@ -95,17 +90,14 @@ open class SafeController(private val safeService: SafeService) {
     @Operation(
         summary = "Get Safe transaction state",
         description =
-            """
-            Returns the aggregated state for a single Safe transaction (approvers, executor, and
-            execution status). Returns an empty document with no approvers when the Safe has not
-            seen the txHash yet, so the dapp does not need to fall back to RPC for unknown hashes.
-            """,
+            "Who approved a Safe transaction, who executed it, and whether it ran. A `txHash`" +
+                " the Safe hasn't seen returns an empty result with no approvers, not an error.",
     )
     @AddressParameter(
         name = "safe",
         `in` = ParameterIn.PATH,
         required = true,
-        description = "The Safe contract address.",
+        description = "Safe address.",
     )
     @CommonApiResponses
     @CacheFor(CachePolicy.VOLATILE)

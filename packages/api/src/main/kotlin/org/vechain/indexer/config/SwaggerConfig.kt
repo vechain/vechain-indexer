@@ -74,6 +74,18 @@ open class SwaggerConfig {
         }
     }
 
+    /** Raw-string descriptions keep their source indent, which Markdown renders as code. */
+    @Bean
+    open fun trimDescriptionIndentCustomizer(): OpenApiCustomizer = OpenApiCustomizer { openApi ->
+        openApi.paths
+            .orEmpty()
+            .values
+            .flatMap { it.readOperations() }
+            .forEach { operation ->
+                operation.description = operation.description?.trimIndent()
+            }
+    }
+
     @Bean
     open fun transactionExpandedOnlyFieldsCustomizer(): OpenApiCustomizer =
         OpenApiCustomizer { openApi ->

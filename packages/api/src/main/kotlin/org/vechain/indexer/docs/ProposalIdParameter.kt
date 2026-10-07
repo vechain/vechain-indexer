@@ -10,7 +10,7 @@ import org.vechain.indexer.proposal.ProposalId
 @Retention(AnnotationRetention.RUNTIME)
 @Parameter(
     name = "proposalId",
-    description = "Proposal ID to filter by.",
+    description = "Proposal ID.",
     schema = Schema(type = "string", pattern = ProposalId.REGEX),
     example = "83654019322420867938874773331484872860308892726218987071908233993897039987210",
 )

@@ -41,7 +41,7 @@ import org.vechain.indexer.validator.Validator
 import org.vechain.indexer.validator.ValidatorSlotStats
 
 @Profile("validator")
-@Tag(name = "Validator", description = "Query validator documents")
+@Tag(name = "Validator", description = "Validators.")
 @Validated
 @RestController
 @RequestMapping(VALIDATORS_PATH_V2)
@@ -53,22 +53,20 @@ open class ValidatorV2Controller(
 
     @GetMapping
     @Operation(
-        summary = "Get V2 validators with optional filters",
+        summary = "List validators",
         description =
-            "Returns validators from the V2 indexer. TVL / yield / NFT-yield fields require " +
-                "VET and VTHO USD prices from the vechain.energy `PriceFeedOracle`; if the " +
-                "oracle is unavailable the endpoint returns 503 rather than a half-populated " +
-                "response. `online` and `totalRewards` are not yet wired up — see " +
-                "`ValidatorV2Response` for the remaining formulas.",
+            "Validators with their stake, yield and status. TVL and yield need live VET and " +
+                "VTHO prices; if those are unavailable the request fails with 503 rather than " +
+                "returning partial data. `online` and `totalRewards` aren't filled in yet.",
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "status",
         schema = Schema(type = "array", implementation = Status::class),
-        description = "Filter by one or more validator statuses",
+        description = "Only these statuses.",
         required = false,
     )
-    @AddressParameter(name = "endorser", description = "Filter by endorser address")
+    @AddressParameter(name = "endorser", description = "Endorser address.")
     @CommonApiResponses
     @PriceOracleUnavailableResponse
     @PaginationParameters
@@ -108,23 +106,29 @@ open class ValidatorV2Controller(
 
     @GetMapping("/slots")
     @Operation(
-        summary = "Get per-validator slot accounting over a time range",
+        summary = "Get every validator's block production over a time range",
         description =
-            "Returns each validator's slot accounting across the requested timestamp window " +
-                "(inclusive, Unix seconds), least uptime first. `missedSlotRatio = missedSlots / " +
-                "(proposedBlocks + missedSlots)`. `uptimeRatio` is the share of the window the " +
-                "validator was not offline: thor stops scheduling a validator after one missed " +
-                "slot, so it is offline from that miss until it next signs or exits. Validators " +
-                "with no scheduled slots in the window appear only if they were offline during it.",
+            """
+            How each validator did at producing blocks between `startTimestamp` and `endTimestamp`
+            (Unix seconds, both included), lowest uptime first.
+
+            - `missedSlotRatio`: the share of its scheduled slots it missed
+            - `uptimeRatio`: the share of the time it was online. Thor stops scheduling a
+              validator once it misses a slot, so it counts as offline from then until it next
+              produces a block or exits.
+
+            Validators with no scheduled slots are listed only if they were offline during the
+            range.
+            """,
     )
     @AfterParameter(
         name = "startTimestamp",
-        description = "Start timestamp in Unix seconds (inclusive)",
+        description = "Start time in Unix seconds, included.",
         required = true,
     )
     @BeforeParameter(
         name = "endTimestamp",
-        description = "End timestamp in Unix seconds (inclusive)",
+        description = "End time in Unix seconds, included.",
         required = true,
     )
     @CommonApiResponses
@@ -137,27 +141,25 @@ open class ValidatorV2Controller(
 
     @GetMapping("/{validatorId}/slots")
     @Operation(
-        summary = "Get a single validator's slot accounting over a time range",
+        summary = "Get one validator's block production over a time range",
         description =
-            "Returns one validator's slot accounting across the requested timestamp window " +
-                "(inclusive, Unix seconds); `uptimeRatio` is defined as on `/slots`. Returns " +
-                "zeroed counts and full uptime when the validator had no scheduled slots in the " +
-                "window and was not offline during it.",
+            "The same figures as `/slots`, for one validator. A validator with no scheduled " +
+                "slots and no downtime in the range gets zero counts and full uptime.",
     )
     @AddressParameter(
         name = "validatorId",
         `in` = ParameterIn.PATH,
-        description = "Validator address",
+        description = "Validator address.",
         required = true,
     )
     @AfterParameter(
         name = "startTimestamp",
-        description = "Start timestamp in Unix seconds (inclusive)",
+        description = "Start time in Unix seconds, included.",
         required = true,
     )
     @BeforeParameter(
         name = "endTimestamp",
-        description = "End timestamp in Unix seconds (inclusive)",
+        description = "End time in Unix seconds, included.",
         required = true,
     )
     @CommonApiResponses
@@ -182,13 +184,13 @@ open class ValidatorV2Controller(
 
     @GetMapping("/{validatorId}")
     @Operation(
-        summary = "Get a single V2 validator by ID",
-        description = "Returns one validator's V2 stats by their address.",
+        summary = "Get a validator",
+        description = "One validator's stake, yield and status.",
     )
     @AddressParameter(
         name = "validatorId",
         `in` = ParameterIn.PATH,
-        description = "Validator address",
+        description = "Validator address.",
         required = true,
     )
     @CommonApiResponses

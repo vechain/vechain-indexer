@@ -13,7 +13,7 @@ import org.vechain.indexer.exception.ExceptionResponse
             ApiResponse(responseCode = "200", description = "Success"),
             ApiResponse(
                 responseCode = "400",
-                description = "Validation errors occurred, eg: invalid input",
+                description = "Invalid request, such as a malformed parameter",
                 content =
                     [
                         Content(
@@ -28,7 +28,7 @@ import org.vechain.indexer.exception.ExceptionResponse
             ),
             ApiResponse(
                 responseCode = "403",
-                description = "Access to the requested resource is forbidden",
+                description = "Forbidden",
                 content =
                     [
                         Content(mediaType = "application/json", schema = Schema(type = "string")),
@@ -40,7 +40,7 @@ import org.vechain.indexer.exception.ExceptionResponse
             ),
             ApiResponse(
                 responseCode = "404",
-                description = "Requested resource was not found",
+                description = "Not found",
                 content =
                     [
                         Content(
@@ -55,7 +55,7 @@ import org.vechain.indexer.exception.ExceptionResponse
             ),
             ApiResponse(
                 responseCode = "500",
-                description = "Service not available",
+                description = "Temporarily unavailable; try again shortly",
                 content =
                     [
                         Content(

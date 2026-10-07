@@ -33,7 +33,7 @@ import org.vechain.indexer.validation.ValidCursor
 import org.vechain.indexer.validation.ValidPageSize
 
 @Profile("blocks")
-@Tag(name = "Transactions", description = "Query on chain transactions")
+@Tag(name = "Transactions", description = "Transactions.")
 @Validated
 @RestController
 @RequestMapping(TRANSACTIONS_PATH)
@@ -41,13 +41,10 @@ open class TransactionController(private val transactionService: TransactionServ
 
     @GetMapping("/latest")
     @Operation(
-        summary = "Get latest transactions",
+        summary = "List the latest transactions",
         description =
-            """
-            Returns latest transactions by block number descending and canonical transaction order
-            within each block. The head of the chain moves every block, so shared caches may serve
-            a response up to one block old.
-            """,
+            "The latest transactions, newest block first and in on-chain order within a " +
+                "block. Results can be one block (about 10 seconds) old.",
     )
     @CommonApiResponses
     @ExpandedParameter
@@ -61,16 +58,7 @@ open class TransactionController(private val transactionService: TransactionServ
     ): PaginatedResponse<IndexedTransaction> = transactionService.findLatest(size, cursor, expanded)
 
     @GetMapping("{txId}")
-    @Operation(
-        summary = "Get transaction by ID",
-        description =
-            """
-            A confirmed transaction never changes, so the response is cacheable for as long as it
-            has already been settled: `Cache-Control` grants the age of the containing block,
-            capped at a year. A transaction from moments ago is therefore barely cached, and a
-            reorg can only serve a dropped transaction for as long as it had been on chain.
-            """,
-    )
+    @Operation(summary = "Get a transaction")
     @TransactionIdParameter
     @CommonApiResponses
     @ExpandedParameter
@@ -86,11 +74,11 @@ open class TransactionController(private val transactionService: TransactionServ
     }
 
     @GetMapping
-    @Operation(summary = "Get all transactions by an origin or delegator address")
+    @Operation(summary = "List transactions sent or sponsored by an address")
     @AddressParameter(
         name = "origin",
         required = true,
-        description = "Address of the transaction origin",
+        description = "Sender address.",
     )
     @IncludeDelegatedParameter
     @CommonApiResponses
@@ -116,7 +104,7 @@ open class TransactionController(private val transactionService: TransactionServ
     }
 
     @GetMapping("/delegated")
-    @Operation(summary = "Get all delegated transactions by a delegator address")
+    @Operation(summary = "List transactions an address sponsored")
     @AddressParameter(name = "delegator", required = true)
     @CommonApiResponses
     @ExpandedParameter
@@ -140,12 +128,8 @@ open class TransactionController(private val transactionService: TransactionServ
 
     @GetMapping("/contract")
     @Operation(
-        summary = "Get all transactions for a contract address",
-        description =
-            """
-            A new transaction can arrive for any contract at any block, so caches may serve a
-            response up to a minute old.
-            """,
+        summary = "List transactions that called a contract",
+        description = "Results can be up to a minute old.",
     )
     @AddressParameter(name = "contractAddress", required = true)
     @CommonApiResponses

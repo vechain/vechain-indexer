@@ -31,12 +31,12 @@ import org.vechain.indexer.validation.ValidPageSize
 @RequestMapping(CONTRACTS_PATH)
 open class ContractsController(private val contractsService: ContractsService) {
     @GetMapping("/{address}")
-    @Operation(summary = "Retrieve a contract by address")
+    @Operation(summary = "Get a contract")
     @AddressParameter(
         name = "address",
         `in` = ParameterIn.PATH,
         required = true,
-        description = "The address of the contract to retrieve.",
+        description = "Contract address.",
     )
     @CommonApiResponses
     @CacheFor(CachePolicy.DAILY)
@@ -45,12 +45,12 @@ open class ContractsController(private val contractsService: ContractsService) {
             ?: throw ResourceNotFoundException("Contract not found for address $address")
 
     @GetMapping("/by-master/{address}")
-    @Operation(summary = "Get contracts where address is master")
+    @Operation(summary = "List the contracts an address is master of")
     @AddressParameter(
         name = "address",
         `in` = ParameterIn.PATH,
         required = true,
-        description = "The address to query as master.",
+        description = "Master address.",
     )
     @CommonApiResponses
     @PaginationParameters

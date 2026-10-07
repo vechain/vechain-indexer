@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema
     `in` = ParameterIn.QUERY,
     name = "cursor",
     schema = Schema(type = "string"),
-    description = "The pagination cursor returned by a previous request.",
+    description = "The `pagination.cursor` from the previous page. Omit for the first page.",
     required = false,
 )
 @Target(
