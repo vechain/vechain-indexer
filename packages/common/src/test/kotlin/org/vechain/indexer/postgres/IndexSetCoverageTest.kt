@@ -249,6 +249,11 @@ class IndexSetCoverageTest {
                         "vote_pkey",
                         "vote_block_idx",
                     ),
+                // The seed of a buyer's running total and the terms a settlement looks up.
+                "wov_marketplace" to
+                    listOf("sale", "terms", "buyer_running").flatMap {
+                        listOf("${it}_pkey", "${it}_block_idx")
+                    } + listOf("buyer_pkey", "buyer_block_idx", "progress_pkey"),
             )
     }
 }

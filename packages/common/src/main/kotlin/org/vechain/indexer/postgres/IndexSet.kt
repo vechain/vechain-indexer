@@ -26,6 +26,7 @@ import org.vechain.indexer.validator.DelegationIndexes
 import org.vechain.indexer.validator.ValidatorIndexes
 import org.vechain.indexer.vevote.HistoricProposalsIndexes
 import org.vechain.indexer.vevote.VeVoteIndexes
+import org.vechain.indexer.wov.marketplace.WovMarketplaceIndexes
 
 /** An index by name; in [IndexSet.indexes] one only `packages/api` reads, dropped in a backfill. */
 data class DeferrableIndex(
@@ -74,5 +75,6 @@ object IndexSets {
             NftBlacklistIndexes.SET,
             VeVoteIndexes.SET,
             HistoricProposalsIndexes.SET,
+            WovMarketplaceIndexes.SET,
         )
 }
