@@ -17,7 +17,7 @@ data class WovBuyerStats(
                 spend =
                     window.spend.map {
                         WovSpend(
-                            it.paymentToken,
+                            it.paymentToken.takeUnless { it == Address.ZERO_ADDRESS },
                             SYMBOLS[it.paymentToken],
                             it.items,
                             it.spend.toString(),
@@ -35,8 +35,8 @@ data class WovBuyerStats(
 }
 
 data class WovSpend(
-    @Schema(description = "The payment token's contract; the zero address is native VET.")
-    val token: String,
+    @Schema(description = "The payment token's contract; null for VET.", nullable = true)
+    val token: String?,
     @Schema(description = "VET, WoV or VVET; null for any other token.", nullable = true)
     val symbol: String?,
     @Schema(description = "Items bought with this token.") val items: Long,
