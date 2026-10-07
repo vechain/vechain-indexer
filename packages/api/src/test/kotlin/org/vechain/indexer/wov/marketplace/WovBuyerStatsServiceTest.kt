@@ -108,7 +108,7 @@ internal class WovBuyerStatsServiceTest {
 
         assertEquals(5L, row.itemCount)
         assertEquals(listOf("VET", "WoV", "VVET", null), row.spend.map { it.symbol })
-        assertEquals(listOf(vet, wov, vvet, other), row.spend.map { it.token })
+        assertEquals(listOf(null, wov, vvet, other), row.spend.map { it.token })
         assertEquals(listOf("3000", "5", "7", "1"), row.spend.map { it.amount })
         assertEquals(listOf(2L, 1L, 1L, 1L), row.spend.map { it.items })
     }
