@@ -28,6 +28,7 @@ const val EXPLORER_PATH = "$API_PATH/explorer"
 const val ACCOUNTS_PATH = "$API_PATH/accounts"
 const val CONTRACTS_PATH = "$API_PATH/contracts"
 const val STATUS_PATH = "$API_PATH/status"
+const val WOV_PATH = "$API_PATH/wov"
 
 // PAGINATION DEFAULTS
 const val DEFAULT_PAGE_NUMBER = 0

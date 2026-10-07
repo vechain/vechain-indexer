@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatusCode
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.exception.InternalServerException
 import org.vechain.indexer.exception.PriceFeedUnavailableException
+import org.vechain.indexer.exception.WindowNotIndexedException
 import strikt.api.expect
 import strikt.assertions.isEqualTo
 import strikt.assertions.isNotNull
@@ -90,6 +91,27 @@ internal class ExceptionResponseConfigTest : ExceptionResponseConfig() {
             that(res.body?.error).isEqualTo("Service Unavailable")
             that(res.body?.id).isNotNull()
             that(res.body?.timestamp).isNotNull()
+        }
+    }
+
+    @Test
+    fun `WindowNotIndexedException maps to 409 with the indexed-through header, briefly cached`() {
+        val res = handleWindowNotIndexed(servlet, WindowNotIndexedException(501, 500))
+
+        expect {
+            that(res.statusCode).isEqualTo(HttpStatusCode.valueOf(409))
+            that(res.body?.message).isEqualTo("to=501 is beyond indexedThrough=500")
+            that(res.body?.error).isEqualTo("Conflict")
+            that(res.headers.getFirst("X-Indexed-Through")).isEqualTo("500")
+            that(res.headers.getFirst("Cache-Control")).isEqualTo("public, max-age=0, s-maxage=10")
+        }
+        expect {
+            that(
+                    handleWindowNotIndexed(servlet, WindowNotIndexedException(null, null))
+                        .headers
+                        .getFirst("X-Indexed-Through")
+                )
+                .isNull()
         }
     }
 

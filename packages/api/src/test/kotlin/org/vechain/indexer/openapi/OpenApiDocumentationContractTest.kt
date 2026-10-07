@@ -50,6 +50,7 @@ import org.vechain.indexer.validator.ValidatorReadRepository
 import org.vechain.indexer.vevote.HistoricProposalsReadRepository
 import org.vechain.indexer.vevote.VeVoteCommentReadRepository
 import org.vechain.indexer.vevote.VeVoteResultReadRepository
+import org.vechain.indexer.wov.marketplace.WovMarketplaceReadRepository
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 import strikt.assertions.isFalse
@@ -99,6 +100,7 @@ class OpenApiDocumentationContractTest {
     @MockitoBean private lateinit var navigatorReadRepository: NavigatorReadRepository
     @MockitoBean private lateinit var vevoteCommentReadRepository: VeVoteCommentReadRepository
     @MockitoBean private lateinit var vevoteResultReadRepository: VeVoteResultReadRepository
+    @MockitoBean private lateinit var wovMarketplaceReadRepository: WovMarketplaceReadRepository
 
     @Autowired private lateinit var mockMvc: MockMvc
     @Autowired private lateinit var objectMapper: ObjectMapper
