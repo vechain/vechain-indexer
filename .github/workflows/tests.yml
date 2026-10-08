@@ -19,7 +19,7 @@ concurrency:
 jobs:
   detect-code-changes:
     name: Detect Code Changes
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       run-tests: ${{ steps.filter.outputs.code_changed }}
     steps:
@@ -51,7 +51,7 @@ jobs:
 
   check-formatting:
     name: Check Formatting
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: detect-code-changes
     steps:
       - name: No formatting changes detected
@@ -83,7 +83,7 @@ jobs:
         package: [api, indexer, common]
       fail-fast: false
     name: Unit Tests (${{ matrix.package }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: detect-code-changes
     permissions:
       contents: read
@@ -142,7 +142,7 @@ jobs:
 
   result:
     name: Result
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [check-formatting, unit-tests, e2e-tests]
     if: always()
     steps:

@@ -23,7 +23,7 @@ env:
 jobs:
   guard:
     name: Shared Infra Guard
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       pull-requests: write
@@ -173,7 +173,7 @@ jobs:
     name: Shared Infra Plan
     needs: [guard, identify-live-color]
     if: needs.guard.outputs.vpc_changed == 'true' && needs.guard.outputs.plan_role == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       id-token: write
@@ -237,7 +237,7 @@ jobs:
     name: CloudFront Plan
     needs: guard
     if: needs.guard.outputs.cloudfront_changed == 'true' && needs.guard.outputs.plan_role == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       id-token: write

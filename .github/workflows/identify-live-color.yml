@@ -59,7 +59,7 @@ permissions:
 jobs:
   identify-live:
     name: "Identify Live/Dead Environments"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       mainnet_live_color: ${{ steps.define_color_vars.outputs.mainnet_live_color }}
       mainnet_dead_color: ${{ steps.define_color_vars.outputs.mainnet_dead_color }}

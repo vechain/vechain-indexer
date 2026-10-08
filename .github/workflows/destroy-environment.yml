@@ -28,7 +28,7 @@ jobs:
   destroy-lingering-resources:
     name: Destroy Lingering Resources
     needs: [identify-live-color]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       dead_color: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}
     steps:
@@ -80,7 +80,7 @@ jobs:
 
   destroy-environment:
     name: "Destroy Terraform Infrastructure"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [identify-live-color, destroy-lingering-resources]
     env:
       dead_color: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}

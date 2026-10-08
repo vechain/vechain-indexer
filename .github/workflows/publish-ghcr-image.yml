@@ -33,7 +33,7 @@ env:
 jobs:
   plan:
     name: Resolve content hashes
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       hashes: ${{ steps.plan.outputs.hashes }}
       build_matrix: ${{ steps.plan.outputs.build_matrix }}
@@ -103,7 +103,7 @@ jobs:
         platform: ["linux/amd64", "linux/arm64"]
         include:
           - platform: linux/amd64
-            runner: ubuntu-latest
+            runner: ubuntu-24.04
           - platform: linux/arm64
             runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
@@ -159,7 +159,7 @@ jobs:
 
   publish-content-tag:
     name: Publish content tag - ${{ matrix.packageName }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [plan, build]
     if: needs.plan.outputs.build_needed == 'true'
     strategy:
@@ -200,7 +200,7 @@ jobs:
 
   release-tags:
     name: Publish release tags - ${{ matrix.packageName }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [plan, publish-content-tag]
     # publish-content-tag is skipped both when nothing needed building and when
     # the build failed. Only the first may tag a release.

@@ -55,7 +55,7 @@ permissions:
 jobs:
   regression:
     name: Regression comparison
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - name: Checkout repository
@@ -138,7 +138,7 @@ jobs:
 
   sweep:
     name: Block window sweep
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     if: ${{ (inputs.sweep_windows == null && 6 || inputs.sweep_windows) != 0 }}
     steps:

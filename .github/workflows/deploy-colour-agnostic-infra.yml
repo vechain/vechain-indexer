@@ -35,7 +35,7 @@ permissions:
 jobs:
   deploy-vpc-route53:
     name: Deploy Terraform VPC Route53
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     # All callers funnel through this job, and queuing here re-resolves the
     # colours: identify-live-color runs inside the queued run, not before it.
