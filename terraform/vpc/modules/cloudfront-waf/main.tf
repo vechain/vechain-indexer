@@ -59,6 +59,13 @@ resource "aws_wafv2_web_acl" "this" {
     allow {}
   }
 
+  # Shaped like the API's own error body, minus the per-request fields WAF cannot fill.
+  custom_response_body {
+    key          = "rate-limited"
+    content_type = "APPLICATION_JSON"
+    content      = jsonencode({ status = 429, error = "Too Many Requests", message = "Rate limit exceeded. Retry later." })
+  }
+
   rule {
     name     = "Imperva-Imperva-IP-Reputation"
     priority = var.rule_priorities["imperva_ip_reputation"]
@@ -203,7 +210,17 @@ resource "aws_wafv2_web_acl" "this" {
     priority = var.rule_priorities["rate_based"]
 
     action {
-      block {}
+      block {
+        custom_response {
+          response_code            = 429
+          custom_response_body_key = "rate-limited"
+
+          response_header {
+            name  = "Retry-After"
+            value = "60"
+          }
+        }
+      }
     }
 
     statement {
@@ -315,7 +332,17 @@ resource "aws_wafv2_web_acl" "this" {
       priority = lookup(var.rule_priorities, "python_ua_rate_limit", 0)
 
       action {
-        block {}
+        block {
+          custom_response {
+            response_code            = 429
+            custom_response_body_key = "rate-limited"
+
+            response_header {
+              name  = "Retry-After"
+              value = "60"
+            }
+          }
+        }
       }
 
       statement {
