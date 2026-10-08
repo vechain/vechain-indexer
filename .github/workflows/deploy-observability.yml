@@ -59,7 +59,7 @@ jobs:
   refuse-branch:
     name: Refuse an apply from a branch
     if: inputs.dispatch_apply && github.ref != 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions: {}
     steps:
       - name: Refuse
@@ -72,7 +72,7 @@ jobs:
   confirm:
     name: Confirm observability apply
     if: inputs.dispatch_apply && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment: prod-release-approval
     permissions: {}
     steps:
@@ -85,7 +85,7 @@ jobs:
     name: Plan/deploy observability - ${{ inputs.environment || 'prod' }}
     needs: [confirm]
     if: ${{ !cancelled() && (!inputs.dispatch_apply || needs.confirm.result == 'success') }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: terraform/observability
@@ -160,7 +160,7 @@ jobs:
 
   deploy-observability-grafana:
     name: Plan/deploy observability-grafana - ${{ inputs.environment || 'prod' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # observability-grafana reads terraform_remote_state from observability;
     # if observability apply fails, skip the datasource stack so we don't
     # apply against stale parent outputs.

@@ -22,7 +22,7 @@ env:
 
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       actions: read
       contents: read
@@ -130,7 +130,7 @@ jobs:
     name: Resolve content hashes
     needs: validate
     if: needs.validate.outputs.publish == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       packages: read
       contents: read
@@ -218,7 +218,7 @@ jobs:
         platform: ["linux/amd64", "linux/arm64"]
         include:
           - platform: linux/amd64
-            runner: ubuntu-latest
+            runner: ubuntu-24.04
           - platform: linux/arm64
             runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
@@ -275,7 +275,7 @@ jobs:
 
   publish-content-tag:
     name: Publish content tag - ${{ matrix.packageName }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [validate, plan, build]
     if: needs.plan.outputs.build_needed == 'true'
     permissions:
@@ -320,7 +320,7 @@ jobs:
 
   tag-pr:
     name: Tag PR image - ${{ matrix.packageName }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [validate, plan, publish-content-tag]
     if: >-
       !cancelled() && needs.validate.outputs.publish == 'true'
@@ -357,7 +357,7 @@ jobs:
           docker buildx imagetools create -t "${IMAGE}:${PR_TAG}" "${IMAGE}:${CONTENT_TAG}"
 
   comment:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [validate, plan, tag-pr]
     if: needs.validate.outputs.publish == 'true' && needs.tag-pr.result == 'success'
     permissions:

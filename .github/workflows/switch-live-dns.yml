@@ -37,7 +37,7 @@ jobs:
 
   fetch-lb-dns-names:
     name: Fetch load balancer DNS names
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write
 
@@ -73,7 +73,7 @@ jobs:
 
   deploy-vpc-stack:
     name: Prepare VPC stack & switch DNS
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [fetch-lb-dns-names, identify-live-color]
     outputs:
       live_color_mainnet: ${{ steps.set-colours.outputs.live_color_mainnet }}
@@ -210,7 +210,7 @@ jobs:
 
   publish-release:
     name: Publish draft release for switched version
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [deploy-vpc-stack, apply-vpc-stack]
     # Only try to publish when both networks were switched together. For
     # per-network switches, the draft may still be valid for the network

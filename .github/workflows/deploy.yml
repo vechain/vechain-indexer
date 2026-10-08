@@ -54,7 +54,7 @@ jobs:
   deployed-state:
     name: Read Deployed State
     needs: [identify-live-color]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       STATE: ${{ steps.state.outputs.STATE }}
     steps:
@@ -80,7 +80,7 @@ jobs:
   plan-release:
     name: Plan Release
     needs: [identify-live-color, deployed-state]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     outputs:
@@ -139,7 +139,7 @@ jobs:
   confirm:
     name: "Confirm: ${{ needs.plan-release.outputs.CONFIRM_TITLE }}"
     needs: [plan-release]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment: prod-release-approval
     permissions:
       contents: read
@@ -172,7 +172,7 @@ jobs:
   verify-plan:
     name: Verify the plan still holds
     needs: [plan-release, recheck-live-color]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
@@ -193,7 +193,7 @@ jobs:
     name: Promote GHCR Image to ECR - ${{ matrix.packageName }}
     needs: [plan-release, verify-plan]
     if: needs.plan-release.outputs.PROMOTE_NEEDED == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         packageName: ${{ fromJSON(needs.plan-release.outputs.PROMOTE) }}
@@ -346,7 +346,7 @@ jobs:
     name: Prewarm restored Postgres - ${{ needs.plan-release.outputs.TARGET_COLOR }}
     needs: [plan-release, restore-dead, deploy-env]
     if: ${{ !cancelled() && needs.deploy-env.result == 'success' && needs.plan-release.outputs.RESTORE == 'true' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -385,7 +385,7 @@ jobs:
 
   manage-release:
     name: Refresh draft or publish release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [plan-release, deploy-env]
     if: ${{ !cancelled() && needs.deploy-env.result == 'success' }}
     permissions:
@@ -465,7 +465,7 @@ jobs:
     name: Next steps
     needs: [plan-release, deploy-env, refresh-dead-dns, manage-release]
     if: ${{ !cancelled() && needs.deploy-env.result == 'success' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0

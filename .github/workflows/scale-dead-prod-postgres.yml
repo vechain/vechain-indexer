@@ -54,7 +54,7 @@ jobs:
 
   resolve-context:
     name: Resolve Dead Prod Context
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [identify-live-color]
     environment: prod
     outputs:
@@ -78,7 +78,7 @@ jobs:
 
   scale:
     name: Resize Dead Prod Postgres
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 120
     needs: [resolve-context]
     # Holds switch-live-dns's lock, so the colour cannot be promoted between the recheck and the resize.

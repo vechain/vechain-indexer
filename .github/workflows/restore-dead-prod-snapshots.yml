@@ -68,7 +68,7 @@ jobs:
 
   resolve-context:
     name: Resolve Restore Context
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [identify-live-color]
     environment: prod
     outputs:
@@ -95,7 +95,7 @@ jobs:
 
   assert-services-stopped:
     name: Assert Dead Prod Services Are Stopped
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [resolve-context]
     environment: prod
     steps:
@@ -119,7 +119,7 @@ jobs:
 
   restore-postgres:
     name: Restore Dead Prod Postgres Instances
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 180
     needs: [resolve-context, assert-services-stopped]
     environment: prod
@@ -169,7 +169,7 @@ jobs:
   # deploy.yml runs the same script again once the application apply has built it.
   prewarm-postgres:
     name: Prewarm Restored Postgres Instances
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [resolve-context, restore-postgres]
     if: ${{ !cancelled() && needs.restore-postgres.result == 'success' }}
     environment: prod

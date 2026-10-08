@@ -28,7 +28,7 @@ concurrency:
 jobs:
   invalidate:
     name: Invalidate CloudFront paths
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment: prod
     permissions:

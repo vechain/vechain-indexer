@@ -74,7 +74,7 @@ jobs:
     needs: identify-live-color
     if: always() && needs.identify-live-color.result == 'success' || needs.identify-live-color.result == 'skipped'
     name: "Plan/deploy veworld-Indexer terraform - ${{ inputs.environment }}"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment: ${{ inputs.environment || needs.identify-live-color.outputs.mainnet_live_color }}
     env:
       ENVIRONMENT: ${{ inputs.environment || needs.identify-live-color.outputs.mainnet_live_color }}
