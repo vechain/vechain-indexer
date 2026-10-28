@@ -1370,8 +1370,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (indexer_name) (rate(indexer_blocks_processed_total{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\"}[1m]))",
-          "legendFormat": "{{indexer_name}}"
+          "expr": "label_replace(label_replace(sum by (deployment, network, indexer_name) (rate(indexer_blocks_processed_total{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\", service=\"indexer\"}[1m])), \"deployment\", \"$1\", \"deployment\", \"(.).*\"), \"network\", \"$1\", \"network\", \"(.*)net\")",
+          "legendFormat": "{{indexer_name}} · {{deployment}}/{{network}}"
         }
       ],
       "fieldConfig": { "defaults": { "unit": "ops", "min": 0 } },
@@ -1386,8 +1386,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.95, sum by (indexer_name, le) (rate(processor_duration_seconds_bucket{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\"}[5m])))",
-          "legendFormat": "{{indexer_name}}"
+          "expr": "label_replace(label_replace(histogram_quantile(0.95, sum by (deployment, network, indexer_name, le) (rate(processor_duration_seconds_bucket{deployment=~\"$deployment\", network=~\"$network\", indexer_name=~\"$indexer_name\"}[5m]))), \"deployment\", \"$1\", \"deployment\", \"(.).*\"), \"network\", \"$1\", \"network\", \"(.*)net\")",
+          "legendFormat": "{{indexer_name}} · {{deployment}}/{{network}}"
         }
       ],
       "fieldConfig": { "defaults": { "unit": "s", "min": 0 } },
@@ -1402,8 +1402,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.95, sum by (endpoint, le) (rate(thor_client_request_duration_seconds_bucket{deployment=~\"$deployment\", network=~\"$network\"}[5m])))",
-          "legendFormat": "{{endpoint}}"
+          "expr": "label_replace(label_replace(histogram_quantile(0.95, sum by (deployment, network, endpoint, le) (rate(thor_client_request_duration_seconds_bucket{deployment=~\"$deployment\", network=~\"$network\"}[5m]))), \"deployment\", \"$1\", \"deployment\", \"(.).*\"), \"network\", \"$1\", \"network\", \"(.*)net\")",
+          "legendFormat": "{{endpoint}} · {{deployment}}/{{network}}"
         }
       ],
       "fieldConfig": { "defaults": { "unit": "s", "min": 0 } },
