@@ -119,6 +119,32 @@ The `indexer_name` variable reads `indexer_sync_status`, not `indexer_current_bl
 only emitted once an indexer is past `NOT_INITIALISED`, so sourcing the picker from it hid exactly
 the indexers you open this row to find.
 
+### Runner row
+
+Collapsed, after Sync, and all AMP. Every series comes from indexer-core's `IndexerRunner`, which
+records them when `IndexManager` hands it the Spring `MeterRegistry`; the meanings are in
+indexer-core's `docs/Metrics.md`. It shows how the runner is scheduling the indexers, which the Sync
+row cannot: an indexer can be `READY_TO_SYNC` and still not be fed a block.
+
+- **"Runner state" is one number per task.** `catch_up * 2 + steady` over the one-hot
+  `indexer_runner_phase`, so 0, 1 and 2 map to Starting, Running and Catching up without a
+  `label_replace` chain. Both sides are reduced to `(deployment, network)` first so the arithmetic
+  matches.
+- **"Waiting to rejoin" is a join, not a meter.** It is catch-up group 1 (fast-sync pending as of
+  the pass start) `and` a `READY_TO_SYNC` status: the indexer finished its fast sync and the pass it
+  started in has not ended yet. "Catching up from logs" is group 1 `unless` that. Before indexer-core
+  11.3.0 this sat at 16 for five minutes after every restart and paged `LiveIndexerBehindHead`; now
+  it should last a block or two, so a sustained value is the thing to look into.
+- **Group numbers are positions.** The runner numbers groups lowest block first, so group 1 is
+  always the furthest behind, and 0 means the indexer is in no group. After a regroup the same
+  number can hold different indexers, which is why there is a per-indexer bar gauge rather than a
+  per-group series.
+- **No timeline, for the reason the API indexes row gives.** Every indexer sits in group 1 almost
+  always, so a state timeline is a wall of one colour. The bar gauge sorts ascending so "Not in a
+  group" and group 1 lead.
+- **The `indexer_name` variable filters the per-indexer panels only.** "Runner state", "Block
+  streams" and "Regroups and restarts" describe the whole task.
+
 ### API indexes row
 
 Collapsed, after Sync, and the whole row is AMP. It shows the feature in `AGENTS.md` "A Backfill

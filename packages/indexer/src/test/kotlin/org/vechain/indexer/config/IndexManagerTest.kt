@@ -1,5 +1,6 @@
 package org.vechain.indexer.config
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.Runs
 import io.mockk.clearAllMocks
 import io.mockk.every
@@ -49,7 +50,7 @@ class IndexManagerTest {
     }
 
     @Test
-    fun `onShutdown publishes final shutdown metrics for block indexers`() {
+    fun `onShutdown marks each indexer unhealthy`() {
         val indexer = mockk<BlockIndexer>()
         var status = Status.FULLY_SYNCED
         every { indexer.name } returns "test-indexer"
@@ -65,6 +66,7 @@ class IndexManagerTest {
                 appCoroutineScope = appCoroutineScope,
                 thorClient = thorClient,
                 metrics = metrics,
+                meterRegistry = SimpleMeterRegistry(),
                 applicationContext = applicationContext,
                 channelBatchSize = 10,
                 catchUpIntervalSeconds = 5,
@@ -74,8 +76,6 @@ class IndexManagerTest {
 
         verify(exactly = 1) { indexer.shutDown() }
         verify { metrics.setComponentHealth("test-indexer", "indexer", 0.0) }
-        verify { metrics.setIndexerSyncStatus("test-indexer", Status.SHUT_DOWN) }
-        verify { metrics.setIndexerCurrentBlock("test-indexer", 1234L) }
     }
 
     @Test
@@ -93,6 +93,7 @@ class IndexManagerTest {
                 appCoroutineScope = appCoroutineScope,
                 thorClient = thorClient,
                 metrics = metrics,
+                meterRegistry = SimpleMeterRegistry(),
                 applicationContext = applicationContext,
                 channelBatchSize = 10,
                 catchUpIntervalSeconds = 5,
@@ -129,6 +130,7 @@ class IndexManagerTest {
                 appCoroutineScope = appCoroutineScope,
                 thorClient = thorClient,
                 metrics = metrics,
+                meterRegistry = SimpleMeterRegistry(),
                 applicationContext = applicationContext,
                 channelBatchSize = 10,
                 catchUpIntervalSeconds = 5,
@@ -138,7 +140,7 @@ class IndexManagerTest {
 
         verify(exactly = 1) { processorA.flushCheckpoint() }
         verify(exactly = 1) { processorB.flushCheckpoint() }
-        verify { metrics.setIndexerCurrentBlock("test-indexer", 42L) }
+        verify { metrics.setComponentHealth("test-indexer", "indexer", 0.0) }
     }
 
     @Test
@@ -146,7 +148,16 @@ class IndexManagerTest {
         mockkObject(IndexerRunner.Companion)
         val runnerJob = mockk<Job>(relaxed = true)
         every {
-            IndexerRunner.launch(any(), any(), any<List<Indexer>>(), any(), any(), any(), any())
+            IndexerRunner.launch(
+                any(),
+                any(),
+                any<List<Indexer>>(),
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+            )
         } returns runnerJob
 
         val indexBootstrapState = mockk<IndexBootstrapState>(relaxed = true)
@@ -161,6 +172,7 @@ class IndexManagerTest {
                 appCoroutineScope = appCoroutineScope,
                 thorClient = thorClient,
                 metrics = metrics,
+                meterRegistry = SimpleMeterRegistry(),
                 applicationContext = applicationContext,
                 channelBatchSize = 10,
                 catchUpIntervalSeconds = 5,
@@ -173,7 +185,16 @@ class IndexManagerTest {
             indexBootstrapState.markReady()
         }
         verify(exactly = 1) {
-            IndexerRunner.launch(any(), any(), any<List<Indexer>>(), any(), any(), any(), any())
+            IndexerRunner.launch(
+                any(),
+                any(),
+                any<List<Indexer>>(),
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+            )
         }
     }
 }

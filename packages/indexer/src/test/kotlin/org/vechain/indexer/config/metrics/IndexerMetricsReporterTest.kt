@@ -6,8 +6,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.BlockIndexer
-import org.vechain.indexer.Status
+import org.vechain.indexer.Indexer
 import org.vechain.indexer.backfill.BackfillState
 import org.vechain.indexer.chain.ChainHead
 import org.vechain.indexer.config.HealthStatus
@@ -28,260 +27,53 @@ class IndexerMetricsReporterTest {
         indexerHealthService = mockk()
     }
 
-    private fun createBlockIndexer(name: String, blockNumber: Long): BlockIndexer {
-        val indexer = mockk<BlockIndexer>()
+    private fun indexer(name: String, health: HealthStatus): Indexer {
+        val indexer = mockk<Indexer>()
         every { indexer.name } returns name
-        every { indexer.getStatus() } returns Status.SYNCING
-        every { indexer.getCurrentBlockNumber() } returns blockNumber
-        every { indexerHealthService.getIndexerHealth(indexer) } returns Pair(HealthStatus.UP, "ok")
+        every { indexerHealthService.getIndexerHealth(indexer) } returns Pair(health, "")
         return indexer
     }
 
-    private fun stubBestBlock(blockNumber: Long) {
-        every { chainHead.bestBlockNumber() } returns blockNumber
+    private fun reporter(vararg indexers: Indexer) =
+        IndexerMetricsReporter(
+            indexers.toList(),
+            metrics,
+            chainHead,
+            indexerHealthService,
+            backfillState,
+        )
+
+    @Test
+    fun `publishes the best block when the chain head knows it`() {
+        every { chainHead.bestBlockNumber() } returns 1_000L
+
+        reporter().reportMetrics()
+
+        verify { metrics.setBestBlockNumber(1_000L) }
     }
 
     @Test
-    fun `incrementBlocksProcessed is called when block advances`() {
-        val indexer = createBlockIndexer("test-indexer", 100L)
-        stubBestBlock(1000L)
+    fun `skips the best block while the chain head has none`() {
+        every { chainHead.bestBlockNumber() } returns null
 
-        val reporter =
-            IndexerMetricsReporter(
-                listOf(indexer),
-                metrics,
-                chainHead,
-                indexerHealthService,
-                backfillState,
-            )
-        reporter.reportMetrics()
+        reporter().reportMetrics()
 
-        every { indexer.getCurrentBlockNumber() } returns 200L
-        reporter.reportMetrics()
-
-        verify { metrics.incrementBlocksProcessed("test-indexer", 100.0) }
+        verify(exactly = 0) { metrics.setBestBlockNumber(any()) }
     }
 
     @Test
-    fun `incrementBlocksProcessed is not called on first tick`() {
-        val indexer = createBlockIndexer("test-indexer", 100L)
-        stubBestBlock(1000L)
+    fun `maps each indexer's health onto the component health gauge`() {
+        every { chainHead.bestBlockNumber() } returns null
 
-        val reporter =
-            IndexerMetricsReporter(
-                listOf(indexer),
-                metrics,
-                chainHead,
-                indexerHealthService,
-                backfillState,
+        reporter(
+                indexer("up", HealthStatus.UP),
+                indexer("down", HealthStatus.DOWN),
+                indexer("unknown", HealthStatus.UNKNOWN),
             )
-        reporter.reportMetrics()
+            .reportMetrics()
 
-        verify(exactly = 0) { metrics.incrementBlocksProcessed(any(), any()) }
-    }
-
-    @Test
-    fun `incrementBlocksProcessed is not called when block does not advance`() {
-        val indexer = createBlockIndexer("test-indexer", 100L)
-        stubBestBlock(1000L)
-
-        val reporter =
-            IndexerMetricsReporter(
-                listOf(indexer),
-                metrics,
-                chainHead,
-                indexerHealthService,
-                backfillState,
-            )
-        reporter.reportMetrics()
-        reporter.reportMetrics()
-
-        verify(exactly = 0) { metrics.incrementBlocksProcessed(any(), any()) }
-    }
-
-    @Test
-    fun `READY_TO_SYNC indexer does not increment blocks processed even when block number changes`() {
-        val indexer = createBlockIndexer("test-indexer", 0L)
-        every { indexer.getStatus() } returns Status.READY_TO_SYNC
-        stubBestBlock(1000L)
-
-        val reporter =
-            IndexerMetricsReporter(
-                listOf(indexer),
-                metrics,
-                chainHead,
-                indexerHealthService,
-                backfillState,
-            )
-        reporter.reportMetrics()
-
-        every { indexer.getCurrentBlockNumber() } returns 400_000L
-        reporter.reportMetrics()
-
-        verify(exactly = 0) { metrics.incrementBlocksProcessed(any(), any()) }
-    }
-
-    @Test
-    fun `FULLY_SYNCED indexer increments blocks processed when block advances`() {
-        val indexer = createBlockIndexer("test-indexer", 1000L)
-        every { indexer.getStatus() } returns Status.FULLY_SYNCED
-        stubBestBlock(1010L)
-
-        val reporter =
-            IndexerMetricsReporter(
-                listOf(indexer),
-                metrics,
-                chainHead,
-                indexerHealthService,
-                backfillState,
-            )
-        reporter.reportMetrics()
-
-        every { indexer.getCurrentBlockNumber() } returns 1005L
-        reporter.reportMetrics()
-
-        verify { metrics.incrementBlocksProcessed("test-indexer", 5.0) }
-    }
-
-    @Test
-    fun `transition from READY_TO_SYNC to SYNCING does not spike blocks processed`() {
-        val indexer = createBlockIndexer("test-indexer", 0L)
-        every { indexer.getStatus() } returns Status.READY_TO_SYNC
-        stubBestBlock(1_000_000L)
-
-        val reporter =
-            IndexerMetricsReporter(
-                listOf(indexer),
-                metrics,
-                chainHead,
-                indexerHealthService,
-                backfillState,
-            )
-        reporter.reportMetrics()
-
-        // Indexer transitions to SYNCING and has caught up significantly. The first
-        // processing tick has no previous processing-state data, so no delta is emitted.
-        every { indexer.getStatus() } returns Status.SYNCING
-        every { indexer.getCurrentBlockNumber() } returns 500_000L
-        reporter.reportMetrics()
-
-        verify(exactly = 0) { metrics.incrementBlocksProcessed(any(), any()) }
-    }
-
-    @Test
-    fun `transition from READY_TO_SYNC to SYNCING increments on second syncing tick`() {
-        val indexer = createBlockIndexer("test-indexer", 0L)
-        every { indexer.getStatus() } returns Status.READY_TO_SYNC
-        stubBestBlock(1_000_000L)
-
-        val reporter =
-            IndexerMetricsReporter(
-                listOf(indexer),
-                metrics,
-                chainHead,
-                indexerHealthService,
-                backfillState,
-            )
-        reporter.reportMetrics()
-
-        every { indexer.getStatus() } returns Status.SYNCING
-        every { indexer.getCurrentBlockNumber() } returns 500_000L
-        reporter.reportMetrics()
-
-        every { indexer.getCurrentBlockNumber() } returns 600_000L
-        reporter.reportMetrics()
-
-        verify { metrics.incrementBlocksProcessed("test-indexer", 100_000.0) }
-    }
-
-    @Test
-    fun `multiple indexers track block deltas independently`() {
-        val indexerA = createBlockIndexer("indexer-a", 100L)
-        val indexerB = createBlockIndexer("indexer-b", 500L)
-        stubBestBlock(1000L)
-
-        val reporter =
-            IndexerMetricsReporter(
-                listOf(indexerA, indexerB),
-                metrics,
-                chainHead,
-                indexerHealthService,
-                backfillState,
-            )
-        reporter.reportMetrics()
-
-        every { indexerA.getCurrentBlockNumber() } returns 150L
-        every { indexerB.getCurrentBlockNumber() } returns 700L
-        reporter.reportMetrics()
-
-        verify { metrics.incrementBlocksProcessed("indexer-a", 50.0) }
-        verify { metrics.incrementBlocksProcessed("indexer-b", 200.0) }
-    }
-
-    @Test
-    fun `reportMetrics calls setIndexerCurrentBlock per block indexer`() {
-        val indexer = createBlockIndexer("test-indexer", 500L)
-        stubBestBlock(1000L)
-
-        val reporter =
-            IndexerMetricsReporter(
-                listOf(indexer),
-                metrics,
-                chainHead,
-                indexerHealthService,
-                backfillState,
-            )
-        reporter.reportMetrics()
-
-        verify { metrics.setIndexerCurrentBlock("test-indexer", 500L) }
-    }
-
-    @Test
-    fun `NOT_INITIALISED indexer does not publish current block`() {
-        val indexer = createBlockIndexer("test-indexer", 0L)
-        every { indexer.getStatus() } returns Status.NOT_INITIALISED
-        stubBestBlock(1000L)
-
-        val reporter =
-            IndexerMetricsReporter(
-                listOf(indexer),
-                metrics,
-                chainHead,
-                indexerHealthService,
-                backfillState,
-            )
-        reporter.reportMetrics()
-
-        verify(exactly = 0) { metrics.setIndexerCurrentBlock(any(), any()) }
-    }
-
-    @Test
-    fun `transition through NOT_INITIALISED resets rate baseline`() {
-        val indexer = createBlockIndexer("test-indexer", 100L)
-        stubBestBlock(1_000_000L)
-
-        val reporter =
-            IndexerMetricsReporter(
-                listOf(indexer),
-                metrics,
-                chainHead,
-                indexerHealthService,
-                backfillState,
-            )
-        // First SYNCING tick — populates previousBlockNumbers.
-        reporter.reportMetrics()
-
-        // Indexer drops back to NOT_INITIALISED — should clear stale baseline.
-        every { indexer.getStatus() } returns Status.NOT_INITIALISED
-        every { indexer.getCurrentBlockNumber() } returns 0L
-        reporter.reportMetrics()
-
-        // Indexer comes back as SYNCING with a much higher block number. If baseline
-        // wasn't cleared, this would emit a large incrementBlocksProcessed delta.
-        every { indexer.getStatus() } returns Status.SYNCING
-        every { indexer.getCurrentBlockNumber() } returns 500_000L
-        reporter.reportMetrics()
-
-        verify(exactly = 0) { metrics.incrementBlocksProcessed(any(), any()) }
+        verify { metrics.setComponentHealth("up", "indexer", 1.0) }
+        verify { metrics.setComponentHealth("down", "indexer", 0.0) }
+        verify { metrics.setComponentHealth("unknown", "indexer", -1.0) }
     }
 }
