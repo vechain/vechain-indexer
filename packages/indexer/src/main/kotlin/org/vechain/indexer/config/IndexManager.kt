@@ -73,11 +73,7 @@ open class IndexManager(
     }
 
     private fun startIndexers() {
-        // Override the upstream 5-minute default for catchUpInterval. With the upstream default,
-        // LogsIndexers (FastSyncableIndexer) that finish fast sync early stay parked at
-        // READY_TO_SYNC for the rest of the slice before the runner re-classifies and lets them
-        // join steady-state. A short interval keeps the catch-up loop reactive — re-evaluation
-        // overhead per tick is negligible.
+        // catchUpInterval only caps a long backfill: a pass ends once its fast syncs finish.
         IndexerRunner.launch(
                 scope = appCoroutineScope,
                 thorClient = thorClient,
