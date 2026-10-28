@@ -62,8 +62,8 @@ class IndexerCoreMetricsTest {
                 .contains("indexer_sync_status{$tag,status=\"READY_TO_SYNC\"} 1.0")
                 .contains("indexer_blocks_processed_total{$tag}")
                 .contains("indexer_runner_phase{phase=\"steady\"} 1.0")
-                .contains("indexer_runner_proximity_group{$tag} 1.0")
-                .contains("indexer_runner_catch_up_group{$tag} 0.0")
+                .contains("indexer_runner_proximity_group{group=\"1\",$tag} 1.0")
+                .contains("indexer_runner_catch_up_group{group=\"1\",$tag} 0.0")
                 .contains("indexer_runner_regroups_total{kind=\"proximity\"} 1.0")
         }
 }
