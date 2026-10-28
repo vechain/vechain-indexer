@@ -1,5 +1,6 @@
 package org.vechain.indexer.config
 
+import io.micrometer.core.instrument.MeterRegistry
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 import kotlinx.coroutines.CoroutineScope
@@ -19,7 +20,6 @@ import org.springframework.context.event.ContextClosedEvent
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
-import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerRunner
 import org.vechain.indexer.config.metrics.IndexerHealthMetrics
@@ -34,6 +34,7 @@ open class IndexManager(
     private val appCoroutineScope: CoroutineScope,
     private val thorClient: ThorClient,
     private val metrics: IndexerHealthMetrics,
+    private val meterRegistry: MeterRegistry,
     private val applicationContext: ApplicationContext,
     @param:Value("\${indexer.channel-batch-size}") private val channelBatchSize: Int,
     @param:Value("\${indexer.catch-up-interval-seconds}") private val catchUpIntervalSeconds: Long,
@@ -80,6 +81,7 @@ open class IndexManager(
                 indexers = indexers,
                 blockBatchSize = channelBatchSize,
                 catchUpInterval = catchUpIntervalSeconds.seconds,
+                meterRegistry = meterRegistry,
             )
             .apply {
                 invokeOnCompletion { throwable ->
@@ -160,10 +162,5 @@ open class IndexManager(
 
     private fun publishShutdownMetrics(indexer: Indexer) {
         metrics.setComponentHealth(indexer.name, "indexer", 0.0)
-        metrics.setIndexerSyncStatus(indexer.name, indexer.getStatus())
-
-        if (indexer is BlockIndexer) {
-            metrics.setIndexerCurrentBlock(indexer.name, indexer.getCurrentBlockNumber())
-        }
     }
 }
