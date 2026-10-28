@@ -119,7 +119,9 @@ The `indexer_name` variable reads `indexer_sync_status`, not `indexer_current_bl
 only emitted once an indexer is past `NOT_INITIALISED`, so sourcing the picker from it hid exactly
 the indexers you open this row to find.
 
-The bar label ends with the indexer's group, from the runner meters indexer-core records when
+The bar label puts the indexer's group right after its name, where the name column cannot clip it
+(a bar gauge sizes that column to the longest label and clips the tail of the rest), with the
+group taken from the runner meters indexer-core records when
 `IndexManager` hands `IndexerRunner` the Spring `MeterRegistry` (its `docs/Metrics.md` has the
 meanings). `g2` is the proximity group the indexer runs in, numbered lowest block first, so `g1` is
 always the furthest behind and the same number can hold different indexers after a regroup. Between
