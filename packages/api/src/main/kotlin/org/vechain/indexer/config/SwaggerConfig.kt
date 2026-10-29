@@ -1,11 +1,17 @@
 package org.vechain.indexer.config
 
+import io.swagger.v3.core.converter.AnnotatedType
+import io.swagger.v3.core.converter.ModelConverter
+import io.swagger.v3.core.converter.ModelConverterContext
+import io.swagger.v3.core.util.Json
 import io.swagger.v3.oas.models.Components
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Info
+import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.media.StringSchema
 import io.swagger.v3.oas.models.parameters.Parameter
 import io.swagger.v3.oas.models.servers.Server
+import java.math.BigInteger
 import org.springdoc.core.customizers.OpenApiCustomizer
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -20,9 +26,28 @@ open class SwaggerConfig {
             "#/components/parameters/$PROJECT_ID_PARAMETER_COMPONENT_NAME"
         private const val INDEXED_TRANSACTION_SCHEMA_NAME = "IndexedTransaction"
         private val TRANSACTION_EXPANDED_ONLY_FIELDS = setOf("clauses", "outputs")
+        private const val BIG_INTEGER_PATTERN = "^-?[0-9]+$"
     }
 
     @Value("\${app.version:UNKNOWN}") lateinit var rawVersion: String
+
+    /** JacksonConfig writes every BigInteger as a decimal string; a fresh schema per field. */
+    @Bean
+    open fun bigIntegerAsStringConverter(): ModelConverter =
+        object : ModelConverter {
+            override fun resolve(
+                type: AnnotatedType,
+                context: ModelConverterContext,
+                chain: Iterator<ModelConverter>,
+            ): Schema<*>? =
+                if (Json.mapper().constructType(type.type).rawClass == BigInteger::class.java) {
+                    StringSchema().pattern(BIG_INTEGER_PATTERN)
+                } else if (chain.hasNext()) {
+                    chain.next().resolve(type, context, chain)
+                } else {
+                    null
+                }
+        }
 
     @Bean
     open fun customOpenAPI(): OpenAPI {
