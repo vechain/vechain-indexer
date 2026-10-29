@@ -137,6 +137,11 @@ object IndexerNames {
         const val COLLECTION = "wov_marketplace"
     }
 
+    object STARGATE_MARKETPLACE {
+        const val NAME = "StargateMarketplaceIndexer"
+        const val COLLECTION = "stargate_marketplace"
+    }
+
     /** Returns a map of indexer NAME → COLLECTION for every nested object that defines both. */
     fun nameToCollection(): Map<String, String> =
         IndexerNames::class

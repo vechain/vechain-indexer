@@ -16,6 +16,7 @@ import org.vechain.indexer.history.HistoryIndexes
 import org.vechain.indexer.nft.NftBlacklistIndexes
 import org.vechain.indexer.nft.NftIndexes
 import org.vechain.indexer.safe.SafeIndexes
+import org.vechain.indexer.stargate.marketplace.StargateMarketplaceIndexes
 import org.vechain.indexer.stargate.staking.StargateStakingIndexes
 import org.vechain.indexer.stargate.token.StargateTokenIndexes
 import org.vechain.indexer.stargate.tokenReward.TokenRewardIndexes
@@ -76,5 +77,6 @@ object IndexSets {
             VeVoteIndexes.SET,
             HistoricProposalsIndexes.SET,
             WovMarketplaceIndexes.SET,
+            StargateMarketplaceIndexes.SET,
         )
 }

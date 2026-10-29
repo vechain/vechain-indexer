@@ -508,6 +508,18 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.wov-marketplace
     },
     {
+      name  = "INDEXER_START_BLOCK_STARGATE_MARKETPLACE"
+      value = each.value.indexer.start-block.stargate-marketplace
+    },
+    {
+      name  = "VERSION_STARGATE_MARKETPLACE"
+      value = each.value.indexer.version.stargate-marketplace
+    },
+    {
+      name  = "STARGATE_MARKETPLACE_CONTRACT_ADDRESS"
+      value = each.value.indexer.stargate-marketplace.contract-address
+    },
+    {
       name  = "BLACKLIST_CONTRACT_ADDRESS"
       value = each.value.indexer.blacklist.contract-address
     },

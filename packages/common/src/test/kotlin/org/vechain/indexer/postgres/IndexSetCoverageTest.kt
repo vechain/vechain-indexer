@@ -254,6 +254,8 @@ class IndexSetCoverageTest {
                     listOf("sale", "terms", "buyer_running").flatMap {
                         listOf("${it}_pkey", "${it}_block_idx")
                     } + listOf("buyer_pkey", "buyer_block_idx", "progress_pkey"),
+                "stargate_marketplace" to
+                    listOf("listing_pkey", "listing_block_idx", "listing_prune_idx"),
             )
     }
 }
