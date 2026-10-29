@@ -134,13 +134,17 @@ Each form is an `or` arm keyed `unless` the arms before it, and the last arm fal
 requires a non-empty `group`, so a task on indexer-core 11.4.x, whose meter carried the group as
 its value, falls back too. The group is a tag because PromQL cannot turn a value into a label.
 
-"Block streams" folds the same meters per group. `IndexerRunner` fetches one block stream per
-proximity group, from the group's lowest member, so that member's block is the stream position, the
-gap from Thor best to it is what the group has left, and its 5-minute rate is the stream's. Spread
-is the highest member minus the lowest, against the 500,000-block threshold at which the runner
-splits a group. Six instant queries in `table` format, merged on their label columns, which is why
-every query shortens its labels into the same `stream` field before the merge. The `indexer_name`
-variable does not apply: a group is a whole.
+"Proximity groups" folds the same meters into one row per group. `IndexerRunner` fetches one block
+stream per group, from its lowest member, so that member's block is the group's position, the gap
+from Thor best to it is what the group has left, and its 5-minute rate is the group's. Spread is the
+highest member minus the lowest, against the 500,000-block threshold at which the runner splits a
+group.
+
+The table is six instant queries in `table` format, merged on their shared `deployment`, `network` and
+`group` labels, which become the Colour, Network and Group columns. Group is converted to a number
+so 10 sorts after 2, and three chained sorts (group, then network, then colour) order the rows
+colour first, since each sort keeps the previous order among ties. The `indexer_name` variable does
+not apply: a group is a whole.
 
 Two annotations draw the runner's events across every time series instead of charting them: "Runner
 restart" marks a reorg or stuck-block restart, and "Catch-up pass" shades the time the runner spends

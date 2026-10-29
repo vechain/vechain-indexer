@@ -1061,8 +1061,8 @@
     {
       "id": 26,
       "type": "table",
-      "title": "Block streams — one row per proximity group",
-      "description": "IndexerRunner fetches one block stream per proximity group, from the group's lowest member; the members ahead of it idle until the stream reaches them. Stream block is that lowest member's block, Behind head is Thor best minus it (pinned to 0 once every member is FULLY_SYNCED), Blocks/s is the stream's 5-minute rate, and ETA divides the two after taking off the chain's own growth. Spread is the highest member minus the lowest: the runner splits a group whose members drift more than 500,000 blocks apart, so a growing spread is a split coming. Groups are numbered lowest block first, so g1 is always the furthest behind, and the same number can hold different indexers after a regroup. Six instant queries merged on the stream column; the indexer_name variable does not apply, a group is a whole.",
+      "title": "Proximity groups",
+      "description": "IndexerRunner runs each proximity group off one block stream, fetched from the group's lowest member; members ahead of it idle until the stream reaches them. Lowest block is that member's block, Behind head is Thor best minus it (0 once every member is FULLY_SYNCED), Blocks/s is the stream's 5-minute rate, and ETA divides the two after taking off the chain's own growth. Spread is the highest member minus the lowest; the runner splits a group whose members drift more than 500,000 blocks apart, so a growing spread is a split coming. Groups are numbered lowest block first, so group 1 is always the furthest behind, and the same number can hold different indexers after a regroup. The indexer_name variable does not apply: a group is a whole.",
       "gridPos": {
         "h": 7,
         "w": 24,
@@ -1076,42 +1076,42 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "label_join(label_replace(label_replace(label_replace(count by (deployment, network, group) (max by (deployment, network, indexer_name, group) (last_over_time(indexer_runner_proximity_group{group!=\"\", deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) == 1), \"deployment\", \"$1\", \"deployment\", \"(.).*\"), \"network\", \"$1\", \"network\", \"(.*)net\"), \"group\", \"g$1\", \"group\", \"(.*)\"), \"stream\", \" · \", \"deployment\", \"network\", \"group\")",
+          "expr": "count by (deployment, network, group) (max by (deployment, network, indexer_name, group) (last_over_time(indexer_runner_proximity_group{group!=\"\", deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) == 1)",
           "instant": true,
           "format": "table",
           "legendFormat": "__auto"
         },
         {
           "refId": "B",
-          "expr": "label_join(label_replace(label_replace(label_replace(min by (deployment, network, group) (max by (deployment, network, indexer_name) (last_over_time(indexer_current_block{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) * on (deployment, network, indexer_name) group_left(group) (max by (deployment, network, indexer_name, group) (last_over_time(indexer_runner_proximity_group{group!=\"\", deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) == 1)), \"deployment\", \"$1\", \"deployment\", \"(.).*\"), \"network\", \"$1\", \"network\", \"(.*)net\"), \"group\", \"g$1\", \"group\", \"(.*)\"), \"stream\", \" · \", \"deployment\", \"network\", \"group\")",
+          "expr": "min by (deployment, network, group) (max by (deployment, network, indexer_name) (last_over_time(indexer_current_block{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) * on (deployment, network, indexer_name) group_left(group) (max by (deployment, network, indexer_name, group) (last_over_time(indexer_runner_proximity_group{group!=\"\", deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) == 1))",
           "instant": true,
           "format": "table",
           "legendFormat": "__auto"
         },
         {
           "refId": "C",
-          "expr": "label_join(label_replace(label_replace(label_replace(clamp_min(max by (deployment, network) (thor_best_block_number{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}) - on (deployment, network) group_right() min by (deployment, network, group) (max by (deployment, network, indexer_name) (last_over_time(indexer_current_block{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) * on (deployment, network, indexer_name) group_left(group) (max by (deployment, network, indexer_name, group) (last_over_time(indexer_runner_proximity_group{group!=\"\", deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) == 1)), 0) * (1 - min by (deployment, network, group) (max by (deployment, network, indexer_name) (last_over_time(indexer_sync_status{status=\"FULLY_SYNCED\", deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) * on (deployment, network, indexer_name) group_left(group) (max by (deployment, network, indexer_name, group) (last_over_time(indexer_runner_proximity_group{group!=\"\", deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) == 1))), \"deployment\", \"$1\", \"deployment\", \"(.).*\"), \"network\", \"$1\", \"network\", \"(.*)net\"), \"group\", \"g$1\", \"group\", \"(.*)\"), \"stream\", \" · \", \"deployment\", \"network\", \"group\")",
+          "expr": "clamp_min(max by (deployment, network) (thor_best_block_number{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}) - on (deployment, network) group_right() min by (deployment, network, group) (max by (deployment, network, indexer_name) (last_over_time(indexer_current_block{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) * on (deployment, network, indexer_name) group_left(group) (max by (deployment, network, indexer_name, group) (last_over_time(indexer_runner_proximity_group{group!=\"\", deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) == 1)), 0) * (1 - min by (deployment, network, group) (max by (deployment, network, indexer_name) (last_over_time(indexer_sync_status{status=\"FULLY_SYNCED\", deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) * on (deployment, network, indexer_name) group_left(group) (max by (deployment, network, indexer_name, group) (last_over_time(indexer_runner_proximity_group{group!=\"\", deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) == 1)))",
           "instant": true,
           "format": "table",
           "legendFormat": "__auto"
         },
         {
           "refId": "D",
-          "expr": "label_join(label_replace(label_replace(label_replace(max by (deployment, network, group) (sum by (deployment, network, indexer_name) (rate(indexer_blocks_processed_total{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[5m])) * on (deployment, network, indexer_name) group_left(group) (max by (deployment, network, indexer_name, group) (last_over_time(indexer_runner_proximity_group{group!=\"\", deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) == 1)), \"deployment\", \"$1\", \"deployment\", \"(.).*\"), \"network\", \"$1\", \"network\", \"(.*)net\"), \"group\", \"g$1\", \"group\", \"(.*)\"), \"stream\", \" · \", \"deployment\", \"network\", \"group\")",
+          "expr": "max by (deployment, network, group) (sum by (deployment, network, indexer_name) (rate(indexer_blocks_processed_total{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[5m])) * on (deployment, network, indexer_name) group_left(group) (max by (deployment, network, indexer_name, group) (last_over_time(indexer_runner_proximity_group{group!=\"\", deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) == 1))",
           "instant": true,
           "format": "table",
           "legendFormat": "__auto"
         },
         {
           "refId": "E",
-          "expr": "label_join(label_replace(label_replace(label_replace((clamp_min(max by (deployment, network) (thor_best_block_number{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}) - on (deployment, network) group_right() min by (deployment, network, group) (max by (deployment, network, indexer_name) (last_over_time(indexer_current_block{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) * on (deployment, network, indexer_name) group_left(group) (max by (deployment, network, indexer_name, group) (last_over_time(indexer_runner_proximity_group{group!=\"\", deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) == 1)), 0) * (1 - min by (deployment, network, group) (max by (deployment, network, indexer_name) (last_over_time(indexer_sync_status{status=\"FULLY_SYNCED\", deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) * on (deployment, network, indexer_name) group_left(group) (max by (deployment, network, indexer_name, group) (last_over_time(indexer_runner_proximity_group{group!=\"\", deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) == 1)))) / clamp_min(max by (deployment, network, group) (sum by (deployment, network, indexer_name) (rate(indexer_blocks_processed_total{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[5m])) * on (deployment, network, indexer_name) group_left(group) (max by (deployment, network, indexer_name, group) (last_over_time(indexer_runner_proximity_group{group!=\"\", deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) == 1)) - on (deployment, network) group_left() clamp_min(max by (deployment, network) (deriv(thor_best_block_number{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[30m])), 0), 0.001), \"deployment\", \"$1\", \"deployment\", \"(.).*\"), \"network\", \"$1\", \"network\", \"(.*)net\"), \"group\", \"g$1\", \"group\", \"(.*)\"), \"stream\", \" · \", \"deployment\", \"network\", \"group\")",
+          "expr": "(clamp_min(max by (deployment, network) (thor_best_block_number{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}) - on (deployment, network) group_right() min by (deployment, network, group) (max by (deployment, network, indexer_name) (last_over_time(indexer_current_block{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) * on (deployment, network, indexer_name) group_left(group) (max by (deployment, network, indexer_name, group) (last_over_time(indexer_runner_proximity_group{group!=\"\", deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) == 1)), 0) * (1 - min by (deployment, network, group) (max by (deployment, network, indexer_name) (last_over_time(indexer_sync_status{status=\"FULLY_SYNCED\", deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) * on (deployment, network, indexer_name) group_left(group) (max by (deployment, network, indexer_name, group) (last_over_time(indexer_runner_proximity_group{group!=\"\", deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) == 1)))) / clamp_min(max by (deployment, network, group) (sum by (deployment, network, indexer_name) (rate(indexer_blocks_processed_total{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[5m])) * on (deployment, network, indexer_name) group_left(group) (max by (deployment, network, indexer_name, group) (last_over_time(indexer_runner_proximity_group{group!=\"\", deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) == 1)) - on (deployment, network) group_left() clamp_min(max by (deployment, network) (deriv(thor_best_block_number{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[30m])), 0), 0.001)",
           "instant": true,
           "format": "table",
           "legendFormat": "__auto"
         },
         {
           "refId": "F",
-          "expr": "label_join(label_replace(label_replace(label_replace(max by (deployment, network, group) (max by (deployment, network, indexer_name) (last_over_time(indexer_current_block{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) * on (deployment, network, indexer_name) group_left(group) (max by (deployment, network, indexer_name, group) (last_over_time(indexer_runner_proximity_group{group!=\"\", deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) == 1)) - min by (deployment, network, group) (max by (deployment, network, indexer_name) (last_over_time(indexer_current_block{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) * on (deployment, network, indexer_name) group_left(group) (max by (deployment, network, indexer_name, group) (last_over_time(indexer_runner_proximity_group{group!=\"\", deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) == 1)), \"deployment\", \"$1\", \"deployment\", \"(.).*\"), \"network\", \"$1\", \"network\", \"(.*)net\"), \"group\", \"g$1\", \"group\", \"(.*)\"), \"stream\", \" · \", \"deployment\", \"network\", \"group\")",
+          "expr": "max by (deployment, network, group) (max by (deployment, network, indexer_name) (last_over_time(indexer_current_block{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) * on (deployment, network, indexer_name) group_left(group) (max by (deployment, network, indexer_name, group) (last_over_time(indexer_runner_proximity_group{group!=\"\", deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) == 1)) - min by (deployment, network, group) (max by (deployment, network, indexer_name) (last_over_time(indexer_current_block{deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) * on (deployment, network, indexer_name) group_left(group) (max by (deployment, network, indexer_name, group) (last_over_time(indexer_runner_proximity_group{group!=\"\", deployment=~\"$deployment\", network=~\"$network\", service=\"indexer\"}[45s])) == 1))",
           "instant": true,
           "format": "table",
           "legendFormat": "__auto"
@@ -1123,27 +1123,40 @@
           "options": {}
         },
         {
+          "id": "convertFieldType",
+          "options": {
+            "fields": {},
+            "conversions": [
+              {
+                "targetField": "group",
+                "destinationType": "number"
+              }
+            ]
+          }
+        },
+        {
           "id": "organize",
           "options": {
             "excludeByName": {
-              "Time": true,
-              "deployment": true,
-              "network": true,
-              "group": true
+              "Time": true
             },
             "indexByName": {
-              "stream": 0,
-              "Value #A": 1,
-              "Value #B": 2,
-              "Value #C": 3,
-              "Value #D": 4,
-              "Value #E": 5,
-              "Value #F": 6
+              "deployment": 0,
+              "network": 1,
+              "group": 2,
+              "Value #A": 3,
+              "Value #B": 4,
+              "Value #C": 5,
+              "Value #D": 6,
+              "Value #E": 7,
+              "Value #F": 8
             },
             "renameByName": {
-              "stream": "Stream",
+              "deployment": "Colour",
+              "network": "Network",
+              "group": "Group",
               "Value #A": "Indexers",
-              "Value #B": "Stream block",
+              "Value #B": "Lowest block",
               "Value #C": "Behind head",
               "Value #D": "Blocks/s",
               "Value #E": "ETA",
@@ -1157,7 +1170,31 @@
             "fields": {},
             "sort": [
               {
-                "field": "Stream",
+                "field": "Group",
+                "desc": false
+              }
+            ]
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "Network",
+                "desc": false
+              }
+            ]
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "Colour",
                 "desc": false
               }
             ]
@@ -1179,7 +1216,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Stream"
+              "options": "Colour"
             },
             "properties": [
               {
@@ -1188,7 +1225,39 @@
               },
               {
                 "id": "custom.width",
-                "value": 140
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Network"
+            },
+            "properties": [
+              {
+                "id": "custom.align",
+                "value": "left"
+              },
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Group"
+            },
+            "properties": [
+              {
+                "id": "custom.align",
+                "value": "left"
+              },
+              {
+                "id": "custom.width",
+                "value": 70
               }
             ]
           },
