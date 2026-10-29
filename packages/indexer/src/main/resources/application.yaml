@@ -157,6 +157,7 @@ indexer:
     stargate-staking: ${INDEXER_START_BLOCK_STARGATE_STAKING:0}
     safe: ${INDEXER_START_BLOCK_SAFE:0}
     wov-marketplace: ${INDEXER_START_BLOCK_WOV_MARKETPLACE:0}
+    stargate-marketplace: ${INDEXER_START_BLOCK_STARGATE_MARKETPLACE:0}
   sync-log-interval: ${INDEXER_SYNC_LOG_INTERVAL:10}
   checkpoint:
     save-interval-seconds: ${INDEXER_CHECKPOINT_SAVE_INTERVAL_SECONDS:5}
@@ -206,6 +207,7 @@ indexer:
     b3tr-balance: ${VERSION_B3TR_BALANCE:1}
     safe: ${VERSION_SAFE:1}
     wov-marketplace: ${VERSION_WOV_MARKETPLACE:1}
+    stargate-marketplace: ${VERSION_STARGATE_MARKETPLACE:1}
   healthcheck:
     inactive-threshold-syncing: ${HEALTHCHECK_INACTIVE_THRESHOLD_SYNCING:120}
     inactive-threshold-not-syncing: ${HEALTHCHECK_INACTIVE_THRESHOLD_NOT_SYNCING:600}
@@ -222,6 +224,9 @@ indexer:
       - "0xd46ecaccb0bf0f34c3cee0c250dd48afaa2d2a6d"
       - "0xe01cb06168f52b40fc60d5ce218346361a75efe7"
       - "0x601048039c5e7617c890445d9bfe795533ceec4d"
+  stargate-marketplace:
+    # FixedPriceNonCustodial proxy; mainnet only until a testnet one whitelists StargateNFT.
+    contract-address: ${STARGATE_MARKETPLACE_CONTRACT_ADDRESS:0x0602cfd406a3f592eb19246c535d855fb3ddaaf4}
   vevote:
     test-proposals:
       "0xa6416a72f816d3a69f33d0814700545c8e3fe4be": [ 33, 32, 30, 29, 28, 27, 26, 24, 23, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 8, 7, 5, 2 ]

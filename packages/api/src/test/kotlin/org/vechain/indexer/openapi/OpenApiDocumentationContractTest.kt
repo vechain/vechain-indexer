@@ -36,6 +36,7 @@ import org.vechain.indexer.explorer.BlockUsageReadRepository
 import org.vechain.indexer.history.HistoryReadRepository
 import org.vechain.indexer.nft.NftReadRepository
 import org.vechain.indexer.safe.SafeReadRepository
+import org.vechain.indexer.stargate.marketplace.StargateMarketplaceReadRepository
 import org.vechain.indexer.stargate.staking.NftHoldersReadRepository
 import org.vechain.indexer.stargate.staking.VetStakedReadRepository
 import org.vechain.indexer.stargate.token.StargateTokenReadRepository
@@ -102,6 +103,8 @@ class OpenApiDocumentationContractTest {
     @MockitoBean private lateinit var vevoteCommentReadRepository: VeVoteCommentReadRepository
     @MockitoBean private lateinit var vevoteResultReadRepository: VeVoteResultReadRepository
     @MockitoBean private lateinit var wovMarketplaceReadRepository: WovMarketplaceReadRepository
+    @MockitoBean
+    private lateinit var stargateMarketplaceReadRepository: StargateMarketplaceReadRepository
 
     @Autowired private lateinit var mockMvc: MockMvc
     @Autowired private lateinit var objectMapper: ObjectMapper

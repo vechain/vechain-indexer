@@ -42,7 +42,7 @@ enabled_nets:
       memory: 2048
       min_capacity: 2
       max_capacity: 8
-      spring_profile: nfts,blocks,transfers,history,vevote,vevote-historic,stargate,b3tr,explorer,validator,accounts,contracts,safe,wov-marketplace
+      spring_profile: nfts,blocks,transfers,history,vevote,vevote-historic,stargate,b3tr,explorer,validator,accounts,contracts,safe,wov-marketplace,stargate-marketplace
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       logging:
         app-log-level: "INFO"
@@ -73,7 +73,7 @@ enabled_nets:
       cpu: 2048
       memory: 4096
       enabled: true
-      spring_profile: indexer,nfts,blocks,transfers,history,vevote,stargate,b3tr,explorer,validator,token-reward,accounts,vevote-historic,contracts,safe,wov-marketplace
+      spring_profile: indexer,nfts,blocks,transfers,history,vevote,stargate,b3tr,explorer,validator,token-reward,accounts,vevote-historic,contracts,safe,wov-marketplace,stargate-marketplace
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       logging:
         app-log-level: "INFO"
@@ -106,6 +106,7 @@ enabled_nets:
         stargate-staking: "22083535"
         safe: "24713855"
         wov-marketplace: "11284825"
+        stargate-marketplace: "22075784"
       sync-log-interval: "10"
       channel-batch-size: "5"
       checkpoint-save-interval-seconds: "5"
@@ -116,6 +117,8 @@ enabled_nets:
         record-limit: "1000000"
       blacklist:
         contract-address: "0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5"
+      stargate-marketplace:
+        contract-address: "0x0602cfd406a3f592eb19246c535d855fb3ddaaf4"
       healthcheck:
         inactive-threshold-syncing: "120"
         inactive-threshold-not-syncing: "600"
@@ -149,6 +152,7 @@ enabled_nets:
         b3tr-balance: "7"
         safe: "1"
         wov-marketplace: "1"
+        stargate-marketplace: "1"
       business-event:
         substitutions:
           B3TR_CONTRACT: "0x5ef79995fe8a89e0812330e4378eb2660cede699"
@@ -269,6 +273,7 @@ enabled_nets:
         stargate-staking: "23188723"
         safe: "24762886"
         wov-marketplace: "0"
+        stargate-marketplace: "0"
       sync-log-interval: "10"
       channel-batch-size: "5"
       checkpoint-save-interval-seconds: "5"
@@ -279,6 +284,10 @@ enabled_nets:
         record-limit: "1000000"
       blacklist:
         contract-address: "0x9405c18c384dd448f82c11136e188a147186ea3a"
+      # No testnet FixedPriceNonCustodial whitelists the testnet StargateNFT yet; set this and add
+      # `stargate-marketplace` to both spring_profile lists once one is deployed.
+      stargate-marketplace:
+        contract-address: "0xd64F6d01FadF6207c27A0597Ff6F6AB8c2d8BB64"
       healthcheck:
         inactive-threshold-syncing: "120"
         inactive-threshold-not-syncing: "600"
@@ -312,6 +321,7 @@ enabled_nets:
         b3tr-balance: "7"
         safe: "1"
         wov-marketplace: "1"
+        stargate-marketplace: "1"
       business-event:
         substitutions:
           B3TR_CONTRACT: "0x95761346d18244bb91664181bf91193376197088"
