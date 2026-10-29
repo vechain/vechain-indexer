@@ -287,7 +287,7 @@ enabled_nets:
       # No testnet FixedPriceNonCustodial whitelists the testnet StargateNFT yet; set this and add
       # `stargate-marketplace` to both spring_profile lists once one is deployed.
       stargate-marketplace:
-        contract-address: "0x0000000000000000000000000000000000000000"
+        contract-address: "0xd64F6d01FadF6207c27A0597Ff6F6AB8c2d8BB64"
       healthcheck:
         inactive-threshold-syncing: "120"
         inactive-threshold-not-syncing: "600"
