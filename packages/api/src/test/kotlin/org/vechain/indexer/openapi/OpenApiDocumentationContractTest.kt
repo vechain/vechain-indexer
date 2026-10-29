@@ -124,6 +124,19 @@ class OpenApiDocumentationContractTest {
     }
 
     @Test
+    fun `big integers are documented as the decimal strings the API writes`() {
+        val schemas = fetchSpec().at("/components/schemas")
+        val vetStaked = schemas.at("/StargateToken/properties/vetStaked")
+        val byLevel = schemas.at("/TotalByBlockDto/properties/byLevel/additionalProperties")
+
+        expectThat(vetStaked.at("/type").asText()).isEqualTo("string")
+        expectThat(vetStaked.at("/pattern").asText()).isEqualTo("^-?[0-9]+$")
+        expectThat(schemas.at("/TotalByBlockDto/properties/total/type").asText())
+            .isEqualTo("string")
+        expectThat(byLevel.at("/type").asText()).isEqualTo("string")
+    }
+
+    @Test
     fun `history address parameters are documented with address patterns`() {
         val spec = fetchSpec()
         val parameters = spec.at("/paths/~1api~1v2~1history~1{account}/get/parameters")
