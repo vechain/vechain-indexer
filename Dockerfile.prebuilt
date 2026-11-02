@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM amazoncorretto:21.0.12-alpine3.23
+FROM amazoncorretto:21.0.13-alpine3.23
 RUN apk --no-cache upgrade && apk add --no-cache curl
 ARG PACKAGE_NAME
 RUN test -n "$PACKAGE_NAME" || (echo "ERROR: PACKAGE_NAME build arg must be set and non-empty" >&2 && exit 1)
