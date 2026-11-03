@@ -38,6 +38,9 @@ allprojects {
     // Ahead of the BOM's 4.1.135.Final for the netty-handler TLS fixes (CVE-2026-50010).
     extra["netty.version"] = "4.1.137.Final"
 
+    // Ahead of the BOM's 2.21.4 for the jackson-databind security fixes.
+    extra["jackson-bom.version"] = "2.21.8"
+
     configurations.all {
         resolutionStrategy {
             force(
