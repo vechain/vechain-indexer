@@ -289,7 +289,7 @@ allprojects {
         // Test dependencies
         testImplementation("org.springframework.boot:spring-boot-starter-test")
         testImplementation("org.junit.jupiter:junit-jupiter-api")
-        testImplementation("io.mockk:mockk:1.14.11")
+        testImplementation("io.mockk:mockk:1.14.12")
         testImplementation("io.strikt:strikt-core:0.35.1")
         testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 
@@ -316,8 +316,8 @@ allprojects {
         // Override the okhttp3 4.3.1 transitively pulled by web3j:core:5.0.0 (via
         // thor-devkit.java:v1.0.0). 4.3.1 has known CVEs (e.g. CVE-2021-0341, fixed in 4.9.2).
         // 4.12.0 is the final 4.x release and API-compatible with web3j's expectations.
-        implementation("com.squareup.okhttp3:okhttp:4.12.0")
-        implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+        implementation("com.squareup.okhttp3:okhttp:4.12.1")
+        implementation("com.squareup.okhttp3:logging-interceptor:4.12.1")
     }
 }
 
