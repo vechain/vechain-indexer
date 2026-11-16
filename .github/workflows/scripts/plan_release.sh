@@ -188,25 +188,47 @@ title="Deploy ${VERSION} to ${target_colour} (${target_kind})"
     echo "PROMOTE_NEEDED=$([ "$(jq 'length' <<<"$promote_list")" -gt 0 ] && echo true || echo false)"
 } >> "${GITHUB_OUTPUT:?}"
 
-requested="${TARGET_INPUT}"
-[ "$TARGET_INPUT" = auto ] || requested="**${TARGET_INPUT}** (recommended: ${recommended})"
+dot() { # colour -> its marker
+    case "$1" in *blue*) echo "🔵" ;; *green*) echo "🟢" ;; *) echo "⚪" ;; esac
+}
+yes_no() { [ "$1" = true ] && echo yes || echo no; }
+
+if [ "$restore" = true ]; then
+    restore_short="✅ Yes, from $(dot "$live") ${live} snapshots"
+elif [ "$target_kind" = dead ] && [ "$dead_state" != up ]; then
+    restore_short="⚠️ No, skipped by request"
+else
+    restore_short="No"
+fi
+
+indexer_why=""
+[ "$indexer_changed" = false ] || indexer_why=": $(join "${indexer_reasons[@]}")"
 
 {
-    echo "### Release plan: ${title}"
+    echo "### Deploy ${VERSION} → $(dot "$target_colour") ${target_colour} (${target_kind})"
+    echo
+    echo "| Live | Dead | Target | Restore |"
+    echo "|---|---|---|---|"
+    echo "| $(dot "$live") **${live}** | $(dot "$dead") **${dead}**, ${dead_desc} | $(dot "$target_colour") **${target_colour}** (${target_kind}) | ${restore_short} |"
+    echo
+    [ "$TARGET_INPUT" = auto ] || [ "$TARGET_INPUT" = "$recommended" ] \
+        || printf '> ⚠️ Target overridden: requested **%s**, recommended %s.\n\n' "$TARGET_INPUT" "$recommended"
+    [ -z "$staged_note" ] || printf '> ℹ️ %s\n\n' "$staged_note"
+    echo "**Next:** ${next_step}"
+    echo
+    echo "<details><summary>Why, and what changes</summary>"
     echo
     echo "| | |"
     echo "|---|---|"
-    echo "| Live colour | ${live} (both networks) |"
-    echo "| Dead colour | ${dead}, ${dead_desc} |"
-    echo "| Target | ${target_colour} (${target_kind}), requested: ${requested} |"
+    echo "| Requested | ${TARGET_INPUT} |"
     echo "| Recommended | ${recommended}: ${why} |"
-    echo "| API changed vs live | ${api_changed} |"
-    echo "| Indexer changed vs live | ${indexer_changed}$([ "$indexer_changed" = true ] && printf ': %s' "$(join "${indexer_reasons[@]}")") |"
-    echo "| Restore first | ${restore_note} |"
-    echo "| After the deploy | ${next_step} |"
+    echo "| API changed vs live | $(yes_no "$api_changed") |"
+    echo "| Indexer changed vs live | $(yes_no "$indexer_changed")${indexer_why} |"
+    echo "| Restore | ${restore_note} |"
     echo
-    [ -z "$staged_note" ] || { echo "> ${staged_note}"; echo; }
     echo "| net | service | running on ${target_colour} | deploying | note |"
     echo "|---|---|---|---|---|"
     printf '%s\n' "${rows[@]}"
+    echo
+    echo "</details>"
 } >> "${GITHUB_STEP_SUMMARY:?}"
