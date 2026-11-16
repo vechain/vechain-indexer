@@ -15,6 +15,7 @@ import org.vechain.indexer.blocks.BlocksFixtures.block
 import org.vechain.indexer.blocks.BlocksFixtures.decodedEvent
 import org.vechain.indexer.blocks.BlocksFixtures.transaction
 import org.vechain.indexer.blocks.BlocksFixtures.transfer
+import org.vechain.indexer.blocks.BlocksReadRepository.ContractCursor
 import org.vechain.indexer.blocks.BlocksReadRepository.LatestCursor
 import org.vechain.indexer.postgres.PostgresTestDatabase
 import org.vechain.indexer.thor.model.Clause
@@ -172,14 +173,17 @@ class BlocksReadRepositoryTest {
 
     @Test
     fun `contract pages count a transaction once however many clauses hit it`() {
-        val page = repository.findByContract(contract, 0, 10, DESC, expanded = true)
+        val page = repository.findByContract(contract, null, null, null, 10, DESC, expanded = true)
 
         assertEquals(listOf(seeded[4]!![0].id, seeded[3]!![0].id), page.map { it.id })
         assertEquals(seeded[4]!![0], page.first())
 
-        val secondAsc = repository.findByContract(contract, 1, 10, ASC, expanded = false)
-        assertEquals(listOf(seeded[4]!![0].id), secondAsc.map { it.id })
-        assertTrue(repository.findByContract(address(99), 0, 10, DESC, expanded = false).isEmpty())
+        val after = ContractCursor(3, seeded[3]!![0].id)
+        val nextAsc = repository.findByContract(contract, after, null, null, 10, ASC, false)
+        assertEquals(listOf(seeded[4]!![0].id), nextAsc.map { it.id })
+        assertTrue(
+            repository.findByContract(address(99), null, null, null, 10, DESC, false).isEmpty()
+        )
     }
 
     @Test

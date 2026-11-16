@@ -60,14 +60,6 @@ class ContractCursorPagingTest {
     }
 
     @Test
-    fun `offset pages and the cursor walk agree`() {
-        for (direction in listOf(DESC, ASC)) {
-            val offset = repository.findByContract(contract, 0, 100, direction, false)
-            assertEquals(offset.map { it.id }, walk(direction, size = 5), "direction $direction")
-        }
-    }
-
-    @Test
     fun `fromBlock and toBlock bound the walk inclusively`() {
         val inRange = calls.filter { it.blockNumber in 2L..3L }.map { it.id }.sortedDescending()
 

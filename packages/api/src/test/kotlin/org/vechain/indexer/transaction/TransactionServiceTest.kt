@@ -53,17 +53,6 @@ class TransactionServiceTest {
     }
 
     @Test
-    fun `findByContractAddress forwards offset, limit and expansion`() {
-        val pageable = PageRequest.of(1, 5, Sort.by(Direction.DESC, "blockNumber", "_id"))
-        every { repository.findByContract(address.value, 5L, 6, Direction.DESC, false) } returns
-            emptyList()
-
-        assertTrue(
-            service.findByContractAddress(address, pageable, expanded = false).content.isEmpty()
-        )
-    }
-
-    @Test
     fun `contract pages hand back the last row served as the cursor`() {
         val tx = "0x" + "b".repeat(64)
         every {
