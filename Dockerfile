@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM amazoncorretto:21.0.12-alpine3.23 AS builder
+FROM amazoncorretto:21.0.13-alpine3.23 AS builder
 
 ARG PACKAGE_NAME
 
@@ -30,7 +30,7 @@ RUN --mount=type=cache,target=/root/.gradle/caches \
     --mount=type=secret,id=gradle_props,target=/root/.gradle/gradle.properties,required=false \
     ./gradlew packages:$PACKAGE_NAME:build -x test
 
-FROM amazoncorretto:21.0.12-alpine3.23 AS prod
+FROM amazoncorretto:21.0.13-alpine3.23 AS prod
 
 ARG PACKAGE_NAME
 # Traceability only: the content_hash.sh value this image was built from.
