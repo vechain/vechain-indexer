@@ -126,10 +126,18 @@ open class TransactionController(private val transactionService: TransactionServ
         )
     }
 
+    @Deprecated("Use GET /api/v2/transactions/contract")
     @GetMapping("/contract")
     @Operation(
-        summary = "List transactions that called a contract",
-        description = "Results can be up to a minute old.",
+        summary = "List transactions that called a contract (deprecated)",
+        description =
+            """
+            **Deprecated:** use `GET /api/v2/transactions/contract`, which pages by cursor
+            with no page limit and filters by block range.
+
+            Results can be up to a minute old. `page` stops at 10000.
+            """,
+        deprecated = true,
     )
     @AddressParameter(name = "contractAddress", required = true)
     @CommonApiResponses

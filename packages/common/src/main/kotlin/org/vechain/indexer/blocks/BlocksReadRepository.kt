@@ -23,6 +23,9 @@ open class BlocksReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTemplate:
     /** The last row of the previous `/transactions/latest` page. */
     data class LatestCursor(val blockNumber: Long, val txIndex: Int)
 
+    /** The last row of the previous `/transactions/contract` page. */
+    data class ContractCursor(val blockNumber: Long, val txId: String)
+
     private class TxWithBlock(
         val row: TransactionRow,
         val block: BlockRef,
@@ -148,6 +151,45 @@ open class BlocksReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTemplate:
                 .addValue("limit", limit),
             expanded,
         )
+
+    /** Seeks `clause_recipient_idx` past [after], so a page costs the same at any depth. */
+    open fun findByContract(
+        contractAddress: String,
+        after: ContractCursor?,
+        fromBlock: Long?,
+        toBlock: Long?,
+        limit: Int,
+        direction: Direction,
+        expanded: Boolean,
+    ): List<IndexedTransaction> {
+        val past = if (direction == Direction.DESC) "<" else ">"
+        val bounds =
+            listOfNotNull(
+                    fromBlock?.let { "c.block_number >= :from" },
+                    toBlock?.let { "c.block_number <= :to" },
+                    after?.let { "(c.block_number, c.tx_id) $past (:b, :t)" },
+                )
+                .joinToString("") { " AND $it" }
+        return transactions(
+            """
+            WITH page AS (
+              SELECT DISTINCT ON (c.block_number, c.tx_id) c.block_number, c.tx_id FROM blocks.clause c
+              WHERE c.to_address = :address$bounds
+              ORDER BY c.block_number ${direction.name}, c.tx_id ${direction.name} LIMIT :limit)
+            SELECT t.*, b.id AS block_id, b.timestamp AS block_timestamp, $CLAUSE_COUNT
+            FROM page p JOIN blocks.transaction t ON t.id = p.tx_id JOIN blocks.block b ON b.number = t.block_number
+            ORDER BY p.block_number ${direction.name}, p.tx_id ${direction.name}
+            """
+                .trimIndent(),
+            MapSqlParameterSource("address", PostgresHex.bytes(contractAddress))
+                .addValue("from", fromBlock)
+                .addValue("to", toBlock)
+                .addValue("b", after?.blockNumber)
+                .addValue("t", after?.let { PostgresHex.bytes(it.txId) })
+                .addValue("limit", limit),
+            expanded,
+        )
+    }
 
     open fun latestTotals(): TransactionCountSummary? =
         jdbc

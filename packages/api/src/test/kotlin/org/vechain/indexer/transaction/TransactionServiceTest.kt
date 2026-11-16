@@ -7,11 +7,14 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.data.domain.Sort.Direction
 import org.vechain.indexer.blocks.BlocksReadRepository
+import org.vechain.indexer.blocks.BlocksReadRepository.ContractCursor
 import org.vechain.indexer.blocks.BlocksReadRepository.LatestCursor
+import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.thor.Address
 
 class TransactionServiceTest {
@@ -58,6 +61,73 @@ class TransactionServiceTest {
         assertTrue(
             service.findByContractAddress(address, pageable, expanded = false).content.isEmpty()
         )
+    }
+
+    @Test
+    fun `contract pages hand back the last row served as the cursor`() {
+        val tx = "0x" + "b".repeat(64)
+        every {
+            repository.findByContract(address.value, null, 10L, 20L, 3, Direction.ASC, false)
+        } returns
+            listOf(
+                transaction("0x1", 10L, 0L),
+                transaction(tx, 11L, 0L),
+                transaction("0x3", 12L, 0L),
+            )
+
+        val response =
+            service.findByContractAddress(address, null, 10L, 20L, 2, Direction.ASC, false)
+
+        assertEquals(listOf("0x1", tx), response.data.map { it.id })
+        assertEquals("11|$tx", response.pagination.cursor)
+    }
+
+    @Test
+    fun `contract pages continue after the cursor and end without one`() {
+        val tx = "0x" + "b".repeat(64)
+        every {
+            repository.findByContract(
+                address.value,
+                ContractCursor(11L, tx),
+                null,
+                null,
+                21,
+                Direction.DESC,
+                true,
+            )
+        } returns listOf(transaction("0x3", 10L, 0L))
+
+        val response =
+            service.findByContractAddress(address, "11|$tx", null, null, null, Direction.DESC, true)
+
+        assertFalse(response.pagination.hasNext)
+        assertNull(response.pagination.cursor)
+    }
+
+    @Test
+    fun `a contract cursor without a transaction id is rejected`() {
+        assertThrows<BadRequestException> {
+            service.findByContractAddress(
+                address,
+                "11|0x12",
+                null,
+                null,
+                null,
+                Direction.DESC,
+                false,
+            )
+        }
+        assertThrows<BadRequestException> {
+            service.findByContractAddress(
+                address,
+                "1.5|0x" + "b".repeat(64),
+                null,
+                null,
+                null,
+                Direction.DESC,
+                false,
+            )
+        }
     }
 
     @Test
