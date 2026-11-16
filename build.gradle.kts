@@ -46,18 +46,18 @@ allprojects {
             force(
                 "com.google.protobuf:protobuf-java:3.25.9",
                 "org.java-websocket:Java-WebSocket:1.6.0",
-                "org.bouncycastle:bcprov-jdk18on:1.85.2",
-                "org.bouncycastle:bcpkix-jdk18on:1.85",
-                "org.bouncycastle:bcutil-jdk18on:1.85",
+                "org.bouncycastle:bcprov-jdk18on:1.87",
+                "org.bouncycastle:bcpkix-jdk18on:1.87",
+                "org.bouncycastle:bcutil-jdk18on:1.87",
             )
             dependencySubstitution {
                 // The jdk15on line ended at 1.70 and receives no security fixes.
                 substitute(module("org.bouncycastle:bcprov-jdk15on"))
-                    .using(module("org.bouncycastle:bcprov-jdk18on:1.85.2"))
+                    .using(module("org.bouncycastle:bcprov-jdk18on:1.87"))
                 substitute(module("org.bouncycastle:bcpkix-jdk15on"))
-                    .using(module("org.bouncycastle:bcpkix-jdk18on:1.85"))
+                    .using(module("org.bouncycastle:bcpkix-jdk18on:1.87"))
                 substitute(module("org.bouncycastle:bcutil-jdk15on"))
-                    .using(module("org.bouncycastle:bcutil-jdk18on:1.85"))
+                    .using(module("org.bouncycastle:bcutil-jdk18on:1.87"))
             }
         }
     }
@@ -275,9 +275,9 @@ allprojects {
 
         implementation("org.web3j:abi:4.14.0")
         implementation("org.web3j:contracts:4.14.0")
-        implementation("org.bouncycastle:bcprov-jdk18on:1.85.2")
+        implementation("org.bouncycastle:bcprov-jdk18on:1.87")
         implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-        implementation("commons-codec:commons-codec:1.22.1")
+        implementation("commons-codec:commons-codec:1.23.0")
 
         // Monitoring dependencies
         implementation("io.micrometer:micrometer-registry-prometheus")
