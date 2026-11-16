@@ -43,8 +43,6 @@ open class TransactionV2Controller(private val transactionService: TransactionSe
     @CommonApiResponses
     @ExpandedParameter
     @CursorPaginationParameters
-    @BlockNumberParameter(name = "fromBlock", description = "Lowest block, inclusive.")
-    @BlockNumberParameter(name = "toBlock", description = "Highest block, inclusive.")
     @CacheFor(CachePolicy.MINUTE)
     open fun getTransactionsByContract(
         @ValidAddress @RequestParam contractAddress: Address,
@@ -52,8 +50,14 @@ open class TransactionV2Controller(private val transactionService: TransactionSe
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
         @ValidCursor @RequestParam(required = false) cursor: String?,
-        @ValidNonNegativeLong @RequestParam(required = false) fromBlock: Long?,
-        @ValidNonNegativeLong @RequestParam(required = false) toBlock: Long?,
+        @BlockNumberParameter(name = "fromBlock", description = "Lowest block, inclusive.")
+        @ValidNonNegativeLong
+        @RequestParam(required = false)
+        fromBlock: Long?,
+        @BlockNumberParameter(name = "toBlock", description = "Highest block, inclusive.")
+        @ValidNonNegativeLong
+        @RequestParam(required = false)
+        toBlock: Long?,
     ): PaginatedResponse<IndexedTransaction> {
         if (fromBlock != null && toBlock != null && fromBlock > toBlock) {
             throw BadRequestException("fromBlock must not be greater than toBlock")

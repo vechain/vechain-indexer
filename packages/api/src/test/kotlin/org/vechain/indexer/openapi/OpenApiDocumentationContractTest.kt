@@ -53,6 +53,7 @@ import org.vechain.indexer.vevote.VeVoteCommentReadRepository
 import org.vechain.indexer.vevote.VeVoteResultReadRepository
 import org.vechain.indexer.wov.marketplace.WovMarketplaceReadRepository
 import strikt.api.expectThat
+import strikt.assertions.contains
 import strikt.assertions.isEmpty
 import strikt.assertions.isEqualTo
 import strikt.assertions.isFalse
@@ -309,6 +310,19 @@ class OpenApiDocumentationContractTest {
                     .isMissingNode
             )
             .isTrue()
+    }
+
+    @Test
+    fun `v2 contract transactions route documents cursor and an unsigned block range`() {
+        val parameters = specParameters("/paths/~1api~1v2~1transactions~1contract/get/parameters")
+
+        expectThat(findParameter(parameters, "cursor", "query").isMissingNode).isFalse()
+        expectThat(parameters.firstOrNull { it.path("name").asText() == "page" } == null).isTrue()
+        for (name in listOf("fromBlock", "toBlock")) {
+            val parameter = findParameter(parameters, name, "query")
+            expectThat(parameter.path("description").asText()).contains("inclusive")
+            expectThat(parameter.at("/schema/minimum").asInt(-1)).isEqualTo(0)
+        }
     }
 
     @Test
