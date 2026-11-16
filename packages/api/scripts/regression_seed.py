@@ -273,6 +273,7 @@ def seed_transfers(values: Dict[str, Any], api: Baseline) -> None:
         token = token_rows[0]
         param(values, "tokenAddress", token["tokenAddress"])
         override(values, "/api/v1/transactions/contract", contractAddress=token["tokenAddress"])
+        override(values, "/api/v2/transactions/contract", contractAddress=token["tokenAddress"])
         override(values, "/api/v1/transfers/to", tokenAddress=None)
         override(values, "/api/v1/transfers/from", tokenAddress=None)
         override(values, "/api/v1/transfers", tokenAddress=None)

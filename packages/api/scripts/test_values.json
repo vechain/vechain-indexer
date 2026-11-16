@@ -39,6 +39,12 @@
         "DESC"
       ]
     },
+    "/api/v2/transactions/contract": {
+      "direction": [
+        "ASC",
+        "DESC"
+      ]
+    },
     "/api/v1/transactions/delegated": {
       "direction": [
         "ASC",

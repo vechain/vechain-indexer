@@ -62,7 +62,7 @@ object PaginationUtils {
         return SliceImpl(rows.take(pageable.pageSize), pageable, rows.size > pageable.pageSize)
     }
 
-    private fun toSortDirection(direction: String?): Direction {
+    fun toSortDirection(direction: String?): Direction {
         val sortDirection: Direction
         try {
             sortDirection = Direction.fromString(direction ?: DEFAULT_SORT_DIRECTION)

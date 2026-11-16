@@ -7,8 +7,10 @@ import org.springframework.data.domain.SliceImpl
 import org.springframework.data.domain.Sort.Direction
 import org.springframework.stereotype.Service
 import org.vechain.indexer.blocks.BlocksReadRepository
+import org.vechain.indexer.blocks.BlocksReadRepository.ContractCursor
 import org.vechain.indexer.blocks.BlocksReadRepository.LatestCursor
 import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
+import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -54,6 +56,48 @@ open class TransactionService(private val repository: BlocksReadRepository) {
         page(pageable) { offset, limit, direction ->
             repository.findByContract(contractAddress.value, offset, limit, direction, expanded)
         }
+
+    /** Cursor is `blockNumber|txId` of the last row served; pass the same [direction] back. */
+    open fun findByContractAddress(
+        contractAddress: Address,
+        cursor: String?,
+        fromBlock: Long?,
+        toBlock: Long?,
+        size: Int?,
+        direction: Direction,
+        expanded: Boolean,
+    ): PaginatedResponse<IndexedTransaction> {
+        val pageSize = size ?: DEFAULT_PAGE_SIZE
+        val rows =
+            repository.findByContract(
+                contractAddress.value,
+                contractCursor(cursor),
+                fromBlock,
+                toBlock,
+                pageSize + 1,
+                direction,
+                expanded,
+            )
+        val data = rows.take(pageSize)
+        val hasNext = rows.size > pageSize
+        return paginatedResponse(
+            data = data,
+            hasNext = hasNext,
+            cursor =
+                if (hasNext)
+                    CursorPaginationUtils.generateCursor(data.last().blockNumber, data.last().id)
+                else null,
+        )
+    }
+
+    private fun contractCursor(cursor: String?): ContractCursor? {
+        val info = CursorPaginationUtils.parseCursor(cursor) ?: return null
+        val blockNumber = info.sortValue.toLongOrNull()
+        if (blockNumber == null || !TransactionUtils.isIdValid(info.cursorValue)) {
+            throw BadRequestException("Invalid cursor: $cursor")
+        }
+        return ContractCursor(blockNumber, info.cursorValue)
+    }
 
     /** Cursor is `blockNumber|transactionIndex` of the last row served, as before. */
     open fun findLatest(
