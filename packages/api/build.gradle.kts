@@ -6,17 +6,21 @@ plugins {
 
 dependencies {
     implementation(project(":packages:common"))
-    implementation("org.springframework.boot:spring-boot-starter-web") {
+    implementation("org.springframework.boot:spring-boot-starter-webmvc") {
         exclude(group = "org.springframework.boot", module = "spring-boot-starter-tomcat")
     }
     implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.9.0")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.2.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
 
     // Caffeine cache
     implementation("org.springframework.boot:spring-boot-starter-cache")
     implementation("com.github.ben-manes.caffeine:caffeine")
+
+    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test") {
+        exclude(group = "org.springframework.boot", module = "spring-boot-starter-tomcat")
+    }
 }
 
 tasks.getByName<BootJar>("bootJar") {

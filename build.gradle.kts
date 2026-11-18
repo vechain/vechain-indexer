@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id("org.springframework.boot") version "3.5.16"
+    id("org.springframework.boot") version "4.1.2"
     id("io.spring.dependency-management") version "1.1.7"
     id("maven-publish")
     kotlin("jvm") version "2.4.10"
@@ -35,17 +35,15 @@ allprojects {
     extra["kotlin-coroutines.version"] = "1.11.0"
     extra["kotlin-serialization.version"] = "1.11.0"
 
-    // Ahead of the BOM's 4.1.135.Final for the netty-handler TLS fixes (CVE-2026-50010).
-    extra["netty.version"] = "4.1.137.Final"
-
-    // Ahead of the BOM's 2.21.4 for the jackson-databind security fixes.
-    extra["jackson-bom.version"] = "2.21.8"
+    // Ahead of the BOM's 2.21.7 for the jackson-databind security fixes.
+    extra["jackson-2-bom.version"] = "2.21.8"
 
     configurations.all {
         resolutionStrategy {
             force(
                 "com.google.protobuf:protobuf-java:3.25.9",
                 "org.java-websocket:Java-WebSocket:1.6.0",
+                "com.google.guava:guava:33.7.2-jre",
                 "org.bouncycastle:bcprov-jdk18on:1.85.2",
                 "org.bouncycastle:bcpkix-jdk18on:1.85",
                 "org.bouncycastle:bcutil-jdk18on:1.85",
@@ -264,6 +262,7 @@ allprojects {
         implementation("org.springframework.data:spring-data-commons")
         implementation("org.springframework:spring-tx")
         implementation("org.springframework.boot:spring-boot-starter-webflux")
+        implementation("org.springframework.boot:spring-boot-starter-webclient")
         implementation("org.springframework.boot:spring-boot-starter-jetty")
         implementation("org.springframework:spring-webflux")
         implementation("org.springframework:spring-core")

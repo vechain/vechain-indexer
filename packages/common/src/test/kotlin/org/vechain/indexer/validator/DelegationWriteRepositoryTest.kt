@@ -59,11 +59,13 @@ class DelegationWriteRepositoryTest {
 
     /** Every row as "id:block:status:supersededAt", ordered. */
     private fun rows(): List<String> =
-        database.jdbc.queryForList(
-            "SELECT id::text || ':' || block_number || ':' || status || ':' || " +
-                "coalesce(superseded_at::text, '-') FROM delegation.state ORDER BY id, block_number",
-            String::class.java,
-        )
+        database.jdbc
+            .queryForList(
+                "SELECT id::text || ':' || block_number || ':' || status || ':' || " +
+                    "coalesce(superseded_at::text, '-') FROM delegation.state ORDER BY id, block_number",
+                String::class.java,
+            )
+            .filterNotNull()
 
     private fun current(): List<Delegation> =
         database.jdbc.query(

@@ -106,10 +106,12 @@ class NftBlacklistProcessorIntegrationTest {
     }
 
     private fun rows(): List<String> =
-        database.jdbc.queryForList(
-            "SELECT encode(contract_address, 'hex') || ':' || block_number || ':' || is_blacklisted " +
-                "|| ':' || coalesce(superseded_at::text, '-') FROM nft_blacklist.collection_state " +
-                "ORDER BY 1",
-            String::class.java,
-        )
+        database.jdbc
+            .queryForList(
+                "SELECT encode(contract_address, 'hex') || ':' || block_number || ':' || is_blacklisted " +
+                    "|| ':' || coalesce(superseded_at::text, '-') FROM nft_blacklist.collection_state " +
+                    "ORDER BY 1",
+                String::class.java,
+            )
+            .filterNotNull()
 }

@@ -53,11 +53,13 @@ class NftProcessorIntegrationTest {
     }
 
     private fun owners(): List<String> =
-        database.jdbc.queryForList(
-            "SELECT token_id::text || '@' || block_number || ':' || encode(owner, 'hex') FROM nft.ownership " +
-                "WHERE superseded_at IS NULL ORDER BY token_id",
-            String::class.java,
-        )
+        database.jdbc
+            .queryForList(
+                "SELECT token_id::text || '@' || block_number || ':' || encode(owner, 'hex') FROM nft.ownership " +
+                    "WHERE superseded_at IS NULL ORDER BY token_id",
+                String::class.java,
+            )
+            .filterNotNull()
 
     @Test
     fun `transfers are written, resumed from, rolled back and replayed`() {

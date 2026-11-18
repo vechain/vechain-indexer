@@ -49,11 +49,13 @@ class StargateTokenWriteRepositoryTest {
 
     /** Every row as "token:block:supersededAt", ordered. */
     private fun rows(): List<String> =
-        database.jdbc.queryForList(
-            "SELECT token_id::text || ':' || block_number || ':' || " +
-                "coalesce(superseded_at::text, '-') FROM stargate_token.state ORDER BY token_id, block_number",
-            String::class.java,
-        )
+        database.jdbc
+            .queryForList(
+                "SELECT token_id::text || ':' || block_number || ':' || " +
+                    "coalesce(superseded_at::text, '-') FROM stargate_token.state ORDER BY token_id, block_number",
+                String::class.java,
+            )
+            .filterNotNull()
 
     @Test
     fun `every field survives the round trip`() {

@@ -1,9 +1,9 @@
 package org.vechain.indexer.config
 
 import org.slf4j.LoggerFactory
-import org.springframework.boot.actuate.health.HealthEndpoint
-import org.springframework.boot.actuate.health.Status
-import org.springframework.boot.actuate.health.SystemHealth
+import org.springframework.boot.health.actuate.endpoint.HealthEndpoint
+import org.springframework.boot.health.actuate.endpoint.SystemHealthDescriptor
+import org.springframework.boot.health.contributor.Status
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 
@@ -34,18 +34,18 @@ open class ApplicationHealth(
 
     @Scheduled(fixedDelay = 60 * 1000)
     fun logApplicationHealth() {
-        val health = healthEndpoint.health() as SystemHealth
+        val health = healthEndpoint.health() as SystemHealthDescriptor
         val applicationPolicy = healthStatusLogPolicy(health.status)
 
         if (health.status != Status.UP) {
             logAtLevel(
                 applicationPolicy.level,
                 "Application is ${applicationPolicy.label}: {}",
-                health.components.filter { it.value.status != Status.UP },
+                health.components.orEmpty().filter { it.value.status != Status.UP },
             )
         }
 
-        health.components.forEach { (name, component) ->
+        health.components.orEmpty().forEach { (name, component) ->
             if (component.status != Status.UP) {
                 val componentPolicy = healthStatusLogPolicy(component.status)
                 logAtLevel(

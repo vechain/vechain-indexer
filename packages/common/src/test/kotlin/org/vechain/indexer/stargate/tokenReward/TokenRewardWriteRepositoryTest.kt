@@ -65,11 +65,13 @@ class TokenRewardWriteRepositoryTest {
 
     /** Every row as "id:block:supersededAt", ordered. */
     private fun rows(): List<String> =
-        database.jdbc.queryForList(
-            "SELECT id || ':' || block_number || ':' || coalesce(superseded_at::text, '-') " +
-                "FROM token_reward.state ORDER BY id, block_number",
-            String::class.java,
-        )
+        database.jdbc
+            .queryForList(
+                "SELECT id || ':' || block_number || ':' || coalesce(superseded_at::text, '-') " +
+                    "FROM token_reward.state ORDER BY id, block_number",
+                String::class.java,
+            )
+            .filterNotNull()
 
     @Test
     fun `a supersede is planned on the current-row index, not the key`() {

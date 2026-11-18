@@ -52,7 +52,7 @@ object PaginationUtils {
         )
 
     /** Offset paging as the Mongo repositories did it: one row past the page decides hasNext. */
-    fun <T> offsetSlice(
+    fun <T : Any> offsetSlice(
         pageable: Pageable,
         sortField: String,
         fetch: (offset: Long, limit: Int, direction: Direction) -> List<T>,

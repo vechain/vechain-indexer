@@ -2,6 +2,7 @@ package org.vechain.e2e
 
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpMethod
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
 import org.springframework.web.client.RestTemplate
 import org.vechain.indexer.nft.IndexedNft
 import org.vechain.indexer.rest.PAGE_SIZE_LIMIT
@@ -18,7 +19,8 @@ object VeWorldAPIClient {
     private const val API_URL = "http://localhost:8080/api/v1/"
     private const val THOR_URL = "http://localhost:8669"
 
-    private val REST_TEMPLATE = RestTemplate()
+    // Spring 7 defaults to Jackson 3, which has no Kotlin module on this classpath.
+    private val REST_TEMPLATE = RestTemplate(listOf(MappingJackson2HttpMessageConverter()))
 
     /** Response Types */
     private val TX_TYPE = object : ParameterizedTypeReference<IndexedTransaction>() {}
@@ -321,7 +323,7 @@ object VeWorldAPIClient {
         return getRequest("$API_URL/e2e/nfts", NFTS_TYPE)
     }
 
-    private fun <T> getRequest(url: String, responseType: ParameterizedTypeReference<T>): T {
+    private fun <T : Any> getRequest(url: String, responseType: ParameterizedTypeReference<T>): T {
         val res = REST_TEMPLATE.exchange(url, HttpMethod.GET, null, responseType)
 
         if (!res.statusCode.is2xxSuccessful) throw Exception("GET failed $url")

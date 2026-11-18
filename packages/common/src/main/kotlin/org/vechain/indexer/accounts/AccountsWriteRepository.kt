@@ -166,7 +166,7 @@ open class AccountsWriteRepository(
             before,
         )
 
-    private fun <T> batch(
+    private fun <T : Any> batch(
         sql: String,
         rows: List<T>,
         bind: (java.sql.PreparedStatement, T) -> Unit,

@@ -1,6 +1,6 @@
 package org.vechain.indexer.config.genesis
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.DefaultResourceLoader
@@ -17,13 +17,13 @@ import org.vechain.indexer.thor.model.Block
  */
 @Service
 class GenesisVetBalanceLoader(
-    private val objectMapper: ObjectMapper,
     private val networkDetectionService: NetworkDetectionService,
     @Value("\${indexer.genesis.vet-balances.resource:}")
     private val genesisVetBalancesResourcePath: String,
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val resourceLoader = DefaultResourceLoader()
+    private val objectMapper = jacksonObjectMapper()
 
     /** Represents the structure of the genesis VET balances JSON file. */
     data class GenesisVetBalancesFile(

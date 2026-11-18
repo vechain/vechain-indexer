@@ -53,13 +53,16 @@ open class PostgresApiRole(
 
     /** Every schema Flyway has created: public and one per indexer. */
     private fun schemas(): List<String> =
-        jdbc.queryForList(
-            // pg_has_role skips a schema owned by someone else, whose GRANT would throw in here.
-            "SELECT nspname FROM pg_namespace WHERE nspname NOT LIKE 'pg\\_%' " +
-                "AND nspname <> 'information_schema' " +
-                "AND pg_has_role(current_user, nspowner, 'USAGE') ORDER BY nspname",
-            String::class.java,
-        )
+        jdbc
+            .queryForList(
+                // pg_has_role skips a schema owned by someone else, whose GRANT would
+                // throw in here.
+                "SELECT nspname FROM pg_namespace WHERE nspname NOT LIKE 'pg\\_%' " +
+                    "AND nspname <> 'information_schema' " +
+                    "AND pg_has_role(current_user, nspowner, 'USAGE') ORDER BY nspname",
+                String::class.java,
+            )
+            .filterNotNull()
 
     companion object {
         const val ROLE = "api"

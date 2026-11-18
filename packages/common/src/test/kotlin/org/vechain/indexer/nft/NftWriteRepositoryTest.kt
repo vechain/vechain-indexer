@@ -46,11 +46,13 @@ class NftWriteRepositoryTest {
 
     /** Every row as "token:block:owner:supersededAt", ordered. */
     private fun rows(): List<String> =
-        database.jdbc.queryForList(
-            "SELECT token_id::text || ':' || block_number || ':' || encode(owner, 'hex') || ':' || " +
-                "coalesce(superseded_at::text, '-') FROM nft.ownership ORDER BY token_id, block_number",
-            String::class.java,
-        )
+        database.jdbc
+            .queryForList(
+                "SELECT token_id::text || ':' || block_number || ':' || encode(owner, 'hex') || ':' || " +
+                    "coalesce(superseded_at::text, '-') FROM nft.ownership ORDER BY token_id, block_number",
+                String::class.java,
+            )
+            .filterNotNull()
 
     private fun current(): List<IndexedNft> =
         database.jdbc
