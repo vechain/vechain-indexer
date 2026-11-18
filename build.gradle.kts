@@ -38,6 +38,9 @@ allprojects {
     // Ahead of the BOM's 2.21.7 for the jackson-databind security fixes.
     extra["jackson-2-bom.version"] = "2.21.8"
 
+    // Ahead of the BOM's 3.1.7 for the jackson-databind type-id fix (AIKIDO-2026-829966).
+    extra["jackson-bom.version"] = "3.1.8"
+
     configurations.all {
         resolutionStrategy {
             force(
