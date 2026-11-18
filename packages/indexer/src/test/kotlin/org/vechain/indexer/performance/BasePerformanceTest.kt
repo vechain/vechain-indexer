@@ -6,8 +6,8 @@ import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.TestPropertySource
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.SimpleBlockIndexerCoordinator
 import org.vechain.indexer.Status
@@ -34,7 +34,7 @@ abstract class BasePerformanceTest {
     @Value("\${thor.url}") lateinit var thorUrl: String
 
     // Mock IndexManager to prevent it from starting all indexers
-    @MockBean private lateinit var indexManager: IndexManager
+    @MockitoBean private lateinit var indexManager: IndexManager
 
     protected data class PerformanceTestConfig(
         val indexerName: String,

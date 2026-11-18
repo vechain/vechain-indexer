@@ -6,7 +6,7 @@ import org.springframework.data.domain.SliceImpl
 import org.springframework.data.domain.Sort.Direction
 
 /** Offset paging as the Mongo repositories did it: one row past the page decides hasNext. */
-fun <T> timeFrameSlice(
+fun <T : Any> timeFrameSlice(
     pageable: Pageable,
     fetch: (direction: Direction, offset: Long, limit: Int) -> List<T>,
 ): Slice<T> {

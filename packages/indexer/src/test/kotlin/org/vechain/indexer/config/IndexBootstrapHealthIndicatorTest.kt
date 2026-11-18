@@ -2,7 +2,7 @@ package org.vechain.indexer.config
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import org.springframework.boot.actuate.health.Status
+import org.springframework.boot.health.contributor.Status
 
 class IndexBootstrapHealthIndicatorTest {
     private val indexBootstrapState = IndexBootstrapState()

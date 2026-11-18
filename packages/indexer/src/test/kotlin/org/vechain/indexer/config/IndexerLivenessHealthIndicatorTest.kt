@@ -7,9 +7,9 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.springframework.boot.actuate.health.HealthContributorNameFactory
-import org.springframework.boot.actuate.health.Status.DOWN
-import org.springframework.boot.actuate.health.Status.UP
+import org.springframework.boot.health.autoconfigure.registry.HealthContributorNameGenerator
+import org.springframework.boot.health.contributor.Status.DOWN
+import org.springframework.boot.health.contributor.Status.UP
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.Status
@@ -130,7 +130,9 @@ class IndexerLivenessHealthIndicatorTest {
         // Spring drops an unknown group member silently, which would leave liveness as ping alone.
         val beanName =
             IndexerLivenessHealthIndicator::class.simpleName!!.replaceFirstChar { it.lowercase() }
-        val contributor = HealthContributorNameFactory.INSTANCE.apply(beanName)
+        val contributor =
+            HealthContributorNameGenerator.withoutStandardSuffixes()
+                .generateContributorName(beanName)
         val livenessInclude =
             Regex("liveness:\\s*\\n\\s*include:\\s*(.+)")
                 .find(File("src/main/resources/application.yaml").readText())

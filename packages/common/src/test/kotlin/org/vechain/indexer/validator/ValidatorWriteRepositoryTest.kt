@@ -46,19 +46,23 @@ class ValidatorWriteRepositoryTest {
 
     /** Every row as "id:block:status:supersededAt", ordered. */
     private fun rows(): List<String> =
-        database.jdbc.queryForList(
-            "SELECT encode(id, 'hex') || ':' || block_number || ':' || status || ':' || " +
-                "coalesce(superseded_at::text, '-') FROM validator.state ORDER BY id, block_number",
-            String::class.java,
-        )
+        database.jdbc
+            .queryForList(
+                "SELECT encode(id, 'hex') || ':' || block_number || ':' || status || ':' || " +
+                    "coalesce(superseded_at::text, '-') FROM validator.state ORDER BY id, block_number",
+                String::class.java,
+            )
+            .filterNotNull()
 
     /** Every cycle row as "id:block:status:supersededAt", ordered. */
     private fun cycles(): List<String> =
-        database.jdbc.queryForList(
-            "SELECT encode(id, 'hex') || ':' || block_number || ':' || status || ':' || " +
-                "coalesce(superseded_at::text, '-') FROM validator.cycle ORDER BY id, block_number",
-            String::class.java,
-        )
+        database.jdbc
+            .queryForList(
+                "SELECT encode(id, 'hex') || ':' || block_number || ':' || status || ':' || " +
+                    "coalesce(superseded_at::text, '-') FROM validator.cycle ORDER BY id, block_number",
+                String::class.java,
+            )
+            .filterNotNull()
 
     @Test
     fun `a cycle row lands only when a field other indexers read changes, and prune keeps it`() {

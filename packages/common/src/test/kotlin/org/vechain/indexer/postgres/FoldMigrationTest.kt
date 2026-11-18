@@ -98,10 +98,12 @@ class FoldMigrationTest {
                     Long::class.java,
                     parent,
                 )!! to
-                    jdbc.queryForList(
-                        "SELECT block_number FROM $movedTable ORDER BY block_number",
-                        Long::class.java,
-                    )
+                    jdbc
+                        .queryForList(
+                            "SELECT block_number FROM $movedTable ORDER BY block_number",
+                            Long::class.java,
+                        )
+                        .filterNotNull()
             }
 
         private fun flyway(dataSource: DriverManagerDataSource, target: String): Flyway =

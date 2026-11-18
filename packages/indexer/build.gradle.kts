@@ -13,7 +13,7 @@ dependencies {
     // Postgres-backed tests build the Postgres store by hand; common keeps these as implementation.
     testImplementation("org.springframework.boot:spring-boot-starter-jdbc")
     testImplementation("org.flywaydb:flyway-core")
-    testImplementation("org.testcontainers:postgresql")
+    testImplementation("org.testcontainers:testcontainers-postgresql")
 }
 
 tasks.getByName<BootJar>("bootJar") { enabled = true }

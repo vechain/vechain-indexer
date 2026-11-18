@@ -9,9 +9,10 @@ import org.eclipse.jetty.server.Request
 import org.eclipse.jetty.server.Response
 import org.eclipse.jetty.server.handler.ErrorHandler
 import org.eclipse.jetty.util.Callback
-import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory
+import org.springframework.boot.jetty.JettyServerCustomizer
+import org.springframework.boot.jetty.servlet.JettyServletWebServerFactory
 import org.springframework.boot.web.server.WebServerFactoryCustomizer
-import org.springframework.boot.web.servlet.error.ErrorController
+import org.springframework.boot.webmvc.error.ErrorController
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpStatus
@@ -79,7 +80,7 @@ open class JettyErrorHandlerConfig {
     ): WebServerFactoryCustomizer<JettyServletWebServerFactory> =
         WebServerFactoryCustomizer { factory ->
             factory.addServerCustomizers(
-                org.springframework.boot.web.embedded.jetty.JettyServerCustomizer { server ->
+                JettyServerCustomizer { server ->
                     server.setErrorHandler(JsonErrorHandler(objectMapper))
                 }
             )

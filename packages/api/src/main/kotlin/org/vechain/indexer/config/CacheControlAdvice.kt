@@ -30,7 +30,7 @@ open class CacheControlAdvice : ResponseBodyAdvice<Any> {
         request: ServerHttpRequest,
         response: ServerHttpResponse,
     ): Any? {
-        if (response.headers.containsKey(HttpHeaders.CACHE_CONTROL)) return body
+        if (response.headers.containsHeader(HttpHeaders.CACHE_CONTROL)) return body
 
         val declared = returnType.getMethodAnnotation(CacheFor::class.java)?.policy
         response.headers.set(

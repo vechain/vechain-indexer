@@ -30,7 +30,7 @@ open class WovMarketplaceWriteRepository(
         jdbc.update(PROGRESS_INSERT, entry.endBlockNumber, entry.endBlockTimestamp)
     }
 
-    private fun <T> insert(
+    private fun <T : Any> insert(
         sql: String,
         rows: List<T>,
         bind: (java.sql.PreparedStatement, T) -> Unit,
