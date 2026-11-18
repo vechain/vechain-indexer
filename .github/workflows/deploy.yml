@@ -219,40 +219,42 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Copy image from GHCR to ECR
+      - name: Resolve GHCR image
         env:
           VERSION: ${{ needs.plan-release.outputs.VERSION }}
           GHCR_IMAGE_ROOT: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPO }}/${{ matrix.packageName }}
-          ECR_IMAGE: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_PROJECT }}/${{ matrix.packageName }}
         run: |
           set -euo pipefail
           # GHCR tags drop the v. prefix (v.1.0.0 -> 1.0.0); ECR keeps it.
-          GHCR_IMAGE="${GHCR_IMAGE_ROOT}:${VERSION#v.}"
+          echo "GHCR_IMAGE=${GHCR_IMAGE_ROOT}:${VERSION#v.}" >> "$GITHUB_ENV"
 
+      # The build-time scan only saw the CVEs known then; re-scan so a newly
+      # disclosed fixable HIGH/CRITICAL blocks the release before it reaches
+      # ECR. ECS runs ARM64 only, so that is the platform scanned and copied.
+      - name: Re-scan image with Trivy
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          TRIVY_PLATFORM: linux/arm64
+        with:
+          image-ref: ${{ env.GHCR_IMAGE }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+          vuln-type: os,library
+
+      - name: Copy image from GHCR to ECR
+        env:
+          VERSION: ${{ needs.plan-release.outputs.VERSION }}
+          ECR_IMAGE: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_PROJECT }}/${{ matrix.packageName }}
+        run: |
+          set -euo pipefail
           docker pull --platform linux/arm64 "$GHCR_IMAGE"
           docker tag "$GHCR_IMAGE" "${ECR_IMAGE}:${VERSION}"
           docker tag "$GHCR_IMAGE" "${ECR_IMAGE}:latest"
           docker push "${ECR_IMAGE}:${VERSION}"
           docker push "${ECR_IMAGE}:latest"
-
-      - name: Scan image in ECR
-        env:
-          REPO: ${{ env.ECR_PROJECT }}/${{ matrix.packageName }}
-          TAG: ${{ needs.plan-release.outputs.VERSION }}
-        run: |
-          set -euo pipefail
-          aws ecr start-image-scan --repository-name "$REPO" --image-id imageTag="$TAG" || true
-          aws ecr wait image-scan-complete --repository-name "$REPO" --image-id imageTag="$TAG"
-          read -r CRIT HIGH MED <<< "$(aws ecr describe-image-scan-findings \
-            --repository-name "$REPO" --image-id imageTag="$TAG" \
-            --query 'imageScanFindings.findingSeverityCounts.[CRITICAL, HIGH, MEDIUM]' \
-            --output text)"
-          CRIT=${CRIT/None/0}; HIGH=${HIGH/None/0}; MED=${MED/None/0}
-          echo "Findings for $REPO:$TAG — CRITICAL=$CRIT HIGH=$HIGH MEDIUM=$MED"
-          if [ $((CRIT + HIGH + MED)) -gt 0 ]; then
-            echo "::error::Vulnerabilities at MEDIUM or higher: CRITICAL=$CRIT HIGH=$HIGH MEDIUM=$MED"
-            exit 1
-          fi
 
   apply-shared:
     name: Apply shared stack
