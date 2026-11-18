@@ -1,5 +1,10 @@
 name: Build & Publish GHCR Image
 
+# Release tags are aliases onto `content.<hash>`: when that content is already
+# in GHCR (normally built by the PR or main run of publish-ghcr-pr-image.yml)
+# it is tagged, not rebuilt. A missing image is built, scanned by Trivy and
+# pushed only when no HIGH/CRITICAL finding with an upstream fix remains.
+
 on:
   push:
     tags:
@@ -20,9 +25,7 @@ concurrency:
   group: ghcr-publish
   cancel-in-progress: false
 
-permissions:
-  packages: write
-  contents: read
+permissions: {}
 
 env:
   versionTag: ${{ inputs.version || github.ref_name }}
@@ -34,6 +37,9 @@ jobs:
   plan:
     name: Resolve content hashes
     runs-on: ubuntu-24.04
+    permissions:
+      packages: read
+      contents: read
     outputs:
       hashes: ${{ steps.plan.outputs.hashes }}
       build_matrix: ${{ steps.plan.outputs.build_matrix }}
@@ -97,6 +103,9 @@ jobs:
   build:
     needs: plan
     if: needs.plan.outputs.build_needed == 'true'
+    permissions:
+      packages: write
+      contents: read
     strategy:
       matrix:
         packageName: ${{ fromJSON(needs.plan.outputs.build_matrix) }}
@@ -126,7 +135,65 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push by digest
+      - name: Build image (load, no push)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          file: Dockerfile
+          platforms: ${{ matrix.platform }}
+          build-args: |
+            PACKAGE_NAME=${{ matrix.packageName }}
+            CONTENT_HASH=${{ fromJSON(needs.plan.outputs.hashes)[matrix.packageName] }}
+          context: ./
+          provenance: false
+          sbom: false
+          secrets: |
+            "gradle_props=gpr.user=${{ github.actor }}
+            gpr.key=${{ secrets.GITHUB_TOKEN }}"
+          load: true
+          push: false
+          tags: ${{ env.registry }}/${{ github.repository }}/${{ matrix.packageName }}:content.${{ fromJSON(needs.plan.outputs.hashes)[matrix.packageName] }}
+
+      - name: Scan image with Trivy
+        id: trivy
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.registry }}/${{ github.repository }}/${{ matrix.packageName }}:content.${{ fromJSON(needs.plan.outputs.hashes)[matrix.packageName] }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+          format: json
+          output: trivy-report.json
+          vuln-type: os,library
+
+      - name: Render Trivy findings
+        if: always() && steps.trivy.conclusion != 'skipped'
+        run: |
+          set -euo pipefail
+          [ -f trivy-report.json ] || { echo "No Trivy report."; exit 0; }
+          jq -r '
+            def rows:
+              [ .Results[]?
+                | select(.Vulnerabilities and (.Vulnerabilities|length > 0))
+                | .Target as $target
+                | .Vulnerabilities[]
+                | "| \(.Severity) | \(.PkgName) | \(.InstalledVersion) | \(.FixedVersion // "-") | [\(.VulnerabilityID)](\(.PrimaryURL // "")) | \($target) |"
+              ];
+            if (rows | length) == 0 then
+              "No HIGH/CRITICAL vulnerabilities with upstream fixes."
+            else
+              "| Severity | Package | Installed | Fixed | CVE | Target |\n|---|---|---|---|---|---|\n" + (rows | join("\n"))
+            end
+          ' trivy-report.json > trivy-findings.md
+          echo "--- Trivy findings ---"
+          cat trivy-findings.md
+          {
+            echo "### Trivy scan"
+            echo ""
+            cat trivy-findings.md
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Same builder and inputs, so all layers hit cache: pushes the image just scanned.
+      - name: Push scanned image by digest
         id: build
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
@@ -144,10 +211,11 @@ jobs:
           outputs: type=image,name=${{ env.registry }}/${{ github.repository }}/${{ matrix.packageName }},push-by-digest=true,name-canonical=true,push=true
 
       - name: Export digest
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           mkdir -p /tmp/digests
-          digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests/${digest#sha256:}"
+          touch "/tmp/digests/${DIGEST#sha256:}"
 
       - name: Upload digest
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -162,6 +230,10 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [plan, build]
     if: needs.plan.outputs.build_needed == 'true'
+    permissions:
+      actions: read
+      packages: write
+      contents: read
     strategy:
       matrix:
         packageName: ${{ fromJSON(needs.plan.outputs.build_matrix) }}
@@ -208,6 +280,9 @@ jobs:
       !cancelled() && needs.plan.result == 'success'
       && (needs.plan.outputs.build_needed != 'true'
           || needs.publish-content-tag.result == 'success')
+    permissions:
+      packages: write
+      contents: read
     strategy:
       matrix:
         include:
@@ -236,9 +311,11 @@ jobs:
 
       - name: Extract version tags
         id: version
+        env:
+          VERSION_TAG: ${{ env.versionTag }}
         run: |
           # Strip v. prefix from version tag
-          VERSION=$(echo "${{ env.versionTag }}" | sed 's/^v\.//')
+          VERSION=$(echo "${VERSION_TAG}" | sed 's/^v\.//')
           echo "full=$VERSION" >> "$GITHUB_OUTPUT"
 
           # Only publish floating tags for stable versions (X.Y.Z)
