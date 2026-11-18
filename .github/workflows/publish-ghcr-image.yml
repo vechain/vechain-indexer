@@ -174,9 +174,9 @@ jobs:
             def rows:
               [ .Results[]?
                 | select(.Vulnerabilities and (.Vulnerabilities|length > 0))
-                | . as $r
+                | .Target as $target
                 | .Vulnerabilities[]
-                | "| \(.Severity) | \(.PkgName) | \(.InstalledVersion) | \(.FixedVersion // "-") | [\(.VulnerabilityID)](\(.PrimaryURL // "")) | \($r.Target) |"
+                | "| \(.Severity) | \(.PkgName) | \(.InstalledVersion) | \(.FixedVersion // "-") | [\(.VulnerabilityID)](\(.PrimaryURL // "")) | \($target) |"
               ];
             if (rows | length) == 0 then
               "No HIGH/CRITICAL vulnerabilities with upstream fixes."
@@ -192,8 +192,7 @@ jobs:
             cat trivy-findings.md
           } >> "$GITHUB_STEP_SUMMARY"
 
-      # Same inputs on the same builder, so every layer is a cache hit: this
-      # pushes the image that was just scanned, without rebuilding it.
+      # Same builder and inputs, so all layers hit cache: pushes the image just scanned.
       - name: Push scanned image by digest
         id: build
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
