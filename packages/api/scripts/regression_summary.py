@@ -65,6 +65,7 @@ def render(report: Dict[str, Any], seed: Dict[str, Any] | None, candidate: str, 
         f"| **Unavailable** | {s.get('unavailable', 0)} |",
         f"| **Failed** | {s['failed']} |",
         f"| **Retried while the head moved** | {s.get('retried', 0)} |",
+        f"| **Rows cut at the common head** | {s.get('settled', 0)} |",
         f"| **Served from a CDN cache** | {s.get('cache_hits', 0)} |",
         "",
     ]

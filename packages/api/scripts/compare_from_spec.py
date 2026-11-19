@@ -42,6 +42,7 @@ Exit codes:
 """
 
 import argparse
+import dataclasses
 import itertools
 import json
 import os
@@ -150,6 +151,9 @@ class TestCase:
     # Unordered list path -> its element's identifying field, from path_overrides.
     unordered_by: Dict[str, str] = field(default_factory=dict)
     expected_failure: Optional[str] = None
+    # The row field that settle_to_head orders by; None compares the rows strictly.
+    block_field: Optional[str] = "blockNumber"
+    num_rel_tolerance: float = 0.0
 
     @property
     def resolved_path(self) -> str:
@@ -185,6 +189,7 @@ class ComparisonResult:
     attempts: int = 1
     cache_headers: Dict[str, Dict[str, str]] = field(default_factory=dict)
     expected_failure: Optional[str] = None
+    settled_at: Optional[int] = None  # the head the rows were cut at, when settle_to_head cut any
 
     @property
     def error_match(self) -> bool:
@@ -479,7 +484,9 @@ _PLACEHOLDER_EXAMPLE_PARAMS = frozenset(
 VARIANT_VALUE_LIMIT = 2
 
 # path_overrides keys that configure the comparison rather than name a parameter.
-RESERVED_OVERRIDE_KEYS = frozenset({"ignore_paths", "expect_fail", "unordered_by"})
+RESERVED_OVERRIDE_KEYS = frozenset(
+    {"ignore_paths", "expect_fail", "unordered_by", "block_field", "num_rel_tolerance"}
+)
 
 
 def generate_value(param: Parameter, test_values: Dict) -> Any:
@@ -694,16 +701,14 @@ def _configured_values(
 
 
 def _with_param(tc: TestCase, param: Parameter, value: Any, label: str) -> TestCase:
-    extra = TestCase(
-        operation=tc.operation,
+    extra = dataclasses.replace(
+        tc,
         path_params=dict(tc.path_params),
         query_params=dict(tc.query_params),
         headers=dict(tc.headers),
-        body=tc.body,
         label=label,
         extra_ignore_paths=list(tc.extra_ignore_paths),
         unordered_by=dict(tc.unordered_by),
-        expected_failure=tc.expected_failure,
     )
     if param.location == "path":
         extra.path_params[param.name] = value
@@ -727,6 +732,8 @@ def generate_test_cases(
         extra_ignore_paths=list(extra_ignore_paths),
         unordered_by=dict(path_overrides.get("unordered_by") or {}),
         expected_failure=path_overrides.get("expect_fail"),
+        block_field=path_overrides.get("block_field", "blockNumber"),
+        num_rel_tolerance=float(path_overrides.get("num_rel_tolerance") or 0.0),
     )
     extra_values: List[Tuple[Parameter, List[Any]]] = []
     variants: List[Parameter] = []
@@ -838,15 +845,13 @@ class Fetched:
     headers: Dict[str, str] = field(default_factory=dict)
 
 
-# Keyset pagination: /blocks resumes through `from`, everything else through `cursor`.
+# Keyset pagination, by preference: `cursor`, then `from` for /blocks, which has no cursor.
 CURSOR_PARAM_NAMES = ("cursor", "from")
 
 
 def cursor_param(op: Operation) -> Optional[Parameter]:
-    for param in op.parameters:
-        if param.location == "query" and param.name in CURSOR_PARAM_NAMES:
-            return param
-    return None
+    query = {p.name: p for p in op.parameters if p.location == "query"}
+    return next((query[name] for name in CURSOR_PARAM_NAMES if name in query), None)
 
 
 def next_cursor(body: Any) -> Optional[str]:
@@ -887,6 +892,128 @@ TRANSIENT_STATUSES = frozenset({408, 425, 429, 500, 502, 503, 504})
 
 def is_transient(fetched: "Fetched") -> bool:
     return fetched.error is not None or fetched.status_code in TRANSIENT_STATUSES
+
+
+STATUS_PATH = "/api/v1/status"
+
+
+@dataclass(frozen=True)
+class CommonHead:
+    """The newest block every indexer on both colours has saved, and whether the colours differ."""
+
+    block: int
+    differs: bool
+
+
+class HeadTracker:
+    """Reads each colour's indexed head from /status, at most once per *ttl* seconds.
+
+    A stale head is only more conservative: heads never go backwards. Colours further
+    apart than *max_gap* get no head, so a stalled colour fails loudly instead of settling.
+    """
+
+    def __init__(
+        self,
+        endpoints: List[Tuple[str, str]],
+        headers: Dict[str, str],
+        timeout: int,
+        ctx: ssl.SSLContext | None,
+        max_gap: int,
+        ttl: float = 10.0,
+        clock: Callable[[], float] = time.monotonic,
+    ) -> None:
+        self.endpoints, self.headers, self.timeout, self.ctx = endpoints, headers, timeout, ctx
+        self.max_gap, self.ttl, self.clock = max_gap, ttl, clock
+        self.read_at: Optional[float] = None
+        self.head: Optional[CommonHead] = None
+
+    def _colour_head(self, base_url: str) -> int:
+        url = f"{base_url.rstrip('/')}{STATUS_PATH}?{CACHE_BUST_PARAM}={fresh_nonce(0)}"
+        body, _ = fetch_json_with_headers(url, self.headers, self.timeout, self.ctx)
+        return min(int(entry["blockNumber"]) for entry in body)
+
+    def __call__(self) -> Optional[CommonHead]:
+        now = self.clock()
+        if self.read_at is None or now - self.read_at >= self.ttl:
+            self.read_at = now
+            try:
+                heads = [self._colour_head(url) for _, url in self.endpoints]
+            except Exception:
+                self.head = None
+            else:
+                gap = max(heads) - min(heads)
+                self.head = None if gap > self.max_gap else CommonHead(min(heads), gap > 0)
+        return self.head
+
+
+def _rows_of(body: Any) -> Optional[List[Any]]:
+    if isinstance(body, dict) and isinstance(body.get("data"), list):
+        return body["data"]
+    return body if isinstance(body, list) else None
+
+
+def _block_of(row: Any, block_field: str) -> Optional[int]:
+    value = row.get(block_field) if isinstance(row, dict) else None
+    return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+
+def _block_ordered(rows: List[Any], block_field: str) -> bool:
+    blocks = [_block_of(row, block_field) for row in rows]
+    if None in blocks:
+        return False
+    return blocks == sorted(blocks) or blocks == sorted(blocks, reverse=True)
+
+
+def _trim_tail(rows: List[Any], other: List[Any], allowance: int) -> List[Any]:
+    """Cut at most *allowance* rows off *rows*' tail towards *other*'s length."""
+    extra = min(len(rows) - len(other), allowance)
+    return rows[: len(rows) - extra] if extra > 0 else rows
+
+
+def settle_to_head(
+    tc: TestCase, responses: Dict[str, Any], head: Optional[CommonHead]
+) -> Tuple[Dict[str, Any], bool]:
+    """Compare only the rows both colours had indexed when the case ran.
+
+    Rows above the common head are set aside, and so are the rows they push off the
+    other side's page tail. A later offset page is shifted by rows the lagging colour has
+    not indexed yet, so it is realigned on that colour's first row. Pages whose rows are
+    not ordered by block, or that nothing above the head touched, compare strictly.
+    """
+    if head is None or tc.block_field is None or len(responses) != 2:
+        return responses, False
+    (name_a, body_a), (name_b, body_b) = responses.items()
+    rows_a, rows_b = _rows_of(body_a), _rows_of(body_b)
+    if rows_a is None or rows_b is None:
+        return responses, False
+    if not all(_block_ordered(rows, tc.block_field) for rows in (rows_a, rows_b)):
+        return responses, False
+
+    kept_a = [r for r in rows_a if _block_of(r, tc.block_field) <= head.block]
+    kept_b = [r for r in rows_b if _block_of(r, tc.block_field) <= head.block]
+    dropped_a, dropped_b = len(rows_a) - len(kept_a), len(rows_b) - len(kept_b)
+
+    shift_a = shift_b = 0
+    offset_page = int(tc.query_params.get("page") or 0) > 0
+    if head.differs and offset_page and kept_a and kept_b and kept_a[0] != kept_b[0]:
+        if kept_b[0] in kept_a:
+            shift_a = kept_a.index(kept_b[0])
+        elif kept_a[0] in kept_b:
+            shift_b = kept_b.index(kept_a[0])
+    kept_a, kept_b = kept_a[shift_a:], kept_b[shift_b:]
+
+    if not (dropped_a or dropped_b or shift_a or shift_b):
+        return responses, False
+    kept_a = _trim_tail(kept_a, kept_b, dropped_b - dropped_a + shift_b)
+    kept_b = _trim_tail(kept_b, kept_a, dropped_a - dropped_b + shift_a)
+
+    def rebuilt(body: Any, rows: List[Any]) -> Any:
+        if isinstance(body, list):
+            return rows
+        # The page's cursor and hasNext describe the unsettled page, so they cannot match.
+        return {**{k: v for k, v in body.items() if k != "pagination"}, "data": rows}
+
+    return {name_a: rebuilt(body_a, kept_a), name_b: rebuilt(body_b, kept_b)}, True
 
 
 def fetch_case(
@@ -962,7 +1089,7 @@ def _pairwise_diffs(
                     unordered_lists=unordered_lists,
                     unordered_by=tc.unordered_by,
                     num_abs_tolerance=num_abs_tolerance,
-                    num_rel_tolerance=num_rel_tolerance,
+                    num_rel_tolerance=max(num_rel_tolerance, tc.num_rel_tolerance),
                 )
             )
             diffs[key] = pair_diffs
@@ -985,12 +1112,14 @@ def execute_test_case(
     cache_bust: bool = False,
     nonce_for: Callable[[int], str] = fresh_nonce,
     backoff_seconds: float = 0.0,
+    head_for: Callable[[], Optional[CommonHead]] = lambda: None,
 ) -> ComparisonResult:
     """Compare one case, re-fetching while the baseline is still moving.
 
     The baseline is read before and after the candidate. A baseline that changed
     between those two reads was mid-block, so the comparison is inconclusive and the
-    attempt is spent rather than reported as a difference.
+    attempt is spent rather than reported as a difference. Rows newer than the head
+    both colours had indexed beforehand are set aside by settle_to_head.
     """
     ctx = ssl_context_for(insecure, cafile)
     merged_headers = {**common_headers, **tc.headers}
@@ -1000,16 +1129,21 @@ def execute_test_case(
 
     for attempt in range(1, max(1, attempts) + 1):
         nonce = nonce_for(attempt) if cache_bust else None
+        head = head_for()
         fetched = {name: fetch_case(tc, url, merged_headers, timeout, ctx, nonce)
                    for name, url in endpoints}
         recheck = fetch_case(tc, endpoints[0][1], merged_headers, timeout, ctx, nonce)
 
         responses = {name: f.body for name, f in fetched.items() if f.error is None}
+        compared, settled = settle_to_head(tc, responses, head)
+        reread, _ = settle_to_head(
+            tc, {"first": fetched[baseline_name].body, "again": recheck.body}, head
+        )
         status_codes = {name: f.status_code for name, f in fetched.items() if f.status_code}
         errors = {name: f.error for name, f in fetched.items() if f.error is not None}
 
         diffs, tolerated = _pairwise_diffs(
-            responses, status_codes, tc, ignored_paths, unordered_lists,
+            compared, status_codes, tc, ignored_paths, unordered_lists,
             num_abs_tolerance, num_rel_tolerance,
         )
         result = ComparisonResult(
@@ -1021,16 +1155,17 @@ def execute_test_case(
             tolerated_diffs=tolerated,
             baseline_shape=(
                 "error" if baseline_name in errors
-                else response_shape(responses.get(baseline_name), status_codes.get(baseline_name, 0))
+                else response_shape(compared.get(baseline_name), status_codes.get(baseline_name, 0))
             ),
             attempts=attempt,
             cache_headers={name: f.headers for name, f in fetched.items() if f.headers},
             expected_failure=tc.expected_failure,
+            settled_at=head.block if settled and head else None,
         )
         if any(is_transient(f) for f in fetched.values()) and attempt < attempts:
             time.sleep(backoff_seconds * attempt)
             continue
-        if recheck.error is not None or recheck.body != fetched[baseline_name].body:
+        if recheck.error is not None or reread["first"] != reread["again"]:
             continue  # the baseline moved mid-comparison, so the diff proves nothing
         if not result.has_mismatch:
             return result
@@ -1090,6 +1225,7 @@ def summarize(results: List[ComparisonResult]) -> Dict[str, Any]:
         "deprecated": counts["expected-fail"],
         "failed": counts["fail"],
         "retried": sum(1 for r in results if r.attempts > 1),
+        "settled": sum(1 for r in results if r.settled_at is not None),
         "cache_hits": sum(1 for r in results if cache_hits(r)),
         "operations_without_data": sorted(k for k, ok in with_data.items() if not ok),
     }
@@ -1110,6 +1246,7 @@ def print_summary(results: List[ComparisonResult]) -> None:
     print(f"  Differing        : {s['failed']}")
     print(f"  Ops without data : {len(s['operations_without_data'])}")
     print(f"  Retried          : {s['retried']}")
+    print(f"  Settled to head  : {s['settled']}")
     print(f"  Served from cache: {s['cache_hits']}")
     print(f"{'=' * 70}\n")
 
@@ -1122,6 +1259,8 @@ def print_summary(results: List[ComparisonResult]) -> None:
 
         for ep, err in result.errors.items():
             print(f"   Warning: Error from {ep}: {err}")
+        if result.settled_at is not None:
+            print(f"   Compared rows up to block {result.settled_at}, the head both colours had indexed")
 
         if result.has_mismatch:
             for pair, diffs in result.diffs.items():
@@ -1175,6 +1314,7 @@ def save_report(
                 "status": status_of(r),
                 "baseline_shape": r.baseline_shape,
                 "attempts": r.attempts,
+                "settled_at": r.settled_at,
                 "expected_failure": r.expected_failure,
                 "cache_hits": cache_hits(r),
                 "cache_control": r.cache_control,
@@ -1291,6 +1431,13 @@ def main() -> None:
         "--no-cache-bust",
         action="store_true",
         help=f"Do not add the {CACHE_BUST_PARAM} parameter that forces a CDN miss on both sides",
+    )
+    comp.add_argument(
+        "--max-head-gap",
+        type=int,
+        default=100,
+        help="Compare rows only up to the head both colours have indexed, unless they are more "
+        "than this many blocks apart (default: 100); a negative value always compares strictly",
     )
     comp.add_argument(
         "--allow-vacuous-operations",
@@ -1438,6 +1585,15 @@ def main() -> None:
 
     results: List[ComparisonResult] = []
     baseline_name = endpoints[0][0]
+    head_for: Callable[[], Optional[CommonHead]] = lambda: None
+    if args.max_head_gap >= 0:
+        head_for = HeadTracker(
+            endpoints,
+            {"User-Agent": "compare-from-spec/1.0", **common_headers},
+            args.timeout,
+            ssl_context_for(args.insecure, args.cafile),
+            args.max_head_gap,
+        )
     pending = list(all_cases)
     walked: Dict[str, int] = {}
     idx = 0
@@ -1459,6 +1615,7 @@ def main() -> None:
             attempts=args.attempts,
             cache_bust=not args.no_cache_bust,
             backoff_seconds=args.backoff_seconds,
+            head_for=head_for,
         )
         results.append(result)
         page = walked.get(tc.label, 1) + 1

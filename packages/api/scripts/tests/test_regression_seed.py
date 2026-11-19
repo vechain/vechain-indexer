@@ -229,3 +229,35 @@ class FamilySeedersTest(unittest.TestCase):
             values["path_overrides"]["/api/v1/b3tr/actions/users/{wallet}/daily-summaries"],
             {"startDate": ["2023-10-15"], "endDate": ["2023-11-14"]},
         )
+
+    def test_a_challenge_wallet_is_one_that_answers_falling_back_to_its_history(self) -> None:
+        rows = [{"challengeId": 7, "status": "Completed", "creator": "0xc1"},
+                {"challengeId": 6, "status": "Completed", "creator": "0xc2"}]
+        mine = f"{self.BASE}/api/v1/b3tr/users/{{}}/challenges?filter={{}}"
+        responses = {
+            f"{self.BASE}/api/v1/b3tr/challenges?size=20": {"data": rows},
+            mine.format("0xc1", "MyChallenges"): {"data": []},
+            mine.format("0xc2", "MyChallenges"): {"data": []},
+            mine.format("0xc1", "History"): {"data": [{"challengeId": 7}]},
+        }
+        values = {}
+        MODULE.seed_challenges(values, self._api(responses))
+        self.assertEqual(
+            values["path_overrides"]["/api/v1/b3tr/users/{wallet}/challenges"],
+            {"wallet": ["0xc1"], "filter": ["History"]},
+        )
+
+    def test_two_open_stargate_listings_each_get_a_case(self) -> None:
+        listings = {"data": [{"tokenId": "453"}, {"tokenId": "3025"}, {"tokenId": "9"}]}
+        values = {}
+        MODULE.seed_stargate_listings(
+            values, self._api({f"{self.BASE}/api/v1/stargate/marketplace/listings?size=5": listings})
+        )
+        self.assertEqual(
+            values["path_overrides"]["/api/v1/stargate/marketplace/listings/{tokenId}"],
+            {"tokenId": ["453", "3025"]},
+        )
+        with self.assertRaises(LookupError):
+            MODULE.seed_stargate_listings(
+                {}, self._api({f"{self.BASE}/api/v1/stargate/marketplace/listings?size=5": {"data": []}})
+            )

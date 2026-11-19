@@ -383,10 +383,24 @@ def seed_b3tr_actions(values: Dict[str, Any], api: Baseline) -> None:
 
 
 def seed_challenges(values: Dict[str, Any], api: Baseline) -> None:
-    row = api.rows("/api/v1/b3tr/challenges", size=20)[0]
+    rows = api.rows("/api/v1/b3tr/challenges", size=20)
+    row = rows[0]
     param(values, "challengeId", row["challengeId"])
     override(values, "/api/v1/b3tr/challenges", status=row["status"])
-    override(values, "/api/v1/b3tr/users/{wallet}/challenges", wallet=row["creator"], filter="MyChallenges")
+    # MyChallenges holds only Pending and Active challenges, so a creator may have none there.
+    wallet, kind = api.pick(
+        ((r["creator"], kind) for kind in ("MyChallenges", "History") for r in rows),
+        lambda pair: api.has_data(f"/api/v1/b3tr/users/{pair[0]}/challenges", filter=pair[1]),
+    )
+    override(values, "/api/v1/b3tr/users/{wallet}/challenges", wallet=wallet, filter=kind)
+
+
+def seed_stargate_listings(values: Dict[str, Any], api: Baseline) -> None:
+    """Two open listings, since either can sell or be withdrawn before its case runs."""
+    listed = [r["tokenId"] for r in api.rows("/api/v1/stargate/marketplace/listings", size=5)]
+    if not listed:
+        raise LookupError("no open Stargate listings")
+    override(values, "/api/v1/stargate/marketplace/listings/{tokenId}", tokenId=listed[:2])
 
 
 def seed_navigators(values: Dict[str, Any], api: Baseline) -> None:
@@ -511,6 +525,7 @@ SEEDERS: List[Callable[[Dict[str, Any], Baseline], None]] = [
     seed_nfts,
     seed_stargate,
     seed_stargate_series,
+    seed_stargate_listings,
     seed_b3tr_actions,
     seed_challenges,
     seed_navigators,
