@@ -226,7 +226,12 @@
       "expect_fail": "Only the candidate serves this endpoint; v1 predates it"
     },
     "/api/v1/status": {
-      "expect_fail": "Only the candidate serves this; it reads a Postgres table"
+      "expect_fail": "A release that bumps a schema version changes this on purpose",
+      "ignore_paths": [
+        "root[*].blockNumber",
+        "root[*].blockId"
+      ],
+      "block_field": null
     },
     "/api/v1/validators/delegations/count": {
       "unordered_by": {
@@ -247,6 +252,12 @@
       "unordered_by": {
         "root": "appId"
       }
+    },
+    "/api/v2/accounts/total": {
+      "num_rel_tolerance": 1e-05
+    },
+    "/api/v1/blocks": {
+      "block_field": "number"
     }
   }
 }

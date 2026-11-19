@@ -1,3 +1,4 @@
+import dataclasses
 import importlib.util
 import sys
 import unittest
@@ -443,9 +444,6 @@ class PerEndpointIgnorePathsTest(unittest.TestCase):
         self.assertEqual(len(rank_diffs), 1)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class CaseGenerationTest(unittest.TestCase):
     """Base case, one variant per optional filter, extra cases per configured list."""
@@ -823,3 +821,134 @@ class CursorWalkTest(unittest.TestCase):
         self.assertIsNone(
             MODULE.cursor_follow_up(self._result("/api/v1/nfts", ["page", "size"], offset), "baseline", 2)
         )
+
+    def test_a_cursor_is_preferred_over_a_from_window(self) -> None:
+        body = {"data": [{"a": 1}], "pagination": {"hasNext": True, "cursor": "1789000000|0xb"}}
+        result = self._result("/api/v1/wov/marketplace/buyers", ["from", "to", "size", "cursor"], body)
+        follow_up = MODULE.cursor_follow_up(result, "baseline", 2)
+        self.assertEqual(follow_up.query_params, {"cursor": "1789000000|0xb"})
+
+
+def page_of(*blocks):
+    return {
+        "data": [{"blockNumber": b, "id": f"row-{b}"} for b in blocks],
+        "pagination": {"hasNext": True, "cursor": f"c{blocks[-1]}" if blocks else None},
+    }
+
+
+class HeadSettlingTest(unittest.TestCase):
+    """Rows newer than the head both colours had indexed are lag, not a regression."""
+
+    def _case(self, **query):
+        op = MODULE.Operation(path="/api/v1/transfers/latest", method="GET")
+        return MODULE.TestCase(operation=op, query_params=query, label="GET /api/v1/transfers/latest")
+
+    def _run(self, tc, baseline, candidate, head):
+        return run_case(tc, baseline, candidate, head_for=lambda: head)
+
+    def test_rows_above_the_common_head_and_the_tail_they_displace_are_set_aside(self) -> None:
+        result = self._run(
+            self._case(), page_of(103, 102, 101, 100, 99), page_of(101, 100, 99, 98, 97),
+            MODULE.CommonHead(101, True),
+        )
+        self.assertEqual(MODULE.status_of(result), "pass")
+        self.assertEqual(result.settled_at, 101)
+
+    def test_a_row_missing_below_the_common_head_still_fails(self) -> None:
+        result = self._run(
+            self._case(), page_of(103, 102, 101, 100, 99), page_of(101, 99, 98, 97, 96),
+            MODULE.CommonHead(101, True),
+        )
+        self.assertEqual(MODULE.status_of(result), "fail")
+
+    def test_a_later_offset_page_is_realigned_on_the_lagging_colours_first_row(self) -> None:
+        result = self._run(
+            self._case(page=3), page_of(90, 89, 88, 87, 86), page_of(92, 91, 90, 89, 88),
+            MODULE.CommonHead(95, True),
+        )
+        self.assertEqual(MODULE.status_of(result), "pass")
+
+    def test_the_first_page_is_never_realigned(self) -> None:
+        result = self._run(
+            self._case(), page_of(90, 89, 88, 87, 86), page_of(92, 91, 90, 89, 88),
+            MODULE.CommonHead(95, True),
+        )
+        self.assertEqual(MODULE.status_of(result), "fail")
+
+    def test_no_head_or_no_block_field_compares_strictly(self) -> None:
+        baseline, candidate = page_of(103, 102, 101), page_of(101, 100, 99)
+        self.assertEqual(MODULE.status_of(self._run(self._case(), baseline, candidate, None)), "fail")
+        strict = dataclasses.replace(self._case(), block_field=None)
+        result = self._run(strict, baseline, candidate, MODULE.CommonHead(101, True))
+        self.assertEqual(MODULE.status_of(result), "fail")
+
+    def test_rows_not_ordered_by_block_compare_strictly(self) -> None:
+        result = self._run(
+            self._case(), page_of(100, 103, 101), page_of(100, 101, 99), MODULE.CommonHead(101, True)
+        )
+        self.assertEqual(MODULE.status_of(result), "fail")
+
+    def test_a_page_entirely_above_the_head_compares_nothing(self) -> None:
+        result = self._run(self._case(), page_of(103, 102), page_of(), MODULE.CommonHead(101, True))
+        self.assertEqual(MODULE.status_of(result), "vacuous")
+
+
+class HeadTrackerTest(unittest.TestCase):
+    def _tracker(self, heads, clock=lambda: 0.0, max_gap=100):
+        calls = []
+
+        def stub(url, headers, timeout, context):
+            calls.append(url)
+            head = heads[BASELINE_URL if url.startswith(BASELINE_URL) else CANDIDATE_URL]
+            if isinstance(head, Exception):
+                raise head
+            return [{"schema": "a", "blockNumber": head}, {"schema": "b", "blockNumber": head + 5}], {}
+
+        patcher = patch.object(MODULE, "fetch_json_with_headers", side_effect=stub)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        return MODULE.HeadTracker(ENDPOINTS, {}, 5, None, max_gap, ttl=10.0, clock=clock), calls
+
+    def test_the_common_head_is_the_lowest_indexer_on_either_colour(self) -> None:
+        tracker, _ = self._tracker({BASELINE_URL: 200, CANDIDATE_URL: 190})
+        self.assertEqual(tracker(), MODULE.CommonHead(190, True))
+
+    def test_colours_too_far_apart_or_unreadable_get_no_head(self) -> None:
+        self.assertIsNone(self._tracker({BASELINE_URL: 500, CANDIDATE_URL: 190})[0]())
+        self.assertIsNone(self._tracker({BASELINE_URL: 200, CANDIDATE_URL: RuntimeError("down")})[0]())
+
+    def test_the_head_is_reread_only_after_the_ttl(self) -> None:
+        now = [0.0]
+        tracker, calls = self._tracker({BASELINE_URL: 200, CANDIDATE_URL: 200}, clock=lambda: now[0])
+        tracker()
+        now[0] = 9.0
+        tracker()
+        self.assertEqual(len(calls), 2)
+        now[0] = 10.0
+        self.assertEqual(tracker(), MODULE.CommonHead(200, False))
+        self.assertEqual(len(calls), 4)
+
+
+class PathConfigTest(unittest.TestCase):
+    def _case(self, overrides):
+        op = MODULE.Operation(path="/api/v2/accounts/total", method="GET")
+        return MODULE.generate_test_cases(op, {"path_overrides": {op.path: overrides}}, {})[0]
+
+    def test_a_per_path_relative_tolerance_absorbs_a_growing_counter(self) -> None:
+        self.assertEqual(MODULE.status_of(run_case(self._case({}), 15204744, 15204746)), "fail")
+        tolerant = self._case({"num_rel_tolerance": 1e-5})
+        self.assertEqual(MODULE.status_of(run_case(tolerant, 15204744, 15204746)), "tolerated")
+        self.assertEqual(MODULE.status_of(run_case(tolerant, 15204744, 30409488)), "fail")
+
+    def test_status_compares_schema_versions_but_not_heads(self) -> None:
+        tc = self._case({"ignore_paths": ["root[*].blockNumber", "root[*].blockId"], "block_field": None})
+        self.assertIsNone(tc.block_field)
+        baseline = [{"schema": "accounts", "version": 2, "blockNumber": 10, "blockId": "0x0a"}]
+        moved = [{"schema": "accounts", "version": 2, "blockNumber": 12, "blockId": "0x0c"}]
+        bumped = [{"schema": "accounts", "version": 3, "blockNumber": 10, "blockId": "0x0a"}]
+        self.assertEqual(MODULE.status_of(run_case(tc, baseline, moved)), "pass")
+        self.assertEqual(MODULE.status_of(run_case(tc, baseline, bumped)), "fail")
+
+
+if __name__ == "__main__":
+    unittest.main()
