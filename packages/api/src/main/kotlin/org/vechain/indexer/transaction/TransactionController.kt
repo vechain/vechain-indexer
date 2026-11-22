@@ -125,37 +125,4 @@ open class TransactionController(private val transactionService: TransactionServ
             )
         )
     }
-
-    @Deprecated("Use GET /api/v2/transactions/contract")
-    @GetMapping("/contract")
-    @Operation(
-        summary = "List transactions that called a contract (deprecated)",
-        description =
-            """
-            **Deprecated:** use `GET /api/v2/transactions/contract`, which pages by cursor
-            with no page limit and filters by block range.
-
-            Results can be up to a minute old. `page` stops at 10000.
-            """,
-        deprecated = true,
-    )
-    @AddressParameter(name = "contractAddress", required = true)
-    @CommonApiResponses
-    @ExpandedParameter
-    @PaginationParameters
-    @CacheFor(CachePolicy.MINUTE)
-    open fun getTransactionsByContract(
-        @ValidAddress @RequestParam contractAddress: Address,
-        @RequestParam(required = false) expanded: Boolean = false,
-        @RequestParam(required = false) page: Int?,
-        @ValidPageSize @RequestParam(required = false) size: Int?,
-        @RequestParam(required = false) direction: String?,
-    ): PaginatedResponse<IndexedTransaction> =
-        paginatedResponse(
-            transactionService.findByContractAddress(
-                contractAddress,
-                toPageable(page, size, direction, "blockNumber", "_id"),
-                expanded,
-            )
-        )
 }

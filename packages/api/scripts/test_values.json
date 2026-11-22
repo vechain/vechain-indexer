@@ -33,12 +33,6 @@
         "DESC"
       ]
     },
-    "/api/v1/transactions/contract": {
-      "direction": [
-        "ASC",
-        "DESC"
-      ]
-    },
     "/api/v2/transactions/contract": {
       "direction": [
         "ASC",

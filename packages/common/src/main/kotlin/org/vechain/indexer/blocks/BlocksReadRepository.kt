@@ -128,30 +128,6 @@ open class BlocksReadRepository(@Qualifier("postgresJdbcTemplate") jdbcTemplate:
         )
 
     /** DISTINCT ON keeps Mongo's multikey semantics: two clauses to one contract is one hit. */
-    open fun findByContract(
-        contractAddress: String,
-        offset: Long,
-        limit: Int,
-        direction: Direction,
-        expanded: Boolean,
-    ): List<IndexedTransaction> =
-        transactions(
-            """
-            WITH page AS (
-              SELECT DISTINCT ON (c.block_number, c.tx_id) c.block_number, c.tx_id FROM blocks.clause c
-              WHERE c.to_address = :address
-              ORDER BY c.block_number ${direction.name}, c.tx_id ${direction.name} OFFSET :offset LIMIT :limit)
-            SELECT t.*, b.id AS block_id, b.timestamp AS block_timestamp, $CLAUSE_COUNT
-            FROM page p JOIN blocks.transaction t ON t.id = p.tx_id JOIN blocks.block b ON b.number = t.block_number
-            ORDER BY p.block_number ${direction.name}, p.tx_id ${direction.name}
-            """
-                .trimIndent(),
-            MapSqlParameterSource("address", PostgresHex.bytes(contractAddress))
-                .addValue("offset", offset)
-                .addValue("limit", limit),
-            expanded,
-        )
-
     /** Seeks `clause_recipient_idx` past [after], so a page costs the same at any depth. */
     open fun findByContract(
         contractAddress: String,

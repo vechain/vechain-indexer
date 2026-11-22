@@ -48,15 +48,6 @@ open class TransactionService(private val repository: BlocksReadRepository) {
             repository.findDelegated(delegator.value, offset, limit, direction, expanded)
         }
 
-    open fun findByContractAddress(
-        contractAddress: Address,
-        pageable: Pageable,
-        expanded: Boolean,
-    ): Slice<IndexedTransaction> =
-        page(pageable) { offset, limit, direction ->
-            repository.findByContract(contractAddress.value, offset, limit, direction, expanded)
-        }
-
     /** Cursor is `blockNumber|txId` of the last row served; pass the same [direction] back. */
     open fun findByContractAddress(
         contractAddress: Address,
