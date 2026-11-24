@@ -121,10 +121,18 @@
           "logGroupNames": [
             "veworld-prod-blue-main-api",
             "veworld-prod-blue-test-api",
+            "veworld-prod-blue-main-indexer",
+            "veworld-prod-blue-test-indexer"
+          ],
+          "expression": "fields @timestamp, message, level, logger_name, stack_trace\n| filter @log like /prod-(${deployment:pipe})-/\n| filter @log like /-(${network:pipe})-/\n| filter @log like /-(${service:pipe})$/\n| filter level like /${level:pipe}/\n| filter (logger_name like /(?i)${indexer:raw}/) or (message like /(?i)${indexer:raw}/)\n| filter (message like /(?i)${filter:raw}/) or (stack_trace like /(?i)${filter:raw}/)\n| sort @timestamp desc, @ptr desc\n| limit 500"
+        },
+        {
+          "refId": "B",
+          "queryMode": "Logs",
+          "region": "default",
+          "logGroupNames": [
             "veworld-prod-green-main-api",
             "veworld-prod-green-test-api",
-            "veworld-prod-blue-main-indexer",
-            "veworld-prod-blue-test-indexer",
             "veworld-prod-green-main-indexer",
             "veworld-prod-green-test-indexer"
           ],
