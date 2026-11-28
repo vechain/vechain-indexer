@@ -113,7 +113,7 @@
     "icon": "bbe48eedf5b23a5e268672276ba889eea5d00256.png",
     "name": "HackenAI",
     "symbol": "HAI",
-    "totalSupply": "95811269632948478"
+    "totalSupply": "95799606696449836"
   },
   {
     "address": "0x1b44a9718e12031530604137f854160759677192",
@@ -189,7 +189,7 @@
     },
     "name": "WorldOfV",
     "symbol": "WoV",
-    "totalSupply": "224842293074398688749462563",
+    "totalSupply": "224841281746273688749462603",
     "website": "https://www.worldofv.art/",
     "whitePaper": "https://medium.com/@WorldofV/world-of-v-tokenomics-the-beginning-of-our-journey-together-d428907c22af"
   },
@@ -244,7 +244,7 @@
     },
     "name": "Veiled VET",
     "symbol": "VVET",
-    "totalSupply": "9358018941232444715400607"
+    "totalSupply": "9766359646936244337114021"
   },
   {
     "address": "0x8e57aadf0992afcc41f7843656c6c7129f738f7b",
@@ -374,7 +374,7 @@
     },
     "name": "VFoxToken",
     "symbol": "VFA",
-    "totalSupply": "9125035415934804446784868",
+    "totalSupply": "9124991787301449725058345",
     "website": "https://vfox-alliance.com/",
     "whitePaper": "https://medium.com/@vfox.alphice/tokenomics-vfa-f3ab4c4f0cf7"
   },
@@ -413,7 +413,7 @@
     },
     "name": "MVA Token",
     "symbol": "MVA",
-    "totalSupply": "9904113830989705612252186",
+    "totalSupply": "9894785344529662826154318",
     "website": "https://mvanfts.com/"
   },
   {
@@ -426,7 +426,7 @@
     },
     "name": "Squirtle Squad",
     "symbol": "SQUAD",
-    "totalSupply": "72714516834999999999912000000"
+    "totalSupply": "72709516834999999999912000000"
   },
   {
     "address": "0x8fcddbb322b18d8bdaec9243e9f4c6eb8901e566",
@@ -468,7 +468,7 @@
     },
     "name": "Sh*tCoin",
     "symbol": "SHT",
-    "totalSupply": "1998139761755380013124296967"
+    "totalSupply": "1997838719782958676214205270"
   },
   {
     "address": "0x7ae288b7224ad8740b2d4fc2b2c8a2392caea3c6",
@@ -717,7 +717,7 @@
     },
     "name": "B3TR",
     "symbol": "B3TR",
-    "totalSupply": "485929194400421393203200000",
+    "totalSupply": "488588524944387397386240000",
     "website": "https://vebetter.com/",
     "whitePaper": "https://files.vebetter.com/vebetterdaocontainer/VeBetter_Whitepaper_v2-OCR.pdf"
   },
@@ -728,7 +728,7 @@
     "icon": "dcc6e7f09932a389a536fe74107cd73af445dd65.png",
     "name": "VOT3",
     "symbol": "VOT3",
-    "totalSupply": "324702992686670763878661257"
+    "totalSupply": "327442048914455470803878360"
   },
   {
     "address": "0x867bca2f3f187bb7bfb900ebcd3155746537a9a9",
@@ -766,7 +766,7 @@
     },
     "name": "veB3TR",
     "symbol": "veB3TR",
-    "totalSupply": "4326668799358038129344343",
+    "totalSupply": "4330880295157143689736559",
     "website": "https://veDelegate.vet/"
   },
   {
@@ -812,7 +812,7 @@
     },
     "name": "CarbonYears",
     "symbol": "CY",
-    "totalSupply": "212221628404746418784401",
+    "totalSupply": "212264628404746418780813",
     "website": "https://pauseyourcarbon.com/"
   },
   {
@@ -834,7 +834,7 @@
     },
     "name": "Better VET",
     "symbol": "BVET",
-    "totalSupply": "14909780200084231865863990",
+    "totalSupply": "14898938229235961829856316",
     "website": "https://www.betterswap.io/"
   },
   {
@@ -906,7 +906,7 @@
     },
     "name": "ETH@vechain",
     "symbol": "ETH",
-    "totalSupply": "195314211039063076",
+    "totalSupply": "196316644812162838",
     "website": "https://bridge.wanchain.org/AssetBridge"
   },
   {
@@ -924,7 +924,7 @@
     },
     "name": "BTC@vechain",
     "symbol": "BTC",
-    "totalSupply": "1104107",
+    "totalSupply": "1102591",
     "website": "https://bridge.wanchain.org/AssetBridge"
   },
   {
@@ -942,7 +942,7 @@
     },
     "name": "USDT@vechain",
     "symbol": "USDT",
-    "totalSupply": "4160438968",
+    "totalSupply": "3576937503",
     "website": "https://bridge.wanchain.org/AssetBridge"
   },
   {
@@ -960,7 +960,7 @@
     },
     "name": "USDC@vechain",
     "symbol": "USDC",
-    "totalSupply": "12672138631",
+    "totalSupply": "13360114920",
     "website": "https://bridge.wanchain.org/AssetBridge"
   },
   {
@@ -978,7 +978,7 @@
     },
     "name": "WAN@vechain",
     "symbol": "WAN",
-    "totalSupply": "5184330727369945246683",
+    "totalSupply": "5284330727369945246683",
     "website": "https://bridge.wanchain.org/AssetBridge"
   },
   {
@@ -996,7 +996,7 @@
     },
     "name": "XRP@vechain",
     "symbol": "XRP",
-    "totalSupply": "163501212",
+    "totalSupply": "162285889",
     "website": "https://bridge.wanchain.org/AssetBridge"
   },
   {
@@ -1035,7 +1035,7 @@
     },
     "name": "COMPOST Token",
     "symbol": "COMPOST",
-    "totalSupply": "1163721000000000000000000",
+    "totalSupply": "1166521000000000000000000",
     "website": "https://sproutlyrwa.com/"
   },
   {
@@ -1068,6 +1068,28 @@
     "icon": "5a7702b4e7e698aaf655ba9aba1af7d23fb93958.png",
     "name": "Gainz coin",
     "symbol": "GAINZ",
+    "totalSupply": "1000000000000000000000000000"
+  },
+  {
+    "address": "0xb8a3f6e8891b4e7b4c64c4edf2b84badcd91aa73",
+    "decimals": 18,
+    "desc": "The in-game currency of Dominance, a strategy game on VeChain where players build empires, raise armies and wage war.",
+    "icon": "8aa3a56606070c5310c7e318368c5bc8ead78cef.png",
+    "name": "Dominance",
+    "symbol": "DOM",
+    "totalSupply": "5012221775740000000000000000",
+    "website": "https://astonishing-paprenjak-72ed21.netlify.app/"
+  },
+  {
+    "address": "0xbe963370fecde7ca146ba184d07b989cc5556f06",
+    "decimals": 18,
+    "desc": "Whalewingo (WhaleMingo) is a community utility token on VeChainThor powering the Strain Garden village game, player rewards, and in-game upgrades.",
+    "icon": "93a8ae805eb913df052c24c960380d19f18b7e0d.png",
+    "links": {
+      "github": "https://github.com/Tfljr89/Whalemingo"
+    },
+    "name": "Whalewingo",
+    "symbol": "Whale",
     "totalSupply": "1000000000000000000000000000"
   }
 ]
